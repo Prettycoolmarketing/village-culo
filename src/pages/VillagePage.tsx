@@ -1,0 +1,179 @@
+import React from 'react'
+import { usePageTitle } from '../utils/usePageTitle'
+import { HeroWidget }                from '../widgets/HeroWidget'
+import { FeaturedWidget }            from '../widgets/FeaturedWidget'
+import { StoryGrid }                 from '../widgets/StoryGrid'
+import { IdeaGrid }                  from '../widgets/IdeaGrid'
+import { FounderGrid }               from '../widgets/FounderGrid'
+import { BusinessGrid }              from '../widgets/BusinessGrid'
+import { MapPreviewWidget }          from '../widgets/MapPreviewWidget'
+import { NoticeboardPreviewWidget }  from '../widgets/NoticeboardPreviewWidget'
+import { ArchiveCTAWidget }          from '../widgets/ArchiveCTAWidget'
+import { InnerContainer }            from '../components/layout/PageContainer'
+
+// ─── Section wrapper ───────────────────────────────────────────────────────────
+// Alternates between surface white and warm background to create visual rhythm.
+interface VillageSectionProps {
+  children: React.ReactNode
+  surface?: boolean // true = white card bg, false = warm cream bg
+  tight?: boolean   // less vertical padding for visual flow
+}
+
+function VillageSection({ children, surface = false, tight = false }: VillageSectionProps) {
+  return (
+    <section className={`${surface ? 'bg-surface' : 'bg-background'} ${tight ? 'py-10 md:py-12' : 'py-14 md:py-20'}`}>
+      <InnerContainer>
+        {children}
+      </InnerContainer>
+    </section>
+  )
+}
+
+// ─── Village Homepage ──────────────────────────────────────────────────────────
+
+export function VillagePage() {
+  usePageTitle('Village')
+  return (
+    <main id="main-content">
+      {/* Skip to main content — accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-20 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-xl focus:text-sm font-medium"
+      >
+        Skip to main content
+      </a>
+
+      {/* ── 1. Hero ─────────────────────────────────────────────────────────── */}
+      {/*
+        Headline, search bar and popular topic pills.
+        The front door to the Village — sets the editorial tone.
+      */}
+      <HeroWidget />
+
+      {/* ── 2. Today's Highlights ───────────────────────────────────────────── */}
+      {/*
+        Story of the Day, Founder of the Day, Idea of the Day,
+        Featured Business, Upcoming Event.
+        Pulled from featured: true objects across the data layer.
+      */}
+      <VillageSection surface>
+        <FeaturedWidget
+          heading="Today's Highlights"
+          subheading="The best of the Village, updated as new stories are published."
+        />
+      </VillageSection>
+
+      {/* ── 3. Latest Stories ───────────────────────────────────────────────── */}
+      {/*
+        Six reel-sized vertical story cards.
+        The primary content format — blogs, reels and carousels from real founders.
+        Schema-visible: title, summary, founder, location, topic, CTA all in readable text.
+      */}
+      <VillageSection>
+        <StoryGrid
+          heading="Latest Stories"
+          subheading="Real founder experiences transformed into blogs, reels and carousels."
+          action={{ label: 'View All Stories', href: '/stories' }}
+          filter={{ limit: 6 }}
+          columns={3}
+          cardVariant="vertical"
+          showSummary
+          showFounder
+          showTopics
+          showCTA
+          emptyTitle="No stories yet"
+          emptyMessage="Be the first to publish a story in the Village."
+        />
+      </VillageSection>
+
+      {/* ── 4. Trending Ideas ───────────────────────────────────────────────── */}
+      {/*
+        Knowledge extracted from stories.
+        IdeaGrid with showQuotes enabled — every 4th card becomes a full-width
+        editorial quote from a real founder, breaking the grid rhythm intentionally.
+      */}
+      <VillageSection surface>
+        <IdeaGrid
+          heading="Trending Ideas"
+          subheading="Knowledge extracted from stories across the Village."
+          action={{ label: 'Explore Ideas', href: '/ideas' }}
+          filter={{ featured: true, limit: 6 }}
+          columns={3}
+          showQuotes
+          emptyTitle="No ideas yet"
+          emptyMessage="Ideas are extracted from published stories. Publish a story to generate ideas."
+        />
+      </VillageSection>
+
+      {/* ── 5. Featured Founders + Mercato preview ──────────────────────────── */}
+      {/*
+        Two grids side by side on desktop — people and businesses together.
+        Keeps the human + commercial ecosystem visible in one section.
+      */}
+      <VillageSection>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+
+          <FounderGrid
+            heading="Featured Founders"
+            subheading="Meet the people behind the knowledge."
+            action={{ label: 'All Founders', href: '/founders' }}
+            filter={{ featured: true, limit: 3 }}
+            columns={2}
+            cardVariant="default"
+            emptyTitle="No featured founders yet"
+            emptyMessage="Founders will appear here once they publish their first story."
+          />
+
+          <BusinessGrid
+            heading="Mercato"
+            subheading="Discover businesses through the stories and ideas behind them."
+            action={{ label: 'Browse Mercato', href: '/mercato' }}
+            filter={{ featured: true, limit: 3 }}
+            columns={2}
+            cardVariant="default"
+            emptyTitle="No featured businesses yet"
+            emptyMessage="Businesses will appear here once connected to published stories."
+          />
+
+        </div>
+      </VillageSection>
+
+      {/* ── 6. Explore by Location ──────────────────────────────────────────── */}
+      {/*
+        Six location cards, portrait orientation.
+        Each shows story count — incentivises publishing from underrepresented cities.
+      */}
+      <VillageSection surface>
+        <MapPreviewWidget
+          heading="Explore by Location"
+          subheading="Discover founders, businesses and stories from across Australia."
+          action={{ label: 'Open Map', href: '/map' }}
+          limit={6}
+        />
+      </VillageSection>
+
+      {/* ── 7. Noticeboard ──────────────────────────────────────────────────── */}
+      {/*
+        Latest events, collaborations, opportunities and requests.
+        Community pulse — keeps the Village feeling alive and active.
+      */}
+      <VillageSection>
+        <NoticeboardPreviewWidget
+          heading="Noticeboard"
+          subheading="Events, collaborations and opportunities from the Village."
+          limit={3}
+        />
+      </VillageSection>
+
+      {/* ── 8. Archive CTA ──────────────────────────────────────────────────── */}
+      {/*
+        Dark search-led CTA block. Closes every homepage visit with a discovery prompt.
+        Reinforces the Village's core promise: knowledge lives here permanently.
+      */}
+      <VillageSection surface tight>
+        <ArchiveCTAWidget variant="dark" />
+      </VillageSection>
+
+    </main>
+  )
+}
