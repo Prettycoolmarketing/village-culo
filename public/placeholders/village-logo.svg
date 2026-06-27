@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="lg-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5EDD6"/>
+      <stop offset="100%" stop-color="#E8D8B8"/>
+    </linearGradient>
+    <radialGradient id="lg-glow" cx="50%" cy="55%" r="40%">
+      <stop offset="0%" stop-color="#FFE4A0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#F5EDD6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="200" height="200" fill="url(#lg-bg)" rx="12"/>
+
+  <!-- Warm glow -->
+  <rect width="200" height="200" fill="url(#lg-glow)" rx="12"/>
+
+  <!-- Arch / doorway icon -->
+  <!-- Arch opening -->
+  <path d="M72,148 L72,102 Q100,72 128,102 L128,148 Z" fill="#C86A43" opacity="0.18"/>
+  <!-- Arch frame sides -->
+  <rect x="68"  y="100" width="12" height="52" fill="#C86A43" opacity="0.75" rx="2"/>
+  <rect x="120" y="100" width="12" height="52" fill="#C86A43" opacity="0.75" rx="2"/>
+  <!-- Arch frame top (semicircle) -->
+  <path d="M68,100 Q100,58 132,100" fill="none" stroke="#C86A43" stroke-width="12" opacity="0.75" stroke-linecap="round"/>
+  <!-- Arch interior glow -->
+  <path d="M74,148 L74,104 Q100,68 126,104 L126,148 Z" fill="#FFE4A0" opacity="0.35"/>
+
+  <!-- Ground line -->
+  <rect x="58" y="148" width="84" height="6" fill="#C86A43" opacity="0.55" rx="1"/>
+
+  <!-- Small vine left -->
+  <path d="M66,115 Q62,128 64,142" fill="none" stroke="#5E6B4A" stroke-width="2" opacity="0.6"/>
+  <ellipse cx="62" cy="118" rx="8" ry="6" fill="#5E6B4A" opacity="0.55" transform="rotate(-20,62,118)"/>
+  <ellipse cx="63" cy="133" rx="7" ry="5" fill="#6B7C3B" opacity="0.5" transform="rotate(15,63,133)"/>
+
+  <!-- CULO text -->
+  <text x="100" y="178" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="11" fill="#2D2A26" letter-spacing="3" opacity="0.7">CULO</text>
+</svg>

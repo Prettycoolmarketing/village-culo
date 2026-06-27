@@ -18,12 +18,10 @@ export function CheCuloToast({
 }: CheCuloToastProps) {
   const closeRef = useRef<HTMLButtonElement>(null)
 
-  // Move focus to close button when toast appears
   useEffect(() => {
     if (visible) closeRef.current?.focus()
   }, [visible])
 
-  // Keyboard: Escape to dismiss
   useEffect(() => {
     if (!visible) return
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -31,26 +29,29 @@ export function CheCuloToast({
     return () => window.removeEventListener('keydown', handler)
   }, [visible, onClose])
 
+  // Auto-dismiss after 7 seconds
+  useEffect(() => {
+    if (!visible) return
+    const timer = setTimeout(onClose, 7000)
+    return () => clearTimeout(timer)
+  }, [visible, onClose])
+
   if (!visible) return null
 
   const isSuccess = variant === 'success'
 
-  // Extract "Che CULO!!" from message for styled split
   const cheCuloPrefix = 'Che CULO!!'
   const hasPrefix = message.startsWith(cheCuloPrefix)
   const body = hasPrefix ? message.slice(cheCuloPrefix.length).trim() : message
 
   const inner = (
     <div className="flex items-start gap-3 flex-1 min-w-0">
-      {/* Icon */}
       <span
-        className={`flex-shrink-0 text-lg leading-none mt-0.5 ${isSuccess ? 'text-2xl' : ''}`}
+        className={`flex-shrink-0 text-base leading-none mt-0.5 ${isSuccess ? 'text-xl' : ''}`}
         aria-hidden="true"
       >
         {isSuccess ? '🎉' : '🔔'}
       </span>
-
-      {/* Text */}
       <div className="min-w-0 flex-1">
         {hasPrefix && (
           <span className="font-heading font-bold text-primary text-sm tracking-tight">
@@ -70,54 +71,50 @@ export function CheCuloToast({
   )
 
   return (
-    // aria-live="polite" so screen readers announce it without interrupting
     <div
       role="status"
       aria-live="polite"
       aria-atomic="true"
       aria-label={message}
-      className={`
-        w-full
-        ${isSuccess
-          ? 'bg-charcoal border-b border-primary/30'
-          : 'bg-charcoal border-b border-white/8'
-        }
-        motion-safe:animate-slide-down
-      `}
-      style={{
-        // Fallback for reduced motion — just appear, no slide
-        animation: 'var(--toast-animation, none)',
-      }}
+      className="fixed bottom-5 left-5 z-50 w-80 max-w-[calc(100vw-2.5rem)]"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+      <div
+        className={`
+          rounded-2xl shadow-2xl border
+          ${isSuccess
+            ? 'bg-charcoal border-primary/40'
+            : 'bg-charcoal border-white/10'
+          }
+          animate-slide-up-fade
+        `}
+      >
+        <div className="px-4 py-3.5 flex items-start gap-3">
+          {href ? (
+            <Link
+              to={href}
+              className="flex items-start gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity"
+              onClick={onClose}
+              aria-label={message}
+            >
+              {inner}
+            </Link>
+          ) : (
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              {inner}
+            </div>
+          )}
 
-        {/* Clickable content */}
-        {href ? (
-          <Link
-            to={href}
-            className="flex items-start gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity"
+          <button
+            ref={closeRef}
             onClick={onClose}
-            aria-label={message}
+            aria-label="Dismiss"
+            className="flex-shrink-0 p-1 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 mt-0.5"
           >
-            {inner}
-          </Link>
-        ) : (
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            {inner}
-          </div>
-        )}
-
-        {/* Dismiss */}
-        <button
-          ref={closeRef}
-          onClick={onClose}
-          aria-label="Dismiss announcement"
-          className="flex-shrink-0 p-1.5 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/8 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -102,13 +102,6 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="flex flex-col min-h-screen bg-background">
-        <CheCuloToast
-          message={activityMsg}
-          href="/stories"
-          visible={bannerVisible}
-          onClose={() => setBannerVisible(false)}
-          variant="activity"
-        />
         <Navbar />
         <div className="flex-1">
           <Routes>
@@ -134,6 +127,13 @@ export default function App() {
           </Routes>
         </div>
         <Footer />
+        <CheCuloToast
+          message={activityMsg}
+          href="/stories"
+          visible={bannerVisible}
+          onClose={() => setBannerVisible(false)}
+          variant="activity"
+        />
       </div>
     </BrowserRouter>
   )

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675">
+  <defs>
+    <linearGradient id="vd-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F9E4C0"/>
+      <stop offset="50%" stop-color="#EDB97A"/>
+      <stop offset="100%" stop-color="#D6946A"/>
+    </linearGradient>
+    <linearGradient id="vd-hill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6B7C3B"/>
+      <stop offset="100%" stop-color="#4A5438"/>
+    </linearGradient>
+    <linearGradient id="vd-ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C4A882"/>
+      <stop offset="100%" stop-color="#8B6840"/>
+    </linearGradient>
+    <radialGradient id="vd-sun" cx="25%" cy="22%" r="16%">
+      <stop offset="0%" stop-color="#FFE4A0" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#EDB97A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vd-play" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2D2A26" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#2D2A26" stop-opacity="0.65"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky background (same as village-cover) -->
+  <rect width="1200" height="675" fill="url(#vd-sky)"/>
+  <ellipse cx="300" cy="150" rx="220" ry="140" fill="url(#vd-sun)"/>
+  <circle cx="300" cy="108" r="30" fill="#FFE4A0" opacity="0.55"/>
+  <circle cx="300" cy="108" r="17" fill="#FFD060" opacity="0.6"/>
+
+  <!-- Hills -->
+  <path d="M0,360 Q120,330 240,345 Q360,358 480,330 Q600,305 720,322 Q840,340 960,318 Q1080,298 1200,328 L1200,675 L0,675 Z" fill="url(#vd-hill)" opacity="0.55"/>
+
+  <!-- Village buildings -->
+  <rect x="90"  y="330" width="22" height="38" fill="#C86A43" opacity="0.85"/>
+  <polygon points="90,330 101,313 112,330" fill="#A0522D" opacity="0.85"/>
+  <rect x="118" y="336" width="18" height="32" fill="#D4956A" opacity="0.8"/>
+  <rect x="140" y="326" width="26" height="42" fill="#C86A43" opacity="0.85"/>
+  <polygon points="140,326 153,308 166,326" fill="#9A4F2B" opacity="0.85"/>
+  <rect x="490" y="308" width="20" height="36" fill="#C86A43" opacity="0.85"/>
+  <polygon points="490,308 500,290 510,308" fill="#A0522D" opacity="0.85"/>
+  <rect x="514" y="314" width="24" height="30" fill="#D4956A" opacity="0.8"/>
+  <rect x="540" y="295" width="14" height="49" fill="#E8D4B0" opacity="0.8"/>
+  <polygon points="540,295 547,280 554,295" fill="#C4A882" opacity="0.85"/>
+  <rect x="960"  y="318" width="24" height="40" fill="#C86A43" opacity="0.85"/>
+  <polygon points="960,318 972,300 984,318" fill="#A0522D" opacity="0.85"/>
+  <rect x="988" y="323" width="18" height="35" fill="#D4956A" opacity="0.8"/>
+  <rect x="1010" y="313" width="28" height="45" fill="#C86A43" opacity="0.85"/>
+  <polygon points="1010,313 1024,293 1038,313" fill="#9A4F2B" opacity="0.85"/>
+
+  <!-- Olive trees -->
+  <rect x="268" y="368" width="6" height="72" fill="#8B6040" rx="2"/>
+  <ellipse cx="271" cy="358" rx="28" ry="22" fill="#5E6B4A" opacity="0.85"/>
+  <ellipse cx="260" cy="366" rx="18" ry="14" fill="#6B7C3B" opacity="0.75"/>
+  <ellipse cx="284" cy="363" rx="16" ry="13" fill="#4A5438" opacity="0.7"/>
+
+  <rect x="906" y="360" width="6" height="66" fill="#8B6040" rx="2"/>
+  <ellipse cx="909" cy="350" rx="26" ry="20" fill="#5E6B4A" opacity="0.82"/>
+  <ellipse cx="898" cy="358" rx="17" ry="13" fill="#6B7C3B" opacity="0.7"/>
+
+  <!-- Ground -->
+  <rect x="0" y="452" width="1200" height="223" fill="url(#vd-ground)"/>
+  <line x1="0" y1="475" x2="1200" y2="475" stroke="#9A7A55" stroke-width="1" opacity="0.3"/>
+  <line x1="0" y1="510" x2="1200" y2="510" stroke="#9A7A55" stroke-width="1" opacity="0.28"/>
+
+  <!-- Dark overlay for play button readability -->
+  <rect width="1200" height="675" fill="#2D2A26" opacity="0.28"/>
+
+  <!-- Play button circle -->
+  <circle cx="600" cy="337" r="72" fill="url(#vd-play)"/>
+  <circle cx="600" cy="337" r="72" fill="none" stroke="#F9E4C0" stroke-width="2" opacity="0.7"/>
+  <!-- Play triangle -->
+  <polygon points="584,308 584,368 638,338" fill="#F9E4C0" opacity="0.95"/>
+
+  <!-- Caption -->
+  <rect x="0" y="618" width="1200" height="57" fill="#2D2A26" opacity="0.75"/>
+  <text x="600" y="645" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#F9E4C0" letter-spacing="2.5" opacity="0.95">your story lives here</text>
+  <text x="600" y="667" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#D6A94D" letter-spacing="6" opacity="0.82">CULO VILLAGE</text>
+</svg>

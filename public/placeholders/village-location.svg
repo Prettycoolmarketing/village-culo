@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="lo-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A8C4D0"/>
+      <stop offset="50%" stop-color="#D4E8F0"/>
+      <stop offset="100%" stop-color="#EDB97A"/>
+    </linearGradient>
+    <linearGradient id="lo-hill1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6B7C3B"/>
+      <stop offset="100%" stop-color="#4A5438"/>
+    </linearGradient>
+    <linearGradient id="lo-hill2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8B9A5E"/>
+      <stop offset="100%" stop-color="#6B7C3B"/>
+    </linearGradient>
+    <linearGradient id="lo-ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C4A882"/>
+      <stop offset="100%" stop-color="#8B6840"/>
+    </linearGradient>
+    <radialGradient id="lo-sun" cx="72%" cy="22%" r="12%">
+      <stop offset="0%" stop-color="#FFE4A0" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#EDB97A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="800" height="450" fill="url(#lo-sky)"/>
+
+  <!-- Sun haze -->
+  <ellipse cx="576" cy="100" rx="140" ry="90" fill="url(#lo-sun)"/>
+  <circle cx="580" cy="72" r="22" fill="#FFE4A0" opacity="0.6"/>
+  <circle cx="580" cy="72" r="12" fill="#FFD060" opacity="0.65"/>
+
+  <!-- Background hills -->
+  <path d="M0,260 Q100,230 200,245 Q300,258 400,235 Q500,215 600,230 Q700,245 800,228 L800,450 L0,450 Z" fill="url(#lo-hill1)" opacity="0.5"/>
+
+  <!-- Middle hills -->
+  <path d="M0,290 Q80,265 180,278 Q280,292 380,268 Q480,248 580,262 Q680,278 800,258 L800,450 L0,450 Z" fill="url(#lo-hill2)" opacity="0.75"/>
+
+  <!-- Small village on hillside -->
+  <rect x="320" y="255" width="16" height="26" fill="#C86A43" opacity="0.8"/>
+  <polygon points="320,255 328,243 336,255" fill="#A0522D" opacity="0.8"/>
+  <rect x="340" y="260" width="12" height="22" fill="#D4956A" opacity="0.75"/>
+  <rect x="356" y="252" width="18" height="30" fill="#C86A43" opacity="0.8"/>
+  <polygon points="356,252 365,238 374,252" fill="#9A4F2B" opacity="0.8"/>
+  <!-- Bell tower -->
+  <rect x="376" y="240" width="10" height="42" fill="#E8D4B0" opacity="0.75"/>
+  <polygon points="376,240 381,230 386,240" fill="#C4A882" opacity="0.8"/>
+  <rect x="400" y="258" width="14" height="24" fill="#D4956A" opacity="0.75"/>
+
+  <!-- Olive tree left hill -->
+  <rect x="185" y="290" width="5" height="50" fill="#8B6040" opacity="0.8"/>
+  <ellipse cx="187" cy="283" rx="20" ry="16" fill="#5E6B4A" opacity="0.82"/>
+  <ellipse cx="178" cy="290" rx="13" ry="10" fill="#6B7C3B" opacity="0.72"/>
+
+  <!-- Olive tree right hill -->
+  <rect x="620" y="272" width="5" height="45" fill="#8B6040" opacity="0.78"/>
+  <ellipse cx="622" cy="265" rx="18" ry="14" fill="#5E6B4A" opacity="0.78"/>
+
+  <!-- Foreground ground -->
+  <rect x="0" y="350" width="800" height="100" fill="url(#lo-ground)"/>
+
+  <!-- Stone path or road -->
+  <path d="M350,450 Q380,385 400,350 Q420,385 450,450 Z" fill="#C4A882" opacity="0.45"/>
+  <!-- Path stones -->
+  <line x1="360" y1="420" x2="440" y2="420" stroke="#9A7A55" stroke-width="1" opacity="0.4"/>
+  <line x1="365" y1="395" x2="435" y2="395" stroke="#9A7A55" stroke-width="1" opacity="0.35"/>
+  <line x1="375" y1="370" x2="425" y2="370" stroke="#9A7A55" stroke-width="1" opacity="0.3"/>
+
+  <!-- Location pin icon -->
+  <path d="M392,182 Q392,152 400,152 Q408,152 408,182 Q415,195 400,208 Q385,195 392,182 Z" fill="#C86A43" opacity="0.88"/>
+  <circle cx="400" cy="168" r="8" fill="#F9E4C0" opacity="0.95"/>
+  <circle cx="400" cy="168" r="4" fill="#C86A43" opacity="0.9"/>
+  <!-- Pin shadow -->
+  <ellipse cx="400" cy="210" rx="6" ry="2" fill="#4A2C17" opacity="0.25"/>
+
+  <!-- Caption -->
+  <rect x="0" y="390" width="800" height="60" fill="#2D2A26" opacity="0.72"/>
+  <text x="400" y="418" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#F9E4C0" letter-spacing="2.5" opacity="0.95">every place tells a story</text>
+  <text x="400" y="440" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#D6A94D" letter-spacing="5.5" opacity="0.82">CULO VILLAGE</text>
+</svg>

@@ -38,15 +38,14 @@ export function FoundersPage() {
   const [activeIndustry, setActiveIndustry] = useState('all')
   const [activeTopic,    setActiveTopic]    = useState('all')
   const [searchQuery,    setSearchQuery]    = useState('')
+  const [filtersOpen,    setFiltersOpen]    = useState(false)
 
-  // Build the filter object — only include active (non-'all') values
   const filter: FounderFilter = {
     ...(activeLocation !== 'all' && { locationId: activeLocation }),
     ...(activeIndustry !== 'all' && { industryId: activeIndustry }),
     ...(activeTopic    !== 'all' && { topicId:    activeTopic    }),
   }
 
-  // Count how many founders match, for the results label
   const matchCount = filterFounders(filter).length
   const hasActiveFilter = activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all'
 
@@ -87,53 +86,77 @@ export function FoundersPage() {
 
       {/* ── Filters ─────────────────────────────────────────────────────────── */}
       <section
-        className="bg-surface border-b border-border py-5 sticky top-16 z-30 shadow-sm"
+        className="bg-surface border-b border-border py-4 sticky top-16 z-30 shadow-sm"
         aria-label="Filter founders"
       >
         <InnerContainer>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
 
-            {/* Search */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            {/* Search row + filter toggle */}
+            <div className="flex items-center gap-3">
               <SearchInput
                 id="founders-search"
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Search by name, business or topic…"
                 size="sm"
-                className="w-full sm:max-w-xs"
+                className="flex-1 sm:max-w-xs"
               />
+
+              <button
+                onClick={() => setFiltersOpen(o => !o)}
+                aria-expanded={filtersOpen}
+                aria-controls="founders-filter-panel"
+                className={`
+                  flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors
+                  ${filtersOpen || hasActiveFilter
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-border text-muted hover:border-primary hover:text-primary'
+                  }
+                `}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2" />
+                </svg>
+                Filters
+                {hasActiveFilter && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" aria-label="active filters" />
+                )}
+              </button>
+
               {hasActiveFilter && (
                 <button
                   onClick={clearFilters}
-                  className="text-sm font-medium text-muted hover:text-primary transition-colors self-start sm:self-auto"
+                  className="text-sm font-medium text-muted hover:text-primary transition-colors whitespace-nowrap"
                 >
-                  Clear filters ×
+                  Clear ×
                 </button>
               )}
             </div>
 
-            {/* Filter rows — stacked on mobile, row on desktop */}
-            <div className="flex flex-col gap-3">
-              <FilterBar
-                options={locationOptions}
-                active={activeLocation}
-                onChange={setActiveLocation}
-                label="Filter by location"
-              />
-              <FilterBar
-                options={industryOptions}
-                active={activeIndustry}
-                onChange={setActiveIndustry}
-                label="Filter by industry"
-              />
-              <FilterBar
-                options={topicOptions}
-                active={activeTopic}
-                onChange={setActiveTopic}
-                label="Filter by topic"
-              />
-            </div>
+            {/* Collapsible filter rows */}
+            {filtersOpen && (
+              <div id="founders-filter-panel" className="flex flex-col gap-3">
+                <FilterBar
+                  options={locationOptions}
+                  active={activeLocation}
+                  onChange={setActiveLocation}
+                  label="Filter by location"
+                />
+                <FilterBar
+                  options={industryOptions}
+                  active={activeIndustry}
+                  onChange={setActiveIndustry}
+                  label="Filter by industry"
+                />
+                <FilterBar
+                  options={topicOptions}
+                  active={activeTopic}
+                  onChange={setActiveTopic}
+                  label="Filter by topic"
+                />
+              </div>
+            )}
 
             {/* Result count */}
             <p className="font-body text-sm text-muted" aria-live="polite" aria-atomic="true">

@@ -39,6 +39,7 @@ export function IdeasPage() {
   const [activeTopic,    setActiveTopic]    = useState('all')
   const [activeFounder,  setActiveFounder]  = useState('all')
   const [activeBusiness, setActiveBusiness] = useState('all')
+  const [filtersOpen,    setFiltersOpen]    = useState(false)
 
   const filter: IdeaFilter = {
     ...(activeTopic    !== 'all' && { topicId:    activeTopic    }),
@@ -85,49 +86,46 @@ export function IdeasPage() {
 
       {/* ── Sticky filters ──────────────────────────────────────────────────── */}
       <section
-        className="bg-surface border-b border-border py-5 sticky top-16 z-30 shadow-sm"
+        className="bg-surface border-b border-border py-4 sticky top-16 z-30 shadow-sm"
         aria-label="Filter ideas"
       >
         <InnerContainer>
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-4">
-              <p className="font-body text-sm font-medium text-charcoal hidden sm:block">Filter</p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setFiltersOpen(o => !o)}
+                aria-expanded={filtersOpen}
+                aria-controls="ideas-filter-panel"
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  filtersOpen || hasActiveFilter
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-border text-muted hover:border-primary hover:text-primary'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2" />
+                </svg>
+                Filters
+                {hasActiveFilter && <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" aria-label="active filters" />}
+              </button>
               {hasActiveFilter && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm font-medium text-muted hover:text-primary transition-colors ml-auto"
-                >
-                  Clear filters ×
+                <button onClick={clearFilters} className="text-sm font-medium text-muted hover:text-primary transition-colors">
+                  Clear ×
                 </button>
               )}
             </div>
 
-            <FilterBar
-              options={topicOptions}
-              active={activeTopic}
-              onChange={setActiveTopic}
-              label="Filter by topic"
-            />
-            <div className="flex flex-wrap gap-3">
-              <FilterBar
-                options={founderOptions}
-                active={activeFounder}
-                onChange={setActiveFounder}
-                label="Filter by founder"
-              />
-              <FilterBar
-                options={businessOptions}
-                active={activeBusiness}
-                onChange={setActiveBusiness}
-                label="Filter by business"
-              />
-            </div>
+            {filtersOpen && (
+              <div id="ideas-filter-panel" className="flex flex-col gap-3">
+                <FilterBar options={topicOptions} active={activeTopic} onChange={setActiveTopic} label="Filter by topic" />
+                <div className="flex flex-wrap gap-3">
+                  <FilterBar options={founderOptions} active={activeFounder} onChange={setActiveFounder} label="Filter by founder" />
+                  <FilterBar options={businessOptions} active={activeBusiness} onChange={setActiveBusiness} label="Filter by business" />
+                </div>
+              </div>
+            )}
 
-            <p
-              className="font-body text-sm text-muted"
-              aria-live="polite"
-              aria-atomic="true"
-            >
+            <p className="font-body text-sm text-muted" aria-live="polite" aria-atomic="true">
               {hasActiveFilter
                 ? `${matchCount} ${matchCount === 1 ? 'idea' : 'ideas'} match your filters`
                 : `${matchCount} ${matchCount === 1 ? 'idea' : 'ideas'} in the Village`}

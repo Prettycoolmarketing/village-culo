@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" width="1200" height="450">
+  <defs>
+    <linearGradient id="ev-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2D1A08"/>
+      <stop offset="35%" stop-color="#7A3818"/>
+      <stop offset="65%" stop-color="#C86A43"/>
+      <stop offset="100%" stop-color="#D6946A"/>
+    </linearGradient>
+    <linearGradient id="ev-ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8B6840"/>
+      <stop offset="100%" stop-color="#5A4228"/>
+    </linearGradient>
+    <radialGradient id="ev-glow1" cx="35%" cy="55%" r="25%">
+      <stop offset="0%" stop-color="#D6A94D" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#C86A43" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ev-glow2" cx="68%" cy="60%" r="20%">
+      <stop offset="0%" stop-color="#D6A94D" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#C86A43" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Night sky -->
+  <rect width="1200" height="450" fill="url(#ev-sky)"/>
+
+  <!-- Warm glow from piazza lights -->
+  <ellipse cx="420" cy="248" rx="300" ry="180" fill="url(#ev-glow1)"/>
+  <ellipse cx="816" cy="270" rx="240" ry="150" fill="url(#ev-glow2)"/>
+
+  <!-- Stars -->
+  <circle cx="120" cy="30" r="1.2" fill="#F9E4C0" opacity="0.7"/>
+  <circle cx="250" cy="18" r="1" fill="#F9E4C0" opacity="0.6"/>
+  <circle cx="380" cy="40" r="1.5" fill="#F9E4C0" opacity="0.8"/>
+  <circle cx="520" cy="22" r="1" fill="#F9E4C0" opacity="0.65"/>
+  <circle cx="650" cy="35" r="1.2" fill="#F9E4C0" opacity="0.7"/>
+  <circle cx="780" cy="15" r="1.4" fill="#F9E4C0" opacity="0.75"/>
+  <circle cx="900" cy="42" r="1" fill="#F9E4C0" opacity="0.6"/>
+  <circle cx="1030" cy="25" r="1.3" fill="#F9E4C0" opacity="0.7"/>
+  <circle cx="1150" cy="38" r="1" fill="#F9E4C0" opacity="0.65"/>
+  <circle cx="190" cy="55" r="0.8" fill="#F9E4C0" opacity="0.5"/>
+  <circle cx="460" cy="60" r="0.9" fill="#F9E4C0" opacity="0.55"/>
+  <circle cx="720" cy="50" r="0.8" fill="#F9E4C0" opacity="0.5"/>
+  <circle cx="980" cy="58" r="0.9" fill="#F9E4C0" opacity="0.55"/>
+
+  <!-- Building silhouettes left -->
+  <rect x="0"   y="195" width="55"  height="200" fill="#1A0E06"/>
+  <rect x="58"  y="215" width="40"  height="180" fill="#1A0E06"/>
+  <rect x="100" y="185" width="65"  height="210" fill="#2D1A08"/>
+  <!-- Windows lit -->
+  <rect x="15"  y="215" width="12" height="16" fill="#D6A94D" opacity="0.65" rx="1"/>
+  <rect x="35"  y="215" width="12" height="16" fill="#D6A94D" opacity="0.5"  rx="1"/>
+  <rect x="15"  y="245" width="12" height="16" fill="#D6A94D" opacity="0.4"  rx="1"/>
+  <rect x="108" y="205" width="14" height="18" fill="#D6A94D" opacity="0.6"  rx="1"/>
+  <rect x="130" y="205" width="14" height="18" fill="#C86A43" opacity="0.55" rx="1"/>
+  <rect x="108" y="238" width="14" height="18" fill="#D6A94D" opacity="0.45" rx="1"/>
+  <!-- Arch passage left -->
+  <rect  x="165" y="248" width="58" height="147" fill="#2D1A08"/>
+  <path  d="M165,248 Q194,218 223,248" fill="#2D1A08"/>
+  <path  d="M170,248 Q194,222 218,248" fill="#D6946A" opacity="0.3"/>
+
+  <!-- Bell tower left -->
+  <rect x="225" y="160" width="32" height="235" fill="#1A0E06"/>
+  <rect x="220" y="155" width="42" height="15"  fill="#2D1A08"/>
+  <polygon points="220,155 241,132 262,155" fill="#1A0E06"/>
+  <rect x="231" y="175" width="10" height="14" fill="#D6A94D" opacity="0.5" rx="1"/>
+
+  <!-- Building silhouettes center-left -->
+  <rect x="260" y="200" width="80"  height="195" fill="#2D1A08"/>
+  <rect x="344" y="220" width="50"  height="175" fill="#1A0E06"/>
+  <!-- Windows -->
+  <rect x="270" y="220" width="14" height="18" fill="#D6A94D" opacity="0.6"  rx="1"/>
+  <rect x="292" y="220" width="14" height="18" fill="#C86A43" opacity="0.45" rx="1"/>
+  <rect x="314" y="220" width="14" height="18" fill="#D6A94D" opacity="0.5"  rx="1"/>
+  <rect x="270" y="252" width="14" height="18" fill="#D6A94D" opacity="0.4"  rx="1"/>
+  <rect x="314" y="252" width="14" height="18" fill="#D6A94D" opacity="0.55" rx="1"/>
+
+  <!-- Colonnade / arcade center -->
+  <rect x="396" y="235" width="408" height="160" fill="#2D1A08"/>
+  <!-- Arch openings -->
+  <rect  x="406" y="266" width="52" height="129" fill="#3D2010" opacity="0.0"/>
+  <path  d="M406,266 Q432,240 458,266 L458,395 L406,395 Z" fill="#D6946A" opacity="0.18"/>
+  <path  d="M470" y="266" Q496,240 522,266 L522,395 L470,395 Z" fill="#D6946A" opacity="0.15"/>
+  <path  d="M534,266 Q560,240 586,266 L586,395 L534,395 Z" fill="#D6946A" opacity="0.18"/>
+  <path  d="M598,266 Q624,240 650,266 L650,395 L598,395 Z" fill="#D6946A" opacity="0.15"/>
+  <path  d="M662,266 Q688,240 714,266 L714,395 L662,395 Z" fill="#D6946A" opacity="0.18"/>
+  <path  d="M726,266 Q752,240 778,266 L778,395 L726,395 Z" fill="#D6946A" opacity="0.15"/>
+  <!-- Column separators -->
+  <rect x="460" y="235" width="8" height="160" fill="#1A0E06"/>
+  <rect x="524" y="235" width="8" height="160" fill="#1A0E06"/>
+  <rect x="588" y="235" width="8" height="160" fill="#1A0E06"/>
+  <rect x="652" y="235" width="8" height="160" fill="#1A0E06"/>
+  <rect x="716" y="235" width="8" height="160" fill="#1A0E06"/>
+  <rect x="780" y="235" width="8" height="160" fill="#1A0E06"/>
+
+  <!-- Building silhouettes right -->
+  <rect x="810" y="210" width="70"  height="185" fill="#2D1A08"/>
+  <rect x="884" y="225" width="48"  height="170" fill="#1A0E06"/>
+  <rect x="935" y="195" width="80"  height="200" fill="#2D1A08"/>
+  <rect x="1020" y="218" width="50" height="177" fill="#1A0E06"/>
+  <rect x="1074" y="200" width="70" height="195" fill="#2D1A08"/>
+  <rect x="1148" y="215" width="52" height="180" fill="#1A0E06"/>
+  <!-- Windows right -->
+  <rect x="820"  y="228" width="13" height="17" fill="#D6A94D" opacity="0.55" rx="1"/>
+  <rect x="842"  y="228" width="13" height="17" fill="#D6A94D" opacity="0.4"  rx="1"/>
+  <rect x="944"  y="215" width="14" height="18" fill="#D6A94D" opacity="0.6"  rx="1"/>
+  <rect x="966"  y="215" width="14" height="18" fill="#C86A43" opacity="0.45" rx="1"/>
+  <rect x="988"  y="215" width="14" height="18" fill="#D6A94D" opacity="0.5"  rx="1"/>
+  <rect x="1082" y="218" width="13" height="17" fill="#D6A94D" opacity="0.55" rx="1"/>
+  <rect x="1100" y="218" width="13" height="17" fill="#D6A94D" opacity="0.4"  rx="1"/>
+
+  <!-- String lights across piazza -->
+  <!-- Left strand -->
+  <path d="M50,182 Q200,195 350,185 Q500,175 600,190" fill="none" stroke="#D6A94D" stroke-width="1.2" opacity="0.6"/>
+  <!-- Light bulbs on left strand -->
+  <circle cx="90"  cy="184" r="2.5" fill="#FFE4A0" opacity="0.9"/>
+  <circle cx="170" cy="191" r="2.5" fill="#FFE4A0" opacity="0.85"/>
+  <circle cx="250" cy="190" r="2.5" fill="#FFE4A0" opacity="0.9"/>
+  <circle cx="330" cy="186" r="2.5" fill="#FFE4A0" opacity="0.85"/>
+  <circle cx="415" cy="179" r="2.5" fill="#FFE4A0" opacity="0.9"/>
+  <circle cx="500" cy="177" r="2.5" fill="#FFE4A0" opacity="0.85"/>
+  <circle cx="565" cy="185" r="2.5" fill="#FFE4A0" opacity="0.9"/>
+  <!-- Right strand -->
+  <path d="M600,190 Q720,178 850,188 Q980,198 1150,182" fill="none" stroke="#D6A94D" stroke-width="1.2" opacity="0.6"/>
+  <circle cx="650"  cy="185" r="2.5" fill="#FFE4A0" opacity="0.9"/>
+  <circle cx="740"  cy="181" r="2.5" fill="#FFE4A0" opacity="0.85"/>
+  <circle cx="830"  cy="184" r="2.5" fill="#FFE4A0" opacity="0.9"/>
+  <circle cx="920"  cy="190" r="2.5" fill="#FFE4A0" opacity="0.85"/>
+  <circle cx="1010" cy="188" r="2.5" fill="#FFE4A0" opacity="0.9"/>
+  <circle cx="1095" cy="184" r="2.5" fill="#FFE4A0" opacity="0.85"/>
+
+  <!-- Cobblestone piazza ground -->
+  <rect x="0" y="378" width="1200" height="72" fill="url(#ev-ground)"/>
+  <line x1="0" y1="393" x2="1200" y2="393" stroke="#6A4828" stroke-width="1" opacity="0.4"/>
+  <line x1="0" y1="410" x2="1200" y2="410" stroke="#6A4828" stroke-width="1" opacity="0.38"/>
+  <line x1="0" y1="428" x2="1200" y2="428" stroke="#6A4828" stroke-width="1" opacity="0.35"/>
+  <line x1="120" y1="378" x2="120" y2="450" stroke="#6A4828" stroke-width="1" opacity="0.28"/>
+  <line x1="260" y1="378" x2="260" y2="450" stroke="#6A4828" stroke-width="1" opacity="0.25"/>
+  <line x1="400" y1="378" x2="400" y2="450" stroke="#6A4828" stroke-width="1" opacity="0.28"/>
+  <line x1="540" y1="378" x2="540" y2="450" stroke="#6A4828" stroke-width="1" opacity="0.25"/>
+  <line x1="680" y1="378" x2="680" y2="450" stroke="#6A4828" stroke-width="1" opacity="0.28"/>
+  <line x1="820" y1="378" x2="820" y2="450" stroke="#6A4828" stroke-width="1" opacity="0.25"/>
+  <line x1="960" y1="378" x2="960" y2="450" stroke="#6A4828" stroke-width="1" opacity="0.28"/>
+  <line x1="1100" y1="378" x2="1100" y2="450" stroke="#6A4828" stroke-width="1" opacity="0.25"/>
+
+  <!-- Caption -->
+  <rect x="0" y="395" width="1200" height="55" fill="#2D2A26" opacity="0.75"/>
+  <text x="600" y="422" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#F9E4C0" letter-spacing="3" opacity="0.95">gathering in the piazza</text>
+  <text x="600" y="443" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#D6A94D" letter-spacing="6" opacity="0.82">CULO VILLAGE</text>
+</svg>

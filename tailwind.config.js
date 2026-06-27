@@ -37,6 +37,15 @@ export default {
         md:   '0 4px 12px rgba(45,42,38,0.08), 0 2px 4px rgba(45,42,38,0.05)',
         lg:   '0 10px 30px rgba(45,42,38,0.10), 0 4px 8px rgba(45,42,38,0.05)',
       },
+      keyframes: {
+        'slide-up-fade': {
+          '0%':   { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'slide-up-fade': 'slide-up-fade 0.25s ease-out both',
+      },
     },
   },
   plugins: [],

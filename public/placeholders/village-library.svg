@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="lb-wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5EDD6"/>
+      <stop offset="100%" stop-color="#E8D8B8"/>
+    </linearGradient>
+    <linearGradient id="lb-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A8C4D0"/>
+      <stop offset="100%" stop-color="#D4E8F0"/>
+    </linearGradient>
+    <linearGradient id="lb-ledge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C4A882"/>
+      <stop offset="100%" stop-color="#8B6840"/>
+    </linearGradient>
+    <linearGradient id="lb-light" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFE4A0" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#F9E4C0" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Interior wall -->
+  <rect width="800" height="600" fill="url(#lb-wall)"/>
+
+  <!-- Warm light wash from window -->
+  <rect width="800" height="600" fill="url(#lb-light)"/>
+
+  <!-- Window frame outer -->
+  <rect x="220" y="50" width="360" height="320" fill="#8B6040" rx="4"/>
+  <!-- Window frame inner reveal -->
+  <rect x="232" y="62" width="336" height="296" fill="#A0522D" rx="3"/>
+  <!-- Sky through window -->
+  <rect x="244" y="74" width="312" height="280" fill="url(#lb-sky)" rx="2"/>
+
+  <!-- Window dividers -->
+  <rect x="394" y="74" width="10" height="280" fill="#8B6040" opacity="0.85"/>
+  <rect x="244" y="208" width="312" height="9" fill="#8B6040" opacity="0.85"/>
+
+  <!-- Distant village through window -->
+  <rect x="280" y="235" width="14" height="26" fill="#C86A43" opacity="0.7"/>
+  <polygon points="280,235 287,225 294,235" fill="#A0522D" opacity="0.7"/>
+  <rect x="300" y="238" width="12" height="23" fill="#D4956A" opacity="0.65"/>
+  <rect x="316" y="233" width="16" height="28" fill="#C86A43" opacity="0.7"/>
+  <polygon points="316,233 324,220 332,233" fill="#9A4F2B" opacity="0.7"/>
+  <!-- Hill below village -->
+  <path d="M244,255 Q320,238 400,248 Q480,256 556,240 L556,354 L244,354 Z" fill="#6B7C3B" opacity="0.55"/>
+  <!-- Olive tree through window left pane -->
+  <rect x="305" y="130" width="5" height="80" fill="#6B4C2A" opacity="0.65"/>
+  <ellipse cx="307" cy="122" rx="22" ry="17" fill="#5E6B4A" opacity="0.72"/>
+  <ellipse cx="298" cy="129" rx="14" ry="11" fill="#6B7C3B" opacity="0.62"/>
+
+  <!-- Window sill / ledge -->
+  <rect x="200" y="358" width="400" height="20" fill="url(#lb-ledge)" rx="2"/>
+  <rect x="210" y="365" width="380" height="8" fill="#9A7A55" opacity="0.4" rx="1"/>
+
+  <!-- Books on ledge -->
+  <!-- Book 1 - tall terracotta -->
+  <rect x="240" y="290" width="28" height="68" fill="#C86A43" rx="1"/>
+  <rect x="240" y="290" width="28" height="5" fill="#A0522D" rx="1"/>
+  <line x1="240" y1="315" x2="268" y2="315" stroke="#A0522D" stroke-width="1" opacity="0.5"/>
+
+  <!-- Book 2 - olive green -->
+  <rect x="272" y="303" width="22" height="55" fill="#5E6B4A" rx="1"/>
+  <rect x="272" y="303" width="22" height="4" fill="#4A5438" rx="1"/>
+
+  <!-- Book 3 - warm amber, slightly leaning -->
+  <rect x="298" y="298" width="18" height="60" fill="#D6A94D" rx="1" transform="rotate(-3,307,328)"/>
+
+  <!-- Book 4 - stone/cream -->
+  <rect x="320" y="306" width="24" height="52" fill="#E8D8B8" rx="1"/>
+  <rect x="320" y="306" width="24" height="4" fill="#C4A882" rx="1"/>
+  <line x1="320" y1="325" x2="344" y2="325" stroke="#C4A882" stroke-width="1" opacity="0.5"/>
+  <line x1="320" y1="340" x2="344" y2="340" stroke="#C4A882" stroke-width="1" opacity="0.4"/>
+
+  <!-- Book 5 - deep brown, short -->
+  <rect x="348" y="318" width="20" height="40" fill="#4A2C17" rx="1"/>
+  <rect x="348" y="318" width="20" height="4" fill="#3D2010" rx="1"/>
+
+  <!-- Book 6 - terracotta slim -->
+  <rect x="372" y="300" width="14" height="58" fill="#B8602D" rx="1"/>
+
+  <!-- Book 7 - leaning, warm peach -->
+  <rect x="390" y="308" width="20" height="50" fill="#E8B890" rx="1" transform="rotate(5,400,333)"/>
+
+  <!-- Small potted herb beside books -->
+  <ellipse cx="448" cy="363" rx="18" ry="8" fill="#8B6040" opacity="0.9"/>
+  <rect x="430" y="342" width="36" height="21" fill="#C86A43" rx="2" opacity="0.85"/>
+  <ellipse cx="448" cy="342" rx="18" ry="6" fill="#D4956A" opacity="0.85"/>
+  <path d="M448,340 Q442,318 450,302 Q453,316 449,326 Q457,311 462,298 Q459,318 452,330 Z" fill="#5E6B4A" opacity="0.85"/>
+
+  <!-- Warm light stripe from window falling on wall -->
+  <rect x="244" y="74" width="152" height="280" fill="#FFE4A0" opacity="0.06"/>
+
+  <!-- Small cup / espresso on ledge -->
+  <ellipse cx="500" cy="364" rx="13" ry="5" fill="#4A2C17" opacity="0.8"/>
+  <path d="M487,358 Q487,348 500,348 Q513,348 513,358 L513,364 L487,364 Z" fill="#2D1A08" opacity="0.85"/>
+  <ellipse cx="500" cy="348" rx="13" ry="4" fill="#5A3A20" opacity="0.8"/>
+  <!-- Steam -->
+  <path d="M494,345 Q496,338 494,332" fill="none" stroke="#E8D8B8" stroke-width="1.5" opacity="0.45" stroke-linecap="round"/>
+  <path d="M500,345 Q502,336 500,330" fill="none" stroke="#E8D8B8" stroke-width="1.5" opacity="0.45" stroke-linecap="round"/>
+  <path d="M506,345 Q508,338 506,333" fill="none" stroke="#E8D8B8" stroke-width="1.5" opacity="0.4" stroke-linecap="round"/>
+
+  <!-- Caption -->
+  <rect x="0" y="530" width="800" height="70" fill="#2D2A26" opacity="0.72"/>
+  <text x="400" y="558" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#F9E4C0" letter-spacing="2.5" opacity="0.95">knowledge worth keeping</text>
+  <text x="400" y="582" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#D6A94D" letter-spacing="5.5" opacity="0.82">CULO VILLAGE LIBRARY</text>
+</svg>

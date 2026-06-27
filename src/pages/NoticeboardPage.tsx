@@ -30,6 +30,7 @@ export function NoticeboardPage() {
   usePageTitle('Noticeboard')
   const [activeType,     setActiveType]     = useState('all')
   const [activeLocation, setActiveLocation] = useState('all')
+  const [filtersOpen,    setFiltersOpen]    = useState(false)
 
   const filter: EventFilter = {
     ...(activeType     !== 'all' && { type:       activeType as NoticeType }),
@@ -74,41 +75,43 @@ export function NoticeboardPage() {
 
       {/* ── Sticky filters ──────────────────────────────────────────────────── */}
       <section
-        className="bg-surface border-b border-border py-5 sticky top-16 z-30 shadow-sm"
+        className="bg-surface border-b border-border py-4 sticky top-16 z-30 shadow-sm"
         aria-label="Filter notices"
       >
         <InnerContainer>
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-4">
-              <p className="font-body text-sm font-medium text-charcoal hidden sm:block">Filter</p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setFiltersOpen(o => !o)}
+                aria-expanded={filtersOpen}
+                aria-controls="noticeboard-filter-panel"
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  filtersOpen || hasActiveFilter
+                    ? 'border-primary text-primary bg-primary/5'
+                    : 'border-border text-muted hover:border-primary hover:text-primary'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h2" />
+                </svg>
+                Filters
+                {hasActiveFilter && <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" aria-label="active filters" />}
+              </button>
               {hasActiveFilter && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm font-medium text-muted hover:text-primary transition-colors ml-auto"
-                >
-                  Clear filters ×
+                <button onClick={clearFilters} className="text-sm font-medium text-muted hover:text-primary transition-colors">
+                  Clear ×
                 </button>
               )}
             </div>
 
-            <FilterBar
-              options={typeOptions}
-              active={activeType}
-              onChange={setActiveType}
-              label="Filter by notice type"
-            />
-            <FilterBar
-              options={locationOptions}
-              active={activeLocation}
-              onChange={setActiveLocation}
-              label="Filter by location"
-            />
+            {filtersOpen && (
+              <div id="noticeboard-filter-panel" className="flex flex-col gap-3">
+                <FilterBar options={typeOptions} active={activeType} onChange={setActiveType} label="Filter by notice type" />
+                <FilterBar options={locationOptions} active={activeLocation} onChange={setActiveLocation} label="Filter by location" />
+              </div>
+            )}
 
-            <p
-              className="font-body text-sm text-muted"
-              aria-live="polite"
-              aria-atomic="true"
-            >
+            <p className="font-body text-sm text-muted" aria-live="polite" aria-atomic="true">
               {hasActiveFilter
                 ? `${matchCount} ${matchCount === 1 ? 'notice' : 'notices'} match your filters`
                 : `${matchCount} ${matchCount === 1 ? 'notice' : 'notices'} on the board`}
