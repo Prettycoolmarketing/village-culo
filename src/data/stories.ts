@@ -20,7 +20,7 @@ export const stories: Story[] = [
     id: 'story-camera-roll',
     slug: 'your-camera-roll-is-your-biggest-marketing-asset',
     title: 'Your Camera Roll Is Your Biggest Marketing Asset',
-    summary: 'Every founder has hundreds of untouched videos sitting on their phone. Here\'s how to turn your camera roll into a content engine that runs for months.',
+    summary: 'Every founder has months of untouched footage sitting on their phone. Here\'s the system I use to turn a camera roll into a content engine — and how CULO makes it repeatable inside Canva.',
     coverImage: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&q=80',
     founderId: 'shakas',
     businessId: 'pretty-cool-marketing',
@@ -28,57 +28,42 @@ export const stories: Story[] = [
     industry: marketing,
     topics: [topics[3], topics[1], topics[2]],
     contentTypes: ['reel', 'blog', 'carousel'],
-    reelUrl: 'https://www.instagram.com/reel/example1',
+    reelUrl: 'https://www.instagram.com/prettycoolmarketing_/',
     carouselImages: [
       'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&q=80',
       'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80',
       'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&q=80',
       'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80',
     ],
-    blog: `Most founders I talk to have the same problem: they know they should be creating content, but they feel like they have nothing to create.
-
-But they're wrong.
-
-I was working with a Brisbane marketing consultant when she told me she had no content ideas. I asked her to open her camera roll. In five minutes, she found 23 videos — behind-the-scenes footage from client workshops, a coffee meeting with a collaborator, a walk-and-talk with her business partner, and short clips of her talking through strategy insights.
-
-That was eight weeks of content. Sitting right there on her phone.
-
-## The truth about your camera roll
-
-Founders are already documenting their work. They're filming things, taking photos, having conversations worth recording. But they're not doing anything with it.
+    blog: `I've spent 15 years behind a camera. And the single most consistent thing I've seen across every kind of client — from outback tour groups to Brisbane founders — is this: people are already capturing the content. They're just not doing anything with it.
 
 Your camera roll is not a graveyard. It's an untapped content engine.
 
-## How to start
+## The scroll test
 
-**Step 1: Open your camera roll now and scroll back 90 days.**
+Here's what I ask every new client to do on our first call: open your camera roll, scroll back 90 days, and count the videos.
 
-Look for:
-- Behind-the-scenes moments from client work
-- Conversations that felt significant
-- Moments where you explained something clearly
-- Footage from events, workshops or travel
-- Screenshots of results or client feedback
+They always find more than they expected. Behind-the-scenes moments. Walk-and-talks. Clips where they explained something clearly. Footage from events. Screenshots of client wins.
 
-**Step 2: Identify the story behind the footage.**
+I've seen founders find six weeks of content in under ten minutes. The footage exists. The story exists. The system to use it is what's missing.
 
-A raw video of you explaining a concept isn't just a video. It's a reel. It's a blog post. It's a carousel. It's a quote.
+## How camera roll marketing works
 
-One piece of footage can become multiple pieces of content when you know how to extract the story from it. This is exactly what CULO does inside Canva — takes raw footage and transforms it into blogs, reels and carousels without you having to start from scratch.
+The idea behind camera roll marketing is simple: your everyday footage is more valuable than any polished studio shoot, because it's real. Audiences — and algorithms — reward specificity and authenticity over production value.
 
-**Step 3: Batch your content.**
+Here's the workflow:
 
-Don't create piece by piece. Spend two hours going through your camera roll and identifying 20–30 moments worth sharing. Create them all at once.
+**Step 1: Scroll and flag.** Once a fortnight, spend 15 minutes going through your camera roll. Mark anything that shows your work, your thinking, your process, or a genuine moment worth sharing.
 
-This is how content systems work. Not daily inspiration — batched creation from real material you already have.
+**Step 2: Find the story.** A video of you explaining a concept isn't just a video. It's a reel. It's a blog. It's a carousel. It's a quote card. One piece of footage becomes multiple pieces of content when you ask: what's the story here?
 
-## Why authentic beats polished
+**Step 3: Batch create.** Don't create one piece at a time. Use the footage to create everything at once — in a single two-hour session every fortnight. This is where CULO inside Canva changes everything.
 
-The reason camera roll content outperforms studio productions is simple: it's real.
+## What CULO does with your camera roll
 
-Audiences can tell the difference between a founder sharing a genuine moment and a brand publishing a produced campaign. The former builds trust. The latter builds awareness.
+CULO is built around this exact workflow. You upload your footage to the media library inside Canva, answer a few questions about the story you're telling, and CULO produces talking head reels, voice-over reels, carousels, vlogs and blog posts — complete with subtitles, hooks and captions.
 
-Trust converts. Awareness rarely does.
+You don't need to be a video editor. You don't need to hire a content team. You need your phone, Canva, and a system.
 
 Your camera roll is full of genuine moments. Stop ignoring them.`,
     ideaIds: ['idea-camera-roll', 'idea-authentic-content'],
@@ -89,71 +74,55 @@ Your camera roll is full of genuine moments. Stop ignoring them.`,
     featured: true,
     createdAt: '2024-03-10',
     updatedAt: '2024-03-10',
-    seoTitle: 'Your Camera Roll Is Your Biggest Marketing Asset',
-    seoDescription: 'How to turn your phone footage into months of content.',
+    seoTitle: 'Your Camera Roll Is Your Biggest Marketing Asset — Shakas',
+    seoDescription: 'How to turn your phone footage into a content engine. The camera roll marketing method behind CULO.',
   },
   {
     id: 'story-content-system',
-    slug: 'how-i-built-a-content-system-that-runs-without-me',
-    title: 'How I Built a Content System That Runs Without Me',
-    summary: 'I spent two years posting inconsistently and burning out. Then I built a system. This is what changed.',
+    slug: 'being-bad-at-posting-isnt-your-problem',
+    title: "Being Bad at Posting Isn't Your Problem",
+    summary: 'Not having a system is. I spent years posting inconsistently and burning out — until I stopped trying to create through willpower and built something that runs without it.',
     coverImage: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=800&q=80',
     founderId: 'shakas',
     businessId: 'pretty-cool-marketing',
     location: brisbane,
     industry: marketing,
-    topics: [topics[2], topics[0], topics[4]],
+    topics: [topics[2], topics[1], topics[9]],
     contentTypes: ['blog', 'reel'],
-    reelUrl: 'https://www.instagram.com/reel/example2',
-    blog: `For two years I posted when I felt like it. Which meant I posted inconsistently. Which meant nothing compounded, nothing built, and I burned out every three months wondering why content wasn't working for me.
+    reelUrl: 'https://www.instagram.com/prettycoolmarketing_/',
+    blog: `"Being bad at posting isn't your problem. Not having a system is."
 
-The problem wasn't my ideas. It wasn't my writing. It wasn't even my time.
+That's the line I put at the top of the Pretty Cool Marketing website. And I put it there because it's the thing I wish someone had told me when I first started trying to build a content presence.
 
-The problem was I was trying to create content through willpower instead of through systems.
+I had great ideas. I had the skills to execute. I had the footage from 15 years of videography. What I didn't have was a process that ran independent of how motivated I felt on any given Tuesday morning.
 
-## What a content system actually is
+## Why willpower fails content
 
-A content system isn't a content calendar. It's not a list of post ideas. It's not a scheduling tool.
+The content creation problem most founders have isn't creativity. It's decision fatigue. Every time you sit down to create something, you have to decide what to create, for which platform, in what format, with what angle, with what call to action.
 
-A content system is a repeatable process that removes the decision-making from content creation.
+Those decisions compound. They exhaust you before you've made a single piece of content. And when you're exhausted, you stop.
 
-When you have a system, you don't ask "what should I post today?" You follow the process, and the answer appears.
+A system removes those decisions in advance. When you have a system, you don't ask "what should I create?" You follow the process. The answer appears.
 
-## The four-part system I use
+## The Pretty Cool Marketing approach
 
-**1. Story first, format second.**
+At PCM, we build systems around one core principle: story first, format second.
 
-Every piece of content starts as a Story. Not a post, not a caption — a Story. I ask: what happened recently that's worth sharing? What did I learn? What did a client experience?
+Everything starts as a story. Not a caption, not a post idea — a real experience, a lesson, a client outcome, a moment from the last few weeks that's worth sharing. Once the story is clear, the formats follow: reel, blog, carousel, caption. The story decides the format, not the platform.
 
-Once I have the story, I decide which formats it deserves. Some stories become reels. Some become blogs. Some become both. But the story comes first.
+From there, we batch. We don't create daily. We create fortnightly — in two-hour sessions using CULO inside Canva — and we publish from there.
 
-**2. Batched creation.**
+Then we distribute. One story. Multiple formats. Multiple platforms. Automatic distribution across the Village. That's the system.
 
-I create content once a fortnight for two hours. In that session, I go through my camera roll, recent client work and any notes I've made, and I identify ten stories worth telling. Then I create them all in that session using CULO inside Canva.
+## What changes when you have one
 
-The rest of the month I don't think about content creation. I think about delivery.
+You stop dreading content. You stop apologising for inconsistency. You start building something that compounds.
 
-**3. Distribution follows publishing.**
-
-When I publish a story, it doesn't just go on Instagram. It goes on the Village homepage, my founder profile, the Stories page, the Ideas page, location pages and the Archive. One story, distributed everywhere, automatically.
-
-That's the CULO Village model. Publish once.
-
-**4. Review once a month.**
-
-At the end of each month I look at what stories performed, which topics resonated, and what's worth expanding. Then I plan the next batch.
-
-Four steps. That's the whole system.
-
-## The result
-
-Since building this system I've published more consistently than any other period in my business. Not because I'm more motivated. Because I removed motivation from the equation.
-
-Systems beat willpower every single time.`,
+Pretty Cool Marketing exists to build this for founders who are done trying to wing it. If that's you, we should talk.`,
     ideaIds: ['idea-content-systems', 'idea-founder-burnout'],
     relatedStoryIds: ['story-camera-roll', 'story-culo-built'],
-    ctaLabel: 'Book a Strategy Session',
-    ctaUrl: 'https://prettycoolmarketing.com/book',
+    ctaLabel: 'Work With Pretty Cool Marketing',
+    ctaUrl: 'https://prettycoolmarketing.com',
     status: 'published',
     featured: true,
     createdAt: '2024-04-02',
@@ -163,111 +132,110 @@ Systems beat willpower every single time.`,
     id: 'story-culo-built',
     slug: 'why-i-built-culo-inside-canva',
     title: 'Why I Built CULO Inside Canva',
-    summary: 'Founders don\'t need another app. They need a tool that fits inside the workflow they already have. Here\'s why Canva was the right home for CULO.',
+    summary: 'After 15 years in videography and watching founders sit on footage they never used, I built a content app. Here\'s why it lives inside Canva — and why that was the only decision that made sense.',
     coverImage: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80',
     founderId: 'shakas',
-    businessId: 'pretty-cool-marketing',
+    businessId: 'culo',
     location: brisbane,
     industry: marketing,
-    topics: [topics[4], topics[0], topics[13]],
+    topics: [topics[4], topics[2], topics[0]],
     contentTypes: ['blog', 'carousel'],
     carouselImages: [
       'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80',
+      'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=600&q=80',
       'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80',
-      'https://images.unsplash.com/photo-1526378722484-bd91ca387e72?w=600&q=80',
     ],
-    blog: `Every time I built a content tool for founders, the same thing happened. They'd use it for a week, get excited about the features, then quietly stop opening it.
+    blog: `The idea for CULO started not at a desk, but on an outback tour.
 
-Not because the tool was bad. Because it required a behaviour change.
+When Mitch and I were running Stagger Inn Adventures — taking people through some of the most remote parts of Australia — I had a camera in my hand almost every day. I was capturing landscapes, people, stories from the road. The footage was extraordinary. But even I struggled to turn it into consistent content.
 
-Founders already have a workflow. They already have a tool they use every day. Adding a new app — even a great one — means switching contexts, logging into something new, learning a new interface.
+And I was a videographer with 15 years of experience.
 
-Most founders won't do it consistently. Not because they're lazy. Because the friction compounds.
+If I couldn't make it consistent, how was a founder supposed to?
+
+## The pattern I kept seeing
+
+After Stagger Inn, when I founded Pretty Cool Marketing, I started seeing the same thing in every client. Footage sitting untouched on phones. Stories going untold. Not because founders didn't have anything worth sharing — they always did. But because the gap between raw footage and published content was too big, too technical, too time-consuming.
+
+The tools that existed either required video editing skills, design skills, or a team. None of them fit into the one hour a week a busy founder could realistically give to content.
 
 ## Why Canva
 
-When I started building CULO, I knew the content creation tool had to live where founders already spent time.
+When I started building CULO, the first question was: where does it live?
 
-Canva is already open on most marketing founders' screens. It's where they design their social posts, build their pitch decks, create their presentations.
+Not a standalone app. Founders won't download another app they open twice and forget about. Not a browser tool. Too much friction. Not a subscription on top of their existing stack. Cost fatigue kills adoption.
 
-Building CULO inside Canva meant I didn't have to convince anyone to open a new app. I just had to build something useful inside a tool they already trusted.
+Canva was the answer. Most founders are already in Canva. It's where they design their posts, build their presentations, create their materials. Canva already has their brand colours, their fonts, their templates.
 
-## What CULO does inside Canva
+Building CULO inside Canva meant zero behaviour change. You're already there. CULO just gives you something useful to do while you're in it.
 
-CULO is a content operating system built as a Canva app. Founders upload their footage, answer a few prompts about the story they want to tell, and CULO generates:
+## What CULO actually does
 
-- A structured blog post
-- A reel script and captions
-- A carousel layout
-- A short-form caption
-- A call to action
+You answer initial questions about your business, your audience and your brand. CULO generates 3 additional personalised questions. You upload your raw footage to the media library. From there, CULO produces:
 
-Then they can edit everything inside Canva using the tools they already know, and publish directly to CULO Village with one click.
+- Talking head reels with on-screen hooks and subtitles
+- Voice-over reels with scripted narration
+- Behind-the-scenes vlogs
+- Quick-rhythm edit reels
+- Carousels with copy and layout
+- Long-form blog posts
 
-No new interface to learn. No app switching. The tool fits the workflow.
+Five or more pieces of content. From one story. In the tool you already use.
 
-## What this taught me about building tools for founders
-
-The best tool is not the most powerful tool. It's the one that gets used.
-
-When you're building for time-poor founders, friction is your enemy. Every additional step, every new login, every different interface is a reason to stop. Build where people already are. Fit the workflow. Remove the friction.
-
-That's the only insight behind CULO. It's not clever. But it works.`,
+Stop working your CULO off just to be on social media.`,
     ideaIds: ['idea-tools-that-fit', 'idea-content-systems'],
-    relatedStoryIds: ['story-content-system', 'story-camera-roll'],
+    relatedStoryIds: ['story-content-system', 'story-camera-roll', 'story-stagger-inn'],
     ctaLabel: 'Try CULO in Canva',
     ctaUrl: 'https://prettycoolmarketing.com/culo',
     status: 'published',
-    featured: false,
+    featured: true,
     createdAt: '2024-05-01',
     updatedAt: '2024-05-01',
   },
   {
     id: 'story-ai-marketing-truth',
-    slug: 'the-truth-about-ai-marketing-for-founders',
-    title: 'The Truth About AI Marketing for Founders',
-    summary: 'AI can write your captions but it can\'t live your story. Here\'s what AI is actually good for, and what it will never replace.',
+    slug: 'ai-can-write-your-captions-but-not-your-story',
+    title: "AI Can Write Your Captions — But It Can't Write Your Story",
+    summary: 'AI is a remarkable amplifier. It is a terrible source. Here\'s the distinction that changes how CULO uses AI — and how you should too.',
     coverImage: 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=800&q=80',
     founderId: 'shakas',
     businessId: 'pretty-cool-marketing',
     location: brisbane,
     industry: marketing,
-    topics: [topics[0], topics[8], topics[1]],
+    topics: [topics[0], topics[1], topics[8]],
     contentTypes: ['reel', 'blog'],
-    reelUrl: 'https://www.instagram.com/reel/example4',
-    blog: `Everyone is talking about AI marketing as if it's going to replace the need for human story. It won't.
+    reelUrl: 'https://www.instagram.com/shakasdesigner/',
+    blog: `The first thing most people do when they discover AI content tools is ask: "Write me a week of Instagram captions."
 
-Here's what AI is genuinely exceptional at: structure, formatting, repurposing, scaling and removing the blank page problem. If you have a story and you need to turn it into a blog post, a caption, a carousel and a reel script — AI can do that remarkably well.
+AI will do it. In about four seconds, you'll have a week of content.
 
-What AI cannot do is live your life. It cannot have the client conversation you had last Tuesday. It cannot feel the uncertainty you felt when you launched your first product. It cannot experience the moment a client's business changed because of your work.
+It will also sound like every other founder who typed the same thing into the same tool. Generic hooks. Vague lessons. Advice that could apply to anyone and therefore applies to no one.
 
-Those moments are yours. And they're worth more than any AI can generate.
+## The problem isn't AI. It's the prompt.
 
-## Where founders go wrong with AI
+AI is exceptional at structure. At formatting. At taking raw material and shaping it into something publishable. At scaling one story into ten pieces of content. These are genuinely useful capabilities for founders.
 
-Most founders using AI for marketing are using it wrong. They're asking it to generate ideas from scratch — to come up with what to say without giving it any raw material.
+What AI cannot do is live your experience. It cannot have sat in the outback watching a sunrise after leading a tour group through a night drive. It cannot have made the call to pivot your business in year two. It cannot have had the client conversation that changed your thinking.
 
-AI given nothing produces generic content. Content that sounds like everyone else. Content that doesn't build authority or trust because it carries no real experience.
+Those are yours. And they're the only things worth saying.
 
-The correct workflow is the opposite:
+## The CULO approach to AI
 
-You live the story. You capture the moment. You give AI the raw material — the footage, the notes, the context. Then AI helps you structure and scale it.
+CULO starts with your footage, not a blank prompt. That's intentional.
 
-AI is an amplifier, not a source.
+When you come to CULO with real material — a video of a lesson you learned, a clip from a client session, footage from your week — the AI has something to work with. It takes your specificity and helps you structure and scale it.
 
-## The CULO approach
+You answer questions about your business, your audience, your brand. CULO asks three more personalised questions to dig deeper into the story. From that, it generates talking head reels, voice-overs, carousels and blogs.
 
-This is exactly why CULO starts with your footage, not a blank prompt. You upload the real thing — the behind-the-scenes moment, the client result, the lesson from your week — and CULO helps structure it into content that carries the authenticity of the original experience.
+The AI does the formatting. You supply the story. That's the correct relationship.
 
-The AI does the formatting. You supply the story.
+## What to do instead
 
-That's the right relationship between a founder and an AI content tool.
+Stop asking AI what to say. Start asking it how to say what you've already lived.
 
-## What this means for your marketing
+Your lived experience is your competitive advantage. AI just helps you share it more efficiently. The founders who win with this aren't using AI to replace their story — they're using it to tell it better.
 
-Stop asking AI what to say. Start asking AI how to say what you've already lived.
-
-The founders who win with AI are the ones who have the most genuine stories to feed it. The depth of your experience is still your competitive advantage. AI just helps you share it more efficiently.`,
+Give CULO the real thing. The rest follows.`,
     ideaIds: ['idea-authentic-content', 'idea-ai-limits'],
     relatedStoryIds: ['story-camera-roll', 'story-culo-built'],
     ctaLabel: 'Try CULO in Canva',
@@ -276,6 +244,96 @@ The founders who win with AI are the ones who have the most genuine stories to f
     featured: false,
     createdAt: '2024-05-20',
     updatedAt: '2024-05-20',
+  },
+  {
+    id: 'story-stagger-inn',
+    slug: 'stagger-inn-adventures-what-outback-tours-taught-me-about-story',
+    title: 'What Running Outback Tours Taught Me About Storytelling',
+    summary: 'Before Pretty Cool Marketing and CULO, Mitch and I ran a tour company through regional Australia. What we learned out there shaped everything I now believe about founder content.',
+    coverImage: 'https://images.unsplash.com/photo-1509773896068-7fd415d91e2e?w=800&q=80',
+    founderId: 'shakas',
+    businessId: 'stagger-inn-adventures',
+    location: brisbane,
+    industry: marketing,
+    topics: [topics[1], topics[8], topics[13]],
+    contentTypes: ['blog'],
+    blog: `Stagger Inn Adventures started the way most good things start — with a conversation, a van, and no real plan.
+
+Mitch and I built a tour company that took people through regional Australia. Outback landscapes. Remote communities. Places most people only see on a screen. We had cameras, we had stories, and we had the privilege of watching people experience something genuinely extraordinary.
+
+It didn't last forever. Most first businesses don't. But what it gave me was a framework for thinking about story that I've never been able to shake.
+
+## What you learn when the story is happening
+
+When you're leading a tour through somewhere remote and remarkable, you can't manufacture the moment. It either happens or it doesn't. Your job is to be present enough to recognise it when it does, and capable enough to capture it when it arrives.
+
+I was behind a camera almost every day out there. And the footage that hit hardest — the clips that made people feel something — wasn't the sweeping drone shots or the golden hour landscapes. It was the moments in between. A traveller's reaction to something they'd never seen. A quiet conversation over a campfire. Someone holding something ancient and realising how small their worries were.
+
+Small. Human. Real.
+
+## The lesson I carry into marketing
+
+When I founded Pretty Cool Marketing, the thing I kept coming back to was this: founders already have extraordinary stories. Their daily business life — the clients they serve, the problems they solve, the decisions they make — is more interesting than any studio shoot.
+
+The gap isn't content. It's capture.
+
+Stagger Inn taught me that the best story is the one already happening. Your job isn't to invent content. Your job is to notice it, document it, and give it somewhere to live.
+
+That's camera roll marketing. That's what CULO is built on. And that's what we started learning in a van in the outback years before any of it had a name.`,
+    ideaIds: ['idea-authentic-content', 'idea-camera-roll'],
+    relatedStoryIds: ['story-culo-built', 'story-camera-roll'],
+    ctaLabel: 'See Stagger Inn on Instagram',
+    ctaUrl: 'https://instagram.com/staggerinnadventures',
+    status: 'published',
+    featured: false,
+    createdAt: '2024-06-15',
+    updatedAt: '2024-06-15',
+  },
+  {
+    id: 'story-wheres-robyn',
+    slug: 'why-a-marketing-founder-is-writing-a-novel',
+    title: "Why a Marketing Founder Is Writing a Psychological Drama Novel",
+    summary: "I'm writing Where's Robyn — a psychological drama. Here's what it has to do with everything I've built, and why the storytelling instinct that drives CULO turned out to have a lot more to say.",
+    coverImage: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&q=80',
+    founderId: 'shakas',
+    businessId: 'wheres-robyn',
+    location: brisbane,
+    industry: marketing,
+    topics: [topics[1], topics[13], topics[8]],
+    contentTypes: ['blog'],
+    blog: `People ask me why a marketing founder is writing a novel.
+
+The honest answer is that I've always been a storyteller first. The videography came from it. The tour company came from it. The belief that founder content should be rooted in real experience — that comes from it too.
+
+Pretty Cool Marketing and CULO exist because I believe story is the most durable form of communication. That it builds trust faster than advertising, credibility faster than credentials, and connection faster than anything a brand campaign can manufacture.
+
+Writing a novel is just the same belief taken somewhere deeper.
+
+## What Where's Robyn is about
+
+Where's Robyn is a psychological drama. I'm not going to say more than that yet — the manuscript is still finding its shape and I want to respect the process enough not to narrate it while it's happening.
+
+What I can say is that the same instincts I use to find the story in a piece of founder footage are the instincts I'm using to find the story in this novel. The craft is different. The core is the same.
+
+## What writing fiction is teaching me about marketing
+
+The discipline of long-form fiction is breaking habits I didn't know I had. In marketing, you write for clarity. In fiction, you write for feeling. Those are different muscles and using both at once is making both stronger.
+
+I'm finding that the founders whose content resonates most are the ones who write like storytellers, not marketers. Specific. Patient. Willing to sit in a moment before rushing to the lesson.
+
+Where's Robyn is teaching me how to do that better.
+
+## Follow the progress
+
+I'll share updates as they come. If you want to follow along, the best place is Instagram — @shakasdesigner.`,
+    ideaIds: ['idea-authentic-content'],
+    relatedStoryIds: ['story-stagger-inn', 'story-camera-roll'],
+    ctaLabel: 'Follow @shakasdesigner',
+    ctaUrl: 'https://instagram.com/shakasdesigner',
+    status: 'published',
+    featured: false,
+    createdAt: '2024-07-01',
+    updatedAt: '2024-07-01',
   },
   // ─── Other founder stories ─────────────────────────────────────────────────
   {
