@@ -1,9 +1,10 @@
-import { stories }    from '../data/stories'
-import { founders }   from '../data/founders'
-import { ideas }      from '../data/ideas'
-import { businesses } from '../data/businesses'
-import { events }     from '../data/events'
-import type { Story, Founder, Idea, Business, Event } from '../types'
+import { stories }      from '../data/stories'
+import { founders }     from '../data/founders'
+import { ideas }        from '../data/ideas'
+import { businesses }   from '../data/businesses'
+import { events }       from '../data/events'
+import { libraryItems } from '../data/library'
+import type { Story, Founder, Idea, Business, Event, LibraryItem } from '../types'
 
 export interface SearchResults {
   stories:    Story[]
@@ -11,6 +12,7 @@ export interface SearchResults {
   ideas:      Idea[]
   businesses: Business[]
   events:     Event[]
+  library:    LibraryItem[]
 }
 
 // Joins all defined fields into one lowercase string for substring matching
@@ -27,6 +29,7 @@ export function searchVillage(query: string): SearchResults {
       ideas:      [...ideas],
       businesses: [...businesses],
       events:     [...events],
+      library:    [...libraryItems],
     }
   }
 
@@ -89,6 +92,18 @@ export function searchVillage(query: string): SearchResults {
         e.type,
       ]).includes(q)
     ),
+
+    library: libraryItems.filter(l => {
+      const f = founderMap.get(l.authorFounderId)
+      const b = l.businessId ? businessMap.get(l.businessId) : undefined
+      return searchable([
+        l.title, l.subtitle, l.description, l.why ?? '',
+        l.productType,
+        l.location?.name, l.location?.state,
+        ...l.topics.map(t => t.name),
+        f?.name, b?.name,
+      ]).includes(q)
+    }),
   }
 }
 
@@ -98,6 +113,7 @@ export function totalResults(results: SearchResults): number {
     results.founders.length +
     results.ideas.length +
     results.businesses.length +
-    results.events.length
+    results.events.length +
+    results.library.length
   )
 }

@@ -1,6 +1,8 @@
 import React, { useState, useId } from 'react'
 import { usePageTitle } from '../utils/usePageTitle'
 import { Link }                   from 'react-router-dom'
+import { CheCuloToast }           from '../components/ui/CheCuloToast'
+import { formatCheCuloSuccess }   from '../utils/checulo'
 import { founders }               from '../data/founders'
 import { businesses }             from '../data/businesses'
 import { locations }              from '../data/locations'
@@ -332,7 +334,7 @@ function DistributionPreview({ story, onPublishMore, onViewStories }: Distributi
         </div>
         <div>
           <h2 className="font-heading text-xl font-bold text-charcoal mb-1">
-            Story published to the Village
+            <span className="text-primary">Che CULO!!</span> Your Story is live in the Village.
           </h2>
           <p className="font-body text-sm text-muted leading-relaxed">
             <strong className="text-charcoal">{story.title}</strong> is now part of the CULO Village
@@ -924,11 +926,13 @@ export function PiazzaPage() {
   const [publishState, setPublishState] = useState<PublishState>('form')
   const [lastStory,    setLastStory]    = useState<Story | null>(null)
   const [myStories,    setMyStories]    = useState<Story[]>([])
+  const [toastVisible, setToastVisible] = useState(false)
 
   function handleSuccess(story: Story) {
     setLastStory(story)
     setMyStories(prev => [story, ...prev])
     setPublishState('success')
+    setToastVisible(true)
   }
 
   function handlePublishMore() {
@@ -947,6 +951,14 @@ export function PiazzaPage() {
 
   return (
     <main className="min-h-screen bg-background">
+
+      {/* ── Che CULO success toast ───────────────────────────────────────────── */}
+      <CheCuloToast
+        message={formatCheCuloSuccess()}
+        visible={toastVisible}
+        onClose={() => setToastVisible(false)}
+        variant="success"
+      />
 
       {/* ── Page hero ───────────────────────────────────────────────────────── */}
       <section

@@ -133,3 +133,15 @@ button {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ── Che CULO toast animation ─────────────────── */
+@keyframes slide-down {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-safe\:animate-slide-down {
+    animation: slide-down 0.25s ease-out forwards;
+  }
+}

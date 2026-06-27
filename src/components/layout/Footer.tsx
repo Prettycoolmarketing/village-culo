@@ -10,6 +10,7 @@ const sections = [
       { to: '/map',         label: 'Map'         },
       { to: '/archive',     label: 'Archive'     },
       { to: '/expertise',   label: 'Expertise'   },
+      { to: '/library',     label: 'Library'     },
     ],
   },
   {

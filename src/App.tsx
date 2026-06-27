@@ -1,7 +1,13 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { useState } from 'react'
 import { Navbar } from './components/layout/Navbar'
 import { Footer } from './components/layout/Footer'
 import { usePageTitle } from './utils/usePageTitle'
+import { CheCuloToast }         from './components/ui/CheCuloToast'
+import { formatCheCuloActivity } from './utils/checulo'
+import { stories }              from './data/stories'
+import { getFounder }           from './data/founders'
+import { getBusiness }          from './data/businesses'
 
 import { VillagePage }        from './pages/VillagePage'
 import { PiazzaPage }         from './pages/PiazzaPage'
@@ -18,6 +24,8 @@ import { NoticeboardPage }    from './pages/NoticeboardPage'
 import { ArchivePage }        from './pages/ArchivePage'
 import { ExpertisePage }      from './pages/ExpertisePage'
 import { ExpertiseDetailPage }from './pages/ExpertiseDetailPage'
+import { LibraryPage }        from './pages/LibraryPage'
+import { LibraryDetailPage }  from './pages/LibraryDetailPage'
 
 // Route structure mirrors future public URL schema:
 // /founders/:slug  → /businesses/:slug  → /stories/:slug
@@ -75,10 +83,31 @@ function NotFound() {
   )
 }
 
+// ─── Global activity banner ─────────────────────────────────────────────────────
+
+// Use the most recent story as the mock global activity signal
+const recentStory   = stories[0]
+const recentFounder = recentStory ? getFounder(recentStory.founderId)             : undefined
+const recentBiz     = recentStory?.businessId ? getBusiness(recentStory.businessId) : undefined
+const activityMsg   = recentStory
+  ? formatCheCuloActivity(recentStory, recentFounder, recentBiz, recentStory.location)
+  : ''
+
+// ─── App ────────────────────────────────────────────────────────────────────────
+
 export default function App() {
+  const [bannerVisible, setBannerVisible] = useState(!!activityMsg)
+
   return (
     <BrowserRouter>
       <div className="flex flex-col min-h-screen bg-background">
+        <CheCuloToast
+          message={activityMsg}
+          href="/stories"
+          visible={bannerVisible}
+          onClose={() => setBannerVisible(false)}
+          variant="activity"
+        />
         <Navbar />
         <div className="flex-1">
           <Routes>
@@ -97,6 +126,8 @@ export default function App() {
             <Route path="/archive"            element={<ArchivePage />} />
             <Route path="/expertise"          element={<ExpertisePage />} />
             <Route path="/expertise/:slug"    element={<ExpertiseDetailPage />} />
+            <Route path="/library"            element={<LibraryPage />} />
+            <Route path="/library/:slug"      element={<LibraryDetailPage />} />
             <Route path="*"                   element={<NotFound />} />
           </Routes>
         </div>

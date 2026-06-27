@@ -7,6 +7,79 @@ export type PermissionRole = 'visitor' | 'founder' | 'business' | 'moderator' | 
 export type ResourceType = 'guide' | 'template' | 'tool' | 'framework' | 'video' | 'article'
 export type PriceType = 'flat' | 'monthly' | 'hourly' | 'custom'
 
+export type ProductType =
+  | 'book' | 'novel' | 'ebook' | 'pdf' | 'guide' | 'checklist' | 'workbook'
+  | 'course' | 'prompt-pack' | 'template' | 'canva-template' | 'framework'
+  | 'worksheet' | 'printable' | 'research' | 'presentation' | 'audio'
+  | 'video' | 'toolkit' | 'bundle'
+
+export type LibraryStatus =
+  | 'coming-soon' | 'available' | 'pre-order' | 'sold-out'
+  | 'free-download' | 'external' | 'members-only' | 'early-access'
+
+export type PurchaseProvider =
+  | 'internal' | 'amazon' | 'audible' | 'shopify' | 'gumroad'
+  | 'etsy' | 'website' | 'url'
+
+// ─── Library Purchase Link ──────────────────────────────────────────────────────
+// One product may exist in many places (Amazon, Kindle, Audible, Direct, etc.)
+
+export interface LibraryPurchaseLink {
+  label: string
+  url: string
+  provider: PurchaseProvider
+  note?: string   // e.g. "Signed copy", "Paperback"
+}
+
+// ─── Library Created-From Entry ────────────────────────────────────────────────
+// Documents the journey that led to this product being created.
+
+export interface LibraryCreatedFromEntry {
+  id: string
+  date: string
+  title: string
+  description: string
+  type: 'idea' | 'story' | 'milestone' | 'talk' | 'experience' | 'decision'
+  linkSlug?: string   // slug of related story or idea
+  linkType?: 'story' | 'idea'
+}
+
+// ─── Library Item ──────────────────────────────────────────────────────────────
+// The permanent home for everything a founder has intentionally published —
+// whether free, paid, internal, external, physical or digital.
+// Purchasing is only one possible action. Discovery, learning and authority
+// are the primary goals.
+
+export interface LibraryItem {
+  id: string
+  slug: string
+  title: string
+  subtitle?: string
+  description: string
+  why?: string           // "Why did this exist?" in the creator's voice
+  authorFounderId: string
+  businessId?: string
+  coverImage: string
+  previewImages?: string[]
+  productType: ProductType
+  topics: Topic[]
+  expertiseIds?: string[]
+  location?: Location
+  price?: string
+  currency?: string
+  status: LibraryStatus
+  purchaseLinks: LibraryPurchaseLink[]
+  deliveryMethod?: 'digital' | 'physical' | 'digital-and-physical'
+  downloadable?: boolean
+  featured: boolean
+  createdAt: string
+  relatedStoryIds?: string[]
+  relatedIdeaIds?: string[]
+  createdFrom?: LibraryCreatedFromEntry[]
+  seoTitle?: string
+  seoDescription?: string
+}
+
 // ─── Location ──────────────────────────────────────────────────────────────────
 
 export interface Location {
@@ -441,6 +514,17 @@ export interface EventFilter {
   type?: NoticeType
   locationId?: string
   founderId?: string
+  featured?: boolean
+  limit?: number
+}
+
+export interface LibraryFilter {
+  founderId?: string
+  businessId?: string
+  productType?: ProductType
+  topicId?: string
+  expertiseId?: string
+  status?: LibraryStatus
   featured?: boolean
   limit?: number
 }

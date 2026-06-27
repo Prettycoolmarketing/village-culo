@@ -12,11 +12,12 @@ import { FounderCard }                 from '../components/cards/FounderCard'
 import { IdeaCard }                    from '../components/cards/IdeaCard'
 import { BusinessCard }                from '../components/cards/BusinessCard'
 import { EventCard }                   from '../components/cards/EventCard'
+import { LibraryCard }                 from '../components/cards/LibraryCard'
 import { InnerContainer }              from '../components/layout/PageContainer'
 
 // ─── Types ───────────────────────────────────────────────────────────────────────
 
-type ActiveTab = 'all' | 'stories' | 'founders' | 'ideas' | 'businesses' | 'events'
+type ActiveTab = 'all' | 'stories' | 'founders' | 'ideas' | 'businesses' | 'events' | 'library'
 
 // ─── Tab bar ─────────────────────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@ function TabBar({ active, onChange, counts }: TabBarProps) {
     { key: 'ideas',      label: 'Ideas'      },
     { key: 'businesses', label: 'Businesses' },
     { key: 'events',     label: 'Events'     },
+    { key: 'library',    label: 'Library'    },
   ]
 
   return (
@@ -246,6 +248,25 @@ function AllResults({ results, query, onViewAll }: AllResultsProps) {
         </section>
       )}
 
+      {/* Library */}
+      {results.library.length > 0 && (
+        <section aria-labelledby="group-library">
+          <GroupHeading title="Library" count={results.library.length} tabKey="library" onViewAll={onViewAll} />
+          <ul
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            role="list"
+            aria-labelledby="group-library"
+            id="group-library"
+          >
+            {results.library.slice(0, 4).map(item => (
+              <li key={item.id}>
+                <LibraryCard item={item} variant="compact" />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
     </div>
   )
 }
@@ -384,6 +405,25 @@ function TypeResults({ activeTab, results, query }: TypeResultsProps) {
           </ul>
         )
       )}
+
+      {/* Library */}
+      {activeTab === 'library' && (
+        results.library.length === 0 ? (
+          <EmptyState title={emptyTitle} message={emptyMessage} />
+        ) : (
+          <ul
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+            role="list"
+            aria-label={`${results.library.length} library items`}
+          >
+            {results.library.map(item => (
+              <li key={item.id}>
+                <LibraryCard item={item} variant="default" />
+              </li>
+            ))}
+          </ul>
+        )
+      )}
     </div>
   )
 }
@@ -422,6 +462,7 @@ export function ArchivePage() {
     ideas:      results.ideas.length,
     businesses: results.businesses.length,
     events:     results.events.length,
+    library:    results.library.length,
   }
 
   // Active count label for aria-live

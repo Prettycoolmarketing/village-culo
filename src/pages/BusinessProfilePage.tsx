@@ -11,6 +11,7 @@ import { getResourcesForBusiness }    from '../data/resources'
 import { getExpertiseForBusiness }    from '../data/expertise'
 import { StoryGrid }                  from '../widgets/StoryGrid'
 import { IdeaGrid }                   from '../widgets/IdeaGrid'
+import { LibraryGrid }               from '../widgets/LibraryGrid'
 import { FounderCard }                from '../components/cards/FounderCard'
 import { BusinessCard }               from '../components/cards/BusinessCard'
 import { Badge }                      from '../components/ui/Badge'
@@ -512,6 +513,16 @@ export function BusinessProfilePage() {
                   </div>
                 </section>
               )}
+
+              {/* Library */}
+              <LibraryGrid
+                heading="Library"
+                subheading={`Resources, templates and products published by ${business.name}.`}
+                filter={{ businessId: business.id }}
+                columns={2}
+                emptyTitle="Nothing published yet"
+                emptyMessage={`${business.name} hasn't added any Library items yet.`}
+              />
 
               {/* Related businesses */}
               {related.length > 0 && (

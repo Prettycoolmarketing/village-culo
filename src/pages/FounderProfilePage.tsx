@@ -9,6 +9,7 @@ import { getTestimonialsForFounder } from '../data/testimonials'
 import { getExpertiseForFounder } from '../data/expertise'
 import { StoryGrid } from '../widgets/StoryGrid'
 import { IdeaGrid } from '../widgets/IdeaGrid'
+import { LibraryGrid } from '../widgets/LibraryGrid'
 import { EventGrid } from '../widgets/EventGrid'
 import { BusinessCard } from '../components/cards/BusinessCard'
 import { Badge } from '../components/ui/Badge'
@@ -463,6 +464,16 @@ export function FounderProfilePage() {
                   </ol>
                 </section>
               )}
+
+              {/* Library */}
+              <LibraryGrid
+                heading="Library"
+                subheading={`Everything ${founder.name} has intentionally published — free and paid.`}
+                filter={{ founderId: founder.id }}
+                columns={2}
+                emptyTitle="Nothing published yet"
+                emptyMessage={`${founder.name} hasn't added any Library items yet.`}
+              />
 
               {/* Events */}
               <EventGrid
