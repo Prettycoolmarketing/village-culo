@@ -9,6 +9,7 @@ const sections = [
       { to: '/ideas',       label: 'Ideas'       },
       { to: '/map',         label: 'Map'         },
       { to: '/archive',     label: 'Archive'     },
+      { to: '/expertise',   label: 'Expertise'   },
     ],
   },
   {

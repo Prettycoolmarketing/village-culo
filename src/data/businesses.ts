@@ -54,6 +54,10 @@ export const businesses: Business[] = [
     status: 'featured',
     featured: true,
     createdAt: '2024-01-15',
+    expertiseIds: ['founder-storytelling', 'content-systems', 'ai-marketing'],
+    serviceIds: ['content-strategy-session', 'story-extraction'],
+    caseStudyIds: ['pcm-founder-content'],
+    resourceIds: ['culo-storytelling-guide', 'story-prompt-list', 'culo-content-os', 'canva-workflow-template', 'ai-prompt-library'],
     seoTitle: 'Pretty Cool Marketing — Content for Founders',
     seoDescription: 'Content systems for founders. Home of CULO.',
   },
@@ -84,6 +88,9 @@ export const businesses: Business[] = [
     status: 'published',
     featured: true,
     createdAt: '2024-02-10',
+    expertiseIds: ['brand-photography', 'personal-brand'],
+    serviceIds: ['brand-shoot'],
+    resourceIds: ['brand-shoot-prep-guide'],
   },
   {
     id: 'okafor-studio',
@@ -110,6 +117,9 @@ export const businesses: Business[] = [
     status: 'published',
     featured: false,
     createdAt: '2024-03-05',
+    expertiseIds: ['content-systems', 'ai-marketing'],
+    serviceIds: ['content-audit'],
+    caseStudyIds: ['okafor-content-system'],
   },
   {
     id: 'maya-chen-design',
@@ -136,6 +146,9 @@ export const businesses: Business[] = [
     status: 'published',
     featured: true,
     createdAt: '2024-03-22',
+    expertiseIds: ['brand-identity', 'personal-brand'],
+    serviceIds: ['brand-identity'],
+    resourceIds: ['personal-brand-checklist', 'brand-identity-checklist'],
   },
   {
     id: 'riley-performance',
@@ -162,6 +175,9 @@ export const businesses: Business[] = [
     status: 'published',
     featured: false,
     createdAt: '2024-04-01',
+    expertiseIds: ['short-form-video', 'founder-storytelling'],
+    serviceIds: ['coaching-program'],
+    resourceIds: ['reel-hook-guide'],
   },
 ]
 

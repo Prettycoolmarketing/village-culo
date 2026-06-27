@@ -16,6 +16,8 @@ import { BusinessProfilePage }from './pages/BusinessProfilePage'
 import { MapPage }            from './pages/MapPage'
 import { NoticeboardPage }    from './pages/NoticeboardPage'
 import { ArchivePage }        from './pages/ArchivePage'
+import { ExpertisePage }      from './pages/ExpertisePage'
+import { ExpertiseDetailPage }from './pages/ExpertiseDetailPage'
 
 // Route structure mirrors future public URL schema:
 // /founders/:slug  → /businesses/:slug  → /stories/:slug
@@ -93,6 +95,8 @@ export default function App() {
             <Route path="/map"                element={<MapPage />} />
             <Route path="/noticeboard"        element={<NoticeboardPage />} />
             <Route path="/archive"            element={<ArchivePage />} />
+            <Route path="/expertise"          element={<ExpertisePage />} />
+            <Route path="/expertise/:slug"    element={<ExpertiseDetailPage />} />
             <Route path="*"                   element={<NotFound />} />
           </Routes>
         </div>

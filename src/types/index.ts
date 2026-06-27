@@ -4,6 +4,8 @@ export type Status = 'draft' | 'submitted' | 'published' | 'featured' | 'archive
 export type ContentType = 'blog' | 'reel' | 'carousel'
 export type NoticeType = 'event' | 'collaboration' | 'opportunity' | 'request'
 export type PermissionRole = 'visitor' | 'founder' | 'business' | 'moderator' | 'admin'
+export type ResourceType = 'guide' | 'template' | 'tool' | 'framework' | 'video' | 'article'
+export type PriceType = 'flat' | 'monthly' | 'hourly' | 'custom'
 
 // ─── Location ──────────────────────────────────────────────────────────────────
 
@@ -24,7 +26,7 @@ export interface Topic {
   slug: string
   name: string
   description: string
-  count: number // number of stories using this topic
+  count: number
 }
 
 // ─── Industry ──────────────────────────────────────────────────────────────────
@@ -43,6 +45,208 @@ export interface Offer {
   description: string
   ctaLabel: string
   ctaUrl: string
+}
+
+// ─── FAQ ───────────────────────────────────────────────────────────────────────
+// Questions answered by a founder or business. Indexed, linkable, schema-ready.
+
+export interface FAQ {
+  id: string
+  question: string
+  answer: string
+  topicIds: string[]
+  expertiseIds: string[]
+  relatedStoryIds: string[]
+  relatedIdeaIds: string[]
+}
+
+// ─── Resource ──────────────────────────────────────────────────────────────────
+// Curated links, tools, templates, guides. Each surfaces on expertise pages + profiles.
+
+export interface Resource {
+  id: string
+  slug: string
+  title: string
+  description: string
+  url: string
+  type: ResourceType
+  founderId?: string
+  businessId?: string
+  topicIds: string[]
+  expertiseIds: string[]
+  free: boolean
+  ctaLabel: string
+}
+
+// ─── Service ───────────────────────────────────────────────────────────────────
+// Structured service offering. Surfaces on business profile + expertise pages.
+
+export interface Service {
+  id: string
+  slug: string
+  name: string
+  description: string
+  deliverable?: string
+  price?: string
+  priceType?: PriceType
+  businessId: string
+  founderId: string
+  topicIds: string[]
+  expertiseIds: string[]
+  ctaLabel: string
+  ctaUrl: string
+}
+
+// ─── Product ───────────────────────────────────────────────────────────────────
+
+export interface Product {
+  id: string
+  slug: string
+  name: string
+  description: string
+  price?: string
+  image?: string
+  businessId: string
+  founderId: string
+  topicIds: string[]
+  ctaLabel: string
+  ctaUrl: string
+}
+
+// ─── Case Study ────────────────────────────────────────────────────────────────
+// Documented result. Shows authority and surfaces on business profile + expertise pages.
+
+export interface CaseStudy {
+  id: string
+  slug: string
+  title: string
+  summary: string
+  challenge: string
+  outcome: string
+  result?: string
+  founderId: string
+  businessId: string
+  topicIds: string[]
+  expertiseIds: string[]
+  relatedStoryIds: string[]
+  createdAt: string
+}
+
+// ─── Talk ──────────────────────────────────────────────────────────────────────
+// Speaking appearances. Builds authority on expertise pages + founder profiles.
+
+export interface Talk {
+  id: string
+  title: string
+  event: string
+  date?: string
+  location?: string
+  description: string
+  videoUrl?: string
+  founderId: string
+  topicIds: string[]
+  expertiseIds: string[]
+}
+
+// ─── Testimonial ───────────────────────────────────────────────────────────────
+
+export interface Testimonial {
+  id: string
+  quote: string
+  authorName: string
+  authorRole?: string
+  authorCompany?: string
+  authorAvatar?: string
+  founderId?: string
+  businessId?: string
+  serviceId?: string
+  featured: boolean
+  createdAt: string
+}
+
+// ─── Media Mention ─────────────────────────────────────────────────────────────
+
+export interface MediaMention {
+  id: string
+  title: string
+  publication: string
+  url?: string
+  date?: string
+  founderId?: string
+  businessId?: string
+  description?: string
+}
+
+// ─── Award ─────────────────────────────────────────────────────────────────────
+
+export interface Award {
+  id: string
+  title: string
+  issuer: string
+  year: string
+  description?: string
+  founderId?: string
+  businessId?: string
+}
+
+// ─── Timeline Entry ────────────────────────────────────────────────────────────
+
+export interface TimelineEntry {
+  id: string
+  date: string
+  title: string
+  description: string
+  type: 'business' | 'story' | 'milestone' | 'talk' | 'award' | 'product'
+  linkUrl?: string
+  linkLabel?: string
+}
+
+// ─── Expertise ─────────────────────────────────────────────────────────────────
+// Aggregation pages. Each expertise slug becomes a canonical URL like /expertise/storytelling.
+// Founders, businesses, stories, ideas, resources, FAQs all surface here.
+
+export interface Expertise {
+  id: string
+  slug: string
+  name: string
+  tagline: string
+  description: string
+  icon?: string
+  topicIds: string[]
+  // Aggregated at runtime from cross-entity relationships
+  founderIds: string[]
+  businessIds: string[]
+  storyIds: string[]
+  ideaIds: string[]
+  resourceIds: string[]
+  serviceIds: string[]
+  caseStudyIds: string[]
+  talkIds: string[]
+  seoTitle?: string
+  seoDescription?: string
+}
+
+// ─── Evidence Metrics ──────────────────────────────────────────────────────────
+// Computed credibility metrics. Not stored — derived at runtime from all entities.
+
+export interface EvidenceMetrics {
+  storiesCount: number
+  ideasCount: number
+  faqsCount: number
+  resourcesCount: number
+  eventsCount: number
+  businessesCount: number
+  servicesCount: number
+  testimonialsCount: number
+  talksCount: number
+  caseStudiesCount: number
+  topicsCount: number
+  yearsPublishing: number
+  contentTypes: {
+    blogs: number
+    reels: number
+    carousels: number
+  }
 }
 
 // ─── Founder ───────────────────────────────────────────────────────────────────
@@ -64,6 +268,15 @@ export interface Founder {
   status: Status
   featured: boolean
   createdAt: string
+  // Knowledge graph extensions
+  expertiseIds?: string[]
+  faqs?: FAQ[]
+  resourceIds?: string[]
+  talkIds?: string[]
+  testimonialIds?: string[]
+  awardIds?: string[]
+  mediaMentionIds?: string[]
+  timeline?: TimelineEntry[]
   // Metadata
   seoTitle?: string
   seoDescription?: string
@@ -82,6 +295,7 @@ export interface Business {
   founderId: string
   location: Location
   industry: Industry
+  industriesServed?: Industry[]
   topics: Topic[]
   website?: string
   instagram?: string
@@ -90,6 +304,15 @@ export interface Business {
   status: Status
   featured: boolean
   createdAt: string
+  // Knowledge graph extensions
+  expertiseIds?: string[]
+  serviceIds?: string[]
+  productIds?: string[]
+  caseStudyIds?: string[]
+  testimonialIds?: string[]
+  faqs?: FAQ[]
+  resourceIds?: string[]
+  // Metadata
   seoTitle?: string
   seoDescription?: string
 }
@@ -108,6 +331,7 @@ export interface Story {
   location: Location
   industry: Industry
   topics: Topic[]
+  expertiseIds?: string[]
   // A Story can have multiple content outputs
   contentTypes: ContentType[]
   blog?: string
@@ -139,6 +363,7 @@ export interface Idea {
   quote?: string
   quoteFounderId?: string
   topics: Topic[]
+  expertiseIds?: string[]
   relatedStoryIds: string[]
   relatedFounderIds: string[]
   relatedBusinessIds: string[]
@@ -167,15 +392,15 @@ export interface Event {
 }
 
 // ─── Widget Filter Props ────────────────────────────────────────────────────────
-// Shared filter shape used across all grid widgets so pages can assemble them declaratively.
 
 export interface StoryFilter {
-  ids?: string[]         // restrict to exactly these story IDs
+  ids?: string[]
   founderId?: string
   businessId?: string
   locationId?: string
   topicId?: string
   industryId?: string
+  expertiseId?: string
   contentType?: ContentType
   featured?: boolean
   status?: Status
@@ -183,25 +408,28 @@ export interface StoryFilter {
 }
 
 export interface FounderFilter {
-  ids?: string[]         // restrict to exactly these founder IDs
+  ids?: string[]
   locationId?: string
   industryId?: string
   topicId?: string
+  expertiseId?: string
   featured?: boolean
   limit?: number
 }
 
 export interface BusinessFilter {
-  ids?: string[]         // restrict to exactly these business IDs
+  ids?: string[]
   locationId?: string
   industryId?: string
   topicId?: string
+  expertiseId?: string
   featured?: boolean
   limit?: number
 }
 
 export interface IdeaFilter {
   topicId?: string
+  expertiseId?: string
   founderId?: string
   businessId?: string
   storyId?: string
@@ -237,7 +465,6 @@ export interface PiazzaSubmission {
   ctaUrl: string
   status: Status
   submittedAt: string
-  // Distribution preview — shown after publish
   distributedTo?: string[]
   extractedIdeaIds?: string[]
 }

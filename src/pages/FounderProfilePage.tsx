@@ -1,16 +1,21 @@
 import { useParams, Link } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
-import { founders }               from '../data/founders'
-import { getBusiness }            from '../data/businesses'
-import { StoryGrid }              from '../widgets/StoryGrid'
-import { IdeaGrid }               from '../widgets/IdeaGrid'
-import { EventGrid }              from '../widgets/EventGrid'
-import { BusinessCard }           from '../components/cards/BusinessCard'
-import { Badge }                  from '../components/ui/Badge'
-import { Avatar }                 from '../components/ui/Avatar'
-import { InnerContainer }         from '../components/layout/PageContainer'
+import { founders } from '../data/founders'
+import { getBusiness } from '../data/businesses'
+import { getFAQsForFounder } from '../data/faqs'
+import { getResourcesForFounder } from '../data/resources'
+import { getTalksForFounder } from '../data/talks'
+import { getTestimonialsForFounder } from '../data/testimonials'
+import { getExpertiseForFounder } from '../data/expertise'
+import { StoryGrid } from '../widgets/StoryGrid'
+import { IdeaGrid } from '../widgets/IdeaGrid'
+import { EventGrid } from '../widgets/EventGrid'
+import { BusinessCard } from '../components/cards/BusinessCard'
+import { Badge } from '../components/ui/Badge'
+import { Avatar } from '../components/ui/Avatar'
+import { InnerContainer } from '../components/layout/PageContainer'
 
-// ─── Social link icons ──────────────────────────────────────────────────────────
+// ─── Social icons ────────────────────────────────────────────────────────────────
 
 function WebIcon() {
   return (
@@ -37,6 +42,13 @@ function LinkedInIcon() {
   )
 }
 
+// ─── Resource type label ────────────────────────────────────────────────────────
+
+const resourceTypeLabel: Record<string, string> = {
+  guide: 'Guide', template: 'Template', tool: 'Tool',
+  framework: 'Framework', video: 'Video', article: 'Article',
+}
+
 // ─── Not Found ──────────────────────────────────────────────────────────────────
 
 function FounderNotFound({ slug }: { slug: string }) {
@@ -48,45 +60,30 @@ function FounderNotFound({ slug }: { slug: string }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </div>
-        <h1 className="font-heading text-2xl font-semibold text-charcoal mb-3">
-          Founder not found
-        </h1>
+        <h1 className="font-heading text-2xl font-semibold text-charcoal mb-3">Founder not found</h1>
         <p className="font-body text-muted mb-2">
           We couldn't find a founder with the slug <code className="text-sm bg-border px-1.5 py-0.5 rounded">{slug}</code>.
         </p>
-        <p className="font-body text-sm text-muted mb-8">
-          They may not have published yet, or the URL may have changed.
-        </p>
+        <p className="font-body text-sm text-muted mb-8">They may not have published yet, or the URL may have changed.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            to="/founders"
-            className="px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
-          >
-            Browse All Founders
-          </Link>
-          <Link
-            to="/"
-            className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
-          >
-            Back to Village
-          </Link>
+          <Link to="/founders" className="px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors">Browse All Founders</Link>
+          <Link to="/" className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors">Back to Village</Link>
         </div>
       </div>
     </main>
   )
 }
 
-// ─── Related Founders logic ─────────────────────────────────────────────────────
-// Score each other founder by shared attributes and take the top 3.
+// ─── Related Founders ────────────────────────────────────────────────────────────
 
 function getRelatedFounders(founderId: string, industryId: string, locationId: string, topicIds: string[]) {
   return founders
     .filter(f => f.id !== founderId)
     .map(f => {
       let score = 0
-      if (f.industry.id === industryId)                                    score += 3
-      if (f.location.id === locationId)                                     score += 2
-      if (f.topics.some(t => topicIds.includes(t.id)))                     score += 1
+      if (f.industry.id === industryId)                         score += 3
+      if (f.location.id === locationId)                          score += 2
+      if (f.topics.some(t => topicIds.includes(t.id)))          score += 1
       return { founder: f, score }
     })
     .filter(({ score }) => score > 0)
@@ -95,41 +92,33 @@ function getRelatedFounders(founderId: string, industryId: string, locationId: s
     .map(({ founder }) => founder)
 }
 
-// ─── Founder Profile ────────────────────────────────────────────────────────────
+// ─── Founder Profile ─────────────────────────────────────────────────────────────
 
 export function FounderProfilePage() {
   const { slug } = useParams<{ slug: string }>()
-
   const founder = founders.find(f => f.slug === slug)
   usePageTitle(founder ? [founder.name, 'Founders'] : 'Founders')
 
-  if (!founder) {
-    return <FounderNotFound slug={slug ?? ''} />
-  }
+  if (!founder) return <FounderNotFound slug={slug ?? ''} />
 
-  const business      = getBusiness(founder.businessId)
-  const relatedIds    = getRelatedFounders(
-    founder.id,
-    founder.industry.id,
-    founder.location.id,
-    founder.topics.map(t => t.id)
-  ).map(f => f.id)
+  const business         = getBusiness(founder.businessId)
+  const faqs             = getFAQsForFounder(founder.id)
+  const resources        = getResourcesForFounder(founder.id)
+  const talks            = getTalksForFounder(founder.id)
+  const testimonials     = getTestimonialsForFounder(founder.id)
+  const expertiseAreas   = getExpertiseForFounder(founder.id)
+  const relatedFounders  = getRelatedFounders(
+    founder.id, founder.industry.id, founder.location.id, founder.topics.map(t => t.id)
+  )
 
-  // FounderGrid filter by explicit IDs — we pass them one at a time via topicId
-  // Instead, we render using a custom filter that matches our related IDs.
-  // The cleanest approach: pass featured:false + topicId from the primary topic,
-  // then filter out the current founder. We handle this by using the relatedFounders
-  // list directly rather than FounderGrid, since FounderGrid doesn't accept an id list.
-  const relatedFounders = founders.filter(f => relatedIds.includes(f.id))
+  // ── Evidence metrics (computed) ──────────────────────────────────────────────
+  const yearsPublishing = new Date().getFullYear() - new Date(founder.createdAt).getFullYear() || 1
 
   return (
     <main className="min-h-screen bg-background" id="founder-profile">
 
       {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
-      <nav
-        className="bg-surface border-b border-border pt-20 pb-4"
-        aria-label="Breadcrumb"
-      >
+      <nav className="bg-surface border-b border-border pt-20 pb-4" aria-label="Breadcrumb">
         <InnerContainer>
           <ol className="flex items-center gap-2 text-sm font-body text-muted" role="list">
             <li><Link to="/" className="hover:text-primary transition-colors">Village</Link></li>
@@ -142,48 +131,23 @@ export function FounderProfilePage() {
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      {/*
-        One H1. Cover image where available.
-        All relationship metadata visible in readable text for SEO/GEO.
-      */}
       <section aria-labelledby="founder-name">
-        {/* Cover image */}
         {founder.coverImage ? (
           <div className="relative h-56 sm:h-72 md:h-80 overflow-hidden bg-charcoal">
-            <img
-              src={founder.coverImage}
-              alt={`${founder.name}'s cover photo`}
-              className="w-full h-full object-cover opacity-70"
-              loading="eager"
-            />
-            <div
-              className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent"
-              aria-hidden="true"
-            />
+            <img src={founder.coverImage} alt={`${founder.name}'s cover photo`} className="w-full h-full object-cover opacity-70" loading="eager" />
+            <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
           </div>
         ) : (
           <div className="h-32 bg-gradient-to-br from-primary/20 to-secondary/10" aria-hidden="true" />
         )}
 
-        {/* Hero content */}
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
             <div className="flex flex-col sm:flex-row sm:items-end gap-6 -mt-12 sm:-mt-16">
-
-              {/* Avatar */}
-              <Avatar
-                src={founder.avatar}
-                alt={founder.name}
-                size="xl"
-                className="ring-4 ring-surface shadow-lg flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 text-2xl"
-              />
-
-              {/* Name + quick meta */}
+              <Avatar src={founder.avatar} alt={founder.name} size="xl"
+                className="ring-4 ring-surface shadow-lg flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 text-2xl" />
               <div className="flex-1 min-w-0 pt-2">
-                <h1
-                  id="founder-name"
-                  className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight"
-                >
+                <h1 id="founder-name" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
                   {founder.name}
                 </h1>
                 <p className="font-body text-base text-primary font-medium mt-1" aria-label="Industry">
@@ -196,41 +160,26 @@ export function FounderProfilePage() {
                   {founder.location.name}, {founder.location.state}, Australia
                 </p>
               </div>
-
-              {/* Social links — top right on desktop */}
               {(founder.website || founder.instagram || founder.linkedin) && (
                 <div className="flex items-center gap-2 flex-shrink-0 pb-1">
                   {founder.website && (
-                    <a
-                      href={founder.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <a href={founder.website} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm font-medium hover:border-primary hover:text-primary transition-colors"
-                      aria-label={`Visit ${founder.name}'s website`}
-                    >
-                      <WebIcon />
-                      <span className="hidden sm:inline">Website</span>
+                      aria-label={`Visit ${founder.name}'s website`}>
+                      <WebIcon /><span className="hidden sm:inline">Website</span>
                     </a>
                   )}
                   {founder.instagram && (
-                    <a
-                      href={founder.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <a href={founder.instagram} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
-                      aria-label={`${founder.name} on Instagram`}
-                    >
+                      aria-label={`${founder.name} on Instagram`}>
                       <InstagramIcon />
                     </a>
                   )}
                   {founder.linkedin && (
-                    <a
-                      href={founder.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <a href={founder.linkedin} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
-                      aria-label={`${founder.name} on LinkedIn`}
-                    >
+                      aria-label={`${founder.name} on LinkedIn`}>
                       <LinkedInIcon />
                     </a>
                   )}
@@ -238,30 +187,23 @@ export function FounderProfilePage() {
               )}
             </div>
 
-            {/* Bio */}
             <div className="mt-6 max-w-2xl">
-              <p className="font-body text-base text-charcoal/80 leading-relaxed">
-                {founder.bio}
-              </p>
+              <p className="font-body text-base text-charcoal/80 leading-relaxed">{founder.bio}</p>
             </div>
 
-            {/* Topic badges */}
             {founder.topics.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2" aria-label="Topics this founder covers">
+              <div className="mt-5 flex flex-wrap gap-2" aria-label="Topics">
                 {founder.topics.map(topic => (
                   <Badge key={topic.id} label={topic.name} variant="secondary" />
                 ))}
               </div>
             )}
 
-            {/* Business pill — quick link */}
             {business && (
               <div className="mt-5">
-                <Link
-                  to={`/businesses/${business.slug}`}
+                <Link to={`/businesses/${business.slug}`}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
-                  aria-label={`View ${business.name} business profile`}
-                >
+                  aria-label={`View ${business.name} business profile`}>
                   <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border">
                     <img src={business.logo} alt="" className="w-full h-full object-cover" />
                   </div>
@@ -274,13 +216,133 @@ export function FounderProfilePage() {
         </div>
       </section>
 
-      {/* ── Main content + sidebar layout ────────────────────────────────────── */}
+      {/* ── Evidence strip ──────────────────────────────────────────────────── */}
+      <section className="bg-charcoal py-5" aria-label="Authority metrics">
+        <InnerContainer>
+          <div className="flex flex-wrap gap-6 sm:gap-10">
+            {expertiseAreas.length > 0 && (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{expertiseAreas.length}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Expertise areas</span>
+              </div>
+            )}
+            {resources.length > 0 && (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{resources.length}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Resources</span>
+              </div>
+            )}
+            {faqs.length > 0 && (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{faqs.length}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">FAQs answered</span>
+              </div>
+            )}
+            {talks.length > 0 && (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{talks.length}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Talks</span>
+              </div>
+            )}
+            {testimonials.length > 0 && (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{testimonials.length}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Testimonials</span>
+              </div>
+            )}
+            <div className="flex flex-col">
+              <span className="font-heading text-2xl font-bold text-white">{yearsPublishing}+</span>
+              <span className="font-body text-xs text-white/50 uppercase tracking-wide">Years publishing</span>
+            </div>
+            {founder.topics.length > 0 && (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{founder.topics.length}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Topics</span>
+              </div>
+            )}
+          </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── Main content + sidebar ───────────────────────────────────────────── */}
       <div className="py-14 md:py-16">
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14">
 
             {/* ── Left: Primary content ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
+
+              {/* Expertise areas */}
+              {expertiseAreas.length > 0 && (
+                <section aria-labelledby="founder-expertise-heading">
+                  <h2 id="founder-expertise-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Expertise
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-5">
+                    The domains {founder.name} is known for in CULO Village.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {expertiseAreas.map(area => (
+                      <Link
+                        key={area.id}
+                        to={`/expertise/${area.slug}`}
+                        className="group flex flex-col bg-surface rounded-2xl border border-border p-5 hover:border-primary hover:shadow-sm transition-all"
+                        aria-label={`Explore ${area.name} expertise`}
+                      >
+                        <h3 className="font-heading text-base font-semibold text-charcoal group-hover:text-primary transition-colors mb-1">
+                          {area.name}
+                        </h3>
+                        <p className="font-body text-xs text-primary font-medium mb-2">{area.tagline}</p>
+                        <p className="font-body text-xs text-muted leading-relaxed line-clamp-2">{area.description}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* FAQ */}
+              {faqs.length > 0 && (
+                <section aria-labelledby="founder-faq-heading">
+                  <h2 id="founder-faq-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Questions &amp; Answers
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Questions {founder.name} answers about their work and expertise.
+                  </p>
+                  <div className="flex flex-col gap-4">
+                    {faqs.map(faq => (
+                      <details
+                        key={faq.id}
+                        className="group bg-surface rounded-2xl border border-border"
+                      >
+                        <summary className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none">
+                          <h3 className="font-heading text-base font-semibold text-charcoal leading-snug">
+                            {faq.question}
+                          </h3>
+                          <svg
+                            className="w-5 h-5 text-muted flex-shrink-0 transition-transform group-open:rotate-180"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </summary>
+                        <div className="px-6 pb-5">
+                          <p className="font-body text-sm text-charcoal/80 leading-relaxed">{faq.answer}</p>
+                          {faq.topicIds.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {faq.topicIds.map(tid => (
+                                <span key={tid} className="font-body text-xs bg-secondary/10 text-secondary px-2 py-0.5 rounded-full">
+                                  {tid.replace(/-/g, ' ')}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {/* Stories */}
               <StoryGrid
@@ -297,6 +359,73 @@ export function FounderProfilePage() {
                 emptyMessage="This founder hasn't published their first story yet. Check back soon."
               />
 
+              {/* Talks */}
+              {talks.length > 0 && (
+                <section aria-labelledby="founder-talks-heading">
+                  <h2 id="founder-talks-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Talks &amp; Presentations
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Speaking appearances and presentations by {founder.name}.
+                  </p>
+                  <div className="flex flex-col gap-4">
+                    {talks.map(talk => (
+                      <article key={talk.id} className="bg-surface rounded-xl border border-border p-5">
+                        <h3 className="font-heading text-base font-semibold text-charcoal mb-1 leading-snug">
+                          {talk.title}
+                        </h3>
+                        <p className="font-body text-xs text-primary font-medium mb-2">
+                          {talk.event}
+                          {talk.location ? ` · ${talk.location}` : ''}
+                          {talk.date ? ` · ${new Date(talk.date).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}` : ''}
+                        </p>
+                        <p className="font-body text-sm text-muted leading-relaxed">{talk.description}</p>
+                        {talk.videoUrl && (
+                          <a href={talk.videoUrl} target="_blank" rel="noopener noreferrer"
+                            className="mt-3 inline-block text-sm font-medium text-primary hover:text-[#b05a35] transition-colors">
+                            Watch recording →
+                          </a>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Testimonials */}
+              {testimonials.length > 0 && (
+                <section aria-labelledby="founder-testimonials-heading">
+                  <h2 id="founder-testimonials-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Testimonials
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    What clients and collaborators say about working with {founder.name}.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {testimonials.map(t => (
+                      <blockquote key={t.id} className="bg-surface rounded-2xl border border-border p-6 flex flex-col gap-4">
+                        <p className="font-body text-sm text-charcoal/80 leading-relaxed italic">
+                          "{t.quote}"
+                        </p>
+                        <footer className="flex items-center gap-2.5 mt-auto">
+                          {t.authorAvatar && (
+                            <img src={t.authorAvatar} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" loading="lazy" />
+                          )}
+                          <div>
+                            <p className="font-body text-sm font-semibold text-charcoal">{t.authorName}</p>
+                            {(t.authorRole || t.authorCompany) && (
+                              <p className="font-body text-xs text-muted">
+                                {[t.authorRole, t.authorCompany].filter(Boolean).join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        </footer>
+                      </blockquote>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {/* Ideas */}
               <IdeaGrid
                 heading={`Ideas ${founder.name} talks about`}
@@ -307,6 +436,33 @@ export function FounderProfilePage() {
                 emptyTitle="No ideas linked yet"
                 emptyMessage={`Ideas are extracted from published stories. Check back once ${founder.name} publishes more.`}
               />
+
+              {/* Timeline */}
+              {founder.timeline && founder.timeline.length > 0 && (
+                <section aria-labelledby="founder-timeline-heading">
+                  <h2 id="founder-timeline-heading" className="font-heading text-2xl font-semibold text-charcoal mb-6">
+                    Timeline
+                  </h2>
+                  <ol className="relative border-l border-border space-y-8 pl-6" role="list">
+                    {[...founder.timeline].sort((a, b) => b.date.localeCompare(a.date)).map(entry => (
+                      <li key={entry.id} className="relative" role="listitem">
+                        <div className="absolute -left-[1.625rem] top-0.5 w-3 h-3 rounded-full bg-primary ring-4 ring-surface" aria-hidden="true" />
+                        <time className="font-body text-xs text-muted font-medium block mb-1" dateTime={entry.date}>
+                          {new Date(entry.date).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+                        </time>
+                        <h3 className="font-heading text-base font-semibold text-charcoal mb-1">{entry.title}</h3>
+                        <p className="font-body text-sm text-muted leading-relaxed">{entry.description}</p>
+                        {entry.linkUrl && (
+                          <a href={entry.linkUrl} target="_blank" rel="noopener noreferrer"
+                            className="mt-1.5 inline-block text-sm font-medium text-primary hover:text-[#b05a35] transition-colors">
+                            {entry.linkLabel ?? 'Learn more'} →
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
 
               {/* Events */}
               <EventGrid
@@ -321,43 +477,58 @@ export function FounderProfilePage() {
 
             </div>
 
-            {/* ── Right: Sidebar ─────────────────────────────────────────────── */}
+            {/* ── Right sidebar ─────────────────────────────────────────────── */}
             <aside className="lg:col-span-1 flex flex-col gap-8" aria-label="Founder details">
 
               {/* Business card */}
               {business && (
                 <section aria-labelledby="founder-business-heading">
-                  <h2
-                    id="founder-business-heading"
-                    className="font-heading text-lg font-semibold text-charcoal mb-4"
-                  >
-                    Business
-                  </h2>
-                  <BusinessCard
-                    business={business}
-                    founder={founder}
-                    variant="default"
-                  />
+                  <h2 id="founder-business-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">Business</h2>
+                  <BusinessCard business={business} founder={founder} variant="default" />
                 </section>
               )}
 
-              {/* About this founder — structured metadata, SEO-readable */}
-              <section
-                className="bg-surface rounded-2xl p-5 border border-border"
-                aria-labelledby="founder-about-heading"
-              >
-                <h2
-                  id="founder-about-heading"
-                  className="font-heading text-base font-semibold text-charcoal mb-4"
-                >
+              {/* Resources */}
+              {resources.length > 0 && (
+                <section aria-labelledby="founder-resources-heading">
+                  <h2 id="founder-resources-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">Resources</h2>
+                  <div className="flex flex-col gap-3">
+                    {resources.map(resource => (
+                      <a
+                        key={resource.id}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex flex-col bg-surface rounded-xl border border-border p-4 hover:border-primary hover:shadow-sm transition-all"
+                        aria-label={resource.title}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-body text-xs font-semibold text-muted uppercase tracking-wide">
+                            {resourceTypeLabel[resource.type] ?? resource.type}
+                          </span>
+                          {resource.free && (
+                            <span className="font-body text-xs font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">Free</span>
+                          )}
+                        </div>
+                        <h3 className="font-heading text-sm font-semibold text-charcoal group-hover:text-primary transition-colors mb-1 leading-snug">
+                          {resource.title}
+                        </h3>
+                        <p className="font-body text-xs text-muted leading-relaxed line-clamp-2">{resource.description}</p>
+                      </a>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* About */}
+              <section className="bg-surface rounded-2xl p-5 border border-border" aria-labelledby="founder-about-heading">
+                <h2 id="founder-about-heading" className="font-heading text-base font-semibold text-charcoal mb-4">
                   About {founder.name}
                 </h2>
                 <dl className="space-y-3 font-body text-sm">
                   <div>
                     <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Location</dt>
-                    <dd className="text-charcoal">
-                      {founder.location.name}, {founder.location.state}, Australia
-                    </dd>
+                    <dd className="text-charcoal">{founder.location.name}, {founder.location.state}, Australia</dd>
                   </div>
                   <div>
                     <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Industry</dt>
@@ -369,8 +540,25 @@ export function FounderProfilePage() {
                       <dd>
                         <ul className="flex flex-wrap gap-1.5" role="list">
                           {founder.topics.map(t => (
-                            <li key={t.id}>
-                              <Badge label={t.name} variant="secondary" />
+                            <li key={t.id}><Badge label={t.name} variant="secondary" /></li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                  )}
+                  {expertiseAreas.length > 0 && (
+                    <div>
+                      <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Expertise</dt>
+                      <dd>
+                        <ul className="flex flex-wrap gap-1.5" role="list">
+                          {expertiseAreas.map(area => (
+                            <li key={area.id}>
+                              <Link
+                                to={`/expertise/${area.slug}`}
+                                className="font-body text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                              >
+                                {area.name}
+                              </Link>
                             </li>
                           ))}
                         </ul>
@@ -381,33 +569,31 @@ export function FounderProfilePage() {
                     <div>
                       <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Website</dt>
                       <dd>
-                        <a
-                          href={founder.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline break-all"
-                        >
+                        <a href={founder.website} target="_blank" rel="noopener noreferrer"
+                          className="text-primary hover:underline break-all">
                           {founder.website.replace(/^https?:\/\//, '')}
                         </a>
                       </dd>
                     </div>
                   )}
+                  <div>
+                    <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Publishing since</dt>
+                    <dd className="text-charcoal">
+                      {new Date(founder.createdAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+                    </dd>
+                  </div>
                 </dl>
               </section>
 
               {/* Related founders */}
               {relatedFounders.length > 0 && (
                 <section aria-labelledby="related-founders-heading">
-                  <h2
-                    id="related-founders-heading"
-                    className="font-heading text-lg font-semibold text-charcoal mb-4"
-                  >
+                  <h2 id="related-founders-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
                     Related Founders
                   </h2>
                   <div className="flex flex-col gap-3" role="list">
                     {relatedFounders.map(related => {
                       const relatedBiz = getBusiness(related.businessId)
-                      // Shared attribute label
                       const sharedLocation = related.location.id === founder.location.id
                       const sharedIndustry = related.industry.id === founder.industry.id
                       const sharedLabel = sharedIndustry
@@ -415,12 +601,11 @@ export function FounderProfilePage() {
                         : sharedLocation
                           ? related.location.name
                           : related.topics.find(t => founder.topics.some(ft => ft.id === t.id))?.name ?? ''
-
                       return (
                         <div key={related.id} role="listitem">
                           <Link
                             to={`/founders/${related.slug}`}
-                            className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-card transition-all group"
+                            className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-sm transition-all group"
                             aria-label={`View ${related.name}'s profile`}
                           >
                             <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden bg-primary/10 ring-2 ring-border">
@@ -448,10 +633,7 @@ export function FounderProfilePage() {
                       )
                     })}
                   </div>
-                  <Link
-                    to="/founders"
-                    className="mt-4 block text-center text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"
-                  >
+                  <Link to="/founders" className="mt-4 block text-center text-sm font-medium text-primary hover:text-[#b05a35] transition-colors">
                     Browse all founders →
                   </Link>
                 </section>

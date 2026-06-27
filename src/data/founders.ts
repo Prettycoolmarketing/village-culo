@@ -39,6 +39,15 @@ export const founders: Founder[] = [
     status: 'featured',
     featured: true,
     createdAt: '2024-01-15',
+    expertiseIds: ['founder-storytelling', 'content-systems', 'ai-marketing'],
+    resourceIds: ['culo-storytelling-guide', 'story-prompt-list', 'culo-content-os', 'canva-workflow-template', 'ai-prompt-library'],
+    talkIds: ['culo-launch-talk', 'founder-story-talk'],
+    timeline: [
+      { id: 't1', date: '2020-03-01', title: 'Founded Pretty Cool Marketing', description: 'Started the agency to help founders build content systems that actually work.', type: 'business' },
+      { id: 't2', date: '2023-06-01', title: 'Started building CULO', description: 'Began development of a content operating system inside Canva after seeing how many founders struggled with production.', type: 'milestone' },
+      { id: 't3', date: '2024-01-15', title: 'Launched CULO Village', description: 'Opened the Village as the public knowledge graph for the CULO ecosystem.', type: 'product' },
+      { id: 't4', date: '2024-05-12', title: 'Spoke at Canva Create Brisbane', description: 'Presented the CULO story and content OS methodology to 200+ founders.', type: 'talk' },
+    ],
     seoTitle: 'Shakas — Founder, Pretty Cool Marketing & CULO',
     seoDescription: 'Helping founders turn real experiences into content that compounds over time.',
   },
@@ -63,6 +72,8 @@ export const founders: Founder[] = [
     status: 'published',
     featured: true,
     createdAt: '2024-02-10',
+    expertiseIds: ['brand-photography', 'personal-brand'],
+    resourceIds: ['brand-shoot-prep-guide'],
   },
   {
     id: 'james-okafor',
@@ -84,6 +95,8 @@ export const founders: Founder[] = [
     status: 'published',
     featured: false,
     createdAt: '2024-03-05',
+    expertiseIds: ['content-systems', 'ai-marketing'],
+    resourceIds: ['canva-workflow-template'],
   },
   {
     id: 'maya-chen',
@@ -105,6 +118,8 @@ export const founders: Founder[] = [
     status: 'published',
     featured: true,
     createdAt: '2024-03-22',
+    expertiseIds: ['brand-identity', 'personal-brand'],
+    resourceIds: ['personal-brand-checklist', 'brand-identity-checklist'],
   },
   {
     id: 'tom-riley',
@@ -125,6 +140,8 @@ export const founders: Founder[] = [
     status: 'published',
     featured: false,
     createdAt: '2024-04-01',
+    expertiseIds: ['short-form-video', 'founder-storytelling'],
+    resourceIds: ['reel-hook-guide'],
   },
   {
     id: 'anika-patel',

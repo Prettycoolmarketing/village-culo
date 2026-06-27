@@ -11,6 +11,7 @@ const navLinks = [
   { to: '/map',        label: 'Map',        exact: false },
   { to: '/noticeboard',label: 'Noticeboard',exact: false },
   { to: '/archive',    label: 'Archive',    exact: false },
+  { to: '/expertise',  label: 'Expertise',  exact: false },
 ]
 
 export function Navbar() {
