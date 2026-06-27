@@ -8,8 +8,9 @@ import { getFounder } from '../data/founders'
 import { getBusiness } from '../data/businesses'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
+import { ContentTypeIcon } from '../components/ui/ContentTypeIcon'
 import { SectionHeading } from '../components/layout/PageContainer'
-import { contentTypeLabel, formatDate } from '../utils/slugify'
+import { formatDate } from '../utils/slugify'
 
 interface FeaturedWidgetProps {
   heading?: string
@@ -40,7 +41,7 @@ export function FeaturedWidget({
         {/* ── Story of the Day — spans 2 cols on large screens ─────────────── */}
         {featuredStory && (
           <article
-            className="lg:col-span-2 group relative bg-surface rounded-2xl overflow-hidden shadow-card hover:shadow-lg transition-all duration-300"
+            className="lg:col-span-2 group relative bg-surface rounded-3xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300"
             aria-label={`Story of the Day: ${featuredStory.title}`}
           >
             <Link
@@ -58,11 +59,15 @@ export function FeaturedWidget({
               <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
 
               <div className="absolute inset-0 flex flex-col justify-end p-6">
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent text-charcoal">Story of the Day</span>
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-accent text-charcoal shadow-sm">Story of the Day</span>
+                  {/* Phone icons for content types */}
                   {featuredStory.contentTypes.map(t => (
-                    <span key={t} className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
-                      {contentTypeLabel(t)}
+                    <span
+                      key={t}
+                      className="flex items-center justify-center w-6 h-9 bg-white/20 backdrop-blur-sm rounded-lg text-white/90"
+                    >
+                      <ContentTypeIcon type={t} />
                     </span>
                   ))}
                 </div>
@@ -93,7 +98,7 @@ export function FeaturedWidget({
           {/* Founder of the Day */}
           {featuredFounder && (
             <article
-              className="group flex-1 bg-surface rounded-2xl p-5 shadow-card hover:shadow-md transition-all duration-200"
+              className="group flex-1 bg-surface rounded-3xl p-5 shadow-card hover:shadow-card-hover transition-all duration-200"
               aria-label={`Founder of the Day: ${featuredFounder.name}`}
             >
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Founder of the Day</p>
@@ -125,12 +130,12 @@ export function FeaturedWidget({
           {/* Idea of the Day */}
           {featuredIdea && (
             <article
-              className="group bg-secondary/5 border border-secondary/15 rounded-2xl p-5 hover:bg-secondary/8 transition-colors duration-200"
+              className="group bg-cloud/5 border border-cloud/15 rounded-3xl p-5 hover:bg-cloud/8 transition-colors duration-200"
               aria-label={`Idea of the Day: ${featuredIdea.title}`}
             >
-              <p className="font-body text-xs font-semibold text-secondary uppercase tracking-widest mb-3">Idea of the Day</p>
+              <p className="font-body text-xs font-semibold text-cloud uppercase tracking-widest mb-3">Idea of the Day</p>
               <h3 className="font-heading text-base font-semibold text-charcoal leading-snug mb-2">
-                <Link to={`/ideas/${featuredIdea.slug}`} className="hover:text-secondary transition-colors focus:outline-none focus-visible:underline">
+                <Link to={`/ideas/${featuredIdea.slug}`} className="hover:text-cloud transition-colors focus:outline-none focus-visible:underline">
                   {featuredIdea.title}
                 </Link>
               </h3>
@@ -148,7 +153,7 @@ export function FeaturedWidget({
         {/* ── Bottom row: Business + Event ─────────────────────────────────── */}
         {featuredBusiness && (
           <article
-            className="group bg-surface rounded-2xl p-5 shadow-card hover:shadow-md transition-all duration-200"
+            className="group bg-surface rounded-3xl p-5 shadow-card hover:shadow-card-hover transition-all duration-200"
             aria-label={`Featured business: ${featuredBusiness.name}`}
           >
             <p className="font-body text-xs font-semibold text-[#8a6a1e] uppercase tracking-widest mb-3">Featured Business</p>
@@ -182,7 +187,7 @@ export function FeaturedWidget({
 
         {featuredEvent && (
           <article
-            className="group bg-surface rounded-2xl p-5 shadow-card hover:shadow-md transition-all duration-200"
+            className="group bg-surface rounded-3xl p-5 shadow-card hover:shadow-card-hover transition-all duration-200"
             aria-label={`Upcoming event: ${featuredEvent.title}`}
           >
             <p className="font-body text-xs font-semibold text-[#B85C3A] uppercase tracking-widest mb-3">Upcoming Event</p>
