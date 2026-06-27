@@ -357,6 +357,8 @@ export interface Founder {
 
 // ─── Business ──────────────────────────────────────────────────────────────────
 
+export type BusinessCategory = 'business' | 'platform' | 'community' | 'event'
+
 export interface Business {
   id: string
   slug: string
@@ -366,6 +368,7 @@ export interface Business {
   logo: string
   coverImage: string
   founderId: string
+  category?: BusinessCategory
   location: Location
   industry: Industry
   industriesServed?: Industry[]

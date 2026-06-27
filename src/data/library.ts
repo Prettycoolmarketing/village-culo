@@ -188,168 +188,7 @@ export const libraryItems: LibraryItem[] = [
     seoDescription: 'AI prompts built for founders. Start from your experience, not a blank page.',
   },
 
-  // ─── 4. Brand Photography Prep Kit (Lucia Romano) ──────────────────────────
-  {
-    id: 'brand-photography-prep-kit',
-    slug: 'brand-photography-prep-kit',
-    title: 'Brand Photography Prep Kit',
-    subtitle: 'Everything you need to prepare for a brand shoot — and make the most of every image.',
-    description: 'A full preparation system for founders booking a brand photography shoot. Includes a shot list template, location brief, outfit planning guide, prop checklist, and a usage strategy guide for getting 6 months of content from one day of shooting. Works with any photographer.',
-    why: 'After years of doing brand shoots, I noticed that the founders who got the most from their sessions were the ones who came prepared. This kit gives every founder what my best clients already know.',
-    authorFounderId: 'lucia-romano',
-    businessId: 'romano-visuals',
-    coverImage: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=800&q=80',
-    previewImages: [
-      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=80',
-    ],
-    productType: 'toolkit',
-    topics: [topics[14], topics[6], topics[8]],
-    expertiseIds: ['brand-photography', 'personal-brand'],
-    location: brisbane,
-    price: 'Free',
-    currency: 'AUD',
-    status: 'free-download',
-    purchaseLinks: [
-      {
-        label: 'Download Free',
-        url: 'https://romanovisuals.com.au/prep-kit',
-        provider: 'website',
-      },
-    ],
-    deliveryMethod: 'digital',
-    downloadable: true,
-    featured: true,
-    createdAt: '2024-04-01',
-    relatedStoryIds: [],
-    relatedIdeaIds: [],
-    createdFrom: [
-      {
-        id: 'cf1',
-        date: '2022-01-01',
-        title: 'Noticed the prep gap',
-        description: 'Founders arriving underprepared consistently produced less usable content from the same shoot time. Prep was the highest leverage variable.',
-        type: 'experience',
-      },
-      {
-        id: 'cf2',
-        date: '2024-03-01',
-        title: 'Documented the system',
-        description: 'Turned the preparation process I used with every client into a downloadable kit that works independently of me.',
-        type: 'decision',
-      },
-    ],
-    seoTitle: 'Brand Photography Prep Kit — Free Download by Romano Visuals',
-    seoDescription: 'A free preparation system for founders booking a brand photography shoot. Shot list, location brief, outfit guide and usage strategy included.',
-  },
-
-  // ─── 5. Content System Blueprint (James Okafor) ────────────────────────────
-  {
-    id: 'content-system-blueprint',
-    slug: 'content-system-blueprint',
-    title: 'Content System Blueprint',
-    subtitle: 'The complete framework for building a content system that runs without you.',
-    description: 'A 40-page PDF framework covering every component of a sustainable content system for founders and teams. Covers: audit methodology, content architecture, ownership mapping, template design, publishing workflow, measurement and iteration. Based on 50+ content system builds across Australia and Southeast Asia.',
-    why: 'I built this because every client eventually asks: "How do I set this up so I don\'t need you forever?" The honest answer is: build a system. This is the system.',
-    authorFounderId: 'james-okafor',
-    businessId: 'okafor-studio',
-    coverImage: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80',
-    productType: 'framework',
-    topics: [topics[2], topics[9]],
-    expertiseIds: ['content-systems'],
-    location: locations[2], // sydney
-    price: '$97',
-    currency: 'AUD',
-    status: 'available',
-    purchaseLinks: [
-      {
-        label: 'Buy the Blueprint',
-        url: 'https://okaforstudio.com/blueprint',
-        provider: 'website',
-      },
-      {
-        label: 'Buy on Gumroad',
-        url: 'https://okaforstudio.gumroad.com/l/blueprint',
-        provider: 'gumroad',
-      },
-    ],
-    deliveryMethod: 'digital',
-    downloadable: true,
-    featured: false,
-    createdAt: '2024-06-15',
-    relatedStoryIds: [],
-    relatedIdeaIds: [],
-    createdFrom: [
-      {
-        id: 'cf1',
-        date: '2021-01-01',
-        title: 'First content system build',
-        description: 'The first documented content system built for a client. Became the basis of the methodology.',
-        type: 'milestone',
-      },
-      {
-        id: 'cf2',
-        date: '2023-12-01',
-        title: 'Refined across 50+ builds',
-        description: 'After running the methodology across 50+ founders and teams, the framework had stabilised. Time to publish it.',
-        type: 'decision',
-      },
-    ],
-    seoTitle: 'Content System Blueprint — Framework by Okafor Studio',
-    seoDescription: 'A 40-page framework for building a content system that runs without you. Based on 50+ builds across Australia.',
-  },
-
-  // ─── 6. CULO Brand Identity Starter Kit (Maya Chen) ────────────────────────
-  {
-    id: 'brand-identity-starter-kit',
-    slug: 'brand-identity-starter-kit',
-    title: 'Brand Identity Starter Kit',
-    subtitle: 'A Canva template system for founders who need a consistent visual identity before they can afford a full rebrand.',
-    description: 'A professional brand identity system inside Canva. Includes: logo mark template, colour palette builder, typography pairing guide, social profile kit, presentation template and brand guidelines document. Designed for founders who need to look credible today while they build toward a full identity tomorrow.',
-    why: 'I see too many founders waiting until they can afford a "real" brand before they start showing up online. This kit closes that gap. It\'s not a replacement for a brand strategy — it\'s a way to show up professionally while you build one.',
-    authorFounderId: 'maya-chen',
-    businessId: 'maya-chen-design',
-    coverImage: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
-    productType: 'canva-template',
-    topics: [topics[6], topics[9]],
-    expertiseIds: ['brand-identity', 'personal-brand'],
-    location: locations[3], // melbourne
-    price: '$57',
-    currency: 'AUD',
-    status: 'available',
-    purchaseLinks: [
-      {
-        label: 'Get the Kit',
-        url: 'https://mayachendesign.com/starter-kit',
-        provider: 'website',
-      },
-    ],
-    deliveryMethod: 'digital',
-    downloadable: true,
-    featured: false,
-    createdAt: '2024-08-01',
-    relatedStoryIds: [],
-    relatedIdeaIds: [],
-    createdFrom: [
-      {
-        id: 'cf1',
-        date: '2023-03-01',
-        title: 'The $3k problem',
-        description: 'A founder told me they couldn\'t afford a brand identity but also couldn\'t afford to look unprofessional. That was the brief.',
-        type: 'experience',
-      },
-      {
-        id: 'cf2',
-        date: '2024-07-01',
-        title: 'Built and tested',
-        description: 'Designed the system, tested with 6 founders at different stages. All produced professional results within two hours.',
-        type: 'milestone',
-      },
-    ],
-    seoTitle: 'Brand Identity Starter Kit — Canva Templates by Maya Chen Design',
-    seoDescription: 'A professional brand identity system in Canva. Look credible before you can afford a full rebrand.',
-  },
-
-  // ─── 7. 90-Day Content System (Coming Soon) ────────────────────────────────
+  // ─── 4. 90-Day Content System (Coming Soon) ────────────────────────────────
   {
     id: 'culo-90-day-course',
     slug: 'culo-90-day-course',
@@ -408,13 +247,13 @@ export const libraryItems: LibraryItem[] = [
     seoDescription: 'A 90-day guided course for founders who want to build a content system that runs for years. Built inside the CULO ecosystem.',
   },
 
-  // ─── 8. Where's Robyn (Novel — Coming Soon) ────────────────────────────────
+  // ─── 5. Where's Robyn (Novel — Coming Soon) ────────────────────────────────
   {
     id: 'wheres-robyn',
     slug: 'wheres-robyn',
     title: "Where's Robyn",
     subtitle: 'A psychological drama about what happens when a woman decides to disappear.',
-    description: "Where's Robyn is a psychological drama novel in progress by Shakas. A woman named Robyn vanishes — not taken, not missing. Gone by choice. The story follows the people left behind and what her absence reveals about each of them. Written while traveling Australia with a young family. Due for completion 2026.",
+    description: "Where's Robyn is a multimedia psychological drama in development by Shakas — novel, TV pilot script, and Screen Australia submission. A woman named Robyn vanishes — not taken, not missing. Gone by choice. The story follows the people left behind and what her absence reveals about each of them. Written while traveling Australia with a young family.",
     why: "Every story I tell through business is ultimately about the same thing: what happens when someone finally decides to stop performing and start being honest. Robyn is that story, told long-form.",
     authorFounderId: 'shakas',
     businessId: 'wheres-robyn',
@@ -456,8 +295,8 @@ export const libraryItems: LibraryItem[] = [
         type: 'milestone',
       },
     ],
-    seoTitle: "Where's Robyn — Psychological Drama Novel by Shakas",
-    seoDescription: "A psychological drama novel in progress by Shakas. A woman named Robyn disappears by choice. Coming 2026.",
+    seoTitle: "Where's Robyn — Psychological Drama Novel & TV Pilot by Shakas",
+    seoDescription: "A multimedia psychological drama in development by Shakas — novel, TV pilot and Screen Australia submission. Coming 2026.",
   },
 ]
 

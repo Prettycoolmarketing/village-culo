@@ -4,15 +4,11 @@ import { industries } from './industries'
 import { topics } from './topics'
 
 const brisbane  = locations[0]
-const goldCoast = locations[1]
-const sydney    = locations[2]
 const melbourne = locations[3]
 
 const marketing   = industries[0]
 const photography = industries[1]
-const design      = industries[2]
-const technology  = industries[3]
-const fitness     = industries[4]
+const retail      = industries[8]
 
 export const stories: Story[] = [
   // ─── Shakas / Pretty Cool Marketing Stories ────────────────────────────────
@@ -112,14 +108,14 @@ Everything starts as a story. Not a caption, not a post idea — a real experien
 
 From there, we batch. We don't create daily. We create fortnightly — in two-hour sessions using CULO inside Canva — and we publish from there.
 
-Then we distribute. One story. Multiple formats. Multiple platforms. Automatic distribution across the Village. That's the system.
+Then we distribute. One story. Multiple formats. Multiple platforms. That's the system.
 
 ## What changes when you have one
 
 You stop dreading content. You stop apologising for inconsistency. You start building something that compounds.
 
 Pretty Cool Marketing exists to build this for founders who are done trying to wing it. If that's you, we should talk.`,
-    ideaIds: ['idea-content-systems', 'idea-founder-burnout'],
+    ideaIds: ['idea-content-systems'],
     relatedStoryIds: ['story-camera-roll', 'story-culo-built'],
     ctaLabel: 'Work With Pretty Cool Marketing',
     ctaUrl: 'https://prettycoolmarketing.com',
@@ -250,7 +246,7 @@ Give CULO the real thing. The rest follows.`,
     slug: 'stagger-inn-adventures-what-outback-tours-taught-me-about-story',
     title: 'What Running Outback Tours Taught Me About Storytelling',
     summary: 'Before Pretty Cool Marketing and CULO, Mitch and I ran a tour company through regional Australia. What we learned out there shaped everything I now believe about founder content.',
-    coverImage: 'https://images.unsplash.com/photo-1509773896068-7fd415d91e2e?w=800&q=80',
+    coverImage: '/assets/shakas-on-the-road.jpg',
     founderId: 'shakas',
     businessId: 'stagger-inn-adventures',
     location: brisbane,
@@ -311,7 +307,9 @@ Writing a novel is just the same belief taken somewhere deeper.
 
 ## What Where's Robyn is about
 
-Where's Robyn is a psychological drama. I'm not going to say more than that yet — the manuscript is still finding its shape and I want to respect the process enough not to narrate it while it's happening.
+Where's Robyn is a psychological drama. It's a multimedia project — novel, TV pilot script, and a Screen Australia submission in progress. A woman named Robyn vanishes — not taken, not missing. Gone by choice. The story follows the people left behind and what her absence reveals about each of them.
+
+I'm not going to say more than that yet — the manuscript is still finding its shape and I want to respect the process enough not to narrate it while it's happening.
 
 What I can say is that the same instincts I use to find the story in a piece of founder footage are the instincts I'm using to find the story in this novel. The craft is different. The core is the same.
 
@@ -335,187 +333,230 @@ I'll share updates as they come. If you want to follow along, the best place is 
     createdAt: '2024-07-01',
     updatedAt: '2024-07-01',
   },
-  // ─── Other founder stories ─────────────────────────────────────────────────
+  // ─── Content Creating Days ────────────────────────────────────────────────
   {
-    id: 'story-brand-photos',
-    slug: 'why-most-brand-photos-dont-look-like-the-founder',
-    title: 'Why Most Brand Photos Don\'t Look Like the Founder',
-    summary: 'The biggest mistake founders make with brand photography is trying to look like someone they\'re not. Here\'s how to fix it.',
-    coverImage: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=80',
-    founderId: 'lucia-romano',
-    businessId: 'romano-visuals',
+    id: 'story-content-creating-days',
+    slug: 'why-we-created-content-creating-days',
+    title: "Why We Created Content Creating Days",
+    summary: "A full day, in person, where you leave with content made — not another strategy document. Here's why PCM moved beyond workshops into hands-on content days across Brisbane and the Gold Coast.",
+    coverImage: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=800&q=80',
+    founderId: 'shakas',
+    businessId: 'pretty-cool-marketing',
     location: brisbane,
-    industry: photography,
-    topics: [topics[14], topics[8], topics[1]],
-    contentTypes: ['carousel', 'blog'],
-    carouselImages: [
-      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=80',
-      'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=600&q=80',
-      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80',
-      'https://images.unsplash.com/photo-1502982720700-bfff97f2ecac?w=600&q=80',
-    ],
-    blog: `I've photographed hundreds of founders. And the most common mistake isn't bad lighting or an awkward pose.
+    industry: marketing,
+    topics: [topics[2], topics[1], topics[3]],
+    contentTypes: ['blog', 'reel'],
+    blog: `Every content workshop I'd ever been to ended the same way.
 
-It's founders trying to look like someone they're not.
+You'd leave energised. You'd have a notebook full of ideas. You'd have a strategy, a framework, a 30-day plan.
 
-They've looked at competitors. They've studied the polished personal brand shots in their industry. They've decided there's a certain way a founder in their field is supposed to look. And then they try to replicate it.
+And then real life happened. The strategy stayed in the notebook. The content didn't get made.
 
-The result is photos that are technically fine but feel completely wrong. Because they don't look like the actual person.
+## The problem with teaching people to create content
 
-## Why this happens
+Teaching content strategy is not the same as helping people create content. The gap between knowledge and action is exactly where most founders get stuck.
 
-Brand photography anxiety is real. Most founders feel uncomfortable in front of a camera. They've rarely been professionally photographed. They don't know what to do with their hands, where to look, or how to just be themselves when someone is pointing a lens at them.
+That's why we created Content Creating Days.
 
-So they perform. They adopt a version of themselves they think looks more professional, more polished, more credible.
+## What a Content Creating Day is
 
-The irony is that the performance makes them look less credible. Audiences are incredibly good at detecting inauthenticity, even in still images.
+A full day. In person. Brisbane or Gold Coast. You bring your phone, your stories, and your footage. You leave with real content made — not ideas. Not a content calendar. Actual posts, reels and captions that are ready to publish.
 
-## How to fix it
+We work through the camera roll audit together. We find the stories. We batch create using CULO inside Canva. We caption, schedule and review. By the end of the day you have a fortnight of content and the system to repeat it.
 
-The best brand photos I've ever taken looked like this: I turned up with my camera, we had a coffee, we talked about the founder's business and what made them start it, and I photographed them during that conversation.
+$197. Brisbane and Gold Coast. Limited spots per day so everyone gets hands-on time.
 
-They weren't posing. They were just talking about something they cared about.
+## Why in person matters
 
-Those shots — mid-conversation, genuine expression, completely unguarded — outperform every staged photo I've ever seen.
+There's something that happens when you're in a room with other founders creating content together. The hesitation drops. The perfectionism loosens. You see someone else post something real and imperfect, and it gives you permission to do the same.
 
-Before your next shoot, tell your photographer: "I want to look like myself on my best day." Not corporate. Not glamorous. Like yourself, just a little more intentional.
+Content Creating Days are not just about the content you leave with. They're about breaking the psychological pattern that's been keeping you from creating consistently.
 
-That's what great brand photography is.`,
-    ideaIds: ['idea-authentic-content'],
-    relatedStoryIds: ['story-camera-roll'],
-    ctaLabel: 'Book a Brand Shoot',
-    ctaUrl: 'https://romanovisuals.com.au/book',
+Show up. Make the content. Go home and publish it.`,
+    ideaIds: ['idea-content-systems', 'idea-camera-roll'],
+    relatedStoryIds: ['story-content-system', 'story-camera-roll'],
+    ctaLabel: 'Book a Content Creating Day',
+    ctaUrl: 'https://prettycoolmarketing.com',
     status: 'published',
     featured: true,
-    createdAt: '2024-04-15',
-    updatedAt: '2024-04-15',
+    createdAt: '2025-01-15',
+    updatedAt: '2025-01-15',
   },
+  // ─── Billow Beach origin story ─────────────────────────────────────────────
   {
-    id: 'story-content-burnout',
-    slug: 'i-posted-every-day-for-90-days-heres-what-actually-happened',
-    title: 'I Posted Every Day for 90 Days — Here\'s What Actually Happened',
-    summary: 'The results weren\'t what the internet told me to expect. But the lessons were far more valuable than the numbers.',
-    coverImage: 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800&q=80',
-    founderId: 'james-okafor',
-    businessId: 'okafor-studio',
-    location: sydney,
-    industry: technology,
-    topics: [topics[9], topics[10], topics[13]],
+    id: 'story-billow-beach-origin',
+    slug: 'the-10-year-dream-that-became-billow-beach',
+    title: 'The 10-Year Dream That Became Billow Beach',
+    summary: 'A 3-in-1 beach bag with a built-in XL towel and pillow. A literal decade-long idea that finally became real. This is the Billow Beach origin story.',
+    coverImage: '/assets/billow-beach-lifestyle.jpg',
+    founderId: 'shakas',
+    businessId: 'billow-beach',
+    location: brisbane,
+    industry: retail,
+    topics: [topics[13], topics[8], topics[1]],
     contentTypes: ['blog', 'reel'],
-    reelUrl: 'https://www.instagram.com/reel/example6',
-    blog: `I ran the experiment so you don't have to.
+    blog: `Some ideas follow you.
 
-90 days. One post every single day. No breaks. The kind of consistency every content creator tells you is the non-negotiable foundation of audience growth.
+The Billow Beach idea was one of those. I'd had it in my head for about 10 years — one of those concepts that feels so obvious you can't believe it doesn't exist yet. A beach bag that has everything built in. Bag. Towel. Pillow. One carry. Nothing to unpack.
 
-Here's what actually happened.
+Every beach trip was the same annoyance: three things to grab, two things to forget, nothing that worked together. And I kept thinking: why isn't there a bag that just solves this?
 
-**The numbers:** My Instagram following grew from 1,847 to 2,094. That's 247 followers in 90 days, or roughly 2.7 per day. I got 4 DMs that turned into genuine conversations. I signed zero clients directly from Instagram during this period.
+## From idea to object
 
-The internet had told me consistent daily posting was the path to compound growth. The numbers disagreed.
+Taking an idea you've had for a decade and turning it into a physical product is humbling.
 
-## What I learned instead
+Sourcing. Sampling. Materials. Sizing. Logistics. Each step revealed something I didn't know. I'd built digital products, run tours, run campaigns — but a physical product is a different kind of problem. It's slower. More unforgiving. You can't iterate in real time.
 
-Something more useful happened in those 90 days than follower growth.
+Claudia Martinez photographed the first real version of the bag. Working with her changed how I understood the product. She didn't photograph a bag — she photographed a lifestyle. A moment of arriving at the beach and having everything sorted. That shift in framing is what Billow Beach needed visually to become something people want, not just something useful.
 
-I got very good at identifying which stories were worth telling. By day 30, I could feel the difference between a post that would land and a post that was just content for the sake of it. By day 60, I'd started writing differently — more specific, more honest, less trying to sound like a thought leader.
+Murrakee — the model in the campaign — brought presence and authenticity that I couldn't have planned. Representation in beachwear and lifestyle matters. Seeing someone like Murrakee hold the Billow Beach bag makes the brand something more than a product story.
 
-The daily discipline didn't build my audience. It built my editorial instinct.
+## What it taught me about building
 
-## The real problem with daily posting
+The best businesses solve problems you've personally lived.
 
-Daily posting optimises for volume. But audience trust is built on depth, not frequency.
+Billow Beach exists because I've stood on a beach trying to find somewhere to put everything for a decade and been annoyed every single time. That's the real brief. Not a market research document or a competitor analysis — a genuine, repeated frustration that finally got solved.
 
-I'd rather post 12 times in a year and have each post be a genuine story that builds authority, than post 365 times and have most of them be noise.
-
-The most consistent feedback I've gotten about content that actually drove enquiries wasn't from my high-frequency period. It was from three pieces I took a week each to write.
-
-Post less. Say more. Mean it every time.`,
-    ideaIds: ['idea-content-systems', 'idea-founder-burnout'],
-    relatedStoryIds: ['story-content-system'],
-    ctaLabel: 'Get a Content Audit',
-    ctaUrl: 'https://okaforstudio.com/audit',
+If you've had an idea following you around for years, that's not a coincidence.`,
+    ideaIds: ['idea-authentic-content', 'idea-story-is-everywhere'],
+    relatedStoryIds: ['story-stagger-inn'],
+    ctaLabel: 'See Billow Beach',
+    ctaUrl: 'https://prettycoolmarketing.com',
     status: 'published',
     featured: false,
-    createdAt: '2024-05-05',
-    updatedAt: '2024-05-05',
+    createdAt: '2025-02-01',
+    updatedAt: '2025-02-01',
   },
+  // ─── Simone Pansino — We The Stars ────────────────────────────────────────
   {
-    id: 'story-brand-without-budget',
-    slug: 'how-to-build-a-recognisable-brand-without-a-big-budget',
-    title: 'How to Build a Recognisable Brand Without a Big Budget',
-    summary: 'Consistency beats money every single time. Here\'s the minimal visual system I give every founder I work with.',
-    coverImage: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80',
-    founderId: 'maya-chen',
-    businessId: 'maya-chen-design',
-    location: melbourne,
-    industry: design,
-    topics: [topics[6], topics[8], topics[9]],
-    contentTypes: ['carousel', 'blog'],
-    carouselImages: [
-      'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80',
-      'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&q=80',
-      'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=600&q=80',
-    ],
-    blog: `The founders I work with consistently underestimate what's possible with a small visual budget and a clear visual system.
+    id: 'story-simone-pansino',
+    slug: 'from-law-to-lifestyle-simone-pansino-we-the-stars',
+    title: 'From Law to Lifestyle: Simone Pansino Built the Brand She Was Afraid to Start',
+    summary: 'She left a legal career to build a fashion brand from her own creative vision. Here\'s how Simone Pansino turned colour, styling and imagination into We The Stars.',
+    coverImage: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+    founderId: 'simone-pansino',
+    businessId: 'we-the-stars',
+    location: brisbane,
+    industry: retail,
+    topics: [topics[13], topics[8], topics[6]],
+    contentTypes: ['blog'],
+    blog: `Simone Pansino had a legal career. It was stable, respectable, and completely wrong for her.
 
-They see businesses with beautiful, cohesive branding and assume it required an expensive agency and months of work. Sometimes it did. But often, the brands that look the most considered simply made a small number of decisions and stuck to them.
+"My dream was created from my vision of expressing my creativity, colours, a love of styling and playing dress ups. Creating something based on my creative visions has been scary and has been a major learning curve."
 
-## The minimal visual system
+That quote is from Simone herself — and it captures something most career-change founders won't say publicly: that doing the thing you actually want to do is scary. That the learning curve is real. That the stability you gave up doesn't disappear just because the dream is exciting.
 
-Here's what I give every founder I work with in their first session:
+## What We The Stars is
 
-**One primary colour.** Not a palette of twelve. One colour that shows up everywhere. Your website headline. Your email signature. Your social media cover photo.
+We The Stars is a Brisbane lifestyle and fashion brand built from creative vision rather than market research. Simone didn't start with a gap analysis. She started with what she loved — colour, styling, the joy of getting dressed — and built a brand around that.
 
-**One heading font and one body font.** That's it. Playfair Display for headings and Inter for body text is what I use personally. Whatever you choose, use it consistently and stop changing it.
+That approach is rarer than it sounds. Most founders build from external demand. Simone built from internal truth. The result is a brand that feels like a person, not a product category.
 
-**Three image treatment rules.** How will your photos look? Warm and natural? Clean and minimal? Moody and editorial? Pick a direction and apply it to every image you share.
+## On collaboration and community
 
-**One consistent CTA.** What do you want people to do when they encounter your brand? Book a call? Visit your website? Download a guide? One thing. The same call to action every time.
+Simone's collaboration with Billow Beach came from exactly that quality — two founders building from genuine creative vision, finding alignment in how they saw the world rather than in a formal partnership brief.
 
-That's the system. Four decisions, applied consistently over six months, will make your brand more recognisable than most brands with ten times the budget.
+When creators build from authentic vision, they tend to find each other. That's how the CULO ecosystem works: not curated connections but natural ones.
 
-## Why it works
+## The lesson
 
-Brands feel established when they look the same over time. The visual consistency signals stability and care. It tells your audience that you've thought about this, that you pay attention to detail, that you can be trusted.
+The legal career was never going to hold. When you have a creative vision that won't go away, it doesn't go away — it just waits.
 
-You don't need a big budget to be consistent. You need decisions and discipline.
-
-Make the decisions once. Then stop changing them.`,
+Simone built We The Stars while it waited. Now it doesn't have to wait anymore.`,
     ideaIds: ['idea-authentic-content'],
-    relatedStoryIds: ['story-brand-photos'],
-    ctaLabel: 'View Brand Packages',
-    ctaUrl: 'https://mayachendesign.com/brand',
+    relatedStoryIds: ['story-billow-beach-origin'],
+    ctaLabel: 'See We The Stars',
+    ctaUrl: 'https://wethestars.com.au',
     status: 'published',
     featured: false,
-    createdAt: '2024-05-12',
-    updatedAt: '2024-05-12',
+    createdAt: '2025-03-01',
+    updatedAt: '2025-03-01',
   },
+  // ─── Claudia Martinez — Cross-collaboration ───────────────────────────────
   {
-    id: 'story-client-results-content',
-    slug: 'how-i-turn-every-client-result-into-content',
-    title: 'How I Turn Every Client Result Into Content',
-    summary: 'My clients give me permission to document their transformations. Those clips now run as ads, reels and testimonials without me filming anything new.',
-    coverImage: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
-    founderId: 'tom-riley',
-    businessId: 'riley-performance',
-    location: goldCoast,
-    industry: fitness,
-    topics: [topics[5], topics[3], topics[1]],
-    contentTypes: ['reel', 'carousel'],
-    reelUrl: 'https://www.instagram.com/reel/example8',
-    carouselImages: [
-      'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80',
-      'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=600&q=80',
-      'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&q=80',
-    ],
-    ideaIds: ['idea-camera-roll', 'idea-authentic-content'],
-    relatedStoryIds: ['story-camera-roll'],
-    ctaLabel: 'Apply for Coaching',
-    ctaUrl: 'https://rileyperf.com/apply',
+    id: 'story-claudia-martinez',
+    slug: 'the-power-of-cross-collaboration-claudia-martinez-billow-beach',
+    title: 'The Power of Cross-Collaboration — Claudia Martinez x Billow Beach',
+    summary: 'A luxury lifestyle photographer in Brunswick. A beach bag founder in Brisbane. Here\'s how Claudia Martinez and Billow Beach found each other — and what the collaboration produced.',
+    coverImage: '/assets/billow-beach-lifestyle.jpg',
+    founderId: 'claudia-martinez',
+    businessId: 'claudia-martinez-photography',
+    location: melbourne,
+    industry: photography,
+    topics: [topics[14], topics[8], topics[1]],
+    contentTypes: ['blog'],
+    blog: `Claudia Martinez has been photographing lifestyle and interiors for over 13 years.
+
+RMIT trained. Brunswick-based. Specialising in editorial lifestyle photography that transforms products into aspirational experiences. When Billow Beach came to Claudia with a beach bag and a brief, what she produced wasn't product photography — it was a world.
+
+"Building a business doesn't happen in isolation. It's about finding the right people — those who elevate, interpret, and amplify your vision."
+
+## What luxury lifestyle photography actually does
+
+There's a difference between a photo that shows a product and a photo that makes you want to live inside the moment it captures.
+
+Claudia's work with Billow Beach did the second thing. The bag wasn't the subject — the experience of arriving at the beach with everything sorted, feeling like a little luxury — that was the subject. The bag just happened to be in the frame.
+
+That's the shift that turns a useful product into a brand people are proud to carry.
+
+## On finding the right collaborators
+
+The Billow Beach x Claudia Martinez collaboration happened because both founders were building from creative vision rather than category playbooks. That alignment made the creative brief almost unnecessary — they already saw the same thing.
+
+The best collaborations in the CULO ecosystem work like this. Not formal partnerships but natural resonances between people building from the same underlying values.
+
+Claudia's presence in this ecosystem reflects that principle: the right photographer doesn't just capture your product. They expand what your brand can mean.`,
+    ideaIds: ['idea-authentic-content'],
+    relatedStoryIds: ['story-billow-beach-origin'],
+    ctaLabel: 'See Claudia\'s Work',
+    ctaUrl: 'https://claudiamartinez.com.au',
     status: 'published',
     featured: false,
-    createdAt: '2024-06-01',
-    updatedAt: '2024-06-01',
+    createdAt: '2025-03-15',
+    updatedAt: '2025-03-15',
+  },
+  // ─── Murrakee — Rising Talent ─────────────────────────────────────────────
+  {
+    id: 'story-murrakee',
+    slug: 'murrakee-rising-talent-billow-beach',
+    title: 'Murrakee: The Rising Talent Behind the Billow Beach Campaign',
+    summary: 'An Indigenous model and creator from Queensland. Strength, softness and presence that redefines what lifestyle and beachwear look like in Australia.',
+    coverImage: '/assets/billow-beach-lifestyle.jpg',
+    founderId: 'murrakee',
+    businessId: 'billow-beach',
+    location: brisbane,
+    industry: marketing,
+    topics: [topics[8], topics[6], topics[1]],
+    contentTypes: ['blog'],
+    blog: `Representation in lifestyle and beachwear in Australia has historically been narrow.
+
+Murrakee changes that.
+
+An Indigenous model and creator based in Brisbane, working across Queensland — from the Gold Coast to the regions — Murrakee brings a quality to fashion and lifestyle campaigns that can't be manufactured: genuine presence.
+
+## Why representation in beachwear matters
+
+"Representation matters. When young Indigenous women are seen in beachwear, lifestyle, and fashion campaigns — it challenges the status quo."
+
+That's the quiet power of what Murrakee brings to the Billow Beach campaign. Not diversity for a press release. Authentic representation that expands who gets to be part of Australian lifestyle imagery.
+
+For Billow Beach — a brand built on simplicity, quality and the genuine experience of going to the beach — working with Murrakee was the right creative decision. The bag is for everyone who goes to the beach. The campaign should reflect that.
+
+## The CULO Rising Talent recognition
+
+CULO Village's Rising Talent feature exists to amplify creators and founders who are doing something genuinely worth watching — before the mainstream catches up.
+
+Murrakee is that.
+
+The work is happening across Brisbane, Gold Coast and the broader Queensland coastal region. For brands, agencies and media looking for authentic, powerful creative presence — pay attention.`,
+    ideaIds: ['idea-authentic-content'],
+    relatedStoryIds: ['story-billow-beach-origin', 'story-claudia-martinez'],
+    ctaLabel: 'See Billow Beach',
+    ctaUrl: 'https://prettycoolmarketing.com',
+    status: 'published',
+    featured: false,
+    createdAt: '2025-04-01',
+    updatedAt: '2025-04-01',
   },
 ]
 
