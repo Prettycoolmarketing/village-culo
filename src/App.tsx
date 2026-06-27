@@ -26,6 +26,7 @@ import { ExpertisePage }      from './pages/ExpertisePage'
 import { ExpertiseDetailPage }from './pages/ExpertiseDetailPage'
 import { LibraryPage }        from './pages/LibraryPage'
 import { LibraryDetailPage }  from './pages/LibraryDetailPage'
+import MediaCuratorPage       from './pages/MediaCuratorPage'
 
 // Route structure mirrors future public URL schema:
 // /founders/:slug  → /businesses/:slug  → /stories/:slug
@@ -128,6 +129,7 @@ export default function App() {
             <Route path="/expertise/:slug"    element={<ExpertiseDetailPage />} />
             <Route path="/library"            element={<LibraryPage />} />
             <Route path="/library/:slug"      element={<LibraryDetailPage />} />
+            <Route path="/media-curator"      element={<MediaCuratorPage />} />
             <Route path="*"                   element={<NotFound />} />
           </Routes>
         </div>

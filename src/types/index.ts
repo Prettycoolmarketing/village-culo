@@ -529,6 +529,108 @@ export interface LibraryFilter {
   limit?: number
 }
 
+// ─── Media ─────────────────────────────────────────────────────────────────────
+// First-class Media object. Every approved asset in the Village knowledge graph.
+// Imported content is always a suggestion until the founder approves it.
+
+export type MediaType =
+  | 'image' | 'video' | 'logo' | 'headshot' | 'cover'
+  | 'product-photo' | 'speaking-photo' | 'screenshot' | 'reel'
+  | 'carousel' | 'youtube-video' | 'podcast-art' | 'book-cover'
+  | 'press-image' | 'document-preview'
+
+export type AssetRole =
+  | 'profile-photo' | 'founder-cover' | 'business-logo' | 'business-cover'
+  | 'story-cover' | 'library-cover' | 'product-gallery' | 'service-cover'
+  | 'speaking-proof' | 'testimonial-proof' | 'behind-the-scenes'
+  | 'social-proof' | 'website-hero' | 'press-feature'
+  | 'youtube-embed' | 'carousel-slide' | 'reel-preview'
+
+export type SourceType =
+  | 'manual-upload' | 'official-website' | 'linkedin' | 'instagram'
+  | 'youtube' | 'tiktok' | 'amazon' | 'podcast' | 'speaker-page'
+  | 'canva-publish' | 'system-generated'
+
+export type ApprovalStatus = 'approved' | 'rejected' | 'needs-review' | 'pending'
+
+export interface Media {
+  id: string
+  slug: string
+  title: string
+  description?: string
+  mediaType: MediaType
+  assetRole: AssetRole
+  sourceType: SourceType
+  sourceUrl?: string        // Original URL where asset was discovered
+  fileUrl: string           // Stored/placeholder asset URL
+  thumbnailUrl?: string     // Thumbnail for video/reel assets
+  altText: string           // Required for SEO/accessibility
+  caption?: string
+  credit?: string
+  copyrightOwner?: string
+  approved: boolean
+  approvalStatus: ApprovalStatus
+  featured: boolean
+  relatedFounderIds: string[]
+  relatedBusinessIds: string[]
+  relatedStoryIds: string[]
+  relatedLibraryItemIds: string[]
+  relatedServiceIds: string[]
+  relatedExpertiseIds: string[]
+  relatedTopicIds: string[]
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Import Suggestion ─────────────────────────────────────────────────────────
+// Suggested text fields discovered from public sources.
+// Never published directly — always requires founder review.
+
+export type ConfidenceLevel = 'high' | 'medium' | 'low'
+
+export interface ImportSuggestion {
+  id: string
+  field: string             // e.g. 'bio', 'businessDescription', 'faq', 'serviceDescription'
+  suggestedValue: string
+  sourceUrl: string
+  sourceType: SourceType
+  confidenceLevel: ConfidenceLevel
+  reviewStatus: ApprovalStatus
+  approvedValue?: string    // Set when founder edits + approves
+  relatedFounderId?: string
+  relatedBusinessId?: string
+  createdAt: string
+}
+
+// ─── Import Source ─────────────────────────────────────────────────────────────
+// An entry point the curator uses to discover assets and text.
+
+export interface ImportSource {
+  id: string
+  label: string
+  sourceType: SourceType
+  url: string
+  relatedFounderId?: string
+  relatedBusinessId?: string
+  lastScannedAt?: string
+  status: 'pending' | 'scanning' | 'complete' | 'error'
+  discoveredMediaCount?: number
+  discoveredSuggestionCount?: number
+}
+
+// ─── Media Filter ──────────────────────────────────────────────────────────────
+
+export interface MediaFilter {
+  founderId?: string
+  businessId?: string
+  mediaType?: MediaType
+  assetRole?: AssetRole
+  sourceType?: SourceType
+  approvalStatus?: ApprovalStatus
+  featured?: boolean
+  limit?: number
+}
+
 // ─── Piazza Submission ─────────────────────────────────────────────────────────
 
 export interface PiazzaSubmission {
