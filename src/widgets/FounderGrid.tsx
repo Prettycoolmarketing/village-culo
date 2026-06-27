@@ -1,4 +1,3 @@
-import React from 'react'
 import type { FounderFilter } from '../types'
 import { filterFounders } from '../utils/filters'
 import { getBusiness } from '../data/businesses'

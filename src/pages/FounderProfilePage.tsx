@@ -1,12 +1,10 @@
-import React from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
-import { founders, getFounder }   from '../data/founders'
+import { founders }               from '../data/founders'
 import { getBusiness }            from '../data/businesses'
 import { StoryGrid }              from '../widgets/StoryGrid'
 import { IdeaGrid }               from '../widgets/IdeaGrid'
 import { EventGrid }              from '../widgets/EventGrid'
-import { FounderGrid }            from '../widgets/FounderGrid'
 import { BusinessCard }           from '../components/cards/BusinessCard'
 import { Badge }                  from '../components/ui/Badge'
 import { Avatar }                 from '../components/ui/Avatar'
@@ -123,8 +121,6 @@ export function FounderProfilePage() {
   // then filter out the current founder. We handle this by using the relatedFounders
   // list directly rather than FounderGrid, since FounderGrid doesn't accept an id list.
   const relatedFounders = founders.filter(f => relatedIds.includes(f.id))
-
-  const pageTitle = `${founder.name} — ${founder.industry.name} Founder in ${founder.location.name}`
 
   return (
     <main className="min-h-screen bg-background" id="founder-profile">

@@ -1,4 +1,3 @@
-import React from 'react'
 import { useParams, Link }      from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
 import { ideas, getIdeaBySlug } from '../data/ideas'

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import { usePageTitle } from '../utils/usePageTitle'
 import { useSearchParams, Link } from 'react-router-dom'
 import { searchVillage, totalResults } from '../utils/search'

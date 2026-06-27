@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import type { Idea, Founder } from '../../types'
 import { Avatar } from '../ui/Avatar'

@@ -1,4 +1,3 @@
-import React from 'react'
 
 type BadgeVariant = 'primary' | 'secondary' | 'accent' | 'stories' | 'ideas' | 'mercato' | 'map' | 'noticeboard' | 'founders' | 'piazza' | 'neutral'
 

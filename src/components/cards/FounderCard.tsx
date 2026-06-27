@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import type { Founder, Business } from '../../types'
 import { Badge } from '../ui/Badge'

@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import { getFeaturedStories } from '../data/stories'
 import { getFeaturedFounders } from '../data/founders'

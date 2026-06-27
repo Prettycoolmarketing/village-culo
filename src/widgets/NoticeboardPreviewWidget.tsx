@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import { filterEvents } from '../utils/filters'
 import { EventCard } from '../components/cards/EventCard'

@@ -1,4 +1,3 @@
-import React from 'react'
 import type { StoryFilter } from '../types'
 import { filterStories } from '../utils/filters'
 import { getFounder } from '../data/founders'

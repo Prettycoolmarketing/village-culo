@@ -1,4 +1,3 @@
-import React from 'react'
 import type { EventFilter } from '../types'
 import { filterEvents } from '../utils/filters'
 import { EventCard } from '../components/cards/EventCard'

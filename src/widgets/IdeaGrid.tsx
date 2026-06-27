@@ -1,4 +1,3 @@
-import React from 'react'
 import type { IdeaFilter } from '../types'
 import { filterIdeas } from '../utils/filters'
 import { getFounder } from '../data/founders'

@@ -1,8 +1,6 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import type { Business, Founder } from '../../types'
 import { Badge } from '../ui/Badge'
-import { Avatar } from '../ui/Avatar'
 
 interface BusinessCardProps {
   business: Business

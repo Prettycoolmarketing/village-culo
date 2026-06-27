@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, NavLink } from 'react-router-dom'
 
 const navLinks = [
   { to: '/',           label: 'Village',    exact: true  },
@@ -15,7 +15,6 @@ const navLinks = [
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const location = useLocation()
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-border shadow-sm" role="banner">

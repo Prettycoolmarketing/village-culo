@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { usePageTitle } from '../utils/usePageTitle'
 import { FounderGrid }       from '../widgets/FounderGrid'
 import { FilterBar }         from '../components/ui/FilterBar'

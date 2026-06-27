@@ -1,5 +1,4 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import type { Event } from '../../types'
 import { Badge } from '../ui/Badge'
 import { noticeTypeLabel, formatDate } from '../../utils/slugify'

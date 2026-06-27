@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import type { Story, Founder, Business } from '../../types'
 import { Badge } from '../ui/Badge'
@@ -17,13 +16,6 @@ interface StoryCardProps {
   showTopics?: boolean
   showCTA?: boolean
 }
-
-// Content type → badge variant colour
-const contentTypeBadgeVariant = {
-  reel:      'stories',
-  blog:      'piazza',
-  carousel:  'mercato',
-} as const
 
 export function StoryCard({
   story,

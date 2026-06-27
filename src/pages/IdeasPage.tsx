@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { usePageTitle } from '../utils/usePageTitle'
 import { IdeaGrid }         from '../widgets/IdeaGrid'
 import { FilterBar }        from '../components/ui/FilterBar'
