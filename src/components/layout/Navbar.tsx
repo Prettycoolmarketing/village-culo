@@ -43,7 +43,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop navigation */}
-          <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
+          <nav className="hidden lg:flex items-center gap-1 ml-8" aria-label="Main navigation">
             {navLinks.map(link => (
               <NavLink
                 key={link.to}
