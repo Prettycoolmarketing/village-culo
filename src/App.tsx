@@ -49,6 +49,7 @@ import { DashboardServicesPage }     from './pages/dashboard/DashboardServicesPa
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardSettingsPage }     from './pages/dashboard/DashboardSettingsPage'
+import { DashboardPublishPage }      from './pages/dashboard/DashboardPublishPage'
 
 // ─── Activity banner data ───────────────────────────────────────────────────────
 const recentStory   = stories[0]
@@ -143,6 +144,7 @@ export default function App() {
             <Route path="home"           element={<DashboardHomePage />}         />
             <Route path="profile"        element={<DashboardProfilePage />}      />
             <Route path="businesses"     element={<DashboardBusinessesPage />}   />
+            <Route path="publish"         element={<DashboardPublishPage />}      />
             <Route path="stories"        element={<DashboardStoriesPage />}      />
             <Route path="ideas"          element={<DashboardIdeasPage />}        />
             <Route path="library"        element={<DashboardLibraryPage />}      />

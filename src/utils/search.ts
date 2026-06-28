@@ -1,9 +1,9 @@
-import { stories }      from '../data/stories'
-import { founders }     from '../data/founders'
-import { businesses }   from '../data/businesses'
-import { events }       from '../data/events'
-import { libraryItems } from '../data/library'
-import { getIdeas }     from '../services/ideas'
+import { getStories }    from '../services/stories'
+import { getFounders }   from '../services/founders'
+import { getBusinesses } from '../services/businesses'
+import { events }        from '../data/events'
+import { libraryItems }  from '../data/library'
+import { getIdeas }      from '../services/ideas'
 import type { Story, Founder, Idea, Business, Event, LibraryItem } from '../types'
 
 export interface SearchResults {
@@ -21,15 +21,18 @@ function searchable(fields: (string | undefined | null)[]): string {
 }
 
 export function searchVillage(query: string): SearchResults {
-  const publicIdeas = getIdeas({ publicOnly: true })
+  const allStories    = getStories()
+  const allFounders   = getFounders()
+  const allBusinesses = getBusinesses()
+  const publicIdeas   = getIdeas({ publicOnly: true })
 
   // Empty query — return everything so Archive doubles as a full browser
   if (!query.trim()) {
     return {
-      stories:    stories.filter(s => s.status !== 'archived'),
-      founders:   founders.filter(f => f.status !== 'archived'),
+      stories:    allStories.filter(s => s.status !== 'archived'),
+      founders:   allFounders.filter(f => f.status !== 'archived'),
       ideas:      publicIdeas,
-      businesses: businesses.filter(b => b.status !== 'archived'),
+      businesses: allBusinesses.filter(b => b.status !== 'archived'),
       events:     [...events],
       library:    libraryItems.filter(l => l.status !== 'archived'),
     }
@@ -38,11 +41,11 @@ export function searchVillage(query: string): SearchResults {
   const q = query.trim().toLowerCase()
 
   // Build ID → object maps for cross-type lookups
-  const founderMap  = new Map(founders.map(f  => [f.id,  f]))
-  const businessMap = new Map(businesses.map(b => [b.id, b]))
+  const founderMap  = new Map(allFounders.map(f  => [f.id,  f]))
+  const businessMap = new Map(allBusinesses.map(b => [b.id, b]))
 
   return {
-    stories: stories.filter(s => {
+    stories: allStories.filter(s => {
       if (s.status === 'archived') return false
       const f = founderMap.get(s.founderId)
       const b = businessMap.get(s.businessId)
@@ -56,7 +59,7 @@ export function searchVillage(query: string): SearchResults {
       ]).includes(q)
     }),
 
-    founders: founders.filter(f => {
+    founders: allFounders.filter(f => {
       if (f.status === 'archived') return false
       const b = businessMap.get(f.businessId)
       return searchable([
@@ -77,7 +80,7 @@ export function searchVillage(query: string): SearchResults {
       ]).includes(q)
     }),
 
-    businesses: businesses.filter(b => {
+    businesses: allBusinesses.filter(b => {
       if (b.status === 'archived') return false
       const f = founderMap.get(b.founderId)
       return searchable([

@@ -16,6 +16,7 @@ const icons = {
   home:    'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
   profile: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
   biz:     'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+  publish: 'M13 10V3L4 14h7v7l9-11h-7z',
   stories: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
   ideas:   'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
   library: 'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z',
@@ -88,10 +89,24 @@ export function DashboardLayout() {
         <nav className="flex-1 px-2 py-3 flex flex-col">
           <NavItem to="/dashboard/home" label="Overview"       icon={<Icon path={icons.home}    />} />
 
+          <NavLink
+            to="/dashboard/publish"
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
+                isActive
+                  ? 'bg-[#C86A43] text-white'
+                  : 'bg-[#C86A43]/10 text-[#C86A43] hover:bg-[#C86A43]/20'
+              }`
+            }
+          >
+            <Icon path={icons.publish} />
+            Publish
+          </NavLink>
+
           <SectionLabel label="My Content" />
           <NavItem to="/dashboard/profile"        label="Profile"         icon={<Icon path={icons.profile}  />} />
           <NavItem to="/dashboard/businesses"     label="Businesses"      icon={<Icon path={icons.biz}      />} />
-          <NavItem to="/dashboard/stories"        label="Stories"         icon={<Icon path={icons.stories}  />} />
+          <NavItem to="/dashboard/stories"        label="My Publications" icon={<Icon path={icons.stories}  />} />
           <NavItem to="/dashboard/ideas"          label="Ideas"           icon={<Icon path={icons.ideas}    />} />
           <NavItem to="/dashboard/library"        label="Library"         icon={<Icon path={icons.library}  />} />
           <NavItem to="/dashboard/services"       label="Services"        icon={<Icon path={icons.services} />} />
