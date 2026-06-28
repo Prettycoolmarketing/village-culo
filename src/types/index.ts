@@ -1,7 +1,11 @@
 // ─── Primitives ────────────────────────────────────────────────────────────────
 
 export type Status = 'draft' | 'submitted' | 'published' | 'featured' | 'archived'
-export type ContentType = 'blog' | 'reel' | 'carousel'
+export type ContentType =
+  | 'blog' | 'reel' | 'carousel'
+  | 'podcast' | 'talking-head' | 'voice-over'
+  | 'photo-story' | 'document' | 'external-article'
+  | 'youtube-video' | 'social-post'
 export type NoticeType = 'event' | 'collaboration' | 'opportunity' | 'request'
 export type PermissionRole = 'visitor' | 'founder' | 'business' | 'moderator' | 'admin'
 export type PublishingSource =
@@ -420,6 +424,7 @@ export interface Story {
   contentTypes: ContentType[]
   blog?: string
   reelUrl?: string
+  audioUrl?: string
   carouselImages?: string[]
   // Relationships
   ideaIds: string[]

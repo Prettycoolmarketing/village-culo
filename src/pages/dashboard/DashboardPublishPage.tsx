@@ -7,67 +7,87 @@ import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
-import type { ContentType, Topic, Status } from '../../types'
+import type { ContentType, Topic } from '../../types'
 
-// ─── Step + source types ───────────────────────────────────────────────────────
+// ─── Content formats ──────────────────────────────────────────────────────────
 
-type PublishStep =
-  | 'source'
-  | 'canva'
-  | 'camera-roll'
-  | 'import'
-  | 'write'
-  | 'connections'
-  | 'preview'
-  | 'published'
+const FORMATS: { type: ContentType; emoji: string; label: string; desc: string }[] = [
+  { type: 'blog',             emoji: '📝', label: 'Blog',             desc: 'Written article or post'      },
+  { type: 'reel',             emoji: '🎥', label: 'Reel',             desc: 'Short-form vertical video'    },
+  { type: 'carousel',         emoji: '🎠', label: 'Carousel',         desc: 'Swipeable image slides'       },
+  { type: 'podcast',          emoji: '🎙️', label: 'Podcast',          desc: 'Audio episode'                },
+  { type: 'talking-head',     emoji: '🎤', label: 'Talking Head',     desc: 'On-camera video'              },
+  { type: 'voice-over',       emoji: '🎧', label: 'Voice Over',       desc: 'Audio narration with visuals' },
+  { type: 'photo-story',      emoji: '📷', label: 'Photo Story',      desc: 'Photo series or gallery'      },
+  { type: 'document',         emoji: '📄', label: 'Document',         desc: 'PDF, Word or guide'           },
+  { type: 'external-article', emoji: '🌐', label: 'External Article', desc: 'Piece published elsewhere'    },
+  { type: 'youtube-video',    emoji: '▶️', label: 'YouTube Video',    desc: 'Long-form video content'      },
+  { type: 'social-post',      emoji: '📱', label: 'Social Post',      desc: 'LinkedIn, Instagram, TikTok'  },
+]
 
-type PublishSource = 'canva' | 'camera-roll' | 'import' | 'write'
+// ─── Steps ────────────────────────────────────────────────────────────────────
+
+type PublishStep = 'format' | 'content' | 'info' | 'media' | 'connections' | 'preview' | 'done'
+
+const STEPS: PublishStep[] = ['format', 'content', 'info', 'media', 'connections', 'preview', 'done']
+
+const STEP_LABELS: Record<PublishStep, string> = {
+  format:      'Format',
+  content:     'Content',
+  info:        'Information',
+  media:       'Media',
+  connections: 'Connections',
+  preview:     'Review',
+  done:        'Published',
+}
 
 // ─── Draft ────────────────────────────────────────────────────────────────────
 
+interface UrlEntry { id: number; url: string }
+
 interface PublishDraft {
-  source: PublishSource | null
-  // Content fields (primarily from Write step)
-  title: string
-  summary: string
-  contentTypes: ContentType[]
-  blog: string
-  reelUrl: string
-  carouselSlides: string[]
-  coverImage: string
-  // Camera roll
-  fileNames: string[]
-  whatHappened: string
-  // Import
-  importMode: 'url' | 'paste' | 'upload'
-  importUrl: string
-  importText: string
-  // Connections (shared)
-  founderId: string
-  businessId: string
-  locationId: string
-  industryId: string
-  topics: Topic[]
-  ctaLabel: string
-  ctaUrl: string
-  status: Status
+  contentTypes:       ContentType[]
+  uploadedFileNames:  string[]
+  urlEntries:         UrlEntry[]
+  pastedText:         string
+  title:              string
+  subtitle:           string
+  summary:            string
+  coverImage:         string
+  reelUrl:            string
+  audioUrl:           string
+  carouselSlides:     string[]
+  documentUrl:        string
+  blog:               string
+  founderId:          string
+  businessId:         string
+  topics:             Topic[]
+  ctaLabel:           string
+  ctaUrl:             string
 }
 
 function defaultDraft(): PublishDraft {
   const founders   = getFounders()
   const businesses = getBusinesses()
   return {
-    source: null,
-    title: '', summary: '', contentTypes: ['blog'],
-    blog: '', reelUrl: '', carouselSlides: [''], coverImage: '',
-    fileNames: [], whatHappened: '',
-    importMode: 'url', importUrl: '', importText: '',
-    founderId:  founders[0]?.id   ?? '',
-    businessId: businesses[0]?.id ?? '',
-    locationId: locations[0]?.id  ?? '',
-    industryId: industries[0]?.id ?? '',
-    topics: [], ctaLabel: 'Read more', ctaUrl: '',
-    status: 'published',
+    contentTypes:      ['blog'],
+    uploadedFileNames: [],
+    urlEntries:        [],
+    pastedText:        '',
+    title:             '',
+    subtitle:          '',
+    summary:           '',
+    coverImage:        '',
+    reelUrl:           '',
+    audioUrl:          '',
+    carouselSlides:    [''],
+    documentUrl:       '',
+    blog:              '',
+    founderId:         founders[0]?.id   ?? '',
+    businessId:        businesses[0]?.id ?? '',
+    topics:            [],
+    ctaLabel:          'Read more',
+    ctaUrl:            '',
   }
 }
 
@@ -127,378 +147,288 @@ function StepHeader({ title, subtitle, onBack }: { title: string; subtitle?: str
   )
 }
 
-// ─── Step 1: Source Selection ──────────────────────────────────────────────────
+// ─── Progress Bar ─────────────────────────────────────────────────────────────
 
-interface SourceCardProps {
-  emoji: string
-  title: string
-  description: string
-  badge?: string
-  onClick: () => void
-  disabled?: boolean
-}
-
-function SourceCard({ emoji, title, description, badge, onClick, disabled }: SourceCardProps) {
+function ProgressBar({ step }: { step: PublishStep }) {
+  const currentIdx = STEPS.indexOf(step)
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`w-full text-left p-5 rounded-2xl border-2 transition-all group ${
-        disabled
-          ? 'border-[#E8E4DD] bg-white opacity-60 cursor-not-allowed'
-          : 'border-[#E8E4DD] bg-white hover:border-[#C86A43] hover:shadow-md cursor-pointer'
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <span className="text-3xl">{emoji}</span>
-        {badge && (
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#C86A43] uppercase tracking-wide shrink-0">
-            {badge}
-          </span>
-        )}
-      </div>
-      <p className="text-base font-bold text-[#2D2A26] mb-1.5 group-hover:text-[#C86A43] transition-colors">{title}</p>
-      <p className="text-sm text-[#6B7280] leading-relaxed">{description}</p>
-    </button>
-  )
-}
-
-function SourceStep({ onSelect }: { onSelect: (source: PublishSource) => void }) {
-  return (
-    <div className="max-w-2xl">
-      <StepHeader
-        title="Publish Something"
-        subtitle="Where is your content coming from?"
-      />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SourceCard
-          emoji="✨"
-          title="Publish from Canva"
-          description="Publish directly from Canva into the Village. The premium workflow — design once, distribute everywhere."
-          badge="Coming soon"
-          onClick={() => onSelect('canva')}
-          disabled
-        />
-        <SourceCard
-          emoji="📷"
-          title="Camera Roll"
-          description="Upload videos, photos and voice notes. CULO helps turn real experiences into publishable knowledge."
-          onClick={() => onSelect('camera-roll')}
-        />
-        <SourceCard
-          emoji="🌐"
-          title="Import Existing Content"
-          description="Import from your website, blog, Instagram, LinkedIn, TikTok, YouTube, PDF, Word or Markdown."
-          onClick={() => onSelect('import')}
-        />
-        <SourceCard
-          emoji="✍️"
-          title="Write From Scratch"
-          description="Start with a blank canvas. Ideal for quick ideas, stories and articles you want to write directly."
-          onClick={() => onSelect('write')}
-        />
-      </div>
+    <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-1">
+      {STEPS.map((s, i) => (
+        <div key={s} className="flex items-center gap-1 shrink-0">
+          <div className={`flex items-center gap-1.5 ${i <= currentIdx ? 'text-[#C86A43]' : 'text-[#9CA3AF]'}`}>
+            <div className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
+              i < currentIdx   ? 'bg-[#5E6B4A] text-white'
+              : i === currentIdx ? 'bg-[#C86A43] text-white'
+              : 'bg-[#E8E4DD] text-[#9CA3AF]'
+            }`}>
+              {i < currentIdx ? '✓' : i + 1}
+            </div>
+            <span className="text-[11px] font-medium hidden sm:inline">{STEP_LABELS[s]}</span>
+          </div>
+          {i < STEPS.length - 1 && (
+            <div className={`w-4 h-px ml-1 ${i < currentIdx ? 'bg-[#5E6B4A]' : 'bg-[#E8E4DD]'}`} />
+          )}
+        </div>
+      ))}
     </div>
   )
 }
 
-// ─── Step 2a: Canva (Coming Soon) ─────────────────────────────────────────────
+// ─── Step 1: Format ───────────────────────────────────────────────────────────
 
-function CanvaStep({ onBack }: { onBack: () => void }) {
-  return (
-    <div className="max-w-lg">
-      <StepHeader title="Publish from Canva" onBack={onBack} />
-      <div className="bg-white rounded-2xl border border-[#E8E4DD] p-8 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-[#F3EDE6] flex items-center justify-center mx-auto mb-5">
-          <span className="text-3xl">✨</span>
-        </div>
-        <h2 className="text-lg font-bold text-[#2D2A26] mb-3">Canva Integration — Coming Soon</h2>
-        <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
-          Once your Canva design is published through the CULO Canva integration, everything below happens automatically.
-        </p>
-        <div className="text-left space-y-2.5 bg-[#F8F5F0] rounded-xl p-4 mb-6">
-          {[
-            'Story created from your Canva design',
-            'Blog, reel and carousel generated automatically',
-            'Caption written by CULO',
-            'Topics, ideas and FAQs suggested',
-            'Founder and business connections pre-filled',
-            'Published to Village immediately',
-          ].map(item => (
-            <CheckItem key={item} label={item} done={false} />
-          ))}
-        </div>
-        <p className="text-xs text-[#9CA3AF]">
-          The CULO Canva app is available now in the Canva Marketplace.
-          Full Village integration is the next sprint.
-        </p>
-      </div>
-    </div>
-  )
-}
-
-// ─── Step 2b: Camera Roll ─────────────────────────────────────────────────────
-
-function CameraRollStep({
-  draft, onChange, onNext, onBack,
-}: {
+function FormatStep({ draft, onChange, onNext }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
   onNext: () => void
-  onBack: () => void
 }) {
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  function handleFiles(e: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
-    onChange({ fileNames: files.map(f => f.name) })
+  function toggle(type: ContentType) {
+    const has = draft.contentTypes.includes(type)
+    onChange({ contentTypes: has ? draft.contentTypes.filter(t => t !== type) : [...draft.contentTypes, type] })
   }
 
+  const firstLabel = FORMATS.find(f => f.type === draft.contentTypes[0])?.label ?? draft.contentTypes[0]
+
   return (
-    <div className="max-w-lg">
+    <div className="max-w-2xl">
       <StepHeader
-        title="Camera Roll"
-        subtitle="Upload your content and tell us what happened."
-        onBack={onBack}
+        title="What are you publishing?"
+        subtitle="Select every format this content exists in. You can choose more than one."
       />
-
-      {/* Upload zone */}
-      <div
-        onClick={() => fileRef.current?.click()}
-        className="border-2 border-dashed border-[#E8E4DD] rounded-2xl p-10 text-center cursor-pointer hover:border-[#C86A43]/50 hover:bg-[#F8F5F0] transition-all mb-5"
-      >
-        <div className="w-12 h-12 rounded-xl bg-[#F3EDE6] flex items-center justify-center mx-auto mb-3">
-          <svg className="w-6 h-6 text-[#C86A43]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-        </div>
-        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Upload videos, photos or voice notes</p>
-        <p className="text-xs text-[#9CA3AF]">MP4, MOV, JPG, PNG, M4A, MP3 — drag in or click to browse</p>
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          accept="video/*,image/*,audio/*"
-          className="hidden"
-          onChange={handleFiles}
-        />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+        {FORMATS.map(f => {
+          const active = draft.contentTypes.includes(f.type)
+          return (
+            <button
+              key={f.type}
+              onClick={() => toggle(f.type)}
+              className={`text-left p-4 rounded-2xl border-2 transition-all ${
+                active
+                  ? 'border-[#C86A43] bg-[#FDF6F3]'
+                  : 'border-[#E8E4DD] bg-white hover:border-[#C86A43]/40 hover:bg-[#FDFAF8]'
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <span className="text-2xl">{f.emoji}</span>
+                {active && (
+                  <div className="w-4 h-4 rounded-full bg-[#C86A43] flex items-center justify-center shrink-0">
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm font-semibold text-[#2D2A26] mb-0.5">{f.label}</p>
+              <p className="text-[11px] text-[#9CA3AF] leading-snug">{f.desc}</p>
+            </button>
+          )
+        })}
       </div>
-
-      {/* File list */}
-      {draft.fileNames.length > 0 && (
-        <div className="mb-5 bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-          {draft.fileNames.map((name, i) => (
-            <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-              <svg className="w-4 h-4 text-[#C86A43] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.069A1 1 0 0121 8.882V15.12a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <p className="text-xs text-[#2D2A26] truncate flex-1">{name}</p>
-              <button
-                onClick={() => onChange({ fileNames: draft.fileNames.filter((_, j) => j !== i) })}
-                className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0"
-              >✕</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* What happened */}
-      <div className="mb-6">
-        <Field label="What happened?" hint="Describe the moment, experience or insight in your own words. CULO will use this to shape the story.">
-          <textarea
-            value={draft.whatHappened}
-            onChange={e => onChange({ whatHappened: e.target.value })}
-            rows={5}
-            placeholder="We were packing up at the end of a long day when a customer came back just to say…"
-            className={inp + ' resize-y'}
-          />
-        </Field>
-      </div>
-
-      {/* Future pipeline note */}
-      <div className="bg-[#F8F5F0] rounded-xl px-4 py-3 mb-6">
-        <p className="text-xs text-[#9CA3AF] leading-relaxed">
-          <span className="font-semibold text-[#2D2A26]">Coming soon:</span> CULO will generate a blog, carousel, reel script, caption, ideas and FAQs from your upload and description. For now, continue to add the content manually in the next steps.
-        </p>
-      </div>
-
       <button
         onClick={onNext}
-        disabled={draft.fileNames.length === 0 && !draft.whatHappened.trim()}
+        disabled={draft.contentTypes.length === 0}
         className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        Continue
+        {draft.contentTypes.length === 0
+          ? 'Select at least one format'
+          : draft.contentTypes.length === 1
+          ? `Continue — ${firstLabel}`
+          : `Continue — ${draft.contentTypes.length} formats selected`}
       </button>
     </div>
   )
 }
 
-// ─── Step 2c: Import ──────────────────────────────────────────────────────────
+// ─── Step 2: Content ─────────────────────────────────────────────────────────
 
-const IMPORT_MODES = [
-  { key: 'url',    label: 'URL' },
-  { key: 'paste',  label: 'Paste Text' },
-  { key: 'upload', label: 'Upload File' },
-] as const
+type ContentTab = 'upload' | 'url' | 'text' | 'library'
 
-const SUPPORTED_SOURCES = [
-  'Website', 'Blog', 'Instagram', 'LinkedIn',
-  'TikTok', 'YouTube', 'PDF', 'Word', 'Markdown',
-]
-
-function ImportStep({
-  draft, onChange, onNext, onBack,
-}: {
+function ContentStep({ draft, onChange, onNext, onBack }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
   onNext: () => void
   onBack: () => void
 }) {
-  const uploadRef = useRef<HTMLInputElement>(null)
+  const [contentTab, setContentTab] = useState<ContentTab>('upload')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  function handleFiles(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    onChange({ uploadedFileNames: [...draft.uploadedFileNames, ...files.map(f => f.name)] })
+  }
+
+  function addUrlEntry() {
+    const maxId = draft.urlEntries.reduce((m, e) => Math.max(m, e.id), 0)
+    onChange({ urlEntries: [...draft.urlEntries, { id: maxId + 1, url: '' }] })
+  }
+
+  function updateUrlEntry(id: number, url: string) {
+    onChange({ urlEntries: draft.urlEntries.map(e => e.id === id ? { ...e, url } : e) })
+  }
+
+  function removeUrlEntry(id: number) {
+    onChange({ urlEntries: draft.urlEntries.filter(e => e.id !== id) })
+  }
 
   const hasContent =
-    (draft.importMode === 'url'    && draft.importUrl.trim())  ||
-    (draft.importMode === 'paste'  && draft.importText.trim()) ||
-    (draft.importMode === 'upload' && draft.fileNames.length > 0)
+    draft.uploadedFileNames.length > 0 ||
+    draft.urlEntries.some(e => e.url.trim()) ||
+    draft.pastedText.trim().length > 0
+
+  const CONTENT_TABS: { key: ContentTab; label: string; soon?: boolean }[] = [
+    { key: 'upload',  label: 'Upload' },
+    { key: 'url',     label: 'Paste URL' },
+    { key: 'text',    label: 'Paste Text' },
+    { key: 'library', label: 'Media Library', soon: true },
+  ]
 
   return (
     <div className="max-w-lg">
       <StepHeader
-        title="Import Existing Content"
-        subtitle="Import content you've already created elsewhere."
+        title="Add Your Content"
+        subtitle="Upload, link or paste your existing content. Skip if writing from scratch."
         onBack={onBack}
       />
 
-      {/* Supported sources */}
-      <div className="flex flex-wrap gap-1.5 mb-5">
-        {SUPPORTED_SOURCES.map(s => (
-          <span key={s} className="text-xs px-2.5 py-1 rounded-full bg-[#F3EDE6] text-[#C86A43] font-medium">{s}</span>
-        ))}
-      </div>
-
-      {/* Mode tabs */}
       <div className="flex gap-1 p-1 bg-[#F8F5F0] rounded-xl mb-5">
-        {IMPORT_MODES.map(m => (
+        {CONTENT_TABS.map(t => (
           <button
-            key={m.key}
-            onClick={() => onChange({ importMode: m.key })}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-              draft.importMode === m.key
+            key={t.key}
+            onClick={() => !t.soon && setContentTab(t.key)}
+            disabled={!!t.soon}
+            className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
+              contentTab === t.key && !t.soon
                 ? 'bg-white text-[#2D2A26] shadow-sm'
+                : t.soon
+                ? 'text-[#C8C4BC] cursor-not-allowed'
                 : 'text-[#9CA3AF] hover:text-[#2D2A26]'
             }`}
           >
-            {m.label}
+            {t.label}{t.soon && <span className="ml-1 text-[9px] align-top">soon</span>}
           </button>
         ))}
       </div>
 
-      {/* Mode content */}
-      {draft.importMode === 'url' && (
-        <Field label="URL" hint="Paste a link to a website, blog post, LinkedIn article, Instagram post, YouTube video or TikTok.">
-          <input
-            type="url"
-            value={draft.importUrl}
-            onChange={e => onChange({ importUrl: e.target.value })}
-            placeholder="https://..."
-            className={inp}
-          />
-        </Field>
+      {contentTab === 'upload' && (
+        <div>
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="border-2 border-dashed border-[#E8E4DD] rounded-2xl p-10 text-center cursor-pointer hover:border-[#C86A43]/50 hover:bg-[#F8F5F0] transition-all mb-4"
+          >
+            <div className="w-12 h-12 rounded-xl bg-[#F3EDE6] flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-[#C86A43]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            </div>
+            <p className="text-sm font-semibold text-[#2D2A26] mb-1">Upload photos, video, audio or documents</p>
+            <p className="text-xs text-[#9CA3AF]">MP4, MOV, JPG, PNG, MP3, M4A, PDF, DOCX</p>
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              accept="video/*,image/*,audio/*,.pdf,.docx,.doc,.md"
+              className="hidden"
+              onChange={handleFiles}
+            />
+          </div>
+          {draft.uploadedFileNames.length > 0 && (
+            <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+              {draft.uploadedFileNames.map((name, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                  <p className="text-xs text-[#2D2A26] truncate flex-1">{name}</p>
+                  <button
+                    onClick={() => onChange({ uploadedFileNames: draft.uploadedFileNames.filter((_, j) => j !== i) })}
+                    className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0"
+                  >✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
-      {draft.importMode === 'paste' && (
-        <Field label="Paste your content" hint="Paste text from a blog post, article, social caption or any other source.">
+      {contentTab === 'url' && (
+        <div className="flex flex-col gap-3">
+          {draft.urlEntries.length === 0 && (
+            <p className="text-xs text-[#9CA3AF] italic">No URLs yet. Click below to add your first link.</p>
+          )}
+          {draft.urlEntries.map(entry => (
+            <div key={entry.id} className="flex items-center gap-2">
+              <input
+                type="url"
+                value={entry.url}
+                onChange={e => updateUrlEntry(entry.id, e.target.value)}
+                placeholder="https://…"
+                className={inp + ' flex-1'}
+              />
+              <button onClick={() => removeUrlEntry(entry.id)} className="text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+            </div>
+          ))}
+          <button onClick={addUrlEntry} className="text-xs text-[#C86A43] hover:underline text-left">
+            + Add URL
+          </button>
+          <p className="text-[11px] text-[#9CA3AF]">Add multiple URLs if the content exists across different platforms.</p>
+        </div>
+      )}
+
+      {contentTab === 'text' && (
+        <Field label="Paste your content" hint="Blog post, article, social caption, transcript or any text you want to publish.">
           <textarea
-            value={draft.importText}
-            onChange={e => onChange({ importText: e.target.value })}
-            rows={8}
+            value={draft.pastedText}
+            onChange={e => onChange({ pastedText: e.target.value })}
+            rows={10}
             placeholder="Paste your content here…"
             className={inp + ' resize-y'}
           />
         </Field>
       )}
 
-      {draft.importMode === 'upload' && (
-        <div
-          onClick={() => uploadRef.current?.click()}
-          className="border-2 border-dashed border-[#E8E4DD] rounded-2xl p-8 text-center cursor-pointer hover:border-[#C86A43]/50 hover:bg-[#F8F5F0] transition-all"
-        >
-          <p className="text-sm font-semibold text-[#2D2A26] mb-1">Upload a file</p>
-          <p className="text-xs text-[#9CA3AF]">PDF, Word (.docx), Markdown (.md)</p>
-          <input
-            ref={uploadRef}
-            type="file"
-            accept=".pdf,.docx,.doc,.md,.txt"
-            className="hidden"
-            onChange={e => {
-              const f = e.target.files?.[0]
-              if (f) onChange({ fileNames: [f.name] })
-            }}
-          />
-          {draft.fileNames.length > 0 && (
-            <p className="text-xs text-[#C86A43] mt-3 font-medium">{draft.fileNames[0]}</p>
-          )}
+      {contentTab === 'library' && (
+        <div className="bg-[#F8F5F0] rounded-2xl p-8 text-center">
+          <p className="text-sm font-semibold text-[#2D2A26] mb-2">Media Library — Coming Soon</p>
+          <p className="text-xs text-[#9CA3AF]">Choose from your uploaded assets, Canva designs and previously published media.</p>
         </div>
       )}
 
-      {/* Future preview note */}
-      <div className="mt-5 bg-[#F8F5F0] rounded-xl px-4 py-3 mb-6">
-        <p className="text-xs font-semibold text-[#2D2A26] mb-1">Coming soon — We found…</p>
-        <p className="text-xs text-[#9CA3AF] leading-relaxed">
-          Once import processing is live, CULO will extract the title, summary, images, topics, suggested founder
-          and suggested CTA from your content automatically. You'll review and approve before publishing.
-        </p>
+      <div className="mt-6 flex gap-3">
+        <button
+          onClick={onNext}
+          disabled={!hasContent}
+          className="flex-1 py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Continue
+        </button>
+        {!hasContent && (
+          <button
+            onClick={onNext}
+            className="px-5 py-3 border border-[#E8E4DD] text-[#6B7280] text-sm rounded-xl hover:border-[#C86A43]/40 transition-colors"
+          >
+            Skip
+          </button>
+        )}
       </div>
-
-      <button
-        onClick={onNext}
-        disabled={!hasContent}
-        className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-      >
-        Continue
-      </button>
     </div>
   )
 }
 
-// ─── Step 2d: Write From Scratch ──────────────────────────────────────────────
+// ─── Step 3: Info ─────────────────────────────────────────────────────────────
 
-const CONTENT_TYPES: ContentType[] = ['blog', 'reel', 'carousel']
-
-function WriteStep({
-  draft, onChange, onNext, onBack,
-}: {
+function InfoStep({ draft, onChange, onNext, onBack }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
   onNext: () => void
   onBack: () => void
 }) {
-  function toggleFormat(ct: ContentType) {
-    const has = draft.contentTypes.includes(ct)
-    onChange({
-      contentTypes: has
-        ? draft.contentTypes.filter(x => x !== ct)
-        : [...draft.contentTypes, ct],
-    })
-  }
-
-  const hasBlog     = draft.contentTypes.includes('blog')
-  const hasReel     = draft.contentTypes.includes('reel')
-  const hasCarousel = draft.contentTypes.includes('carousel')
-  const canContinue = draft.title.trim() && draft.summary.trim()
+  const canContinue = draft.title.trim().length > 0 && draft.summary.trim().length > 0
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-lg">
       <StepHeader
-        title="Write From Scratch"
-        subtitle="Start with what you want to share. Only fill in what you know now."
+        title="Story Information"
+        subtitle="Give your content a title and summary. This is how it appears in the Village."
         onBack={onBack}
       />
-
       <div className="flex flex-col gap-5">
-
-        {/* Core content */}
-        <Field label="Title">
+        <Field label="Title *">
           <input
             type="text"
             value={draft.title}
@@ -507,8 +437,7 @@ function WriteStep({
             className={inp}
           />
         </Field>
-
-        <Field label="Summary" hint="One or two sentences. What will the reader take away?">
+        <Field label="Summary *" hint="One or two sentences. What will the reader take away?">
           <textarea
             value={draft.summary}
             onChange={e => onChange({ summary: e.target.value })}
@@ -517,58 +446,66 @@ function WriteStep({
             className={inp + ' resize-y'}
           />
         </Field>
-
-        <SectionDivider label="Formats" />
-
-        <Field label="Content Formats" hint="Select every format this story is published in">
-          <div className="flex gap-2 flex-wrap mt-1">
-            {CONTENT_TYPES.map(ct => (
-              <button
-                key={ct}
-                onClick={() => toggleFormat(ct)}
-                className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${
-                  draft.contentTypes.includes(ct)
-                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                    : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                }`}
-              >
-                {ct}
-              </button>
-            ))}
-          </div>
+        <Field label="Subtitle" hint="Optional secondary headline.">
+          <input
+            type="text"
+            value={draft.subtitle}
+            onChange={e => onChange({ subtitle: e.target.value })}
+            placeholder="Optional…"
+            className={inp}
+          />
         </Field>
+        <button
+          onClick={onNext}
+          disabled={!canContinue}
+          className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  )
+}
 
-        {/* Blog */}
-        {hasBlog && (
+// ─── Step 4: Media ────────────────────────────────────────────────────────────
+
+function MediaStep({ draft, onChange, onNext, onBack }: {
+  draft: PublishDraft
+  onChange: (patch: Partial<PublishDraft>) => void
+  onNext: () => void
+  onBack: () => void
+}) {
+  const types = draft.contentTypes
+  const hasVideo    = types.some(t => ['reel', 'talking-head', 'youtube-video'].includes(t))
+  const hasAudio    = types.some(t => ['podcast', 'voice-over'].includes(t))
+  const hasSlides   = types.some(t => ['carousel', 'photo-story'].includes(t))
+  const hasDocument = types.some(t => ['document', 'external-article', 'social-post'].includes(t))
+  const hasBlog     = types.includes('blog')
+  const autocover   = hasSlides && draft.carouselSlides.filter(Boolean).length > 0
+
+  return (
+    <div className="max-w-xl">
+      <StepHeader
+        title="Add Media"
+        subtitle="Only fill in what you have. You can always add more later from My Publications."
+        onBack={onBack}
+      />
+      <div className="flex flex-col gap-6">
+
+        {hasVideo && (
           <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
             <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
-              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Blog Content</p>
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">
+                {types.includes('youtube-video') ? 'YouTube / Video URL' : 'Reel / Video URL'}
+              </p>
             </div>
             <div className="px-4 py-3">
-              <textarea
-                value={draft.blog}
-                onChange={e => onChange({ blog: e.target.value })}
-                rows={8}
-                placeholder="Write or paste your full blog post here. Markdown supported: ## headings, **bold**, - lists."
-                className={inp + ' resize-y'}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Reel */}
-        {hasReel && (
-          <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
-            <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
-              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Reel</p>
-            </div>
-            <div className="px-4 py-3">
-              <Field label="Reel URL" hint="Instagram, TikTok or YouTube Shorts link">
+              <Field label="URL" hint="YouTube, Instagram Reel, TikTok or YouTube Shorts">
                 <input
                   type="url"
                   value={draft.reelUrl}
                   onChange={e => onChange({ reelUrl: e.target.value })}
-                  placeholder="https://instagram.com/reel/…"
+                  placeholder="https://youtube.com/watch?v=… or https://instagram.com/reel/…"
                   className={inp}
                 />
               </Field>
@@ -576,11 +513,31 @@ function WriteStep({
           </div>
         )}
 
-        {/* Carousel */}
-        {hasCarousel && (
+        {hasAudio && (
           <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
             <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
-              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Carousel Slides</p>
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Audio URL</p>
+            </div>
+            <div className="px-4 py-3">
+              <Field label="URL" hint="Spotify, Apple Podcasts, Anchor or direct audio link">
+                <input
+                  type="url"
+                  value={draft.audioUrl}
+                  onChange={e => onChange({ audioUrl: e.target.value })}
+                  placeholder="https://open.spotify.com/episode/… or https://…"
+                  className={inp}
+                />
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {hasSlides && (
+          <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
+            <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">
+                {types.includes('photo-story') ? 'Gallery / Slides' : 'Carousel Slides'}
+              </p>
             </div>
             <div className="px-4 py-3 flex flex-col gap-2.5">
               {draft.carouselSlides.map((slide, i) => (
@@ -609,25 +566,70 @@ function WriteStep({
               >
                 + Add slide
               </button>
-              <p className="text-[11px] text-[#9CA3AF] ml-7">First slide will be used as the cover image automatically.</p>
+              <p className="text-[11px] text-[#9CA3AF] ml-7">First image is used as cover automatically.</p>
             </div>
           </div>
         )}
 
-        <SectionDivider label="Cover Image" />
+        {hasDocument && (
+          <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
+            <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Document / External Link</p>
+            </div>
+            <div className="px-4 py-3">
+              <Field label="URL" hint="Link to the document, article or social post">
+                <input
+                  type="url"
+                  value={draft.documentUrl}
+                  onChange={e => onChange({ documentUrl: e.target.value })}
+                  placeholder="https://…"
+                  className={inp}
+                />
+              </Field>
+            </div>
+          </div>
+        )}
 
-        <Field label="Cover Image" hint="Choose from Media Library, upload, or paste an external URL.">
-          <div className="flex flex-col gap-2">
-            {draft.coverImage && (
-              <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />
-            )}
-            {hasCarousel && draft.carouselSlides[0] && !draft.coverImage && (
+        {hasBlog && (
+          <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
+            <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Blog Content</p>
+            </div>
+            <div className="px-4 py-3 flex flex-col gap-2">
+              <textarea
+                value={draft.blog}
+                onChange={e => onChange({ blog: e.target.value })}
+                rows={8}
+                placeholder="Write or paste your full blog post. Markdown supported: ## headings, **bold**, - lists."
+                className={inp + ' resize-y'}
+              />
+              {draft.pastedText && !draft.blog && (
+                <button
+                  onClick={() => onChange({ blog: draft.pastedText })}
+                  className="text-xs text-[#C86A43] hover:underline text-left"
+                >
+                  Use pasted text as blog content →
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
+          <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
+            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Cover Image</p>
+          </div>
+          <div className="px-4 py-3 flex flex-col gap-2">
+            {autocover && !draft.coverImage && (
               <div className="flex items-center gap-2 px-3 py-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD]">
                 <svg className="w-3.5 h-3.5 text-[#5E6B4A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                <p className="text-xs text-[#5E6B4A]">First carousel slide will be used as cover automatically.</p>
+                <p className="text-xs text-[#5E6B4A]">First slide will be used as cover automatically.</p>
               </div>
+            )}
+            {draft.coverImage && (
+              <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />
             )}
             <input
               type="url"
@@ -636,41 +638,33 @@ function WriteStep({
               placeholder="/assets/my-photo.jpg or https://…"
               className={inp}
             />
-            <div className="flex gap-2">
-              <button disabled className="text-xs text-[#9CA3AF] px-2.5 py-1.5 rounded-lg border border-[#E8E4DD] cursor-not-allowed">
-                Choose from Media Library
-              </button>
-              <button disabled className="text-xs text-[#9CA3AF] px-2.5 py-1.5 rounded-lg border border-[#E8E4DD] cursor-not-allowed">
-                Upload
-              </button>
-            </div>
+            <button disabled className="text-xs text-[#9CA3AF] px-2.5 py-1.5 rounded-lg border border-[#E8E4DD] cursor-not-allowed w-fit">
+              Media Library (coming soon)
+            </button>
           </div>
-        </Field>
+        </div>
 
         <button
           onClick={onNext}
-          disabled={!canContinue}
-          className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
         >
-          Continue to Connections
+          Continue
         </button>
       </div>
     </div>
   )
 }
 
-// ─── Step 3: Connections ──────────────────────────────────────────────────────
+// ─── Step 5: Connections ──────────────────────────────────────────────────────
 
-function ConnectionsStep({
-  draft, onChange, onNext, onBack,
-}: {
+function ConnectionsStep({ draft, onChange, onNext, onBack }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
   onNext: () => void
   onBack: () => void
 }) {
-  const founders   = getFounders()
-  const businesses = getBusinesses()
+  const founders       = getFounders()
+  const businesses     = getBusinesses()
   const singleFounder  = founders.length === 1  ? founders[0]   : null
   const singleBusiness = businesses.length === 1 ? businesses[0] : null
 
@@ -679,67 +673,17 @@ function ConnectionsStep({
     onChange({ topics: has ? draft.topics.filter(t => t.id !== topic.id) : [...draft.topics, topic] })
   }
 
-  // For Camera Roll and Import, we also need title/summary here
-  const needsTitleSummary = draft.source === 'camera-roll' || draft.source === 'import'
-
   return (
     <div className="max-w-xl">
       <StepHeader
         title="Connections"
-        subtitle="CULO has pre-filled what it can. Review and edit anything that needs changing."
+        subtitle="CULO has pre-filled what it can. Review and adjust if needed."
         onBack={onBack}
       />
-
       <div className="flex flex-col gap-5">
-
-        {/* Title + summary for camera-roll / import sources */}
-        {needsTitleSummary && (
-          <>
-            <SectionDivider label="Your Story" />
-            <Field label="Title">
-              <input
-                type="text"
-                value={draft.title}
-                onChange={e => onChange({ title: e.target.value })}
-                placeholder="What is this story about?"
-                className={inp}
-              />
-            </Field>
-            <Field label="Summary">
-              <textarea
-                value={draft.summary}
-                onChange={e => onChange({ summary: e.target.value })}
-                rows={3}
-                placeholder="What will the reader take away?"
-                className={inp + ' resize-y'}
-              />
-            </Field>
-            <Field label="Content Formats">
-              <div className="flex gap-2 flex-wrap mt-1">
-                {CONTENT_TYPES.map(ct => (
-                  <button
-                    key={ct}
-                    onClick={() => {
-                      const has = draft.contentTypes.includes(ct)
-                      onChange({ contentTypes: has ? draft.contentTypes.filter(x => x !== ct) : [...draft.contentTypes, ct] })
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${
-                      draft.contentTypes.includes(ct)
-                        ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                        : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                    }`}
-                  >
-                    {ct}
-                  </button>
-                ))}
-              </div>
-            </Field>
-          </>
-        )}
 
         <SectionDivider label="Publisher" />
 
-        {/* Founder */}
         {singleFounder ? (
           <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-[#E8E4DD]">
             {singleFounder.avatar && (
@@ -753,7 +697,7 @@ function ConnectionsStep({
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-        ) : founders.length > 0 ? (
+        ) : founders.length > 1 ? (
           <Field label="Publisher">
             <select value={draft.founderId} onChange={e => onChange({ founderId: e.target.value })} className={inp}>
               {founders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
@@ -766,7 +710,6 @@ function ConnectionsStep({
           </div>
         )}
 
-        {/* Business */}
         {singleBusiness ? (
           <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-[#E8E4DD]">
             <img src={singleBusiness.logo} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
@@ -788,17 +731,20 @@ function ConnectionsStep({
 
         <SectionDivider label="Topics" />
 
-        <Field label="Topics" hint="Select the topics this story belongs to. Used for discovery and knowledge graph connections.">
+        <Field label="Topics" hint="Select topics for discovery and knowledge graph connections.">
           <div className="flex flex-wrap gap-1.5 mt-1">
             {allTopics.map(topic => {
               const active = draft.topics.some(t => t.id === topic.id)
               return (
-                <button key={topic.id} onClick={() => toggleTopic(topic)}
+                <button
+                  key={topic.id}
+                  onClick={() => toggleTopic(topic)}
                   className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                     active
                       ? 'bg-[#C86A43] text-white border-[#C86A43]'
                       : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                  }`}>
+                  }`}
+                >
                   {topic.name}
                 </button>
               )
@@ -818,7 +764,7 @@ function ConnectionsStep({
               placeholder="Read more"
             />
           </Field>
-          <Field label="CTA URL" hint="Optional">
+          <Field label="CTA URL">
             <input
               type="url"
               value={draft.ctaUrl}
@@ -829,22 +775,9 @@ function ConnectionsStep({
           </Field>
         </div>
 
-        <SectionDivider label="Publishing" />
-
-        <div className="flex gap-2">
-          {(['draft', 'published'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => onChange({ status: s })}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors capitalize ${
-                draft.status === s
-                  ? 'border-[#C86A43] bg-[#C86A43] text-white'
-                  : 'border-[#E8E4DD] bg-white text-[#6B7280] hover:border-[#C86A43]/40'
-              }`}
-            >
-              {s === 'draft' ? 'Save as Draft' : 'Publish Now'}
-            </button>
-          ))}
+        <div className="px-4 py-3 bg-[#F8F5F0] rounded-xl border border-[#E8E4DD]">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Coming soon</p>
+          <p className="text-xs text-[#9CA3AF]">Products, Services, Events, Communities, Platforms, Resources.</p>
         </div>
 
         <button
@@ -859,7 +792,7 @@ function ConnectionsStep({
   )
 }
 
-// ─── Step 4: Preview ──────────────────────────────────────────────────────────
+// ─── Step 6: Preview ──────────────────────────────────────────────────────────
 
 const DISTRIBUTION_LOCATIONS = [
   'Founder Profile',
@@ -868,27 +801,21 @@ const DISTRIBUTION_LOCATIONS = [
   'Homepage (if featured)',
   'Search',
   'Related Stories',
-  'Media Library',
   'Knowledge Graph',
-  'Website Widgets (future)',
 ]
 
 const KNOWLEDGE_OUTPUTS = [
   'Internal relationships',
-  'Knowledge graph connections',
-  'Related content suggestions',
+  'Suggested topics + ideas',
   'AI-readable metadata',
   'Search metadata',
-  'Suggested FAQs',
-  'Suggested Ideas',
-  'Suggested Resources',
+  'FAQs (coming soon)',
+  'Automated resources (coming soon)',
 ]
 
-function PreviewStep({
-  draft, onPublish, onBack, publishing,
-}: {
+function PreviewStep({ draft, onPublish, onBack, publishing }: {
   draft: PublishDraft
-  onPublish: () => void
+  onPublish: (action: 'publish' | 'draft' | 'archive') => void
   onBack: () => void
   publishing: boolean
 }) {
@@ -897,19 +824,18 @@ function PreviewStep({
   const founder    = founders.find(f => f.id === draft.founderId)
   const business   = businesses.find(b => b.id === draft.businessId)
 
-  const hasBlog           = draft.contentTypes.includes('blog')
-  const hasCarouselSlide  = draft.contentTypes.includes('carousel') && draft.carouselSlides.filter(Boolean).length > 0
+  const hasCarouselSlide  = draft.carouselSlides.filter(Boolean).length > 0
   const missingCoverImage = !draft.coverImage && !hasCarouselSlide
+  const hasBlog           = draft.contentTypes.includes('blog')
 
   return (
     <div className="max-w-2xl">
       <StepHeader
         title="Ready to Publish"
-        subtitle="Review where this will appear before it goes live."
+        subtitle="Review your publication and choose how to save it."
         onBack={onBack}
       />
 
-      {/* Cover image warning for blog without image */}
       {hasBlog && missingCoverImage && (
         <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl mb-5">
           <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -918,81 +844,58 @@ function PreviewStep({
           <div>
             <p className="text-xs font-semibold text-amber-800">No cover image</p>
             <p className="text-xs text-amber-700 mt-0.5">
-              Blog posts display best with a cover image. A placeholder will be used until you add one.{' '}
+              Blog posts display best with a cover image. A placeholder will be used.{' '}
               <button onClick={onBack} className="underline hover:no-underline">Go back to add one.</button>
             </p>
           </div>
         </div>
       )}
 
-      {/* Summary card */}
       <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4 mb-6">
         <div className="flex items-start gap-3">
           {draft.coverImage ? (
             <img src={draft.coverImage} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0 bg-[#F3EDE6]" />
           ) : (
             <div className="w-16 h-16 rounded-xl bg-[#F3EDE6] shrink-0 flex items-center justify-center">
-              <span className="text-2xl">📝</span>
+              <span className="text-2xl">{FORMATS.find(f => f.type === draft.contentTypes[0])?.emoji ?? '📝'}</span>
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-base font-bold text-[#2D2A26] leading-snug mb-1">
-              {draft.title || 'Untitled publication'}
-            </p>
+            <p className="text-base font-bold text-[#2D2A26] leading-snug mb-1">{draft.title || 'Untitled publication'}</p>
             {draft.summary && <p className="text-sm text-[#6B7280] line-clamp-2">{draft.summary}</p>}
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {draft.contentTypes.map(ct => (
-                <span key={ct} className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#C86A43] uppercase">{ct}</span>
-              ))}
-              {founder && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#6B7280]">{founder.name}</span>}
+              {draft.contentTypes.map(ct => {
+                const f = FORMATS.find(x => x.type === ct)
+                return (
+                  <span key={ct} className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#C86A43] uppercase">
+                    {f?.emoji} {f?.label ?? ct}
+                  </span>
+                )
+              })}
+              {founder  && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#6B7280]">{founder.name}</span>}
               {business && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#6B7280]">{business.name}</span>}
             </div>
           </div>
-          <span className={`text-[10px] font-semibold px-2 py-1 rounded-full shrink-0 ${
-            draft.status === 'published'
-              ? 'bg-green-100 text-green-700'
-              : 'bg-[#F3EDE6] text-[#9CA3AF]'
-          }`}>
-            {draft.status}
-          </span>
         </div>
       </div>
 
-      {/* Two panels */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-
-        {/* Distribution */}
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
-          <p className="text-sm font-bold text-[#2D2A26] mb-1">
-            {draft.status === 'published' ? 'This story will appear in:' : 'Once published, appears in:'}
-          </p>
+          <p className="text-sm font-bold text-[#2D2A26] mb-1">Once published, appears in:</p>
           <p className="text-xs text-[#9CA3AF] mb-4">Publish once, distributed everywhere.</p>
           <div className="space-y-2.5">
-            {DISTRIBUTION_LOCATIONS.map(loc => (
-              <CheckItem
-                key={loc}
-                label={loc}
-                done={draft.status === 'published' && !loc.includes('future')}
-              />
-            ))}
+            {DISTRIBUTION_LOCATIONS.map(loc => <CheckItem key={loc} label={loc} done />)}
           </div>
         </div>
-
-        {/* Knowledge */}
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
           <p className="text-sm font-bold text-[#2D2A26] mb-1">CULO will also create:</p>
-          <p className="text-xs text-[#9CA3AF] mb-4">Your knowledge stays connected and grows over time.</p>
+          <p className="text-xs text-[#9CA3AF] mb-4">Knowledge automations are in a future sprint.</p>
           <div className="space-y-2.5">
-            {KNOWLEDGE_OUTPUTS.map(item => (
-              <CheckItem key={item} label={item} done={false} />
-            ))}
+            {KNOWLEDGE_OUTPUTS.map(item => <CheckItem key={item} label={item} done={false} />)}
           </div>
-          <p className="text-[11px] text-[#9CA3AF] mt-4">Knowledge automations coming in a future sprint.</p>
         </div>
-
       </div>
 
-      {/* Topics preview */}
       {draft.topics.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-6">
           {draft.topics.map(t => (
@@ -1001,42 +904,66 @@ function PreviewStep({
         </div>
       )}
 
-      {/* Publish button */}
-      <button
-        onClick={onPublish}
-        disabled={publishing}
-        className="w-full py-4 bg-[#C86A43] text-white text-base font-bold rounded-2xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
-      >
-        {publishing
-          ? 'Publishing…'
-          : draft.status === 'published'
-          ? 'Publish to Village'
-          : 'Save as Draft'}
-      </button>
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={() => onPublish('publish')}
+          disabled={publishing}
+          className="w-full py-4 bg-[#C86A43] text-white text-base font-bold rounded-2xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+        >
+          {publishing ? 'Publishing…' : 'Publish to Village'}
+        </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => onPublish('draft')}
+            disabled={publishing}
+            className="py-3 border-2 border-[#E8E4DD] text-[#2D2A26] text-sm font-semibold rounded-xl hover:border-[#C86A43]/40 disabled:opacity-60 transition-colors"
+          >
+            Save as Draft
+          </button>
+          <button
+            onClick={() => onPublish('archive')}
+            disabled={publishing}
+            className="py-3 border-2 border-[#E8E4DD] text-[#6B7280] text-sm font-medium rounded-xl hover:border-[#E8E4DD] disabled:opacity-60 transition-colors"
+          >
+            Archive
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
 
-// ─── Step 5: Published ────────────────────────────────────────────────────────
+// ─── Step 7: Done ─────────────────────────────────────────────────────────────
 
-function PublishedStep({ draft, publishedSlug, onPublishAnother }: { draft: PublishDraft; publishedSlug: string; onPublishAnother: () => void }) {
+function DoneStep({ draft, publishedSlug, action, onPublishAnother }: {
+  draft: PublishDraft
+  publishedSlug: string
+  action: 'publish' | 'draft' | 'archive'
+  onPublishAnother: () => void
+}) {
+  const label = action === 'publish' ? 'Published to the Village'
+              : action === 'draft'   ? 'Saved as Draft'
+              : 'Archived'
+
+  const msg = action === 'publish'
+    ? `"${draft.title}" is now live. It appears in your Founder Profile, the Story Archive and Search.`
+    : action === 'draft'
+    ? `"${draft.title}" has been saved as a draft. You can publish it any time from My Publications.`
+    : `"${draft.title}" has been archived.`
+
   return (
     <div className="max-w-md text-center">
-      <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-        <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+        action === 'publish' ? 'bg-green-100' : 'bg-[#F3EDE6]'
+      }`}>
+        <svg className={`w-10 h-10 ${action === 'publish' ? 'text-green-600' : 'text-[#C86A43]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
-      <h1 className="text-2xl font-bold text-[#2D2A26] mb-2">
-        {draft.status === 'published' ? 'Published to the Village' : 'Saved as Draft'}
-      </h1>
-      <p className="text-sm text-[#6B7280] mb-8 leading-relaxed">
-        {draft.status === 'published'
-          ? `"${draft.title}" is now live. It's been distributed across the Village and is visible in your Founder Profile, the Story Archive and Search.`
-          : `"${draft.title}" has been saved as a draft. You can publish it any time from My Publications.`}
-      </p>
+      <h1 className="text-2xl font-bold text-[#2D2A26] mb-2">{label}</h1>
+      <p className="text-sm text-[#6B7280] mb-8 leading-relaxed">{msg}</p>
       <div className="flex flex-col gap-3">
-        {draft.status === 'published' && (
+        {action === 'publish' && (
           <a
             href={`/stories/${publishedSlug}`}
             target="_blank"
@@ -1052,10 +979,7 @@ function PublishedStep({ draft, publishedSlug, onPublishAnother }: { draft: Publ
         >
           My Publications
         </Link>
-        <button
-          onClick={onPublishAnother}
-          className="text-sm text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
-        >
+        <button onClick={onPublishAnother} className="text-sm text-[#9CA3AF] hover:text-[#C86A43] transition-colors">
           Publish something else →
         </button>
       </div>
@@ -1063,148 +987,97 @@ function PublishedStep({ draft, publishedSlug, onPublishAnother }: { draft: Publ
   )
 }
 
-// ─── Progress indicator ───────────────────────────────────────────────────────
-
-const STEP_LABELS: Partial<Record<PublishStep, string>> = {
-  source: 'Source',
-  'camera-roll': 'Capture',
-  import: 'Import',
-  write: 'Write',
-  canva: 'Canva',
-  connections: 'Connections',
-  preview: 'Preview',
-  published: 'Published',
-}
-
-const STEP_ORDER: PublishStep[] = ['source', 'write', 'connections', 'preview', 'published']
-
-function ProgressBar({ step }: { step: PublishStep }) {
-  const steps = step === 'canva'
-    ? ['source', 'canva']
-    : STEP_ORDER.map(s => {
-        if (s === 'write') {
-          return step === 'camera-roll' ? 'camera-roll'
-               : step === 'import'     ? 'import'
-               : 'write'
-        }
-        return s
-      })
-
-  const currentIdx = steps.indexOf(step)
-
-  return (
-    <div className="flex items-center gap-2 mb-8">
-      {steps.map((s, i) => (
-        <div key={s} className="flex items-center gap-2">
-          <div className={`flex items-center gap-1.5 ${i <= currentIdx ? 'text-[#C86A43]' : 'text-[#9CA3AF]'}`}>
-            <div className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
-              i < currentIdx  ? 'bg-[#5E6B4A] text-white'  :
-              i === currentIdx ? 'bg-[#C86A43] text-white'  :
-              'bg-[#E8E4DD] text-[#9CA3AF]'
-            }`}>
-              {i < currentIdx ? '✓' : i + 1}
-            </div>
-            <span className="text-xs font-medium hidden sm:inline">{STEP_LABELS[s as PublishStep] ?? s}</span>
-          </div>
-          {i < steps.length - 1 && <div className={`flex-1 h-px w-6 ${i < currentIdx ? 'bg-[#5E6B4A]' : 'bg-[#E8E4DD]'}`} />}
-        </div>
-      ))}
-    </div>
-  )
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function DashboardPublishPage() {
-  const [step,           setStep]           = useState<PublishStep>('source')
-  const [draft,          setDraft]          = useState<PublishDraft>(defaultDraft)
-  const [publishing,     setPublishing]     = useState(false)
-  const [publishedSlug,  setPublishedSlug]  = useState('')
+  const [step,          setStep]          = useState<PublishStep>('format')
+  const [draft,         setDraft]         = useState<PublishDraft>(defaultDraft)
+  const [publishing,    setPublishing]    = useState(false)
+  const [publishedSlug, setPublishedSlug] = useState('')
+  const [lastAction,    setLastAction]    = useState<'publish' | 'draft' | 'archive'>('publish')
 
   function patch(changes: Partial<PublishDraft>) {
     setDraft(prev => ({ ...prev, ...changes }))
   }
 
-  function selectSource(source: PublishSource) {
-    patch({ source })
-    setStep(source)
+  function next() {
+    const idx = STEPS.indexOf(step)
+    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1])
   }
 
-  function goConnections() { setStep('connections') }
-  function goPreview()     { setStep('preview') }
-  function goBack()        { setStep('source') }
+  function back() {
+    const idx = STEPS.indexOf(step)
+    if (idx > 0) setStep(STEPS[idx - 1])
+  }
 
-  function handlePublish() {
+  function handlePublish(action: 'publish' | 'draft' | 'archive') {
     setPublishing(true)
-    const founder    = getFounders().find(f => f.id === draft.founderId)
-    const location   = locations.find(l => l.id === draft.locationId)  ?? locations[0]
-    const industry   = industries.find(i => i.id === draft.industryId) ?? industries[0]
-    const titleSlug  = slugify(draft.title) || `pub-${Date.now()}`
-    const id         = `pub-${Date.now()}`
+    setLastAction(action)
+
+    const allFounders = getFounders()
+    const founder     = allFounders.find(f => f.id === draft.founderId)
+    const location    = founder?.location ?? locations[0]!
+    const industry    = founder?.industry ?? industries[0]!
+    const titleSlug   = slugify(draft.title) || `pub-${Date.now()}`
+    const id          = `pub-${Date.now()}`
+    const status      = action === 'publish' ? 'published' as const
+                      : action === 'archive' ? 'archived'  as const
+                      : 'draft'              as const
+    const ctaUrl      = draft.ctaUrl || draft.documentUrl || ''
 
     updateStory({
       id,
-      slug:          titleSlug,
-      title:         draft.title         || 'Untitled',
-      summary:       draft.summary       || '',
-      coverImage:    draft.coverImage    || (draft.carouselSlides[0] ?? '/placeholders/village-story.svg'),
-      founderId:     draft.founderId,
-      businessId:    draft.businessId,
+      slug:           titleSlug,
+      title:          draft.title   || 'Untitled',
+      summary:        draft.summary || '',
+      coverImage:     draft.coverImage || (draft.carouselSlides.filter(Boolean)[0] ?? '/placeholders/village-story.svg'),
+      founderId:      draft.founderId,
+      businessId:     draft.businessId,
       location,
-      industry:      founder?.industry ?? industry,
-      topics:        draft.topics,
-      contentTypes:  draft.contentTypes.length > 0 ? draft.contentTypes : ['blog'],
-      blog:          draft.blog          || undefined,
-      reelUrl:       draft.reelUrl       || undefined,
-      carouselImages: draft.carouselSlides.filter(Boolean).length > 0 ? draft.carouselSlides.filter(Boolean) : undefined,
-      ideaIds:       [],
+      industry,
+      topics:         draft.topics,
+      contentTypes:   draft.contentTypes.length > 0 ? draft.contentTypes : ['blog'],
+      blog:           draft.blog     || undefined,
+      reelUrl:        draft.reelUrl  || undefined,
+      audioUrl:       draft.audioUrl || undefined,
+      carouselImages: draft.carouselSlides.filter(Boolean).length > 0
+                        ? draft.carouselSlides.filter(Boolean)
+                        : undefined,
+      ideaIds:        [],
       relatedStoryIds: [],
-      ctaLabel:      draft.ctaLabel,
-      ctaUrl:        draft.ctaUrl,
-      status:        draft.status,
-      featured:      false,
-      publishingSource: draft.source === 'camera-roll' ? 'one-drive-import'
-                      : draft.source === 'import'      ? 'website-import'
+      ctaLabel:       draft.ctaLabel,
+      ctaUrl,
+      status,
+      featured:       false,
+      publishingSource: draft.urlEntries.some(e => e.url.trim()) ? 'website-import'
+                      : draft.uploadedFileNames.length > 0        ? 'one-drive-import'
                       : 'manual-dashboard',
-      createdAt:     new Date().toISOString().split('T')[0],
-      updatedAt:     new Date().toISOString().split('T')[0],
+      createdAt:      new Date().toISOString().split('T')[0],
+      updatedAt:      new Date().toISOString().split('T')[0],
     })
 
     setPublishedSlug(titleSlug)
     setPublishing(false)
-    setStep('published')
+    setStep('done')
   }
 
-  function resetFlow() {
+  function reset() {
     setDraft(defaultDraft())
-    setStep('source')
+    setStep('format')
     setPublishedSlug('')
   }
 
   return (
     <div className="min-h-full p-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      {step !== 'published' && <ProgressBar step={step} />}
+      {step !== 'done' && <ProgressBar step={step} />}
 
-      {step === 'source'      && <SourceStep onSelect={selectSource} />}
-      {step === 'canva'       && <CanvaStep onBack={goBack} />}
-      {step === 'camera-roll' && (
-        <CameraRollStep draft={draft} onChange={patch} onNext={goConnections} onBack={goBack} />
-      )}
-      {step === 'import'      && (
-        <ImportStep draft={draft} onChange={patch} onNext={goConnections} onBack={goBack} />
-      )}
-      {step === 'write'       && (
-        <WriteStep draft={draft} onChange={patch} onNext={goConnections} onBack={goBack} />
-      )}
-      {step === 'connections' && (
-        <ConnectionsStep draft={draft} onChange={patch} onNext={goPreview} onBack={() => setStep(draft.source ?? 'source')} />
-      )}
-      {step === 'preview'     && (
-        <PreviewStep draft={draft} onPublish={handlePublish} onBack={() => setStep('connections')} publishing={publishing} />
-      )}
-      {step === 'published'   && (
-        <PublishedStep draft={draft} publishedSlug={publishedSlug} onPublishAnother={resetFlow} />
-      )}
+      {step === 'format'      && <FormatStep      draft={draft} onChange={patch} onNext={next} />}
+      {step === 'content'     && <ContentStep     draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'info'        && <InfoStep        draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'media'       && <MediaStep       draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'connections' && <ConnectionsStep draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'preview'     && <PreviewStep     draft={draft} onPublish={handlePublish} onBack={back} publishing={publishing} />}
+      {step === 'done'        && <DoneStep        draft={draft} publishedSlug={publishedSlug} action={lastAction} onPublishAnother={reset} />}
     </div>
   )
 }

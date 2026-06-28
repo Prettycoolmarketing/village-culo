@@ -479,6 +479,47 @@ export function StoryDetailPage() {
                       </p>
                     )}
                   </div>
+
+                  {/* Panels for extended content types */}
+                  {([
+                    ['podcast',          story.audioUrl],
+                    ['talking-head',     story.reelUrl],
+                    ['voice-over',       story.audioUrl],
+                    ['photo-story',      undefined],
+                    ['document',         story.ctaUrl],
+                    ['external-article', story.ctaUrl],
+                    ['youtube-video',    story.reelUrl],
+                    ['social-post',      story.ctaUrl],
+                  ] as [ContentType, string | undefined][])
+                    .filter(([t]) => story.contentTypes.includes(t))
+                    .map(([type, url]) => (
+                      <div
+                        key={type}
+                        id={`tab-panel-${type}`}
+                        role="tabpanel"
+                        aria-labelledby={`tab-${type}`}
+                        hidden={activeTab !== type}
+                      >
+                        {type === 'photo-story' ? (
+                          story.carouselImages && story.carouselImages.length > 0
+                            ? <CarouselContent images={story.carouselImages} title={story.title} />
+                            : <p className="font-body text-muted text-sm italic">Photo gallery will appear here once published.</p>
+                        ) : (type === 'talking-head' || type === 'youtube-video') ? (
+                          <ReelContent reelUrl={story.reelUrl} title={story.title} summary={story.summary} />
+                        ) : url ? (
+                          <div className="py-2">
+                            <a href={url} target="_blank" rel="noopener noreferrer"
+                               className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-[#b05a35] transition-colors text-sm">
+                              View {contentTypeLabel(type)} ↗
+                            </a>
+                          </div>
+                        ) : (
+                          <p className="font-body text-muted text-sm italic">
+                            {contentTypeLabel(type)} content will appear here once published.
+                          </p>
+                        )}
+                      </div>
+                    ))}
                 </div>
               </section>
 

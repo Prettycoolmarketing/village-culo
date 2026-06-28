@@ -17,9 +17,17 @@ export function formatDate(dateString: string): string {
 
 export function contentTypeLabel(type: string): string {
   const labels: Record<string, string> = {
-    blog: 'Blog',
-    reel: 'Reel',
-    carousel: 'Carousel',
+    blog:             'Blog',
+    reel:             'Reel',
+    carousel:         'Carousel',
+    podcast:          'Podcast',
+    'talking-head':   'Talking Head',
+    'voice-over':     'Voice Over',
+    'photo-story':    'Photo Story',
+    document:         'Document',
+    'external-article': 'External Article',
+    'youtube-video':  'YouTube Video',
+    'social-post':    'Social Post',
   }
   return labels[type] ?? type
 }

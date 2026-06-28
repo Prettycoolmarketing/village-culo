@@ -4,9 +4,17 @@ import type { Story, Founder, Business, Location, ContentType } from '../types'
 const FORMAT_PRIORITY: ContentType[] = ['reel', 'carousel', 'blog']
 
 const FORMAT_LABEL: Record<ContentType, string> = {
-  reel:      'Reel',
-  carousel:  'Carousel',
-  blog:      'Blog Post',
+  reel:               'Reel',
+  carousel:           'Carousel',
+  blog:               'Blog Post',
+  podcast:            'Podcast',
+  'talking-head':     'Talking Head',
+  'voice-over':       'Voice Over',
+  'photo-story':      'Photo Story',
+  document:           'Document',
+  'external-article': 'External Article',
+  'youtube-video':    'YouTube Video',
+  'social-post':      'Social Post',
 }
 
 export function primaryContentFormat(contentTypes: ContentType[]): string {
