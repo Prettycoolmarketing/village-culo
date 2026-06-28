@@ -102,7 +102,7 @@ export function BusinessProfilePage() {
   const business = getBusinessBySlug(slug ?? '')
   usePageTitle(business ? [business.name, 'Mercato'] : 'Mercato')
 
-  if (!business) return <BusinessNotFound slug={slug ?? ''} />
+  if (!business || business.status === 'archived') return <BusinessNotFound slug={slug ?? ''} />
 
   const founder        = getFounder(business.founderId)
   const faqs           = getFAQsForBusiness(business.id)
@@ -113,7 +113,7 @@ export function BusinessProfilePage() {
   const expertiseAreas = getExpertiseForBusiness(business.id)
 
   const businessTopicIds = new Set(business.topics.map(t => t.id))
-  const related = getBusinesses()
+  const related = getBusinesses({ publicOnly: true })
     .filter(b => b.id !== business.id)
     .map(b => {
       let score = 0
@@ -474,7 +474,7 @@ export function BusinessProfilePage() {
                 </h2>
                 <p className="font-body text-sm text-muted mb-6">Published founder stories connected to this business.</p>
                 <StoryGrid
-                  filter={{ businessId: business.id }}
+                  filter={{ businessId: business.id, publicOnly: true }}
                   columns={2}
                   cardVariant="compact"
                   showSummary
@@ -493,7 +493,7 @@ export function BusinessProfilePage() {
                 </h2>
                 <p className="font-body text-sm text-muted mb-6">Knowledge extracted from this business's stories.</p>
                 <IdeaGrid
-                  filter={{ businessId: business.id }}
+                  filter={{ businessId: business.id, publicOnly: true }}
                   columns={2}
                   cardVariant="default"
                   emptyTitle="No ideas linked yet"

@@ -249,7 +249,7 @@ export function StoryDetailPage() {
   const story = getStoryBySlug(slug ?? '')
   usePageTitle(story ? [story.title, 'Stories'] : 'Stories')
 
-  if (!story) return <StoryNotFound slug={slug ?? ''} />
+  if (!story || story.status === 'archived') return <StoryNotFound slug={slug ?? ''} />
 
   const founder  = getFounder(story.founderId)
   const business = getBusiness(story.businessId)
@@ -260,12 +260,12 @@ export function StoryDetailPage() {
   // Related stories: prefer relatedStoryIds, fall back to same primary topic
   const related = (() => {
     if (story.relatedStoryIds.length > 0) {
-      return getStories()
+      return getStories({ publicOnly: true })
         .filter(s => story.relatedStoryIds.includes(s.id) && s.id !== story.id)
         .slice(0, 3)
     }
     if (story.topics.length > 0) {
-      return getStories({ topicId: story.topics[0].id, limit: 4 })
+      return getStories({ topicId: story.topics[0].id, publicOnly: true, limit: 4 })
         .filter(s => s.id !== story.id)
         .slice(0, 3)
     }

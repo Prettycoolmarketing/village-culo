@@ -23,7 +23,7 @@ export type ProductType =
 
 export type LibraryStatus =
   | 'coming-soon' | 'available' | 'pre-order' | 'sold-out'
-  | 'free-download' | 'external' | 'members-only' | 'early-access'
+  | 'free-download' | 'external' | 'members-only' | 'early-access' | 'archived'
 
 export type PurchaseProvider =
   | 'internal' | 'amazon' | 'audible' | 'shopify' | 'gumroad'

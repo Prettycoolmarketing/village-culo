@@ -6,7 +6,7 @@ import { ideas } from '../data/ideas'
 import { events } from '../data/events'
 
 export function filterStories(filter: StoryFilter = {}): Story[] {
-  let result = [...stories]
+  let result = stories.filter(s => s.status !== 'archived')
   if (filter.ids) result = result.filter(s => filter.ids!.includes(s.id))
   if (filter.founderId) result = result.filter(s => s.founderId === filter.founderId)
   if (filter.businessId) result = result.filter(s => s.businessId === filter.businessId)
@@ -21,7 +21,7 @@ export function filterStories(filter: StoryFilter = {}): Story[] {
 }
 
 export function filterFounders(filter: FounderFilter = {}): Founder[] {
-  let result = [...founders]
+  let result = founders.filter(f => f.status !== 'archived')
   if (filter.ids) result = result.filter(f => filter.ids!.includes(f.id))
   if (filter.locationId) result = result.filter(f => f.location.id === filter.locationId)
   if (filter.industryId) result = result.filter(f => f.industry.id === filter.industryId)
@@ -32,7 +32,7 @@ export function filterFounders(filter: FounderFilter = {}): Founder[] {
 }
 
 export function filterBusinesses(filter: BusinessFilter = {}): Business[] {
-  let result = [...businesses]
+  let result = businesses.filter(b => b.status !== 'archived')
   if (filter.ids) result = result.filter(b => filter.ids!.includes(b.id))
   if (filter.locationId) result = result.filter(b => b.location.id === filter.locationId)
   if (filter.industryId) result = result.filter(b => b.industry.id === filter.industryId)

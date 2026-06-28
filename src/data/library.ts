@@ -27,7 +27,7 @@ export const libraryItems: LibraryItem[] = [
     location: brisbane,
     price: '$47',
     currency: 'AUD',
-    status: 'available',
+    status: 'archived',
     purchaseLinks: [
       {
         label: 'Get the Playbook',
@@ -96,7 +96,7 @@ export const libraryItems: LibraryItem[] = [
     location: brisbane,
     price: '$67',
     currency: 'AUD',
-    status: 'available',
+    status: 'archived',
     purchaseLinks: [
       {
         label: 'Get the Templates',
@@ -154,7 +154,7 @@ export const libraryItems: LibraryItem[] = [
     location: brisbane,
     price: '$37',
     currency: 'AUD',
-    status: 'available',
+    status: 'archived',
     purchaseLinks: [
       {
         label: 'Get the Prompts',
@@ -205,7 +205,7 @@ export const libraryItems: LibraryItem[] = [
     location: brisbane,
     price: '$497',
     currency: 'AUD',
-    status: 'coming-soon',
+    status: 'archived',
     purchaseLinks: [
       {
         label: 'Join the Waitlist',
@@ -264,7 +264,7 @@ export const libraryItems: LibraryItem[] = [
     location: brisbane,
     price: 'TBA',
     currency: 'AUD',
-    status: 'coming-soon',
+    status: 'archived',
     purchaseLinks: [
       {
         label: 'Follow the Journey',

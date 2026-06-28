@@ -5,8 +5,8 @@ import { getServicesForExpertise } from '../data/services'
 import { getResourcesForExpertise } from '../data/resources'
 import { getCaseStudiesForExpertise } from '../data/caseStudies'
 import { getTalksForExpertise } from '../data/talks'
-import { founders } from '../data/founders'
-import { businesses } from '../data/businesses'
+import { getFounders } from '../services/founders'
+import { getBusinesses } from '../services/businesses'
 import { StoryGrid } from '../widgets/StoryGrid'
 import { IdeaGrid } from '../widgets/IdeaGrid'
 import { InnerContainer } from '../components/layout/PageContainer'
@@ -51,8 +51,8 @@ export function ExpertiseDetailPage() {
 
   if (!expertise) return <ExpertiseNotFound slug={slug ?? ''} />
 
-  const expertiseFounders = founders.filter(f => expertise.founderIds.includes(f.id))
-  const expertiseBusinesses = businesses.filter(b => expertise.businessIds.includes(b.id))
+  const expertiseFounders = getFounders({ publicOnly: true }).filter(f => expertise.founderIds.includes(f.id))
+  const expertiseBusinesses = getBusinesses({ publicOnly: true }).filter(b => expertise.businessIds.includes(b.id))
   const expertiseServices = getServicesForExpertise(expertise.id)
   const expertiseResources = getResourcesForExpertise(expertise.id)
   const expertiseCaseStudies = getCaseStudiesForExpertise(expertise.id)
@@ -143,7 +143,7 @@ export function ExpertiseDetailPage() {
               <StoryGrid
                 heading={`Stories about ${expertise.name}`}
                 subheading={`Published work from founders who practise ${expertise.name}.`}
-                filter={{ ids: expertise.storyIds.length > 0 ? expertise.storyIds : undefined, topicId: expertise.topicIds[0] }}
+                filter={{ ids: expertise.storyIds.length > 0 ? expertise.storyIds : undefined, topicId: expertise.topicIds[0], publicOnly: true }}
                 columns={2}
                 cardVariant="vertical"
                 showSummary
@@ -158,7 +158,7 @@ export function ExpertiseDetailPage() {
               <IdeaGrid
                 heading={`Ideas in ${expertise.name}`}
                 subheading={`Extracted knowledge and insights from this expertise area.`}
-                filter={{ topicId: expertise.topicIds[0] }}
+                filter={{ topicId: expertise.topicIds[0], publicOnly: true }}
                 columns={2}
                 cardVariant="default"
                 emptyTitle="Ideas coming soon"

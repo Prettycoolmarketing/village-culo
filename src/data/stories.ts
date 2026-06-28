@@ -565,5 +565,5 @@ export const getStoryBySlug  = (slug: string) => stories.find(s => s.slug === sl
 export const getFeaturedStories    = () => stories.filter(s => s.featured && s.status !== 'archived')
 export const getStoriesByFounder   = (founderId: string)   => stories.filter(s => s.founderId === founderId)
 export const getStoriesByBusiness  = (businessId: string)  => stories.filter(s => s.businessId === businessId)
-export const getStoriesByLocation  = (locationId: string)  => stories.filter(s => s.location.id === locationId)
+export const getStoriesByLocation  = (locationId: string)  => stories.filter(s => s.location.id === locationId && s.status !== 'archived')
 export const getStoriesByTopic     = (topicId: string)     => stories.filter(s => s.topics.some(t => t.id === topicId))

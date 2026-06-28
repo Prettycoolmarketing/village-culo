@@ -71,7 +71,7 @@ export function LibraryDetailPage() {
   const item     = getLibraryItemBySlug(slug ?? '')
   usePageTitle(item ? [item.title, 'Library'] : 'Library')
 
-  if (!item) return <LibraryNotFound slug={slug ?? ''} />
+  if (!item || item.status === 'archived') return <LibraryNotFound slug={slug ?? ''} />
 
   const founder  = getFounder(item.authorFounderId)
   const business = item.businessId ? getBusiness(item.businessId) : undefined
@@ -82,7 +82,7 @@ export function LibraryDetailPage() {
 
   // Related from same founder/business, different slug
   const related = getLibraryItems()
-    .filter(l => l.slug !== item.slug && (
+    .filter(l => l.status !== 'archived' && l.slug !== item.slug && (
       l.authorFounderId === item.authorFounderId ||
       l.topics.some(t => item.topics.some(it => it.id === t.id))
     ))

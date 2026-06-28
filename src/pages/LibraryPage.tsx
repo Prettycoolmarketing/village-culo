@@ -43,6 +43,7 @@ export function LibraryPage() {
   const [status,      setStatus]      = useState<LibraryStatus | ''>('')
 
   const filtered = libraryItems.filter(item => {
+    if (item.status === 'archived') return false
     if (productType && item.productType !== productType) return false
     if (status      && item.status      !== status)      return false
     if (query.trim()) {
@@ -58,7 +59,7 @@ export function LibraryPage() {
     return true
   })
 
-  const featured = libraryItems.filter(i => i.featured)
+  const featured = libraryItems.filter(i => i.featured && i.status !== 'archived')
 
   return (
     <main className="min-h-screen bg-background" id="library-index">
@@ -82,9 +83,9 @@ export function LibraryPage() {
             {/* Stats */}
             <div className="flex flex-wrap gap-8 mt-8">
               {[
-                { count: libraryItems.length,                        label: 'Published items'   },
-                { count: libraryItems.filter(i => i.status === 'free-download').length, label: 'Free resources' },
-                { count: new Set(libraryItems.map(i => i.authorFounderId)).size, label: 'Creators' },
+                { count: filtered.length,                        label: 'Published items'   },
+                { count: filtered.filter(i => i.status === 'free-download').length, label: 'Free resources' },
+                { count: new Set(filtered.map(i => i.authorFounderId)).size, label: 'Creators' },
               ].map(stat => (
                 <div key={stat.label} className="flex flex-col">
                   <span className="font-heading text-3xl font-bold text-white">{stat.count}</span>

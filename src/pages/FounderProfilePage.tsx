@@ -78,7 +78,7 @@ function FounderNotFound({ slug }: { slug: string }) {
 // ─── Related Founders ────────────────────────────────────────────────────────────
 
 function getRelatedFounders(founderId: string, industryId: string, locationId: string, topicIds: string[]) {
-  return getFounders()
+  return getFounders({ publicOnly: true })
     .filter(f => f.id !== founderId)
     .map(f => {
       let score = 0
@@ -100,7 +100,7 @@ export function FounderProfilePage() {
   const founder = getFounders().find(f => f.slug === slug)
   usePageTitle(founder ? [founder.name, 'Founders'] : 'Founders')
 
-  if (!founder) return <FounderNotFound slug={slug ?? ''} />
+  if (!founder || founder.status === 'archived') return <FounderNotFound slug={slug ?? ''} />
 
   const business         = getBusiness(founder.businessId)
   const faqs             = getFAQsForFounder(founder.id)
@@ -349,7 +349,7 @@ export function FounderProfilePage() {
               <StoryGrid
                 heading={`Stories by ${founder.name}`}
                 subheading={`Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
-                filter={{ founderId: founder.id }}
+                filter={{ founderId: founder.id, publicOnly: true }}
                 columns={2}
                 cardVariant="vertical"
                 showSummary
@@ -431,7 +431,7 @@ export function FounderProfilePage() {
               <IdeaGrid
                 heading={`Ideas ${founder.name} talks about`}
                 subheading={`Knowledge and insights connected to ${founder.name}'s stories and experiences.`}
-                filter={{ founderId: founder.id }}
+                filter={{ founderId: founder.id, publicOnly: true }}
                 columns={2}
                 cardVariant="default"
                 emptyTitle="No ideas linked yet"

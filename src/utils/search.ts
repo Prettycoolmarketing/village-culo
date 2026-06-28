@@ -26,12 +26,12 @@ export function searchVillage(query: string): SearchResults {
   // Empty query — return everything so Archive doubles as a full browser
   if (!query.trim()) {
     return {
-      stories:    [...stories],
-      founders:   [...founders],
+      stories:    stories.filter(s => s.status !== 'archived'),
+      founders:   founders.filter(f => f.status !== 'archived'),
       ideas:      publicIdeas,
-      businesses: [...businesses],
+      businesses: businesses.filter(b => b.status !== 'archived'),
       events:     [...events],
-      library:    [...libraryItems],
+      library:    libraryItems.filter(l => l.status !== 'archived'),
     }
   }
 
@@ -43,6 +43,7 @@ export function searchVillage(query: string): SearchResults {
 
   return {
     stories: stories.filter(s => {
+      if (s.status === 'archived') return false
       const f = founderMap.get(s.founderId)
       const b = businessMap.get(s.businessId)
       return searchable([
@@ -56,6 +57,7 @@ export function searchVillage(query: string): SearchResults {
     }),
 
     founders: founders.filter(f => {
+      if (f.status === 'archived') return false
       const b = businessMap.get(f.businessId)
       return searchable([
         f.name, f.bio,
@@ -76,6 +78,7 @@ export function searchVillage(query: string): SearchResults {
     }),
 
     businesses: businesses.filter(b => {
+      if (b.status === 'archived') return false
       const f = founderMap.get(b.founderId)
       return searchable([
         b.name, b.tagline, b.description,
@@ -96,6 +99,7 @@ export function searchVillage(query: string): SearchResults {
     ),
 
     library: libraryItems.filter(l => {
+      if (l.status === 'archived') return false
       const f = founderMap.get(l.authorFounderId)
       const b = l.businessId ? businessMap.get(l.businessId) : undefined
       return searchable([
