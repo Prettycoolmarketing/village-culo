@@ -7,7 +7,7 @@ import { InnerContainer }    from '../components/layout/PageContainer'
 import { locations }         from '../data/locations'
 import { industries }        from '../data/industries'
 import { topics }            from '../data/topics'
-import { filterFounders }    from '../utils/filters'
+import { getFounders }       from '../services/founders'
 import type { FounderFilter } from '../types'
 
 // ─── Build filter option arrays from data ──────────────────────────────────────
@@ -26,7 +26,7 @@ const topicOptions = [
   { value: 'all', label: 'All Topics' },
   // Only show topics that at least one founder covers
   ...topics
-    .filter(t => filterFounders({ topicId: t.id }).length > 0)
+    .filter(t => getFounders({ topicId: t.id }).length > 0)
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
@@ -46,7 +46,7 @@ export function FoundersPage() {
     ...(activeTopic    !== 'all' && { topicId:    activeTopic    }),
   }
 
-  const matchCount = filterFounders(filter).length
+  const matchCount = getFounders(filter).length
   const hasActiveFilter = activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all'
 
   function clearFilters() {

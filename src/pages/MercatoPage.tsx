@@ -6,7 +6,7 @@ import { InnerContainer }    from '../components/layout/PageContainer'
 import { locations }         from '../data/locations'
 import { industries }        from '../data/industries'
 import { topics }            from '../data/topics'
-import { filterBusinesses }  from '../utils/filters'
+import { getBusinesses }     from '../services/businesses'
 import type { BusinessFilter } from '../types'
 
 // ─── Filter option arrays ──────────────────────────────────────────────────────
@@ -14,21 +14,21 @@ import type { BusinessFilter } from '../types'
 const locationOptions = [
   { value: 'all', label: 'All Locations' },
   ...locations
-    .filter(l => filterBusinesses({ locationId: l.id }).length > 0)
+    .filter(l => getBusinesses({ locationId: l.id }).length > 0)
     .map(l => ({ value: l.id, label: l.name })),
 ]
 
 const industryOptions = [
   { value: 'all', label: 'All Industries' },
   ...industries
-    .filter(i => filterBusinesses({ industryId: i.id }).length > 0)
+    .filter(i => getBusinesses({ industryId: i.id }).length > 0)
     .map(i => ({ value: i.id, label: i.name })),
 ]
 
 const topicOptions = [
   { value: 'all', label: 'All Topics' },
   ...topics
-    .filter(t => filterBusinesses({ topicId: t.id }).length > 0)
+    .filter(t => getBusinesses({ topicId: t.id }).length > 0)
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
@@ -47,7 +47,7 @@ export function MercatoPage() {
     ...(activeTopic    !== 'all' && { topicId:    activeTopic    }),
   }
 
-  const matchCount      = filterBusinesses(filter).length
+  const matchCount      = getBusinesses(filter).length
   const hasActiveFilter = activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all'
 
   function clearFilters() {

@@ -6,7 +6,7 @@ import { InnerContainer }   from '../components/layout/PageContainer'
 import { topics }           from '../data/topics'
 import { founders }         from '../data/founders'
 import { businesses }       from '../data/businesses'
-import { filterIdeas }      from '../utils/filters'
+import { getIdeas }         from '../services/ideas'
 import type { IdeaFilter }  from '../types'
 
 // ─── Filter option arrays ──────────────────────────────────────────────────────
@@ -14,21 +14,21 @@ import type { IdeaFilter }  from '../types'
 const topicOptions = [
   { value: 'all', label: 'All Topics' },
   ...topics
-    .filter(t => filterIdeas({ topicId: t.id }).length > 0)
+    .filter(t => getIdeas({ topicId: t.id }).length > 0)
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
 const founderOptions = [
   { value: 'all', label: 'All Founders' },
   ...founders
-    .filter(f => filterIdeas({ founderId: f.id }).length > 0)
+    .filter(f => getIdeas({ founderId: f.id }).length > 0)
     .map(f => ({ value: f.id, label: f.name })),
 ]
 
 const businessOptions = [
   { value: 'all', label: 'All Businesses' },
   ...businesses
-    .filter(b => filterIdeas({ businessId: b.id }).length > 0)
+    .filter(b => getIdeas({ businessId: b.id }).length > 0)
     .map(b => ({ value: b.id, label: b.name })),
 ]
 
@@ -47,7 +47,7 @@ export function IdeasPage() {
     ...(activeBusiness !== 'all' && { businessId: activeBusiness }),
   }
 
-  const matchCount     = filterIdeas(filter).length
+  const matchCount     = getIdeas(filter).length
   const hasActiveFilter = activeTopic !== 'all' || activeFounder !== 'all' || activeBusiness !== 'all'
 
   function clearFilters() {

@@ -4,7 +4,7 @@ import { EventGrid }       from '../widgets/EventGrid'
 import { FilterBar }       from '../components/ui/FilterBar'
 import { InnerContainer }  from '../components/layout/PageContainer'
 import { locations }       from '../data/locations'
-import { filterEvents }    from '../utils/filters'
+import { getEvents }       from '../services/events'
 import type { EventFilter, NoticeType } from '../types'
 
 // ─── Filter option arrays ──────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ const typeOptions = [
 const locationOptions = [
   { value: 'all', label: 'All Locations' },
   ...locations
-    .filter(l => filterEvents({ locationId: l.id }).length > 0)
+    .filter(l => getEvents({ locationId: l.id }).length > 0)
     .map(l => ({ value: l.id, label: l.name })),
 ]
 
@@ -37,7 +37,7 @@ export function NoticeboardPage() {
     ...(activeLocation !== 'all' && { locationId: activeLocation           }),
   }
 
-  const matchCount      = filterEvents(filter).length
+  const matchCount      = getEvents(filter).length
   const hasActiveFilter = activeType !== 'all' || activeLocation !== 'all'
 
   function clearFilters() {

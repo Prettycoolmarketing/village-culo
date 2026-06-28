@@ -4,6 +4,14 @@ export type Status = 'draft' | 'submitted' | 'published' | 'featured' | 'archive
 export type ContentType = 'blog' | 'reel' | 'carousel'
 export type NoticeType = 'event' | 'collaboration' | 'opportunity' | 'request'
 export type PermissionRole = 'visitor' | 'founder' | 'business' | 'moderator' | 'admin'
+export type PublishingSource =
+  | 'manual-dashboard'
+  | 'piazza-form'
+  | 'canva-api'
+  | 'website-import'
+  | 'youtube-import'
+  | 'one-drive-import'
+  | 'system-generated'
 export type ResourceType = 'guide' | 'template' | 'tool' | 'framework' | 'video' | 'article'
 export type PriceType = 'flat' | 'monthly' | 'hourly' | 'custom'
 
@@ -422,6 +430,7 @@ export interface Story {
   // Metadata
   status: Status
   featured: boolean
+  publishingSource?: PublishingSource
   createdAt: string
   updatedAt: string
   seoTitle?: string

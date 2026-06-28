@@ -6,7 +6,7 @@ import { InnerContainer }    from '../components/layout/PageContainer'
 import { locations }         from '../data/locations'
 import { industries }        from '../data/industries'
 import { topics }            from '../data/topics'
-import { filterStories }     from '../utils/filters'
+import { getStories }        from '../services/stories'
 import type { StoryFilter, ContentType } from '../types'
 
 // ─── Filter option arrays ──────────────────────────────────────────────────────
@@ -21,21 +21,21 @@ const contentTypeOptions = [
 const locationOptions = [
   { value: 'all', label: 'All Locations' },
   ...locations
-    .filter(l => filterStories({ locationId: l.id }).length > 0)
+    .filter(l => getStories({ locationId: l.id }).length > 0)
     .map(l => ({ value: l.id, label: l.name })),
 ]
 
 const industryOptions = [
   { value: 'all', label: 'All Industries' },
   ...industries
-    .filter(i => filterStories({ industryId: i.id }).length > 0)
+    .filter(i => getStories({ industryId: i.id }).length > 0)
     .map(i => ({ value: i.id, label: i.name })),
 ]
 
 const topicOptions = [
   { value: 'all', label: 'All Topics' },
   ...topics
-    .filter(t => filterStories({ topicId: t.id }).length > 0)
+    .filter(t => getStories({ topicId: t.id }).length > 0)
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
@@ -56,7 +56,7 @@ export function StoriesPage() {
     ...(activeTopic    !== 'all' && { topicId:     activeTopic    }),
   }
 
-  const matchCount     = filterStories(filter).length
+  const matchCount     = getStories(filter).length
   const hasActiveFilter = activeFormat !== 'all' || activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all'
 
   function clearFilters() {
