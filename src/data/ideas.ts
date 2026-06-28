@@ -14,6 +14,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['shakas', 'murrakee'],
     relatedBusinessIds: ['pretty-cool-marketing', 'billow-beach'],
     featured: false,
+    status: 'archived',
     createdAt: '2024-03-10',
   },
   {
@@ -28,6 +29,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['shakas', 'claudia-martinez', 'murrakee'],
     relatedBusinessIds: ['pretty-cool-marketing', 'claudia-martinez-photography'],
     featured: false,
+    status: 'archived',
     createdAt: '2024-03-15',
   },
   {
@@ -42,6 +44,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['shakas'],
     relatedBusinessIds: ['pretty-cool-marketing', 'culo'],
     featured: false,
+    status: 'archived',
     createdAt: '2024-04-02',
   },
   {
@@ -56,6 +59,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['shakas'],
     relatedBusinessIds: ['pretty-cool-marketing'],
     featured: false,
+    status: 'archived',
     createdAt: '2024-05-05',
   },
   {
@@ -70,6 +74,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['shakas'],
     relatedBusinessIds: ['pretty-cool-marketing', 'culo', 'canva'],
     featured: false,
+    status: 'archived',
     createdAt: '2024-05-01',
   },
   {
@@ -84,6 +89,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['shakas'],
     relatedBusinessIds: ['pretty-cool-marketing', 'culo'],
     featured: false,
+    status: 'archived',
     createdAt: '2024-05-20',
   },
   {
@@ -98,6 +104,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['shakas'],
     relatedBusinessIds: ['stagger-inn-adventures', 'pretty-cool-marketing'],
     featured: false,
+    status: 'archived',
     createdAt: '2024-06-15',
   },
   {
@@ -112,6 +119,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['shakas', 'claudia-martinez', 'murrakee', 'simone-pansino'],
     relatedBusinessIds: ['billow-beach', 'claudia-martinez-photography', 'we-the-stars'],
     featured: false,
+    status: 'archived',
     createdAt: '2025-03-15',
   },
   {
@@ -126,6 +134,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['simone-pansino', 'shakas'],
     relatedBusinessIds: ['we-the-stars', 'pretty-cool-marketing'],
     featured: false,
+    status: 'archived',
     createdAt: '2025-03-01',
   },
   {
@@ -140,6 +149,7 @@ export const ideas: Idea[] = [
     relatedFounderIds: ['murrakee', 'shakas'],
     relatedBusinessIds: ['billow-beach'],
     featured: false,
+    status: 'archived',
     createdAt: '2025-04-01',
   },
 ]

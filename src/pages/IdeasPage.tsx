@@ -4,31 +4,32 @@ import { IdeaGrid }         from '../widgets/IdeaGrid'
 import { FilterBar }        from '../components/ui/FilterBar'
 import { InnerContainer }   from '../components/layout/PageContainer'
 import { topics }           from '../data/topics'
-import { founders }         from '../data/founders'
-import { businesses }       from '../data/businesses'
+import { getFounders }      from '../services/founders'
+import { getBusinesses }    from '../services/businesses'
 import { getIdeas }         from '../services/ideas'
 import type { IdeaFilter }  from '../types'
 
 // ─── Filter option arrays ──────────────────────────────────────────────────────
+// Only show options that have at least one publicly visible idea
 
 const topicOptions = [
   { value: 'all', label: 'All Topics' },
   ...topics
-    .filter(t => getIdeas({ topicId: t.id }).length > 0)
+    .filter(t => getIdeas({ topicId: t.id, publicOnly: true }).length > 0)
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
 const founderOptions = [
   { value: 'all', label: 'All Founders' },
-  ...founders
-    .filter(f => getIdeas({ founderId: f.id }).length > 0)
+  ...getFounders({ publicOnly: true })
+    .filter(f => getIdeas({ founderId: f.id, publicOnly: true }).length > 0)
     .map(f => ({ value: f.id, label: f.name })),
 ]
 
 const businessOptions = [
   { value: 'all', label: 'All Businesses' },
-  ...businesses
-    .filter(b => getIdeas({ businessId: b.id }).length > 0)
+  ...getBusinesses({ publicOnly: true })
+    .filter(b => getIdeas({ businessId: b.id, publicOnly: true }).length > 0)
     .map(b => ({ value: b.id, label: b.name })),
 ]
 
@@ -42,6 +43,7 @@ export function IdeasPage() {
   const [filtersOpen,    setFiltersOpen]    = useState(false)
 
   const filter: IdeaFilter = {
+    publicOnly: true,
     ...(activeTopic    !== 'all' && { topicId:    activeTopic    }),
     ...(activeFounder  !== 'all' && { founderId:  activeFounder  }),
     ...(activeBusiness !== 'all' && { businessId: activeBusiness }),
@@ -145,8 +147,11 @@ export function IdeasPage() {
             columns={3}
             cardVariant="default"
             showQuotes
-            emptyTitle="No ideas match these filters"
-            emptyMessage="Try clearing one or more filters, or check back as more stories are published and new ideas are extracted."
+            emptyTitle={hasActiveFilter ? 'No ideas match these filters' : 'The first ideas are waiting to be discovered.'}
+            emptyMessage={hasActiveFilter
+              ? 'Try clearing one or more filters to see more ideas.'
+              : 'Ideas are extracted from published founder stories. As founders publish, the knowledge layer of the Village will grow here.'
+            }
           />
         </InnerContainer>
       </section>

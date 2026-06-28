@@ -1,9 +1,9 @@
 import { stories }      from '../data/stories'
 import { founders }     from '../data/founders'
-import { ideas }        from '../data/ideas'
 import { businesses }   from '../data/businesses'
 import { events }       from '../data/events'
 import { libraryItems } from '../data/library'
+import { getIdeas }     from '../services/ideas'
 import type { Story, Founder, Idea, Business, Event, LibraryItem } from '../types'
 
 export interface SearchResults {
@@ -21,12 +21,14 @@ function searchable(fields: (string | undefined | null)[]): string {
 }
 
 export function searchVillage(query: string): SearchResults {
+  const publicIdeas = getIdeas({ publicOnly: true })
+
   // Empty query — return everything so Archive doubles as a full browser
   if (!query.trim()) {
     return {
       stories:    [...stories],
       founders:   [...founders],
-      ideas:      [...ideas],
+      ideas:      publicIdeas,
       businesses: [...businesses],
       events:     [...events],
       library:    [...libraryItems],
@@ -64,7 +66,7 @@ export function searchVillage(query: string): SearchResults {
       ]).includes(q)
     }),
 
-    ideas: ideas.filter(i => {
+    ideas: publicIdeas.filter(i => {
       const relatedNames = i.relatedFounderIds.map(id => founderMap.get(id)?.name ?? '')
       return searchable([
         i.title, i.description, i.quote ?? '',

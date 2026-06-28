@@ -97,11 +97,11 @@ export function VillagePage() {
           heading="Trending Ideas"
           subheading="Knowledge extracted from stories across the Village."
           action={{ label: 'Explore Ideas', href: '/ideas' }}
-          filter={{ featured: true, limit: 6 }}
+          filter={{ publicOnly: true, featured: true, limit: 6 }}
           columns={3}
           showQuotes
-          emptyTitle="No ideas yet"
-          emptyMessage="Ideas are extracted from published stories. Publish a story to generate ideas."
+          emptyTitle="The first ideas are waiting to be discovered."
+          emptyMessage="Ideas are extracted from published founder stories. As founders publish, the knowledge layer of the Village will grow here."
         />
       </VillageSection>
 

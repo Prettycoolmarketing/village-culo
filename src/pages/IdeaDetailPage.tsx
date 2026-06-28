@@ -73,13 +73,13 @@ export function IdeaDetailPage() {
   const idea = getIdeaBySlug(slug ?? '')
   usePageTitle(idea ? [idea.title, 'Ideas'] : 'Ideas')
 
-  if (!idea) return <IdeaNotFound slug={slug ?? ''} />
+  if (!idea || idea.status === 'archived') return <IdeaNotFound slug={slug ?? ''} />
 
   const quoteFounder = idea.quoteFounderId ? getFounder(idea.quoteFounderId) : undefined
 
-  // Related ideas: share at least one topic, exclude current, deduplicated
+  // Related ideas: share at least one topic, public only, exclude current
   const topicIds = new Set(idea.topics.map(t => t.id))
-  const relatedIdeas = getIdeas()
+  const relatedIdeas = getIdeas({ publicOnly: true })
     .filter(i => i.id !== idea.id && i.topics.some(t => topicIds.has(t.id)))
     .slice(0, 3)
 

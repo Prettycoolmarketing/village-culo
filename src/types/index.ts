@@ -453,6 +453,7 @@ export interface Idea {
   relatedFounderIds: string[]
   relatedBusinessIds: string[]
   featured: boolean
+  status?: Status
   createdAt: string
 }
 
@@ -522,6 +523,7 @@ export interface IdeaFilter {
   businessId?: string
   storyId?: string
   featured?: boolean
+  publicOnly?: boolean
   limit?: number
 }
 

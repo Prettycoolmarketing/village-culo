@@ -15,6 +15,7 @@ export function getIdeas(filter?: IdeaFilter): Idea[] {
   if (filter.founderId)  result = result.filter(i => i.relatedFounderIds.includes(filter.founderId!))
   if (filter.businessId) result = result.filter(i => i.relatedBusinessIds.includes(filter.businessId!))
   if (filter.storyId)    result = result.filter(i => i.relatedStoryIds.includes(filter.storyId!))
+  if (filter.publicOnly) result = result.filter(i => i.status === 'published' || i.status === 'featured')
   if (filter.featured !== undefined) result = result.filter(i => i.featured === filter.featured)
   if (filter.limit)      result = result.slice(0, filter.limit)
   return result

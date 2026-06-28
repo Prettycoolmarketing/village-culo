@@ -491,7 +491,7 @@ export function StoryDetailPage() {
                   Ideas inside this Story
                 </h2>
                 <IdeaGrid
-                  filter={{ storyId: story.id }}
+                  filter={{ storyId: story.id, publicOnly: true }}
                   columns={2}
                   cardVariant="default"
                   emptyTitle="No ideas extracted yet"
