@@ -20,8 +20,6 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, loading } = useAuth()
 
-  const publishTo = user ? '/dashboard/publish' : '/piazza'
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-border shadow-sm" role="banner">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -66,31 +64,41 @@ export function Navbar() {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden lg:flex items-center gap-3">
-            {!loading && (
-              user ? (
-                <Link
-                  to="/dashboard/home"
-                  className="px-4 py-2 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
-                >
-                  Dashboard
-                </Link>
+          {!loading && (
+            <div className="hidden lg:flex items-center gap-3">
+              {user ? (
+                <>
+                  <Link
+                    to="/dashboard/home"
+                    className="px-4 py-2 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/dashboard/publish"
+                    className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
+                  >
+                    Publish
+                  </Link>
+                </>
               ) : (
-                <Link
-                  to="/dashboard/login"
-                  className="px-4 py-2 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
-                >
-                  Log in
-                </Link>
-              )
-            )}
-            <Link
-              to={publishTo}
-              className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
-            >
-              Publish a Story
-            </Link>
-          </div>
+                <>
+                  <Link
+                    to="/dashboard/login"
+                    className="px-4 py-2 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/onboarding"
+                    className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
+                  >
+                    Become a Publisher
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Mobile menu button */}
           <button
@@ -137,8 +145,8 @@ export function Navbar() {
               </NavLink>
             ))}
             <div className="pt-3 border-t border-border mt-3 flex flex-col gap-2">
-              {!loading && (
-                user ? (
+              {!loading && (user ? (
+                <>
                   <Link
                     to="/dashboard/home"
                     onClick={() => setMobileOpen(false)}
@@ -146,7 +154,16 @@ export function Navbar() {
                   >
                     Dashboard
                   </Link>
-                ) : (
+                  <Link
+                    to="/dashboard/publish"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
+                  >
+                    Publish
+                  </Link>
+                </>
+              ) : (
+                <>
                   <Link
                     to="/dashboard/login"
                     onClick={() => setMobileOpen(false)}
@@ -154,15 +171,15 @@ export function Navbar() {
                   >
                     Log in
                   </Link>
-                )
-              )}
-              <Link
-                to={publishTo}
-                onClick={() => setMobileOpen(false)}
-                className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
-              >
-                Publish a Story
-              </Link>
+                  <Link
+                    to="/onboarding"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
+                  >
+                    Become a Publisher
+                  </Link>
+                </>
+              ))}
             </div>
           </div>
         </nav>
