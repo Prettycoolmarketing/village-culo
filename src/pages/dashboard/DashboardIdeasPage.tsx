@@ -1,71 +1,170 @@
 import { useState } from 'react'
-import { getIdeas } from '../../services/ideas'
+import { ideas as allIdeas } from '../../data/ideas'
+import { stories } from '../../data/stories'
+import { founders } from '../../data/founders'
+import { businesses } from '../../data/businesses'
+import { Tabs } from '../../components/dashboard/Tabs'
+import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
+import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
+import { getIdeaFeaturedIn } from '../../utils/featuredIn'
+import type { Idea } from '../../types'
 
-export function DashboardIdeasPage() {
-  const [search, setSearch] = useState('')
+// ─── Idea detail pane ─────────────────────────────────────────────────────────
 
-  const allIdeas = getIdeas()
-  const ideas = search
-    ? allIdeas.filter(i =>
-        i.title.toLowerCase().includes(search.toLowerCase()) ||
-        i.description.toLowerCase().includes(search.toLowerCase())
-      )
-    : allIdeas
+function IdeaDetailPane({ idea, onClose }: { idea: Idea; onClose: () => void }) {
+  const [tab, setTab] = useState('overview')
+
+  const featuredIn     = getIdeaFeaturedIn(idea.id)
+  const relatedStories = stories.filter(s => idea.relatedStoryIds.includes(s.id))
+  const relatedFnders  = founders.filter(f => idea.relatedFounderIds.includes(f.id))
+  const relatedBizs    = businesses.filter(b => idea.relatedBusinessIds.includes(b.id))
+
+  const TABS = [
+    { key: 'overview',      label: 'Overview'      },
+    { key: 'relationships', label: 'Relationships', badge: relatedStories.length + relatedFnders.length },
+    { key: 'featured-in',   label: 'Featured In',   badge: featuredIn.length },
+  ]
 
   return (
-    <div className="p-8 max-w-4xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#2D2A26]">Ideas</h1>
-          <p className="text-sm text-[#6B7280] mt-1">{allIdeas.length} ideas in the knowledge graph</p>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E4DD]">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-[#2D2A26] truncate">{idea.title}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            {idea.featured && (
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#D6A94D]/15 text-[#D6A94D]">Featured</span>
+            )}
+            <span className="text-[10px] text-[#9CA3AF]">{relatedStories.length} stories</span>
+          </div>
+        </div>
+        <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#2D2A26] text-lg leading-none shrink-0 ml-2">×</button>
+      </div>
+
+      <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-5" />
+
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+
+        {tab === 'overview' && (
+          <div className="flex flex-col gap-4">
+            <p className="text-sm text-[#4B4845] leading-relaxed">{idea.description}</p>
+            {idea.quote && (
+              <blockquote className="border-l-2 border-[#C86A43] pl-3 italic text-sm text-[#6B7280]">
+                "{idea.quote}"
+              </blockquote>
+            )}
+            <div className="flex flex-wrap gap-1.5">
+              {idea.topics.map(t => (
+                <span key={t.id} className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">{t.name}</span>
+              ))}
+            </div>
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+              <p className="text-xs font-semibold text-[#6B7280] mb-1">Created</p>
+              <p className="text-xs text-[#9CA3AF]">{idea.createdAt}</p>
+            </div>
+            <a href={`/ideas/${idea.slug}`} target="_blank" rel="noopener noreferrer"
+              className="text-xs text-[#C86A43] hover:underline">View on site ↗</a>
+          </div>
+        )}
+
+        {tab === 'relationships' && (
+          <RelationshipsPanel
+            groups={[
+              {
+                title: 'Stories',
+                items: relatedStories.map(s => ({ id: s.id, label: s.title, sublabel: s.contentTypes.join(' · '), path: `/stories/${s.slug}`, image: s.coverImage })),
+              },
+              {
+                title: 'Founders',
+                items: relatedFnders.map(f => ({ id: f.id, label: f.name, sublabel: f.industry.name, path: `/founders/${f.slug}`, image: f.avatar })),
+              },
+              {
+                title: 'Businesses',
+                items: relatedBizs.map(b => ({ id: b.id, label: b.name, sublabel: b.location.name, path: `/businesses/${b.slug}`, image: b.logo })),
+              },
+            ]}
+          />
+        )}
+
+        {tab === 'featured-in' && (
+          <FeaturedInPanel locations={featuredIn} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── DashboardIdeasPage ────────────────────────────────────────────────────────
+
+export function DashboardIdeasPage() {
+  const [search,     setSearch]     = useState('')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const ideaList = search
+    ? allIdeas.filter(i => i.title.toLowerCase().includes(search.toLowerCase()) || i.description.toLowerCase().includes(search.toLowerCase()))
+    : allIdeas
+
+  const selected = allIdeas.find(i => i.id === selectedId) ?? null
+
+  return (
+    <div className="flex h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* ── List ──────────────────────────────────────────────────────── */}
+      <div className={`flex flex-col overflow-hidden ${selected ? 'flex-1 min-w-0 border-r border-[#E8E4DD]' : 'w-full'}`}>
+        <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
+          <div>
+            <h1 className="text-2xl font-bold text-[#2D2A26]">Ideas</h1>
+            <p className="text-sm text-[#6B7280] mt-1">{allIdeas.length} ideas in the knowledge graph</p>
+          </div>
+        </div>
+
+        <div className="px-8 pb-5 shrink-0">
+          <input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search ideas…"
+            className="w-full max-w-sm px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+          />
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-8 pb-8">
+          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+            {ideaList.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-[#9CA3AF] text-center">No ideas match your search.</p>
+            ) : ideaList.map(idea => {
+              const relCount = idea.relatedStoryIds.length + idea.relatedFounderIds.length + idea.relatedBusinessIds.length
+              return (
+                <button key={idea.id} onClick={() => setSelectedId(selectedId === idea.id ? null : idea.id)}
+                  className={`w-full text-left flex items-start gap-4 px-5 py-4 transition-colors ${
+                    selectedId === idea.id ? 'bg-[#C86A43]/5 border-l-2 border-[#C86A43]' : 'hover:bg-[#FDFCFB]'
+                  }`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-[#2D2A26]">{idea.title}</p>
+                      {idea.featured && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#D6A94D]/15 text-[#D6A94D]">Featured</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#6B7280] mt-1 line-clamp-2">{idea.description}</p>
+                    <div className="flex gap-1.5 mt-2 flex-wrap">
+                      {idea.topics.slice(0, 3).map(t => (
+                        <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#6B7280]">{t.name}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-xs text-[#9CA3AF]">{idea.relatedStoryIds.length} stories</p>
+                    {relCount > 0 && <p className="text-[10px] text-[#9CA3AF] mt-0.5">{relCount} connected</p>}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
-      <div className="mb-5">
-        <input
-          type="search"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search ideas…"
-          className="w-full max-w-sm px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
-        />
-      </div>
-
-      <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-        {ideas.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-[#9CA3AF] text-center">No ideas match your search.</p>
-        ) : ideas.map(idea => (
-          <div key={idea.id} className="flex items-start gap-4 px-5 py-4 hover:bg-[#FDFCFB] transition-colors">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-medium text-[#2D2A26]">{idea.title}</p>
-                {idea.featured && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#D6A94D]/15 text-[#D6A94D]">
-                    Featured
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-[#6B7280] mt-1 line-clamp-2">{idea.description}</p>
-              <div className="flex gap-1.5 mt-2 flex-wrap">
-                {idea.topics.slice(0, 3).map(t => (
-                  <span key={t.id} className="text-[10px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#6B7280]">{t.name}</span>
-                ))}
-              </div>
-            </div>
-            <div className="shrink-0 text-right">
-              <p className="text-xs text-[#9CA3AF]">{idea.relatedStoryIds.length} stories</p>
-              <a
-                href={`/ideas/${idea.slug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#9CA3AF] hover:text-[#C86A43] transition-colors mt-1 inline-block"
-              >
-                ↗ View
-              </a>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* ── Detail pane ────────────────────────────────────────────── */}
+      {selected && (
+        <div className="w-72 shrink-0 bg-white border-l border-[#E8E4DD] flex flex-col overflow-hidden">
+          <IdeaDetailPane key={selected.id} idea={selected} onClose={() => setSelectedId(null)} />
+        </div>
+      )}
     </div>
   )
 }

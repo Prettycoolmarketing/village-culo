@@ -1,4 +1,4 @@
-import { libraryItems } from '../data/library'
+import { getLibraryItems } from '../services/library'
 import { LibraryCard } from '../components/cards/LibraryCard'
 import type { LibraryFilter } from '../types'
 
@@ -12,18 +12,6 @@ interface LibraryGridProps {
   emptyMessage?: string
 }
 
-function applyFilter(filter: LibraryFilter) {
-  return libraryItems.filter(item => {
-    if (filter.founderId  && item.authorFounderId !== filter.founderId)  return false
-    if (filter.businessId && item.businessId      !== filter.businessId) return false
-    if (filter.productType && item.productType    !== filter.productType) return false
-    if (filter.topicId    && !item.topics.some(t => t.id === filter.topicId)) return false
-    if (filter.expertiseId && !item.expertiseIds?.includes(filter.expertiseId)) return false
-    if (filter.status     && item.status          !== filter.status)     return false
-    if (filter.featured   && !item.featured)                             return false
-    return true
-  }).slice(0, filter.limit ?? 50)
-}
 
 const colClass: Record<2 | 3 | 4, string> = {
   2: 'grid-cols-1 sm:grid-cols-2',
@@ -40,7 +28,7 @@ export function LibraryGrid({
   emptyTitle = 'Nothing here yet',
   emptyMessage = 'Library items will appear here as founders publish them.',
 }: LibraryGridProps) {
-  const items = applyFilter(filter)
+  const items = getLibraryItems(filter)
 
   return (
     <section aria-label={heading ?? 'Library items'}>

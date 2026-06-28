@@ -1,6 +1,6 @@
 import type { IdeaFilter } from '../types'
-import { filterIdeas } from '../utils/filters'
-import { getFounder } from '../data/founders'
+import { getIdeas } from '../services/ideas'
+import { getFounder } from '../services/founders'
 import { IdeaCard } from '../components/cards/IdeaCard'
 import { QuoteCard } from '../components/cards/QuoteCard'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -37,7 +37,7 @@ export function IdeaGrid({
   emptyTitle,
   emptyMessage,
 }: IdeaGridProps) {
-  const ideas = filterIdeas(filter)
+  const ideas = getIdeas(filter)
 
   return (
     <section aria-label={heading ?? 'Ideas'} className={className}>

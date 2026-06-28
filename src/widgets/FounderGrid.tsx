@@ -1,6 +1,6 @@
 import type { FounderFilter } from '../types'
-import { filterFounders } from '../utils/filters'
-import { getBusiness } from '../data/businesses'
+import { getFounders } from '../services/founders'
+import { getBusiness } from '../services/businesses'
 import { FounderCard } from '../components/cards/FounderCard'
 import { EmptyState } from '../components/ui/EmptyState'
 import { SectionHeading } from '../components/layout/PageContainer'
@@ -34,7 +34,7 @@ export function FounderGrid({
   emptyTitle,
   emptyMessage,
 }: FounderGridProps) {
-  const founders = filterFounders(filter)
+  const founders = getFounders(filter)
 
   return (
     <section aria-label={heading ?? 'Founders'} className={className}>

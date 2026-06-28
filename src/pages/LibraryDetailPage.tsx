@@ -1,8 +1,9 @@
 import { useParams, Link } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
-import { getLibraryBySlug, libraryItems, productTypeLabel, statusLabel } from '../data/library'
-import { getFounder } from '../data/founders'
-import { getBusiness } from '../data/businesses'
+import { productTypeLabel, statusLabel } from '../data/library'
+import { getLibraryItemBySlug, getLibraryItems } from '../services/library'
+import { getFounder } from '../services/founders'
+import { getBusiness } from '../services/businesses'
 import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
 import { LibraryCard } from '../components/cards/LibraryCard'
@@ -67,7 +68,7 @@ function LibraryNotFound({ slug }: { slug: string }) {
 
 export function LibraryDetailPage() {
   const { slug } = useParams<{ slug: string }>()
-  const item     = getLibraryBySlug(slug ?? '')
+  const item     = getLibraryItemBySlug(slug ?? '')
   usePageTitle(item ? [item.title, 'Library'] : 'Library')
 
   if (!item) return <LibraryNotFound slug={slug ?? ''} />
@@ -80,7 +81,7 @@ export function LibraryDetailPage() {
   const colour      = statusColour[item.status]          ?? 'bg-border text-charcoal'
 
   // Related from same founder/business, different slug
-  const related = libraryItems
+  const related = getLibraryItems()
     .filter(l => l.slug !== item.slug && (
       l.authorFounderId === item.authorFounderId ||
       l.topics.some(t => item.topics.some(it => it.id === t.id))

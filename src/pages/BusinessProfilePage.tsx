@@ -1,10 +1,10 @@
 import type { ReactNode }             from 'react'
 import { useParams, Link }           from 'react-router-dom'
 import { usePageTitle }               from '../utils/usePageTitle'
-import { businesses, getBusinessBySlug } from '../data/businesses'
-import { getFounder }                 from '../data/founders'
-import { getFAQsForBusiness }         from '../data/faqs'
-import { getServicesForBusiness }     from '../data/services'
+import { getBusinesses, getBusinessBySlug } from '../services/businesses'
+import { getFounder }                      from '../services/founders'
+import { getFAQsForBusiness }              from '../data/faqs'
+import { getServices }                     from '../services/serviceOfferings'
 import { getTestimonialsForBusiness } from '../data/testimonials'
 import { getCaseStudiesForBusiness }  from '../data/caseStudies'
 import { getResourcesForBusiness }    from '../data/resources'
@@ -106,14 +106,14 @@ export function BusinessProfilePage() {
 
   const founder        = getFounder(business.founderId)
   const faqs           = getFAQsForBusiness(business.id)
-  const services       = getServicesForBusiness(business.id)
+  const services       = getServices(undefined, business.id)
   const testimonials   = getTestimonialsForBusiness(business.id)
   const caseStudies    = getCaseStudiesForBusiness(business.id)
   const resources      = getResourcesForBusiness(business.id)
   const expertiseAreas = getExpertiseForBusiness(business.id)
 
   const businessTopicIds = new Set(business.topics.map(t => t.id))
-  const related = businesses
+  const related = getBusinesses()
     .filter(b => b.id !== business.id)
     .map(b => {
       let score = 0

@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
-import { founders } from '../data/founders'
-import { getBusiness } from '../data/businesses'
+import { getFounders } from '../services/founders'
+import { getBusiness } from '../services/businesses'
 import { getFAQsForFounder } from '../data/faqs'
 import { getResourcesForFounder } from '../data/resources'
 import { getTalksForFounder } from '../data/talks'
@@ -78,7 +78,7 @@ function FounderNotFound({ slug }: { slug: string }) {
 // ─── Related Founders ────────────────────────────────────────────────────────────
 
 function getRelatedFounders(founderId: string, industryId: string, locationId: string, topicIds: string[]) {
-  return founders
+  return getFounders()
     .filter(f => f.id !== founderId)
     .map(f => {
       let score = 0
@@ -97,7 +97,7 @@ function getRelatedFounders(founderId: string, industryId: string, locationId: s
 
 export function FounderProfilePage() {
   const { slug } = useParams<{ slug: string }>()
-  const founder = founders.find(f => f.slug === slug)
+  const founder = getFounders().find(f => f.slug === slug)
   usePageTitle(founder ? [founder.name, 'Founders'] : 'Founders')
 
   if (!founder) return <FounderNotFound slug={slug ?? ''} />

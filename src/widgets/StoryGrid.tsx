@@ -1,7 +1,7 @@
 import type { StoryFilter } from '../types'
-import { filterStories } from '../utils/filters'
-import { getFounder } from '../data/founders'
-import { getBusiness } from '../data/businesses'
+import { getStories } from '../services/stories'
+import { getFounder } from '../services/founders'
+import { getBusiness } from '../services/businesses'
 import { StoryCard } from '../components/cards/StoryCard'
 import { EmptyState } from '../components/ui/EmptyState'
 import { SectionHeading } from '../components/layout/PageContainer'
@@ -45,7 +45,7 @@ export function StoryGrid({
   emptyTitle,
   emptyMessage,
 }: StoryGridProps) {
-  const stories = filterStories(filter)
+  const stories = getStories(filter)
 
   return (
     <section aria-label={heading ?? 'Stories'} className={className}>

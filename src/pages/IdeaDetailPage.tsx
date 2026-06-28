@@ -1,9 +1,9 @@
 import { useParams, Link }      from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
-import { ideas, getIdeaBySlug } from '../data/ideas'
-import { getFounder }           from '../data/founders'
-import { stories }              from '../data/stories'
-import { businesses }           from '../data/businesses'
+import { getIdeas, getIdeaBySlug } from '../services/ideas'
+import { getFounder }              from '../services/founders'
+import { getStories }              from '../services/stories'
+import { getBusinesses }           from '../services/businesses'
 import { StoryGrid }            from '../widgets/StoryGrid'
 import { FounderGrid }          from '../widgets/FounderGrid'
 import { BusinessGrid }         from '../widgets/BusinessGrid'
@@ -79,7 +79,7 @@ export function IdeaDetailPage() {
 
   // Related ideas: share at least one topic, exclude current, deduplicated
   const topicIds = new Set(idea.topics.map(t => t.id))
-  const relatedIdeas = ideas
+  const relatedIdeas = getIdeas()
     .filter(i => i.id !== idea.id && i.topics.some(t => topicIds.has(t.id)))
     .slice(0, 3)
 
@@ -312,7 +312,7 @@ export function IdeaDetailPage() {
                         <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1.5">Connected Stories</dt>
                         <dd className="space-y-1">
                           {idea.relatedStoryIds.map(id => {
-                            const s = stories.find(x => x.id === id)
+                            const s = getStories().find(x => x.id === id)
                             return s ? (
                               <div key={id}>
                                 <Link
@@ -354,7 +354,7 @@ export function IdeaDetailPage() {
                         <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1.5">Connected Businesses</dt>
                         <dd className="space-y-1">
                           {idea.relatedBusinessIds.map(id => {
-                            const b = businesses.find(x => x.id === id)
+                            const b = getBusinesses().find(x => x.id === id)
                             return b ? (
                               <div key={id}>
                                 <Link

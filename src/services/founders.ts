@@ -1,16 +1,33 @@
-import { founders as foundersData } from '../data/founders'
-import { filterFounders } from '../utils/filters'
+import { founders as staticData } from '../data/founders'
+import { store } from '../lib/store'
 import type { Founder, FounderFilter } from '../types'
 
+const KEY = 'founders'
+
+function live(): Founder[] {
+  return store.get<Founder>(KEY) ?? staticData
+}
+
 export function getFounders(filter?: FounderFilter): Founder[] {
-  if (!filter) return [...foundersData]
-  return filterFounders(filter)
+  let result = live()
+  if (!filter) return result
+  if (filter.ids)       result = result.filter(f => filter.ids!.includes(f.id))
+  if (filter.locationId) result = result.filter(f => f.location.id === filter.locationId)
+  if (filter.industryId) result = result.filter(f => f.industry.id === filter.industryId)
+  if (filter.topicId)   result = result.filter(f => f.topics.some(t => t.id === filter.topicId))
+  if (filter.featured !== undefined) result = result.filter(f => f.featured === filter.featured)
+  if (filter.limit)     result = result.slice(0, filter.limit)
+  return result
 }
 
 export function getFounder(id: string): Founder | undefined {
-  return foundersData.find(f => f.id === id)
+  return live().find(f => f.id === id)
 }
 
 export function getFounderBySlug(slug: string): Founder | undefined {
-  return foundersData.find(f => f.slug === slug)
+  return live().find(f => f.slug === slug)
+}
+
+export function updateFounder(founder: Founder): void {
+  store.update<Founder>(KEY, founder)
 }

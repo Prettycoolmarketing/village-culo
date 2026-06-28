@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 import { useParams, Link }  from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
-import { stories }          from '../data/stories'
-import { getFounder }       from '../data/founders'
-import { getBusiness }      from '../data/businesses'
-import { filterStories }    from '../utils/filters'
+import { getStories, getStoryBySlug } from '../services/stories'
+import { getFounder } from '../services/founders'
+import { getBusiness } from '../services/businesses'
 import { IdeaGrid }         from '../widgets/IdeaGrid'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
@@ -247,7 +246,7 @@ function CarouselContent({ images, title }: { images: string[]; title: string })
 
 export function StoryDetailPage() {
   const { slug } = useParams<{ slug: string }>()
-  const story = stories.find(s => s.slug === slug)
+  const story = getStoryBySlug(slug ?? '')
   usePageTitle(story ? [story.title, 'Stories'] : 'Stories')
 
   if (!story) return <StoryNotFound slug={slug ?? ''} />
@@ -261,12 +260,12 @@ export function StoryDetailPage() {
   // Related stories: prefer relatedStoryIds, fall back to same primary topic
   const related = (() => {
     if (story.relatedStoryIds.length > 0) {
-      return stories
+      return getStories()
         .filter(s => story.relatedStoryIds.includes(s.id) && s.id !== story.id)
         .slice(0, 3)
     }
     if (story.topics.length > 0) {
-      return filterStories({ topicId: story.topics[0].id, limit: 4 })
+      return getStories({ topicId: story.topics[0].id, limit: 4 })
         .filter(s => s.id !== story.id)
         .slice(0, 3)
     }

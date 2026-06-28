@@ -1,7 +1,20 @@
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import { resetAndReseed } from '../../lib/seedStore'
 
 export function DashboardSettingsPage() {
   const { user, isConfigured } = useAuth()
+  const [resetting, setResetting] = useState(false)
+  const [resetDone, setResetDone] = useState(false)
+
+  function handleReset() {
+    if (!window.confirm('This will reset all local edits back to the original demo data. Are you sure?')) return
+    setResetting(true)
+    resetAndReseed()
+    setResetting(false)
+    setResetDone(true)
+    setTimeout(() => window.location.reload(), 800)
+  }
 
   return (
     <div className="p-8 max-w-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -29,6 +42,31 @@ export function DashboardSettingsPage() {
         </div>
       </section>
 
+      {/* Local Data */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Local Data</h2>
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-[#2D2A26]">Reset Demo Data</p>
+              <p className="text-xs text-[#9CA3AF] mt-0.5 max-w-xs">
+                Clears all local edits and reseeds the dashboard from the original static data. Use this to start fresh.
+              </p>
+              {resetDone && (
+                <p className="text-xs text-green-600 mt-2 font-medium">Reset complete — reloading…</p>
+              )}
+            </div>
+            <button
+              onClick={handleReset}
+              disabled={resetting || resetDone}
+              className="shrink-0 px-4 py-2 text-sm font-semibold rounded-lg border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-60 transition-colors"
+            >
+              {resetting ? 'Resetting…' : 'Reset Data'}
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Supabase status */}
       <section className="mb-8">
         <h2 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Database</h2>
@@ -37,12 +75,12 @@ export function DashboardSettingsPage() {
             <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isConfigured ? 'bg-green-400' : 'bg-amber-400'}`} />
             <div>
               <p className="text-sm font-medium text-[#2D2A26]">
-                {isConfigured ? 'Supabase Connected' : 'Supabase Not Configured'}
+                {isConfigured ? 'Supabase Connected' : 'localStorage (Dev Mode)'}
               </p>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
                 {isConfigured
-                  ? 'Your data is being persisted to Supabase.'
-                  : 'Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file to enable persistence.'}
+                  ? 'Data is persisted to Supabase. Edits appear on the public Village.'
+                  : 'Edits are saved to browser localStorage and survive page refresh. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to switch to Supabase.'}
               </p>
             </div>
           </div>
@@ -60,7 +98,7 @@ export function DashboardSettingsPage() {
         <h2 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Village</h2>
         <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
           <p className="text-sm font-medium text-[#2D2A26] mb-1">View Public Site</p>
-          <p className="text-xs text-[#9CA3AF] mb-3">Your changes will be reflected on the public Village once Supabase is connected and content is published.</p>
+          <p className="text-xs text-[#9CA3AF] mb-3">Public pages read from the same service layer as the dashboard. Saved edits are reflected immediately.</p>
           <a
             href="/"
             target="_blank"

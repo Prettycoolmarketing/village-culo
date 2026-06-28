@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route, Link, Navigate, Outlet } from 'react-router-dom'
 import { useState } from 'react'
+import { seedStore } from './lib/seedStore'
 import { AuthProvider }    from './contexts/AuthContext'
+
+// Seed localStorage from static data on first load
+seedStore()
 import { ProtectedRoute }  from './components/dashboard/ProtectedRoute'
 import { DashboardLayout } from './components/dashboard/DashboardLayout'
 import { Navbar }          from './components/layout/Navbar'

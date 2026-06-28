@@ -1,6 +1,6 @@
 import type { BusinessFilter } from '../types'
-import { filterBusinesses } from '../utils/filters'
-import { getFounder } from '../data/founders'
+import { getBusinesses } from '../services/businesses'
+import { getFounder } from '../services/founders'
 import { BusinessCard } from '../components/cards/BusinessCard'
 import { EmptyState } from '../components/ui/EmptyState'
 import { SectionHeading } from '../components/layout/PageContainer'
@@ -34,7 +34,7 @@ export function BusinessGrid({
   emptyTitle,
   emptyMessage,
 }: BusinessGridProps) {
-  const businesses = filterBusinesses(filter)
+  const businesses = getBusinesses(filter)
 
   return (
     <section aria-label={heading ?? 'Businesses'} className={className}>
