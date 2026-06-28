@@ -7,6 +7,8 @@ import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
+import { isSupabaseConfigured } from '../../lib/supabase'
+import { uploadFile } from '../../lib/storage'
 import type { ContentType, Topic } from '../../types'
 
 // ─── Content formats ──────────────────────────────────────────────────────────
@@ -48,6 +50,7 @@ interface UrlEntry { id: number; url: string }
 interface PublishDraft {
   contentTypes:       ContentType[]
   uploadedFileNames:  string[]
+  uploadedUrls:       string[]
   urlEntries:         UrlEntry[]
   pastedText:         string
   title:              string
@@ -72,6 +75,7 @@ function defaultDraft(): PublishDraft {
   return {
     contentTypes:      ['blog'],
     uploadedFileNames: [],
+    uploadedUrls:      [],
     urlEntries:        [],
     pastedText:        '',
     title:             '',
@@ -248,12 +252,27 @@ function ContentStep({ draft, onChange, onNext, onBack }: {
   onNext: () => void
   onBack: () => void
 }) {
-  const [contentTab, setContentTab] = useState<ContentTab>('upload')
+  const [contentTab,    setContentTab]    = useState<ContentTab>('upload')
+  const [uploadingSet,  setUploadingSet]  = useState<Set<string>>(new Set())
+  const [uploadErrors,  setUploadErrors]  = useState<Record<string, string>>({})
   const fileRef = useRef<HTMLInputElement>(null)
 
-  function handleFiles(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFiles(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
     onChange({ uploadedFileNames: [...draft.uploadedFileNames, ...files.map(f => f.name)] })
+    if (!isSupabaseConfigured) return
+
+    for (const file of files) {
+      setUploadingSet(prev => new Set([...prev, file.name]))
+      const result = await uploadFile(file)
+      setUploadingSet(prev => { const s = new Set(prev); s.delete(file.name); return s })
+      if (result.error) {
+        setUploadErrors(prev => ({ ...prev, [file.name]: result.error! }))
+      } else {
+        onChange({ uploadedUrls: [...draft.uploadedUrls, result.url] })
+      }
+    }
   }
 
   function addUrlEntry() {
@@ -334,6 +353,15 @@ function ContentStep({ draft, onChange, onNext, onBack }: {
             <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
               {draft.uploadedFileNames.map((name, i) => (
                 <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                  {uploadingSet.has(name) ? (
+                    <div className="w-3 h-3 border-2 border-[#C86A43] border-t-transparent rounded-full animate-spin shrink-0" />
+                  ) : uploadErrors[name] ? (
+                    <span className="text-red-400 shrink-0" title={uploadErrors[name]}>⚠</span>
+                  ) : (
+                    <svg className="w-3 h-3 text-[#5E6B4A] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
                   <p className="text-xs text-[#2D2A26] truncate flex-1">{name}</p>
                   <button
                     onClick={() => onChange({ uploadedFileNames: draft.uploadedFileNames.filter((_, j) => j !== i) })}
@@ -469,6 +497,11 @@ function InfoStep({ draft, onChange, onNext, onBack }: {
 
 // ─── Step 4: Media ────────────────────────────────────────────────────────────
 
+function isImageUrl(url: string) { return /\.(jpg|jpeg|png|webp|gif|svg)(\?|$)/i.test(url) }
+function isVideoUrl(url: string) { return /\.(mp4|mov|avi|webm|mkv)(\?|$)/i.test(url) }
+function isAudioUrl(url: string) { return /\.(mp3|m4a|wav|ogg|aac)(\?|$)/i.test(url) }
+function isDocUrl(url: string)   { return /\.(pdf|docx|doc|md|txt)(\?|$)/i.test(url) }
+
 function MediaStep({ draft, onChange, onNext, onBack }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
@@ -482,6 +515,11 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
   const hasDocument = types.some(t => ['document', 'external-article', 'social-post'].includes(t))
   const hasBlog     = types.includes('blog')
   const autocover   = hasSlides && draft.carouselSlides.filter(Boolean).length > 0
+
+  const uploadedImageUrls = draft.uploadedUrls.filter(isImageUrl)
+  const uploadedVideoUrls = draft.uploadedUrls.filter(isVideoUrl)
+  const uploadedAudioUrls = draft.uploadedUrls.filter(isAudioUrl)
+  const uploadedDocUrls   = draft.uploadedUrls.filter(isDocUrl)
 
   return (
     <div className="max-w-xl">
@@ -499,7 +537,7 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                 {types.includes('youtube-video') ? 'YouTube / Video URL' : 'Reel / Video URL'}
               </p>
             </div>
-            <div className="px-4 py-3">
+            <div className="px-4 py-3 flex flex-col gap-2">
               <Field label="URL" hint="YouTube, Instagram Reel, TikTok or YouTube Shorts">
                 <input
                   type="url"
@@ -509,6 +547,14 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                   className={inp}
                 />
               </Field>
+              {uploadedVideoUrls.length > 0 && !draft.reelUrl && (
+                <button
+                  onClick={() => onChange({ reelUrl: uploadedVideoUrls[0] })}
+                  className="text-xs text-[#C86A43] hover:underline text-left"
+                >
+                  Use uploaded video →
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -518,7 +564,7 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
             <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
               <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Audio URL</p>
             </div>
-            <div className="px-4 py-3">
+            <div className="px-4 py-3 flex flex-col gap-2">
               <Field label="URL" hint="Spotify, Apple Podcasts, Anchor or direct audio link">
                 <input
                   type="url"
@@ -528,6 +574,14 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                   className={inp}
                 />
               </Field>
+              {uploadedAudioUrls.length > 0 && !draft.audioUrl && (
+                <button
+                  onClick={() => onChange({ audioUrl: uploadedAudioUrls[0] })}
+                  className="text-xs text-[#C86A43] hover:underline text-left"
+                >
+                  Use uploaded audio →
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -576,7 +630,7 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
             <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
               <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Document / External Link</p>
             </div>
-            <div className="px-4 py-3">
+            <div className="px-4 py-3 flex flex-col gap-2">
               <Field label="URL" hint="Link to the document, article or social post">
                 <input
                   type="url"
@@ -586,6 +640,14 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                   className={inp}
                 />
               </Field>
+              {uploadedDocUrls.length > 0 && !draft.documentUrl && (
+                <button
+                  onClick={() => onChange({ documentUrl: uploadedDocUrls[0] })}
+                  className="text-xs text-[#C86A43] hover:underline text-left"
+                >
+                  Use uploaded document →
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -638,6 +700,19 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
               placeholder="/assets/my-photo.jpg or https://…"
               className={inp}
             />
+            {uploadedImageUrls.length > 0 && !draft.coverImage && (
+              <div className="flex flex-col gap-1">
+                {uploadedImageUrls.slice(0, 3).map(url => (
+                  <button
+                    key={url}
+                    onClick={() => onChange({ coverImage: url })}
+                    className="text-xs text-[#C86A43] hover:underline text-left truncate"
+                  >
+                    Use uploaded image →
+                  </button>
+                ))}
+              </div>
+            )}
             <button disabled className="text-xs text-[#9CA3AF] px-2.5 py-1.5 rounded-lg border border-[#E8E4DD] cursor-not-allowed w-fit">
               Media Library (coming soon)
             </button>

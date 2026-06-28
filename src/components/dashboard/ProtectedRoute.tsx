@@ -1,5 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { isSupabaseConfigured } from '../../lib/supabase'
+import { SupabaseSetupBanner } from './SupabaseSetupBanner'
 import type { ReactNode } from 'react'
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -15,5 +17,14 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!user) return <Navigate to="/dashboard/login" replace />
 
-  return <>{children}</>
+  return (
+    <>
+      {!isSupabaseConfigured && (
+        <div className="px-8 pt-6">
+          <SupabaseSetupBanner />
+        </div>
+      )}
+      {children}
+    </>
+  )
 }

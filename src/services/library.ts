@@ -1,5 +1,7 @@
 import { libraryItems as staticData } from '../data/library'
 import { store } from '../lib/store'
+import { isSupabaseConfigured } from '../lib/supabase'
+import { dbUpsertLibraryItem } from '../lib/db'
 import type { LibraryItem, LibraryFilter } from '../types'
 
 const KEY = 'library'
@@ -32,4 +34,5 @@ export function getLibraryItemBySlug(slug: string): LibraryItem | undefined {
 
 export function updateLibraryItem(item: LibraryItem): void {
   store.update<LibraryItem>(KEY, item)
+  if (isSupabaseConfigured) void dbUpsertLibraryItem(item)
 }

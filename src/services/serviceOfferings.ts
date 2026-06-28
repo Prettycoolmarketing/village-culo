@@ -1,5 +1,7 @@
 import { services as staticData } from '../data/services'
 import { store } from '../lib/store'
+import { isSupabaseConfigured } from '../lib/supabase'
+import { dbUpsertService } from '../lib/db'
 import type { Service } from '../types'
 
 const KEY = 'services'
@@ -21,4 +23,5 @@ export function getService(id: string): Service | undefined {
 
 export function updateService(service: Service): void {
   store.update<Service>(KEY, service)
+  if (isSupabaseConfigured) void dbUpsertService(service)
 }

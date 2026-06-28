@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link, Navigate, Outlet } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { seedStore } from './lib/seedStore'
+import { syncPublishedContent } from './lib/publicSync'
 import { AuthProvider }    from './contexts/AuthContext'
 
 // Seed localStorage from static data on first load
@@ -125,6 +126,7 @@ function PublicLayout() {
 // ─── App ────────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  useEffect(() => { void syncPublishedContent() }, [])
   return (
     <BrowserRouter>
       <AuthProvider>

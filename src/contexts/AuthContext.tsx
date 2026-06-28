@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { syncUserDataFromSupabase } from '../lib/sync'
 import type { User } from '@supabase/supabase-js'
 
 export interface AuthUser {
@@ -12,7 +13,8 @@ interface AuthContextValue {
   user: AuthUser | null
   loading: boolean
   isConfigured: boolean
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signIn:  (email: string, password: string) => Promise<{ error: string | null }>
+  signUp:  (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -23,7 +25,7 @@ function toAuthUser(supaUser: User): AuthUser {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser]       = useState<AuthUser | null>(null)
+  const [user,    setUser]    = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -41,8 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ? toAuthUser(session.user) : null)
+      if (event === 'SIGNED_IN' && session?.user) {
+        void syncUserDataFromSupabase(session.user.id)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -59,6 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }
 
+  async function signUp(email: string, password: string): Promise<{ error: string | null }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase not configured. Sign up is unavailable in dev mode.' }
+    }
+    const { error } = await supabase.auth.signUp({ email, password })
+    return { error: error?.message ?? null }
+  }
+
   async function signOut(): Promise<void> {
     if (!isSupabaseConfigured || !supabase) {
       setUser(null)
@@ -69,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isConfigured: isSupabaseConfigured, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isConfigured: isSupabaseConfigured, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   )
