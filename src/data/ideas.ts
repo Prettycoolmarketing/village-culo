@@ -13,7 +13,7 @@ export const ideas: Idea[] = [
     relatedStoryIds: ['story-camera-roll', 'story-stagger-inn', 'story-content-creating-days'],
     relatedFounderIds: ['shakas', 'murrakee'],
     relatedBusinessIds: ['pretty-cool-marketing', 'billow-beach'],
-    featured: true,
+    featured: false,
     createdAt: '2024-03-10',
   },
   {
@@ -27,7 +27,7 @@ export const ideas: Idea[] = [
     relatedStoryIds: ['story-camera-roll', 'story-stagger-inn', 'story-billow-beach-origin', 'story-murrakee'],
     relatedFounderIds: ['shakas', 'claudia-martinez', 'murrakee'],
     relatedBusinessIds: ['pretty-cool-marketing', 'claudia-martinez-photography'],
-    featured: true,
+    featured: false,
     createdAt: '2024-03-15',
   },
   {
@@ -41,7 +41,7 @@ export const ideas: Idea[] = [
     relatedStoryIds: ['story-content-system', 'story-content-creating-days'],
     relatedFounderIds: ['shakas'],
     relatedBusinessIds: ['pretty-cool-marketing', 'culo'],
-    featured: true,
+    featured: false,
     createdAt: '2024-04-02',
   },
   {
@@ -83,7 +83,7 @@ export const ideas: Idea[] = [
     relatedStoryIds: ['story-ai-marketing-truth', 'story-camera-roll'],
     relatedFounderIds: ['shakas'],
     relatedBusinessIds: ['pretty-cool-marketing', 'culo'],
-    featured: true,
+    featured: false,
     createdAt: '2024-05-20',
   },
   {
@@ -97,7 +97,7 @@ export const ideas: Idea[] = [
     relatedStoryIds: ['story-stagger-inn', 'story-camera-roll', 'story-wheres-robyn'],
     relatedFounderIds: ['shakas'],
     relatedBusinessIds: ['stagger-inn-adventures', 'pretty-cool-marketing'],
-    featured: true,
+    featured: false,
     createdAt: '2024-06-15',
   },
   {
@@ -111,7 +111,7 @@ export const ideas: Idea[] = [
     relatedStoryIds: ['story-claudia-martinez', 'story-billow-beach-origin', 'story-murrakee'],
     relatedFounderIds: ['shakas', 'claudia-martinez', 'murrakee', 'simone-pansino'],
     relatedBusinessIds: ['billow-beach', 'claudia-martinez-photography', 'we-the-stars'],
-    featured: true,
+    featured: false,
     createdAt: '2025-03-15',
   },
   {

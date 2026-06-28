@@ -15,6 +15,7 @@ export function getFounders(filter?: FounderFilter): Founder[] {
   if (filter.locationId) result = result.filter(f => f.location.id === filter.locationId)
   if (filter.industryId) result = result.filter(f => f.industry.id === filter.industryId)
   if (filter.topicId)   result = result.filter(f => f.topics.some(t => t.id === filter.topicId))
+  if (filter.publicOnly) result = result.filter(f => f.status === 'published' || f.status === 'featured')
   if (filter.featured !== undefined) result = result.filter(f => f.featured === filter.featured)
   if (filter.limit)     result = result.slice(0, filter.limit)
   return result

@@ -74,15 +74,15 @@ export function VillagePage() {
           heading="Latest Stories"
           subheading="Real founder experiences transformed into blogs, reels and carousels."
           action={{ label: 'View All Stories', href: '/stories' }}
-          filter={{ limit: 6 }}
+          filter={{ publicOnly: true, limit: 6 }}
           columns={3}
           cardVariant="vertical"
           showSummary
           showFounder
           showTopics
           showCTA
-          emptyTitle="No stories yet"
-          emptyMessage="Be the first to publish a story in the Village."
+          emptyTitle="The Village is about to come alive."
+          emptyMessage="The first stories will appear here as founders begin publishing. Real experiences, real businesses, real ideas — all permanent."
         />
       </VillageSection>
 
@@ -117,22 +117,22 @@ export function VillagePage() {
             heading="Featured Founders"
             subheading="Meet the people behind the knowledge."
             action={{ label: 'All Founders', href: '/founders' }}
-            filter={{ featured: true, limit: 3 }}
+            filter={{ publicOnly: true, featured: true, limit: 3 }}
             columns={2}
             cardVariant="default"
-            emptyTitle="No featured founders yet"
-            emptyMessage="Founders will appear here once they publish their first story."
+            emptyTitle="The first Publisher is about to arrive."
+            emptyMessage="Featured founders will appear here once they've published to the Village."
           />
 
           <BusinessGrid
             heading="Mercato"
             subheading="Discover businesses through the stories and ideas behind them."
             action={{ label: 'Browse Mercato', href: '/mercato' }}
-            filter={{ featured: true, limit: 3 }}
+            filter={{ publicOnly: true, featured: true, limit: 3 }}
             columns={2}
             cardVariant="default"
-            emptyTitle="No featured businesses yet"
-            emptyMessage="Businesses will appear here once connected to published stories."
+            emptyTitle="The Mercato is almost open."
+            emptyMessage="Featured businesses will appear here once their founders begin publishing."
           />
 
         </div>

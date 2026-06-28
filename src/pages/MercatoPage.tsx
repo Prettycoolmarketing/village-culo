@@ -14,21 +14,21 @@ import type { BusinessFilter } from '../types'
 const locationOptions = [
   { value: 'all', label: 'All Locations' },
   ...locations
-    .filter(l => getBusinesses({ locationId: l.id }).length > 0)
+    .filter(l => getBusinesses({ locationId: l.id, publicOnly: true }).length > 0)
     .map(l => ({ value: l.id, label: l.name })),
 ]
 
 const industryOptions = [
   { value: 'all', label: 'All Industries' },
   ...industries
-    .filter(i => getBusinesses({ industryId: i.id }).length > 0)
+    .filter(i => getBusinesses({ industryId: i.id, publicOnly: true }).length > 0)
     .map(i => ({ value: i.id, label: i.name })),
 ]
 
 const topicOptions = [
   { value: 'all', label: 'All Topics' },
   ...topics
-    .filter(t => getBusinesses({ topicId: t.id }).length > 0)
+    .filter(t => getBusinesses({ topicId: t.id, publicOnly: true }).length > 0)
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
@@ -42,6 +42,7 @@ export function MercatoPage() {
   const [filtersOpen,    setFiltersOpen]    = useState(false)
 
   const filter: BusinessFilter = {
+    publicOnly: true,
     ...(activeLocation !== 'all' && { locationId: activeLocation }),
     ...(activeIndustry !== 'all' && { industryId: activeIndustry }),
     ...(activeTopic    !== 'all' && { topicId:    activeTopic    }),
@@ -145,8 +146,11 @@ export function MercatoPage() {
             filter={filter}
             columns={3}
             cardVariant="featured"
-            emptyTitle="No businesses match these filters"
-            emptyMessage="Try clearing one or more filters, or check back as more businesses join the Village."
+            emptyTitle={hasActiveFilter ? 'No businesses match these filters' : 'The Mercato is setting up.'}
+            emptyMessage={hasActiveFilter
+              ? 'Try clearing one or more filters to see more businesses.'
+              : 'The first businesses will be listed here once their founders arrive and begin publishing to the Village.'
+            }
           />
         </InnerContainer>
       </section>

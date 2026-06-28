@@ -489,6 +489,7 @@ export interface StoryFilter {
   contentType?: ContentType
   featured?: boolean
   status?: Status
+  publicOnly?: boolean
   limit?: number
 }
 
@@ -499,6 +500,7 @@ export interface FounderFilter {
   topicId?: string
   expertiseId?: string
   featured?: boolean
+  publicOnly?: boolean
   limit?: number
 }
 
@@ -509,6 +511,7 @@ export interface BusinessFilter {
   topicId?: string
   expertiseId?: string
   featured?: boolean
+  publicOnly?: boolean
   limit?: number
 }
 

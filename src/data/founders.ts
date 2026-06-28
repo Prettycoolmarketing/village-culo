@@ -33,7 +33,7 @@ export const founders: Founder[] = [
     website: 'https://prettycoolmarketing.com',
     instagram: 'https://instagram.com/shakasdesigner',
     linkedin: 'https://linkedin.com/in/shakasdesigner',
-    status: 'featured',
+    status: 'archived',
     featured: true,
     createdAt: '2024-01-15',
     expertiseIds: ['founder-storytelling', 'content-systems', 'ai-marketing', 'short-form-video'],
@@ -109,7 +109,7 @@ export const founders: Founder[] = [
       topics[8],  // Authenticity
       topics[6],  // Personal Brand
     ],
-    status: 'published',
+    status: 'archived',
     featured: false,
     createdAt: '2025-07-17',
     expertiseIds: ['personal-brand', 'founder-storytelling'],
@@ -133,7 +133,7 @@ export const founders: Founder[] = [
       topics[6],  // Personal Brand
       topics[1],  // Founder Storytelling
     ],
-    status: 'published',
+    status: 'archived',
     featured: false,
     createdAt: '2025-07-17',
     expertiseIds: ['brand-photography', 'personal-brand'],
@@ -157,7 +157,7 @@ export const founders: Founder[] = [
       topics[6],  // Personal Brand
       topics[1],  // Founder Storytelling
     ],
-    status: 'published',
+    status: 'archived',
     featured: false,
     createdAt: '2025-07-17',
     expertiseIds: ['personal-brand'],

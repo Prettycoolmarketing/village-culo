@@ -24,9 +24,8 @@ const industryOptions = [
 
 const topicOptions = [
   { value: 'all', label: 'All Topics' },
-  // Only show topics that at least one founder covers
   ...topics
-    .filter(t => getFounders({ topicId: t.id }).length > 0)
+    .filter(t => getFounders({ topicId: t.id, publicOnly: true }).length > 0)
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
@@ -41,6 +40,7 @@ export function FoundersPage() {
   const [filtersOpen,    setFiltersOpen]    = useState(false)
 
   const filter: FounderFilter = {
+    publicOnly: true,
     ...(activeLocation !== 'all' && { locationId: activeLocation }),
     ...(activeIndustry !== 'all' && { industryId: activeIndustry }),
     ...(activeTopic    !== 'all' && { topicId:    activeTopic    }),
@@ -179,8 +179,11 @@ export function FoundersPage() {
             filter={filter}
             columns={3}
             cardVariant="featured"
-            emptyTitle="No founders match these filters"
-            emptyMessage="Try clearing one or more filters to see more founders, or check back as new founders join the Village."
+            emptyTitle={hasActiveFilter ? 'No founders match these filters' : 'The first Publisher is almost here.'}
+            emptyMessage={hasActiveFilter
+              ? 'Try clearing one or more filters to see more founders.'
+              : 'CULO Village is setting up for its founding members. The first Publisher will arrive soon — and everything they share will live here permanently.'
+            }
           />
         </InnerContainer>
       </section>

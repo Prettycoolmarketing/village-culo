@@ -21,21 +21,21 @@ const contentTypeOptions = [
 const locationOptions = [
   { value: 'all', label: 'All Locations' },
   ...locations
-    .filter(l => getStories({ locationId: l.id }).length > 0)
+    .filter(l => getStories({ locationId: l.id, publicOnly: true }).length > 0)
     .map(l => ({ value: l.id, label: l.name })),
 ]
 
 const industryOptions = [
   { value: 'all', label: 'All Industries' },
   ...industries
-    .filter(i => getStories({ industryId: i.id }).length > 0)
+    .filter(i => getStories({ industryId: i.id, publicOnly: true }).length > 0)
     .map(i => ({ value: i.id, label: i.name })),
 ]
 
 const topicOptions = [
   { value: 'all', label: 'All Topics' },
   ...topics
-    .filter(t => getStories({ topicId: t.id }).length > 0)
+    .filter(t => getStories({ topicId: t.id, publicOnly: true }).length > 0)
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
@@ -50,6 +50,7 @@ export function StoriesPage() {
   const [filtersOpen,    setFiltersOpen]    = useState(false)
 
   const filter: StoryFilter = {
+    publicOnly: true,
     ...(activeFormat   !== 'all' && { contentType: activeFormat as ContentType }),
     ...(activeLocation !== 'all' && { locationId:  activeLocation }),
     ...(activeIndustry !== 'all' && { industryId:  activeIndustry }),
@@ -159,8 +160,11 @@ export function StoriesPage() {
             showFounder
             showTopics
             showCTA
-            emptyTitle="No stories match these filters"
-            emptyMessage="Try clearing one or more filters, or check back as more stories are published to the Village."
+            emptyTitle={hasActiveFilter ? 'No stories match these filters' : 'The first story is brewing.'}
+            emptyMessage={hasActiveFilter
+              ? 'Try clearing one or more filters to see more stories.'
+              : 'Stories will appear here as Village founders begin publishing their real experiences. Every story is a permanent digital asset — it lives here forever.'
+            }
           />
         </InnerContainer>
       </section>

@@ -35,6 +35,7 @@ import { ExpertiseDetailPage }from './pages/ExpertiseDetailPage'
 import { LibraryPage }        from './pages/LibraryPage'
 import { LibraryDetailPage }  from './pages/LibraryDetailPage'
 import MediaCuratorPage       from './pages/MediaCuratorPage'
+import { OnboardingPage }    from './pages/OnboardingPage'
 
 // ─── Dashboard pages ────────────────────────────────────────────────────────────
 import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
@@ -171,6 +172,7 @@ export default function App() {
             <Route path="/library"            element={<LibraryPage />}          />
             <Route path="/library/:slug"      element={<LibraryDetailPage />}    />
             <Route path="/media-curator"      element={<MediaCuratorPage />}     />
+            <Route path="/onboarding"         element={<OnboardingPage />}       />
             <Route path="*"                   element={<NotFound />}             />
           </Route>
 
