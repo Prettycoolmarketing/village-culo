@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 
 const navLinks = [
   { to: '/',           label: 'Village',    exact: true  },
@@ -17,6 +18,9 @@ const navLinks = [
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { user, loading } = useAuth()
+
+  const publishTo = user ? '/dashboard/publish' : '/piazza'
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-border shadow-sm" role="banner">
@@ -63,8 +67,25 @@ export function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-3">
+            {!loading && (
+              user ? (
+                <Link
+                  to="/dashboard/home"
+                  className="px-4 py-2 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/dashboard/login"
+                  className="px-4 py-2 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                >
+                  Log in
+                </Link>
+              )
+            )}
             <Link
-              to="/piazza"
+              to={publishTo}
               className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
             >
               Publish a Story
@@ -115,9 +136,28 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
-            <div className="pt-3 border-t border-border mt-3">
+            <div className="pt-3 border-t border-border mt-3 flex flex-col gap-2">
+              {!loading && (
+                user ? (
+                  <Link
+                    to="/dashboard/home"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-3 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl text-center hover:border-primary hover:text-primary transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                ) : (
+                  <Link
+                    to="/dashboard/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-3 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl text-center hover:border-primary hover:text-primary transition-colors"
+                  >
+                    Log in
+                  </Link>
+                )
+              )}
               <Link
-                to="/piazza"
+                to={publishTo}
                 onClick={() => setMobileOpen(false)}
                 className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
               >
