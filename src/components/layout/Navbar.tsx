@@ -65,18 +65,18 @@ export function Navbar() {
 
           {/* Desktop CTA */}
           {!loading && (
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-4">
               {user ? (
                 <>
                   <Link
                     to="/dashboard/home"
-                    className="px-4 py-2 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                    className="text-sm font-medium text-charcoal hover:text-primary transition-colors"
                   >
                     Dashboard
                   </Link>
                   <Link
                     to="/dashboard/publish"
-                    className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
+                    className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
                   >
                     Publish
                   </Link>
@@ -85,13 +85,13 @@ export function Navbar() {
                 <>
                   <Link
                     to="/dashboard/login"
-                    className="px-4 py-2 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                    className="text-sm font-medium text-charcoal hover:text-primary transition-colors"
                   >
                     Log in
                   </Link>
                   <Link
                     to="/onboarding"
-                    className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
+                    className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
                   >
                     Become a Publisher
                   </Link>
