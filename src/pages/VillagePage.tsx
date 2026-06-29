@@ -1,5 +1,5 @@
 import React from 'react'
-import { usePageTitle } from '../utils/usePageTitle'
+import { usePageMeta } from '../utils/usePageMeta'
 import { HeroWidget }                from '../widgets/HeroWidget'
 import { FeaturedWidget }            from '../widgets/FeaturedWidget'
 import { StoryGrid }                 from '../widgets/StoryGrid'
@@ -32,7 +32,19 @@ function VillageSection({ children, surface = false, tight = false }: VillageSec
 // ─── Village Homepage ──────────────────────────────────────────────────────────
 
 export function VillagePage() {
-  usePageTitle('Village')
+  usePageMeta({
+    title:       'Discover Australian Founders',
+    description: 'CULO Village — a curated directory of Australian founder stories, businesses, and content. Discover real people building real things.',
+    keywords:    ['Australian founders', 'small business stories', 'founder directory', 'business content', 'CULO Village', 'Australian entrepreneurs'],
+    ogType:      'website',
+    jsonLd: {
+      '@context':   'https://schema.org',
+      '@type':      'WebSite',
+      name:         'CULO Village',
+      description:  'A curated directory of Australian founder stories, businesses, and content.',
+      url:          window.location.origin,
+    },
+  })
   return (
     <main id="main-content">
       {/* Skip to main content — accessibility */}

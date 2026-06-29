@@ -49,8 +49,14 @@ import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPag
 import { DashboardServicesPage }     from './pages/dashboard/DashboardServicesPage'
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
-import { DashboardSettingsPage }     from './pages/dashboard/DashboardSettingsPage'
-import { DashboardPublishPage }      from './pages/dashboard/DashboardPublishPage'
+import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
+import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
+import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
+import { DashboardPartnershipPage }      from './pages/dashboard/DashboardPartnershipPage'
+import { DashboardRevenuePage }          from './pages/dashboard/DashboardRevenuePage'
+import { DashboardCuratedProfilesPage }  from './pages/dashboard/DashboardCuratedProfilesPage'
+import { DashboardCuratedFounderBuilderPage } from './pages/dashboard/DashboardCuratedFounderBuilderPage'
+import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 
 // ─── Activity banner data ───────────────────────────────────────────────────────
 const recentStory   = stories[0]
@@ -153,7 +159,12 @@ export default function App() {
             <Route path="services"       element={<DashboardServicesPage />}     />
             <Route path="media"          element={<DashboardMediaPage />}        />
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
-            <Route path="settings"       element={<DashboardSettingsPage />}     />
+            <Route path="import-content" element={<DashboardImportContentPage />}/>
+            <Route path="opportunities"  element={<DashboardPartnershipPage />}  />
+            <Route path="revenue"           element={<DashboardRevenuePage />}         />
+            <Route path="curated-profiles" element={<DashboardCuratedProfilesPage />} />
+            <Route path="curated-profiles/new" element={<DashboardCuratedFounderBuilderPage />} />
+            <Route path="settings"         element={<DashboardSettingsPage />}        />
           </Route>
 
           {/* ── Public site (with Navbar + Footer) ────────────────────────── */}
@@ -177,6 +188,7 @@ export default function App() {
             <Route path="/library/:slug"      element={<LibraryDetailPage />}    />
             <Route path="/media-curator"      element={<MediaCuratorPage />}     />
             <Route path="/onboarding"         element={<OnboardingPage />}       />
+            <Route path="/claim/:slug"        element={<ClaimProfilePage />}     />
             <Route path="*"                   element={<NotFound />}             />
           </Route>
 

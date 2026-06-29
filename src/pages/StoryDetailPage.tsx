@@ -1,17 +1,36 @@
 import React, { useState } from 'react'
 import { useParams, Link }  from 'react-router-dom'
-import { usePageTitle } from '../utils/usePageTitle'
-import { getStories, getStoryBySlug } from '../services/stories'
-import { getFounder } from '../services/founders'
+import { usePageMeta } from '../utils/usePageMeta'
+import { getStories, getStoryBySlug, getStory } from '../services/stories'
+import { getFounder, getFounders } from '../services/founders'
 import { getBusiness } from '../services/businesses'
+import { recommendationService } from '../services/partnership'
+import { villageContentIntelligenceService } from '../services/villageIntelligence'
+import { importedContentService } from '../services/importedContent'
 import { IdeaGrid }         from '../widgets/IdeaGrid'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
 import { StoryCard }        from '../components/cards/StoryCard'
+import { ImportedContentCard } from '../components/cards/ImportedContentCard'
 import { Badge }            from '../components/ui/Badge'
+import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBlock'
+import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
+import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { InnerContainer }   from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType } from '../types'
+
+const DISCLOSURE_TYPE_LABELS: Record<string, string> = {
+  affiliate:          'Affiliate Relationship',
+  referral:           'Referral Partner',
+  sponsored:          'Sponsored Content',
+  gifted:             'Gifted Product',
+  'paid-partnership': 'Paid Partnership',
+  ambassador:         'Brand Ambassador',
+  'creator-program':  'Creator Program',
+  'community-partner':'Community Partner',
+  none:               'Genuine Recommendation',
+}
 
 // ─── Not found ──────────────────────────────────────────────────────────────────
 
@@ -247,22 +266,73 @@ function CarouselContent({ images, title }: { images: string[]; title: string })
 export function StoryDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const story = getStoryBySlug(slug ?? '')
-  usePageTitle(story ? [story.title, 'Stories'] : 'Stories')
 
-  if (!story || story.status === 'archived') return <StoryNotFound slug={slug ?? ''} />
+  // Pre-guard lookups — hooks must be called unconditionally before any early return
+  const founder = story ? getFounder(story.founderId) : undefined
+  const intel   = story ? (villageContentIntelligenceService.getByContent('story', story.id) ?? null) : null
+  const [activeTab, setActiveTab] = useState<ContentType>(story?.contentTypes[0] ?? 'blog')
 
-  const founder  = getFounder(story.founderId)
+  usePageMeta({
+    title:       story?.title,
+    description: story?.summary?.slice(0, 160),
+    keywords:    intel?.seoKeywords.slice(0, 15),
+    ogType:      'article',
+    ogImage:     story?.coverImage,
+    jsonLd:      story && (story.status === 'published' || story.status === 'featured') ? {
+      '@context':      'https://schema.org',
+      '@type':         'Article',
+      headline:        story.title,
+      description:     story.summary?.slice(0, 200) ?? '',
+      ...(founder ? {
+        author: {
+          '@type': 'Person',
+          name:    founder.name,
+          url:     `${window.location.origin}/founders/${founder.slug}`,
+        },
+      } : {}),
+      datePublished: story.createdAt,
+      ...(story.coverImage ? { image: story.coverImage } : {}),
+      ...(intel?.seoKeywords.length ? { keywords: intel.seoKeywords.join(', ') } : {}),
+      ...(intel?.canonicalTopics.length ? {
+        about: intel.canonicalTopics.map(t => ({ '@type': 'Thing', name: t })),
+      } : {}),
+      ...(intel && (intel.people.length > 0 || intel.businesses.length > 0) ? {
+        mentions: [
+          ...intel.people.map(p => ({ '@type': 'Person', name: p })),
+          ...intel.businesses.map(b => ({ '@type': 'Organization', name: b })),
+        ].slice(0, 10),
+      } : {}),
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id':   `${window.location.origin}/stories/${story.slug}`,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name:    'CULO Village',
+        url:     window.location.origin,
+      },
+    } : undefined,
+  })
+
+  if (!story || (story.status !== 'published' && story.status !== 'featured')) return <StoryNotFound slug={slug ?? ''} />
+
   const business = getBusiness(story.businessId)
+  const approvedRecs = recommendationService.getAll({ storyId: story.id, status: 'approved' })
+    .filter(r => r.disclosureVisible)
 
-  // Default to first available content type
-  const [activeTab, setActiveTab] = useState<ContentType>(story.contentTypes[0])
-
-  // Related stories: prefer relatedStoryIds, fall back to same primary topic
+  // Related stories: prefer relatedStoryIds, then intel relatedContentIds, fall back to same primary topic
   const related = (() => {
     if (story.relatedStoryIds.length > 0) {
       return getStories({ publicOnly: true })
         .filter(s => story.relatedStoryIds.includes(s.id) && s.id !== story.id)
         .slice(0, 3)
+    }
+    if (intel && intel.relatedContentIds.length > 0) {
+      const fromIntel = intel.relatedContentIds
+        .map(id => getStory(id))
+        .filter((s): s is NonNullable<typeof s> => !!s && s.id !== story.id && (s.status === 'published' || s.status === 'featured'))
+        .slice(0, 3)
+      if (fromIntel.length > 0) return fromIntel
     }
     if (story.topics.length > 0) {
       return getStories({ topicId: story.topics[0].id, publicOnly: true, limit: 4 })
@@ -271,6 +341,30 @@ export function StoryDetailPage() {
     }
     return []
   })()
+
+  // Related imported content from intel
+  const relatedImports = intel
+    ? intel.relatedContentIds
+        .map(id => importedContentService.get(id))
+        .filter((c): c is NonNullable<typeof c> => !!c && (c.status === 'published' || c.status === 'featured') && (c.visibility === 'public' || c.visibility === 'discoverable'))
+        .slice(0, 3)
+    : []
+
+  // Related founders from intel
+  const intelRelatedFounders = intel
+    ? intel.relatedFounderIds
+        .map(id => getFounders({ publicOnly: true }).find(f => f.id === id))
+        .filter((f): f is NonNullable<typeof f> => !!f && f.id !== story.founderId)
+        .slice(0, 3)
+    : []
+
+  // Related businesses from intel
+  const intelRelatedBusinesses = intel
+    ? intel.relatedBusinessIds
+        .map(id => getBusiness(id))
+        .filter((b): b is NonNullable<typeof b> => !!b && (b.status === 'published' || b.status === 'featured'))
+        .slice(0, 3)
+    : []
 
   return (
     <main className="min-h-screen bg-background">
@@ -540,6 +634,158 @@ export function StoryDetailPage() {
                 />
               </section>
 
+              {/* Approved recommendations disclosed in this story */}
+              {approvedRecs.length > 0 && (
+                <section aria-labelledby="story-recs-heading">
+                  <h2 id="story-recs-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Recommended in this Story
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    These are genuine recommendations mentioned in this story. Each has been reviewed and approved by the author with a disclosure statement.
+                  </p>
+                  <ul className="flex flex-col gap-4" role="list">
+                    {approvedRecs.map(rec => (
+                      <li key={rec.id} className="bg-surface rounded-2xl border border-border p-5">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <h3 className="font-heading text-base font-semibold text-charcoal leading-snug">{rec.entityName}</h3>
+                          {rec.disclosureType !== 'none' && (
+                            <span className="flex-shrink-0 font-body text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary/10 text-secondary">
+                              {DISCLOSURE_TYPE_LABELS[rec.disclosureType] ?? rec.disclosureType}
+                            </span>
+                          )}
+                        </div>
+                        {rec.disclosureText && (
+                          <p className="font-body text-sm text-muted leading-relaxed border-l-2 border-border pl-3 italic">
+                            {rec.disclosureText}
+                          </p>
+                        )}
+                        {rec.detectedInContext && (
+                          <p className="font-body text-xs text-muted/70 mt-2 leading-relaxed">
+                            Mentioned: "{rec.detectedInContext}"
+                          </p>
+                        )}
+                        {rec.businessId && (
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <TrackedRecommendationLink
+                              founderId={rec.founderId}
+                              businessId={rec.businessId}
+                              recommendationId={rec.id}
+                              storyId={story.id}
+                              businessWebsite={getBusiness(rec.businessId)?.website}
+                              sourcePage="story"
+                              className="font-body text-xs font-semibold text-primary hover:text-[#b05a35] transition-colors"
+                            />
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Questions this answers — from Village Intelligence */}
+              {intel && (intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (
+                <section aria-labelledby="story-questions-heading">
+                  <h2
+                    id="story-questions-heading"
+                    className="font-heading text-2xl font-semibold text-charcoal mb-2"
+                  >
+                    Questions this answers
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Common questions this story helps you think through.
+                  </p>
+                  <ul className="flex flex-col gap-3" role="list">
+                    {[...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6).map((q, i) => (
+                      <li
+                        key={i}
+                        className="font-body text-sm text-charcoal/80 leading-relaxed px-4 py-3 bg-surface rounded-xl border border-border italic"
+                      >
+                        {q}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Related Village Content — imported content from intel */}
+              {relatedImports.length > 0 && (
+                <section aria-labelledby="related-imports-heading">
+                  <h2
+                    id="related-imports-heading"
+                    className="font-heading text-2xl font-semibold text-charcoal mb-2"
+                  >
+                    Related Village Content
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Other content in the Village on similar topics.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {relatedImports.map(item => (
+                      <ImportedContentCard key={item.id} content={item} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Related founders from intel */}
+              {intelRelatedFounders.length > 0 && (
+                <section aria-labelledby="related-founders-intel-heading">
+                  <h2
+                    id="related-founders-intel-heading"
+                    className="font-heading text-2xl font-semibold text-charcoal mb-6"
+                  >
+                    Related Founders
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {intelRelatedFounders.map(f => {
+                      const fBiz = getBusiness(f.businessId)
+                      return (
+                        <Link
+                          key={f.id}
+                          to={`/founders/${f.slug}`}
+                          className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-sm transition-all group"
+                          aria-label={`View ${f.name}'s profile`}
+                        >
+                          <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden bg-primary/10 ring-2 ring-border">
+                            {f.avatar
+                              ? <img src={f.avatar} alt="" className="w-full h-full object-cover" loading="lazy" />
+                              : <span className="flex items-center justify-center h-full text-primary font-heading text-sm font-semibold">{f.name[0]}</span>
+                            }
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-body text-sm font-semibold text-charcoal group-hover:text-primary transition-colors truncate">{f.name}</p>
+                            <p className="font-body text-xs text-muted truncate">{fBiz?.name ?? f.industry.name}</p>
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* Related businesses from intel */}
+              {intelRelatedBusinesses.length > 0 && (
+                <section aria-labelledby="related-businesses-intel-heading">
+                  <h2
+                    id="related-businesses-intel-heading"
+                    className="font-heading text-2xl font-semibold text-charcoal mb-6"
+                  >
+                    Related Businesses
+                  </h2>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list">
+                    {intelRelatedBusinesses.map(b => {
+                      const bFounder = getFounder(b.founderId)
+                      return (
+                        <li key={b.id}>
+                          <BusinessCard business={b} founder={bFounder} variant="default" />
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </section>
+              )}
+
               {/* Related stories */}
               {related.length > 0 && (
                 <section aria-labelledby="related-stories-heading">
@@ -579,6 +825,12 @@ export function StoryDetailPage() {
                   </div>
                 </section>
               )}
+
+              {/* Create with CULO CTA */}
+              <CreateWithCuloCTA
+                variant="banner"
+                label="Have a story like this? Create with CULO in Canva"
+              />
 
             </div>
 
@@ -706,6 +958,9 @@ export function StoryDetailPage() {
                   )}
                 </dl>
               </section>
+
+              {/* Village Intelligence sidebar block */}
+              {intel && <VillageIntelligenceBlock intel={intel} variant="sidebar" />}
 
             </aside>
           </div>

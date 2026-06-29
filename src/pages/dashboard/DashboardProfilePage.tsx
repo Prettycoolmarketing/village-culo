@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { getFounders, updateFounder } from '../../services/founders'
+import { publisherPartnerProfileService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
@@ -15,6 +16,7 @@ import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { getFounderMissingItems, getMissingCounts } from '../../utils/missingAssets'
 import { getFounderFeaturedIn } from '../../utils/featuredIn'
 import type { Founder, Topic } from '../../types'
+import type { PublisherPartnerProfile } from '../../types/partnership'
 
 // ─── Shared form helpers ───────────────────────────────────────────────────────
 
@@ -27,6 +29,379 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">{label}</label>
       {hint && <p className="text-xs text-[#9CA3AF] mb-1.5">{hint}</p>}
       {children}
+    </div>
+  )
+}
+
+// ─── Publisher Discovery Profile ─────────────────────────────────────────────
+
+function DiscoverySection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
+      <div className="px-5 py-4 border-b border-[#F3EDE6]">
+        <p className="text-sm font-semibold text-[#2D2A26]">{title}</p>
+        {description && <p className="text-xs text-[#9CA3AF] mt-0.5 leading-relaxed">{description}</p>}
+      </div>
+      <div className="px-5 py-5 flex flex-col gap-4">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function OpportunityGroup({ title, description, items, profile, onToggle }: {
+  title: string
+  description: string
+  items: Array<{ key: keyof PublisherPartnerProfile; label: string }>
+  profile: PublisherPartnerProfile
+  onToggle: (key: keyof PublisherPartnerProfile) => void
+}) {
+  const activeCount = items.filter(i => profile[i.key] as boolean).length
+  return (
+    <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
+      <div className={`px-4 py-3 flex items-center justify-between gap-3 ${activeCount > 0 ? 'bg-[#5E6B4A]/5' : 'bg-[#F8F5F0]'}`}>
+        <div>
+          <p className="text-xs font-semibold text-[#2D2A26]">{title}</p>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">{description}</p>
+        </div>
+        {activeCount > 0 && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] font-semibold shrink-0 whitespace-nowrap">
+            {activeCount} active
+          </span>
+        )}
+      </div>
+      <div className="divide-y divide-[#F3EDE6]">
+        {items.map(({ key, label }) => (
+          <div key={key} className="flex items-center justify-between gap-4 px-4 py-3">
+            <p className="text-xs text-[#4B4845]">{label}</p>
+            <button
+              onClick={() => onToggle(key)}
+              className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${(profile[key] as boolean) ? 'bg-[#5E6B4A]' : 'bg-[#E8E4DD]'}`}
+              aria-label={`Toggle ${label}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${(profile[key] as boolean) ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const SPEAKING_OPPS = [
+  { key: 'openToSpeaking'  as const, label: 'Speaking at events and conferences' },
+  { key: 'openToPodcasts'  as const, label: 'Podcast guest appearances' },
+  { key: 'openToWorkshops' as const, label: 'Running workshops or masterclasses' },
+]
+
+const CONTENT_OPPS = [
+  { key: 'openToGuestBlogs' as const, label: 'Guest blog posts and editorial' },
+  { key: 'openToCampaigns'  as const, label: 'Brand campaign collaborations' },
+]
+
+const BUSINESS_OPPS = [
+  { key: 'openToConsulting' as const, label: 'Consulting and strategy work' },
+  { key: 'openToAdvisory'   as const, label: 'Board and advisory roles' },
+  { key: 'openToFreelance'  as const, label: 'Freelance and contract projects' },
+]
+
+const COMMUNITY_OPPS = [
+  { key: 'openToCollaboration' as const, label: 'Publisher and creator collaborations' },
+  { key: 'openToMentoring'     as const, label: 'Mentoring founders and creators' },
+  { key: 'openToAffiliates'    as const, label: 'Genuine affiliate partnerships' },
+  { key: 'openToReferrals'     as const, label: 'Business referral partnerships' },
+]
+
+function PublisherDiscoveryProfile({ founderId, founderTopics }: {
+  founderId: string
+  founderTopics: Topic[]
+}) {
+  const [profile, setProfile] = useState<PublisherPartnerProfile>(
+    () => publisherPartnerProfileService.getOrCreate(founderId)
+  )
+  const [saved, setSaved] = useState(false)
+
+  function setP<K extends keyof PublisherPartnerProfile>(key: K, value: PublisherPartnerProfile[K]) {
+    setProfile(prev => ({ ...prev, [key]: value }))
+    setSaved(false)
+  }
+
+  function toggleP(key: keyof PublisherPartnerProfile) {
+    setProfile(prev => ({ ...prev, [key]: !(prev[key] as boolean) }))
+    setSaved(false)
+  }
+
+  function handleSave() {
+    publisherPartnerProfileService.upsert(profile)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  const discoveryInputClass =
+    'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
+
+  return (
+    <div className="max-w-2xl flex flex-col gap-5 pb-8">
+
+      {/* Value statement */}
+      <div className="px-5 py-4 bg-[#5E6B4A]/5 rounded-xl border border-[#5E6B4A]/20">
+        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Your Publisher Discovery Profile</p>
+        <p className="text-xs text-[#6B7280] leading-relaxed">
+          This helps CULO find the right opportunities, recommendations, speaking invites, podcasts, collaborations and businesses for you — based on what you write about and what you're genuinely open to.
+        </p>
+      </div>
+
+      {/* Status */}
+      <DiscoverySection
+        title="Discovery Status"
+        description="Control whether CULO actively matches you with opportunities and recommendations"
+      >
+        {/* Enable toggle */}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-[#2D2A26]">Enable Discovery Profile</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">Turn on matching — CULO will start surfacing relevant opportunities</p>
+          </div>
+          <button
+            onClick={() => setP('enabled', !profile.enabled)}
+            className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${profile.enabled ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
+            aria-label="Toggle discovery"
+          >
+            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${profile.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+
+        {/* Availability */}
+        <div>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Availability</label>
+          <p className="text-xs text-[#9CA3AF] mb-2">Let businesses know how open you are right now</p>
+          <div className="flex gap-2 flex-wrap">
+            {([
+              { value: 'available',    label: 'Available',     desc: 'Open to new opportunities' },
+              { value: 'limited',      label: 'Limited',       desc: 'Selective — right opportunities only' },
+              { value: 'unavailable',  label: 'Not Available', desc: 'Not looking right now' },
+            ] as const).map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setP('availability', opt.value)}
+                title={opt.desc}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  (profile.availability ?? 'available') === opt.value
+                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
+                    : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Visibility */}
+        <div>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Profile Visibility</label>
+          <div className="flex flex-col gap-2.5">
+            {([
+              { value: 'public',       label: 'Public',       desc: 'Visible to anyone on CULO' },
+              { value: 'discoverable', label: 'Discoverable', desc: 'Only surfaces when matched to a business or opportunity' },
+              { value: 'private',      label: 'Private',      desc: 'Hidden — only you can see this profile' },
+            ] as const).map(opt => (
+              <label key={opt.value} className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`visibility-${founderId}`}
+                  value={opt.value}
+                  checked={(profile.profileVisibility ?? 'discoverable') === opt.value}
+                  onChange={() => setP('profileVisibility', opt.value)}
+                  className="mt-0.5 accent-[#C86A43]"
+                />
+                <div>
+                  <p className="text-sm font-medium text-[#2D2A26]">{opt.label}</p>
+                  <p className="text-xs text-[#9CA3AF]">{opt.desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+      </DiscoverySection>
+
+      {/* For the Record */}
+      <DiscoverySection
+        title="For the Record"
+        description="Write this for CULO's matching engine and for businesses reviewing your profile — not for the public. Be specific and honest."
+      >
+        <div>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">What do you want to be known for?</label>
+          <p className="text-xs text-[#9CA3AF] mb-2">Your professional focus, the problem you solve, or what you'd want a business to know before working with you</p>
+          <textarea
+            value={profile.professionalBio ?? ''}
+            onChange={e => setP('professionalBio', e.target.value || undefined)}
+            rows={4}
+            className={discoveryInputClass + ' resize-y'}
+            placeholder="I help founders tell the story behind their business — not the polished version, the real one. I've published 200+ stories about building slowly, using fewer tools better, and running businesses on your own terms."
+          />
+        </div>
+
+        {/* Founder topics — read-only reference, no re-entry */}
+        {founderTopics.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-[#6B7280] mb-2">Your profile topics (from Content tab)</p>
+            <div className="flex flex-wrap gap-1.5">
+              {founderTopics.map(t => (
+                <span key={t.id} className="px-2.5 py-1 rounded-full text-xs bg-[#C86A43]/10 text-[#C86A43] border border-[#C86A43]/20">
+                  {t.name}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-[#9CA3AF] mt-2">
+              CULO uses these for opportunity matching.{' '}
+              <button
+                type="button"
+                onClick={() => {/* parent controls tab — user can click Content tab manually */}}
+                className="text-[#C86A43] underline-offset-2 hover:underline"
+              >
+                Edit in the Content tab ↑
+              </button>
+            </p>
+          </div>
+        )}
+      </DiscoverySection>
+
+      {/* What I Genuinely Use & Recommend */}
+      <DiscoverySection
+        title="What I Genuinely Use & Recommend"
+        description="List the tools, products, services and businesses you actually use and would genuinely recommend to others. One per line. CULO uses this to detect future recommendations in your stories."
+      >
+        <div>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Tools & products I use</label>
+          <p className="text-xs text-[#9CA3AF] mb-2">One per line — be specific. "Notion" not "productivity tools."</p>
+          <textarea
+            value={(profile.genuineRecommendations ?? []).join('\n')}
+            onChange={e => {
+              const vals = e.target.value.split('\n').map(v => v.trim()).filter(Boolean)
+              setP('genuineRecommendations', vals.length > 0 ? vals : undefined)
+            }}
+            rows={6}
+            className={discoveryInputClass + ' resize-y'}
+            placeholder={'Notion\nCanva\nStripe\nMailchimp\nClaude\nXero\nSquarespace'}
+          />
+          <p className="text-xs text-[#9CA3AF] mt-1.5">These are the businesses CULO will look for in your stories first.</p>
+        </div>
+      </DiscoverySection>
+
+      {/* Opportunities I'm Open To */}
+      <DiscoverySection
+        title="Opportunities I'm Open To"
+        description="Be selective. Only turn on what you'd genuinely say yes to. Businesses see this when deciding whether to reach out."
+      >
+        <OpportunityGroup
+          title="Speaking & Events"
+          description="Keynotes, podcasts, workshops, live appearances"
+          items={SPEAKING_OPPS}
+          profile={profile}
+          onToggle={toggleP}
+        />
+        <OpportunityGroup
+          title="Content & Campaigns"
+          description="Guest posts, brand collaborations, sponsored content"
+          items={CONTENT_OPPS}
+          profile={profile}
+          onToggle={toggleP}
+        />
+        <OpportunityGroup
+          title="Business & Advisory"
+          description="Consulting, advisory, freelance and strategy work"
+          items={BUSINESS_OPPS}
+          profile={profile}
+          onToggle={toggleP}
+        />
+        <OpportunityGroup
+          title="Collaboration & Community"
+          description="Publisher partnerships, mentoring, referral programs"
+          items={COMMUNITY_OPPS}
+          profile={profile}
+          onToggle={toggleP}
+        />
+      </DiscoverySection>
+
+      {/* Who I Want to Connect With */}
+      <DiscoverySection
+        title="Who I Want to Connect With"
+        description="Describe the types of businesses, founders or collaborators you'd most like CULO to match you with"
+      >
+        <div>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Ideal collaborator or business</label>
+          <textarea
+            value={profile.idealCollaborator ?? ''}
+            onChange={e => setP('idealCollaborator', e.target.value || undefined)}
+            rows={3}
+            className={discoveryInputClass + ' resize-none'}
+            placeholder="Bootstrapped software businesses that genuinely care about their customers. Not VC-funded, not growth-at-all-costs. Ideally founder-led with a small team."
+          />
+        </div>
+      </DiscoverySection>
+
+      {/* Locations & Markets */}
+      <DiscoverySection
+        title="Locations & Markets"
+        description="Where can you work with businesses? Your primary location is already on your profile — add any additional markets here."
+      >
+        <div>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Markets I serve</label>
+          <p className="text-xs text-[#9CA3AF] mb-2">Countries or regions (comma separated)</p>
+          <input
+            type="text"
+            value={(profile.countries ?? []).join(', ')}
+            onChange={e => {
+              const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean)
+              setP('countries', vals.length > 0 ? vals : undefined)
+            }}
+            className={discoveryInputClass}
+            placeholder="Australia, New Zealand, UK, Remote — Worldwide"
+          />
+        </div>
+      </DiscoverySection>
+
+      {/* Contact Preference */}
+      <DiscoverySection
+        title="Contact Preference"
+        description="How should businesses and collaborators reach out to you?"
+      >
+        <div className="flex flex-col gap-2.5">
+          {([
+            { value: 'open',             label: 'Open',             desc: 'Reach out however you prefer — email, DM, form' },
+            { value: 'direct-message',   label: 'Direct message',   desc: 'Message me through the CULO platform first' },
+            { value: 'email',            label: 'Email',            desc: 'Contact me via email' },
+            { value: 'application-form', label: 'Application form', desc: 'Complete a form before I consider it' },
+          ] as const).map(opt => (
+            <label key={opt.value} className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name={`contact-${founderId}`}
+                value={opt.value}
+                checked={(profile.contactPreference ?? 'open') === opt.value}
+                onChange={() => setP('contactPreference', opt.value)}
+                className="mt-0.5 accent-[#C86A43]"
+              />
+              <div>
+                <p className="text-sm font-medium text-[#2D2A26]">{opt.label}</p>
+                <p className="text-xs text-[#9CA3AF]">{opt.desc}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </DiscoverySection>
+
+      {/* Save */}
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          onClick={handleSave}
+          className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+        >
+          Save Discovery Profile
+        </button>
+        {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
+      </div>
     </div>
   )
 }
@@ -49,14 +424,15 @@ export function DashboardProfilePage() {
   const founderLibrary  = getLibraryItems({ founderId: draft.id })
 
   const TABS = [
-    { key: 'overview',      label: 'Overview'     },
-    { key: 'content',       label: 'Content'      },
-    { key: 'media',         label: 'Media'        },
+    { key: 'overview',      label: 'Overview'          },
+    { key: 'content',       label: 'Content'           },
+    { key: 'media',         label: 'Media'             },
     { key: 'relationships', label: 'Relationships', badge: founderStories.length + founderIdeas.length },
     { key: 'featured-in',   label: 'Featured In',  badge: featuredIn.length },
-    { key: 'seo',           label: 'SEO & GEO'    },
-    { key: 'publishing',    label: 'Publishing'   },
-    { key: 'settings',      label: 'Settings'     },
+    { key: 'seo',           label: 'SEO & GEO'         },
+    { key: 'publishing',    label: 'Publishing'        },
+    { key: 'discovery',     label: 'Discovery Profile' },
+    { key: 'settings',      label: 'Settings'          },
   ]
 
   function set<K extends keyof Founder>(key: K, value: Founder[K]) {
@@ -369,6 +745,14 @@ export function DashboardProfilePage() {
               <p className="text-[#6B7280]"><span className="font-medium text-[#2D2A26]">Created:</span> {draft.createdAt}</p>
             </div>
           </div>
+        )}
+
+        {/* ── Discovery Profile ────────────────────────────────────────── */}
+        {tab === 'discovery' && (
+          <PublisherDiscoveryProfile
+            founderId={draft.id}
+            founderTopics={draft.topics ?? []}
+          />
         )}
 
         {/* ── Settings ─────────────────────────────────────────────────── */}

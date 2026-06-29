@@ -3,8 +3,10 @@ import type { Story, Founder, Business, LibraryItem, Service } from '../types'
 
 async function currentUserId(): Promise<string | null> {
   if (!supabase) return null
-  const { data: { user } } = await supabase.auth.getUser()
-  return user?.id ?? null
+  // getSession() reads the local cached token — no network round-trip.
+  // RLS enforces ownership server-side so session-level trust is sufficient here.
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.user.id ?? null
 }
 
 // ─── Stories ──────────────────────────────────────────────────────────────────

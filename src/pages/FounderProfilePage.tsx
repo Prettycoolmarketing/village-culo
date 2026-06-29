@@ -1,7 +1,13 @@
 import { useParams, Link } from 'react-router-dom'
-import { usePageTitle } from '../utils/usePageTitle'
+import { usePageMeta } from '../utils/usePageMeta'
 import { getFounders } from '../services/founders'
-import { getBusiness } from '../services/businesses'
+import { getBusiness, getBusinesses } from '../services/businesses'
+import { trustProfileService, recommendationService } from '../services/partnership'
+import { importedContentService } from '../services/importedContent'
+import { villageContentIntelligenceService } from '../services/villageIntelligence'
+import { ImportedContentCard } from '../components/cards/ImportedContentCard'
+import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
+import { LEVEL_LABELS, LEVEL_COLORS } from '../services/trustEngine'
 import { getFAQsForFounder } from '../data/faqs'
 import { getResourcesForFounder } from '../data/resources'
 import { getTalksForFounder } from '../data/talks'
@@ -15,6 +21,7 @@ import { BusinessCard } from '../components/cards/BusinessCard'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
+import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 
 // ─── Social icons ────────────────────────────────────────────────────────────────
 
@@ -39,6 +46,38 @@ function LinkedInIcon() {
   return (
     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    </svg>
+  )
+}
+
+function YouTubeIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+    </svg>
+  )
+}
+
+function TikTokIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.14 8.14 0 004.78 1.53V6.78a4.85 4.85 0 01-1.01-.09z"/>
+    </svg>
+  )
+}
+
+function PodcastIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+    </svg>
+  )
+}
+
+function NewsletterIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
     </svg>
   )
 }
@@ -98,11 +137,41 @@ function getRelatedFounders(founderId: string, industryId: string, locationId: s
 export function FounderProfilePage() {
   const { slug } = useParams<{ slug: string }>()
   const founder = getFounders().find(f => f.slug === slug)
-  usePageTitle(founder ? [founder.name, 'Founders'] : 'Founders')
 
-  if (!founder || founder.status === 'archived') return <FounderNotFound slug={slug ?? ''} />
+  // Pre-guard lookups — hooks must be called unconditionally before any early return
+  const business           = founder ? getBusiness(founder.businessId) : undefined
+  const founderIntelRecords = founder ? villageContentIntelligenceService.getByFounder(founder.id) : []
 
-  const business         = getBusiness(founder.businessId)
+  usePageMeta({
+    title:       founder?.name,
+    description: founder?.bio?.slice(0, 160),
+    keywords:    [
+      ...(founder?.topics.map(t => t.name) ?? []),
+      ...[...new Set(founderIntelRecords.flatMap(r => r.seoKeywords))].slice(0, 8),
+    ].slice(0, 15),
+    ogType:  'profile',
+    ogImage: founder?.coverImage ?? founder?.avatar,
+    jsonLd:  founder && (founder.status === 'published' || founder.status === 'featured') ? {
+      '@context':   'https://schema.org',
+      '@type':      'Person',
+      name:         founder.name,
+      description:  founder.bio ?? '',
+      url:          `${window.location.origin}/founders/${founder.slug}`,
+      ...(founder.avatar ? { image: founder.avatar } : {}),
+      sameAs:       [founder.website, founder.instagram, founder.linkedin, founder.youtube, founder.tiktok, founder.podcast, founder.newsletter].filter(Boolean),
+      knowsAbout:   [
+        ...founder.topics.map(t => t.name),
+        ...[...new Set(founderIntelRecords.flatMap(r => r.primaryTopics))].slice(0, 5),
+      ].slice(0, 10),
+      ...(business ? { affiliation: { '@type': 'Organization', name: business.name } } : {}),
+      homeLocation: {
+        '@type': 'Place',
+        name: `${founder.location.name}, ${founder.location.state}, Australia`,
+      },
+    } : undefined,
+  })
+
+  if (!founder || (founder.status !== 'published' && founder.status !== 'featured')) return <FounderNotFound slug={slug ?? ''} />
   const faqs             = getFAQsForFounder(founder.id)
   const resources        = getResourcesForFounder(founder.id)
   const talks            = getTalksForFounder(founder.id)
@@ -111,6 +180,35 @@ export function FounderProfilePage() {
   const relatedFounders  = getRelatedFounders(
     founder.id, founder.industry.id, founder.location.id, founder.topics.map(t => t.id)
   )
+
+  const trustProfile    = trustProfileService.get(founder.id)
+  const approvedRecs    = recommendationService.getAll({ founderId: founder.id, status: 'approved' })
+    .filter(r => r.disclosureVisible)
+  const publicImports   = importedContentService.getAll({ founderId: founder.id, publicOnly: true })
+
+  // ── Village Intelligence — aggregate across all content ───────────────────
+  const aggregatedIntel = founderIntelRecords.length > 0 ? {
+    topics:    [...new Set(founderIntelRecords.flatMap(r => r.primaryTopics))].slice(0, 10),
+    locations: [...new Set(founderIntelRecords.flatMap(r => [...r.cities, ...r.regions]))].slice(0, 8),
+    questions: [...new Set(founderIntelRecords.flatMap(r => [...r.searchQuestions, ...r.geoQuestions]))].slice(0, 6),
+    lessons:   [...new Set(founderIntelRecords.flatMap(r => r.lessons))].slice(0, 4),
+    relatedFounderIds:   [...new Set(founderIntelRecords.flatMap(r => r.relatedFounderIds))].filter(id => id !== founder.id).slice(0, 3),
+    relatedBusinessIds:  [...new Set(founderIntelRecords.flatMap(r => r.relatedBusinessIds))].slice(0, 3),
+  } : null
+
+  // Intel-driven related founders (supplement existing scoring-based related founders)
+  const intelRelatedFounders = aggregatedIntel
+    ? aggregatedIntel.relatedFounderIds
+        .map(id => getFounders({ publicOnly: true }).find(f => f.id === id))
+        .filter((f): f is NonNullable<typeof f> => !!f && f.id !== founder.id)
+    : []
+
+  // Intel-driven related businesses
+  const intelRelatedBusinesses = aggregatedIntel
+    ? aggregatedIntel.relatedBusinessIds
+        .map(id => getBusinesses({ publicOnly: true }).find(b => b.id === id))
+        .filter((b): b is NonNullable<typeof b> => !!b)
+    : []
 
   // ── Evidence metrics (computed) ──────────────────────────────────────────────
   const yearsPublishing = new Date().getFullYear() - new Date(founder.createdAt).getFullYear() || 1
@@ -130,6 +228,63 @@ export function FounderProfilePage() {
           </ol>
         </InnerContainer>
       </nav>
+
+      {/* ── Profile ownership banner ──────────────────────────────────────── */}
+      {founder.profileStatus === 'village-curated' && (
+        <div className="bg-blue-50 border-b border-blue-100" role="note" aria-label="Curated profile notice">
+          <InnerContainer>
+            <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <p className="font-body text-sm text-blue-800 leading-relaxed">
+                  This profile has been curated by CULO Village using publicly available content and original source links.{' '}
+                  <span className="text-blue-600">
+                    If this is your profile and you would like changes, you can claim it or request removal.
+                  </span>
+                </p>
+              </div>
+              <Link
+                to={`/claim/${founder.slug}`}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                Is this you? Claim this profile →
+              </Link>
+            </div>
+          </InnerContainer>
+        </div>
+      )}
+
+      {founder.profileStatus === 'claim-pending' && (
+        <div className="bg-amber-50 border-b border-amber-100" role="note">
+          <InnerContainer>
+            <div className="py-3 flex items-center gap-2.5">
+              <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              <p className="font-body text-sm text-amber-800">
+                A claim for this profile is currently under review by CULO Village.
+              </p>
+            </div>
+          </InnerContainer>
+        </div>
+      )}
+
+      {(founder.profileStatus === 'claimed' || founder.profileStatus === 'verified') && (
+        <div className="bg-[#5E6B4A]/10 border-b border-[#5E6B4A]/20" role="note">
+          <InnerContainer>
+            <div className="py-3 flex items-center gap-2.5">
+              <svg className="w-4 h-4 text-[#5E6B4A] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <p className="font-body text-sm text-[#5E6B4A] font-semibold">
+                {founder.profileStatus === 'verified' ? '✓ Verified Founder' : '✓ Claimed Founder'}
+              </p>
+            </div>
+          </InnerContainer>
+        </div>
+      )}
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section aria-labelledby="founder-name">
@@ -161,8 +316,8 @@ export function FounderProfilePage() {
                   {founder.location.name}, {founder.location.state}, Australia
                 </p>
               </div>
-              {(founder.website || founder.instagram || founder.linkedin) && (
-                <div className="flex items-center gap-2 flex-shrink-0 pb-1">
+              {(founder.website || founder.instagram || founder.linkedin || founder.youtube || founder.tiktok || founder.podcast || founder.newsletter) && (
+                <div className="flex items-center gap-2 flex-shrink-0 pb-1 flex-wrap">
                   {founder.website && (
                     <a href={founder.website} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm font-medium hover:border-primary hover:text-primary transition-colors"
@@ -182,6 +337,34 @@ export function FounderProfilePage() {
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
                       aria-label={`${founder.name} on LinkedIn`}>
                       <LinkedInIcon />
+                    </a>
+                  )}
+                  {founder.youtube && (
+                    <a href={founder.youtube} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-red-500 hover:text-red-500 transition-colors"
+                      aria-label={`${founder.name} on YouTube`}>
+                      <YouTubeIcon />
+                    </a>
+                  )}
+                  {founder.tiktok && (
+                    <a href={founder.tiktok} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
+                      aria-label={`${founder.name} on TikTok`}>
+                      <TikTokIcon />
+                    </a>
+                  )}
+                  {founder.podcast && (
+                    <a href={founder.podcast} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-purple-500 hover:text-purple-500 transition-colors"
+                      aria-label={`${founder.name}'s podcast`}>
+                      <PodcastIcon />
+                    </a>
+                  )}
+                  {founder.newsletter && (
+                    <a href={founder.newsletter} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
+                      aria-label={`${founder.name}'s newsletter`}>
+                      <NewsletterIcon />
                     </a>
                   )}
                 </div>
@@ -213,6 +396,11 @@ export function FounderProfilePage() {
                 </Link>
               </div>
             )}
+
+            {/* Create with CULO CTA */}
+            <div className="mt-6">
+              <CreateWithCuloCTA variant="inline" label="Continue your story with CULO" />
+            </div>
           </InnerContainer>
         </div>
       </section>
@@ -259,6 +447,17 @@ export function FounderProfilePage() {
               <div className="flex flex-col">
                 <span className="font-heading text-2xl font-bold text-white">{founder.topics.length}</span>
                 <span className="font-body text-xs text-white/50 uppercase tracking-wide">Topics</span>
+              </div>
+            )}
+            {trustProfile && trustProfile.overallScore > 0 && (
+              <div className="flex flex-col">
+                <span
+                  className="font-heading text-sm font-bold px-2 py-0.5 rounded-full w-fit"
+                  style={{ color: LEVEL_COLORS[trustProfile.trustLevel], backgroundColor: `${LEVEL_COLORS[trustProfile.trustLevel]}22` }}
+                >
+                  {LEVEL_LABELS[trustProfile.trustLevel]}
+                </span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide mt-1">CULO Trust</span>
               </div>
             )}
           </div>
@@ -596,22 +795,158 @@ export function FounderProfilePage() {
                 </dl>
               </section>
 
+              {/* Approved recommendations */}
+              {approvedRecs.length > 0 && (
+                <section aria-labelledby="founder-recs-heading">
+                  <h2 id="founder-recs-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
+                    Genuine Recommendations
+                  </h2>
+                  <p className="font-body text-xs text-muted mb-3 leading-relaxed">
+                    Tools and businesses {founder.name} has mentioned in stories and approved with a disclosure.
+                  </p>
+                  <ul className="flex flex-col gap-2.5" role="list">
+                    {approvedRecs.map(rec => (
+                      <li key={rec.id} className="bg-surface rounded-xl border border-border px-4 py-3">
+                        <p className="font-body text-sm font-semibold text-charcoal leading-snug">{rec.entityName}</p>
+                        {rec.disclosureText && (
+                          <p className="font-body text-xs text-muted mt-1 leading-relaxed line-clamp-2 italic">
+                            {rec.disclosureText}
+                          </p>
+                        )}
+                        {rec.businessId && (
+                          <TrackedRecommendationLink
+                            founderId={rec.founderId}
+                            businessId={rec.businessId}
+                            recommendationId={rec.id}
+                            storyId={rec.storyId}
+                            businessWebsite={getBusiness(rec.businessId)?.website}
+                            sourcePage="founder"
+                            className="font-body text-xs font-semibold text-primary hover:text-[#b05a35] transition-colors mt-2 block"
+                          />
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Imported content */}
+              {publicImports.length > 0 && (
+                <section aria-labelledby="founder-imports-heading">
+                  <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-3">
+                    From Around the Web
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {publicImports.map(item => (
+                      <ImportedContentCard key={item.id} content={item} compact />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Village Intelligence — aggregated across founder's content */}
+              {aggregatedIntel && (aggregatedIntel.topics.length > 0 || aggregatedIntel.questions.length > 0) && (
+                <section aria-labelledby="founder-intel-heading">
+                  <h2 id="founder-intel-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
+                    Village Intelligence
+                  </h2>
+
+                  {aggregatedIntel.topics.length > 0 && (
+                    <div className="mb-4">
+                      <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Topics covered</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {aggregatedIntel.topics.map(t => (
+                          <span key={t} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {aggregatedIntel.locations.length > 0 && (
+                    <div className="mb-4">
+                      <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Locations</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {aggregatedIntel.locations.map(l => (
+                          <span key={l} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-border text-charcoal/70">
+                            {l}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {aggregatedIntel.questions.length > 0 && (
+                    <div>
+                      <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Questions this founder answers</p>
+                      <ul className="space-y-1.5">
+                        {aggregatedIntel.questions.slice(0, 4).map((q, i) => (
+                          <li key={i} className="font-body text-xs text-muted leading-relaxed italic pl-2 border-l border-border">
+                            {q}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* Intel-driven related businesses */}
+              {intelRelatedBusinesses.length > 0 && (
+                <section aria-labelledby="founder-intel-businesses-heading">
+                  <h2 id="founder-intel-businesses-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
+                    Related Businesses
+                  </h2>
+                  <div className="flex flex-col gap-2">
+                    {intelRelatedBusinesses.map(b => {
+                      const bFounder = getFounders({ publicOnly: true }).find(f => f.id === b.founderId)
+                      return (
+                        <Link
+                          key={b.id}
+                          to={`/businesses/${b.slug}`}
+                          className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-sm transition-all group"
+                          aria-label={`View ${b.name}`}
+                        >
+                          <div className="flex-shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-background ring-2 ring-border">
+                            {b.logo
+                              ? <img src={b.logo} alt="" className="w-full h-full object-cover" loading="lazy" />
+                              : <span className="flex items-center justify-center h-full text-muted font-heading text-sm font-semibold">{b.name[0]}</span>
+                            }
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-body text-sm font-semibold text-charcoal group-hover:text-primary transition-colors truncate">{b.name}</p>
+                            <p className="font-body text-xs text-muted truncate">{bFounder?.name ?? b.industry.name}</p>
+                          </div>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </section>
+              )}
+
               {/* Related founders */}
-              {relatedFounders.length > 0 && (
+              {(relatedFounders.length > 0 || intelRelatedFounders.length > 0) && (
                 <section aria-labelledby="related-founders-heading">
                   <h2 id="related-founders-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
                     Related Founders
                   </h2>
                   <div className="flex flex-col gap-3" role="list">
-                    {relatedFounders.map(related => {
+                    {[
+                      ...relatedFounders,
+                      ...intelRelatedFounders.filter(f => !relatedFounders.some(r => r.id === f.id)),
+                    ].slice(0, 5).map(related => {
                       const relatedBiz = getBusiness(related.businessId)
+                      const isIntelOnly = !relatedFounders.some(r => r.id === related.id)
                       const sharedLocation = related.location.id === founder.location.id
                       const sharedIndustry = related.industry.id === founder.industry.id
-                      const sharedLabel = sharedIndustry
-                        ? related.industry.name
-                        : sharedLocation
-                          ? related.location.name
-                          : related.topics.find(t => founder.topics.some(ft => ft.id === t.id))?.name ?? ''
+                      const sharedLabel = isIntelOnly
+                        ? 'Similar topics'
+                        : sharedIndustry
+                          ? related.industry.name
+                          : sharedLocation
+                            ? related.location.name
+                            : related.topics.find(t => founder.topics.some(ft => ft.id === t.id))?.name ?? ''
                       return (
                         <div key={related.id} role="listitem">
                           <Link

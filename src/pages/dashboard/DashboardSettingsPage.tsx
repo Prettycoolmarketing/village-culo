@@ -1,11 +1,35 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { resetAndReseed } from '../../lib/seedStore'
+import { getFounders } from '../../services/founders'
+import { publisherSettingsService } from '../../services/partnership'
+import type { PublisherPartnershipSettings } from '../../types/partnership'
 
 export function DashboardSettingsPage() {
   const { user, isConfigured } = useAuth()
   const [resetting, setResetting] = useState(false)
   const [resetDone, setResetDone] = useState(false)
+
+  // Canonical founderId: resolve to actual Founder entity so Settings, Partnership,
+  // Profile and Detection all share the same key.
+  // In Supabase mode: getFounders().find(f => f.email === user?.email)?.id
+  const founders  = getFounders()
+  const founderId = founders[0]?.id ?? user?.id ?? 'dev-user'
+  const [partnerSettings, setPartnerSettings] = useState<PublisherPartnershipSettings>(
+    () => publisherSettingsService.getOrCreate(founderId)
+  )
+  const [partnerSaved, setPartnerSaved] = useState(false)
+
+  function togglePartner(key: keyof PublisherPartnershipSettings) {
+    setPartnerSettings(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))
+    setPartnerSaved(false)
+  }
+
+  function savePartnerSettings() {
+    publisherSettingsService.upsert(partnerSettings)
+    setPartnerSaved(true)
+    setTimeout(() => setPartnerSaved(false), 2000)
+  }
 
   function handleReset() {
     if (!window.confirm('This will reset all local edits back to the original demo data. Are you sure?')) return
@@ -90,6 +114,68 @@ export function DashboardSettingsPage() {
               <p className="mt-0.5">VITE_SUPABASE_ANON_KEY=your-anon-key</p>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Partnership Operating System */}
+      <section className="mb-8">
+        <h2 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Partnership Operating System</h2>
+        <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
+
+          {/* Master toggle */}
+          <div className="px-5 py-4 flex items-center justify-between border-b border-[#F3EDE6]">
+            <div>
+              <p className="text-sm font-semibold text-[#2D2A26]">Join the Partnership Operating System</p>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">Enable recommendations, opportunities and partnership features</p>
+            </div>
+            <button
+              onClick={() => togglePartner('partnershipEnabled')}
+              className={`w-11 h-6 rounded-full transition-colors relative ${partnerSettings.partnershipEnabled ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
+              aria-label="Toggle partnership"
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${partnerSettings.partnershipEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          {/* Individual options */}
+          {([
+            { key: 'receiveRecommendations',       label: 'Enable Recommendations',       desc: 'Detect brands and products in your stories' },
+            { key: 'receiveOpportunities',          label: 'Receive Opportunities',         desc: 'Speaking, podcasts, collaborations and campaigns' },
+            { key: 'receiveCampaigns',              label: 'Receive Campaign Invitations',  desc: 'Businesses can invite you to campaigns' },
+            { key: 'receiveBusinessMatches',        label: 'Business Matches',              desc: 'Get matched with relevant businesses' },
+            { key: 'receivePodcastOpportunities',   label: 'Podcast Opportunities',         desc: 'Podcast guest appearances' },
+            { key: 'receiveSpeakingOpportunities',  label: 'Speaking Opportunities',        desc: 'Events and conference invitations' },
+            { key: 'receiveCollaborationRequests',  label: 'Collaboration Requests',        desc: 'Publisher and business collaboration invitations' },
+          ] as Array<{ key: keyof PublisherPartnershipSettings; label: string; desc: string }>).map(({ key, label, desc }) => (
+            <div key={key} className="px-5 py-3.5 flex items-center justify-between gap-4 border-b border-[#F3EDE6] last:border-0">
+              <div>
+                <p className="text-sm font-medium text-[#2D2A26]">{label}</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">{desc}</p>
+              </div>
+              <button
+                onClick={() => togglePartner(key)}
+                disabled={!partnerSettings.partnershipEnabled}
+                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 disabled:opacity-40 ${
+                  (partnerSettings[key] as boolean) ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'
+                }`}
+                aria-label={`Toggle ${label}`}
+              >
+                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  (partnerSettings[key] as boolean) ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            onClick={savePartnerSettings}
+            className="px-4 py-2 text-sm font-semibold bg-[#C86A43] text-white rounded-lg hover:bg-[#b05a35] transition-colors"
+          >
+            Save Partnership Settings
+          </button>
+          {partnerSaved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
         </div>
       </section>
 

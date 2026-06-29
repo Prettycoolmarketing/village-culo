@@ -336,6 +336,8 @@ export interface EvidenceMetrics {
 
 // ─── Founder ───────────────────────────────────────────────────────────────────
 
+export type FounderProfileStatus = 'claimed' | 'village-curated' | 'claim-pending' | 'verified'
+
 export interface Founder {
   id: string
   slug: string
@@ -350,6 +352,10 @@ export interface Founder {
   website?: string
   instagram?: string
   linkedin?: string
+  youtube?: string
+  tiktok?: string
+  podcast?: string
+  newsletter?: string
   status: Status
   featured: boolean
   createdAt: string
@@ -362,6 +368,15 @@ export interface Founder {
   awardIds?: string[]
   mediaMentionIds?: string[]
   timeline?: TimelineEntry[]
+  // Profile ownership (Sprint 15)
+  profileStatus?: FounderProfileStatus
+  curatedBy?: string
+  curatedAt?: string
+  claimedAt?: string
+  claimedByUserId?: string // TODO: wire to Supabase auth transfer in future sprint
+  claimEmail?: string
+  claimNotes?: string
+  isClaimable?: boolean
   // Metadata
   seoTitle?: string
   seoDescription?: string
@@ -400,6 +415,9 @@ export interface Business {
   testimonialIds?: string[]
   faqs?: FAQ[]
   resourceIds?: string[]
+  // Partnership Operating System fields (managed by Partnership Engine)
+  partnerEnabled?: boolean       // Business is discoverable in the Partnership Engine
+  villageProActive?: boolean     // Business has an active Village Pro account
   // Metadata
   seoTitle?: string
   seoDescription?: string

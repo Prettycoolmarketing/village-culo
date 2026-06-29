@@ -1,8 +1,12 @@
 import type { ReactNode }             from 'react'
 import { useParams, Link }           from 'react-router-dom'
-import { usePageTitle }               from '../utils/usePageTitle'
+import { usePageMeta }               from '../utils/usePageMeta'
 import { getBusinesses, getBusinessBySlug } from '../services/businesses'
 import { getFounder }                      from '../services/founders'
+import { programService, recommendationService } from '../services/partnership'
+import { villageContentIntelligenceService } from '../services/villageIntelligence'
+import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBlock'
+import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { getFAQsForBusiness }              from '../data/faqs'
 import { getServices }                     from '../services/serviceOfferings'
 import { getTestimonialsForBusiness } from '../data/testimonials'
@@ -16,6 +20,9 @@ import { FounderCard }                from '../components/cards/FounderCard'
 import { BusinessCard }               from '../components/cards/BusinessCard'
 import { Badge }                      from '../components/ui/Badge'
 import { InnerContainer }             from '../components/layout/PageContainer'
+import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
+import { importedContentService } from '../services/importedContent'
+import { ImportedContentCard } from '../components/cards/ImportedContentCard'
 import { formatDate }                 from '../utils/slugify'
 import type { Business }              from '../types'
 
@@ -100,11 +107,52 @@ const resourceTypeLabel: Record<string, string> = {
 export function BusinessProfilePage() {
   const { slug } = useParams<{ slug: string }>()
   const business = getBusinessBySlug(slug ?? '')
-  usePageTitle(business ? [business.name, 'Mercato'] : 'Mercato')
 
-  if (!business || business.status === 'archived') return <BusinessNotFound slug={slug ?? ''} />
+  // Pre-guard lookups — hooks must be called unconditionally before any early return
+  const founder              = business ? getFounder(business.founderId) : undefined
+  const businessIntelRecords = business
+    ? villageContentIntelligenceService.getByFounder(business.founderId).filter(r => !r.businessId || r.businessId === business.id)
+    : []
 
-  const founder        = getFounder(business.founderId)
+  usePageMeta({
+    title:       business?.name,
+    description: business?.description?.slice(0, 160),
+    keywords:    [
+      ...(business?.topics.map(t => t.name) ?? []),
+      ...[...new Set(businessIntelRecords.flatMap(r => r.seoKeywords))].slice(0, 8),
+    ].slice(0, 15),
+    ogType:  'website',
+    ogImage: business?.logo ?? business?.coverImage,
+    jsonLd:  business && (business.status === 'published' || business.status === 'featured') ? {
+      '@context':   'https://schema.org',
+      '@type':      'Organization',
+      name:         business.name,
+      description:  business.description ?? '',
+      url:          business.website ?? `${window.location.origin}/businesses/${business.slug}`,
+      ...(business.logo ? { logo: business.logo } : {}),
+      ...(business.coverImage ? { image: business.coverImage } : {}),
+      sameAs:       [business.website, business.instagram, business.linkedin].filter(Boolean),
+      address: {
+        '@type':          'PostalAddress',
+        addressLocality:  business.location.name,
+        addressRegion:    business.location.state,
+        addressCountry:   'AU',
+      },
+      ...(founder ? {
+        founder: {
+          '@type': 'Person',
+          name:    founder.name,
+          url:     `${window.location.origin}/founders/${founder.slug}`,
+        },
+      } : {}),
+      knowsAbout: [
+        ...business.topics.map(t => t.name),
+        ...[...new Set(businessIntelRecords.flatMap(r => r.primaryTopics))].slice(0, 5),
+      ].slice(0, 10),
+    } : undefined,
+  })
+
+  if (!business || (business.status !== 'published' && business.status !== 'featured')) return <BusinessNotFound slug={slug ?? ''} />
   const faqs           = getFAQsForBusiness(business.id)
   const services       = getServices(undefined, business.id)
   const testimonials   = getTestimonialsForBusiness(business.id)
@@ -127,9 +175,47 @@ export function BusinessProfilePage() {
     .slice(0, 3)
     .map(({ business: b }) => b)
 
+  const publicPrograms = programService.getAll({ businessId: business.id, status: 'active', isPublic: true })
+  const receivedRecs   = recommendationService.getAll({ businessId: business.id, status: 'approved' })
+    .filter(r => r.disclosureVisible)
+  const publicImports  = importedContentService.getAll({ businessId: business.id, publicOnly: true })
+
+  // ── Village Intelligence — aggregate across business content ──────────────
+  const bestIntel = businessIntelRecords.length > 0
+    ? businessIntelRecords.reduce((best, r) =>
+        (r.primaryTopics.length + r.searchQuestions.length) > (best.primaryTopics.length + best.searchQuestions.length)
+          ? r : best
+      )
+    : null
+  const aggregatedBusinessIntel = businessIntelRecords.length > 0 ? {
+    topics:    [...new Set(businessIntelRecords.flatMap(r => r.primaryTopics))].slice(0, 8),
+    locations: [...new Set(businessIntelRecords.flatMap(r => [...r.cities, ...r.regions]))].slice(0, 6),
+    questions: [...new Set(businessIntelRecords.flatMap(r => [...r.searchQuestions, ...r.geoQuestions]))].slice(0, 5),
+    lessons:   [...new Set(businessIntelRecords.flatMap(r => r.lessons))].slice(0, 3),
+    industries:[...new Set(businessIntelRecords.flatMap(r => r.industries))].slice(0, 4),
+  } : null
+
   const websiteHostname = business.website
     ? new URL(business.website).hostname.replace('www.', '')
     : null
+
+  const PROG_TYPE_LABELS: Record<string, string> = {
+    affiliate: 'Affiliate', referral: 'Referral', creator: 'Creator',
+    ambassador: 'Ambassador', influencer: 'Influencer', 'technology-partner': 'Technology Partner',
+    'community-partner': 'Community Partner', 'media-partner': 'Media Partner',
+    'podcast-partner': 'Podcast Partner', 'speaker-partner': 'Speaker Partner',
+    'workshop-partner': 'Workshop Partner', 'event-partner': 'Event Partner',
+    sponsor: 'Sponsor', 'education-partner': 'Education Partner',
+    'agency-partner': 'Agency Partner', reseller: 'Reseller', marketplace: 'Marketplace',
+    custom: 'Custom',
+  }
+
+  const APPLICATION_MODE_LABELS: Record<string, string> = {
+    open:        'Open to applications',
+    application: 'Application required',
+    invitation:  'By invitation only',
+    approval:    'Requires approval',
+  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -205,6 +291,10 @@ export function BusinessProfilePage() {
               ))}
             </div>
 
+            <div className="mb-5">
+              <CreateWithCuloCTA variant="inline" label="Turn your business experience into content" />
+            </div>
+
             <div className="flex flex-wrap gap-2">
               {business.website && (
                 <SocialLink href={business.website} label={websiteHostname ?? 'Website'} icon={
@@ -270,6 +360,18 @@ export function BusinessProfilePage() {
               <div className="flex flex-col">
                 <span className="font-heading text-2xl font-bold text-white">{business.topics.length}</span>
                 <span className="font-body text-xs text-white/50 uppercase tracking-wide">Topics</span>
+              </div>
+            )}
+            {publicPrograms.length > 0 && (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{publicPrograms.length}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">{publicPrograms.length === 1 ? 'Program' : 'Programs'}</span>
+              </div>
+            )}
+            {receivedRecs.length > 0 && (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{receivedRecs.length}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">{receivedRecs.length === 1 ? 'Recommendation' : 'Recommendations'}</span>
               </div>
             )}
           </div>
@@ -467,6 +569,128 @@ export function BusinessProfilePage() {
                 </section>
               )}
 
+              {/* Partner programs */}
+              {publicPrograms.length > 0 && (
+                <section aria-labelledby="business-programs-heading">
+                  <h2 id="business-programs-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Partner Programs
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Ways to formally partner with {business.name} through CULO Village.
+                  </p>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list">
+                    {publicPrograms.map(prog => (
+                      <li key={prog.id}>
+                        <article className="bg-surface rounded-2xl border border-border p-5 flex flex-col gap-3 h-full">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-heading text-base font-semibold text-charcoal leading-snug">{prog.name}</h3>
+                            <span className="flex-shrink-0 font-body text-xs font-semibold px-2.5 py-1 rounded-full bg-accent/10 text-accent">
+                              {PROG_TYPE_LABELS[prog.programType] ?? prog.programType}
+                            </span>
+                          </div>
+                          {(prog.shortDescription || prog.description) && (
+                            <p className="font-body text-sm text-muted leading-relaxed flex-1 line-clamp-3">
+                              {prog.shortDescription ?? prog.description}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between gap-2 mt-auto">
+                            <span className="font-body text-xs text-muted">
+                              {APPLICATION_MODE_LABELS[prog.applicationMode] ?? prog.applicationMode}
+                            </span>
+                            {prog.applicationUrl && (
+                              <a
+                                href={prog.applicationUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent text-charcoal text-xs font-semibold rounded-lg hover:bg-[#c4963e] transition-colors"
+                              >
+                                Apply ↗
+                              </a>
+                            )}
+                          </div>
+                        </article>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Recommendations received */}
+              {receivedRecs.length > 0 && (
+                <section aria-labelledby="business-recs-received-heading">
+                  <h2 id="business-recs-received-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Recommended by Village Founders
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    CULO Village founders have mentioned {business.name} in their published stories. Each includes a disclosure statement.
+                  </p>
+                  <ul className="flex flex-col gap-3" role="list">
+                    {receivedRecs.map(rec => (
+                      <li key={rec.id} className="bg-surface rounded-xl border border-border px-4 py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            {rec.storyId && (
+                              <p className="font-body text-xs text-muted mb-0.5">Mentioned in a published story</p>
+                            )}
+                            {rec.disclosureText && (
+                              <p className="font-body text-sm text-charcoal/80 leading-relaxed italic">
+                                "{rec.disclosureText}"
+                              </p>
+                            )}
+                            {rec.businessId && (
+                              <TrackedRecommendationLink
+                                founderId={rec.founderId}
+                                businessId={rec.businessId}
+                                recommendationId={rec.id}
+                                storyId={rec.storyId}
+                                businessWebsite={business.website}
+                                sourcePage="business"
+                                className="font-body text-xs font-semibold text-primary hover:text-[#b05a35] transition-colors mt-2 block"
+                              />
+                            )}
+                          </div>
+                          {rec.disclosureType !== 'none' && (
+                            <span className="flex-shrink-0 font-body text-xs font-medium px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">
+                              {rec.disclosureType.replace(/-/g, ' ')}
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {/* Imported content */}
+              {publicImports.length > 0 && (
+                <section aria-labelledby="business-imports-heading">
+                  <h2 id="business-imports-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    From Around the Web
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Videos, articles and content connected to {business.name}.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {publicImports.map(item => (
+                      <ImportedContentCard key={item.id} content={item} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Village Intelligence — full block */}
+              {bestIntel && (
+                <section aria-labelledby="business-intel-full-heading">
+                  <h2 id="business-intel-full-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    What this business covers
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Topics, questions and themes from {business.name}'s published content.
+                  </p>
+                  <VillageIntelligenceBlock intel={bestIntel} variant="full" />
+                </section>
+              )}
+
               {/* Stories */}
               <section aria-labelledby="business-stories-heading">
                 <h2 id="business-stories-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
@@ -608,6 +832,59 @@ export function BusinessProfilePage() {
                         </a>
                       ))}
                     </div>
+                  </section>
+                )}
+
+                {/* Village Intelligence panel */}
+                {aggregatedBusinessIntel && (aggregatedBusinessIntel.topics.length > 0 || aggregatedBusinessIntel.questions.length > 0) && (
+                  <section className="bg-surface rounded-2xl p-5 border border-border" aria-labelledby="business-intel-heading">
+                    <h2 id="business-intel-heading" className="font-heading text-base font-semibold text-charcoal mb-4">
+                      Village Intelligence
+                    </h2>
+
+                    {aggregatedBusinessIntel.topics.length > 0 && (
+                      <div className="mb-4">
+                        <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Topics</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {aggregatedBusinessIntel.topics.map(t => (
+                            <span key={t} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary">{t}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {aggregatedBusinessIntel.locations.length > 0 && (
+                      <div className="mb-4">
+                        <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Locations</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {aggregatedBusinessIntel.locations.map(l => (
+                            <span key={l} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-border text-charcoal/70">{l}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {aggregatedBusinessIntel.lessons.length > 0 && (
+                      <div className="mb-4">
+                        <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">What this business covers</p>
+                        <ul className="space-y-1.5">
+                          {aggregatedBusinessIntel.lessons.map((l, i) => (
+                            <li key={i} className="font-body text-xs text-muted leading-relaxed pl-2 border-l border-border">{l}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {aggregatedBusinessIntel.questions.length > 0 && (
+                      <div>
+                        <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Questions answered</p>
+                        <ul className="space-y-1.5">
+                          {aggregatedBusinessIntel.questions.map((q, i) => (
+                            <li key={i} className="font-body text-xs text-muted leading-relaxed italic">{q}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </section>
                 )}
 

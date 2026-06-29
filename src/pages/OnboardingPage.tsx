@@ -444,9 +444,9 @@ export function OnboardingPage() {
     setPublishing(true)
 
     const founderSlugVal = slugify(draft.name)
-    const founderId = founderSlugVal
-    const businessSlug = slugify(draft.businessName)
-    const businessId = businessSlug
+    const founderId      = crypto.randomUUID()
+    const businessSlug   = slugify(draft.businessName)
+    const businessId     = crypto.randomUUID()
 
     const selectedTopics: Topic[] = topics.filter(t => draft.topicIds.includes(t.id))
     const location = locations.find(l => l.id === draft.locationId)!
