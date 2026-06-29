@@ -56,6 +56,15 @@ import { DashboardPartnershipPage }      from './pages/dashboard/DashboardPartne
 import { DashboardRevenuePage }          from './pages/dashboard/DashboardRevenuePage'
 import { DashboardCuratedProfilesPage }  from './pages/dashboard/DashboardCuratedProfilesPage'
 import { DashboardCuratedFounderBuilderPage } from './pages/dashboard/DashboardCuratedFounderBuilderPage'
+import { DashboardBulkImportPage }            from './pages/dashboard/DashboardBulkImportPage'
+import { VillageHQOverviewPage }              from './pages/dashboard/village/VillageHQOverviewPage'
+import { VillageCuratedFoundersPage }         from './pages/dashboard/village/VillageCuratedFoundersPage'
+import { VillageClaimRequestsPage }           from './pages/dashboard/village/VillageClaimRequestsPage'
+import { VillageBulkImportPage }              from './pages/dashboard/village/VillageBulkImportPage'
+import { VillageEmailExportPage }             from './pages/dashboard/village/VillageEmailExportPage'
+import { VillageFeaturedContentPage }         from './pages/dashboard/village/VillageFeaturedContentPage'
+import { VillageAnalyticsPage }               from './pages/dashboard/village/VillageAnalyticsPage'
+import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 
 // ─── Activity banner data ───────────────────────────────────────────────────────
@@ -164,6 +173,15 @@ export default function App() {
             <Route path="revenue"           element={<DashboardRevenuePage />}         />
             <Route path="curated-profiles" element={<DashboardCuratedProfilesPage />} />
             <Route path="curated-profiles/new" element={<DashboardCuratedFounderBuilderPage />} />
+            <Route path="bulk-import"          element={<DashboardBulkImportPage />}            />
+            <Route path="village"              element={<VillageHQOverviewPage />}              />
+            <Route path="village/founders"     element={<VillageCuratedFoundersPage />}         />
+            <Route path="village/claims"       element={<VillageClaimRequestsPage />}           />
+            <Route path="village/imports"      element={<VillageBulkImportPage />}              />
+            <Route path="village/emails"       element={<VillageEmailExportPage />}             />
+            <Route path="village/featured"     element={<VillageFeaturedContentPage />}         />
+            <Route path="village/analytics"    element={<VillageAnalyticsPage />}               />
+            <Route path="village/settings"     element={<VillageSettingsPage />}                />
             <Route path="settings"         element={<DashboardSettingsPage />}        />
           </Route>
 
