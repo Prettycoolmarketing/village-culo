@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { MissingItem } from '../../utils/missingAssets'
 import { getHealthScore } from '../../utils/missingAssets'
 
@@ -7,8 +8,8 @@ interface HealthBadgeProps {
 }
 
 export function HealthBadge({ missing, size = 'sm' }: HealthBadgeProps) {
-  const critical = missing.filter(m => m.severity === 'critical').length
-  const important = missing.filter(m => m.severity === 'important').length
+  const recommended = missing.filter(m => m.severity === 'critical').length
+  const niceToImprove = missing.filter(m => m.severity === 'important').length
 
   const textSize = size === 'sm' ? 'text-xs' : 'text-sm'
 
@@ -16,22 +17,22 @@ export function HealthBadge({ missing, size = 'sm' }: HealthBadgeProps) {
     return (
       <span className={`flex items-center gap-1 ${textSize} text-green-600 font-medium`}>
         <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block shrink-0" />
-        Complete
+        Ready to publish
       </span>
     )
   }
-  if (critical > 0) {
+  if (recommended > 0) {
     return (
-      <span className={`flex items-center gap-1 ${textSize} text-red-600 font-medium`}>
-        <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block shrink-0" />
-        {critical} critical
+      <span className={`flex items-center gap-1 ${textSize} text-[#C86A43] font-medium`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#C86A43] inline-block shrink-0" />
+        {recommended} recommended
       </span>
     )
   }
   return (
     <span className={`flex items-center gap-1 ${textSize} text-amber-600 font-medium`}>
       <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block shrink-0" />
-      {important} missing
+      {niceToImprove} nice to improve
     </span>
   )
 }
@@ -45,8 +46,9 @@ interface PublishingHealthCardProps {
 
 export function PublishingHealthCard({ title, subtitle, missing, editPath }: PublishingHealthCardProps) {
   const score = getHealthScore(missing)
-  const scoreColor = score === 100 ? 'text-green-600' : score >= 60 ? 'text-amber-600' : 'text-red-600'
-  const barColor   = score === 100 ? 'bg-green-400'  : score >= 60 ? 'bg-amber-400'  : 'bg-red-400'
+  const scoreColor = score === 100 ? 'text-green-600' : score >= 60 ? 'text-amber-600' : 'text-[#C86A43]'
+  const barColor   = score === 100 ? 'bg-green-400'  : score >= 60 ? 'bg-amber-400'  : 'bg-[#C86A43]'
+  const nextAction = [...missing].sort(a => (a.severity === 'critical' ? -1 : 1))[0]
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
@@ -66,10 +68,10 @@ export function PublishingHealthCard({ title, subtitle, missing, editPath }: Pub
           style={{ width: `${score}%` }}
         />
       </div>
-      {editPath && missing.length > 0 && (
-        <a href={editPath} className="text-xs text-[#C86A43] hover:underline mt-2 inline-block">
-          Fix {missing.filter(m => m.severity === 'critical').length > 0 ? 'critical issues' : 'issues'} →
-        </a>
+      {editPath && nextAction && (
+        <Link to={editPath} className="text-xs text-[#C86A43] hover:underline mt-2 inline-block font-medium">
+          {nextAction.action} →
+        </Link>
       )}
     </div>
   )

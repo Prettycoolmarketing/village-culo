@@ -16,10 +16,17 @@ import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPane
 import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
-import { getFounderMissingItems, getMissingCounts } from '../../utils/missingAssets'
+import { getFounderMissingItems, getMissingCounts, type MissingItem } from '../../utils/missingAssets'
 import { getFounderFeaturedIn } from '../../utils/featuredIn'
 import type { Founder, Topic } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
+
+const FIELD_TO_TAB: Record<string, string> = {
+  avatar: 'media', coverImage: 'media',
+  bio: 'content', topics: 'content', faqs: 'content',
+  website: 'publishing', socials: 'publishing',
+  seoTitle: 'seo', seoDescription: 'seo',
+}
 
 // ─── Shared form helpers ───────────────────────────────────────────────────────
 
@@ -490,7 +497,7 @@ export function DashboardProfilePage() {
               <HealthBadge missing={missing} />
               {counts.total > 0 && (
                 <span className="text-xs text-[#9CA3AF]">
-                  {counts.critical > 0 ? `${counts.critical} critical, ` : ''}{counts.total} total issues
+                  {counts.total} {counts.total === 1 ? 'recommendation' : 'recommendations'} to grow your profile
                 </span>
               )}
             </div>
@@ -549,8 +556,11 @@ export function DashboardProfilePage() {
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Publishing Completeness</p>
-              <MissingAssetsPanel items={missing} />
+              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Profile Progress</p>
+              <MissingAssetsPanel
+                items={missing}
+                onAction={(item: MissingItem) => setTab(FIELD_TO_TAB[item.field] ?? 'content')}
+              />
             </div>
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">

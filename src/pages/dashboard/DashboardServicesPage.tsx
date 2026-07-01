@@ -29,7 +29,7 @@ function ServiceDetailPane({ service, onClose, onSave }: { service: Service; onC
   const TABS = [
     { key: 'overview',      label: 'Overview'      },
     { key: 'relationships', label: 'Relationships', badge: (bizOwner ? 1 : 0) + (fOwner ? 1 : 0) },
-    { key: 'issues',        label: 'Issues',         badge: missing.length },
+    { key: 'improve',       label: 'Improve',        badge: missing.length },
   ]
 
   return (
@@ -99,8 +99,8 @@ function ServiceDetailPane({ service, onClose, onSave }: { service: Service; onC
           />
         )}
 
-        {tab === 'issues' && (
-          <MissingAssetsPanel items={missing} />
+        {tab === 'improve' && (
+          <MissingAssetsPanel items={missing} onAction={() => setTab('overview')} />
         )}
       </div>
     </div>
@@ -144,7 +144,7 @@ export function DashboardServicesPage() {
               <p className="px-5 py-8 text-sm text-[#9CA3AF] text-center">No services match your search.</p>
             ) : filtered.map(service => {
               const missing  = getServiceMissingItems(service)
-              const critical = missing.filter(m => m.severity === 'critical').length
+              const recommended = missing.filter(m => m.severity === 'critical').length
               return (
                 <button key={service.id} onClick={() => setSelectedId(selectedId === service.id ? null : service.id)}
                   className={`w-full text-left px-5 py-4 transition-colors ${
@@ -154,8 +154,8 @@ export function DashboardServicesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-semibold text-[#2D2A26] truncate">{service.name}</p>
-                        {critical > 0 && (
-                          <span className="text-[9px] font-bold px-1 py-0.5 rounded-full bg-red-100 text-red-600 shrink-0">{critical}!</span>
+                        {recommended > 0 && (
+                          <span className="text-[9px] font-bold px-1 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">{recommended}</span>
                         )}
                       </div>
                       <p className="text-xs text-[#6B7280] mt-1 line-clamp-2">{service.description}</p>

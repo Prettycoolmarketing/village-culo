@@ -157,10 +157,10 @@ function StoryDetailPane({ story, onSave }: { story: Story; onSave: (s: Story) =
               </div>
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
                 <p className="text-xl font-bold text-[#2D2A26]">{counts.total > 0 ? counts.total : '✓'}</p>
-                <p className="text-xs text-[#9CA3AF]">Issues</p>
+                <p className="text-xs text-[#9CA3AF]">To Improve</p>
               </div>
             </div>
-            <MissingAssetsPanel items={missing} />
+            <MissingAssetsPanel items={missing} onAction={() => setTab('content')} />
           </div>
         )}
 
@@ -446,7 +446,7 @@ export function DashboardStoriesPage() {
         <div className="flex-1 overflow-y-auto">
           {filtered.map(story => {
             const missing  = getStoryMissingItems(story)
-            const critical = missing.filter(m => m.severity === 'critical').length
+            const recommended = missing.filter(m => m.severity === 'critical').length
             return (
               <button key={story.id} onClick={() => setSelectedId(story.id)}
                 className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-[#F3EDE6] transition-colors ${
@@ -459,8 +459,8 @@ export function DashboardStoriesPage() {
                     {story.contentTypes.map(ct => (
                       <span key={ct} className="text-[9px] font-semibold px-1 py-0.5 rounded bg-[#F3EDE6] text-[#C86A43] uppercase">{ct}</span>
                     ))}
-                    {critical > 0 && (
-                      <span className="text-[9px] font-bold px-1 py-0.5 rounded-full bg-red-100 text-red-600">{critical}!</span>
+                    {recommended > 0 && (
+                      <span className="text-[9px] font-bold px-1 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">{recommended}</span>
                     )}
                   </div>
                 </div>

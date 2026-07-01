@@ -39,7 +39,7 @@ function LibraryDetailPane({ item, onClose, onSave }: { item: LibraryItem; onClo
     { key: 'overview',      label: 'Overview'      },
     { key: 'relationships', label: 'Relationships', badge: itemFounders.length + itemBizs.length },
     { key: 'featured-in',   label: 'Featured In',   badge: featuredIn.length },
-    { key: 'issues',        label: 'Issues',         badge: missing.length },
+    { key: 'improve',       label: 'Improve',        badge: missing.length },
   ]
 
   return (
@@ -116,8 +116,8 @@ function LibraryDetailPane({ item, onClose, onSave }: { item: LibraryItem; onClo
           <FeaturedInPanel locations={featuredIn} />
         )}
 
-        {tab === 'issues' && (
-          <MissingAssetsPanel items={missing} />
+        {tab === 'improve' && (
+          <MissingAssetsPanel items={missing} onAction={() => setTab('overview')} />
         )}
       </div>
     </div>
@@ -159,7 +159,7 @@ export function DashboardLibraryPage() {
           <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
             {filtered.map(item => {
               const missing  = getLibraryMissingItems(item)
-              const critical = missing.filter(m => m.severity === 'critical').length
+              const recommended = missing.filter(m => m.severity === 'critical').length
               return (
                 <button key={item.id} onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}
                   className={`w-full text-left flex items-center gap-4 px-5 py-4 transition-colors ${
@@ -170,8 +170,8 @@ export function DashboardLibraryPage() {
                     <p className="text-sm font-medium text-[#2D2A26] truncate">{item.title}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-xs text-[#9CA3AF]">{item.productType}</p>
-                      {critical > 0 && (
-                        <span className="text-[9px] font-bold px-1 py-0.5 rounded-full bg-red-100 text-red-600">{critical}!</span>
+                      {recommended > 0 && (
+                        <span className="text-[9px] font-bold px-1 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">{recommended}</span>
                       )}
                     </div>
                   </div>

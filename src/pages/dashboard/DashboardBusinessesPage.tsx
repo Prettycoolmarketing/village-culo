@@ -17,6 +17,14 @@ import { getBusinessMissingItems, getMissingCounts } from '../../utils/missingAs
 import { getBusinessFeaturedIn } from '../../utils/featuredIn'
 import type { Business, Topic, Offer } from '../../types'
 
+const BUSINESS_FIELD_TO_TAB: Record<string, string> = {
+  logo: 'brand', coverImage: 'brand',
+  description: 'content', faqs: 'content',
+  website: 'publishing', socials: 'publishing',
+  offers: 'offers',
+  seoTitle: 'seo', seoDescription: 'seo',
+}
+
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 
 const inputClass =
@@ -1160,10 +1168,13 @@ function BusinessDetailPane({ biz, onSave }: { biz: Business; onSave: (b: Busine
               </div>
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
                 <p className="text-xl font-bold text-[#2D2A26]">{counts.total > 0 ? counts.total : '✓'}</p>
-                <p className="text-xs text-[#9CA3AF]">Issues</p>
+                <p className="text-xs text-[#9CA3AF]">To Improve</p>
               </div>
             </div>
-            <MissingAssetsPanel items={missing} />
+            <MissingAssetsPanel
+              items={missing}
+              onAction={(item) => setTab(BUSINESS_FIELD_TO_TAB[item.field] ?? 'content')}
+            />
           </div>
         )}
 
@@ -1424,7 +1435,7 @@ export function DashboardBusinessesPage() {
         <div className="flex-1 overflow-y-auto">
           {bizList.map(biz => {
             const missing = getBusinessMissingItems(biz)
-            const critical = missing.filter(m => m.severity === 'critical').length
+            const recommended = missing.filter(m => m.severity === 'critical').length
             return (
               <button
                 key={biz.id}
@@ -1438,8 +1449,8 @@ export function DashboardBusinessesPage() {
                   <p className="text-sm font-medium text-[#2D2A26] truncate">{biz.name}</p>
                   <HealthBadge missing={missing} />
                 </div>
-                {critical > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 shrink-0">{critical}</span>
+                {recommended > 0 && (
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">{recommended}</span>
                 )}
               </button>
             )

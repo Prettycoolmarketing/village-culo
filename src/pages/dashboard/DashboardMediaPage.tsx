@@ -36,7 +36,7 @@ function MediaDetailPanel({ item, onClose, onSave }: { item: Media; onClose: () 
   const TABS = [
     { key: 'details',   label: 'Details'        },
     { key: 'used-in',   label: 'Used In', badge: usedCount },
-    { key: 'issues',    label: 'Issues',  badge: missing.length },
+    { key: 'improve',   label: 'Improve', badge: missing.length },
   ]
 
   const isVideo = draft.mediaType === 'video' || draft.mediaType === 'reel' || draft.mediaType === 'youtube-video'
@@ -195,9 +195,9 @@ function MediaDetailPanel({ item, onClose, onSave }: { item: Media; onClose: () 
           </div>
         )}
 
-        {/* Issues */}
-        {tab === 'issues' && (
-          <MissingAssetsPanel items={missing} />
+        {/* Improve */}
+        {tab === 'improve' && (
+          <MissingAssetsPanel items={missing} onAction={() => setTab('details')} />
         )}
       </div>
     </div>
@@ -267,7 +267,7 @@ export function DashboardMediaPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {filtered.map(item => {
                 const missing  = getMediaMissingItems(item)
-                const critical = missing.filter(m => m.severity === 'critical').length
+                const recommended = missing.filter(m => m.severity === 'critical').length
                 const isVideo2 = item.mediaType === 'video' || item.mediaType === 'reel' || item.mediaType === 'youtube-video'
                 return (
                   <button key={item.id} onClick={() => setSelected(item.id === selected?.id ? null : item)}
@@ -291,9 +291,9 @@ export function DashboardMediaPage() {
                       }`}>
                         {item.approvalStatus === 'approved' ? '✓' : item.approvalStatus === 'rejected' ? '✕' : '!'}
                       </span>
-                      {critical > 0 && (
-                        <span className="absolute bottom-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-600 text-white">
-                          {critical}!
+                      {recommended > 0 && (
+                        <span className="absolute bottom-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#C86A43] text-white">
+                          {recommended}
                         </span>
                       )}
                     </div>

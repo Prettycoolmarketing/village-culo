@@ -12,6 +12,7 @@ import {
   getBusinessMissingItems,
   getStoryMissingItems,
   getLibraryMissingItems,
+  type MissingItem,
 } from '../../utils/missingAssets'
 
 // ─── Stat card ─────────────────────────────────────────────────────────────────
@@ -24,6 +25,31 @@ function StatCard({ label, value, to }: { label: string; value: number; to: stri
     >
       <p className="text-3xl font-bold text-[#2D2A26] group-hover:text-[#C86A43] transition-colors">{value}</p>
       <p className="text-sm text-[#6B7280] mt-0.5">{label}</p>
+    </Link>
+  )
+}
+
+// ─── Recommendation row ─────────────────────────────────────────────────────────
+
+interface Recommendation {
+  key: string
+  title: string
+  action: MissingItem
+  path: string
+}
+
+function RecommendationRow({ rec }: { rec: Recommendation }) {
+  return (
+    <Link
+      to={rec.path}
+      className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors group"
+    >
+      <span className="w-5 h-5 rounded-md border-2 border-[#E8E4DD] shrink-0 group-hover:border-[#C86A43] transition-colors" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-[#2D2A26]">{rec.action.label}</p>
+        <p className="text-xs text-[#9CA3AF] mt-0.5 truncate">{rec.title}</p>
+      </div>
+      <span className="text-xs font-semibold text-[#C86A43] shrink-0">{rec.action.action} →</span>
     </Link>
   )
 }
@@ -43,18 +69,45 @@ export function DashboardHomePage() {
   const recentStories = allStories.slice(0, 5)
   const firstName = user?.email?.split('@')[0] ?? 'Publisher'
 
-  // Publishing health
+  // Today's recommendations — the single most valuable next action per entity,
+  // not a diagnostic report of everything that's incomplete.
+  const recommendations: Recommendation[] = []
+  for (const f of allFounders) {
+    const [top] = getFounderMissingItems(f)
+    if (top) recommendations.push({ key: `founder-${f.id}`, title: `Founder profile — ${f.name}`, action: top, path: '/dashboard/profile' })
+  }
+  for (const b of allBiz.slice(0, 6)) {
+    const [top] = getBusinessMissingItems(b)
+    if (top) recommendations.push({ key: `biz-${b.id}`, title: b.name, action: top, path: '/dashboard/businesses' })
+  }
+  for (const s of allStories.slice(0, 6)) {
+    const [top] = getStoryMissingItems(s)
+    if (top) recommendations.push({ key: `story-${s.id}`, title: s.title, action: top, path: '/dashboard/stories' })
+  }
+  if (allStories.length === 0) {
+    recommendations.push({
+      key: 'first-story',
+      title: 'You haven\'t published a story yet',
+      action: { field: 'first-story', label: 'Publish your first story to start growing your presence', action: 'Publish Story', severity: 'critical' },
+      path: '/dashboard/publish',
+    })
+  }
+  const pendingMedia = allMedia.filter(m => m.approvalStatus === 'needs-review' || m.approvalStatus === 'pending').length
+  if (pendingMedia > 0) {
+    recommendations.push({
+      key: 'media-review',
+      title: `${pendingMedia} ${pendingMedia === 1 ? 'asset' : 'assets'} uploaded`,
+      action: { field: 'media', label: 'Review your uploaded media', action: 'Review Media', severity: 'important' },
+      path: '/dashboard/media',
+    })
+  }
+  const topRecommendations = recommendations.slice(0, 6)
+
+  // Founders
   const founderHealth  = allFounders.map(f  => ({ name: f.name,    missing: getFounderMissingItems(f),  path: '/dashboard/profile'      }))
   const bizHealth      = allBiz.slice(0, 6).map(b  => ({ name: b.name,    missing: getBusinessMissingItems(b),  path: '/dashboard/businesses' }))
   const storyHealth    = allStories.slice(0, 6).map(s => ({ name: s.title,   missing: getStoryMissingItems(s),    path: '/dashboard/stories'    }))
   const libraryHealth  = allLibrary.slice(0, 4).map(l => ({ name: l.title,   missing: getLibraryMissingItems(l),  path: '/dashboard/library'    }))
-
-  const pendingMedia = allMedia.filter(m => m.approvalStatus === 'needs-review' || m.approvalStatus === 'pending').length
-  const totalIssues  = [
-    ...allFounders.flatMap(f  => getFounderMissingItems(f).filter(i => i.severity === 'critical')),
-    ...allBiz.flatMap(b       => getBusinessMissingItems(b).filter(i => i.severity === 'critical')),
-    ...allStories.flatMap(s   => getStoryMissingItems(s).filter(i => i.severity === 'critical')),
-  ].length
 
   return (
     <div className="p-8 max-w-5xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -73,25 +126,20 @@ export function DashboardHomePage() {
         )}
       </div>
 
-      {/* Alert bar */}
-      {(totalIssues > 0 || pendingMedia > 0) && (
-        <div className="mb-8 flex flex-wrap gap-3">
-          {totalIssues > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200">
-              <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
-              <p className="text-sm font-medium text-red-700">{totalIssues} critical publishing issues</p>
-              <Link to="/dashboard/profile" className="text-xs text-red-600 hover:underline ml-1">Review →</Link>
-            </div>
-          )}
-          {pendingMedia > 0 && (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200">
-              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-              <p className="text-sm font-medium text-amber-700">{pendingMedia} media assets awaiting approval</p>
-              <Link to="/dashboard/media" className="text-xs text-amber-600 hover:underline ml-1">Review →</Link>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Today's recommendations */}
+      <section className="mb-10" aria-labelledby="recs-heading">
+        <h2 id="recs-heading" className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Today's Recommendations</h2>
+        {topRecommendations.length === 0 ? (
+          <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+            <p className="text-sm font-semibold text-[#2D2A26]">You're all caught up.</p>
+            <p className="text-xs text-[#9CA3AF] mt-1">Nothing needs your attention right now — great work.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+            {topRecommendations.map(rec => <RecommendationRow key={rec.key} rec={rec} />)}
+          </div>
+        )}
+      </section>
 
       {/* Content stats */}
       <section className="mb-10" aria-labelledby="stats-heading">
@@ -106,10 +154,10 @@ export function DashboardHomePage() {
         </div>
       </section>
 
-      {/* Publishing health */}
-      <section className="mb-10" aria-labelledby="health-heading">
+      {/* Profile progress */}
+      <section className="mb-10" aria-labelledby="progress-heading">
         <div className="flex items-center justify-between mb-4">
-          <h2 id="health-heading" className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Publishing Health</h2>
+          <h2 id="progress-heading" className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Profile Progress</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -165,7 +213,6 @@ export function DashboardHomePage() {
         <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
           {recentStories.map(story => {
             const missing = getStoryMissingItems(story)
-            const critical = missing.filter(m => m.severity === 'critical').length
             return (
               <div key={story.id} className="flex items-center gap-4 px-5 py-3.5">
                 <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
@@ -173,9 +220,13 @@ export function DashboardHomePage() {
                   <p className="text-sm font-medium text-[#2D2A26] truncate">{story.title}</p>
                   <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
                 </div>
-                {critical > 0 && (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-600 shrink-0">
-                    {critical} critical
+                {missing.length === 0 ? (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
+                    Ready to publish
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
+                    {missing.length} recommended
                   </span>
                 )}
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
