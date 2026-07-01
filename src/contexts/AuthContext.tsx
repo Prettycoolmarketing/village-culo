@@ -128,7 +128,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isSupabaseConfigured || !supabase) {
       return { error: 'Supabase not configured. Sign up is unavailable in dev mode.', needsConfirmation: false }
     }
-    const { data, error } = await supabase.auth.signUp({ email, password })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard/home` },
+    })
     return {
       error:              error?.message ?? null,
       needsConfirmation:  !error && !data.session,
