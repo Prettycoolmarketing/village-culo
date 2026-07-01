@@ -54,6 +54,22 @@ export function updateFoundersBatch(founders: Founder[]): Promise<WriteResult> {
   return writeEntityBatch<Founder>({ cacheKey: KEY, items: founders, table: TABLE, toRow })
 }
 
+export function duplicateFounder(id: string): Promise<WriteResult> {
+  const source = getFounder(id)
+  if (!source) return Promise.resolve({ success: false, error: 'Founder not found.' })
+  const suffix = Date.now().toString(36)
+  const copy: Founder = {
+    ...source,
+    id: `${source.id}-copy-${suffix}`,
+    slug: `${source.slug}-copy-${suffix}`,
+    name: `${source.name} (Copy)`,
+    status: 'draft',
+    featured: false,
+    createdAt: new Date().toISOString(),
+  }
+  return updateFounder(copy)
+}
+
 export function deleteFounder(id: string): Promise<WriteResult> {
   return deleteEntity({ cacheKey: KEY, id, table: TABLE })
 }

@@ -1,4 +1,4 @@
-import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
+import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
 import type { Service } from '../types'
 
 const KEY = 'services'
@@ -34,4 +34,22 @@ export async function updateService(service: Service): Promise<WriteResult> {
       data: s,
     }),
   })
+}
+
+export function deleteService(id: string): Promise<WriteResult> {
+  return deleteEntity({ cacheKey: KEY, id, table: TABLE })
+}
+
+export function duplicateService(id: string): Promise<WriteResult> {
+  const source = getService(id)
+  if (!source) return Promise.resolve({ success: false, error: 'Service not found.' })
+  const suffix = Date.now().toString(36)
+  const copy: Service = {
+    ...source,
+    id: `${source.id}-copy-${suffix}`,
+    slug: `${source.slug}-copy-${suffix}`,
+    name: `${source.name} (Copy)`,
+    status: 'draft',
+  }
+  return updateService(copy)
 }

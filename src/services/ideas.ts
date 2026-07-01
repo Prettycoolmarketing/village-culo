@@ -1,4 +1,4 @@
-import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
+import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
 import type { Idea, IdeaFilter } from '../types'
 
 const KEY = 'ideas'
@@ -38,4 +38,28 @@ export function updateIdea(idea: Idea): Promise<WriteResult> {
     table: TABLE,
     toRow: i => ({ id: i.id, slug: i.slug, status: i.status ?? 'published', featured: i.featured, data: i }),
   })
+}
+
+// Admin-write per migration 003 RLS — delete/duplicate follow the same restriction
+// as updateIdea above. A signed-in founder can call these, but Supabase will reject
+// the write with an RLS error surfaced through WriteResult.error, same as any other
+// save failure in this app.
+export function deleteIdea(id: string): Promise<WriteResult> {
+  return deleteEntity({ cacheKey: KEY, id, table: TABLE })
+}
+
+export function duplicateIdea(id: string): Promise<WriteResult> {
+  const source = getIdea(id)
+  if (!source) return Promise.resolve({ success: false, error: 'Idea not found.' })
+  const suffix = Date.now().toString(36)
+  const copy: Idea = {
+    ...source,
+    id: `${source.id}-copy-${suffix}`,
+    slug: `${source.slug}-copy-${suffix}`,
+    title: `${source.title} (Copy)`,
+    status: 'draft',
+    featured: false,
+    createdAt: new Date().toISOString(),
+  }
+  return updateIdea(copy)
 }

@@ -36,6 +36,28 @@ export function updateMedia(media: Media): void {
   store.update<Media>(KEY, media)
 }
 
+export function deleteMedia(id: string): void {
+  store.set<Media>(KEY, live().filter(m => m.id !== id))
+}
+
+export function duplicateMedia(id: string): Media | null {
+  const source = getMediaById(id)
+  if (!source) return null
+  const suffix = Date.now().toString(36)
+  const copy: Media = {
+    ...source,
+    id: `${source.id}-copy-${suffix}`,
+    slug: `${source.slug}-copy-${suffix}`,
+    title: `${source.title} (Copy)`,
+    approved: false,
+    approvalStatus: 'pending',
+    featured: false,
+    createdAt: new Date().toISOString(),
+  }
+  store.update<Media>(KEY, copy)
+  return copy
+}
+
 export interface MediaUsedIn {
   founders: { id: string; slug: string; name: string; avatar: string }[]
   businesses: { id: string; slug: string; name: string; logo: string }[]

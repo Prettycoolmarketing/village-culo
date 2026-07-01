@@ -1,16 +1,25 @@
 import { useState } from 'react'
-import { getMedia, getMediaUsedIn, updateMedia } from '../../services/media'
+import { getMedia, getMediaUsedIn, updateMedia, deleteMedia, duplicateMedia } from '../../services/media'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { getMediaMissingItems } from '../../utils/missingAssets'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
+import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import type { Media, ApprovalStatus } from '../../types'
 
 // ─── Detail panel ─────────────────────────────────────────────────────────────
 
 const inputClass = 'w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-xs text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
 
-function MediaDetailPanel({ item, onClose, onSave }: { item: Media; onClose: () => void; onSave: (m: Media) => void }) {
+interface MediaDetailPanelProps {
+  item: Media
+  onClose: () => void
+  onSave: (m: Media) => void
+  onDuplicated: (m: Media) => void
+  onDeleted: () => void
+}
+
+function MediaDetailPanel({ item, onClose, onSave, onDuplicated, onDeleted }: MediaDetailPanelProps) {
   const [draft, setDraft] = useState<Media>({ ...item })
   const [tab, setTab]     = useState('details')
   const [saved, setSaved] = useState(false)
@@ -27,6 +36,16 @@ function MediaDetailPanel({ item, onClose, onSave }: { item: Media; onClose: () 
     updateMedia(draft)
     setSaved(true)
     onSave(draft)
+  }
+
+  function handleDuplicate() {
+    const copy = duplicateMedia(item.id)
+    if (copy) onDuplicated(copy)
+  }
+
+  function handleDelete() {
+    deleteMedia(item.id)
+    onDeleted()
   }
 
   const usedCount =
@@ -54,6 +73,7 @@ function MediaDetailPanel({ item, onClose, onSave }: { item: Media; onClose: () 
             className="px-2.5 py-1 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
             Save
           </button>
+          <OverflowMenu onDuplicate={handleDuplicate} onDelete={handleDelete} />
           <button onClick={onClose} className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors text-lg leading-none">×</button>
         </div>
       </div>
@@ -218,6 +238,9 @@ export function DashboardMediaPage() {
   const [selected,     setSelected]     = useState<Media | null>(null)
   const [statusFilter, setStatusFilter] = useState<ApprovalStatus | 'all'>('all')
   const [typeFilter,   setTypeFilter]   = useState('all')
+  const [tick, setTick] = useState(0)
+  const refresh = () => setTick(t => t + 1)
+  void tick
 
   const allMedia  = getMedia()
   const filtered  = allMedia.filter(m => {
@@ -270,8 +293,8 @@ export function DashboardMediaPage() {
                 const recommended = missing.filter(m => m.severity === 'critical').length
                 const isVideo2 = item.mediaType === 'video' || item.mediaType === 'reel' || item.mediaType === 'youtube-video'
                 return (
-                  <button key={item.id} onClick={() => setSelected(item.id === selected?.id ? null : item)}
-                    className={`text-left rounded-xl overflow-hidden border transition-all ${
+                  <div key={item.id} onClick={() => setSelected(item.id === selected?.id ? null : item)}
+                    className={`text-left rounded-xl overflow-hidden border transition-all cursor-pointer ${
                       selected?.id === item.id
                         ? 'border-[#C86A43] ring-2 ring-[#C86A43]/20'
                         : 'border-[#E8E4DD] hover:border-[#C86A43]/40 hover:shadow-sm'
@@ -297,11 +320,18 @@ export function DashboardMediaPage() {
                         </span>
                       )}
                     </div>
-                    <div className="px-3 py-2.5 bg-white">
-                      <p className="text-xs font-medium text-[#2D2A26] truncate">{item.title}</p>
-                      <p className="text-[10px] text-[#9CA3AF] mt-0.5">{item.mediaType}</p>
+                    <div className="px-3 py-2.5 bg-white flex items-center justify-between gap-1">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-[#2D2A26] truncate">{item.title}</p>
+                        <p className="text-[10px] text-[#9CA3AF] mt-0.5">{item.mediaType}</p>
+                      </div>
+                      <OverflowMenu
+                        onEdit={() => setSelected(item)}
+                        onDuplicate={() => { duplicateMedia(item.id); refresh() }}
+                        onDelete={() => { deleteMedia(item.id); if (selected?.id === item.id) setSelected(null); refresh() }}
+                      />
                     </div>
-                  </button>
+                  </div>
                 )
               })}
             </div>
@@ -312,7 +342,13 @@ export function DashboardMediaPage() {
       {/* ── Detail panel ──────────────────────────────────────────────── */}
       {selected && (
         <div className="w-72 shrink-0 overflow-y-auto bg-white flex flex-col">
-          <MediaDetailPanel item={selected} onClose={() => setSelected(null)} onSave={() => {}} />
+          <MediaDetailPanel
+            item={selected}
+            onClose={() => setSelected(null)}
+            onSave={refresh}
+            onDuplicated={copy => { setSelected(copy); refresh() }}
+            onDeleted={() => { setSelected(null); refresh() }}
+          />
         </div>
       )}
     </div>

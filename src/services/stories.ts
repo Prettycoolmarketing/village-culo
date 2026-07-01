@@ -1,4 +1,4 @@
-import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
+import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
 import type { Story, StoryFilter } from '../types'
 
 const KEY = 'stories'
@@ -51,4 +51,24 @@ export async function updateStory(story: Story): Promise<WriteResult> {
       data: s,
     }),
   })
+}
+
+export function deleteStory(id: string): Promise<WriteResult> {
+  return deleteEntity({ cacheKey: KEY, id, table: TABLE })
+}
+
+export function duplicateStory(id: string): Promise<WriteResult> {
+  const source = getStory(id)
+  if (!source) return Promise.resolve({ success: false, error: 'Story not found.' })
+  const suffix = Date.now().toString(36)
+  const copy: Story = {
+    ...source,
+    id: `${source.id}-copy-${suffix}`,
+    slug: `${source.slug}-copy-${suffix}`,
+    title: `${source.title} (Copy)`,
+    status: 'draft',
+    featured: false,
+    createdAt: new Date().toISOString(),
+  }
+  return updateStory(copy)
 }

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { getBusinesses, updateBusiness } from '../../services/businesses'
+import { getBusinesses, updateBusiness, deleteBusiness, duplicateBusiness } from '../../services/businesses'
 import { businessPartnerProfileService, programService, enrollmentService } from '../../services/partnership'
 import type { BusinessPartnerProfile, PartnerProgram, PartnerProgramType, DisclosureType } from '../../types/partnership'
 import { getStories } from '../../services/stories'
@@ -13,6 +13,8 @@ import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPane
 import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
+import { OverflowMenu } from '../../components/ui/OverflowMenu'
+import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { getBusinessMissingItems, getMissingCounts } from '../../utils/missingAssets'
 import { getBusinessFeaturedIn } from '../../utils/featuredIn'
 import type { Business, Topic, Offer } from '../../types'
@@ -1034,7 +1036,14 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
 
 // ─── Business detail pane ──────────────────────────────────────────────────────
 
-function BusinessDetailPane({ biz, onSave }: { biz: Business; onSave: (b: Business) => void }) {
+interface BusinessDetailPaneProps {
+  biz: Business
+  onSave: (b: Business) => void
+  onDuplicate: (b: Business) => void
+  onDelete: (b: Business) => void
+}
+
+function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDetailPaneProps) {
   const [draft, setDraft]   = useState<Business>({ ...biz })
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
@@ -1147,6 +1156,10 @@ function BusinessDetailPane({ biz, onSave }: { biz: Business; onSave: (b: Busine
             className="px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
             {saving ? 'Saving…' : 'Save'}
           </button>
+          <OverflowMenu
+            onDuplicate={() => onDuplicate(draft)}
+            onDelete={() => onDelete(draft)}
+          />
         </div>
       </div>
 
@@ -1416,11 +1429,59 @@ function BusinessDetailPane({ biz, onSave }: { biz: Business; onSave: (b: Busine
 export function DashboardBusinessesPage() {
   const [bizList,    setBizList]    = useState<Business[]>(() => getBusinesses())
   const [selectedId, setSelectedId] = useState<string | null>(() => getBusinesses()[0]?.id ?? null)
+  const [checked,    setChecked]    = useState<Set<string>>(new Set())
 
   const selected = bizList.find(b => b.id === selectedId) ?? null
 
+  function toggleChecked(id: string) {
+    setChecked(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  async function handleBulkArchive() {
+    const targets = bizList.filter(b => checked.has(b.id))
+    await Promise.all(targets.map(b => updateBusiness({ ...b, status: 'archived' })))
+    setBizList(getBusinesses())
+    setChecked(new Set())
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...checked]
+    await Promise.all(ids.map(id => deleteBusiness(id)))
+    setBizList(prev => prev.filter(b => !checked.has(b.id)))
+    if (selectedId && checked.has(selectedId)) setSelectedId(null)
+    setChecked(new Set())
+  }
+
   function handleSave(updated: Business) {
     setBizList(prev => prev.map(b => b.id === updated.id ? updated : b))
+  }
+
+  async function handleArchiveToggle(biz: Business) {
+    const next = { ...biz, status: (biz.status === 'archived' ? 'draft' : 'archived') as Business['status'] }
+    const result = await updateBusiness(next)
+    if (result.success) handleSave(next)
+  }
+
+  async function handleDuplicate(biz: Business) {
+    const result = await duplicateBusiness(biz.id)
+    if (result.success) {
+      const fresh = getBusinesses()
+      setBizList(fresh)
+      const copy = fresh.find(b => b.name === `${biz.name} (Copy)`)
+      if (copy) setSelectedId(copy.id)
+    }
+  }
+
+  async function handleDelete(biz: Business) {
+    const result = await deleteBusiness(biz.id)
+    if (result.success) {
+      setBizList(prev => prev.filter(b => b.id !== biz.id))
+      if (selectedId === biz.id) setSelectedId(null)
+    }
   }
 
   return (
@@ -1432,18 +1493,39 @@ export function DashboardBusinessesPage() {
           <h1 className="text-base font-bold text-[#2D2A26]">Businesses</h1>
           <p className="text-xs text-[#9CA3AF] mt-0.5">{bizList.length} total</p>
         </div>
+        {checked.size > 0 && (
+          <div className="px-4 py-2 bg-[#FBF1EB] border-y border-[#F0DDD2] flex items-center justify-between gap-2 shrink-0">
+            <p className="text-xs font-medium text-[#C86A43]">{checked.size} selected</p>
+            <div className="flex items-center gap-3">
+              <button onClick={() => void handleBulkArchive()} className="text-xs font-semibold text-[#C86A43] hover:underline">Archive</button>
+              <ConfirmButton
+                label="Delete"
+                confirmLabel="Confirm"
+                onConfirm={() => void handleBulkDelete()}
+                className="text-xs font-semibold text-red-600 hover:underline"
+              />
+            </div>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto">
           {bizList.map(biz => {
             const missing = getBusinessMissingItems(biz)
             const recommended = missing.filter(m => m.severity === 'critical').length
             return (
-              <button
+              <div
                 key={biz.id}
                 onClick={() => setSelectedId(biz.id)}
-                className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-[#F3EDE6] transition-colors ${
+                className={`w-full text-left flex items-center gap-2 px-4 py-3 border-b border-[#F3EDE6] transition-colors cursor-pointer ${
                   selectedId === biz.id ? 'bg-[#C86A43]/5 border-l-2 border-l-[#C86A43]' : 'hover:bg-[#F8F5F0]'
                 }`}
               >
+                <input
+                  type="checkbox"
+                  checked={checked.has(biz.id)}
+                  onClick={e => e.stopPropagation()}
+                  onChange={() => toggleChecked(biz.id)}
+                  className="shrink-0 w-3.5 h-3.5 accent-[#C86A43]"
+                />
                 <img src={biz.logo} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#2D2A26] truncate">{biz.name}</p>
@@ -1452,7 +1534,15 @@ export function DashboardBusinessesPage() {
                 {recommended > 0 && (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">{recommended}</span>
                 )}
-              </button>
+                <OverflowMenu
+                  archived={biz.status === 'archived'}
+                  onEdit={() => setSelectedId(biz.id)}
+                  onDuplicate={() => void handleDuplicate(biz)}
+                  onArchive={() => void handleArchiveToggle(biz)}
+                  onRestore={() => void handleArchiveToggle(biz)}
+                  onDelete={() => void handleDelete(biz)}
+                />
+              </div>
             )
           })}
         </div>
@@ -1465,6 +1555,8 @@ export function DashboardBusinessesPage() {
             key={selected.id}
             biz={selected}
             onSave={handleSave}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
           />
         ) : (
           <div className="flex items-center justify-center h-full">

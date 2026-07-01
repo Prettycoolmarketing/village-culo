@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
-import { updateFounder } from '../../services/founders'
+import { updateFounder, deleteFounder } from '../../services/founders'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { publisherPartnerProfileService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
 import { getIdeas } from '../../services/ideas'
@@ -420,6 +422,7 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
 
 export function DashboardProfilePage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const currentFounder = getCurrentFounder(user)
   const [draft, setDraft]   = useState<Founder | null>(() => currentFounder ? { ...currentFounder } : null)
   const [saved, setSaved]   = useState(false)
@@ -472,6 +475,13 @@ export function DashboardProfilePage() {
       setSaved(false)
       return { ...prev, topics: has ? prev.topics.filter(t => t.id !== topic.id) : [...prev.topics, topic] }
     })
+  }
+
+  async function handleDelete() {
+    if (!draft) return
+    const result = await deleteFounder(draft.id)
+    if (result.success) navigate('/dashboard/home')
+    else setSaveError(result.error ?? 'Could not delete this profile.')
   }
 
   async function handleSave() {
@@ -801,14 +811,18 @@ export function DashboardProfilePage() {
             </div>
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-2">Danger Zone</p>
-              <p className="text-xs text-[#9CA3AF] mb-3">Archiving removes this founder from all public directories while preserving their data.</p>
-              <button
-                disabled
-                className="px-4 py-2 text-sm border border-[#E8E4DD] rounded-lg text-[#9CA3AF] cursor-not-allowed"
-                title="Connect Supabase to enable"
-              >
-                Archive Founder (requires Supabase)
-              </button>
+              <p className="text-xs text-[#9CA3AF] mb-3">
+                To hide your profile from public directories while keeping your data, set Status to Archived in the Publishing tab instead.
+                Deleting removes your founder profile permanently and can't be undone.
+              </p>
+              {saveError && <p className="text-xs text-red-600 mb-2">{saveError}</p>}
+              <ConfirmButton
+                label="Delete Profile"
+                confirmLabel="Yes, delete permanently"
+                message="This can't be undone."
+                onConfirm={() => void handleDelete()}
+                className="px-4 py-2 text-sm border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+              />
             </div>
           </div>
         )}

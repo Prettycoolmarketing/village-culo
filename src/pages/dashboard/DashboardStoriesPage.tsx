@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { getStories, updateStory } from '../../services/stories'
+import { getStories, updateStory, deleteStory, duplicateStory } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
@@ -12,6 +12,8 @@ import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPane
 import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
+import { OverflowMenu } from '../../components/ui/OverflowMenu'
+import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { getStoryMissingItems, getMissingCounts } from '../../utils/missingAssets'
 import { getStoryFeaturedIn } from '../../utils/featuredIn'
 import type { Story, ContentType, Topic } from '../../types'
@@ -37,7 +39,14 @@ const PUBLISHING_SOURCES = [
 
 // ─── Detail pane ──────────────────────────────────────────────────────────────
 
-function StoryDetailPane({ story, onSave }: { story: Story; onSave: (s: Story) => void }) {
+interface StoryDetailPaneProps {
+  story: Story
+  onSave: (s: Story) => void
+  onDuplicate: (s: Story) => void
+  onDelete: (s: Story) => void
+}
+
+function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPaneProps) {
   const [draft, setDraft]   = useState<Story>({ ...story })
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
@@ -136,6 +145,13 @@ function StoryDetailPane({ story, onSave }: { story: Story; onSave: (s: Story) =
             className="px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
             {saving ? 'Saving…' : 'Save'}
           </button>
+          <OverflowMenu
+            archived={draft.status === 'archived'}
+            onDuplicate={() => onDuplicate(draft)}
+            onArchive={() => { const next = { ...draft, status: 'archived' as Story['status'] }; setDraft(next); void updateStory(next).then(r => r.success && onSave(next)) }}
+            onRestore={() => { const next = { ...draft, status: 'draft' as Story['status'] }; setDraft(next); void updateStory(next).then(r => r.success && onSave(next)) }}
+            onDelete={() => onDelete(draft)}
+          />
         </div>
       </div>
 
@@ -419,12 +435,54 @@ export function DashboardStoriesPage() {
   const [storyList,  setStoryList]  = useState<Story[]>(() => getStories())
   const [selectedId, setSelectedId] = useState<string | null>(() => getStories()[0]?.id ?? null)
   const [search,     setSearch]     = useState('')
+  const [checked,    setChecked]    = useState<Set<string>>(new Set())
 
   const filtered = search ? storyList.filter(s => s.title.toLowerCase().includes(search.toLowerCase())) : storyList
   const selected = storyList.find(s => s.id === selectedId) ?? null
 
+  function toggleChecked(id: string) {
+    setChecked(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  async function handleBulkArchive() {
+    const targets = storyList.filter(s => checked.has(s.id))
+    await Promise.all(targets.map(s => updateStory({ ...s, status: 'archived' })))
+    setStoryList(getStories())
+    setChecked(new Set())
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...checked]
+    await Promise.all(ids.map(id => deleteStory(id)))
+    setStoryList(prev => prev.filter(s => !checked.has(s.id)))
+    if (selectedId && checked.has(selectedId)) setSelectedId(null)
+    setChecked(new Set())
+  }
+
   function handleSave(updated: Story) {
     setStoryList(prev => prev.map(s => s.id === updated.id ? updated : s))
+  }
+
+  async function handleDuplicate(story: Story) {
+    const result = await duplicateStory(story.id)
+    if (result.success) {
+      const fresh = getStories()
+      setStoryList(fresh)
+      const copy = fresh.find(s => s.title === `${story.title} (Copy)`)
+      if (copy) setSelectedId(copy.id)
+    }
+  }
+
+  async function handleDelete(story: Story) {
+    const result = await deleteStory(story.id)
+    if (result.success) {
+      setStoryList(prev => prev.filter(s => s.id !== story.id))
+      if (selectedId === story.id) setSelectedId(null)
+    }
   }
 
   return (
@@ -443,15 +501,36 @@ export function DashboardStoriesPage() {
             className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#C86A43]/30"
           />
         </div>
+        {checked.size > 0 && (
+          <div className="px-4 py-2 bg-[#FBF1EB] border-y border-[#F0DDD2] flex items-center justify-between gap-2 shrink-0">
+            <p className="text-xs font-medium text-[#C86A43]">{checked.size} selected</p>
+            <div className="flex items-center gap-3">
+              <button onClick={() => void handleBulkArchive()} className="text-xs font-semibold text-[#C86A43] hover:underline">Archive</button>
+              <ConfirmButton
+                label="Delete"
+                confirmLabel="Confirm"
+                onConfirm={() => void handleBulkDelete()}
+                className="text-xs font-semibold text-red-600 hover:underline"
+              />
+            </div>
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto">
           {filtered.map(story => {
             const missing  = getStoryMissingItems(story)
             const recommended = missing.filter(m => m.severity === 'critical').length
             return (
-              <button key={story.id} onClick={() => setSelectedId(story.id)}
-                className={`w-full text-left flex items-center gap-3 px-4 py-3 border-b border-[#F3EDE6] transition-colors ${
+              <div key={story.id} onClick={() => setSelectedId(story.id)}
+                className={`w-full text-left flex items-center gap-2 px-4 py-3 border-b border-[#F3EDE6] transition-colors cursor-pointer ${
                   selectedId === story.id ? 'bg-[#C86A43]/5 border-l-2 border-l-[#C86A43]' : 'hover:bg-[#F8F5F0]'
                 }`}>
+                <input
+                  type="checkbox"
+                  checked={checked.has(story.id)}
+                  onClick={e => e.stopPropagation()}
+                  onChange={() => toggleChecked(story.id)}
+                  className="shrink-0 w-3.5 h-3.5 accent-[#C86A43]"
+                />
                 <img src={story.coverImage} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#2D2A26] truncate">{story.title}</p>
@@ -470,7 +549,15 @@ export function DashboardStoriesPage() {
                 }`}>
                   {story.status}
                 </span>
-              </button>
+                <OverflowMenu
+                  archived={story.status === 'archived'}
+                  onEdit={() => setSelectedId(story.id)}
+                  onDuplicate={() => void handleDuplicate(story)}
+                  onArchive={() => void updateStory({ ...story, status: 'archived' }).then(r => r.success && setStoryList(prev => prev.map(s => s.id === story.id ? { ...s, status: 'archived' } : s)))}
+                  onRestore={() => void updateStory({ ...story, status: 'draft' }).then(r => r.success && setStoryList(prev => prev.map(s => s.id === story.id ? { ...s, status: 'draft' } : s)))}
+                  onDelete={() => void handleDelete(story)}
+                />
+              </div>
             )
           })}
           {filtered.length === 0 && (
@@ -482,7 +569,7 @@ export function DashboardStoriesPage() {
       {/* ── Detail ────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden bg-[#F8F5F0]">
         {selected ? (
-          <StoryDetailPane key={selected.id} story={selected} onSave={handleSave} />
+          <StoryDetailPane key={selected.id} story={selected} onSave={handleSave} onDuplicate={handleDuplicate} onDelete={handleDelete} />
         ) : (
           <div className="flex items-center justify-center h-full">
             <p className="text-sm text-[#9CA3AF]">Select a story to edit</p>
