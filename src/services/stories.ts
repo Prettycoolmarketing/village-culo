@@ -1,13 +1,11 @@
-import { stories as staticData } from '../data/stories'
-import { store } from '../lib/store'
-import { isSupabaseConfigured } from '../lib/supabase'
-import { dbUpsertStory } from '../lib/db'
+import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
 import type { Story, StoryFilter } from '../types'
 
 const KEY = 'stories'
+const TABLE = 'stories'
 
 function live(): Story[] {
-  return store.get<Story>(KEY) ?? staticData
+  return readCache<Story>(KEY)
 }
 
 export function getStories(filter?: StoryFilter): Story[] {
@@ -35,7 +33,22 @@ export function getStoryBySlug(slug: string): Story | undefined {
   return live().find(s => s.slug === slug)
 }
 
-export function updateStory(story: Story): void {
-  store.update<Story>(KEY, story)
-  if (isSupabaseConfigured) void dbUpsertStory(story)
+export async function updateStory(story: Story): Promise<WriteResult> {
+  return writeEntity<Story>({
+    cacheKey: KEY,
+    item: story,
+    table: TABLE,
+    toRow: (s, userId) => ({
+      id: s.id,
+      user_id: userId,
+      founder_id: s.founderId,
+      business_id: s.businessId,
+      status: s.status,
+      featured: s.featured,
+      slug: s.slug,
+      visibility: 'public',
+      published_at: s.status === 'published' || s.status === 'featured' ? new Date().toISOString() : null,
+      data: s,
+    }),
+  })
 }

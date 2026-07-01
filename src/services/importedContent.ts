@@ -1,4 +1,4 @@
-import { store } from '../lib/store'
+import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
 import type {
   ImportedContent,
   ImportedContentFilter,
@@ -7,6 +7,7 @@ import type {
 } from '../types/importedContent'
 
 const KEY = 'imported_content'
+const TABLE = 'imported_content'
 
 function now() { return new Date().toISOString() }
 
@@ -106,7 +107,7 @@ export function buildDraftImport(founderId: string, url: string): ImportedConten
 
 export const importedContentService = {
   getAll(filter?: ImportedContentFilter): ImportedContent[] {
-    let items = store.get<ImportedContent>(KEY) ?? []
+    let items = readCache<ImportedContent>(KEY)
     if (filter?.founderId)  items = items.filter(i => i.founderId === filter.founderId)
     if (filter?.businessId) items = items.filter(i => i.businessId === filter.businessId)
     if (filter?.status)     items = items.filter(i => i.status === filter.status)
@@ -116,24 +117,39 @@ export const importedContentService = {
   },
 
   get(id: string): ImportedContent | undefined {
-    return (store.get<ImportedContent>(KEY) ?? []).find(i => i.id === id)
+    return readCache<ImportedContent>(KEY).find(i => i.id === id)
   },
 
   getByFounderId(founderId: string): ImportedContent[] {
     return this.getAll({ founderId })
   },
 
-  upsert(item: ImportedContent): void {
-    store.update<ImportedContent>(KEY, item)
+  upsert(item: ImportedContent): Promise<WriteResult> {
+    return writeEntity<ImportedContent>({
+      cacheKey: KEY,
+      item,
+      table: TABLE,
+      toRow: (i, userId) => ({
+        id: i.id,
+        user_id: userId,
+        founder_id: i.founderId,
+        business_id: i.businessId ?? null,
+        status: i.status,
+        visibility: i.visibility,
+        source_platform: i.sourcePlatform,
+        published_at: i.status === 'published' || i.status === 'featured' ? new Date().toISOString() : null,
+        data: i,
+      }),
+    })
   },
 
-  delete(id: string): void {
-    const items = (store.get<ImportedContent>(KEY) ?? []).filter(i => i.id !== id)
-    store.set(KEY, items)
+  delete(id: string): Promise<WriteResult> {
+    return deleteEntity({ cacheKey: KEY, id, table: TABLE })
   },
 
-  updateStatus(id: string, status: ImportedContentStatus): void {
+  async updateStatus(id: string, status: ImportedContentStatus): Promise<WriteResult> {
     const item = this.get(id)
-    if (item) this.upsert({ ...item, status })
+    if (!item) return { success: false, error: 'Not found' }
+    return this.upsert({ ...item, status })
   },
 }

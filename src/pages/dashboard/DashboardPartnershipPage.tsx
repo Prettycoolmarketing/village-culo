@@ -8,7 +8,7 @@ import {
   affiliateLinkService,
   programService,
 } from '../../services/partnership'
-import { getFounders } from '../../services/founders'
+import { getCurrentFounderId } from '../../services/currentFounder'
 import { getStory } from '../../services/stories'
 import { getBusiness } from '../../services/businesses'
 import { runDetection, DEFAULT_DISCLOSURE } from '../../services/recommendationDetection'
@@ -370,6 +370,7 @@ function MyPicksSection({ founderId }: { founderId: string }) {
   const [filterTab, setFilterTab] = useState<PicksFilter>('pending')
   const [scanning,  setScanning]  = useState(false)
   const [scanResult, setScanResult] = useState<{ detected: number; skipped: number; stories: number } | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   function refresh() {
     setAllRecs(recommendationService.getAll({ founderId }))
@@ -389,37 +390,47 @@ function MyPicksSection({ founderId }: { founderId: string }) {
   function handleScan() {
     setScanning(true)
     setScanResult(null)
+    setActionError(null)
     // Defer to let the UI update before running detection
     setTimeout(() => {
-      const result = runDetection(founderId)
-      setScanResult(result)
-      refresh()
-      setScanning(false)
-      setFilterTab('pending')
+      void runDetection(founderId).then(result => {
+        if (result.error) setActionError(result.error)
+        setScanResult(result)
+        refresh()
+        setScanning(false)
+        setFilterTab('pending')
+      })
     }, 50)
   }
 
-  function handleApprove(id: string, disclosureText: string) {
+  async function handleApprove(id: string, disclosureText: string) {
+    setActionError(null)
     const rec = recommendationService.get(id)
     if (rec) {
       rec.disclosureText    = disclosureText
       rec.disclosureVisible = true
-      recommendationService.upsert(rec)
+      const result = await recommendationService.upsert(rec)
+      if (!result.success) { setActionError(result.error ?? 'Failed to approve. Please try again.'); return }
     }
-    recommendationService.approve(id)
+    const result = await recommendationService.approve(id)
+    if (!result.success) { setActionError(result.error ?? 'Failed to approve. Please try again.'); return }
     refresh()
   }
 
-  function handleIgnore(id: string) {
+  async function handleIgnore(id: string) {
+    setActionError(null)
     const rec = recommendationService.get(id)
     if (!rec) return
     rec.status = 'ignored'
-    recommendationService.upsert(rec)
+    const result = await recommendationService.upsert(rec)
+    if (!result.success) { setActionError(result.error ?? 'Failed to update. Please try again.'); return }
     refresh()
   }
 
-  function handleReject(id: string) {
-    recommendationService.reject(id)
+  async function handleReject(id: string) {
+    setActionError(null)
+    const result = await recommendationService.reject(id)
+    if (!result.success) { setActionError(result.error ?? 'Failed to reject. Please try again.'); return }
     refresh()
   }
 
@@ -448,6 +459,12 @@ function MyPicksSection({ founderId }: { founderId: string }) {
           {scanning ? 'Scanning…' : 'Scan my stories'}
         </button>
       </div>
+
+      {actionError && (
+        <div className="mb-5 px-4 py-3 rounded-xl border border-red-200 bg-red-50 text-sm text-red-700">
+          {actionError}
+        </div>
+      )}
 
       {/* Scan result banner */}
       {scanResult && (
@@ -718,23 +735,29 @@ function OpportunitiesSection({ founderId }: { founderId: string }) {
   const [filterTab,   setFilterTab]  = useState<OppFilter>('suggested')
   const [generating,  setGenerating] = useState(false)
   const [genResult,   setGenResult]  = useState<{ generated: number; skipped: number; businesses: number } | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   function refresh() { setAllOpps(opportunityService.getAll({ founderId })) }
 
   function handleFind() {
     setGenerating(true)
     setGenResult(null)
+    setActionError(null)
     setTimeout(() => {
-      const result = runMatching(founderId)
-      setGenResult(result)
-      refresh()
-      setGenerating(false)
-      setFilterTab('suggested')
+      void runMatching(founderId).then(result => {
+        if (result.error) setActionError(result.error)
+        setGenResult(result)
+        refresh()
+        setGenerating(false)
+        setFilterTab('suggested')
+      })
     }, 50)
   }
 
-  function handleAction(id: string, status: Opportunity['status']) {
-    opportunityService.updateStatus(id, status)
+  async function handleAction(id: string, status: Opportunity['status']) {
+    setActionError(null)
+    const result = await opportunityService.updateStatus(id, status)
+    if (!result.success) { setActionError(result.error ?? 'Failed to update. Please try again.'); return }
     refresh()
   }
 
@@ -771,6 +794,12 @@ function OpportunitiesSection({ founderId }: { founderId: string }) {
           {generating ? 'Finding…' : 'Find opportunities'}
         </button>
       </div>
+
+      {actionError && (
+        <div className="mb-5 px-4 py-3 rounded-xl border border-red-200 bg-red-50 text-sm text-red-700">
+          {actionError}
+        </div>
+      )}
 
       {/* Result banner */}
       {genResult && (
@@ -1130,10 +1159,7 @@ export function DashboardPartnershipPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('overview')
   // Resolve to actual Founder entity ID so detection/stories/profiles all share the same key.
-  // In dev mode: first founder from seed data.
-  // In Supabase mode: getFounders().find(f => f.email === user?.email)?.id
-  const founders  = getFounders()
-  const founderId = founders[0]?.id ?? user?.id ?? 'dev-user'
+  const founderId = getCurrentFounderId(user) ?? 'dev-user'
 
   return (
     <div className="flex h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>

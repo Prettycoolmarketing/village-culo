@@ -26,22 +26,33 @@ export function VillageSettingsPage() {
   const saved = villageSettingsService.get()
   const [settings, setSettings] = useState(saved)
   const [saved_, setSaved_]     = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   function update(key: keyof typeof settings, val: string) {
     setSettings(s => ({ ...s, [key]: val }))
     setSaved_(false)
   }
 
-  function handleSave() {
-    villageSettingsService.save(settings)
-    setSaved_(true)
-    setTimeout(() => setSaved_(false), 3000)
+  async function handleSave() {
+    setSaveError(null)
+    const result = await villageSettingsService.save(settings)
+    if (result.success) {
+      setSaved_(true)
+      setTimeout(() => setSaved_(false), 3000)
+    } else {
+      setSaveError(result.error ?? 'Save failed. Please try again.')
+    }
   }
 
-  function handleReset() {
-    villageSettingsService.reset()
-    setSettings(villageSettingsService.get())
-    setSaved_(false)
+  async function handleReset() {
+    setSaveError(null)
+    const result = await villageSettingsService.reset()
+    if (result.success) {
+      setSettings(villageSettingsService.get())
+      setSaved_(false)
+    } else {
+      setSaveError(result.error ?? 'Reset failed. Please try again.')
+    }
   }
 
   const roles: VillageRole[] = ['admin', 'editor', 'moderator', 'viewer']
@@ -181,6 +192,7 @@ export function VillageSettingsPage() {
         >
           Reset to defaults
         </button>
+        {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
       </div>
     </div>
   )

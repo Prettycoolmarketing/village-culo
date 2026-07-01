@@ -135,6 +135,8 @@ export function DashboardBulkImportPage() {
   const [validation, setValidation] = useState<VIFValidationResult | null>(null)
   const [options, setOptions]   = useState<VIFImportOptions>(DEFAULT_IMPORT_OPTIONS)
   const [result, setResult]     = useState<VIFImportResult | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
   const [exampleOpen, setExampleOpen] = useState(false)
   const [copied, setCopied]     = useState<string | null>(null)
 
@@ -165,22 +167,41 @@ export function DashboardBulkImportPage() {
 
   // ── Step 2 → Import ──────────────────────────────────────────────────────
 
-  function handleImport() {
+  // Never reports a result until every write has actually been attempted and
+  // confirmed (importVIF awaits + retries each one) — the result shown here
+  // reflects real Supabase state, not an in-memory guess made before the writes
+  // landed. The import-batch log is saved regardless, including partial-failure
+  // runs, so admins always have a record of what happened.
+  async function handleImport() {
     if (!pkg) return
-    const res = importVIF(pkg, options)
-    importBatchService.save({
-      batchName:        pkg.batchName,
-      source:           pkg.source,
-      founderCount:     pkg.founders.length,
-      created:          res.created.length,
-      skipped:          res.skipped.length,
-      errored:          res.errors.length,
-      businessesCreated: res.businessesCreated,
-      contentCreated:   res.contentCreated,
-      intelGenerated:   res.intelGenerated,
-    })
-    setResult(res)
-    setStep(3)
+    setImporting(true)
+    setImportError(null)
+    try {
+      const res = await importVIF(pkg, options)
+      const batchResult = await importBatchService.save({
+        batchName:        pkg.batchName,
+        source:           pkg.source,
+        founderCount:     pkg.founders.length,
+        created:          res.created.length,
+        skipped:          res.skipped.length,
+        errored:          res.errors.length,
+        businessesCreated: res.businessesCreated,
+        contentCreated:   res.contentCreated,
+        intelGenerated:   res.intelGenerated,
+      })
+      if (!batchResult.write.success) {
+        // The founders/businesses/content themselves are already saved at this
+        // point — only the admin-facing log entry failed. Surface it, but don't
+        // block the admin from seeing their (real) results.
+        setImportError(`Import completed, but the history log failed to save: ${batchResult.write.error ?? 'unknown error'}`)
+      }
+      setResult(res)
+      setStep(3)
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Import failed. Please try again.')
+    } finally {
+      setImporting(false)
+    }
   }
 
   // ── Reset ────────────────────────────────────────────────────────────────
@@ -665,13 +686,20 @@ export function DashboardBulkImportPage() {
           )}
 
           {step === 2 && (
-            <button
-              type="button"
-              onClick={handleImport}
-              className="px-6 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-            >
-              Import {validation?.founderCount ?? ''} Founders ✓
-            </button>
+            <div className="flex flex-col items-end gap-2">
+              {importError && <p className="text-sm text-red-600 max-w-sm text-right">{importError}</p>}
+              <button
+                type="button"
+                onClick={() => void handleImport()}
+                disabled={importing}
+                className="px-6 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+              >
+                {importing ? `Importing ${validation?.founderCount ?? ''} founders…` : `Import ${validation?.founderCount ?? ''} Founders ✓`}
+              </button>
+              {importing && (
+                <p className="text-xs text-[#9CA3AF]">This can take a while for large batches — each founder is saved and confirmed before the next.</p>
+              )}
+            </div>
           )}
         </div>
       )}

@@ -144,6 +144,7 @@ function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdate }: {
   )
   const [localBiz, setLocalBiz] = useState<Business>(business)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   function setP<K extends keyof BusinessPartnerProfile>(key: K, value: BusinessPartnerProfile[K]) {
     setProfile(prev => ({ ...prev, [key]: value }))
@@ -175,9 +176,16 @@ function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdate }: {
     setP('idealContentTypes', current.includes(ct) ? current.filter(c => c !== ct) : [...current, ct])
   }
 
-  function handleSave() {
-    businessPartnerProfileService.upsert(profile)
-    updateBusiness(localBiz)
+  async function handleSave() {
+    setSaveError(null)
+    const [profileResult, bizResult] = await Promise.all([
+      businessPartnerProfileService.upsert(profile),
+      updateBusiness(localBiz),
+    ])
+    if (!profileResult.success || !bizResult.success) {
+      setSaveError(profileResult.error ?? bizResult.error ?? 'Save failed. Please try again.')
+      return
+    }
     onBusinessUpdate(localBiz)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -428,12 +436,13 @@ function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdate }: {
       {/* Save */}
       <div className="flex items-center gap-3 pt-2">
         <button
-          onClick={handleSave}
+          onClick={() => void handleSave()}
           className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
         >
           Save Discovery Profile
         </button>
         {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
+        {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
       </div>
     </div>
   )
@@ -548,16 +557,19 @@ function ProgramForm({ initial, onSave, onCancel }: {
   onCancel: () => void
 }) {
   const [p, setP] = useState<PartnerProgram>({ ...initial })
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   function set<K extends keyof PartnerProgram>(key: K, value: PartnerProgram[K]) {
     setP(prev => ({ ...prev, [key]: value }))
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!p.name.trim()) return
+    setSaveError(null)
     const slug = p.slug.trim() || p.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    programService.upsert({ ...p, slug })
-    onSave({ ...p, slug })
+    const result = await programService.upsert({ ...p, slug })
+    if (result.success) onSave({ ...p, slug })
+    else setSaveError(result.error ?? 'Save failed. Please try again.')
   }
 
   const fi = 'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
@@ -818,7 +830,7 @@ function ProgramForm({ initial, onSave, onCancel }: {
         {/* Save */}
         <div className="flex items-center gap-3 pt-1">
           <button
-            onClick={handleSave}
+            onClick={() => void handleSave()}
             disabled={!p.name.trim()}
             className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
@@ -830,6 +842,7 @@ function ProgramForm({ initial, onSave, onCancel }: {
           >
             Cancel
           </button>
+          {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
         </div>
 
       </div>
@@ -847,6 +860,7 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
     () => programService.getAll({ businessId })
   )
   const [view, setView] = useState<'list' | 'new' | string>('list') // 'list' | 'new' | program id
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const editing = view !== 'list' && view !== 'new'
     ? programs.find(p => p.id === view) ?? null
@@ -861,9 +875,14 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
     setView('list')
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (!window.confirm('Remove this program?')) return
-    programService.delete(id)
+    setDeleteError(null)
+    const result = await programService.delete(id)
+    if (!result.success) {
+      setDeleteError(result.error ?? 'Failed to delete program. Please try again.')
+      return
+    }
     refresh()
     setView('list')
   }
@@ -910,13 +929,14 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
           onSave={handleSave}
           onCancel={() => setView('list')}
         />
-        <div className="px-1">
+        <div className="px-1 flex items-center gap-3">
           <button
-            onClick={() => handleDelete(editing.id)}
+            onClick={() => void handleDelete(editing.id)}
             className="text-xs text-red-400 hover:text-red-600 transition-colors"
           >
             Remove this program
           </button>
+          {deleteError && <p className="text-xs text-red-600 font-medium">{deleteError}</p>}
         </div>
       </div>
     )
@@ -1010,6 +1030,7 @@ function BusinessDetailPane({ biz, onSave }: { biz: Business; onSave: (b: Busine
   const [draft, setDraft]   = useState<Business>({ ...biz })
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [tab, setTab]       = useState('overview')
 
   const missing    = getBusinessMissingItems(draft)
@@ -1083,12 +1104,17 @@ function BusinessDetailPane({ biz, onSave }: { biz: Business; onSave: (b: Busine
     })
   }
 
-  function handleSave() {
+  async function handleSave() {
     setSaving(true)
-    updateBusiness(draft)
+    setSaveError(null)
+    const result = await updateBusiness(draft)
     setSaving(false)
-    setSaved(true)
-    onSave(draft)
+    if (result.success) {
+      setSaved(true)
+      onSave(draft)
+    } else {
+      setSaveError(result.error ?? 'Save failed. Please try again.')
+    }
   }
 
   return (
@@ -1104,11 +1130,12 @@ function BusinessDetailPane({ biz, onSave }: { biz: Business; onSave: (b: Busine
         </div>
         <div className="flex items-center gap-2">
           {saved && <span className="text-xs text-green-600 font-medium">Saved ✓</span>}
+          {saveError && <span className="text-xs text-red-600 font-medium">{saveError}</span>}
           <a href={`/businesses/${draft.slug}`} target="_blank" rel="noopener noreferrer"
             className="px-2.5 py-1.5 text-xs text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:text-[#C86A43] hover:border-[#C86A43]/40 transition-colors">
             View ↗
           </a>
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={() => void handleSave()} disabled={saving}
             className="px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
             {saving ? 'Saving…' : 'Save'}
           </button>

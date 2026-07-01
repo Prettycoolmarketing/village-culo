@@ -7,6 +7,7 @@ import { AuthProvider }    from './contexts/AuthContext'
 // Seed localStorage from static data on first load
 seedStore()
 import { ProtectedRoute }  from './components/dashboard/ProtectedRoute'
+import { RoleProtectedRoute } from './components/dashboard/RoleProtectedRoute'
 import { DashboardLayout } from './components/dashboard/DashboardLayout'
 import { Navbar }          from './components/layout/Navbar'
 import { Footer }          from './components/layout/Footer'
@@ -66,6 +67,10 @@ import { VillageFeaturedContentPage }         from './pages/dashboard/village/Vi
 import { VillageAnalyticsPage }               from './pages/dashboard/village/VillageAnalyticsPage'
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
+import type { UserRole } from './contexts/AuthContext'
+
+// Village HQ / curated-profile / bulk-import routes are admin tooling, not founder-facing.
+const ADMIN_ROUTE_ROLES: UserRole[] = ['admin', 'editor', 'moderator']
 
 // ─── Activity banner data ───────────────────────────────────────────────────────
 const recentStory   = stories[0]
@@ -171,17 +176,17 @@ export default function App() {
             <Route path="import-content" element={<DashboardImportContentPage />}/>
             <Route path="opportunities"  element={<DashboardPartnershipPage />}  />
             <Route path="revenue"           element={<DashboardRevenuePage />}         />
-            <Route path="curated-profiles" element={<DashboardCuratedProfilesPage />} />
-            <Route path="curated-profiles/new" element={<DashboardCuratedFounderBuilderPage />} />
-            <Route path="bulk-import"          element={<DashboardBulkImportPage />}            />
-            <Route path="village"              element={<VillageHQOverviewPage />}              />
-            <Route path="village/founders"     element={<VillageCuratedFoundersPage />}         />
-            <Route path="village/claims"       element={<VillageClaimRequestsPage />}           />
-            <Route path="village/imports"      element={<VillageBulkImportPage />}              />
-            <Route path="village/emails"       element={<VillageEmailExportPage />}             />
-            <Route path="village/featured"     element={<VillageFeaturedContentPage />}         />
-            <Route path="village/analytics"    element={<VillageAnalyticsPage />}               />
-            <Route path="village/settings"     element={<VillageSettingsPage />}                />
+            <Route path="curated-profiles" element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><DashboardCuratedProfilesPage /></RoleProtectedRoute>} />
+            <Route path="curated-profiles/new" element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><DashboardCuratedFounderBuilderPage /></RoleProtectedRoute>} />
+            <Route path="bulk-import"          element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><DashboardBulkImportPage /></RoleProtectedRoute>}            />
+            <Route path="village"              element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageHQOverviewPage /></RoleProtectedRoute>}              />
+            <Route path="village/founders"     element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageCuratedFoundersPage /></RoleProtectedRoute>}         />
+            <Route path="village/claims"       element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageClaimRequestsPage /></RoleProtectedRoute>}           />
+            <Route path="village/imports"      element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageBulkImportPage /></RoleProtectedRoute>}              />
+            <Route path="village/emails"       element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageEmailExportPage /></RoleProtectedRoute>}             />
+            <Route path="village/featured"     element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageFeaturedContentPage /></RoleProtectedRoute>}         />
+            <Route path="village/analytics"    element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageAnalyticsPage /></RoleProtectedRoute>}               />
+            <Route path="village/settings"     element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageSettingsPage /></RoleProtectedRoute>}                />
             <Route path="settings"         element={<DashboardSettingsPage />}        />
           </Route>
 

@@ -1,13 +1,11 @@
-import { businesses as staticData } from '../data/businesses'
-import { store } from '../lib/store'
-import { isSupabaseConfigured } from '../lib/supabase'
-import { dbUpsertBusiness } from '../lib/db'
+import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
 import type { Business, BusinessFilter } from '../types'
 
 const KEY = 'businesses'
+const TABLE = 'businesses'
 
 function live(): Business[] {
-  return store.get<Business>(KEY) ?? staticData
+  return readCache<Business>(KEY)
 }
 
 export function getBusinesses(filter?: BusinessFilter): Business[] {
@@ -31,7 +29,21 @@ export function getBusinessBySlug(slug: string): Business | undefined {
   return live().find(b => b.slug === slug)
 }
 
-export function updateBusiness(business: Business): void {
-  store.update<Business>(KEY, business)
-  if (isSupabaseConfigured) void dbUpsertBusiness(business)
+export async function updateBusiness(business: Business): Promise<WriteResult> {
+  return writeEntity<Business>({
+    cacheKey: KEY,
+    item: business,
+    table: TABLE,
+    toRow: (b, userId) => ({
+      id: b.id,
+      user_id: userId,
+      founder_id: b.founderId,
+      status: b.status,
+      featured: b.featured,
+      slug: b.slug,
+      visibility: 'public',
+      published_at: b.status === 'published' || b.status === 'featured' ? new Date().toISOString() : null,
+      data: b,
+    }),
+  })
 }

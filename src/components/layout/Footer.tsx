@@ -24,9 +24,9 @@ const sections = [
   {
     heading: 'Publish',
     links: [
-      { to: '/piazza',         label: 'Piazza'         },
-      { to: '/piazza',         label: 'Submit a Story' },
-      { to: '/media-curator',  label: 'Media Curator'  },
+      { to: '/onboarding',     label: 'Become a Publisher' },
+      { to: '/piazza',         label: 'Submit a Story'     },
+      { to: '/media-curator',  label: 'Media Curator'      },
     ],
   },
 ]

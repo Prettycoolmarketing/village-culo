@@ -35,8 +35,16 @@ function ToggleButton({
 export function VillageFeaturedContentPage() {
   const [tab, setTab]   = useState<ContentTab>('founders')
   const [tick, setTick] = useState(0)
+  const [toggleError, setToggleError] = useState<string | null>(null)
   const refresh = () => setTick(t => t + 1)
   void tick
+
+  async function handleToggle(write: Promise<{ success: boolean; error?: string }>) {
+    setToggleError(null)
+    const result = await write
+    if (!result.success) setToggleError(result.error ?? 'Failed to update. Please try again.')
+    refresh()
+  }
 
   const founders  = getFounders()
   const businesses = getBusinesses()
@@ -96,6 +104,12 @@ export function VillageFeaturedContentPage() {
         ))}
       </div>
 
+      {toggleError && (
+        <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+          {toggleError}
+        </div>
+      )}
+
       {/* Founders */}
       {tab === 'founders' && (
         <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
@@ -116,7 +130,7 @@ export function VillageFeaturedContentPage() {
               <div className="flex items-center gap-2">
                 <ToggleButton
                   active={f.featured}
-                  onToggle={() => { updateFounder({ ...f, featured: !f.featured, status: !f.featured ? 'featured' : 'published' }); refresh() }}
+                  onToggle={() => void handleToggle(updateFounder({ ...f, featured: !f.featured, status: !f.featured ? 'featured' : 'published' }))}
                 />
                 <Link to={`/founders/${f.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
               </div>
@@ -145,7 +159,7 @@ export function VillageFeaturedContentPage() {
               <div className="flex items-center gap-2">
                 <ToggleButton
                   active={b.featured}
-                  onToggle={() => { updateBusiness({ ...b, featured: !b.featured, status: !b.featured ? 'featured' : 'published' }); refresh() }}
+                  onToggle={() => void handleToggle(updateBusiness({ ...b, featured: !b.featured, status: !b.featured ? 'featured' : 'published' }))}
                 />
                 <Link to={`/mercato/${b.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
               </div>
@@ -178,7 +192,7 @@ export function VillageFeaturedContentPage() {
               <div className="flex items-center gap-2">
                 <ToggleButton
                   active={s.featured}
-                  onToggle={() => { updateStory({ ...s, featured: !s.featured, status: !s.featured ? 'featured' : 'published' }); refresh() }}
+                  onToggle={() => void handleToggle(updateStory({ ...s, featured: !s.featured, status: !s.featured ? 'featured' : 'published' }))}
                 />
                 <Link to={`/stories/${s.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
               </div>
@@ -210,8 +224,7 @@ export function VillageFeaturedContentPage() {
                   active={c.status === 'featured'}
                   onToggle={() => {
                     const next = c.status === 'featured' ? 'published' : 'featured'
-                    importedContentService.upsert({ ...c, status: next, visibility: next === 'featured' ? 'public' : 'public' })
-                    refresh()
+                    void handleToggle(importedContentService.upsert({ ...c, status: next, visibility: 'public' }))
                   }}
                 />
                 <a href={c.originalUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">Source ↗</a>

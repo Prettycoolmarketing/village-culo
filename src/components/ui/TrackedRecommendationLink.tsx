@@ -29,7 +29,7 @@ export function TrackedRecommendationLink({
     'Visit business'
 
   function handleClick() {
-    trackingService.record({
+    void trackingService.record({
       founderId,
       businessId,
       recommendationId,

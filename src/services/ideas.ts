@@ -1,11 +1,11 @@
-import { ideas as staticData } from '../data/ideas'
-import { store } from '../lib/store'
+import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
 import type { Idea, IdeaFilter } from '../types'
 
 const KEY = 'ideas'
+const TABLE = 'ideas'
 
 function live(): Idea[] {
-  return store.get<Idea>(KEY) ?? staticData
+  return readCache<Idea>(KEY)
 }
 
 export function getIdeas(filter?: IdeaFilter): Idea[] {
@@ -29,6 +29,13 @@ export function getIdeaBySlug(slug: string): Idea | undefined {
   return live().find(i => i.slug === slug)
 }
 
-export function updateIdea(idea: Idea): void {
-  store.update<Idea>(KEY, idea)
+// Admin-write, public-read (see migration 003) — there is no founder-facing idea
+// editing UI today, so this requires an admin session when Supabase is configured.
+export function updateIdea(idea: Idea): Promise<WriteResult> {
+  return writeEntity<Idea>({
+    cacheKey: KEY,
+    item: idea,
+    table: TABLE,
+    toRow: i => ({ id: i.id, slug: i.slug, status: i.status ?? 'published', featured: i.featured, data: i }),
+  })
 }

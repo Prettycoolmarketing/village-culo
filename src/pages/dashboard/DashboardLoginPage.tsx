@@ -107,6 +107,9 @@ export function DashboardLoginPage() {
               {!isConfigured && (
                 <div className="mb-5 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700">
                   Supabase is not configured. Auth is simulated — credentials are not verified.
+                  You'll sign in as a founder account, unless your email is listed in
+                  <code className="mx-1 px-1 py-0.5 bg-amber-100 rounded">VITE_DEV_ADMIN_EMAILS</code>
+                  in <code className="px-1 py-0.5 bg-amber-100 rounded">.env</code>.
                 </div>
               )}
 

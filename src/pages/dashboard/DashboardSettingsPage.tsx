@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { resetAndReseed } from '../../lib/seedStore'
-import { getFounders } from '../../services/founders'
+import { getCurrentFounderId } from '../../services/currentFounder'
 import { publisherSettingsService } from '../../services/partnership'
 import type { PublisherPartnershipSettings } from '../../types/partnership'
 
@@ -10,25 +10,29 @@ export function DashboardSettingsPage() {
   const [resetting, setResetting] = useState(false)
   const [resetDone, setResetDone] = useState(false)
 
-  // Canonical founderId: resolve to actual Founder entity so Settings, Partnership,
-  // Profile and Detection all share the same key.
-  // In Supabase mode: getFounders().find(f => f.email === user?.email)?.id
-  const founders  = getFounders()
-  const founderId = founders[0]?.id ?? user?.id ?? 'dev-user'
+  // Canonical founderId: resolved via getCurrentFounder so Settings, Partnership,
+  // Profile and Detection all share the same key for the actual logged-in founder.
+  const founderId = getCurrentFounderId(user) ?? 'dev-user'
   const [partnerSettings, setPartnerSettings] = useState<PublisherPartnershipSettings>(
     () => publisherSettingsService.getOrCreate(founderId)
   )
   const [partnerSaved, setPartnerSaved] = useState(false)
+  const [partnerSaveError, setPartnerSaveError] = useState<string | null>(null)
 
   function togglePartner(key: keyof PublisherPartnershipSettings) {
     setPartnerSettings(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))
     setPartnerSaved(false)
   }
 
-  function savePartnerSettings() {
-    publisherSettingsService.upsert(partnerSettings)
-    setPartnerSaved(true)
-    setTimeout(() => setPartnerSaved(false), 2000)
+  async function savePartnerSettings() {
+    setPartnerSaveError(null)
+    const result = await publisherSettingsService.upsert(partnerSettings)
+    if (result.success) {
+      setPartnerSaved(true)
+      setTimeout(() => setPartnerSaved(false), 2000)
+    } else {
+      setPartnerSaveError(result.error ?? 'Save failed. Please try again.')
+    }
   }
 
   function handleReset() {
@@ -176,6 +180,7 @@ export function DashboardSettingsPage() {
             Save Partnership Settings
           </button>
           {partnerSaved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
+          {partnerSaveError && <p className="text-sm text-red-600 font-medium">{partnerSaveError}</p>}
         </div>
       </section>
 

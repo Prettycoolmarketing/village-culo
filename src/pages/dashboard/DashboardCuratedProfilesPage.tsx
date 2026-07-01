@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { getFounders } from '../../services/founders'
 import { founderClaimService } from '../../services/founderClaim'
 import { importedContentService } from '../../services/importedContent'
 import { getBusiness } from '../../services/businesses'
+import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import type { FounderClaimRequest } from '../../types/founderClaim'
 import type { Founder } from '../../types'
 
@@ -38,16 +40,33 @@ function StatusPill({ status }: { status: string }) {
 function ClaimCard({
   claim,
   founder,
+  reviewedBy,
   onApprove,
   onReject,
 }: {
   claim: FounderClaimRequest
   founder?: Founder
+  reviewedBy: string
   onApprove: () => void
   onReject: () => void
 }) {
   const [adminNotes, setAdminNotes] = useState('')
   const [showNotes, setShowNotes] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  async function handleApprove() {
+    setActionError(null)
+    const result = await founderClaimService.approve(claim.id, reviewedBy, adminNotes || undefined)
+    if (result.success) onApprove()
+    else setActionError(result.error ?? 'Failed to approve claim. Please try again.')
+  }
+
+  async function handleReject() {
+    setActionError(null)
+    const result = await founderClaimService.reject(claim.id, reviewedBy, adminNotes || undefined)
+    if (result.success) onReject()
+    else setActionError(result.error ?? 'Failed to reject claim. Please try again.')
+  }
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
@@ -96,25 +115,27 @@ function ClaimCard({
               placeholder="Admin notes (optional)..."
             />
           )}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { founderClaimService.approve(claim.id, 'admin', adminNotes || undefined); onApprove() }}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ConfirmButton
+              label="Approve"
+              confirmLabel="Yes, approve"
+              message="Transfer ownership to this requester?"
+              onConfirm={() => void handleApprove()}
               className="px-4 py-1.5 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5538] transition-colors"
-            >
-              Approve
-            </button>
-            <button
-              onClick={() => { founderClaimService.reject(claim.id, 'admin', adminNotes || undefined); onReject() }}
+            />
+            <ConfirmButton
+              label="Reject"
+              confirmLabel="Yes, reject"
+              onConfirm={() => void handleReject()}
               className="px-4 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Reject
-            </button>
+            />
             <button
               onClick={() => setShowNotes(s => !s)}
               className="text-xs text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
             >
               {showNotes ? 'Hide notes' : 'Add notes'}
             </button>
+            {actionError && <p className="text-xs text-red-600 font-medium w-full">{actionError}</p>}
           </div>
         </div>
       )}
@@ -188,6 +209,8 @@ function FounderRow({ founder, onAction }: { founder: Founder; onAction: () => v
 }
 
 export function DashboardCuratedProfilesPage() {
+  const { user } = useAuth()
+  const reviewedBy = user?.email || user?.id || 'admin'
   const [activeTab, setActiveTab] = useState<Tab>('pending')
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)
@@ -280,6 +303,7 @@ export function DashboardCuratedProfilesPage() {
                     key={claim.id}
                     claim={claim}
                     founder={founder}
+                    reviewedBy={reviewedBy}
                     onApprove={refresh}
                     onReject={refresh}
                   />
@@ -339,6 +363,7 @@ export function DashboardCuratedProfilesPage() {
                     key={claim.id}
                     claim={claim}
                     founder={founder}
+                    reviewedBy={reviewedBy}
                     onApprove={refresh}
                     onReject={refresh}
                   />

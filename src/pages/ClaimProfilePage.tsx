@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
+import { useAuth } from '../contexts/AuthContext'
 import { getFounders } from '../services/founders'
 import { founderClaimService } from '../services/founderClaim'
 import { InnerContainer } from '../components/layout/PageContainer'
 
 export function ClaimProfilePage() {
   const { slug } = useParams<{ slug: string }>()
+  const { user } = useAuth()
   const founder = getFounders().find(f => f.slug === slug)
   usePageMeta({
     title:       founder ? `Claim ${founder.name}'s Profile` : 'Claim a Profile',
@@ -20,6 +22,7 @@ export function ClaimProfilePage() {
   const [message, setMessage]       = useState('')
   const [evidenceUrl, setEvidenceUrl] = useState('')
   const [submitted, setSubmitted]   = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [error, setError]           = useState('')
 
   // Not found
@@ -97,7 +100,7 @@ export function ClaimProfilePage() {
     )
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
@@ -110,14 +113,22 @@ export function ClaimProfilePage() {
       return
     }
 
-    founderClaimService.create({
-      founderId:        founder!.id,
-      requesterName:    name.trim(),
-      requesterEmail:   email.trim(),
-      requesterMessage: message.trim() || undefined,
-      evidenceUrl:      evidenceUrl.trim() || undefined,
-    })
-    setSubmitted(true)
+    setSubmitting(true)
+    try {
+      await founderClaimService.create({
+        founderId:        founder!.id,
+        requesterName:    name.trim(),
+        requesterEmail:   email.trim(),
+        requesterMessage: message.trim() || undefined,
+        evidenceUrl:      evidenceUrl.trim() || undefined,
+        requesterUserId:  user?.email === email.trim() ? user.id : undefined,
+      })
+      setSubmitted(true)
+    } catch {
+      setError('Something went wrong submitting your claim. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -297,9 +308,10 @@ export function ClaimProfilePage() {
                 <div className="flex items-center gap-4 pt-1">
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                    disabled={submitting}
+                    className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
                   >
-                    Submit Claim
+                    {submitting ? 'Submitting…' : 'Submit Claim'}
                   </button>
                   <Link
                     to={`/founders/${founder.slug}`}

@@ -286,7 +286,7 @@ export function DashboardCuratedFounderBuilderPage() {
         try {
           const input = importedContentToInput(item)
           const intel = villageContentIntelligenceService.analyse(input)
-          villageContentIntelligenceService.upsert(intel)
+          void villageContentIntelligenceService.upsert(intel)
           intelCount++
         } catch {
           // non-fatal

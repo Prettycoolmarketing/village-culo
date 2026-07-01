@@ -1,15 +1,15 @@
-import { mediaItems as staticData }   from '../data/media'
-import { founders as foundersStatic }   from '../data/founders'
-import { businesses as bizStatic }      from '../data/businesses'
-import { stories as storiesStatic }     from '../data/stories'
-import { libraryItems as libraryStatic } from '../data/library'
+import { readCache } from '../lib/entityStore'
 import { store } from '../lib/store'
-import type { Media, MediaFilter, Founder, Business, Story, LibraryItem } from '../types'
+import { getFounders } from './founders'
+import { getBusinesses } from './businesses'
+import { getStories } from './stories'
+import { getLibraryItems } from './library'
+import type { Media, MediaFilter } from '../types'
 
 const KEY = 'media'
 
 function live(): Media[] {
-  return store.get<Media>(KEY) ?? staticData
+  return readCache<Media>(KEY)
 }
 
 export function getMedia(filter?: MediaFilter): Media[] {
@@ -30,6 +30,8 @@ export function getMediaById(id: string): Media | undefined {
   return live().find(m => m.id === id)
 }
 
+// Not yet backed by Supabase — Media has no table in migration 002 (see Sprint 19B
+// audit's "still localStorage-only" list). Cache-only write, same as before.
 export function updateMedia(media: Media): void {
   store.update<Media>(KEY, media)
 }
@@ -45,22 +47,19 @@ export function getMediaUsedIn(mediaId: string): MediaUsedIn {
   const item = live().find(m => m.id === mediaId)
   if (!item) return { founders: [], businesses: [], stories: [], library: [] }
 
-  const liveFounders   = (store.get<Founder>('founders')     ?? foundersStatic)
-  const liveBiz        = (store.get<Business>('businesses')  ?? bizStatic)
-  const liveStories    = (store.get<Story>('stories')        ?? storiesStatic)
-  const liveLibrary    = (store.get<LibraryItem>('library')  ?? libraryStatic)
-
+  // Reuses the canonical service getters instead of re-implementing the
+  // cache-or-fallback read pattern a second time (see Sprint 19B audit).
   return {
-    founders: liveFounders
+    founders: getFounders()
       .filter(f => item.relatedFounderIds.includes(f.id))
       .map(f => ({ id: f.id, slug: f.slug, name: f.name, avatar: f.avatar })),
-    businesses: liveBiz
+    businesses: getBusinesses()
       .filter(b => item.relatedBusinessIds.includes(b.id))
       .map(b => ({ id: b.id, slug: b.slug, name: b.name, logo: b.logo })),
-    stories: liveStories
+    stories: getStories()
       .filter(s => item.relatedStoryIds.includes(s.id))
       .map(s => ({ id: s.id, title: s.title, slug: s.slug })),
-    library: liveLibrary
+    library: getLibraryItems()
       .filter(l => item.relatedLibraryItemIds.includes(l.id))
       .map(l => ({ id: l.id, title: l.title, slug: l.slug })),
   }

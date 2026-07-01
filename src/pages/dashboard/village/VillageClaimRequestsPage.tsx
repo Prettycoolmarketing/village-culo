@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../../contexts/AuthContext'
 import { getFounders } from '../../../services/founders'
 import { founderClaimService } from '../../../services/founderClaim'
+import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { FounderClaimRequest, FounderClaimStatus } from '../../../types/founderClaim'
 import type { Founder } from '../../../types'
 
@@ -25,14 +27,31 @@ function StatusPill({ status }: { status: string }) {
 function ClaimRow({
   claim,
   founder,
+  reviewedBy,
   onRefresh,
 }: {
   claim: FounderClaimRequest
   founder?: Founder
+  reviewedBy: string
   onRefresh: () => void
 }) {
   const [adminNotes, setAdminNotes] = useState(claim.adminNotes ?? '')
   const [notesOpen, setNotesOpen]   = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  async function handleApprove() {
+    setActionError(null)
+    const result = await founderClaimService.approve(claim.id, reviewedBy, adminNotes || undefined)
+    if (result.success) onRefresh()
+    else setActionError(result.error ?? 'Failed to approve claim. Please try again.')
+  }
+
+  async function handleReject() {
+    setActionError(null)
+    const result = await founderClaimService.reject(claim.id, reviewedBy, adminNotes || undefined)
+    if (result.success) onRefresh()
+    else setActionError(result.error ?? 'Failed to reject claim. Please try again.')
+  }
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
@@ -89,25 +108,27 @@ function ClaimRow({
               placeholder="Admin notes (optional)..."
             />
           )}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { founderClaimService.approve(claim.id, 'admin', adminNotes || undefined); onRefresh() }}
+          <div className="flex items-center gap-2 flex-wrap">
+            <ConfirmButton
+              label="Approve"
+              confirmLabel="Yes, approve"
+              message="Transfer ownership to this requester?"
+              onConfirm={() => void handleApprove()}
               className="px-4 py-1.5 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5538] transition-colors"
-            >
-              Approve
-            </button>
-            <button
-              onClick={() => { founderClaimService.reject(claim.id, 'admin', adminNotes || undefined); onRefresh() }}
+            />
+            <ConfirmButton
+              label="Reject"
+              confirmLabel="Yes, reject"
+              onConfirm={() => void handleReject()}
               className="px-4 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Reject
-            </button>
+            />
             <button
               onClick={() => setNotesOpen(o => !o)}
               className="text-xs text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
             >
               {notesOpen ? 'Hide notes' : 'Add notes'}
             </button>
+            {actionError && <p className="text-xs text-red-600 font-medium w-full">{actionError}</p>}
           </div>
         </div>
       )}
@@ -121,6 +142,8 @@ type FilterStatus = 'all' | FounderClaimStatus
 type SortOrder = 'newest' | 'oldest'
 
 export function VillageClaimRequestsPage() {
+  const { user } = useAuth()
+  const reviewedBy = user?.email || user?.id || 'admin'
   const [tick, setTick]         = useState(0)
   const [search, setSearch]     = useState('')
   const [status, setStatus]     = useState<FilterStatus>('all')
@@ -229,6 +252,7 @@ export function VillageClaimRequestsPage() {
               key={c.id}
               claim={c}
               founder={founders.find(f => f.id === c.founderId)}
+              reviewedBy={reviewedBy}
               onRefresh={refresh}
             />
           ))}

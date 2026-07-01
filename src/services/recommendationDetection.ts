@@ -57,10 +57,15 @@ function disclosureTypeForProgram(bizId: string): DisclosureType {
 
 // ─── Duplicate check ──────────────────────────────────────────────────────────
 
-function alreadyDetected(founderId: string, storyId: string, entityName: string): boolean {
-  return recommendationService
-    .getAll({ founderId, storyId })
-    .some(r => r.entityName.toLowerCase() === entityName.toLowerCase())
+// `pending` covers recommendations already queued earlier in the same run but not
+// yet written (writes are now batched at the end of runDetection) — without this,
+// pass 2 wouldn't see what pass 1 just queued for the same story.
+function alreadyDetected(founderId: string, storyId: string, entityName: string, pending: Recommendation[]): boolean {
+  const name = entityName.toLowerCase()
+  return (
+    recommendationService.getAll({ founderId, storyId }).some(r => r.entityName.toLowerCase() === name) ||
+    pending.some(r => r.founderId === founderId && r.storyId === storyId && r.entityName.toLowerCase() === name)
+  )
 }
 
 // ─── Detection result ─────────────────────────────────────────────────────────
@@ -69,11 +74,15 @@ export interface DetectionResult {
   detected: number
   skipped:  number
   stories:  number
+  error?:   string
 }
 
 // ─── Main Detection Function ──────────────────────────────────────────────────
+// Collects every detected recommendation and writes them in one batch at the end
+// instead of one Supabase round-trip + cache rewrite per mention — a single scan
+// across many stories could otherwise mean dozens of individual writes.
 
-export function runDetection(founderId: string): DetectionResult {
+export async function runDetection(founderId: string): Promise<DetectionResult> {
   const stories     = getStories({ founderId })
   const businesses  = getBusinesses()
   const profile     = publisherPartnerProfileService.get(founderId)
@@ -84,6 +93,7 @@ export function runDetection(founderId: string): DetectionResult {
   let detected = 0
   let skipped  = 0
   const ts     = new Date().toISOString()
+  const toWrite: Recommendation[] = []
 
   for (const story of stories) {
     const text = [story.title, story.summary, story.blog ?? ''].join(' ')
@@ -94,7 +104,7 @@ export function runDetection(founderId: string): DetectionResult {
       const name = biz.name?.trim()
       if (!name || name.length < MIN_NAME_LENGTH) continue
 
-      if (alreadyDetected(founderId, story.id, name)) { skipped++; continue }
+      if (alreadyDetected(founderId, story.id, name, toWrite)) { skipped++; continue }
 
       const matchCount = countMatches(text, name)
       if (matchCount === 0) continue
@@ -149,7 +159,7 @@ export function runDetection(founderId: string): DetectionResult {
         updatedAt:        ts,
       }
 
-      recommendationService.upsert(rec)
+      toWrite.push(rec)
       detected++
     }
 
@@ -160,7 +170,7 @@ export function runDetection(founderId: string): DetectionResult {
       if (!term || term.length < MIN_NAME_LENGTH) continue
 
       // Skip if already captured via business match
-      if (alreadyDetected(founderId, story.id, term)) continue
+      if (alreadyDetected(founderId, story.id, term, toWrite)) continue
 
       const matchCount = countMatches(text, term)
       if (matchCount === 0) continue
@@ -194,8 +204,15 @@ export function runDetection(founderId: string): DetectionResult {
         updatedAt:        ts,
       }
 
-      recommendationService.upsert(rec)
+      toWrite.push(rec)
       detected++
+    }
+  }
+
+  if (toWrite.length > 0) {
+    const result = await recommendationService.upsertBatch(toWrite)
+    if (!result.success) {
+      return { detected: 0, skipped, stories: stories.length, error: result.error ?? 'Failed to save detected recommendations.' }
     }
   }
 

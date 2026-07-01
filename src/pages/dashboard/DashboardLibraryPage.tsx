@@ -16,6 +16,7 @@ import type { LibraryItem } from '../../types'
 function LibraryDetailPane({ item, onClose, onSave }: { item: LibraryItem; onClose: () => void; onSave: (i: LibraryItem) => void }) {
   const [tab, setTab]     = useState('overview')
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const missing    = getLibraryMissingItems(item)
   const featuredIn = getLibraryItemFeaturedIn(item.id)
@@ -23,10 +24,15 @@ function LibraryDetailPane({ item, onClose, onSave }: { item: LibraryItem; onClo
   const itemFounders = getFounders().filter(f => item.authorFounderId === f.id)
   const itemBizs     = getBusinesses().filter(b => item.businessId === b.id)
 
-  function handleSave() {
-    updateLibraryItem(item)
-    setSaved(true)
-    onSave(item)
+  async function handleSave() {
+    setSaveError(null)
+    const result = await updateLibraryItem(item)
+    if (result.success) {
+      setSaved(true)
+      onSave(item)
+    } else {
+      setSaveError(result.error ?? 'Save failed. Please try again.')
+    }
   }
 
   const TABS = [
@@ -45,7 +51,8 @@ function LibraryDetailPane({ item, onClose, onSave }: { item: LibraryItem; onClo
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-2">
           {saved && <span className="text-xs text-green-600">Saved ✓</span>}
-          <button onClick={handleSave}
+          {saveError && <span className="text-xs text-red-600">{saveError}</span>}
+          <button onClick={() => void handleSave()}
             className="px-2.5 py-1 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
             Save
           </button>

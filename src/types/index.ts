@@ -180,6 +180,9 @@ export interface Service {
   expertiseIds: string[]
   ctaLabel: string
   ctaUrl: string
+  // Optional: services with no status are treated as 'published' (the only state
+  // they could ever be in before Sprint 19B added a real status column/policy).
+  status?: Status
 }
 
 // ─── Product ───────────────────────────────────────────────────────────────────
@@ -369,6 +372,10 @@ export interface Founder {
   mediaMentionIds?: string[]
   timeline?: TimelineEntry[]
   // Profile ownership (Sprint 15)
+  // userId: set only when the founder created/published this profile themselves
+  // (Onboarding self-publish). Never set by admin-driven writes (curated builder,
+  // bulk import, Village HQ edits) — see getCurrentFounder() resolution order.
+  userId?: string
   profileStatus?: FounderProfileStatus
   curatedBy?: string
   curatedAt?: string
@@ -447,6 +454,10 @@ export interface Story {
   // Relationships
   ideaIds: string[]
   relatedStoryIds: string[]
+  // Set when this Story was built from an ImportedContent item via the Story
+  // Builder's "Turn into Story" entry point — the source ImportedContent record
+  // mirrors this back via its own relatedStoryId.
+  importedContentId?: string
   // CTA
   ctaLabel: string
   ctaUrl: string

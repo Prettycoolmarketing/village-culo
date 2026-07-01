@@ -66,9 +66,12 @@ function SectionLabel({ label }: { label: string }) {
 
 // ─── DashboardLayout ────────────────────────────────────────────────────────────
 
+const VILLAGE_HQ_ROLES = ['admin', 'editor', 'moderator']
+
 export function DashboardLayout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const hasVillageHQAccess = !!user && VILLAGE_HQ_ROLES.includes(user.role)
 
   async function handleSignOut() {
     await signOut()
@@ -126,15 +129,19 @@ export function DashboardLayout() {
           <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} />
           <NavItem to="/dashboard/revenue"        label="Revenue"         icon={<Icon path={icons.revenue}     />} />
 
-          <SectionLabel label="Village HQ" />
-          <NavItem to="/dashboard/village"           label="HQ Overview"       icon={<Icon path={icons.hq}         />} />
-          <NavItem to="/dashboard/village/founders"  label="Curated Founders"  icon={<Icon path={icons.curated}    />} />
-          <NavItem to="/dashboard/village/imports"   label="Bulk Import"       icon={<Icon path={icons.import}     />} />
-          <NavItem to="/dashboard/village/claims"    label="Claim Requests"    icon={<Icon path={icons.claims}     />} />
-          <NavItem to="/dashboard/village/emails"    label="Email Export"      icon={<Icon path={icons.email}      />} />
-          <NavItem to="/dashboard/village/featured"  label="Featured Content"  icon={<Icon path={icons.featured}   />} />
-          <NavItem to="/dashboard/village/analytics" label="Analytics"         icon={<Icon path={icons.analytics}  />} />
-          <NavItem to="/dashboard/village/settings"  label="HQ Settings"       icon={<Icon path={icons.settings}   />} />
+          {hasVillageHQAccess && (
+            <>
+              <SectionLabel label="Village HQ" />
+              <NavItem to="/dashboard/village"           label="HQ Overview"       icon={<Icon path={icons.hq}         />} />
+              <NavItem to="/dashboard/village/founders"  label="Curated Founders"  icon={<Icon path={icons.curated}    />} />
+              <NavItem to="/dashboard/village/imports"   label="Bulk Import"       icon={<Icon path={icons.import}     />} />
+              <NavItem to="/dashboard/village/claims"    label="Claim Requests"    icon={<Icon path={icons.claims}     />} />
+              <NavItem to="/dashboard/village/emails"    label="Email Export"      icon={<Icon path={icons.email}      />} />
+              <NavItem to="/dashboard/village/featured"  label="Featured Content"  icon={<Icon path={icons.featured}   />} />
+              <NavItem to="/dashboard/village/analytics" label="Analytics"         icon={<Icon path={icons.analytics}  />} />
+              <NavItem to="/dashboard/village/settings"  label="HQ Settings"       icon={<Icon path={icons.settings}   />} />
+            </>
+          )}
 
           <SectionLabel label="Tools" />
           <NavItem to="/dashboard/import-sources" label="Import Sources"  icon={<Icon path={icons.import}   />} />

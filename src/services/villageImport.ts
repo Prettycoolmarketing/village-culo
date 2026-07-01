@@ -3,6 +3,7 @@ import { getFounderBySlug, updateFounder } from './founders'
 import { getBusinessBySlug, updateBusiness } from './businesses'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { importedContentToInput, villageContentIntelligenceService } from './villageIntelligence'
+import type { WriteResult } from '../lib/entityStore'
 import { locations } from '../data/locations'
 import { industries } from '../data/industries'
 import { topics as ALL_TOPICS } from '../data/topics'
@@ -227,7 +228,18 @@ export function validateVIF(pkg: VillageImportPackage): VIFValidationResult {
 
 // ─── Import ───────────────────────────────────────────────────────────────────
 
-export function importVIF(pkg: VillageImportPackage, options: VIFImportOptions): VIFImportResult {
+/**
+ * Awaits a write and retries it once on failure before giving up — bulk import
+ * is exactly the situation where a single transient network hiccup shouldn't
+ * sink one founder's record out of a 500-row batch.
+ */
+async function writeWithRetry(write: () => Promise<WriteResult>): Promise<WriteResult> {
+  const first = await write()
+  if (first.success) return first
+  return write()
+}
+
+export async function importVIF(pkg: VillageImportPackage, options: VIFImportOptions): Promise<VIFImportResult> {
   const now = new Date().toISOString()
   const created: VIFImportedFounder[] = []
   const skipped: string[] = []
@@ -299,7 +311,10 @@ export function importVIF(pkg: VillageImportPackage, options: VIFImportOptions):
             featured:    false,
             createdAt:   now,
           }
-          updateBusiness(newBiz)
+          const bizResult = await writeWithRetry(() => updateBusiness(newBiz))
+          if (!bizResult.success) {
+            throw new Error(`Failed to save business "${vb.name}": ${bizResult.error ?? 'unknown error'}`)
+          }
           businessesCreated++
           if (bi === 0 && !primaryBusinessId) primaryBusinessId = newBiz.id
         }
@@ -335,7 +350,10 @@ export function importVIF(pkg: VillageImportPackage, options: VIFImportOptions):
         curatedAt:    now,
         claimNotes:   claimNotes || undefined,
       }
-      updateFounder(founder)
+      const founderResult = await writeWithRetry(() => updateFounder(founder))
+      if (!founderResult.success) {
+        throw new Error(`Failed to save founder: ${founderResult.error ?? 'unknown error'}`)
+      }
 
       // Content
       if (f.content && f.content.length > 0) {
@@ -371,17 +389,23 @@ export function importVIF(pkg: VillageImportPackage, options: VIFImportOptions):
             locations:  c.locations ?? [],
             publishedAt: c.publishedAt,
           }
-          importedContentService.upsert(item)
+          const contentResult = await writeWithRetry(() => importedContentService.upsert(item))
+          if (!contentResult.success) {
+            // Non-fatal to the founder as a whole — record it and move on to the
+            // next content item rather than discarding everything already saved.
+            errors.push({ name: `${displayName} — "${item.title}"`, error: contentResult.error ?? 'Failed to save imported content' })
+            continue
+          }
           contentCreated++
 
           if (options.runIntelligence && (contentStatus === 'published' || contentStatus === 'featured')) {
             try {
               const input = importedContentToInput(item)
               const intel = villageContentIntelligenceService.analyse(input)
-              villageContentIntelligenceService.upsert(intel)
-              intelGenerated++
+              const intelResult = await writeWithRetry(() => villageContentIntelligenceService.upsert(intel))
+              if (intelResult.success) intelGenerated++
             } catch {
-              // non-fatal
+              // non-fatal — intelligence generation failing shouldn't fail the import
             }
           }
         }

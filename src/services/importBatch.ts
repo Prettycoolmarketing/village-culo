@@ -1,7 +1,9 @@
-const PREFIX = 'culo_v1_'
-const KEY    = 'village_import_batches'
-
+import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
+import { store } from '../lib/store'
 import type { VIFSource } from '../types/villageImport'
+
+const KEY = 'village_import_batches'
+const TABLE = 'import_batches'
 
 export interface ImportBatch {
   id: string
@@ -17,39 +19,40 @@ export interface ImportBatch {
   intelGenerated: number
 }
 
-function load(): ImportBatch[] {
-  try {
-    const raw = localStorage.getItem(PREFIX + KEY)
-    return raw ? (JSON.parse(raw) as ImportBatch[]) : []
-  } catch {
-    return []
-  }
-}
-
-function save(batches: ImportBatch[]): void {
-  localStorage.setItem(PREFIX + KEY, JSON.stringify(batches))
-}
-
 export const importBatchService = {
   getAll(): ImportBatch[] {
-    return load()
+    return readCache<ImportBatch>(KEY).sort((a, b) => b.importedAt.localeCompare(a.importedAt))
   },
 
-  save(batch: Omit<ImportBatch, 'id' | 'importedAt'>): ImportBatch {
+  // Village HQ admin tooling only — RLS requires is_village_admin() to write this table.
+  async save(batch: Omit<ImportBatch, 'id' | 'importedAt'>): Promise<ImportBatch & { write: WriteResult }> {
     const record: ImportBatch = {
       ...batch,
       id: crypto.randomUUID(),
       importedAt: new Date().toISOString(),
     }
-    save([record, ...load()])
-    return record
+    const write = await writeEntity<ImportBatch>({
+      cacheKey: KEY,
+      item: record,
+      table: TABLE,
+      toRow: (b, userId) => ({
+        id: b.id,
+        created_by: userId,
+        batch_name: b.batchName,
+        founder_count: b.founderCount,
+        imported_at: b.importedAt,
+        data: b,
+      }),
+    })
+    return { ...record, write }
   },
 
-  delete(id: string): void {
-    save(load().filter(b => b.id !== id))
+  delete(id: string): Promise<WriteResult> {
+    return deleteEntity({ cacheKey: KEY, id, table: TABLE })
   },
 
-  clear(): void {
-    save([])
+  async clear(): Promise<void> {
+    for (const batch of this.getAll()) await this.delete(batch.id)
+    store.set(KEY, [])
   },
 }

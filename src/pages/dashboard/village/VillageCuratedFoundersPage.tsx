@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { getFounders, updateFounder } from '../../../services/founders'
+import { getFounders, updateFoundersBatch, deleteFoundersBatch } from '../../../services/founders'
 import { getBusinesses } from '../../../services/businesses'
 import { importedContentService } from '../../../services/importedContent'
 import { founderClaimService } from '../../../services/founderClaim'
-import { store } from '../../../lib/store'
+import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { Founder } from '../../../types'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
@@ -63,7 +63,13 @@ function BulkBar({
         <button onClick={onMarkCurated} className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">Mark Curated</button>
         <button onClick={onPublish}     className="text-xs px-3 py-1.5 bg-[#5E6B4A] text-white rounded-lg font-semibold hover:bg-[#4a5538] transition-colors">Publish</button>
         <button onClick={onHide}        className="text-xs px-3 py-1.5 bg-[#6B7280] text-white rounded-lg font-semibold hover:bg-[#4B5563] transition-colors">Hide</button>
-        <button onClick={onArchive}     className="text-xs px-3 py-1.5 bg-red-600   text-white rounded-lg font-semibold hover:bg-red-700    transition-colors">Archive</button>
+        <ConfirmButton
+          label="Archive"
+          confirmLabel="Yes, archive"
+          message={`Remove ${selected.size} founder${selected.size === 1 ? '' : 's'}?`}
+          onConfirm={onArchive}
+          className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+        />
         <button onClick={onExport}      className="text-xs px-3 py-1.5 bg-[#C86A43] text-white rounded-lg font-semibold hover:bg-[#b05a35] transition-colors">Export CSV</button>
       </div>
       <div className="flex gap-1">
@@ -79,6 +85,7 @@ function BulkBar({
 
 export function VillageCuratedFoundersPage() {
   const [tick, setTick]           = useState(0)
+  const [bulkError, setBulkError] = useState<string | null>(null)
   const [search, setSearch]       = useState('')
   const [sortBy, setSortBy]       = useState<'newest' | 'oldest' | 'name-az' | 'name-za'>('newest')
   const [filterIndustry, setFilterIndustry] = useState('all')
@@ -156,19 +163,25 @@ export function VillageCuratedFoundersPage() {
     return list
   }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, founders, contentCountByFounder, claimByFounder, claimEmailByFounder])
 
-  // Bulk operations
-  function bulkUpdate(ids: Set<string>, patch: Partial<Founder>) {
+  // Bulk operations — one Supabase upsert/delete + one cache rewrite per batch,
+  // not one round-trip per founder (see Sprint 19B-Fix audit for the O(n²) bug
+  // this replaces).
+  async function bulkUpdate(ids: Set<string>, patch: Partial<Founder>) {
+    setBulkError(null)
     const allFounders = getFounders()
-    for (const id of ids) {
-      const f = allFounders.find(fo => fo.id === id)
-      if (f) updateFounder({ ...f, ...patch })
-    }
+    const targets = Array.from(ids)
+      .map(id => allFounders.find(fo => fo.id === id))
+      .filter((f): f is Founder => !!f)
+      .map(f => ({ ...f, ...patch }))
+    const result = await updateFoundersBatch(targets)
+    if (!result.success) setBulkError(result.error ?? `Failed to update ${ids.size} founder${ids.size === 1 ? '' : 's'}. Try again.`)
     refresh()
   }
 
-  function archiveSelected(ids: Set<string>) {
-    const allFounders = store.get<Founder>('founders') ?? []
-    store.set('founders', allFounders.filter(f => !ids.has(f.id)))
+  async function archiveSelected(ids: Set<string>) {
+    setBulkError(null)
+    const result = await deleteFoundersBatch(Array.from(ids))
+    if (!result.success) setBulkError(result.error ?? `Failed to archive ${ids.size} founder${ids.size === 1 ? '' : 's'}. Try again.`)
     refresh()
   }
 
@@ -441,16 +454,22 @@ export function VillageCuratedFoundersPage() {
         )}
       </div>
 
+      {bulkError && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg shadow-sm z-20">
+          {bulkError}
+        </div>
+      )}
+
       {/* Bulk action bar */}
       <BulkBar
         selected={selected}
         total={filtered.length}
         onSelectAll={() => setSelected(new Set(filtered.map(f => f.id)))}
         onClearAll={() => setSelected(new Set())}
-        onMarkCurated={() => bulkUpdate(selected, { profileStatus: 'village-curated', isClaimable: true })}
-        onPublish={() => bulkUpdate(selected, { status: 'published' })}
-        onHide={() => bulkUpdate(selected, { status: 'archived' })}
-        onArchive={() => archiveSelected(selected)}
+        onMarkCurated={() => void bulkUpdate(selected, { profileStatus: 'village-curated', isClaimable: true })}
+        onPublish={() => void bulkUpdate(selected, { status: 'published' })}
+        onHide={() => void bulkUpdate(selected, { status: 'archived' })}
+        onArchive={() => void archiveSelected(selected)}
         onExport={() => exportSelected(selected)}
       />
     </div>

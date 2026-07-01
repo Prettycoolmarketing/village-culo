@@ -1,13 +1,11 @@
-import { libraryItems as staticData } from '../data/library'
-import { store } from '../lib/store'
-import { isSupabaseConfigured } from '../lib/supabase'
-import { dbUpsertLibraryItem } from '../lib/db'
+import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
 import type { LibraryItem, LibraryFilter } from '../types'
 
 const KEY = 'library'
+const TABLE = 'library_items'
 
 function live(): LibraryItem[] {
-  return store.get<LibraryItem>(KEY) ?? staticData
+  return readCache<LibraryItem>(KEY)
 }
 
 export function getLibraryItems(filter?: LibraryFilter): LibraryItem[] {
@@ -32,7 +30,20 @@ export function getLibraryItemBySlug(slug: string): LibraryItem | undefined {
   return live().find(i => i.slug === slug)
 }
 
-export function updateLibraryItem(item: LibraryItem): void {
-  store.update<LibraryItem>(KEY, item)
-  if (isSupabaseConfigured) void dbUpsertLibraryItem(item)
+export async function updateLibraryItem(item: LibraryItem): Promise<WriteResult> {
+  return writeEntity<LibraryItem>({
+    cacheKey: KEY,
+    item,
+    table: TABLE,
+    toRow: (i, userId) => ({
+      id: i.id,
+      user_id: userId,
+      founder_id: i.authorFounderId,
+      status: i.status,
+      featured: i.featured,
+      slug: i.slug,
+      visibility: 'public',
+      data: i,
+    }),
+  })
 }

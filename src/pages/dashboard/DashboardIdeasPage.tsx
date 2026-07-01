@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { ideas as allIdeas } from '../../data/ideas'
-import { stories } from '../../data/stories'
-import { founders } from '../../data/founders'
-import { businesses } from '../../data/businesses'
+import { getIdeas } from '../../services/ideas'
+import { getStories } from '../../services/stories'
+import { getFounders } from '../../services/founders'
+import { getBusinesses } from '../../services/businesses'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
@@ -15,9 +15,9 @@ function IdeaDetailPane({ idea, onClose }: { idea: Idea; onClose: () => void }) 
   const [tab, setTab] = useState('overview')
 
   const featuredIn     = getIdeaFeaturedIn(idea.id)
-  const relatedStories = stories.filter(s => idea.relatedStoryIds.includes(s.id))
-  const relatedFnders  = founders.filter(f => idea.relatedFounderIds.includes(f.id))
-  const relatedBizs    = businesses.filter(b => idea.relatedBusinessIds.includes(b.id))
+  const relatedStories = getStories({ ids: idea.relatedStoryIds })
+  const relatedFnders  = getFounders({ ids: idea.relatedFounderIds })
+  const relatedBizs    = getBusinesses({ ids: idea.relatedBusinessIds })
 
   const TABS = [
     { key: 'overview',      label: 'Overview'      },
@@ -99,6 +99,7 @@ export function DashboardIdeasPage() {
   const [search,     setSearch]     = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  const allIdeas = getIdeas()
   const ideaList = search
     ? allIdeas.filter(i => i.title.toLowerCase().includes(search.toLowerCase()) || i.description.toLowerCase().includes(search.toLowerCase()))
     : allIdeas

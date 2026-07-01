@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { getFounders } from '../../services/founders'
+import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
 import {
   importedContentService,
@@ -100,7 +101,7 @@ function VillageIntelligencePreview({ draft }: { draft: ImportedContent }) {
     setAnalysing(true)
     const input = importedContentToInput(draft)
     const result = villageContentIntelligenceService.analyse(input)
-    villageContentIntelligenceService.upsert(result)
+    void villageContentIntelligenceService.upsert(result)
     setIntel(result)
     setAnalysing(false)
     if (!open) setOpen(true)
@@ -708,6 +709,17 @@ function SavedRow({
         {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
       <div className="flex items-center gap-2 shrink-0">
+        {item.relatedStoryId ? (
+          <span className="text-xs text-[#5E6B4A] font-medium">✓ Story published</span>
+        ) : (
+          <Link
+            to="/dashboard/publish"
+            state={{ importedContentId: item.id }}
+            className="text-xs text-[#C86A43] font-semibold hover:underline"
+          >
+            Turn into Story →
+          </Link>
+        )}
         <button onClick={onEdit} className="text-xs text-[#6B7280] hover:text-[#C86A43] transition-colors">
           Edit
         </button>
@@ -731,12 +743,13 @@ function SavedRow({
 
 export function DashboardImportContentPage() {
   const { user } = useAuth()
-  const founderId = getFounders()[0]?.id ?? user?.id ?? 'dev-user'
+  const founderId = getCurrentFounderId(user) ?? 'dev-user'
 
   const [urlInput, setUrlInput] = useState('')
   const [urlError, setUrlError] = useState('')
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [allItems, setAllItems] = useState<ImportedContent[]>([])
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   function loadItems() {
     setAllItems(
@@ -759,13 +772,18 @@ export function DashboardImportContentPage() {
     setUrlInput('')
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!draft) return
-    importedContentService.upsert(draft)
+    setSaveError(null)
+    const result = await importedContentService.upsert(draft)
+    if (!result.success) {
+      setSaveError(result.error ?? 'Save failed. Please try again.')
+      return
+    }
     if (draft.status === 'published' || draft.status === 'featured') {
       const input = importedContentToInput(draft)
-      const result = villageContentIntelligenceService.analyse(input)
-      villageContentIntelligenceService.upsert(result)
+      const intel = villageContentIntelligenceService.analyse(input)
+      void villageContentIntelligenceService.upsert(intel)
     }
     setDraft(null)
     loadItems()
@@ -850,10 +868,13 @@ export function DashboardImportContentPage() {
           <p className="text-sm font-semibold text-[#2D2A26] mb-3">
             {allItems.some(i => i.id === draft.id) ? 'Edit imported content' : 'Review & save your import'}
           </p>
+          {saveError && (
+            <p className="text-sm text-red-600 font-medium mb-2">{saveError}</p>
+          )}
           <EditForm
             draft={draft}
             onChange={setDraft}
-            onSave={handleSave}
+            onSave={() => void handleSave()}
             onCancel={handleCancel}
           />
         </div>

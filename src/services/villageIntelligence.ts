@@ -1,4 +1,4 @@
-import { store } from '../lib/store'
+import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
 import { getBusiness } from './businesses'
 import type {
   VillageContentIntelligence,
@@ -12,6 +12,7 @@ import type { ImportedContent } from '../types/importedContent'
 import type { Story } from '../types'
 
 const KEY             = 'village_intelligence'
+const TABLE            = 'village_content_intelligence'
 const ENGINE_VERSION  = '1.0'
 
 function now() { return new Date().toISOString() }
@@ -443,7 +444,7 @@ function buildSummary(input: AnalysisInput): string {
 
 function findRelatedContentIds(currentId: string, topics: string[]): string[] {
   if (topics.length === 0) return []
-  const all = store.get<VillageContentIntelligence>(KEY) ?? []
+  const all = readCache<VillageContentIntelligence>(KEY)
   return all
     .filter(i => i.contentId !== currentId)
     .map(i => ({
@@ -460,7 +461,7 @@ function findRelatedContentIds(currentId: string, topics: string[]): string[] {
 
 function findRelatedBusinessIds(topics: string[]): string[] {
   if (topics.length === 0) return []
-  const all = store.get<VillageContentIntelligence>(KEY) ?? []
+  const all = readCache<VillageContentIntelligence>(KEY)
   const ids = new Set<string>()
   for (const item of all) {
     if (item.businessId && item.primaryTopics.some(t => topics.includes(t))) {
@@ -472,7 +473,7 @@ function findRelatedBusinessIds(topics: string[]): string[] {
 
 function findRelatedFounderIds(currentFounderId: string, topics: string[]): string[] {
   if (topics.length === 0) return []
-  const all = store.get<VillageContentIntelligence>(KEY) ?? []
+  const all = readCache<VillageContentIntelligence>(KEY)
   const ids = new Set<string>()
   for (const item of all) {
     if (item.founderId !== currentFounderId && item.primaryTopics.some(t => topics.includes(t))) {
@@ -618,27 +619,39 @@ export const villageContentIntelligenceService = {
     return runAnalysis(input, existing?.id)
   },
 
-  upsert(item: VillageContentIntelligence): void {
-    store.update<VillageContentIntelligence>(KEY, item)
+  upsert(item: VillageContentIntelligence): Promise<WriteResult> {
+    return writeEntity<VillageContentIntelligence>({
+      cacheKey: KEY,
+      item,
+      table: TABLE,
+      toRow: i => ({
+        id: i.id,
+        content_type: i.contentType,
+        content_id: i.contentId,
+        founder_id: i.founderId,
+        business_id: i.businessId ?? null,
+        data: i,
+      }),
+    })
   },
 
   get(id: string): VillageContentIntelligence | undefined {
-    return (store.get<VillageContentIntelligence>(KEY) ?? []).find(i => i.id === id)
+    return (readCache<VillageContentIntelligence>(KEY)).find(i => i.id === id)
   },
 
   getByContent(contentType: VillageContentType, contentId: string): VillageContentIntelligence | undefined {
-    return (store.get<VillageContentIntelligence>(KEY) ?? [])
+    return (readCache<VillageContentIntelligence>(KEY))
       .find(i => i.contentType === contentType && i.contentId === contentId)
   },
 
   getByFounder(founderId: string): VillageContentIntelligence[] {
-    return (store.get<VillageContentIntelligence>(KEY) ?? [])
+    return (readCache<VillageContentIntelligence>(KEY))
       .filter(i => i.founderId === founderId)
       .sort((a, b) => b.generatedAt.localeCompare(a.generatedAt))
   },
 
   getRelated(item: VillageContentIntelligence, limit = 6): VillageContentIntelligence[] {
-    const all = store.get<VillageContentIntelligence>(KEY) ?? []
+    const all = readCache<VillageContentIntelligence>(KEY)
     return all
       .filter(i => i.id !== item.id)
       .map(i => ({
@@ -657,6 +670,6 @@ export const villageContentIntelligenceService = {
   },
 
   getAll(): VillageContentIntelligence[] {
-    return store.get<VillageContentIntelligence>(KEY) ?? []
+    return readCache<VillageContentIntelligence>(KEY)
   },
 }

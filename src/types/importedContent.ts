@@ -30,6 +30,10 @@ export interface ImportedContent {
   canonicalUrl?: string
   visibility: ImportedContentVisibility
 
+  // Set once this import has been turned into a published Story via the Story
+  // Builder — the Story mirrors this back via its own importedContentId.
+  relatedStoryId?: string
+
   // Transcript
   transcriptText?: string
   transcriptSource?: 'manual' | 'youtube' | 'platform' | 'generated' | 'unknown'

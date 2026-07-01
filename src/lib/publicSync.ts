@@ -1,31 +1,30 @@
 import { supabase } from './supabase'
-import { store } from './store'
-import type { Story, Founder, Business } from '../types'
+import { pullVisibleRows } from './entityStore'
+import { villageSettingsService } from '../services/villageSettings'
 
-function mergeIntoStore<T extends { id: string }>(key: string, remote: T[]): void {
-  if (remote.length === 0) return
-  const local  = store.get<T>(key) ?? []
-  const merged = [...local]
-  for (const item of remote) {
-    const idx = merged.findIndex(l => l.id === item.id)
-    if (idx >= 0) merged[idx] = item
-    else merged.push(item)
-  }
-  store.set(key, merged)
-}
+// Public-read tables that should populate the cache for anonymous visitors too —
+// scoped by each table's own public-read RLS policy (published/featured content,
+// public trust profiles, public village content intelligence).
+const PUBLIC_TABLES: Array<{ table: string; cacheKey: string }> = [
+  { table: 'stories',                      cacheKey: 'stories' },
+  { table: 'founders',                     cacheKey: 'founders' },
+  { table: 'businesses',                   cacheKey: 'businesses' },
+  { table: 'library_items',                cacheKey: 'library' },
+  { table: 'services',                     cacheKey: 'services' },
+  { table: 'ideas',                        cacheKey: 'ideas' },
+  { table: 'events',                       cacheKey: 'events' },
+  { table: 'village_content_intelligence', cacheKey: 'village_intelligence' },
+  { table: 'trust_profiles',               cacheKey: 'partnership_trust_profiles' },
+]
 
-// Fetches all published/featured content from Supabase (no user filter — uses public read policies).
-// Called once on app init so Village public pages show real Supabase data, not just seed data.
+// Called once on app init so Village public pages show real Supabase data, not just
+// whatever was last cached locally. Never falls back to static seed data — an empty
+// result here just means the public cache stays whatever it already was/empty.
 export async function syncPublishedContent(): Promise<void> {
   if (!supabase) return
 
-  const [stories, founders, businesses] = await Promise.all([
-    supabase.from('stories').select('data').in('status', ['published', 'featured']),
-    supabase.from('founders').select('data').in('status', ['published', 'featured']),
-    supabase.from('businesses').select('data').in('status', ['published', 'featured']),
-  ])
+  await Promise.all(PUBLIC_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey)))
 
-  if (stories.data?.length)    mergeIntoStore<Story>('stories',       stories.data.map(r => r.data as Story))
-  if (founders.data?.length)   mergeIntoStore<Founder>('founders',   founders.data.map(r => r.data as Founder))
-  if (businesses.data?.length) mergeIntoStore<Business>('businesses', businesses.data.map(r => r.data as Business))
+  const { data, error } = await supabase.from('village_settings').select('data').eq('id', 'default').maybeSingle()
+  if (!error && data) villageSettingsService.cacheFromRemote(data.data as Partial<import('../types/villageSettings').VillageSettings>)
 }

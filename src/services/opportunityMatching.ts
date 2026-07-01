@@ -95,11 +95,14 @@ export interface MatchResult {
   generated: number
   skipped:   number
   businesses: number
+  error?:    string
 }
 
 // ─── Main matching function ───────────────────────────────────────────────────
+// Collects every generated opportunity and writes them in one batch at the end —
+// see the equivalent note in recommendationDetection.ts.
 
-export function runMatching(founderId: string): MatchResult {
+export async function runMatching(founderId: string): Promise<MatchResult> {
   const founders  = getFounders()
   const founder   = founders.find(f => f.id === founderId) ?? founders[0]
   if (!founder) return { generated: 0, skipped: 0, businesses: 0 }
@@ -126,6 +129,7 @@ export function runMatching(founderId: string): MatchResult {
   const ts = new Date().toISOString()
   let generated = 0
   let skipped   = 0
+  const toWrite: Opportunity[] = []
 
   for (const biz of businesses) {
     if (!biz.name) continue
@@ -275,8 +279,15 @@ export function runMatching(founderId: string): MatchResult {
         updatedAt:        ts,
       }
 
-      opportunityService.upsert(opp)
+      toWrite.push(opp)
       generated++
+    }
+  }
+
+  if (toWrite.length > 0) {
+    const result = await opportunityService.upsertBatch(toWrite)
+    if (!result.success) {
+      return { generated: 0, skipped, businesses: businesses.length, error: result.error ?? 'Failed to save matched opportunities.' }
     }
   }
 

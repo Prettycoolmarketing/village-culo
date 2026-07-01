@@ -1,5 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { getFounders, updateFounder } from '../../services/founders'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
+import { updateFounder } from '../../services/founders'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { publisherPartnerProfileService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
 import { getIdeas } from '../../services/ideas'
@@ -409,10 +412,25 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
 // ─── DashboardProfilePage ──────────────────────────────────────────────────────
 
 export function DashboardProfilePage() {
-  const [draft, setDraft]   = useState<Founder>(() => ({ ...getFounders()[0]! }))
+  const { user } = useAuth()
+  const currentFounder = getCurrentFounder(user)
+  const [draft, setDraft]   = useState<Founder | null>(() => currentFounder ? { ...currentFounder } : null)
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [tab, setTab]       = useState('overview')
+
+  if (!draft) {
+    return (
+      <div className="p-8">
+        <EmptyState
+          title="No founder profile yet"
+          message="Create your founder profile to start publishing to the Village."
+          action={{ label: 'Start onboarding', href: '/onboarding' }}
+        />
+      </div>
+    )
+  }
 
   const missing     = getFounderMissingItems(draft)
   const counts      = getMissingCounts(missing)
@@ -436,23 +454,27 @@ export function DashboardProfilePage() {
   ]
 
   function set<K extends keyof Founder>(key: K, value: Founder[K]) {
-    setDraft(prev => ({ ...prev, [key]: value }))
+    setDraft(prev => prev ? { ...prev, [key]: value } : prev)
     setSaved(false)
   }
 
   function toggleTopic(topic: Topic) {
     setDraft(prev => {
+      if (!prev) return prev
       const has = prev.topics.some(t => t.id === topic.id)
       setSaved(false)
       return { ...prev, topics: has ? prev.topics.filter(t => t.id !== topic.id) : [...prev.topics, topic] }
     })
   }
 
-  function handleSave() {
+  async function handleSave() {
+    if (!draft) return
     setSaving(true)
-    updateFounder(draft)
+    setSaveError(null)
+    const result = await updateFounder(draft)
     setSaving(false)
-    setSaved(true)
+    if (result.success) setSaved(true)
+    else setSaveError(result.error ?? 'Save failed. Please try again.')
   }
 
   return (
@@ -484,6 +506,7 @@ export function DashboardProfilePage() {
             View on site ↗
           </a>
           {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
+          {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
           <button
             onClick={handleSave}
             disabled={saving}
@@ -785,6 +808,7 @@ export function DashboardProfilePage() {
       {/* Bottom save bar */}
       <div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-[#E8E4DD] bg-white shrink-0">
         {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
+        {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
         <button onClick={handleSave} disabled={saving} className="px-5 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
           {saving ? 'Saving…' : 'Save Changes'}
         </button>

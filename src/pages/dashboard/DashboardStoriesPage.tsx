@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { getStories, updateStory } from '../../services/stories'
+import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { getIdeas } from '../../services/ideas'
@@ -40,6 +41,7 @@ function StoryDetailPane({ story, onSave }: { story: Story; onSave: (s: Story) =
   const [draft, setDraft]   = useState<Story>({ ...story })
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [tab, setTab]       = useState('overview')
 
   const missing    = getStoryMissingItems(draft)
@@ -82,12 +84,24 @@ function StoryDetailPane({ story, onSave }: { story: Story; onSave: (s: Story) =
     })
   }
 
-  function handleSave() {
+  async function handleSave() {
     setSaving(true)
-    updateStory(draft)
+    setSaveError(null)
+    const result = await updateStory(draft)
     setSaving(false)
-    setSaved(true)
-    onSave(draft)
+    if (result.success) {
+      // Editing a published story regenerates intelligence — same engine,
+      // same call shape as publishing it the first time (DashboardPublishPage),
+      // so SEO/GEO/related-content all stay current with no separate refresh.
+      if (draft.status === 'published' || draft.status === 'featured') {
+        const intel = villageContentIntelligenceService.analyse(storyToInput(draft))
+        void villageContentIntelligenceService.upsert(intel)
+      }
+      setSaved(true)
+      onSave(draft)
+    } else {
+      setSaveError(result.error ?? 'Save failed. Please try again.')
+    }
   }
 
   const hasCarousel = draft.contentTypes.includes('carousel')
@@ -113,6 +127,7 @@ function StoryDetailPane({ story, onSave }: { story: Story; onSave: (s: Story) =
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {saved && <span className="text-xs text-green-600 font-medium">Saved ✓</span>}
+          {saveError && <span className="text-xs text-red-600 font-medium">{saveError}</span>}
           <a href={`/stories/${draft.slug}`} target="_blank" rel="noopener noreferrer"
             className="px-2.5 py-1.5 text-xs text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:text-[#C86A43] hover:border-[#C86A43]/40 transition-colors">
             View ↗

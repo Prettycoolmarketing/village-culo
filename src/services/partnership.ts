@@ -1,4 +1,4 @@
-import { store } from '../lib/store'
+import { readCache, writeEntity, writeEntityUnowned, writeEntityBatch, deleteEntity, type WriteResult } from '../lib/entityStore'
 import type {
   PartnerProgram,
   PublisherPartnerProfile,
@@ -22,7 +22,10 @@ import type {
   TrackingFilter,
 } from '../types/partnership'
 
-// ─── Store Keys ───────────────────────────────────────────────────────────────
+// ─── Cache keys + Supabase table names ───────────────────────────────────────
+// One service per Partnership Operating System entity. All now Supabase-backed
+// (see Sprint 19B migration 002) — localStorage is a read cache populated by
+// sync.ts, not the source of truth, the same as every other entity service.
 
 const KEYS = {
   programs:                    'partnership_programs',
@@ -40,6 +43,22 @@ const KEYS = {
   trackingRecords:             'partnership_tracking_records',
 } as const
 
+const TABLES = {
+  programs:             'partner_programs',
+  publisherProfiles:    'publisher_partner_profiles',
+  businessProfiles:     'business_partner_profiles',
+  recommendations:      'recommendations',
+  opportunities:        'opportunities',
+  trustProfiles:        'trust_profiles',
+  campaigns:            'campaigns',
+  campaignApplications: 'campaign_applications',
+  publisherSettings:    'publisher_partnership_settings',
+  businessSettings:     'business_partnership_settings',
+  enrollments:          'founder_program_enrollments',
+  affiliateLinks:       'founder_affiliate_links',
+  trackingRecords:      'tracking_records',
+} as const
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function now() { return new Date().toISOString() }
@@ -48,7 +67,7 @@ function now() { return new Date().toISOString() }
 
 export const programService = {
   getAll(filter?: PartnerProgramFilter): PartnerProgram[] {
-    let items = store.get<PartnerProgram>(KEYS.programs) ?? []
+    let items = readCache<PartnerProgram>(KEYS.programs)
     if (filter?.businessId) items = items.filter(p => p.businessId === filter.businessId)
     if (filter?.programType) items = items.filter(p => p.programType === filter.programType)
     if (filter?.status) items = items.filter(p => p.status === filter.status)
@@ -58,17 +77,24 @@ export const programService = {
   },
 
   get(id: string): PartnerProgram | undefined {
-    return (store.get<PartnerProgram>(KEYS.programs) ?? []).find(p => p.id === id)
+    return readCache<PartnerProgram>(KEYS.programs).find(p => p.id === id)
   },
 
-  upsert(program: PartnerProgram): void {
+  upsert(program: PartnerProgram): Promise<WriteResult> {
     program.updatedAt = now()
-    store.update(KEYS.programs, program)
+    return writeEntity<PartnerProgram>({
+      cacheKey: KEYS.programs,
+      item: program,
+      table: TABLES.programs,
+      toRow: p => ({
+        id: p.id, slug: p.slug, business_id: p.businessId, program_type: p.programType,
+        status: p.status, is_public: p.isPublic, featured: p.featured, data: p,
+      }),
+    })
   },
 
-  delete(id: string): void {
-    const items = (store.get<PartnerProgram>(KEYS.programs) ?? []).filter(p => p.id !== id)
-    store.set(KEYS.programs, items)
+  delete(id: string): Promise<WriteResult> {
+    return deleteEntity({ cacheKey: KEYS.programs, id, table: TABLES.programs })
   },
 }
 
@@ -76,15 +102,22 @@ export const programService = {
 
 export const publisherPartnerProfileService = {
   get(founderId: string): PublisherPartnerProfile | undefined {
-    return (store.get<PublisherPartnerProfile>(KEYS.publisherProfiles) ?? [])
-      .find(p => p.founderId === founderId)
+    return readCache<PublisherPartnerProfile>(KEYS.publisherProfiles).find(p => p.founderId === founderId)
   },
 
-  upsert(profile: PublisherPartnerProfile): void {
+  upsert(profile: PublisherPartnerProfile): Promise<WriteResult> {
     profile.updatedAt = now()
-    store.update(KEYS.publisherProfiles, profile)
+    return writeEntity<PublisherPartnerProfile>({
+      cacheKey: KEYS.publisherProfiles,
+      item: profile,
+      table: TABLES.publisherProfiles,
+      toRow: p => ({ id: p.id, founder_id: p.founderId, enabled: p.enabled, data: p }),
+    })
   },
 
+  // Synchronous on purpose: callers use this as a useState initializer. The blank
+  // default is fully known without a round-trip, so the write happens in the
+  // background rather than making every read-site async for a one-time bootstrap.
   getOrCreate(founderId: string): PublisherPartnerProfile {
     const existing = this.get(founderId)
     if (existing) return existing
@@ -114,7 +147,7 @@ export const publisherPartnerProfileService = {
       createdAt: now(),
       updatedAt: now(),
     }
-    this.upsert(blank)
+    void this.upsert(blank)
     return blank
   },
 }
@@ -123,13 +156,17 @@ export const publisherPartnerProfileService = {
 
 export const businessPartnerProfileService = {
   get(businessId: string): BusinessPartnerProfile | undefined {
-    return (store.get<BusinessPartnerProfile>(KEYS.businessProfiles) ?? [])
-      .find(p => p.businessId === businessId)
+    return readCache<BusinessPartnerProfile>(KEYS.businessProfiles).find(p => p.businessId === businessId)
   },
 
-  upsert(profile: BusinessPartnerProfile): void {
+  upsert(profile: BusinessPartnerProfile): Promise<WriteResult> {
     profile.updatedAt = now()
-    store.update(KEYS.businessProfiles, profile)
+    return writeEntity<BusinessPartnerProfile>({
+      cacheKey: KEYS.businessProfiles,
+      item: profile,
+      table: TABLES.businessProfiles,
+      toRow: p => ({ id: p.id, business_id: p.businessId, enabled: p.enabled, data: p }),
+    })
   },
 
   getOrCreate(businessId: string): BusinessPartnerProfile {
@@ -155,16 +192,23 @@ export const businessPartnerProfileService = {
       createdAt: now(),
       updatedAt: now(),
     }
-    this.upsert(blank)
+    void this.upsert(blank)
     return blank
   },
 }
 
 // ─── Recommendation Service ───────────────────────────────────────────────────
 
+function recommendationRow(r: Recommendation) {
+  return {
+    id: r.id, slug: r.slug, founder_id: r.founderId, business_id: r.businessId ?? null,
+    story_id: r.storyId ?? null, status: r.status, visibility: r.visibility, featured: r.featured, data: r,
+  }
+}
+
 export const recommendationService = {
   getAll(filter?: RecommendationFilter): Recommendation[] {
-    let items = store.get<Recommendation>(KEYS.recommendations) ?? []
+    let items = readCache<Recommendation>(KEYS.recommendations)
     if (filter?.founderId) items = items.filter(r => r.founderId === filter.founderId)
     if (filter?.businessId) items = items.filter(r => r.businessId === filter.businessId)
     if (filter?.storyId) items = items.filter(r => r.storyId === filter.storyId)
@@ -178,33 +222,50 @@ export const recommendationService = {
   },
 
   get(id: string): Recommendation | undefined {
-    return (store.get<Recommendation>(KEYS.recommendations) ?? []).find(r => r.id === id)
+    return readCache<Recommendation>(KEYS.recommendations).find(r => r.id === id)
   },
 
-  upsert(rec: Recommendation): void {
+  upsert(rec: Recommendation): Promise<WriteResult> {
     rec.updatedAt = now()
-    store.update(KEYS.recommendations, rec)
+    return writeEntity<Recommendation>({
+      cacheKey: KEYS.recommendations,
+      item: rec,
+      table: TABLES.recommendations,
+      toRow: recommendationRow,
+    })
   },
 
-  approve(id: string, publisherNote?: string): Recommendation | undefined {
+  /** One upsert call for a whole detection run's worth of new recommendations, instead of one per story/mention. */
+  upsertBatch(recs: Recommendation[]): Promise<WriteResult> {
+    const ts = now()
+    const stamped = recs.map(r => ({ ...r, updatedAt: ts }))
+    return writeEntityBatch<Recommendation>({
+      cacheKey: KEYS.recommendations,
+      items: stamped,
+      table: TABLES.recommendations,
+      toRow: recommendationRow,
+    })
+  },
+
+  async approve(id: string, publisherNote?: string): Promise<WriteResult & { rec?: Recommendation }> {
     const rec = this.get(id)
-    if (!rec) return undefined
+    if (!rec) return { success: false, error: 'Recommendation not found' }
     rec.status = 'approved'
     rec.approvedAt = now()
     rec.disclosureVisible = true
     if (publisherNote) rec.publisherNote = publisherNote
-    this.upsert(rec)
-    return rec
+    const result = await this.upsert(rec)
+    return { ...result, rec: result.success ? rec : undefined }
   },
 
-  reject(id: string, reason?: string): Recommendation | undefined {
+  async reject(id: string, reason?: string): Promise<WriteResult & { rec?: Recommendation }> {
     const rec = this.get(id)
-    if (!rec) return undefined
+    if (!rec) return { success: false, error: 'Recommendation not found' }
     rec.status = 'rejected'
     rec.rejectedAt = now()
     if (reason) rec.rejectionReason = reason
-    this.upsert(rec)
-    return rec
+    const result = await this.upsert(rec)
+    return { ...result, rec: result.success ? rec : undefined }
   },
 
   countByStatus(founderId: string): Record<string, number> {
@@ -219,9 +280,16 @@ export const recommendationService = {
 
 // ─── Opportunity Service ──────────────────────────────────────────────────────
 
+function opportunityRow(o: Opportunity) {
+  return {
+    id: o.id, slug: o.slug, business_id: o.businessId ?? null, target_founder_id: o.targetFounderId ?? null,
+    status: o.status, visibility: o.visibility, data: o,
+  }
+}
+
 export const opportunityService = {
   getAll(filter?: OpportunityFilter): Opportunity[] {
-    let items = store.get<Opportunity>(KEYS.opportunities) ?? []
+    let items = readCache<Opportunity>(KEYS.opportunities)
     if (filter?.founderId) items = items.filter(o => o.targetFounderId === filter.founderId)
     if (filter?.businessId) items = items.filter(o => o.businessId === filter.businessId)
     if (filter?.type) items = items.filter(o => o.type === filter.type)
@@ -231,20 +299,37 @@ export const opportunityService = {
   },
 
   get(id: string): Opportunity | undefined {
-    return (store.get<Opportunity>(KEYS.opportunities) ?? []).find(o => o.id === id)
+    return readCache<Opportunity>(KEYS.opportunities).find(o => o.id === id)
   },
 
-  upsert(opportunity: Opportunity): void {
+  upsert(opportunity: Opportunity): Promise<WriteResult> {
     opportunity.updatedAt = now()
-    store.update(KEYS.opportunities, opportunity)
+    return writeEntity<Opportunity>({
+      cacheKey: KEYS.opportunities,
+      item: opportunity,
+      table: TABLES.opportunities,
+      toRow: opportunityRow,
+    })
   },
 
-  updateStatus(id: string, status: Opportunity['status']): void {
+  /** One upsert call for a whole matching run's worth of new opportunities. */
+  upsertBatch(opportunities: Opportunity[]): Promise<WriteResult> {
+    const ts = now()
+    const stamped = opportunities.map(o => ({ ...o, updatedAt: ts }))
+    return writeEntityBatch<Opportunity>({
+      cacheKey: KEYS.opportunities,
+      items: stamped,
+      table: TABLES.opportunities,
+      toRow: opportunityRow,
+    })
+  },
+
+  async updateStatus(id: string, status: Opportunity['status']): Promise<WriteResult> {
     const item = this.get(id)
-    if (!item) return
+    if (!item) return { success: false, error: 'Not found' }
     item.status = status
     item.updatedAt = now()
-    this.upsert(item)
+    return this.upsert(item)
   },
 }
 
@@ -252,13 +337,17 @@ export const opportunityService = {
 
 export const trustProfileService = {
   get(entityId: string): TrustProfile | undefined {
-    return (store.get<TrustProfile>(KEYS.trustProfiles) ?? [])
-      .find(t => t.entityId === entityId)
+    return readCache<TrustProfile>(KEYS.trustProfiles).find(t => t.entityId === entityId)
   },
 
-  upsert(profile: TrustProfile): void {
+  upsert(profile: TrustProfile): Promise<WriteResult> {
     profile.updatedAt = now()
-    store.update(KEYS.trustProfiles, profile)
+    return writeEntity<TrustProfile>({
+      cacheKey: KEYS.trustProfiles,
+      item: profile,
+      table: TABLES.trustProfiles,
+      toRow: t => ({ id: t.id, entity_id: t.entityId, entity_type: t.entityType, data: t }),
+    })
   },
 
   getOrCreate(entityId: string, entityType: 'publisher' | 'business'): TrustProfile {
@@ -289,7 +378,7 @@ export const trustProfileService = {
       createdAt: now(),
       updatedAt: now(),
     }
-    this.upsert(blank)
+    void this.upsert(blank)
     return blank
   },
 }
@@ -298,7 +387,7 @@ export const trustProfileService = {
 
 export const campaignService = {
   getAll(filter?: CampaignFilter): Campaign[] {
-    let items = store.get<Campaign>(KEYS.campaigns) ?? []
+    let items = readCache<Campaign>(KEYS.campaigns)
     if (filter?.businessId) items = items.filter(c => c.businessId === filter.businessId)
     if (filter?.type) items = items.filter(c => c.type === filter.type)
     if (filter?.status) items = items.filter(c => c.status === filter.status)
@@ -307,30 +396,46 @@ export const campaignService = {
   },
 
   get(id: string): Campaign | undefined {
-    return (store.get<Campaign>(KEYS.campaigns) ?? []).find(c => c.id === id)
+    return readCache<Campaign>(KEYS.campaigns).find(c => c.id === id)
   },
 
-  upsert(campaign: Campaign): void {
+  upsert(campaign: Campaign): Promise<WriteResult> {
     campaign.updatedAt = now()
-    store.update(KEYS.campaigns, campaign)
+    return writeEntity<Campaign>({
+      cacheKey: KEYS.campaigns,
+      item: campaign,
+      table: TABLES.campaigns,
+      toRow: c => ({
+        id: c.id, slug: c.slug, business_id: c.businessId, status: c.status,
+        is_public: c.isPublic, featured: c.featured, data: c,
+      }),
+    })
   },
 }
 
 export const campaignApplicationService = {
   getAll(campaignId?: string, founderId?: string): CampaignApplication[] {
-    let items = store.get<CampaignApplication>(KEYS.campaignApplications) ?? []
+    let items = readCache<CampaignApplication>(KEYS.campaignApplications)
     if (campaignId) items = items.filter(a => a.campaignId === campaignId)
     if (founderId) items = items.filter(a => a.founderId === founderId)
     return items
   },
 
   get(id: string): CampaignApplication | undefined {
-    return (store.get<CampaignApplication>(KEYS.campaignApplications) ?? []).find(a => a.id === id)
+    return readCache<CampaignApplication>(KEYS.campaignApplications).find(a => a.id === id)
   },
 
-  upsert(app: CampaignApplication): void {
+  upsert(app: CampaignApplication): Promise<WriteResult> {
     app.updatedAt = now()
-    store.update(KEYS.campaignApplications, app)
+    return writeEntity<CampaignApplication>({
+      cacheKey: KEYS.campaignApplications,
+      item: app,
+      table: TABLES.campaignApplications,
+      toRow: a => ({
+        id: a.id, campaign_id: a.campaignId, founder_id: a.founderId, status: a.status,
+        applied_at: a.appliedAt, data: a,
+      }),
+    })
   },
 }
 
@@ -338,8 +443,7 @@ export const campaignApplicationService = {
 
 export const publisherSettingsService = {
   get(founderId: string): PublisherPartnershipSettings | undefined {
-    return (store.get<PublisherPartnershipSettings>(KEYS.publisherSettings) ?? [])
-      .find(s => s.founderId === founderId)
+    return readCache<PublisherPartnershipSettings>(KEYS.publisherSettings).find(s => s.founderId === founderId)
   },
 
   getOrCreate(founderId: string): PublisherPartnershipSettings {
@@ -358,13 +462,18 @@ export const publisherSettingsService = {
       receiveCollaborationRequests: false,
       updatedAt: now(),
     }
-    this.upsert(defaults)
+    void this.upsert(defaults)
     return defaults
   },
 
-  upsert(settings: PublisherPartnershipSettings): void {
+  upsert(settings: PublisherPartnershipSettings): Promise<WriteResult> {
     settings.updatedAt = now()
-    store.update(KEYS.publisherSettings, settings)
+    return writeEntity<PublisherPartnershipSettings>({
+      cacheKey: KEYS.publisherSettings,
+      item: settings,
+      table: TABLES.publisherSettings,
+      toRow: s => ({ id: s.id, founder_id: s.founderId, data: s }),
+    })
   },
 }
 
@@ -372,8 +481,7 @@ export const publisherSettingsService = {
 
 export const businessSettingsService = {
   get(businessId: string): BusinessPartnershipSettings | undefined {
-    return (store.get<BusinessPartnershipSettings>(KEYS.businessSettings) ?? [])
-      .find(s => s.businessId === businessId)
+    return readCache<BusinessPartnershipSettings>(KEYS.businessSettings).find(s => s.businessId === businessId)
   },
 
   getOrCreate(businessId: string): BusinessPartnershipSettings {
@@ -398,13 +506,18 @@ export const businessSettingsService = {
       customPartnershipEnabled: false,
       updatedAt: now(),
     }
-    this.upsert(defaults)
+    void this.upsert(defaults)
     return defaults
   },
 
-  upsert(settings: BusinessPartnershipSettings): void {
+  upsert(settings: BusinessPartnershipSettings): Promise<WriteResult> {
     settings.updatedAt = now()
-    store.update(KEYS.businessSettings, settings)
+    return writeEntity<BusinessPartnershipSettings>({
+      cacheKey: KEYS.businessSettings,
+      item: settings,
+      table: TABLES.businessSettings,
+      toRow: s => ({ id: s.id, business_id: s.businessId, data: s }),
+    })
   },
 }
 
@@ -412,7 +525,7 @@ export const businessSettingsService = {
 
 export const enrollmentService = {
   getAll(filter?: EnrollmentFilter): FounderProgramEnrollment[] {
-    let items = store.get<FounderProgramEnrollment>(KEYS.enrollments) ?? []
+    let items = readCache<FounderProgramEnrollment>(KEYS.enrollments)
     if (filter?.founderId)  items = items.filter(e => e.founderId  === filter.founderId)
     if (filter?.programId)  items = items.filter(e => e.programId  === filter.programId)
     if (filter?.businessId) items = items.filter(e => e.businessId === filter.businessId)
@@ -421,25 +534,32 @@ export const enrollmentService = {
   },
 
   get(id: string): FounderProgramEnrollment | undefined {
-    return (store.get<FounderProgramEnrollment>(KEYS.enrollments) ?? []).find(e => e.id === id)
+    return readCache<FounderProgramEnrollment>(KEYS.enrollments).find(e => e.id === id)
   },
 
   getActive(founderId: string, businessId: string): FounderProgramEnrollment | undefined {
-    return (store.get<FounderProgramEnrollment>(KEYS.enrollments) ?? [])
+    return readCache<FounderProgramEnrollment>(KEYS.enrollments)
       .find(e => e.founderId === founderId && e.businessId === businessId && e.status === 'active')
   },
 
-  upsert(enrollment: FounderProgramEnrollment): void {
+  upsert(enrollment: FounderProgramEnrollment): Promise<WriteResult> {
     enrollment.updatedAt = now()
-    store.update(KEYS.enrollments, enrollment)
+    return writeEntity<FounderProgramEnrollment>({
+      cacheKey: KEYS.enrollments,
+      item: enrollment,
+      table: TABLES.enrollments,
+      toRow: e => ({
+        id: e.id, founder_id: e.founderId, program_id: e.programId, business_id: e.businessId,
+        status: e.status, enrolled_at: e.enrolledAt, data: e,
+      }),
+    })
   },
 
-  leave(id: string): void {
+  async leave(id: string): Promise<WriteResult> {
     const e = this.get(id)
-    if (!e) return
-    e.status    = 'left'
-    e.updatedAt = now()
-    store.update(KEYS.enrollments, e)
+    if (!e) return { success: false, error: 'Not found' }
+    e.status = 'left'
+    return this.upsert(e)
   },
 }
 
@@ -447,37 +567,44 @@ export const enrollmentService = {
 
 export const affiliateLinkService = {
   getAll(filter?: AffiliateLinkFilter): FounderAffiliateLink[] {
-    let items = store.get<FounderAffiliateLink>(KEYS.affiliateLinks) ?? []
+    let items = readCache<FounderAffiliateLink>(KEYS.affiliateLinks)
     if (filter?.founderId)  items = items.filter(l => l.founderId  === filter.founderId)
     if (filter?.businessId) items = items.filter(l => l.businessId === filter.businessId)
     return items
   },
 
   get(id: string): FounderAffiliateLink | undefined {
-    return (store.get<FounderAffiliateLink>(KEYS.affiliateLinks) ?? []).find(l => l.id === id)
+    return readCache<FounderAffiliateLink>(KEYS.affiliateLinks).find(l => l.id === id)
   },
 
   getForBusiness(founderId: string, businessId: string): FounderAffiliateLink | undefined {
-    return (store.get<FounderAffiliateLink>(KEYS.affiliateLinks) ?? [])
+    return readCache<FounderAffiliateLink>(KEYS.affiliateLinks)
       .find(l => l.founderId === founderId && l.businessId === businessId)
   },
 
-  upsert(link: FounderAffiliateLink): void {
+  upsert(link: FounderAffiliateLink): Promise<WriteResult> {
     link.updatedAt = now()
-    store.update(KEYS.affiliateLinks, link)
+    return writeEntity<FounderAffiliateLink>({
+      cacheKey: KEYS.affiliateLinks,
+      item: link,
+      table: TABLES.affiliateLinks,
+      toRow: l => ({ id: l.id, founder_id: l.founderId, business_id: l.businessId, data: l }),
+    })
   },
 
-  delete(id: string): void {
-    const items = (store.get<FounderAffiliateLink>(KEYS.affiliateLinks) ?? []).filter(l => l.id !== id)
-    store.set(KEYS.affiliateLinks, items)
+  delete(id: string): Promise<WriteResult> {
+    return deleteEntity({ cacheKey: KEYS.affiliateLinks, id, table: TABLES.affiliateLinks })
   },
 }
 
 // ─── Tracking Service ─────────────────────────────────────────────────────────
+// Click tracking is the one place an anonymous visitor writes a partnership row —
+// recording a click on a public recommendation link requires no auth (RLS allows
+// public INSERT on tracking_records; SELECT stays owner/admin-only).
 
 export const trackingService = {
   getAll(filter?: TrackingFilter): TrackingRecord[] {
-    let items = store.get<TrackingRecord>(KEYS.trackingRecords) ?? []
+    let items = readCache<TrackingRecord>(KEYS.trackingRecords)
     if (filter?.founderId)        items = items.filter(r => r.founderId        === filter.founderId)
     if (filter?.businessId)       items = items.filter(r => r.businessId       === filter.businessId)
     if (filter?.recommendationId) items = items.filter(r => r.recommendationId === filter.recommendationId)
@@ -487,10 +614,18 @@ export const trackingService = {
     return items
   },
 
-  record(data: Omit<TrackingRecord, 'id' | 'clickedAt'>): TrackingRecord {
+  async record(data: Omit<TrackingRecord, 'id' | 'clickedAt'>): Promise<TrackingRecord> {
     const rec: TrackingRecord = { ...data, id: crypto.randomUUID(), clickedAt: now() }
-    const existing = store.get<TrackingRecord>(KEYS.trackingRecords) ?? []
-    store.set(KEYS.trackingRecords, [...existing, rec])
+    await writeEntityUnowned<TrackingRecord>({
+      cacheKey: KEYS.trackingRecords,
+      item: rec,
+      table: TABLES.trackingRecords,
+      toRow: r => ({
+        id: r.id, founder_id: r.founderId, business_id: r.businessId, recommendation_id: r.recommendationId ?? null,
+        link_type: r.linkType, source_page: r.sourcePage ?? null, redirect_url: r.redirectUrl, clicked_at: r.clickedAt,
+      }),
+    })
     return rec
   },
 }
+

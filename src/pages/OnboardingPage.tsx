@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
 import { slugify } from '../utils/slugify'
+import { useAuth } from '../contexts/AuthContext'
+import { linkOwnFounder } from '../services/currentFounder'
 import { updateFounder } from '../services/founders'
 import { updateBusiness } from '../services/businesses'
 import { updateService } from '../services/serviceOfferings'
@@ -12,13 +14,13 @@ import type { Founder, Business, Service, Offer, Topic } from '../types'
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
-type Step = 'welcome' | 'profile' | 'social' | 'business' | 'offers' | 'services' | 'review' | 'done'
+type Step = 'welcome' | 'account' | 'profile' | 'social' | 'business' | 'offers' | 'services' | 'review' | 'done'
 
-const STEPS: Step[] = ['welcome', 'profile', 'social', 'business', 'offers', 'services', 'review', 'done']
+const STEPS: Step[] = ['welcome', 'account', 'profile', 'social', 'business', 'offers', 'services', 'review', 'done']
 
 function stepIndex(s: Step) { return STEPS.indexOf(s) }
 function stepLabel(s: Step) {
-  return { welcome: 'Welcome', profile: 'Your Profile', social: 'Links', business: 'Your Business', offers: 'Offers', services: 'Services', review: 'Review', done: 'Published' }[s]
+  return { welcome: 'Welcome', account: 'Your Account', profile: 'Your Profile', social: 'Links', business: 'Your Business', offers: 'Offers', services: 'Services', review: 'Review', done: 'Published' }[s]
 }
 
 // ─── Draft state ──────────────────────────────────────────────────────────────
@@ -147,7 +149,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         You're about to create your Publisher account. This takes about 5 minutes. At the end, your founder profile and business will be live on CULO Village — ready to receive stories, ideas and connections.
       </p>
       <p className="font-body text-sm text-muted mb-8">
-        Everything you enter here is saved to your browser. You can edit it all from your dashboard after you publish.
+        Nothing publishes until you finish the final review step. You can edit everything from your dashboard afterwards.
       </p>
       <button
         onClick={onNext}
@@ -155,6 +157,104 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
       >
         Get started
       </button>
+    </div>
+  )
+}
+
+function AccountStep({ onDone }: { onDone: () => void }) {
+  const { isConfigured, signIn, signUp } = useAuth()
+  const [mode, setMode] = useState<'signup' | 'signin'>('signup')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [checkEmail, setCheckEmail] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (!email.trim() || !password) {
+      setError('Enter your email and a password.')
+      return
+    }
+    if (mode === 'signup' && password.length < 6) {
+      setError('Password must be at least 6 characters.')
+      return
+    }
+    setSubmitting(true)
+    // Dev mode (no Supabase) has no real signup — signIn() in dev mode creates
+    // an equivalent local session for either mode, so reuse it.
+    const result = mode === 'signup' && isConfigured
+      ? await signUp(email.trim(), password)
+      : await signIn(email.trim(), password)
+    setSubmitting(false)
+    if (result.error) { setError(result.error); return }
+    if ('needsConfirmation' in result && result.needsConfirmation) {
+      setCheckEmail(true)
+      return
+    }
+    onDone()
+  }
+
+  if (checkEmail) {
+    return (
+      <div className="text-center max-w-md mx-auto">
+        <h2 className="font-heading text-xl font-bold text-charcoal mb-3">Check your email</h2>
+        <p className="font-body text-sm text-muted leading-relaxed">
+          We sent a confirmation link to <span className="font-medium text-charcoal">{email}</span>. Click it, then come back here to keep going.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-md mx-auto">
+      <h2 className="font-heading text-xl font-bold text-charcoal mb-1">Create your account</h2>
+      <p className="font-body text-sm text-muted mb-6">
+        This is what you'll use to sign in and manage your profile afterwards.
+      </p>
+      {!isConfigured && (
+        <div className="mb-5 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700">
+          Dev mode — any credentials will work.
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Email" required>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            autoComplete="email"
+            className="w-full border border-border rounded-xl px-3 py-2 text-sm text-charcoal placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+            placeholder="you@example.com"
+          />
+        </Field>
+        <Field label="Password" required>
+          <input
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+            className="w-full border border-border rounded-xl px-3 py-2 text-sm text-charcoal placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+            placeholder="••••••••"
+          />
+        </Field>
+        {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full px-6 py-3 bg-primary text-white rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-60"
+        >
+          {submitting ? 'Just a moment…' : mode === 'signup' ? 'Create account & continue' : 'Sign in & continue'}
+        </button>
+      </form>
+      <p className="text-center text-xs text-muted mt-4">
+        {mode === 'signup' ? (
+          <>Already have an account? <button onClick={() => setMode('signin')} className="text-primary hover:underline font-medium">Sign in →</button></>
+        ) : (
+          <>New here? <button onClick={() => setMode('signup')} className="text-primary hover:underline font-medium">Create an account →</button></>
+        )}
+      </p>
     </div>
   )
 }
@@ -415,10 +515,18 @@ function DoneStep({ founderSlug }: { founderSlug: string }) {
 export function OnboardingPage() {
   usePageTitle('Get started')
 
+  const { user } = useAuth()
   const [step, setStep] = useState<Step>('welcome')
   const [draft, setDraft] = useState<Draft>(empty)
   const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState('')
   const [founderSlug, setFounderSlug] = useState('')
+
+  // If the visitor is already signed in (e.g. they came from /dashboard/login's
+  // post-signup redirect), skip the account-creation step entirely.
+  useEffect(() => {
+    if (step === 'account' && user) next()
+  }, [step, user])
 
   function set(k: keyof Draft, v: unknown) {
     setDraft(prev => ({ ...prev, [k]: v }))
@@ -440,7 +548,14 @@ export function OnboardingPage() {
     return true
   }
 
-  function publish() {
+  async function publish() {
+    if (!user) {
+      // Shouldn't be reachable (the 'account' step gates this), but never let a
+      // founder publish an unowned profile.
+      setStep('account')
+      return
+    }
+
     setPublishing(true)
 
     const founderSlugVal = slugify(draft.name)
@@ -473,6 +588,9 @@ export function OnboardingPage() {
       status: 'published',
       featured: false,
       createdAt: now,
+      // The founder created this profile themselves — they own it immediately,
+      // no claim flow needed. See getCurrentFounder()'s resolution order.
+      userId: user.id,
     }
 
     const offers: Offer[] = draft.offers.map(o => ({
@@ -502,10 +620,20 @@ export function OnboardingPage() {
       createdAt: now,
     }
 
-    updateFounder(founder)
-    updateBusiness(business)
+    const founderResult = await updateFounder(founder)
+    if (!founderResult.success) {
+      setPublishing(false)
+      setPublishError(founderResult.error ?? 'Could not publish your profile. Please try again.')
+      return
+    }
+    await updateBusiness(business)
 
-    draft.services.forEach(s => {
+    // Mirrors the new founder.userId onto profiles.founder_id so the fast-path
+    // (step 1 of getCurrentFounder()'s resolution order) is populated too —
+    // harmless no-op in dev mode / if it fails, since userId already resolves it.
+    void linkOwnFounder(founderId)
+
+    await Promise.all(draft.services.map(s => {
       const svc: Service = {
         id: s.id,
         slug: slugify(s.name),
@@ -519,8 +647,8 @@ export function OnboardingPage() {
         ctaLabel: s.ctaLabel,
         ctaUrl: s.ctaUrl,
       }
-      updateService(svc)
-    })
+      return updateService(svc)
+    }))
 
     setFounderSlug(founderSlugVal)
     setPublishing(false)
@@ -529,6 +657,7 @@ export function OnboardingPage() {
 
   const idx = stepIndex(step)
   const isFirst = step === 'welcome'
+  const isAccount = step === 'account'
   const isReview = step === 'review'
   const isDone = step === 'done'
   const totalSteps = STEPS.length - 2 // exclude welcome + done from progress
@@ -557,6 +686,7 @@ export function OnboardingPage() {
         {/* ── Step content ─────────────────────────────────────────────────── */}
         <div className="bg-surface rounded-2xl border border-border p-6 sm:p-8 shadow-sm">
           {step === 'welcome'  && <WelcomeStep onNext={next} />}
+          {step === 'account'  && <AccountStep onDone={next} />}
           {step === 'profile'  && <ProfileStep draft={draft} set={set} />}
           {step === 'social'   && <SocialStep draft={draft} set={set} />}
           {step === 'business' && <BusinessStep draft={draft} set={set} />}
@@ -567,7 +697,7 @@ export function OnboardingPage() {
         </div>
 
         {/* ── Navigation ───────────────────────────────────────────────────── */}
-        {!isFirst && !isDone && (
+        {!isFirst && !isAccount && !isDone && (
           <div className="flex items-center justify-between mt-6">
             <button
               onClick={back}
@@ -577,13 +707,16 @@ export function OnboardingPage() {
             </button>
 
             {isReview ? (
-              <button
-                onClick={publish}
-                disabled={publishing}
-                className="px-8 py-3 bg-primary text-white rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-60"
-              >
-                {publishing ? 'Publishing…' : 'Publish to the Village'}
-              </button>
+              <div className="flex flex-col items-end gap-2">
+                {publishError && <p className="text-sm text-red-600">{publishError}</p>}
+                <button
+                  onClick={() => void publish()}
+                  disabled={publishing}
+                  className="px-8 py-3 bg-primary text-white rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-60"
+                >
+                  {publishing ? 'Publishing…' : 'Publish to the Village'}
+                </button>
+              </div>
             ) : (
               <button
                 onClick={next}

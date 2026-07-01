@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { importBatchService } from '../../../services/importBatch'
+import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { ImportBatch } from '../../../services/importBatch'
 
 // ─── Batch row ────────────────────────────────────────────────────────────────
@@ -128,12 +129,12 @@ export function VillageBulkImportPage() {
             Import History ({batches.length} {batches.length === 1 ? 'batch' : 'batches'})
           </p>
           {batches.length > 0 && (
-            <button
-              onClick={() => { importBatchService.clear(); refresh() }}
-              className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
-            >
-              Clear history
-            </button>
+            <ConfirmButton
+              label="Clear history"
+              confirmLabel="Yes, clear all"
+              message={`Delete all ${batches.length} batch records?`}
+              onConfirm={() => void importBatchService.clear().then(refresh)}
+            />
           )}
         </div>
 
@@ -156,7 +157,7 @@ export function VillageBulkImportPage() {
               <BatchRow
                 key={batch.id}
                 batch={batch}
-                onDelete={() => { importBatchService.delete(batch.id); refresh() }}
+                onDelete={() => { void importBatchService.delete(batch.id).then(refresh) }}
               />
             ))}
           </div>

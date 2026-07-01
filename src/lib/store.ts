@@ -23,6 +23,24 @@ export const store = {
     this.set(key, items)
   },
 
+  /**
+   * Upserts many items in one read-modify-write cycle instead of one per item.
+   * `store.update()` called N times in a loop reads, scans and rewrites the
+   * *entire* collection N times (O(n²) for an N-item bulk action) — this does it
+   * once. Use this for any bulk/multi-select action.
+   */
+  updateMany<T extends { id: string }>(key: string, newItems: T[]): void {
+    if (newItems.length === 0) return
+    const items = (this.get<T>(key) ?? []) as T[]
+    const byId  = new Map(items.map((item, idx) => [item.id, idx]))
+    for (const item of newItems) {
+      const idx = byId.get(item.id)
+      if (idx !== undefined) items[idx] = item
+      else { byId.set(item.id, items.length); items.push(item) }
+    }
+    this.set(key, items)
+  },
+
   isSeeded(): boolean {
     return localStorage.getItem(SEED_FLAG) === '1'
   },

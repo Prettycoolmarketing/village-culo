@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { getFounders } from '../../services/founders'
+import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusiness } from '../../services/businesses'
 import {
   recommendationService,
@@ -574,8 +574,7 @@ function RevenueDashboard({ founderId }: { founderId: string }) {
 
 export function DashboardRevenuePage() {
   const { user } = useAuth()
-  const founders  = getFounders()
-  const founderId = founders[0]?.id ?? user?.id ?? 'dev-user'
+  const founderId = getCurrentFounderId(user) ?? 'dev-user'
 
   const [tick, setTick] = useState(0)
   function refresh() { setTick(t => t + 1) }

@@ -1,15 +1,19 @@
-import { useState, useRef, type ReactNode, type ChangeEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useRef, useEffect, useMemo, type ReactNode, type ChangeEvent } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
-import { updateStory } from '../../services/stories'
+import { getStories, updateStory } from '../../services/stories'
+import { importedContentService } from '../../services/importedContent'
+import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { uploadFile } from '../../lib/storage'
-import type { ContentType, Topic } from '../../types'
+import type { ContentType, Topic, Story } from '../../types'
 
 // ─── Content formats ──────────────────────────────────────────────────────────
 
@@ -29,18 +33,23 @@ const FORMATS: { type: ContentType; emoji: string; label: string; desc: string }
 
 // ─── Steps ────────────────────────────────────────────────────────────────────
 
-type PublishStep = 'format' | 'content' | 'info' | 'media' | 'connections' | 'preview' | 'done'
+// 'format'/'content'/'media' remain a short intake flow for getting raw content
+// into the draft (unchanged — still the right tool for "upload a file" style
+// input). Everything about ORGANISING and PUBLISHING that content — title,
+// summary, topics, location, connections, related entities, SEO/GEO, preview —
+// is now one consolidated 'builder' step instead of three separate ones
+// (previously info → connections → preview), so a founder edits it as one
+// continuous page instead of a multi-page form.
+type PublishStep = 'format' | 'content' | 'media' | 'builder' | 'done'
 
-const STEPS: PublishStep[] = ['format', 'content', 'info', 'media', 'connections', 'preview', 'done']
+const STEPS: PublishStep[] = ['format', 'content', 'media', 'builder', 'done']
 
 const STEP_LABELS: Record<PublishStep, string> = {
-  format:      'Format',
-  content:     'Content',
-  info:        'Information',
-  media:       'Media',
-  connections: 'Connections',
-  preview:     'Review',
-  done:        'Published',
+  format:  'Format',
+  content: 'Content',
+  media:   'Media',
+  builder: 'Story Builder',
+  done:    'Published',
 }
 
 // ─── Draft ────────────────────────────────────────────────────────────────────
@@ -65,13 +74,42 @@ interface PublishDraft {
   founderId:          string
   businessId:         string
   topics:             Topic[]
+  // UI-only override of the primary location (the founder's own location is the
+  // default, per resolveLocationForDraft below) — not a new Story field, Story
+  // still stores a single `location: Location` exactly as before.
+  locationId:         string
   ctaLabel:           string
   ctaUrl:             string
+  ctaPreset:          CtaPreset
+  // Editable overrides merged into the Village Intelligence record at publish
+  // time (see handlePublish) — reuses the existing lessons/geoQuestions/
+  // relatedFounderIds/relatedBusinessIds/relatedContentIds fields already on
+  // VillageContentIntelligence, no schema change.
+  lessonsOverride?:        string[]
+  questionsOverride?:      string[]
+  excludedFounderIds:      string[]
+  excludedBusinessIds:     string[]
+  excludedContentIds:      string[]
+  extraFounderIds:         string[]
+  extraBusinessIds:        string[]
+  // Set when this draft started from "Turn into Story" on an imported item —
+  // see DashboardImportContentPage's SavedRow and the effect that prefills this
+  // page from router state below.
+  importedContentId?: string
 }
 
-function defaultDraft(): PublishDraft {
-  const founders   = getFounders()
-  const businesses = getBusinesses()
+type CtaPreset = 'website' | 'business' | 'book' | 'speaking' | 'newsletter' | 'custom'
+
+const CTA_PRESETS: { key: CtaPreset; label: string; ctaLabel: string }[] = [
+  { key: 'website',   label: 'Visit my website',   ctaLabel: 'Visit website' },
+  { key: 'business',  label: 'View my business',   ctaLabel: 'View business' },
+  { key: 'book',      label: 'Book me',             ctaLabel: 'Book a call' },
+  { key: 'speaking',  label: 'Enquire about speaking', ctaLabel: 'Enquire now' },
+  { key: 'newsletter',label: 'Join my newsletter',  ctaLabel: 'Subscribe' },
+  { key: 'custom',    label: 'Custom',              ctaLabel: 'Learn more' },
+]
+
+function defaultDraft(founderId: string, businessId: string): PublishDraft {
   return {
     contentTypes:      ['blog'],
     uploadedFileNames: [],
@@ -87,11 +125,18 @@ function defaultDraft(): PublishDraft {
     carouselSlides:    [''],
     documentUrl:       '',
     blog:              '',
-    founderId:         founders[0]?.id   ?? '',
-    businessId:        businesses[0]?.id ?? '',
+    founderId,
+    businessId,
     topics:            [],
+    locationId:        '',
     ctaLabel:          'Read more',
     ctaUrl:            '',
+    ctaPreset:         'custom',
+    excludedFounderIds:  [],
+    excludedBusinessIds: [],
+    excludedContentIds:  [],
+    extraFounderIds:     [],
+    extraBusinessIds:    [],
   }
 }
 
@@ -105,16 +150,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <label className="block text-xs font-medium text-[#6B7280] mb-1">{label}</label>
       {hint && <p className="text-[11px] text-[#9CA3AF] mb-1.5">{hint}</p>}
       {children}
-    </div>
-  )
-}
-
-function SectionDivider({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 pt-2">
-      <div className="flex-1 h-px bg-[#E8E4DD]" />
-      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest shrink-0">{label}</p>
-      <div className="flex-1 h-px bg-[#E8E4DD]" />
     </div>
   )
 }
@@ -438,63 +473,6 @@ function ContentStep({ draft, onChange, onNext, onBack }: {
   )
 }
 
-// ─── Step 3: Info ─────────────────────────────────────────────────────────────
-
-function InfoStep({ draft, onChange, onNext, onBack }: {
-  draft: PublishDraft
-  onChange: (patch: Partial<PublishDraft>) => void
-  onNext: () => void
-  onBack: () => void
-}) {
-  const canContinue = draft.title.trim().length > 0 && draft.summary.trim().length > 0
-
-  return (
-    <div className="max-w-lg">
-      <StepHeader
-        title="Story Information"
-        subtitle="Give your content a title and summary. This is how it appears in the Village."
-        onBack={onBack}
-      />
-      <div className="flex flex-col gap-5">
-        <Field label="Title *">
-          <input
-            type="text"
-            value={draft.title}
-            onChange={e => onChange({ title: e.target.value })}
-            placeholder="What is this story about?"
-            className={inp}
-          />
-        </Field>
-        <Field label="Summary *" hint="One or two sentences. What will the reader take away?">
-          <textarea
-            value={draft.summary}
-            onChange={e => onChange({ summary: e.target.value })}
-            rows={3}
-            placeholder="The honest story of…"
-            className={inp + ' resize-y'}
-          />
-        </Field>
-        <Field label="Subtitle" hint="Optional secondary headline.">
-          <input
-            type="text"
-            value={draft.subtitle}
-            onChange={e => onChange({ subtitle: e.target.value })}
-            placeholder="Optional…"
-            className={inp}
-          />
-        </Field>
-        <button
-          onClick={onNext}
-          disabled={!canContinue}
-          className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          Continue
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── Step 4: Media ────────────────────────────────────────────────────────────
 
 function isImageUrl(url: string) { return /\.(jpg|jpeg|png|webp|gif|svg)(\?|$)/i.test(url) }
@@ -730,276 +708,459 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
   )
 }
 
-// ─── Step 5: Connections ──────────────────────────────────────────────────────
+// ─── Story Builder (canonical publishing step) ─────────────────────────────────
+// Replaces the old Info → Connections → Preview steps with one scrolling,
+// card-based editor. Every card reuses the same draft state and the same
+// villageContentIntelligenceService.analyse() engine the Import flow and
+// handlePublish already use — nothing here is a parallel pipeline. Suggested
+// lessons/questions/related-entities come from a live (non-persisted) preview
+// analysis; anything the founder edits is merged into the real analysis result
+// at publish time (see handlePublish), reusing VillageContentIntelligence's
+// existing lessons/geoQuestions/relatedFounderIds/relatedBusinessIds/
+// relatedContentIds fields rather than adding new columns.
 
-function ConnectionsStep({ draft, onChange, onNext, onBack }: {
+const DISTRIBUTION_LOCATIONS = [
+  'Founder Profile', 'Business Profile', 'Story Archive',
+  'Homepage (if featured)', 'Search', 'Related Stories', 'Knowledge Graph',
+]
+
+function buildPreviewStory(draft: PublishDraft, founder: ReturnType<typeof getFounders>[number] | undefined): Story {
+  const loc = locations.find(l => l.id === draft.locationId) ?? founder?.location ?? locations[0]!
+  return {
+    id: 'preview',
+    slug: slugify(draft.title) || 'preview',
+    title: draft.title || 'Untitled',
+    summary: draft.summary || '',
+    coverImage: draft.coverImage || '',
+    founderId: draft.founderId,
+    businessId: draft.businessId,
+    location: loc,
+    industry: founder?.industry ?? industries[0]!,
+    topics: draft.topics,
+    contentTypes: draft.contentTypes.length > 0 ? draft.contentTypes : ['blog'],
+    blog: draft.blog || undefined,
+    ideaIds: [],
+    relatedStoryIds: [],
+    ctaLabel: draft.ctaLabel,
+    ctaUrl: draft.ctaUrl,
+    status: 'draft',
+    featured: false,
+    createdAt: '',
+    updatedAt: '',
+  }
+}
+
+/** Collapsible card shell — the "progressive disclosure" primitive every section below uses. */
+function BuilderCard({ title, subtitle, defaultOpen = true, badge, children }: {
+  title: string
+  subtitle?: string
+  defaultOpen?: boolean
+  badge?: ReactNode
+  children: ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="bg-white rounded-2xl border border-[#E8E4DD] overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
+      >
+        <div>
+          <p className="text-sm font-bold text-[#2D2A26]">{title}</p>
+          {subtitle && <p className="text-xs text-[#9CA3AF] mt-0.5">{subtitle}</p>}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {badge}
+          <svg className={`w-4 h-4 text-[#9CA3AF] transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+      {open && <div className="px-5 pb-5">{children}</div>}
+    </div>
+  )
+}
+
+/** Small editable-list primitive shared by Lessons and Questions cards. */
+function EditableList({ items, onChange, placeholder }: {
+  items: string[]
+  onChange: (items: string[]) => void
+  placeholder: string
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <textarea
+            value={item}
+            onChange={e => onChange(items.map((x, j) => j === i ? e.target.value : x))}
+            rows={1}
+            className={inp + ' resize-none'}
+          />
+          <button onClick={() => onChange(items.filter((_, j) => j !== i))} className="text-xs text-[#9CA3AF] hover:text-red-500 px-1 py-2 shrink-0">✕</button>
+        </div>
+      ))}
+      <button onClick={() => onChange([...items, ''])} className="text-xs text-[#C86A43] hover:underline text-left">
+        + Add {placeholder}
+      </button>
+    </div>
+  )
+}
+
+function StoryBuilderStep({ draft, onChange, onBack, onPublish, publishing, publishError }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
-  onNext: () => void
   onBack: () => void
+  onPublish: (action: 'publish' | 'draft' | 'archive') => void
+  publishing: boolean
+  publishError?: string
 }) {
-  const founders       = getFounders()
-  const businesses     = getBusinesses()
+  const { user } = useAuth()
+  const currentFounder = getCurrentFounder(user)
+  const founders   = currentFounder ? [currentFounder] : []
+  const businesses = getBusinesses().filter(b => b.founderId === currentFounder?.id)
   const singleFounder  = founders.length === 1  ? founders[0]   : null
   const singleBusiness = businesses.length === 1 ? businesses[0] : null
+  const founder = getFounders().find(f => f.id === draft.founderId)
+
+  const hasCarouselSlide  = draft.carouselSlides.filter(Boolean).length > 0
+  const missingCoverImage = !draft.coverImage && !hasCarouselSlide
+  const hasBlog           = draft.contentTypes.includes('blog')
+
+  // Live, non-persisted analysis — same engine as handlePublish, just previewed.
+  const intel = useMemo(() => {
+    const previewStory = buildPreviewStory(draft, founder)
+    return villageContentIntelligenceService.analyse(storyToInput(previewStory))
+  }, [draft.title, draft.summary, draft.blog, draft.topics, draft.locationId, draft.founderId, draft.businessId])
+
+  const lessons   = draft.lessonsOverride   ?? intel.lessons
+  const questions = draft.questionsOverride ?? [...intel.geoQuestions, ...intel.searchQuestions]
+
+  const suggestedFounders  = getFounders().filter(f => intel.relatedFounderIds.includes(f.id) && !draft.excludedFounderIds.includes(f.id))
+  const suggestedBusinesses = getBusinesses().filter(b => intel.relatedBusinessIds.includes(b.id) && !draft.excludedBusinessIds.includes(b.id))
+  const extraFounders  = getFounders().filter(f => draft.extraFounderIds.includes(f.id))
+  const extraBusinesses = getBusinesses().filter(b => draft.extraBusinessIds.includes(b.id))
+  const relatedContentItems = intel.relatedContentIds
+    .filter(id => !draft.excludedContentIds.includes(id))
+    .map(id => getStories().find(s => s.id === id) ?? importedContentService.get(id))
+    .filter((x): x is NonNullable<typeof x> => !!x)
 
   function toggleTopic(topic: Topic) {
     const has = draft.topics.some(t => t.id === topic.id)
     onChange({ topics: has ? draft.topics.filter(t => t.id !== topic.id) : [...draft.topics, topic] })
   }
 
+  function makePrimaryTopic(topic: Topic) {
+    onChange({ topics: [topic, ...draft.topics.filter(t => t.id !== topic.id)] })
+  }
+
   return (
-    <div className="max-w-xl">
-      <StepHeader
-        title="Connections"
-        subtitle="CULO has pre-filled what it can. Review and adjust if needed."
-        onBack={onBack}
-      />
-      <div className="flex flex-col gap-5">
+    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+      <StepHeader title="Story Builder" subtitle="Everything below publishes together — no separate refresh steps." onBack={onBack} />
 
-        <SectionDivider label="Publisher" />
-
-        {singleFounder ? (
-          <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-[#E8E4DD]">
-            {singleFounder.avatar && (
-              <img src={singleFounder.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0 bg-[#F3EDE6]" />
+      {/* ── 1. Story Overview ────────────────────────────────────────────── */}
+      <BuilderCard title="Story Overview" subtitle="Headline, summary and hero image — how this appears everywhere in the Village.">
+        <div className="flex flex-col gap-4">
+          <Field label="Headline *">
+            <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
+              placeholder="What is this story about?" className={inp + ' text-base font-semibold'} />
+          </Field>
+          <Field label="Summary *" hint="One or two sentences — the reader's takeaway.">
+            <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
+              placeholder="The honest story of…" className={inp + ' resize-y'} />
+          </Field>
+          <Field label="Hero image">
+            {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD] mb-2" />}
+            <input type="url" value={draft.coverImage} onChange={e => onChange({ coverImage: e.target.value })}
+              placeholder="/assets/my-photo.jpg or https://…" className={inp} />
+            {hasBlog && missingCoverImage && (
+              <p className="text-xs text-amber-700 mt-1.5">No cover image yet — a placeholder will be used until you add one.</p>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#2D2A26] truncate">{singleFounder.name}</p>
-              <p className="text-xs text-[#9CA3AF]">Publisher · auto-selected</p>
-            </div>
-            <svg className="w-4 h-4 text-[#5E6B4A] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        ) : founders.length > 1 ? (
-          <Field label="Publisher">
-            <select value={draft.founderId} onChange={e => onChange({ founderId: e.target.value })} className={inp}>
-              {founders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
           </Field>
-        ) : (
-          <div className="px-4 py-3 bg-[#F8F5F0] rounded-xl border border-[#E8E4DD]">
-            <p className="text-xs text-[#9CA3AF]">Complete your profile first to publish a story.</p>
-            <Link to="/dashboard/profile" className="text-xs text-[#C86A43] hover:underline mt-1 inline-block">Set up your profile →</Link>
-          </div>
+        </div>
+      </BuilderCard>
+
+      {/* ── 2. Founder's Perspective ─────────────────────────────────────── */}
+      <BuilderCard title="Founder's Perspective" subtitle="What happened, what you learned, what you'd do differently. Fully yours to rewrite.">
+        <textarea
+          value={draft.blog}
+          onChange={e => onChange({ blog: e.target.value })}
+          rows={10}
+          placeholder="What happened? What did you learn? What would you do differently?"
+          className={inp + ' resize-y text-sm leading-relaxed'}
+        />
+      </BuilderCard>
+
+      {/* ── 3. Lessons ───────────────────────────────────────────────────── */}
+      <BuilderCard title="Lessons" subtitle="Extracted from your writing above — edit, remove or add your own." defaultOpen={false}
+        badge={<span className="text-[10px] text-[#9CA3AF]">{lessons.length}</span>}>
+        <EditableList items={lessons} onChange={v => onChange({ lessonsOverride: v })} placeholder="a lesson" />
+      </BuilderCard>
+
+      {/* ── 4. Questions this story answers ──────────────────────────────── */}
+      <BuilderCard title="Questions this story answers" subtitle="Powers SEO and GEO — how AI systems and search understand this story." defaultOpen={false}
+        badge={<span className="text-[10px] text-[#9CA3AF]">{questions.length}</span>}>
+        <EditableList items={questions} onChange={v => onChange({ questionsOverride: v })} placeholder="a question" />
+      </BuilderCard>
+
+      {/* ── 5. Topics ────────────────────────────────────────────────────── */}
+      <BuilderCard title="Topics" subtitle="First topic is primary. Click a topic to make it primary.">
+        <div className="flex flex-wrap gap-1.5">
+          {allTopics.map(topic => {
+            const idx = draft.topics.findIndex(t => t.id === topic.id)
+            const active = idx !== -1
+            return (
+              <button
+                key={topic.id}
+                onClick={() => active ? makePrimaryTopic(topic) : toggleTopic(topic)}
+                onDoubleClick={() => toggleTopic(topic)}
+                title={active ? (idx === 0 ? 'Primary topic' : 'Click to make primary, double-click to remove') : 'Click to add'}
+                className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                  idx === 0 ? 'bg-[#C86A43] text-white border-[#C86A43] font-semibold'
+                  : active ? 'bg-[#F3EDE6] text-[#C86A43] border-[#C86A43]/40'
+                  : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                }`}
+              >
+                {idx === 0 && '★ '}{topic.name}
+              </button>
+            )
+          })}
+        </div>
+        {draft.topics.length > 0 && (
+          <button onClick={() => toggleTopic(draft.topics[0])} className="text-xs text-[#9CA3AF] hover:text-red-500 mt-2">
+            Remove primary topic ({draft.topics[0].name})
+          </button>
         )}
+      </BuilderCard>
 
-        {singleBusiness ? (
-          <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-xl border border-[#E8E4DD]">
-            <img src={singleBusiness.logo} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#2D2A26] truncate">{singleBusiness.name}</p>
-              <p className="text-xs text-[#9CA3AF]">Business · auto-selected</p>
-            </div>
-            <svg className="w-4 h-4 text-[#5E6B4A] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        ) : businesses.length > 1 ? (
-          <Field label="Business">
-            <select value={draft.businessId} onChange={e => onChange({ businessId: e.target.value })} className={inp}>
-              {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+      {/* ── 6. Locations ─────────────────────────────────────────────────── */}
+      <BuilderCard title="Location" subtitle="Primary location shown on the story. Detected mentions below are suggestions." defaultOpen={false}>
+        <div className="flex flex-col gap-3">
+          <Field label="Primary location">
+            <select value={draft.locationId || founder?.location.id || ''} onChange={e => onChange({ locationId: e.target.value })} className={inp}>
+              {locations.map(l => <option key={l.id} value={l.id}>{l.name}, {l.state}</option>)}
             </select>
           </Field>
-        ) : null}
-
-        <SectionDivider label="Topics" />
-
-        <Field label="Topics" hint="Select topics for discovery and knowledge graph connections.">
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {allTopics.map(topic => {
-              const active = draft.topics.some(t => t.id === topic.id)
-              return (
-                <button
-                  key={topic.id}
-                  onClick={() => toggleTopic(topic)}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                    active
-                      ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                      : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                  }`}
-                >
-                  {topic.name}
-                </button>
-              )
-            })}
-          </div>
-        </Field>
-
-        <SectionDivider label="CTA" />
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="CTA Label">
-            <input
-              type="text"
-              value={draft.ctaLabel}
-              onChange={e => onChange({ ctaLabel: e.target.value })}
-              className={inp}
-              placeholder="Read more"
-            />
-          </Field>
-          <Field label="CTA URL">
-            <input
-              type="url"
-              value={draft.ctaUrl}
-              onChange={e => onChange({ ctaUrl: e.target.value })}
-              className={inp}
-              placeholder="https://"
-            />
-          </Field>
-        </div>
-
-        <div className="px-4 py-3 bg-[#F8F5F0] rounded-xl border border-[#E8E4DD]">
-          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Coming soon</p>
-          <p className="text-xs text-[#9CA3AF]">Products, Services, Events, Communities, Platforms, Resources.</p>
-        </div>
-
-        <button
-          onClick={onNext}
-          disabled={!draft.founderId}
-          className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          Preview Publication
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ─── Step 6: Preview ──────────────────────────────────────────────────────────
-
-const DISTRIBUTION_LOCATIONS = [
-  'Founder Profile',
-  'Business Profile',
-  'Story Archive',
-  'Homepage (if featured)',
-  'Search',
-  'Related Stories',
-  'Knowledge Graph',
-]
-
-const KNOWLEDGE_OUTPUTS = [
-  'Internal relationships',
-  'Suggested topics + ideas',
-  'AI-readable metadata',
-  'Search metadata',
-  'FAQs (coming soon)',
-  'Automated resources (coming soon)',
-]
-
-function PreviewStep({ draft, onPublish, onBack, publishing }: {
-  draft: PublishDraft
-  onPublish: (action: 'publish' | 'draft' | 'archive') => void
-  onBack: () => void
-  publishing: boolean
-}) {
-  const founders   = getFounders()
-  const businesses = getBusinesses()
-  const founder    = founders.find(f => f.id === draft.founderId)
-  const business   = businesses.find(b => b.id === draft.businessId)
-
-  const hasCarouselSlide  = draft.carouselSlides.filter(Boolean).length > 0
-  const missingCoverImage = !draft.coverImage && !hasCarouselSlide
-  const hasBlog           = draft.contentTypes.includes('blog')
-
-  return (
-    <div className="max-w-2xl">
-      <StepHeader
-        title="Ready to Publish"
-        subtitle="Review your publication and choose how to save it."
-        onBack={onBack}
-      />
-
-      {hasBlog && missingCoverImage && (
-        <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl mb-5">
-          <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-          </svg>
-          <div>
-            <p className="text-xs font-semibold text-amber-800">No cover image</p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              Blog posts display best with a cover image. A placeholder will be used.{' '}
-              <button onClick={onBack} className="underline hover:no-underline">Go back to add one.</button>
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4 mb-6">
-        <div className="flex items-start gap-3">
-          {draft.coverImage ? (
-            <img src={draft.coverImage} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0 bg-[#F3EDE6]" />
-          ) : (
-            <div className="w-16 h-16 rounded-xl bg-[#F3EDE6] shrink-0 flex items-center justify-center">
-              <span className="text-2xl">{FORMATS.find(f => f.type === draft.contentTypes[0])?.emoji ?? '📝'}</span>
+          {intel.cities.length > 0 && (
+            <div>
+              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Detected in your writing</p>
+              <div className="flex flex-wrap gap-1.5">
+                {intel.cities.map(c => <span key={c} className="text-xs px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">{c}</span>)}
+              </div>
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <p className="text-base font-bold text-[#2D2A26] leading-snug mb-1">{draft.title || 'Untitled publication'}</p>
-            {draft.summary && <p className="text-sm text-[#6B7280] line-clamp-2">{draft.summary}</p>}
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {draft.contentTypes.map(ct => {
-                const f = FORMATS.find(x => x.type === ct)
-                return (
-                  <span key={ct} className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#C86A43] uppercase">
-                    {f?.emoji} {f?.label ?? ct}
-                  </span>
-                )
-              })}
-              {founder  && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#6B7280]">{founder.name}</span>}
-              {business && <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#6B7280]">{business.name}</span>}
+        </div>
+      </BuilderCard>
+
+      {/* ── 7 & 8. Related founders / businesses ─────────────────────────── */}
+      <BuilderCard title="Related Founders" subtitle="Detected from your writing. Uncheck to exclude, or connect someone manually." defaultOpen={false}
+        badge={<span className="text-[10px] text-[#9CA3AF]">{suggestedFounders.length + extraFounders.length}</span>}>
+        <div className="flex flex-col gap-2">
+          {[...suggestedFounders, ...extraFounders].map(f => (
+            <div key={f.id} className="flex items-center gap-2 text-sm">
+              <img src={f.avatar} alt="" className="w-6 h-6 rounded-full object-cover bg-[#F3EDE6] shrink-0" />
+              <span className="flex-1 text-[#2D2A26]">{f.name}</span>
+              <button
+                onClick={() => draft.extraFounderIds.includes(f.id)
+                  ? onChange({ extraFounderIds: draft.extraFounderIds.filter(id => id !== f.id) })
+                  : onChange({ excludedFounderIds: [...draft.excludedFounderIds, f.id] })}
+                className="text-xs text-[#9CA3AF] hover:text-red-500"
+              >Remove</button>
+            </div>
+          ))}
+          {suggestedFounders.length + extraFounders.length === 0 && <p className="text-xs text-[#9CA3AF]">None detected yet — mention another founder by name in your writing.</p>}
+          <select
+            value=""
+            onChange={e => e.target.value && onChange({ extraFounderIds: [...draft.extraFounderIds, e.target.value] })}
+            className={inp + ' mt-1'}
+          >
+            <option value="">+ Connect a founder…</option>
+            {getFounders().filter(f => f.id !== draft.founderId && !suggestedFounders.some(s => s.id === f.id) && !extraFounders.some(s => s.id === f.id)).map(f => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+        </div>
+      </BuilderCard>
+
+      <BuilderCard title="Related Businesses" subtitle="Detected from your writing. Uncheck to exclude, or connect one manually." defaultOpen={false}
+        badge={<span className="text-[10px] text-[#9CA3AF]">{suggestedBusinesses.length + extraBusinesses.length}</span>}>
+        <div className="flex flex-col gap-2">
+          {[...suggestedBusinesses, ...extraBusinesses].map(b => (
+            <div key={b.id} className="flex items-center gap-2 text-sm">
+              <img src={b.logo} alt="" className="w-6 h-6 rounded object-cover bg-[#F3EDE6] shrink-0" />
+              <span className="flex-1 text-[#2D2A26]">{b.name}</span>
+              <button
+                onClick={() => draft.extraBusinessIds.includes(b.id)
+                  ? onChange({ extraBusinessIds: draft.extraBusinessIds.filter(id => id !== b.id) })
+                  : onChange({ excludedBusinessIds: [...draft.excludedBusinessIds, b.id] })}
+                className="text-xs text-[#9CA3AF] hover:text-red-500"
+              >Remove</button>
+            </div>
+          ))}
+          {suggestedBusinesses.length + extraBusinesses.length === 0 && <p className="text-xs text-[#9CA3AF]">None detected yet — mention a business by name in your writing.</p>}
+          <select
+            value=""
+            onChange={e => e.target.value && onChange({ extraBusinessIds: [...draft.extraBusinessIds, e.target.value] })}
+            className={inp + ' mt-1'}
+          >
+            <option value="">+ Connect a business…</option>
+            {getBusinesses().filter(b => !suggestedBusinesses.some(s => s.id === b.id) && !extraBusinesses.some(s => s.id === b.id)).map(b => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+        </div>
+      </BuilderCard>
+
+      {/* ── 9. Related content ───────────────────────────────────────────── */}
+      <BuilderCard title="Related Content" subtitle="Stories and imports this connects to — computed automatically, remove anything incorrect." defaultOpen={false}
+        badge={<span className="text-[10px] text-[#9CA3AF]">{relatedContentItems.length}</span>}>
+        <div className="flex flex-col gap-2">
+          {relatedContentItems.map(item => (
+            <div key={item.id} className="flex items-center gap-2 text-sm">
+              <span className="flex-1 text-[#2D2A26] truncate">{'title' in item ? item.title : ''}</span>
+              <button onClick={() => onChange({ excludedContentIds: [...draft.excludedContentIds, item.id] })} className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
+            </div>
+          ))}
+          {relatedContentItems.length === 0 && <p className="text-xs text-[#9CA3AF]">Nothing connected yet — add topics or write more detail above.</p>}
+        </div>
+      </BuilderCard>
+
+      {/* ── 10. Publisher & Business connection (kept compact, not a separate step) ── */}
+      <BuilderCard title="Publisher & Business" defaultOpen={false}>
+        <div className="flex flex-col gap-3">
+          {singleFounder ? (
+            <div className="flex items-center gap-3 px-3 py-2 bg-[#F8F5F0] rounded-xl">
+              {singleFounder.avatar && <img src={singleFounder.avatar} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />}
+              <p className="text-sm text-[#2D2A26] flex-1">{singleFounder.name}</p>
+              <span className="text-[10px] text-[#9CA3AF]">auto-selected</span>
+            </div>
+          ) : founders.length > 1 ? (
+            <Field label="Publisher">
+              <select value={draft.founderId} onChange={e => onChange({ founderId: e.target.value })} className={inp}>
+                {founders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+            </Field>
+          ) : (
+            <div className="px-3 py-2 bg-[#F8F5F0] rounded-xl">
+              <p className="text-xs text-[#9CA3AF]">Complete your profile first to publish a story.</p>
+              <Link to="/dashboard/profile" className="text-xs text-[#C86A43] hover:underline">Set up your profile →</Link>
+            </div>
+          )}
+          {singleBusiness && (
+            <div className="flex items-center gap-3 px-3 py-2 bg-[#F8F5F0] rounded-xl">
+              <img src={singleBusiness.logo} alt="" className="w-7 h-7 rounded object-cover shrink-0" />
+              <p className="text-sm text-[#2D2A26] flex-1">{singleBusiness.name}</p>
+              <span className="text-[10px] text-[#9CA3AF]">auto-selected</span>
+            </div>
+          )}
+        </div>
+      </BuilderCard>
+
+      {/* ── 11. Call To Action ───────────────────────────────────────────── */}
+      <BuilderCard title="Call To Action" subtitle="Pick one primary action for readers to take." defaultOpen={false}>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {CTA_PRESETS.map(p => (
+            <button
+              key={p.key}
+              onClick={() => onChange({ ctaPreset: p.key, ctaLabel: p.ctaLabel, ctaUrl: p.key === 'business' && singleBusiness ? `/businesses/${singleBusiness.slug}` : draft.ctaUrl })}
+              className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                draft.ctaPreset === p.key ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Button label">
+            <input type="text" value={draft.ctaLabel} onChange={e => onChange({ ctaLabel: e.target.value })} className={inp} placeholder="Read more" />
+          </Field>
+          <Field label="Link">
+            <input type="url" value={draft.ctaUrl} onChange={e => onChange({ ctaUrl: e.target.value })} className={inp} placeholder="https://" />
+          </Field>
+        </div>
+      </BuilderCard>
+
+      {/* ── 12. SEO Preview ──────────────────────────────────────────────── */}
+      <BuilderCard title="SEO Preview" subtitle="Read-only — generated automatically from the content above." defaultOpen={false}>
+        <div className="space-y-2 text-xs">
+          <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Title</p><p className="text-[#2D2A26] font-medium">{draft.title || 'Untitled'}</p></div>
+          <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Description</p><p className="text-[#2D2A26]">{draft.summary || '—'}</p></div>
+          <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Canonical topic</p><p className="text-[#2D2A26]">{draft.topics[0]?.name ?? intel.canonicalTopics[0] ?? '—'}</p></div>
+          <div>
+            <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Keywords</p>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {intel.seoKeywords.slice(0, 10).map(k => <span key={k} className="px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#6B7280]">{k}</span>)}
+              {intel.seoKeywords.length === 0 && <span className="text-[#9CA3AF]">—</span>}
             </div>
           </div>
         </div>
-      </div>
+      </BuilderCard>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      {/* ── 13. GEO Preview ──────────────────────────────────────────────── */}
+      <BuilderCard title="GEO Preview" subtitle="How AI systems will understand this story. Read-only." defaultOpen={false}>
+        <div className="space-y-3 text-xs">
+          <div>
+            <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Questions answered</p>
+            <ul className="space-y-1">{questions.slice(0, 6).map(q => <li key={q}>· {q}</li>)}{questions.length === 0 && <li className="text-[#9CA3AF]">Add more detail above.</li>}</ul>
+          </div>
+          {intel.problems.length > 0 && <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Problems solved</p><p>{intel.problems.join(', ')}</p></div>}
+          {intel.solutions.length > 0 && <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Solutions</p><p>{intel.solutions.join(', ')}</p></div>}
+          {intel.industries.length > 0 && <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Industries</p><p>{intel.industries.join(', ')}</p></div>}
+        </div>
+      </BuilderCard>
+
+      {/* ── 14. Public Preview ───────────────────────────────────────────── */}
+      <BuilderCard title="Public Preview" subtitle="A simplified preview — not a pixel-perfect render of the live page." defaultOpen={false}>
+        <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
+          {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-40 object-cover bg-[#F3EDE6]" />}
+          <div className="p-4">
+            <p className="text-lg font-bold text-[#2D2A26] leading-snug">{draft.title || 'Untitled publication'}</p>
+            {draft.summary && <p className="text-sm text-[#6B7280] mt-1">{draft.summary}</p>}
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {draft.topics.slice(0, 4).map(t => <span key={t.id} className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#C86A43]">{t.name}</span>)}
+            </div>
+            {draft.blog && <p className="text-xs text-[#4B4845] mt-3 line-clamp-4 whitespace-pre-line">{draft.blog}</p>}
+            <button disabled className="mt-3 px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg opacity-90">{draft.ctaLabel || 'Read more'}</button>
+          </div>
+        </div>
+      </BuilderCard>
+
+      {/* ── Where this appears / what gets generated (informational) ─────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
           <p className="text-sm font-bold text-[#2D2A26] mb-1">Once published, appears in:</p>
-          <p className="text-xs text-[#9CA3AF] mb-4">Publish once, distributed everywhere.</p>
-          <div className="space-y-2.5">
-            {DISTRIBUTION_LOCATIONS.map(loc => <CheckItem key={loc} label={loc} done />)}
-          </div>
+          <div className="space-y-2.5 mt-3">{DISTRIBUTION_LOCATIONS.map(loc => <CheckItem key={loc} label={loc} done />)}</div>
         </div>
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
-          <p className="text-sm font-bold text-[#2D2A26] mb-1">CULO will also create:</p>
-          <p className="text-xs text-[#9CA3AF] mb-4">Knowledge automations are in a future sprint.</p>
-          <div className="space-y-2.5">
-            {KNOWLEDGE_OUTPUTS.map(item => <CheckItem key={item} label={item} done={false} />)}
+          <p className="text-sm font-bold text-[#2D2A26] mb-1">Generated automatically on publish:</p>
+          <div className="space-y-2.5 mt-3">
+            <CheckItem label="Related founders, businesses & content" />
+            <CheckItem label="Search keywords (SEO)" />
+            <CheckItem label="AI-readable questions (GEO)" />
+            <CheckItem label="Canonical topics" />
+            <CheckItem label="FAQs" done={false} />
+            <CheckItem label="Automated resources" done={false} />
           </div>
         </div>
       </div>
 
-      {draft.topics.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-6">
-          {draft.topics.map(t => (
-            <span key={t.id} className="text-xs px-2.5 py-1 rounded-full bg-[#F3EDE6] text-[#C86A43] font-medium">{t.name}</span>
-          ))}
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3">
-        <button
-          onClick={() => onPublish('publish')}
-          disabled={publishing}
-          className="w-full py-4 bg-[#C86A43] text-white text-base font-bold rounded-2xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
-        >
-          {publishing ? 'Publishing…' : 'Publish to Village'}
-        </button>
-        <div className="grid grid-cols-2 gap-3">
+      {/* ── One publish action ───────────────────────────────────────────── */}
+      <div className="sticky bottom-0 bg-[#F8F5F0]/95 backdrop-blur pt-3 pb-1 -mx-8 px-8 flex flex-col gap-3 border-t border-[#E8E4DD] mt-2">
+        {publishError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{publishError}</p>}
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => onPublish('draft')}
-            disabled={publishing}
-            className="py-3 border-2 border-[#E8E4DD] text-[#2D2A26] text-sm font-semibold rounded-xl hover:border-[#C86A43]/40 disabled:opacity-60 transition-colors"
+            onClick={() => onPublish('publish')}
+            disabled={publishing || !draft.founderId}
+            className="flex-1 py-3.5 bg-[#C86A43] text-white text-base font-bold rounded-2xl hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
           >
-            Save as Draft
+            {publishing ? 'Publishing…' : 'Publish to Village'}
           </button>
-          <button
-            onClick={() => onPublish('archive')}
-            disabled={publishing}
-            className="py-3 border-2 border-[#E8E4DD] text-[#6B7280] text-sm font-medium rounded-xl hover:border-[#E8E4DD] disabled:opacity-60 transition-colors"
-          >
+          <button onClick={() => onPublish('draft')} disabled={publishing} className="px-4 py-3.5 border-2 border-[#E8E4DD] text-[#2D2A26] text-sm font-semibold rounded-xl hover:border-[#C86A43]/40 disabled:opacity-50 transition-colors">
+            Save Draft
+          </button>
+          <button onClick={() => onPublish('archive')} disabled={publishing} className="px-4 py-3.5 border-2 border-[#E8E4DD] text-[#6B7280] text-sm font-medium rounded-xl hover:border-[#E8E4DD] disabled:opacity-50 transition-colors">
             Archive
           </button>
         </div>
@@ -1062,14 +1223,73 @@ function DoneStep({ draft, publishedSlug, action, onPublishAnother }: {
   )
 }
 
+// ─── Auto-save (draft-in-progress only — not the published Story) ─────────────
+// Pure localStorage, no network: this is "don't lose my half-written wizard
+// state if the tab closes," distinct from the real Supabase-backed publish.
+
+const DRAFT_AUTOSAVE_KEY = 'culo_v1_publish_wizard_draft'
+type AutoSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
+function loadAutoSavedDraft(): PublishDraft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_AUTOSAVE_KEY)
+    return raw ? (JSON.parse(raw) as PublishDraft) : null
+  } catch {
+    return null
+  }
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export function DashboardPublishPage() {
+  const { user } = useAuth()
+  const currentFounder = getCurrentFounder(user)
+  const location = useLocation()
   const [step,          setStep]          = useState<PublishStep>('format')
-  const [draft,         setDraft]         = useState<PublishDraft>(defaultDraft)
+  const [draft,         setDraft]         = useState<PublishDraft>(() => {
+    // Don't resurrect a stale wizard draft over a fresh "Turn into Story" prefill.
+    if ((location.state as { importedContentId?: string } | null)?.importedContentId) {
+      return defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
+    }
+    return loadAutoSavedDraft() ?? defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
+  })
   const [publishing,    setPublishing]    = useState(false)
   const [publishedSlug, setPublishedSlug] = useState('')
+  const [publishError,  setPublishError]  = useState('')
   const [lastAction,    setLastAction]    = useState<'publish' | 'draft' | 'archive'>('publish')
+  const [autoSave,      setAutoSave]      = useState<AutoSaveStatus>('idle')
+
+  // Debounced auto-save of the in-progress wizard state to localStorage.
+  useEffect(() => {
+    setAutoSave('saving')
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_AUTOSAVE_KEY, JSON.stringify(draft))
+        setAutoSave('saved')
+      } catch {
+        setAutoSave('error')
+      }
+    }, 600)
+    return () => clearTimeout(t)
+  }, [draft])
+
+  // Arrived via "Turn into Story" on an ImportedContent row — prefill the draft
+  // from it and remember the link so publish() can write it both ways.
+  useEffect(() => {
+    const importedContentId = (location.state as { importedContentId?: string } | null)?.importedContentId
+    if (!importedContentId) return
+    const item = importedContentService.get(importedContentId)
+    if (!item) return
+    setDraft(prev => ({
+      ...prev,
+      importedContentId,
+      title: prev.title || item.title,
+      summary: prev.summary || item.autoSummary || item.description || '',
+      blog: prev.blog || item.diaryNote || item.transcriptText || '',
+      coverImage: prev.coverImage || item.thumbnailUrl || '',
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function patch(changes: Partial<PublishDraft>) {
     setDraft(prev => ({ ...prev, ...changes }))
@@ -1085,13 +1305,20 @@ export function DashboardPublishPage() {
     if (idx > 0) setStep(STEPS[idx - 1])
   }
 
-  function handlePublish(action: 'publish' | 'draft' | 'archive') {
+  // The single canonical publish path: write the Story, link it to its source
+  // ImportedContent (if any) in both directions, then generate Village
+  // Intelligence from it — which is also where SEO keywords, GEO questions, and
+  // related founder/business/content links all get computed (see
+  // villageIntelligence.ts's runAnalysis()). One call produces all of it; there
+  // is no second/manual "refresh" step, and no parallel logic duplicating what
+  // the Import flow already does for ImportedContent.
+  async function handlePublish(action: 'publish' | 'draft' | 'archive') {
     setPublishing(true)
     setLastAction(action)
 
     const allFounders = getFounders()
     const founder     = allFounders.find(f => f.id === draft.founderId)
-    const location    = founder?.location ?? locations[0]!
+    const loc         = locations.find(l => l.id === draft.locationId) ?? founder?.location ?? locations[0]!
     const industry    = founder?.industry ?? industries[0]!
     const titleSlug   = slugify(draft.title) || `pub-${Date.now()}`
     const id          = `pub-${Date.now()}`
@@ -1099,8 +1326,9 @@ export function DashboardPublishPage() {
                       : action === 'archive' ? 'archived'  as const
                       : 'draft'              as const
     const ctaUrl      = draft.ctaUrl || draft.documentUrl || ''
+    const nowIso       = new Date().toISOString().split('T')[0]
 
-    updateStory({
+    const story: Story = {
       id,
       slug:           titleSlug,
       title:          draft.title   || 'Untitled',
@@ -1108,7 +1336,7 @@ export function DashboardPublishPage() {
       coverImage:     draft.coverImage || (draft.carouselSlides.filter(Boolean)[0] ?? '/placeholders/village-story.svg'),
       founderId:      draft.founderId,
       businessId:     draft.businessId,
-      location,
+      location: loc,
       industry,
       topics:         draft.topics,
       contentTypes:   draft.contentTypes.length > 0 ? draft.contentTypes : ['blog'],
@@ -1120,39 +1348,97 @@ export function DashboardPublishPage() {
                         : undefined,
       ideaIds:        [],
       relatedStoryIds: [],
+      importedContentId: draft.importedContentId,
       ctaLabel:       draft.ctaLabel,
       ctaUrl,
       status,
       featured:       false,
-      publishingSource: draft.urlEntries.some(e => e.url.trim()) ? 'website-import'
+      publishingSource: draft.importedContentId ? 'website-import'
+                      : draft.urlEntries.some(e => e.url.trim()) ? 'website-import'
                       : draft.uploadedFileNames.length > 0        ? 'one-drive-import'
                       : 'manual-dashboard',
-      createdAt:      new Date().toISOString().split('T')[0],
-      updatedAt:      new Date().toISOString().split('T')[0],
-    })
+      createdAt:      nowIso,
+      updatedAt:      nowIso,
+    }
 
+    const result = await updateStory(story)
+    if (!result.success) {
+      setPublishing(false)
+      // Surfaced via the Preview step's publishError prop below.
+      setPublishError(result.error ?? 'Could not publish. Please try again.')
+      return
+    }
+
+    if (draft.importedContentId) {
+      const source = importedContentService.get(draft.importedContentId)
+      if (source) void importedContentService.upsert({ ...source, relatedStoryId: id })
+    }
+
+    if (status === 'published') {
+      // Same engine the Story Builder's live preview used — re-run once more
+      // against the final story, then merge in whatever the founder explicitly
+      // edited in the Lessons/Questions/Related-entity cards. Nothing here is a
+      // second pipeline: analyse() + upsert() is the one call every publish path
+      // (Import, wizard, edit) goes through.
+      const intel = villageContentIntelligenceService.analyse(storyToInput(story))
+      const merged = {
+        ...intel,
+        lessons: draft.lessonsOverride ?? intel.lessons,
+        geoQuestions: draft.questionsOverride ?? intel.geoQuestions,
+        relatedFounderIds: [
+          ...intel.relatedFounderIds.filter(fid => !draft.excludedFounderIds.includes(fid)),
+          ...draft.extraFounderIds,
+        ],
+        relatedBusinessIds: [
+          ...intel.relatedBusinessIds.filter(bid => !draft.excludedBusinessIds.includes(bid)),
+          ...draft.extraBusinessIds,
+        ],
+        relatedContentIds: intel.relatedContentIds.filter(cid => !draft.excludedContentIds.includes(cid)),
+      }
+      void villageContentIntelligenceService.upsert(merged)
+    }
+
+    localStorage.removeItem(DRAFT_AUTOSAVE_KEY)
+    setPublishError('')
     setPublishedSlug(titleSlug)
     setPublishing(false)
     setStep('done')
   }
 
   function reset() {
-    setDraft(defaultDraft())
+    localStorage.removeItem(DRAFT_AUTOSAVE_KEY)
+    setDraft(defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? ''))
     setStep('format')
     setPublishedSlug('')
   }
 
   return (
     <div className="min-h-full p-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      {step !== 'done' && <ProgressBar step={step} />}
+      {step !== 'done' && (
+        <div className="flex items-center justify-between mb-2">
+          <ProgressBar step={step} />
+          <p className="text-[11px] text-[#9CA3AF] shrink-0 ml-4">
+            {autoSave === 'saving' && 'Saving…'}
+            {autoSave === 'saved' && 'Saved just now'}
+            {autoSave === 'error' && <span className="text-red-500">Save failed</span>}
+          </p>
+        </div>
+      )}
 
-      {step === 'format'      && <FormatStep      draft={draft} onChange={patch} onNext={next} />}
-      {step === 'content'     && <ContentStep     draft={draft} onChange={patch} onNext={next} onBack={back} />}
-      {step === 'info'        && <InfoStep        draft={draft} onChange={patch} onNext={next} onBack={back} />}
-      {step === 'media'       && <MediaStep       draft={draft} onChange={patch} onNext={next} onBack={back} />}
-      {step === 'connections' && <ConnectionsStep draft={draft} onChange={patch} onNext={next} onBack={back} />}
-      {step === 'preview'     && <PreviewStep     draft={draft} onPublish={handlePublish} onBack={back} publishing={publishing} />}
-      {step === 'done'        && <DoneStep        draft={draft} publishedSlug={publishedSlug} action={lastAction} onPublishAnother={reset} />}
+      {step === 'format'  && <FormatStep  draft={draft} onChange={patch} onNext={next} />}
+      {step === 'content' && <ContentStep draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'media'   && <MediaStep   draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'builder' && (
+        <StoryBuilderStep
+          draft={draft}
+          onChange={patch}
+          onBack={back}
+          onPublish={action => void handlePublish(action)}
+          publishing={publishing}
+          publishError={publishError}
+        />
+      )}
+      {step === 'done' && <DoneStep draft={draft} publishedSlug={publishedSlug} action={lastAction} onPublishAnother={reset} />}
     </div>
   )
 }
