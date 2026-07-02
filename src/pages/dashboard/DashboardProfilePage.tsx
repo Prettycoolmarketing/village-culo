@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder } from '../../services/founders'
+import { getBusinesses } from '../../services/businesses'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { publisherPartnerProfileService } from '../../services/partnership'
@@ -21,14 +22,16 @@ import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { getFounderMissingItems, getMissingCounts, type MissingItem } from '../../utils/missingAssets'
 import { getFounderFeaturedIn } from '../../utils/featuredIn'
 import { focusField } from '../../utils/focusField'
-import type { Founder, Topic } from '../../types'
+import type { Founder, Topic, FAQ, SocialLink, SocialPlatform, Status } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
+// Every existing field keeps its home; this map only changed which tab a
+// recommendation jumps to, not what data exists.
 const FIELD_TO_TAB: Record<string, string> = {
-  avatar: 'media', coverImage: 'media',
-  bio: 'content', topics: 'content', faqs: 'content',
-  website: 'publishing', socials: 'publishing',
-  seoTitle: 'seo', seoDescription: 'seo',
+  avatar: 'identity', coverImage: 'identity', bio: 'identity', socials: 'identity',
+  topics: 'expertise', faqs: 'expertise',
+  website: 'identity',
+  seoTitle: 'discovery', seoDescription: 'discovery',
 }
 
 // ─── Shared form helpers ───────────────────────────────────────────────────────
@@ -46,7 +49,16 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   )
 }
 
-// ─── Publisher Discovery Profile ─────────────────────────────────────────────
+/** Explains why a section matters for discovery, not just what it does. */
+function TabIntro({ children }: { children: ReactNode }) {
+  return (
+    <div className="px-4 py-3 bg-[#F8F5F0] rounded-xl mb-1">
+      <p className="text-xs text-[#6B7280] leading-relaxed">{children}</p>
+    </div>
+  )
+}
+
+// ─── Publisher Discovery Profile (opportunity matching) ───────────────────────
 
 function DiscoverySection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -125,9 +137,10 @@ const COMMUNITY_OPPS = [
   { key: 'openToReferrals'     as const, label: 'Business referral partnerships' },
 ]
 
-function PublisherDiscoveryProfile({ founderId, founderTopics }: {
+function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
   founderId: string
   founderTopics: Topic[]
+  onEditTopics: () => void
 }) {
   const [profile, setProfile] = useState<PublisherPartnerProfile>(
     () => publisherPartnerProfileService.getOrCreate(founderId)
@@ -150,26 +163,16 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
     setTimeout(() => setSaved(false), 2500)
   }
 
-  const discoveryInputClass =
-    'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
+  const discoveryInputClass = inputClass
 
   return (
-    <div className="max-w-2xl flex flex-col gap-5 pb-8">
-
-      {/* Value statement */}
-      <div className="px-5 py-4 bg-[#5E6B4A]/5 rounded-xl border border-[#5E6B4A]/20">
-        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Your Publisher Discovery Profile</p>
-        <p className="text-xs text-[#6B7280] leading-relaxed">
-          This helps CULO find the right opportunities, recommendations, speaking invites, podcasts, collaborations and businesses for you — based on what you write about and what you're genuinely open to.
-        </p>
-      </div>
+    <div className="flex flex-col gap-5">
 
       {/* Status */}
       <DiscoverySection
         title="Discovery Status"
         description="Control whether CULO actively matches you with opportunities and recommendations"
       >
-        {/* Enable toggle */}
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-medium text-[#2D2A26]">Enable Discovery Profile</p>
@@ -184,7 +187,6 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
           </button>
         </div>
 
-        {/* Availability */}
         <div>
           <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Availability</label>
           <p className="text-xs text-[#9CA3AF] mb-2">Let businesses know how open you are right now</p>
@@ -209,39 +211,12 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
             ))}
           </div>
         </div>
-
-        {/* Visibility */}
-        <div>
-          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Profile Visibility</label>
-          <div className="flex flex-col gap-2.5">
-            {([
-              { value: 'public',       label: 'Public',       desc: 'Visible to anyone on CULO' },
-              { value: 'discoverable', label: 'Discoverable', desc: 'Only surfaces when matched to a business or opportunity' },
-              { value: 'private',      label: 'Private',      desc: 'Hidden — only you can see this profile' },
-            ] as const).map(opt => (
-              <label key={opt.value} className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name={`visibility-${founderId}`}
-                  value={opt.value}
-                  checked={(profile.profileVisibility ?? 'discoverable') === opt.value}
-                  onChange={() => setP('profileVisibility', opt.value)}
-                  className="mt-0.5 accent-[#C86A43]"
-                />
-                <div>
-                  <p className="text-sm font-medium text-[#2D2A26]">{opt.label}</p>
-                  <p className="text-xs text-[#9CA3AF]">{opt.desc}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-        </div>
       </DiscoverySection>
 
       {/* For the Record */}
       <DiscoverySection
         title="For the Record"
-        description="Write this for CULO's matching engine and for businesses reviewing your profile — not for the public. Be specific and honest."
+        description="Write this for CULO's matching engine and for businesses reviewing your profile, not for the public. Be specific and honest."
       >
         <div>
           <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">What do you want to be known for?</label>
@@ -251,14 +226,13 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
             onChange={e => setP('professionalBio', e.target.value || undefined)}
             rows={4}
             className={discoveryInputClass + ' resize-y'}
-            placeholder="I help founders tell the story behind their business — not the polished version, the real one. I've published 200+ stories about building slowly, using fewer tools better, and running businesses on your own terms."
+            placeholder="I help founders tell the story behind their business, not the polished version, the real one. I've published 200+ stories about building slowly, using fewer tools better, and running businesses on your own terms."
           />
         </div>
 
-        {/* Founder topics — read-only reference, no re-entry */}
         {founderTopics.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-[#6B7280] mb-2">Your profile topics (from Content tab)</p>
+            <p className="text-xs font-medium text-[#6B7280] mb-2">Your topics (from the Expertise tab)</p>
             <div className="flex flex-wrap gap-1.5">
               {founderTopics.map(t => (
                 <span key={t.id} className="px-2.5 py-1 rounded-full text-xs bg-[#C86A43]/10 text-[#C86A43] border border-[#C86A43]/20">
@@ -268,12 +242,8 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
             </div>
             <p className="text-xs text-[#9CA3AF] mt-2">
               CULO uses these for opportunity matching.{' '}
-              <button
-                type="button"
-                onClick={() => {/* parent controls tab — user can click Content tab manually */}}
-                className="text-[#C86A43] underline-offset-2 hover:underline"
-              >
-                Edit in the Content tab ↑
+              <button type="button" onClick={onEditTopics} className="text-[#C86A43] underline-offset-2 hover:underline">
+                Edit in Expertise →
               </button>
             </p>
           </div>
@@ -286,8 +256,8 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
         description="List the tools, products, services and businesses you actually use and would genuinely recommend to others. One per line. CULO uses this to detect future recommendations in your stories."
       >
         <div>
-          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Tools & products I use</label>
-          <p className="text-xs text-[#9CA3AF] mb-2">One per line — be specific. "Notion" not "productivity tools."</p>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Tools &amp; products I use</label>
+          <p className="text-xs text-[#9CA3AF] mb-2">One per line, be specific. "Notion" not "productivity tools."</p>
           <textarea
             value={(profile.genuineRecommendations ?? []).join('\n')}
             onChange={e => {
@@ -307,61 +277,28 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
         title="Opportunities I'm Open To"
         description="Be selective. Only turn on what you'd genuinely say yes to. Businesses see this when deciding whether to reach out."
       >
-        <OpportunityGroup
-          title="Speaking & Events"
-          description="Keynotes, podcasts, workshops, live appearances"
-          items={SPEAKING_OPPS}
-          profile={profile}
-          onToggle={toggleP}
-        />
-        <OpportunityGroup
-          title="Content & Campaigns"
-          description="Guest posts, brand collaborations, sponsored content"
-          items={CONTENT_OPPS}
-          profile={profile}
-          onToggle={toggleP}
-        />
-        <OpportunityGroup
-          title="Business & Advisory"
-          description="Consulting, advisory, freelance and strategy work"
-          items={BUSINESS_OPPS}
-          profile={profile}
-          onToggle={toggleP}
-        />
-        <OpportunityGroup
-          title="Collaboration & Community"
-          description="Publisher partnerships, mentoring, referral programs"
-          items={COMMUNITY_OPPS}
-          profile={profile}
-          onToggle={toggleP}
-        />
+        <OpportunityGroup title="Speaking &amp; Events" description="Keynotes, podcasts, workshops, live appearances" items={SPEAKING_OPPS} profile={profile} onToggle={toggleP} />
+        <OpportunityGroup title="Content &amp; Campaigns" description="Guest posts, brand collaborations, sponsored content" items={CONTENT_OPPS} profile={profile} onToggle={toggleP} />
+        <OpportunityGroup title="Business &amp; Advisory" description="Consulting, advisory, freelance and strategy work" items={BUSINESS_OPPS} profile={profile} onToggle={toggleP} />
+        <OpportunityGroup title="Collaboration &amp; Community" description="Publisher partnerships, mentoring, referral programs" items={COMMUNITY_OPPS} profile={profile} onToggle={toggleP} />
       </DiscoverySection>
 
       {/* Who I Want to Connect With */}
-      <DiscoverySection
-        title="Who I Want to Connect With"
-        description="Describe the types of businesses, founders or collaborators you'd most like CULO to match you with"
-      >
-        <div>
-          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Ideal collaborator or business</label>
-          <textarea
-            value={profile.idealCollaborator ?? ''}
-            onChange={e => setP('idealCollaborator', e.target.value || undefined)}
-            rows={3}
-            className={discoveryInputClass + ' resize-none'}
-            placeholder="Bootstrapped software businesses that genuinely care about their customers. Not VC-funded, not growth-at-all-costs. Ideally founder-led with a small team."
-          />
-        </div>
+      <DiscoverySection title="Who I Want to Connect With" description="Describe the types of businesses, founders or collaborators you'd most like CULO to match you with">
+        <textarea
+          value={profile.idealCollaborator ?? ''}
+          onChange={e => setP('idealCollaborator', e.target.value || undefined)}
+          rows={3}
+          className={discoveryInputClass + ' resize-none'}
+          placeholder="Bootstrapped software businesses that genuinely care about their customers. Not VC-funded, not growth-at-all-costs. Ideally founder-led with a small team."
+        />
       </DiscoverySection>
 
       {/* Locations & Markets */}
-      <DiscoverySection
-        title="Locations & Markets"
-        description="Where can you work with businesses? Your primary location is already on your profile — add any additional markets here."
-      >
+      <DiscoverySection title="Locations &amp; Markets" description="Where can you work with businesses? Your primary location is already on your profile, add any additional markets here.">
         <div>
           <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Markets I serve</label>
-          <p className="text-xs text-[#9CA3AF] mb-2">Countries or regions (comma separated)</p>
+          <p className="text-xs text-[#9CA3AF] mb-2">Countries or regions, comma separated</p>
           <input
             type="text"
             value={(profile.countries ?? []).join(', ')}
@@ -376,10 +313,7 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
       </DiscoverySection>
 
       {/* Contact Preference */}
-      <DiscoverySection
-        title="Contact Preference"
-        description="How should businesses and collaborators reach out to you?"
-      >
+      <DiscoverySection title="Contact Preference" description="How should businesses and collaborators reach out to you?">
         <div className="flex flex-col gap-2.5">
           {([
             { value: 'open',             label: 'Open',             desc: 'Reach out however you prefer — email, DM, form' },
@@ -405,16 +339,91 @@ function PublisherDiscoveryProfile({ founderId, founderTopics }: {
         </div>
       </DiscoverySection>
 
-      {/* Save */}
-      <div className="flex items-center gap-3 pt-2">
-        <button
-          onClick={handleSave}
-          className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-        >
-          Save Discovery Profile
+      <div className="flex items-center gap-3">
+        <button onClick={handleSave} className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
+          Save Opportunity Matching
         </button>
         {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
       </div>
+    </div>
+  )
+}
+
+// ─── Social links (multi-entry) ────────────────────────────────────────────────
+
+const PLATFORM_LABELS: Record<SocialPlatform, string> = {
+  linkedin: 'LinkedIn', instagram: 'Instagram', facebook: 'Facebook',
+  'facebook-page': 'Facebook Page', youtube: 'YouTube', tiktok: 'TikTok',
+  x: 'X', threads: 'Threads', podcast: 'Podcast', newsletter: 'Newsletter', custom: 'Custom Link',
+}
+const PLATFORM_ORDER: SocialPlatform[] = ['linkedin', 'instagram', 'facebook', 'facebook-page', 'youtube', 'tiktok', 'x', 'threads', 'podcast', 'newsletter', 'custom']
+
+function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange: (links: SocialLink[]) => void }) {
+  function add() {
+    onChange([...links, { id: `link-${Date.now()}`, platform: 'instagram', url: '' }])
+  }
+  function update(i: number, patch: Partial<SocialLink>) {
+    onChange(links.map((l, idx) => idx === i ? { ...l, ...patch } : l))
+  }
+  function remove(i: number) {
+    onChange(links.filter((_, idx) => idx !== i))
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      {links.map((link, i) => (
+        <div key={link.id} className="flex items-center gap-2">
+          <select
+            value={link.platform}
+            onChange={e => update(i, { platform: e.target.value as SocialPlatform })}
+            className="border border-[#E8E4DD] rounded-lg px-2 py-2 text-xs bg-white shrink-0"
+          >
+            {PLATFORM_ORDER.map(p => <option key={p} value={p}>{PLATFORM_LABELS[p]}</option>)}
+          </select>
+          {link.platform === 'custom' && (
+            <input type="text" value={link.label ?? ''} onChange={e => update(i, { label: e.target.value })}
+              placeholder="Label" className={inputClass + ' max-w-[120px]'} />
+          )}
+          <input type="url" value={link.url} onChange={e => update(i, { url: e.target.value })}
+            placeholder="https://…" className={inputClass} />
+          <button onClick={() => remove(i)} className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0 px-1">✕</button>
+        </div>
+      ))}
+      <button onClick={add} className="text-xs font-semibold text-[#C86A43] hover:underline text-left mt-1">
+        + Add a link
+      </button>
+    </div>
+  )
+}
+
+// ─── FAQ editor ─────────────────────────────────────────────────────────────────
+
+function FAQEditor({ faqs, onChange }: { faqs: FAQ[]; onChange: (faqs: FAQ[]) => void }) {
+  function add() {
+    onChange([...faqs, { id: `faq-${Date.now()}`, question: '', answer: '', topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [] }])
+  }
+  function update(i: number, patch: Partial<FAQ>) {
+    onChange(faqs.map((f, idx) => idx === i ? { ...f, ...patch } : f))
+  }
+  function remove(i: number) {
+    onChange(faqs.filter((_, idx) => idx !== i))
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      {faqs.map((faq, i) => (
+        <div key={faq.id} className="border border-[#E8E4DD] rounded-xl p-3 flex flex-col gap-2 bg-white">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Question {i + 1}</span>
+            <button onClick={() => remove(i)} className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
+          </div>
+          <input type="text" value={faq.question} onChange={e => update(i, { question: e.target.value })}
+            placeholder="A question people ask you" className={inputClass} />
+          <textarea value={faq.answer} onChange={e => update(i, { answer: e.target.value })} rows={2}
+            placeholder="Your answer" className={inputClass + ' resize-none'} />
+        </div>
+      ))}
+      <button onClick={add} className="text-xs font-semibold text-[#C86A43] hover:underline text-left">
+        + Add a question
+      </button>
     </div>
   )
 }
@@ -447,21 +456,19 @@ export function DashboardProfilePage() {
   const counts      = getMissingCounts(missing)
   const featuredIn  = getFounderFeaturedIn(draft.id)
 
-  // Relationships
-  const founderStories  = getStories({ founderId: draft.id })
-  const founderIdeas    = getIdeas({ founderId: draft.id })
-  const founderLibrary  = getLibraryItems({ founderId: draft.id })
+  // Relationships — everything this founder is connected to across the Village.
+  const founderBusinesses = getBusinesses().filter(b => b.founderId === draft.id)
+  const founderStories    = getStories({ founderId: draft.id })
+  const founderIdeas      = getIdeas({ founderId: draft.id })
+  const founderLibrary    = getLibraryItems({ founderId: draft.id })
 
   const TABS = [
-    { key: 'overview',      label: 'Overview'          },
-    { key: 'content',       label: 'Content'           },
-    { key: 'media',         label: 'Media'             },
-    { key: 'relationships', label: 'Relationships', badge: founderStories.length + founderIdeas.length },
-    { key: 'featured-in',   label: 'Featured In',  badge: featuredIn.length },
-    { key: 'seo',           label: 'SEO & GEO'         },
-    { key: 'publishing',    label: 'Publishing'        },
-    { key: 'discovery',     label: 'Discovery Profile' },
-    { key: 'settings',      label: 'Settings'          },
+    { key: 'overview',      label: 'Overview'      },
+    { key: 'identity',      label: 'Identity'      },
+    { key: 'expertise',     label: 'Expertise'     },
+    { key: 'discovery',     label: 'Discovery'     },
+    { key: 'relationships', label: 'Relationships', badge: founderBusinesses.length + founderStories.length + founderIdeas.length + founderLibrary.length + featuredIn.length },
+    { key: 'settings',      label: 'Settings'      },
   ]
 
   function set<K extends keyof Founder>(key: K, value: Founder[K]) {
@@ -494,6 +501,8 @@ export function DashboardProfilePage() {
     if (result.success) setSaved(true)
     else setSaveError(result.error ?? 'Save failed. Please try again.')
   }
+
+  const isPublic = draft.status === 'published' || draft.status === 'featured'
 
   return (
     <div className="flex flex-col h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -551,7 +560,11 @@ export function DashboardProfilePage() {
         {/* ── Overview ─────────────────────────────────────────────────── */}
         {tab === 'overview' && (
           <div className="max-w-2xl flex flex-col gap-6">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
+                <p className="text-2xl font-bold text-[#2D2A26]">{founderBusinesses.length}</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Businesses</p>
+              </div>
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderStories.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Stories</p>
@@ -570,7 +583,7 @@ export function DashboardProfilePage() {
               <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Profile Progress</p>
               <MissingAssetsPanel
                 items={missing}
-                onAction={(item: MissingItem) => { setTab(FIELD_TO_TAB[item.field] ?? 'content'); focusField(item.field) }}
+                onAction={(item: MissingItem) => { setTab(FIELD_TO_TAB[item.field] ?? 'identity'); focusField(item.field) }}
               />
             </div>
 
@@ -590,9 +603,14 @@ export function DashboardProfilePage() {
           </div>
         )}
 
-        {/* ── Content ──────────────────────────────────────────────────── */}
-        {tab === 'content' && (
+        {/* ── Identity: name, bio, photo, cover, links ────────────────────── */}
+        {tab === 'identity' && (
           <div className="max-w-2xl flex flex-col gap-5">
+            <TabIntro>
+              This is how people first recognise you across the Village: your name, your photo and the
+              story you tell about yourself. It's the foundation everything else builds on.
+            </TabIntro>
+
             <Field label="Display Name">
               <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
             </Field>
@@ -600,6 +618,59 @@ export function DashboardProfilePage() {
               <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{draft.bio.length} chars</p>
             </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Profile Photo" hint="Square, min 400×400px.">
+                <div className="flex gap-3 items-start mt-1">
+                  <img src={draft.avatar || '/placeholders/village-logo.svg'} alt="" className="w-16 h-16 rounded-full object-cover shrink-0 bg-[#F3EDE6] border border-[#E8E4DD]" />
+                  <div className="flex-1">
+                    <input id="avatar" type="url" value={draft.avatar} onChange={e => set('avatar', e.target.value)} className={inputClass} placeholder="/assets/your-headshot.jpg" />
+                    {draft.avatar.includes('/placeholders/') && (
+                      <p className="text-xs text-red-600 mt-1.5">Using a placeholder. Upload a real photo.</p>
+                    )}
+                  </div>
+                </div>
+              </Field>
+              <Field label="Cover Image" hint="16:9 recommended.">
+                <div className="flex flex-col gap-2 mt-1">
+                  {draft.coverImage && (
+                    <img src={draft.coverImage} alt="" className="w-full h-16 rounded-lg object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />
+                  )}
+                  <input id="coverImage" type="url" value={draft.coverImage ?? ''} onChange={e => set('coverImage', e.target.value || undefined)} className={inputClass} placeholder="/assets/your-cover.jpg" />
+                </div>
+              </Field>
+            </div>
+
+            <div className="border-t border-[#E8E4DD] pt-5">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Links</p>
+              <p className="text-xs text-[#9CA3AF] mb-3">Where people can follow you. A business website belongs on the Business profile, not here.</p>
+              <div className="flex flex-col gap-3 mb-4">
+                <Field label="Website">
+                  <input id="website" type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://yourwebsite.com" />
+                </Field>
+                <Field label="Instagram">
+                  <input id="socials" type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/handle" />
+                </Field>
+                <Field label="LinkedIn">
+                  <input type="url" value={draft.linkedin ?? ''} onChange={e => set('linkedin', e.target.value || undefined)} className={inputClass} placeholder="https://linkedin.com/in/handle" />
+                </Field>
+              </div>
+              <Field label="Additional links" hint="Add more accounts, including more than one of the same kind.">
+                <SocialLinksEditor links={draft.socialLinks ?? []} onChange={v => set('socialLinks', v)} />
+              </Field>
+            </div>
+          </div>
+        )}
+
+        {/* ── Expertise: topics, industry, location, FAQs ─────────────────── */}
+        {tab === 'expertise' && (
+          <div className="max-w-2xl flex flex-col gap-5">
+            <TabIntro>
+              This is what connects you to the Village knowledge graph. Topics, industry and location
+              determine which stories, ideas and businesses you're linked to, and what you show up for
+              in search.
+            </TabIntro>
+
             <div className="grid grid-cols-2 gap-4">
               <Field label="Location">
                 <select
@@ -620,7 +691,8 @@ export function DashboardProfilePage() {
                 </select>
               </Field>
             </div>
-            <Field label="Topics" hint="Power the Village knowledge graph.">
+
+            <Field label="Topics" hint="What would you like people to discover you for? These power the knowledge graph.">
               <div className="flex flex-wrap gap-2 mt-1">
                 {allTopics.map(topic => {
                   const active = draft.topics.some(t => t.id === topic.id)
@@ -640,43 +712,95 @@ export function DashboardProfilePage() {
                 })}
               </div>
             </Field>
+
+            <div className="border-t border-[#E8E4DD] pt-5">
+              <Field label="Frequently Asked Questions" hint="Real questions people ask you. These help both search engines and AI systems understand what you know.">
+                <FAQEditor faqs={draft.faqs ?? []} onChange={v => set('faqs', v)} />
+              </Field>
+            </div>
           </div>
         )}
 
-        {/* ── Media ────────────────────────────────────────────────────── */}
-        {tab === 'media' && (
-          <div className="max-w-2xl flex flex-col gap-6">
-            <Field label="Profile Photo" hint="Displayed as your avatar throughout the Village (square, min 400×400px).">
-              <div className="flex gap-4 items-start mt-2">
-                <img src={draft.avatar || '/placeholders/village-logo.svg'} alt="" className="w-20 h-20 rounded-full object-cover shrink-0 bg-[#F3EDE6] border border-[#E8E4DD]" />
-                <div className="flex-1">
-                  <input id="avatar" type="url" value={draft.avatar} onChange={e => set('avatar', e.target.value)} className={inputClass} placeholder="/assets/your-headshot.jpg" />
-                  {draft.avatar.includes('/placeholders/') && (
-                    <p className="text-xs text-red-600 mt-1.5">⚠ Using a placeholder — upload a real photo.</p>
-                  )}
-                </div>
+        {/* ── Discovery: SEO, GEO, search preview, visibility ─────────────── */}
+        {tab === 'discovery' && (
+          <div className="max-w-2xl flex flex-col gap-5">
+            <TabIntro>
+              This controls how your profile appears in search results and whether it's public at all.
+              Getting this right is what makes the difference between being found and being invisible.
+            </TabIntro>
+
+            <Field label="Public Visibility" hint="Only published profiles are indexed by search and appear across the Village.">
+              <div className="flex gap-2 flex-wrap">
+                {(['draft', 'submitted', 'published', 'featured', 'archived'] as Status[]).map(s => (
+                  <button
+                    key={s}
+                    onClick={() => set('status', s)}
+                    className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${
+                      draft.status === s
+                        ? 'bg-[#C86A43] text-white border-[#C86A43]'
+                        : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
+              <p className={`text-xs mt-2 ${isPublic ? 'text-green-600' : 'text-[#9CA3AF]'}`}>
+                {isPublic ? 'Your profile is public and discoverable.' : 'Your profile is hidden from public search and directories.'}
+              </p>
             </Field>
 
-            <Field label="Cover Image" hint="Displayed at the top of your founder profile page (16:9 recommended).">
-              <div className="flex flex-col gap-2 mt-2">
-                {draft.coverImage && (
-                  <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />
-                )}
-                <input id="coverImage" type="url" value={draft.coverImage ?? ''} onChange={e => set('coverImage', e.target.value || undefined)} className={inputClass} placeholder="/assets/your-cover.jpg" />
-                {draft.coverImage?.includes('/placeholders/') && (
-                  <p className="text-xs text-amber-600">⚠ Using a placeholder — add a real cover image.</p>
-                )}
-              </div>
+            <Field label="SEO Title" hint="Shown in browser tab and search results. ~60 chars.">
+              <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
+              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
             </Field>
+            <Field label="SEO Description" hint="Shown in search results. 140 to 160 characters is ideal.">
+              <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} placeholder="15+ years turning founder stories into content systems that build visibility, trust and sales." />
+              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
+            </Field>
+
+            {/* Search preview — real data, no new field, just a rendering of it */}
+            <div>
+              <p className="text-sm font-medium text-[#2D2A26] mb-1.5">Search Preview</p>
+              <div className="border border-[#E8E4DD] rounded-xl px-4 py-3 bg-white">
+                <p className="text-xs text-[#5E6B4A] truncate">culovillage.com/founders/{draft.slug}</p>
+                <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">{draft.seoTitle || draft.name}</p>
+                <p className="text-xs text-[#4d5156] mt-0.5 line-clamp-2">{draft.seoDescription || draft.bio}</p>
+              </div>
+            </div>
+
+            <div className="border-t border-[#E8E4DD] pt-5">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-3">Opportunity Matching</p>
+              <p className="text-xs text-[#9CA3AF] mb-4">
+                Beyond search engines, this is how CULO matches you to businesses, speaking invites and
+                collaborations based on what you're genuinely open to.
+              </p>
+              <PublisherDiscoveryProfile
+                founderId={draft.id}
+                founderTopics={draft.topics ?? []}
+                onEditTopics={() => setTab('expertise')}
+              />
+            </div>
           </div>
         )}
 
-        {/* ── Relationships ─────────────────────────────────────────────── */}
+        {/* ── Relationships: businesses, stories, ideas, library, featured ── */}
         {tab === 'relationships' && (
-          <div className="max-w-2xl">
+          <div className="max-w-2xl flex flex-col gap-6">
+            <TabIntro>
+              Everything you've published connects back to you. This is where you can see and jump to
+              every business, story, idea and piece of content linked to your profile, and everywhere
+              in the Village you're featured.
+            </TabIntro>
             <RelationshipsPanel
               groups={[
+                {
+                  title: 'Businesses',
+                  items: founderBusinesses.map(b => ({
+                    id: b.id, label: b.name, sublabel: b.tagline,
+                    path: `/businesses/${b.slug}`, image: b.logo,
+                  })),
+                },
                 {
                   title: 'Stories',
                   items: founderStories.map(s => ({
@@ -700,59 +824,20 @@ export function DashboardProfilePage() {
                 },
               ]}
             />
-          </div>
-        )}
-
-        {/* ── Featured In ───────────────────────────────────────────────── */}
-        {tab === 'featured-in' && (
-          <div className="max-w-2xl">
-            <p className="text-sm text-[#6B7280] mb-4">Every location in the Village where your founder profile is surfaced.</p>
-            <FeaturedInPanel locations={featuredIn} />
-          </div>
-        )}
-
-        {/* ── SEO & GEO ─────────────────────────────────────────────────── */}
-        {tab === 'seo' && (
-          <div className="max-w-2xl flex flex-col gap-5">
-            <Field label="SEO Title" hint="Shown in browser tab and search results. ~60 chars.">
-              <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
-            </Field>
-            <Field label="SEO Description" hint="Shown in search results. 140–160 chars ideal.">
-              <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} placeholder="15+ years turning founder stories into content systems that build visibility, trust and sales." />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
-            </Field>
-            <div className="border-t border-[#E8E4DD] pt-5">
-              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Location Data</p>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3 text-sm text-[#6B7280]">
-                <p><span className="font-medium text-[#2D2A26]">Region:</span> {draft.location.name}, {draft.location.state}</p>
-                <p className="mt-1"><span className="font-medium text-[#2D2A26]">Country:</span> {draft.location.country}</p>
-              </div>
+            <div>
+              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Featured In</p>
+              <FeaturedInPanel locations={featuredIn} />
             </div>
           </div>
         )}
 
-        {/* ── Publishing ────────────────────────────────────────────────── */}
-        {tab === 'publishing' && (
-          <div className="max-w-2xl flex flex-col gap-5">
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-3">Publishing Status</p>
-              <div className="flex gap-2 flex-wrap">
-                {(['draft', 'submitted', 'published', 'featured', 'archived'] as const).map(s => (
-                  <button
-                    key={s}
-                    onClick={() => set('status', s)}
-                    className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${
-                      draft.status === s
-                        ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                        : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* ── Settings: publishing preferences, account-level settings ────── */}
+        {tab === 'settings' && (
+          <div className="max-w-2xl flex flex-col gap-4">
+            <TabIntro>
+              Account-level details and publishing preferences that don't affect how you're discovered,
+              just how your profile behaves.
+            </TabIntro>
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <div className="flex items-center justify-between">
@@ -770,39 +855,6 @@ export function DashboardProfilePage() {
             </div>
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Links</p>
-              <div className="flex flex-col gap-3">
-                <Field label="Website">
-                  <input id="website" type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://yourwebsite.com" />
-                </Field>
-                <Field label="Instagram">
-                  <input id="socials" type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/handle" />
-                </Field>
-                <Field label="LinkedIn">
-                  <input type="url" value={draft.linkedin ?? ''} onChange={e => set('linkedin', e.target.value || undefined)} className={inputClass} placeholder="https://linkedin.com/in/handle" />
-                </Field>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 text-sm">
-              <p className="font-semibold text-[#2D2A26] mb-2">Publishing Dates</p>
-              <p className="text-[#6B7280]"><span className="font-medium text-[#2D2A26]">Created:</span> {draft.createdAt}</p>
-            </div>
-          </div>
-        )}
-
-        {/* ── Discovery Profile ────────────────────────────────────────── */}
-        {tab === 'discovery' && (
-          <PublisherDiscoveryProfile
-            founderId={draft.id}
-            founderTopics={draft.topics ?? []}
-          />
-        )}
-
-        {/* ── Settings ─────────────────────────────────────────────────── */}
-        {tab === 'settings' && (
-          <div className="max-w-2xl flex flex-col gap-4">
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Founder ID</p>
               <p className="text-xs font-mono text-[#6B7280]">{draft.id}</p>
             </div>
@@ -810,11 +862,17 @@ export function DashboardProfilePage() {
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Public Slug</p>
               <p className="text-xs font-mono text-[#6B7280]">/founders/{draft.slug}</p>
             </div>
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 text-sm">
+              <p className="font-semibold text-[#2D2A26] mb-1">Created</p>
+              <p className="text-[#6B7280]">{draft.createdAt}</p>
+            </div>
+
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-2">Danger Zone</p>
               <p className="text-xs text-[#9CA3AF] mb-3">
-                To hide your profile from public directories while keeping your data, set Status to Archived in the Publishing tab instead.
-                Deleting removes your founder profile permanently and can't be undone.
+                To hide your profile from public directories while keeping your data, set visibility to
+                Archived in the Discovery tab instead. Deleting removes your founder profile permanently
+                and can't be undone.
               </p>
               {saveError && <p className="text-xs text-red-600 mb-2">{saveError}</p>}
               <ConfirmButton
