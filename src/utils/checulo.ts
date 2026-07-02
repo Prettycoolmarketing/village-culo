@@ -44,3 +44,33 @@ export function formatCheCuloActivity(
 export function formatCheCuloSuccess(): string {
   return 'Che CULO!! Your Story is live in the Village.'
 }
+
+// ─── Milestone celebrations ──────────────────────────────────────────────────
+// Reserved for genuine, real, first-time-only events (see checkFirstMilestone
+// callers) — never fired on repeat occurrences, and never for milestones the
+// platform doesn't actually measure. Every other success message stays warm
+// but does not use this prefix.
+
+export function formatCheCuloFirstStory(founderName: string): string {
+  return `Che CULO!! ${founderName}, your first story is now helping grow your expertise across the Village.`
+}
+
+export function formatCheCuloFirstProfile(founderName: string): string {
+  return `Che CULO!! Welcome to the Village, ${founderName} — your founder profile is live.`
+}
+
+export function formatCheCuloFirstIdea(): string {
+  return 'Che CULO!! Village just extracted your first Idea from a story — it\'s now part of the knowledge graph.'
+}
+
+export function formatCheCuloFirstAuthority(): string {
+  return 'Che CULO!! You just earned your first Authority points. Every story you publish grows this.'
+}
+
+export function formatCheCuloKnowledgeGraphMilestone(): string {
+  return 'Che CULO!! Your first Village connection just formed — your content now links to another founder or business.'
+}
+
+export function formatCheCuloFirstBusiness(businessName: string): string {
+  return `Che CULO!! ${businessName}'s profile is complete and ready to be discovered.`
+}

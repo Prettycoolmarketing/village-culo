@@ -5,11 +5,16 @@ import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { getStories, updateStory } from '../../services/stories'
+import { getIdeas } from '../../services/ideas'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores, previewIdeaImpact } from '../../services/ideaSync'
 import { computeReadability } from '../../utils/readability'
 import { getStoryMissingItems } from '../../utils/missingAssets'
+import {
+  formatCheCuloFirstStory, formatCheCuloFirstIdea,
+  formatCheCuloFirstAuthority, formatCheCuloKnowledgeGraphMilestone,
+} from '../../utils/checulo'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
@@ -120,6 +125,8 @@ interface PublishSummary {
   seoComplete: boolean
   geoComplete: boolean
   authorityDelta: number
+  /** Set only for a genuine first-time milestone (see handlePublish) — never for repeat events. */
+  milestone: string | null
 }
 
 const CTA_PRESETS: { key: CtaPreset; label: string; ctaLabel: string }[] = [
@@ -354,8 +361,26 @@ function ContentStep({ draft, onChange, onNext, onBack }: {
     { key: 'upload',  label: 'Upload' },
     { key: 'url',     label: 'Paste URL' },
     { key: 'text',    label: 'Paste Text' },
-    { key: 'library', label: 'Media Library', soon: true },
+    { key: 'library', label: 'From Imported Content' },
   ]
+
+  // Anything already captured via Import Content that hasn't become a story yet —
+  // Publish is the one place a founder actually starts a story, whether from
+  // scratch or from something they saved earlier. No second publishing entry point.
+  const importCandidates = importedContentService
+    .getAll({ founderId: draft.founderId || undefined })
+    .filter(item => !item.relatedStoryId)
+
+  function selectImportedContent(item: (typeof importCandidates)[number]) {
+    onChange({
+      importedContentId: item.id,
+      title: draft.title || item.title,
+      summary: draft.summary || item.autoSummary || item.description || '',
+      blog: draft.blog || item.diaryNote || item.transcriptText || '',
+      coverImage: draft.coverImage || item.thumbnailUrl || '',
+    })
+    onNext()
+  }
 
   return (
     <div className="max-w-lg">
@@ -468,10 +493,32 @@ function ContentStep({ draft, onChange, onNext, onBack }: {
       )}
 
       {contentTab === 'library' && (
-        <div className="bg-[#F8F5F0] rounded-2xl p-8 text-center">
-          <p className="text-sm font-semibold text-[#2D2A26] mb-2">Media Library — Coming Soon</p>
-          <p className="text-xs text-[#9CA3AF]">Choose from your uploaded assets, Canva designs and previously published media.</p>
-        </div>
+        importCandidates.length === 0 ? (
+          <div className="bg-[#F8F5F0] rounded-2xl p-8 text-center">
+            <p className="text-sm font-semibold text-[#2D2A26] mb-2">Nothing imported yet</p>
+            <p className="text-xs text-[#9CA3AF] mb-4">Save content from Import Content and it'll show up here as a starting point.</p>
+            <Link to="/dashboard/import-content" className="inline-flex text-xs font-semibold text-[#C86A43] hover:underline">
+              Go to Import Content →
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {importCandidates.map(item => (
+              <button
+                key={item.id}
+                onClick={() => selectImportedContent(item)}
+                className="flex items-center gap-3 px-4 py-3 bg-white border border-[#E8E4DD] rounded-xl hover:border-[#C86A43]/40 transition-colors text-left"
+              >
+                {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#2D2A26] truncate">{item.title}</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">{item.sourcePlatform ?? 'Imported'}</p>
+                </div>
+                <span className="text-xs font-semibold text-[#C86A43] shrink-0">Use this →</span>
+              </button>
+            ))}
+          </div>
+        )
       )}
 
       <div className="mt-6 flex gap-3">
@@ -1395,11 +1442,16 @@ function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing,
   const [shared, setShared] = useState(false)
   const storyUrl = typeof window !== 'undefined' ? `${window.location.origin}/stories/${publishedSlug}` : `/stories/${publishedSlug}`
 
-  const label = action === 'publish' ? 'Story Published'
+  const isMilestone = action === 'publish' && !!summary?.milestone
+
+  const label = isMilestone ? 'Che CULO!'
+              : action === 'publish' ? 'Story Published'
               : action === 'draft'   ? 'Saved as Draft'
               : 'Archived'
 
-  const msg = action === 'publish'
+  const msg = isMilestone
+    ? summary!.milestone!.replace(/^Che CULO!!\s*/, '')
+    : action === 'publish'
     ? `"${draft.title}" is live in the Village.`
     : action === 'draft'
     ? `"${draft.title}" has been saved as a draft. You can publish it any time from My Publications.`
@@ -1417,13 +1469,17 @@ function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing,
   return (
     <div className="max-w-md mx-auto text-center">
       <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-        action === 'publish' ? 'bg-green-100' : 'bg-[#F3EDE6]'
+        isMilestone ? 'bg-[#C86A43]/10' : action === 'publish' ? 'bg-green-100' : 'bg-[#F3EDE6]'
       }`}>
-        <svg className={`w-10 h-10 ${action === 'publish' ? 'text-green-600' : 'text-[#C86A43]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
+        {isMilestone ? (
+          <span className="text-4xl" aria-hidden="true">🎉</span>
+        ) : (
+          <svg className={`w-10 h-10 ${action === 'publish' ? 'text-green-600' : 'text-[#C86A43]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
       </div>
-      <h1 className="text-2xl font-bold text-[#2D2A26] mb-2">{label}</h1>
+      <h1 className={`text-2xl font-bold mb-2 ${isMilestone ? 'text-[#C86A43]' : 'text-[#2D2A26]'}`}>{label}</h1>
       <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">{msg}</p>
 
       {action === 'publish' && summary && (
@@ -1582,6 +1638,17 @@ export function DashboardPublishPage() {
 
     const allFounders = getFounders()
     const founder     = allFounders.find(f => f.id === draft.founderId)
+
+    // Snapshot "before" state for milestone detection — captured before any
+    // writes happen, so these can never be confused with the post-publish state.
+    const priorStoryCount  = draft.founderId ? getStories({ founderId: draft.founderId, publicOnly: true }).length : 0
+    const priorIdeas       = draft.founderId ? getIdeas({ founderId: draft.founderId }) : []
+    const priorIdeaCount   = priorIdeas.length
+    const priorAuthority   = founder?.authorityScore ?? 0
+    const priorRelationshipTotal = priorIdeas.reduce(
+      (sum, i) => sum + i.relatedBusinessIds.length + i.relatedFounderIds.filter(fid => fid !== draft.founderId).length, 0,
+    )
+
     const loc         = locations.find(l => l.id === draft.locationId) ?? founder?.location ?? locations[0]!
     const industry    = founder?.industry ?? industries[0]!
     const titleSlug   = slugify(draft.title) || `pub-${Date.now()}`
@@ -1667,17 +1734,29 @@ export function DashboardPublishPage() {
       // reads the graph syncIdeasFromStory just wrote.
       const { created, strengthened } = await syncIdeasFromStory(story, merged)
       const { founderDelta } = await refreshAuthorityScores(story)
+      const totalRelationships = merged.relatedFounderIds.length + merged.relatedBusinessIds.length + merged.relatedContentIds.length
+
+      // Exactly one milestone per publish, priority-ordered so a story that
+      // happens to be several "firsts" at once doesn't fire more than one
+      // Che CULO — reserved language, not a running commentary.
+      const milestone =
+        priorStoryCount === 0 ? formatCheCuloFirstStory(founder?.name ?? 'Founder') :
+        (priorIdeaCount === 0 && created.length > 0) ? formatCheCuloFirstIdea() :
+        (priorAuthority === 0 && founderDelta > 0) ? formatCheCuloFirstAuthority() :
+        (priorRelationshipTotal === 0 && totalRelationships > 0) ? formatCheCuloKnowledgeGraphMilestone() :
+        null
 
       setSummary({
         ideasCreated: created.length,
         ideasStrengthened: strengthened.length,
-        relationships: merged.relatedFounderIds.length + merged.relatedBusinessIds.length + merged.relatedContentIds.length,
+        relationships: totalRelationships,
         founderLinks: merged.relatedFounderIds.length,
         businessLinks: merged.relatedBusinessIds.length,
         internalLinks: merged.relatedContentIds.length,
         seoComplete: merged.seoKeywords.length > 0,
         geoComplete: merged.geoQuestions.length > 0,
         authorityDelta: founderDelta,
+        milestone,
       })
     } else {
       setSummary(null)

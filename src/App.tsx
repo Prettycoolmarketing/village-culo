@@ -47,7 +47,6 @@ import { DashboardBusinessesPage }   from './pages/dashboard/DashboardBusinesses
 import { DashboardStoriesPage }      from './pages/dashboard/DashboardStoriesPage'
 import { DashboardIdeasPage }        from './pages/dashboard/DashboardIdeasPage'
 import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPage'
-import { DashboardServicesPage }     from './pages/dashboard/DashboardServicesPage'
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
@@ -168,7 +167,6 @@ export default function App() {
             <Route path="stories"        element={<DashboardStoriesPage />}      />
             <Route path="ideas"          element={<DashboardIdeasPage />}        />
             <Route path="library"        element={<DashboardLibraryPage />}      />
-            <Route path="services"       element={<DashboardServicesPage />}     />
             <Route path="media"          element={<DashboardMediaPage />}        />
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
             <Route path="import-content" element={<DashboardImportContentPage />}/>

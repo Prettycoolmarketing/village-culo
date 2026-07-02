@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 import { getStories } from '../../services/stories'
-import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
@@ -55,36 +55,54 @@ function RecommendationRow({ rec }: { rec: Recommendation }) {
 }
 
 // ─── DashboardHomePage ─────────────────────────────────────────────────────────
+// Everything on this page is scoped to the signed-in founder and their own
+// linked businesses/stories/library/media — never another founder's content.
+// Cross-founder diagnostics and curation live in CAPO, not here (see
+// utils/permissions.ts and the CAPO nav in DashboardLayout).
 
 export function DashboardHomePage() {
   const { user, isConfigured } = useAuth()
-
-  const allStories  = getStories()
-  const allFounders = getFounders()
-  const allBiz      = getBusinesses()
-  const allIdeas    = getIdeas()
-  const allLibrary  = getLibraryItems()
-  const allMedia    = getMedia()
-
-  const recentStories = allStories.slice(0, 5)
+  const founder = getCurrentFounder(user)
   const firstName = user?.email?.split('@')[0] ?? 'Publisher'
 
-  // Today's recommendations — the single most valuable next action per entity,
-  // not a diagnostic report of everything that's incomplete.
-  const recommendations: Recommendation[] = []
-  for (const f of allFounders) {
-    const [top] = getFounderMissingItems(f)
-    if (top) recommendations.push({ key: `founder-${f.id}`, title: `Founder profile — ${f.name}`, action: top, path: '/dashboard/profile' })
+  if (!founder) {
+    return (
+      <div className="p-8 max-w-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <h1 className="text-2xl font-bold text-[#2D2A26] mb-1">Welcome back, {firstName}</h1>
+        <p className="text-sm text-[#6B7280] mb-8">Publishing Operating System</p>
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-6 py-8 text-center">
+          <p className="text-sm font-semibold text-[#2D2A26] mb-2">Create your founder profile to get started</p>
+          <p className="text-xs text-[#9CA3AF] mb-4">Tell readers who you are so your stories and ideas have a home in the Village.</p>
+          <Link to="/onboarding" className="inline-flex px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
+            Create Profile
+          </Link>
+        </div>
+      </div>
+    )
   }
-  for (const b of allBiz.slice(0, 6)) {
+
+  const myBusinesses = getBusinesses().filter(b => b.founderId === founder.id)
+  const myStories    = getStories({ founderId: founder.id })
+  const myIdeas      = getIdeas({ founderId: founder.id })
+  const myLibrary    = getLibraryItems({ founderId: founder.id })
+  const myMedia      = getMedia({ founderId: founder.id })
+
+  const recentStories = myStories.slice(0, 5)
+
+  // Today's recommendations — the single most valuable next action for THIS
+  // founder's own content, never another founder's.
+  const recommendations: Recommendation[] = []
+  const [founderTop] = getFounderMissingItems(founder)
+  if (founderTop) recommendations.push({ key: `founder-${founder.id}`, title: 'Your founder profile', action: founderTop, path: '/dashboard/profile' })
+  for (const b of myBusinesses) {
     const [top] = getBusinessMissingItems(b)
     if (top) recommendations.push({ key: `biz-${b.id}`, title: b.name, action: top, path: '/dashboard/businesses' })
   }
-  for (const s of allStories.slice(0, 6)) {
+  for (const s of myStories) {
     const [top] = getStoryMissingItems(s)
     if (top) recommendations.push({ key: `story-${s.id}`, title: s.title, action: top, path: '/dashboard/stories' })
   }
-  if (allStories.length === 0) {
+  if (myStories.length === 0) {
     recommendations.push({
       key: 'first-story',
       title: 'You haven\'t published a story yet',
@@ -92,22 +110,22 @@ export function DashboardHomePage() {
       path: '/dashboard/publish',
     })
   }
-  const pendingMedia = allMedia.filter(m => m.approvalStatus === 'needs-review' || m.approvalStatus === 'pending').length
-  if (pendingMedia > 0) {
+  const myPendingMedia = myMedia.filter(m => m.approvalStatus === 'needs-review' || m.approvalStatus === 'pending').length
+  if (myPendingMedia > 0) {
     recommendations.push({
       key: 'media-review',
-      title: `${pendingMedia} ${pendingMedia === 1 ? 'asset' : 'assets'} uploaded`,
+      title: `${myPendingMedia} ${myPendingMedia === 1 ? 'asset' : 'assets'} uploaded`,
       action: { field: 'media', label: 'Review your uploaded media', action: 'Review Media', severity: 'important' },
       path: '/dashboard/media',
     })
   }
   const topRecommendations = recommendations.slice(0, 6)
 
-  // Founders
-  const founderHealth  = allFounders.map(f  => ({ name: f.name,    missing: getFounderMissingItems(f),  path: '/dashboard/profile'      }))
-  const bizHealth      = allBiz.slice(0, 6).map(b  => ({ name: b.name,    missing: getBusinessMissingItems(b),  path: '/dashboard/businesses' }))
-  const storyHealth    = allStories.slice(0, 6).map(s => ({ name: s.title,   missing: getStoryMissingItems(s),    path: '/dashboard/stories'    }))
-  const libraryHealth  = allLibrary.slice(0, 4).map(l => ({ name: l.title,   missing: getLibraryMissingItems(l),  path: '/dashboard/library'    }))
+  // Profile progress — this founder and their own businesses/stories/library only.
+  const founderHealth = [{ name: founder.name, missing: getFounderMissingItems(founder), path: '/dashboard/profile' }]
+  const bizHealth      = myBusinesses.map(b => ({ name: b.name,  missing: getBusinessMissingItems(b), path: '/dashboard/businesses' }))
+  const storyHealth    = myStories.slice(0, 6).map(s => ({ name: s.title, missing: getStoryMissingItems(s), path: '/dashboard/stories' }))
+  const libraryHealth  = myLibrary.slice(0, 4).map(l => ({ name: l.title, missing: getLibraryMissingItems(l), path: '/dashboard/library' }))
 
   return (
     <div className="p-8 max-w-5xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -141,16 +159,15 @@ export function DashboardHomePage() {
         )}
       </section>
 
-      {/* Content stats */}
+      {/* Content stats — this founder's own content only */}
       <section className="mb-10" aria-labelledby="stats-heading">
-        <h2 id="stats-heading" className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Village Content</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatCard label="Stories"    value={allStories.length}  to="/dashboard/stories"    />
-          <StatCard label="Founders"   value={allFounders.length} to="/dashboard/profile"    />
-          <StatCard label="Businesses" value={allBiz.length}      to="/dashboard/businesses" />
-          <StatCard label="Ideas"      value={allIdeas.length}    to="/dashboard/ideas"      />
-          <StatCard label="Library"    value={allLibrary.length}  to="/dashboard/library"    />
-          <StatCard label="Media"      value={allMedia.length}    to="/dashboard/media"      />
+        <h2 id="stats-heading" className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Your Content</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <StatCard label="Stories"    value={myStories.length}    to="/dashboard/stories"    />
+          <StatCard label="Businesses" value={myBusinesses.length} to="/dashboard/businesses" />
+          <StatCard label="Ideas"      value={myIdeas.length}      to="/dashboard/ideas"      />
+          <StatCard label="Library"    value={myLibrary.length}    to="/dashboard/library"    />
+          <StatCard label="Media"      value={myMedia.length}      to="/dashboard/media"      />
         </div>
       </section>
 
@@ -162,9 +179,9 @@ export function DashboardHomePage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* Founders */}
+          {/* Founder */}
           <div>
-            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Founders</p>
+            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Founder Profile</p>
             <div className="flex flex-col gap-2">
               {founderHealth.map((h, i) => (
                 <PublishingHealthCard key={i} title={h.name} missing={h.missing} editPath={h.path} />
@@ -173,75 +190,90 @@ export function DashboardHomePage() {
           </div>
 
           {/* Businesses */}
-          <div>
-            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Businesses</p>
-            <div className="flex flex-col gap-2">
-              {bizHealth.map((h, i) => (
-                <PublishingHealthCard key={i} title={h.name} missing={h.missing} editPath={h.path} />
-              ))}
+          {myBusinesses.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Businesses</p>
+              <div className="flex flex-col gap-2">
+                {bizHealth.map((h, i) => (
+                  <PublishingHealthCard key={i} title={h.name} missing={h.missing} editPath={h.path} />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Stories */}
-          <div>
-            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Stories</p>
-            <div className="flex flex-col gap-2">
-              {storyHealth.map((h, i) => (
-                <PublishingHealthCard key={i} title={h.name} missing={h.missing} editPath={h.path} />
-              ))}
+          {myStories.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Stories</p>
+              <div className="flex flex-col gap-2">
+                {storyHealth.map((h, i) => (
+                  <PublishingHealthCard key={i} title={h.name} missing={h.missing} editPath={h.path} />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Library */}
-          <div>
-            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Library</p>
-            <div className="flex flex-col gap-2">
-              {libraryHealth.map((h, i) => (
-                <PublishingHealthCard key={i} title={h.name} missing={h.missing} editPath={h.path} />
-              ))}
+          {myLibrary.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Library</p>
+              <div className="flex flex-col gap-2">
+                {libraryHealth.map((h, i) => (
+                  <PublishingHealthCard key={i} title={h.name} missing={h.missing} editPath={h.path} />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
       {/* Recent stories */}
       <section aria-labelledby="recent-heading">
         <div className="flex items-center justify-between mb-4">
-          <h2 id="recent-heading" className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Recent Stories</h2>
+          <h2 id="recent-heading" className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Your Recent Stories</h2>
           <Link to="/dashboard/stories" className="text-xs text-[#C86A43] hover:underline">View all</Link>
         </div>
-        <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-          {recentStories.map(story => {
-            const missing = getStoryMissingItems(story)
-            return (
-              <div key={story.id} className="flex items-center gap-4 px-5 py-3.5">
-                <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#2D2A26] truncate">{story.title}</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
+        {recentStories.length === 0 ? (
+          <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+            <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
+            <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+              Publish Story
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+            {recentStories.map(story => {
+              const missing = getStoryMissingItems(story)
+              return (
+                <div key={story.id} className="flex items-center gap-4 px-5 py-3.5">
+                  <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#2D2A26] truncate">{story.title}</p>
+                    <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
+                  </div>
+                  {missing.length === 0 ? (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
+                      Ready to publish
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
+                      {missing.length} recommended
+                    </span>
+                  )}
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                    story.status === 'published' || story.status === 'featured'
+                      ? 'bg-green-100 text-green-700'
+                      : story.status === 'draft'
+                      ? 'bg-[#F3EDE6] text-[#9CA3AF]'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {story.status}
+                  </span>
                 </div>
-                {missing.length === 0 ? (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
-                    Ready to publish
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
-                    {missing.length} recommended
-                  </span>
-                )}
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                  story.status === 'published' || story.status === 'featured'
-                    ? 'bg-green-100 text-green-700'
-                    : story.status === 'draft'
-                    ? 'bg-[#F3EDE6] text-[#9CA3AF]'
-                    : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {story.status}
-                </span>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </section>
     </div>
   )

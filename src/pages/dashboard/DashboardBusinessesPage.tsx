@@ -3,7 +3,7 @@ import { getBusinesses, updateBusiness, deleteBusiness, duplicateBusiness } from
 import { businessPartnerProfileService, programService, enrollmentService } from '../../services/partnership'
 import type { BusinessPartnerProfile, PartnerProgram, PartnerProgramType, DisclosureType } from '../../types/partnership'
 import { getStories } from '../../services/stories'
-import { getServices } from '../../services/serviceOfferings'
+import { getServices, updateService, deleteService, duplicateService } from '../../services/serviceOfferings'
 import { getFounders } from '../../services/founders'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
@@ -15,10 +15,10 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
-import { getBusinessMissingItems, getMissingCounts } from '../../utils/missingAssets'
+import { getBusinessMissingItems, getMissingCounts, getServiceMissingItems } from '../../utils/missingAssets'
 import { getBusinessFeaturedIn } from '../../utils/featuredIn'
 import { focusField } from '../../utils/focusField'
-import type { Business, Topic, Offer } from '../../types'
+import type { Business, Topic, Offer, Service } from '../../types'
 
 const BUSINESS_FIELD_TO_TAB: Record<string, string> = {
   logo: 'brand', coverImage: 'brand',
@@ -1050,6 +1050,10 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
   const [saved,  setSaved]  = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [tab, setTab]       = useState('overview')
+  const [serviceTick, setServiceTick] = useState(0)
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
+  const refreshServices = () => setServiceTick(t => t + 1)
+  void serviceTick
 
   const missing    = getBusinessMissingItems(draft)
   const counts     = getMissingCounts(missing)
@@ -1060,11 +1064,23 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
   const bizServices = getServices(undefined, draft.id)
   const owner       = getFounders().find(f => f.businessId === draft.id)
 
+  async function handleAddService() {
+    const id = `service-${Date.now()}`
+    const newService: Service = {
+      id, slug: id, name: 'New service', description: '',
+      businessId: draft.id, founderId: owner?.id ?? draft.founderId,
+      topicIds: [], expertiseIds: [], ctaLabel: 'Learn more', ctaUrl: '', status: 'draft',
+    }
+    const result = await updateService(newService)
+    if (result.success) { setEditingServiceId(id); refreshServices() }
+  }
+
   const TABS = [
     { key: 'overview',      label: 'Overview'      },
     { key: 'content',       label: 'Content'       },
     { key: 'brand',         label: 'Brand & Media' },
     { key: 'offers',        label: 'Offers',        badge: draft.offers.length },
+    { key: 'services',      label: 'Services',      badge: bizServices.length },
     { key: 'relationships', label: 'Relationships', badge: bizStories.length + bizServices.length },
     { key: 'featured-in',   label: 'Featured In',  badge: featuredIn.length },
     { key: 'seo',           label: 'SEO & GEO'     },
@@ -1366,6 +1382,65 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
               className="w-full py-2.5 rounded-xl border border-dashed border-[#C86A43]/40 text-xs font-semibold text-[#C86A43] hover:bg-[#C86A43]/5 transition-colors"
             >
               + Add Offer
+            </button>
+          </div>
+        )}
+
+        {/* Services — nested under the business they belong to, not a separate top-level page. */}
+        {tab === 'services' && (
+          <div className="flex flex-col gap-3">
+            {bizServices.length === 0 && (
+              <p className="text-xs text-[#9CA3AF] text-center py-4">No services yet. Add a service people can book below.</p>
+            )}
+            {bizServices.map(service => {
+              const svcMissing = getServiceMissingItems(service)
+              const isEditing = editingServiceId === service.id
+              return (
+                <div key={service.id} className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <button onClick={() => setEditingServiceId(isEditing ? null : service.id)} className="flex-1 min-w-0 text-left">
+                      <p className="text-sm font-semibold text-[#2D2A26] truncate">{service.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {service.price && <span className="text-xs text-[#C86A43] font-medium">{service.price}{service.priceType ? ` / ${service.priceType}` : ''}</span>}
+                        <HealthBadge missing={svcMissing} size="sm" />
+                      </div>
+                    </button>
+                    <OverflowMenu
+                      archived={service.status === 'archived'}
+                      onEdit={() => setEditingServiceId(service.id)}
+                      onDuplicate={() => { void duplicateService(service.id).then(refreshServices) }}
+                      onArchive={() => { void updateService({ ...service, status: 'archived' }).then(refreshServices) }}
+                      onRestore={() => { void updateService({ ...service, status: 'published' }).then(refreshServices) }}
+                      onDelete={() => { void deleteService(service.id).then(() => { if (editingServiceId === service.id) setEditingServiceId(null); refreshServices() }) }}
+                    />
+                  </div>
+                  {isEditing && (
+                    <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[#F3EDE6] pt-3">
+                      <Field label="Name">
+                        <input type="text" value={service.name} onChange={e => { void updateService({ ...service, name: e.target.value }).then(refreshServices) }} className={inputClass} />
+                      </Field>
+                      <Field label="Description">
+                        <textarea value={service.description} onChange={e => { void updateService({ ...service, description: e.target.value }).then(refreshServices) }} rows={2} className={inputClass + ' resize-none'} />
+                      </Field>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Field label="Price">
+                          <input type="text" value={service.price ?? ''} onChange={e => { void updateService({ ...service, price: e.target.value || undefined }).then(refreshServices) }} className={inputClass} placeholder="$500" />
+                        </Field>
+                        <Field label="Booking Link">
+                          <input type="url" value={service.ctaUrl} onChange={e => { void updateService({ ...service, ctaUrl: e.target.value }).then(refreshServices) }} className={inputClass} placeholder="https://" />
+                        </Field>
+                      </div>
+                      <button onClick={() => setEditingServiceId(null)} className="text-xs text-[#9CA3AF] hover:text-[#2D2A26] self-start">Done</button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            <button
+              onClick={() => void handleAddService()}
+              className="w-full py-2.5 rounded-xl border border-dashed border-[#C86A43]/40 text-xs font-semibold text-[#C86A43] hover:bg-[#C86A43]/5 transition-colors"
+            >
+              + Add Service
             </button>
           </div>
         )}

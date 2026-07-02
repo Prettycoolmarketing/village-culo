@@ -120,7 +120,6 @@ export function DashboardLayout() {
           <NavItem to="/dashboard/stories"        label="My Publications" icon={<Icon path={icons.stories}  />} />
           <NavItem to="/dashboard/ideas"          label="Ideas"           icon={<Icon path={icons.ideas}    />} />
           <NavItem to="/dashboard/library"        label="Library"         icon={<Icon path={icons.library}  />} />
-          <NavItem to="/dashboard/services"       label="Services"        icon={<Icon path={icons.services} />} />
           <NavItem to="/dashboard/media"          label="Media"           icon={<Icon path={icons.media}    />} />
           <NavItem to="/dashboard/import-content" label="Import Content"  icon={<Icon path={icons.importc}  />} />
 

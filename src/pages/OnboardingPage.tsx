@@ -481,16 +481,16 @@ function ReviewStep({ draft }: { draft: Draft }) {
   )
 }
 
-function DoneStep({ founderSlug }: { founderSlug: string }) {
+function DoneStep({ founderSlug, founderName }: { founderSlug: string; founderName: string }) {
   const navigate = useNavigate()
   return (
     <div className="text-center max-w-lg mx-auto">
       <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center mx-auto mb-6">
-        <span className="text-3xl">✓</span>
+        <span className="text-3xl">🎉</span>
       </div>
-      <h2 className="font-heading text-3xl font-bold text-charcoal mb-4">You're in the Village.</h2>
+      <h2 className="font-heading text-3xl font-bold text-primary mb-4">Che CULO! Welcome to the Village, {founderName}.</h2>
       <p className="font-body text-base text-muted leading-relaxed mb-8">
-        Your profile and business are now live. Head to your public profile to see how you appear to visitors, or go straight to the dashboard to publish your first story.
+        Your founder profile and business are now live. Head to your public profile to see how you appear to visitors, or go straight to the dashboard to publish your first story.
       </p>
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <button
@@ -693,7 +693,7 @@ export function OnboardingPage() {
           {step === 'offers'   && <OffersStep draft={draft} set={set} />}
           {step === 'services' && <ServicesStep draft={draft} set={set} />}
           {step === 'review'   && <ReviewStep draft={draft} />}
-          {step === 'done'     && <DoneStep founderSlug={founderSlug} />}
+          {step === 'done'     && <DoneStep founderSlug={founderSlug} founderName={draft.name} />}
         </div>
 
         {/* ── Navigation ───────────────────────────────────────────────────── */}
