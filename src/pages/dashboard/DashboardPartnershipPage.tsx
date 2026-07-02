@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   recommendationService,
@@ -129,12 +130,12 @@ function OverviewSection({ founderId }: { founderId: string }) {
               Enable the Partnership Operating System in Settings to start receiving recommendations and opportunities.
             </p>
           </div>
-          <a
-            href="/dashboard/settings"
+          <Link
+            to="/dashboard/settings"
             className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
           >
             Enable in Settings
-          </a>
+          </Link>
         </div>
       )}
 

@@ -1297,10 +1297,6 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
                 title: 'Stories',
                 items: bizStories.map(s => ({ id: s.id, label: s.title, sublabel: s.status, path: `/stories/${s.slug}`, image: s.coverImage })),
               },
-              {
-                title: 'Services',
-                items: bizServices.map(s => ({ id: s.id, label: s.name, sublabel: s.price ?? '', path: `#` })),
-              },
             ]}
           />
         )}

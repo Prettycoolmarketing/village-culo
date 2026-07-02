@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
 type Mode = 'signin' | 'signup'
@@ -197,7 +197,7 @@ export function DashboardLoginPage() {
         </div>
 
         <p className="text-center text-xs text-[#9CA3AF] mt-6">
-          <a href="/" className="hover:text-[#C86A43] transition-colors">← Back to Village</a>
+          <Link to="/" className="hover:text-[#C86A43] transition-colors">← Back to Piazza</Link>
         </p>
       </div>
     </div>

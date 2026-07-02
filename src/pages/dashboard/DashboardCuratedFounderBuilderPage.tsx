@@ -77,6 +77,8 @@ const INPUT_ERROR_CLS =
 export function DashboardCuratedFounderBuilderPage() {
   const [step, setStep] = useState<Step>(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [result, setResult] = useState<BuildResult | null>(null)
 
@@ -183,7 +185,9 @@ export function DashboardCuratedFounderBuilderPage() {
 
   // ── Save ─────────────────────────────────────────────────────────────────────
 
-  function save() {
+  async function save() {
+    setSaving(true)
+    setSaveError(null)
     const founderId = crypto.randomUUID()
     const now = new Date().toISOString()
 
@@ -231,7 +235,12 @@ export function DashboardCuratedFounderBuilderPage() {
         featured: false,
         createdAt: now,
       }
-      updateBusiness(newBiz)
+      const bizResult = await updateBusiness(newBiz)
+      if (!bizResult.success) {
+        setSaving(false)
+        setSaveError(bizResult.error ?? 'Could not save the business. Please try again.')
+        return
+      }
       linkedBusinessId = newBizId
     }
 
@@ -262,7 +271,12 @@ export function DashboardCuratedFounderBuilderPage() {
       curatedAt: now,
       claimNotes: notes.trim() || undefined,
     }
-    updateFounder(founder)
+    const founderResult = await updateFounder(founder)
+    if (!founderResult.success) {
+      setSaving(false)
+      setSaveError(founderResult.error ?? 'Could not save the founder profile. Please try again.')
+      return
+    }
 
     // Imported content
     const validLinks = links.filter(l => l.url.trim())
@@ -295,16 +309,17 @@ export function DashboardCuratedFounderBuilderPage() {
     }
 
     setResult({ founderId, founderSlug: slug.trim(), founderName: name.trim(), importCount, intelCount })
+    setSaving(false)
     setStep(3)
   }
 
   // ── Step navigation ───────────────────────────────────────────────────────────
 
-  function handleNext() {
+  async function handleNext() {
     setErrors({})
     if (step === 0 && validateStep0()) setStep(1)
     else if (step === 1 && validateStep1()) setStep(2)
-    else if (step === 2 && validateStep2()) save()
+    else if (step === 2 && validateStep2()) await save()
   }
 
   function handleBack() {
@@ -883,22 +898,26 @@ export function DashboardCuratedFounderBuilderPage() {
 
       {/* ── Navigation buttons ─────────────────────────────────────────────── */}
       {step < 3 && (
-        <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E8E4DD]">
-          <button
-            type="button"
-            onClick={handleBack}
-            disabled={step === 0}
-            className="px-5 py-2.5 text-sm font-medium text-[#6B7280] hover:text-[#2D2A26] transition-colors disabled:opacity-30"
-          >
-            ← Back
-          </button>
-          <button
-            type="button"
-            onClick={handleNext}
-            className="px-6 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-          >
-            {step === 2 ? 'Save & Publish ✓' : 'Next →'}
-          </button>
+        <div className="mt-8 pt-6 border-t border-[#E8E4DD]">
+          {saveError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{saveError}</p>}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handleBack}
+              disabled={step === 0 || saving}
+              className="px-5 py-2.5 text-sm font-medium text-[#6B7280] hover:text-[#2D2A26] transition-colors disabled:opacity-30"
+            >
+              ← Back
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleNext()}
+              disabled={saving}
+              className="px-6 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+            >
+              {saving ? 'Saving…' : step === 2 ? 'Save & Publish ✓' : 'Next →'}
+            </button>
+          </div>
         </div>
       )}
     </div>

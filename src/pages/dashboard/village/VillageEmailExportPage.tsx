@@ -108,6 +108,8 @@ export function VillageEmailExportPage() {
       if (dateFrom && r.createdAt < dateFrom) return false
       if (dateTo   && r.createdAt > dateTo)   return false
       if (statusFilter !== 'all' && r.profileStatus !== statusFilter) return false
+      if (sourceFilter === 'claim'   && r.tags !== 'claim-request')   return false
+      if (sourceFilter === 'curated' && r.tags !== 'village-curated') return false
       return true
     })
   }

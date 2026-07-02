@@ -161,7 +161,7 @@ export function VillageFeaturedContentPage() {
                   active={b.featured}
                   onToggle={() => void handleToggle(updateBusiness({ ...b, featured: !b.featured, status: !b.featured ? 'featured' : 'published' }))}
                 />
-                <Link to={`/mercato/${b.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
+                <Link to={`/businesses/${b.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
               </div>
             </div>
           ))}
