@@ -53,6 +53,15 @@ function similarity(a: string, b: string): number {
 
 const SIMILARITY_THRESHOLD = 0.6
 
+/** Shared matching rule — the one place "is this the same idea?" is decided, used by both the real sync and the read-only preview so they can never disagree. */
+function findIdeaMatch(pool: Idea[], story: Story, lessonText: string): number {
+  const storyTopicIds = new Set(story.topics.map(t => t.id))
+  return pool.findIndex(idea =>
+    idea.topics.some(t => storyTopicIds.has(t.id)) &&
+    similarity(idea.title, lessonText) >= SIMILARITY_THRESHOLD,
+  )
+}
+
 /**
  * Turns a story's extracted lessons into real Idea records: strengthens an
  * existing matching idea (links the story/founder/business, does not
@@ -65,16 +74,12 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
   if (!story.founderId) return { created, strengthened }
 
   const pool = [...getIdeas()]
-  const storyTopicIds = new Set(story.topics.map(t => t.id))
 
   for (const lessonText of intel.lessons) {
     const title = lessonText.trim()
     if (!title) continue
 
-    const candidateIdx = pool.findIndex(idea =>
-      idea.topics.some(t => storyTopicIds.has(t.id)) &&
-      similarity(idea.title, title) >= SIMILARITY_THRESHOLD,
-    )
+    const candidateIdx = findIdeaMatch(pool, story, title)
 
     if (candidateIdx !== -1) {
       const candidate = pool[candidateIdx]
@@ -130,23 +135,26 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
 // ─── Authority scores ───────────────────────────────────────────────────────
 // Deterministic, heuristic, real — computed from what's actually in the
 // database after idea sync, not fabricated for display. Recomputed on every
-// publish; never drifts from the underlying graph.
+// publish; never drifts from the underlying graph. scoreFromSignals is the one
+// formula both the real (post-write) score and the read-only preview use.
+
+function scoreFromSignals(ideaCount: number, relationshipStrength: number, storiesPublished: number, businessConnections: number): number {
+  return Math.min(100, ideaCount * 3 + relationshipStrength + storiesPublished * 2 + businessConnections * 2)
+}
 
 export function computeFounderAuthorityScore(founderId: string): number {
   const ideas = getIdeas({ founderId })
   const relationshipStrength = ideas.reduce((sum, i) => sum + i.relatedStoryIds.length, 0)
   const storiesPublished = getStories({ founderId, publicOnly: true }).length
   const businessConnections = new Set(ideas.flatMap(i => i.relatedBusinessIds)).size
-  const raw = ideas.length * 3 + relationshipStrength + storiesPublished * 2 + businessConnections * 2
-  return Math.min(100, raw)
+  return scoreFromSignals(ideas.length, relationshipStrength, storiesPublished, businessConnections)
 }
 
 export function computeBusinessAuthorityScore(businessId: string): number {
   const ideas = getIdeas().filter(i => i.relatedBusinessIds.includes(businessId))
   const relationshipStrength = ideas.reduce((sum, i) => sum + i.relatedStoryIds.length, 0)
   const storiesPublished = getStories({ businessId, publicOnly: true }).length
-  const raw = ideas.length * 3 + relationshipStrength + storiesPublished * 2
-  return Math.min(100, raw)
+  return scoreFromSignals(ideas.length, relationshipStrength, storiesPublished, 0)
 }
 
 /** Recomputes and persists both scores touched by a story — no-ops if unchanged. */
@@ -173,4 +181,72 @@ export async function refreshAuthorityScores(story: Story): Promise<{ founderDel
   }
 
   return { founderDelta, businessDelta }
+}
+
+// ─── Read-only preview ──────────────────────────────────────────────────────
+// Powers the live Village Intelligence panel while a founder is still
+// drafting — same matching rule (findIdeaMatch) and same scoring formula
+// (scoreFromSignals) as the real write path, just never calls updateIdea/
+// updateFounder. Real numbers projected from the real current graph, not a
+// second guess at what the pipeline might do.
+
+export interface IdeaImpactPreview {
+  newIdeas: number
+  strengthenedIdeas: number
+  currentAuthorityScore: number
+  projectedAuthorityScore: number
+  projectedAuthorityDelta: number
+}
+
+export function previewIdeaImpact(story: Story, intel: VillageContentIntelligence): IdeaImpactPreview {
+  const pool = [...getIdeas()]
+  let newIdeas = 0
+  let strengthenedIdeas = 0
+  const touched = new Set<string>()
+
+  for (const lessonText of intel.lessons) {
+    const title = lessonText.trim()
+    if (!title) continue
+
+    const idx = findIdeaMatch(pool, story, title)
+    if (idx !== -1) {
+      const idea = pool[idx]
+      if (!touched.has(idea.id) && !idea.relatedStoryIds.includes(story.id)) {
+        strengthenedIdeas++
+        touched.add(idea.id)
+      }
+      continue
+    }
+
+    newIdeas++
+    // Simulate the pool gaining this idea so a second similar lesson later in
+    // the same draft strengthens it instead of double-counting as new —
+    // exactly what syncIdeasFromStory does for real.
+    pool.push({
+      id: `preview-${newIdeas}`, slug: '', title, description: title, topics: story.topics,
+      relatedStoryIds: [story.id],
+      relatedFounderIds: story.founderId ? [story.founderId] : [],
+      relatedBusinessIds: story.businessId ? [story.businessId] : [],
+      featured: false, createdAt: '',
+    })
+  }
+
+  if (!story.founderId) {
+    return { newIdeas, strengthenedIdeas, currentAuthorityScore: 0, projectedAuthorityScore: 0, projectedAuthorityDelta: 0 }
+  }
+
+  const currentAuthorityScore = getFounders().find((f: Founder) => f.id === story.founderId)?.authorityScore ?? 0
+  const projectedIdeas = pool.filter(i => i.relatedFounderIds.includes(story.founderId!))
+  const projectedRelationshipStrength = projectedIdeas.reduce((sum, i) => sum + i.relatedStoryIds.length, 0)
+  const projectedStoriesPublished = getStories({ founderId: story.founderId, publicOnly: true }).length + (story.status === 'published' ? 0 : 1)
+  const projectedBusinessConnections = new Set(projectedIdeas.flatMap(i => i.relatedBusinessIds)).size
+  const projectedAuthorityScore = scoreFromSignals(projectedIdeas.length, projectedRelationshipStrength, projectedStoriesPublished, projectedBusinessConnections)
+
+  return {
+    newIdeas,
+    strengthenedIdeas,
+    currentAuthorityScore,
+    projectedAuthorityScore,
+    projectedAuthorityDelta: projectedAuthorityScore - currentAuthorityScore,
+  }
 }

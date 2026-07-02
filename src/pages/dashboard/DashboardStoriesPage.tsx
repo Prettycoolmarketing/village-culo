@@ -18,6 +18,7 @@ import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { getStoryMissingItems, getMissingCounts } from '../../utils/missingAssets'
 import { getStoryFeaturedIn } from '../../utils/featuredIn'
 import { focusField } from '../../utils/focusField'
+import { computeReadability } from '../../utils/readability'
 import type { Story, ContentType, Topic } from '../../types'
 
 const inputClass =
@@ -68,14 +69,19 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
 
   const storyFounder   = getFounders().find(f => f.id === draft.founderId)
   const storyBusiness  = getBusinesses().find(b => b.id === draft.businessId)
-  const relatedIdeas   = getIdeas().filter(i => draft.ideaIds.includes(i.id))
+  // Ideas connect back to a story via Idea.relatedStoryIds (Sprint 3.5) — Story.ideaIds
+  // predates first-class Idea entities and is never populated by any publish path.
+  const connectedIdeas = getIdeas().filter(i => i.relatedStoryIds.includes(draft.id))
   const relatedStories = getStories().filter(s => draft.relatedStoryIds.includes(s.id))
+  const intelRecord    = villageContentIntelligenceService.getByContent('story', draft.id)
+  const readability     = computeReadability(draft.blog ?? '')
 
   const TABS = [
     { key: 'overview',      label: 'Overview'     },
     { key: 'content',       label: 'Content'      },
     { key: 'media',         label: 'Media'        },
-    { key: 'relationships', label: 'Relationships', badge: relatedIdeas.length + relatedStories.length },
+    { key: 'relationships', label: 'Relationships', badge: connectedIdeas.length + relatedStories.length },
+    { key: 'intelligence',  label: 'Intelligence',  badge: connectedIdeas.length },
     { key: 'featured-in',   label: 'Featured In',   badge: featuredIn.length },
     { key: 'seo',           label: 'SEO & GEO'    },
     { key: 'publishing',    label: 'Publishing'   },
@@ -181,7 +187,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 <p className="text-xs text-[#9CA3AF]">Content types</p>
               </div>
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{relatedIdeas.length}</p>
+                <p className="text-xl font-bold text-[#2D2A26]">{connectedIdeas.length}</p>
                 <p className="text-xs text-[#9CA3AF]">Related ideas</p>
               </div>
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
@@ -351,7 +357,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
               },
               {
                 title: 'Ideas',
-                items: relatedIdeas.map(i => ({ id: i.id, label: i.title, sublabel: i.topics.map(t => t.name).join(', '), path: `/ideas/${i.slug}` })),
+                items: connectedIdeas.map(i => ({ id: i.id, label: i.title, sublabel: i.topics.map(t => t.name).join(', '), path: `/ideas/${i.slug}` })),
               },
               {
                 title: 'Related Stories',
@@ -359,6 +365,61 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
               },
             ]}
           />
+        )}
+
+        {/* Intelligence — realized numbers, not projected. Sprint 3.5. */}
+        {tab === 'intelligence' && (
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+                <p className="text-2xl font-bold text-[#2D2A26]">{storyFounder?.authorityScore ?? 0}</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Founder Authority Score</p>
+              </div>
+              {storyBusiness && (
+                <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+                  <p className="text-2xl font-bold text-[#2D2A26]">{storyBusiness.authorityScore ?? 0}</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">Business Authority Score</p>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Readability</p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-[#C86A43]">{readability.score}</p>
+                <p className="text-xs text-[#9CA3AF]">{readability.label}</p>
+              </div>
+              <p className="text-[11px] text-[#9CA3AF] mt-1">{readability.wordCount} words · {readability.avgWordsPerSentence} words/sentence</p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Ideas this story created or strengthened</p>
+              {connectedIdeas.length === 0 ? (
+                <p className="text-xs text-[#9CA3AF]">None yet — save this story again to run Village Intelligence.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {connectedIdeas.map(idea => (
+                    <div key={idea.id} className="flex items-center justify-between gap-2 text-sm">
+                      <a href={`/ideas/${idea.slug}`} target="_blank" rel="noopener noreferrer" className="text-[#2D2A26] hover:text-[#C86A43] truncate">{idea.title}</a>
+                      <span className="text-[10px] text-[#9CA3AF] shrink-0">{idea.relatedStoryIds.length} {idea.relatedStoryIds.length === 1 ? 'story' : 'stories'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {intelRecord && (
+              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+                <p className="text-sm font-semibold text-[#2D2A26] mb-2">SEO &amp; GEO signals persisted</p>
+                <div className="grid grid-cols-2 gap-2 text-xs text-[#6B7280]">
+                  <p>{intelRecord.seoKeywords.length} SEO keywords</p>
+                  <p>{intelRecord.geoQuestions.length} GEO questions</p>
+                  <p>{intelRecord.relatedFounderIds.length} founder links</p>
+                  <p>{intelRecord.relatedBusinessIds.length} business links</p>
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Featured In */}

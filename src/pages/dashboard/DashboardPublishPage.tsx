@@ -7,7 +7,9 @@ import { getBusinesses } from '../../services/businesses'
 import { getStories, updateStory } from '../../services/stories'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
-import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
+import { syncIdeasFromStory, refreshAuthorityScores, previewIdeaImpact } from '../../services/ideaSync'
+import { computeReadability } from '../../utils/readability'
+import { getStoryMissingItems } from '../../utils/missingAssets'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
@@ -926,12 +928,19 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
     onChange({ topics: [topic, ...draft.topics.filter(t => t.id !== topic.id)] })
   }
 
+  // Real projected impact — same matching/scoring rules as the actual publish
+  // write path (services/ideaSync.ts), just not yet persisted.
+  const previewStory = useMemo(() => buildPreviewStory(draft, founder), [draft, founder])
+  const impact = useMemo(() => previewIdeaImpact(previewStory, intel), [previewStory, intel])
+  const readability = useMemo(() => computeReadability(draft.blog), [draft.blog])
+  const recommendedImprovements = useMemo(() => getStoryMissingItems(previewStory), [previewStory])
+
   const intelligenceRows = [
-    { label: 'Primary topic',       count: intel.canonicalTopics.length || draft.topics.length },
+    { label: 'Ideas detected',      count: impact.newIdeas + impact.strengthenedIdeas },
     { label: 'Founders connected',  count: suggestedFounders.length + extraFounders.length },
     { label: 'Businesses connected', count: suggestedBusinesses.length + extraBusinesses.length },
     { label: 'Related content',     count: relatedContentItems.length },
-    { label: 'Lessons extracted',   count: lessons.length },
+    { label: 'Topics added',        count: draft.topics.length },
     { label: 'Questions answered',  count: questions.length },
     { label: 'SEO keywords',        count: intel.seoKeywords.length },
     { label: 'GEO signals',         count: intel.geoKeywords.length },
@@ -940,6 +949,22 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
       <StepHeader title="Village Intelligence" subtitle="Village is reading your story and building everything else automatically." onBack={onBack} />
+
+      {/* ── Authority Score — the number this whole screen is building toward ── */}
+      {draft.founderId && (
+        <div className="bg-gradient-to-br from-[#2D2A26] to-[#3d3831] rounded-2xl px-6 py-6 text-white flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-1">Founder Authority Score</p>
+            <p className="text-4xl font-bold">{impact.currentAuthorityScore}</p>
+          </div>
+          {impact.projectedAuthorityDelta !== 0 && (
+            <div className="text-right">
+              <p className="text-sm font-semibold text-[#8FBF6F]">↑ +{impact.projectedAuthorityDelta}</p>
+              <p className="text-[11px] text-white/50 mt-0.5">from publishing this story</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Live extraction summary — this is the "watch it happen" moment ── */}
       <div className="bg-[#2D2A26] rounded-2xl px-6 py-6 text-white">
@@ -955,10 +980,42 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
               <p className="text-[11px] text-white/60 leading-snug mt-0.5">{row.label}</p>
             </div>
           ))}
+          <div className="transition-all duration-500" style={{ transitionDelay: `${intelligenceRows.length * 60}ms` }}>
+            <p className="text-2xl font-bold">{impact.newIdeas}</p>
+            <p className="text-[11px] text-white/60 leading-snug mt-0.5">New ideas</p>
+          </div>
+          <div className="transition-all duration-500" style={{ transitionDelay: `${(intelligenceRows.length + 1) * 60}ms` }}>
+            <p className="text-2xl font-bold">{impact.strengthenedIdeas}</p>
+            <p className="text-[11px] text-white/60 leading-snug mt-0.5">Ideas strengthened</p>
+          </div>
         </div>
         <p className="text-xs text-white/40 mt-5">
           Keep writing on the previous step and come back — this updates automatically. Nothing here requires manual setup.
         </p>
+      </div>
+
+      {/* ── Readability + recommended improvements ───────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
+          <p className="text-sm font-bold text-[#2D2A26] mb-1">Readability</p>
+          <div className="flex items-baseline gap-2 mt-2">
+            <p className="text-3xl font-bold text-[#C86A43]">{readability.score}</p>
+            <p className="text-xs text-[#9CA3AF]">{readability.label}</p>
+          </div>
+          <p className="text-[11px] text-[#9CA3AF] mt-1.5">{readability.wordCount} words · {readability.avgWordsPerSentence} words/sentence</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
+          <p className="text-sm font-bold text-[#2D2A26] mb-2">Recommended improvements</p>
+          {recommendedImprovements.length === 0 ? (
+            <p className="text-xs text-green-600 mt-2">Nothing left to improve — this story is ready.</p>
+          ) : (
+            <div className="flex flex-col gap-1.5 mt-2">
+              {recommendedImprovements.slice(0, 3).map(item => (
+                <p key={item.field} className="text-xs text-[#6B7280]">· {item.action}: {item.label}</p>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── 1. Lessons ───────────────────────────────────────────────────── */}
