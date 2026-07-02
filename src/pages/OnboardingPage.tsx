@@ -266,7 +266,7 @@ function ProfileStep({ draft, set }: { draft: Draft; set: (k: keyof Draft, v: un
     <div className="space-y-5">
       <h2 className="font-heading text-xl font-bold text-charcoal">Your founder profile</h2>
       <Field label="Full name" required>
-        <TextInput value={draft.name} onChange={v => set('name', v)} placeholder="e.g. Shakas Parata" />
+        <TextInput value={draft.name} onChange={v => set('name', v)} placeholder="e.g. Shakas Designer" />
       </Field>
       <Field label="Bio" required>
         <TextArea value={draft.bio} onChange={v => set('bio', v)} placeholder="A paragraph about who you are and what you do in the Village." rows={5} />
