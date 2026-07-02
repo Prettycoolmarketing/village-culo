@@ -6,6 +6,7 @@ import { founderClaimService } from '../../../services/founderClaim'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { FounderClaimRequest, FounderClaimStatus } from '../../../types/founderClaim'
 import type { Founder } from '../../../types'
+import { normalizeUrl } from '../../../utils/url'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
@@ -87,7 +88,7 @@ function ClaimRow({
       )}
 
       {claim.evidenceUrl && (
-        <a href={claim.evidenceUrl} target="_blank" rel="noopener noreferrer"
+        <a href={normalizeUrl(claim.evidenceUrl)} target="_blank" rel="noopener noreferrer"
           className="text-xs text-[#C86A43] hover:underline block mb-3 truncate">
           Evidence: {claim.evidenceUrl}
         </a>

@@ -2,6 +2,7 @@ import React from 'react'
 import type { Event } from '../../types'
 import { Badge } from '../ui/Badge'
 import { noticeTypeLabel, formatDate } from '../../utils/slugify'
+import { normalizeUrl } from '../../utils/url'
 
 interface EventCardProps {
   event: Event
@@ -42,8 +43,9 @@ const typeIcon: Record<string, React.ReactNode> = {
 export function EventCard({ event, variant = 'default', className = '' }: EventCardProps) {
   // Link to the event's own CTA URL (external booking/info page).
   // Fall back to /noticeboard only when no specific URL is set.
-  const eventUrl = event.ctaUrl && event.ctaUrl !== '#' ? event.ctaUrl : '/noticeboard'
-  const isExternal = eventUrl.startsWith('http')
+  const hasCtaUrl = Boolean(event.ctaUrl && event.ctaUrl !== '#')
+  const eventUrl = hasCtaUrl ? normalizeUrl(event.ctaUrl) : '/noticeboard'
+  const isExternal = hasCtaUrl
 
   if (variant === 'featured') {
     return (

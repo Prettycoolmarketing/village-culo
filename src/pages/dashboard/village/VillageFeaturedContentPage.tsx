@@ -4,6 +4,7 @@ import { getFounders, updateFounder } from '../../../services/founders'
 import { getBusinesses, updateBusiness } from '../../../services/businesses'
 import { getStories, updateStory } from '../../../services/stories'
 import { importedContentService } from '../../../services/importedContent'
+import { normalizeUrl } from '../../../utils/url'
 
 type ContentTab = 'founders' | 'businesses' | 'stories' | 'imports'
 
@@ -146,8 +147,8 @@ export function VillageFeaturedContentPage() {
             <div className="px-5 py-8 text-center"><p className="text-sm text-[#9CA3AF]">No businesses yet.</p></div>
           ) : businesses.map(b => (
             <div key={b.id} className="flex items-center gap-4 px-5 py-3.5">
-              <div className="w-9 h-9 rounded-lg bg-[#F3EDE6] flex-shrink-0 flex items-center justify-center text-[#C86A43] text-sm font-bold overflow-hidden">
-                {b.logo ? <img src={b.logo} alt="" className="w-full h-full object-cover" /> : b.name[0]}
+              <div className="w-9 h-9 rounded-lg bg-[#F3EDE6] flex-shrink-0 flex items-center justify-center text-[#C86A43] text-sm font-bold overflow-hidden p-1">
+                {b.logo ? <img src={b.logo} alt="" className="w-full h-full object-contain" /> : b.name[0]}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#2D2A26] truncate">{b.name}</p>
@@ -227,7 +228,7 @@ export function VillageFeaturedContentPage() {
                     void handleToggle(importedContentService.upsert({ ...c, status: next, visibility: 'public' }))
                   }}
                 />
-                <a href={c.originalUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">Source ↗</a>
+                <a href={normalizeUrl(c.originalUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">Source ↗</a>
               </div>
             </div>
           ))}

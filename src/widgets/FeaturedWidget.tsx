@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { SectionHeading } from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
+import { normalizeUrl } from '../utils/url'
 
 interface FeaturedWidgetProps {
   heading?: string
@@ -153,8 +154,8 @@ export function FeaturedWidget({
           >
             <p className="font-body text-xs font-semibold text-[#8a6a1e] uppercase tracking-widest mb-3">Featured Business</p>
             <div className="flex items-start gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border">
-                <img src={featuredBusiness.logo} alt={`${featuredBusiness.name} logo`} className="w-full h-full object-cover" loading="lazy" />
+              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border flex items-center justify-center p-1">
+                <img src={featuredBusiness.logo} alt={`${featuredBusiness.name} logo`} className="w-full h-full object-contain" loading="lazy" />
               </div>
               <div className="min-w-0">
                 <h3 className="font-heading text-base font-semibold text-charcoal leading-tight">
@@ -168,7 +169,7 @@ export function FeaturedWidget({
             <p className="font-body text-sm text-muted line-clamp-2 mb-3">{featuredBusiness.tagline}</p>
             {featuredBusiness.offers[0] && (
               <a
-                href={featuredBusiness.offers[0].ctaUrl}
+                href={normalizeUrl(featuredBusiness.offers[0].ctaUrl)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"
@@ -204,7 +205,7 @@ export function FeaturedWidget({
             )}
             <p className="font-body text-sm text-muted line-clamp-2 mb-3">{featuredEvent.description}</p>
             <a
-              href={featuredEvent.ctaUrl}
+              href={normalizeUrl(featuredEvent.ctaUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"

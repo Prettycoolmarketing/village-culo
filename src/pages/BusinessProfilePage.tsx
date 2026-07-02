@@ -1,6 +1,7 @@
 import type { ReactNode }             from 'react'
 import { useParams, Link }           from 'react-router-dom'
 import { usePageMeta }               from '../utils/usePageMeta'
+import { normalizeUrl }              from '../utils/url'
 import { getBusinesses, getBusinessBySlug } from '../services/businesses'
 import { getFounder }                      from '../services/founders'
 import { programService, recommendationService } from '../services/partnership'
@@ -65,7 +66,7 @@ function OfferCard({ offer, businessName }: { offer: Business['offers'][number];
       <h3 className="font-heading text-base font-semibold text-charcoal leading-snug">{offer.title}</h3>
       <p className="font-body text-sm text-muted leading-relaxed flex-1">{offer.description}</p>
       <a
-        href={offer.ctaUrl}
+        href={normalizeUrl(offer.ctaUrl)}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-accent text-charcoal text-sm font-semibold rounded-xl hover:bg-[#c4963e] transition-colors self-start"
@@ -85,7 +86,7 @@ function OfferCard({ offer, businessName }: { offer: Business['offers'][number];
 function SocialLink({ href, label, icon }: { href: string; label: string; icon: ReactNode }) {
   return (
     <a
-      href={href}
+      href={normalizeUrl(href)}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm text-muted hover:border-accent hover:text-charcoal transition-colors"
@@ -128,10 +129,10 @@ export function BusinessProfilePage() {
       '@type':      'Organization',
       name:         business.name,
       description:  business.description ?? '',
-      url:          business.website ?? `${window.location.origin}/businesses/${business.slug}`,
+      url:          business.website ? normalizeUrl(business.website) : `${window.location.origin}/businesses/${business.slug}`,
       ...(business.logo ? { logo: business.logo } : {}),
       ...(business.coverImage ? { image: business.coverImage } : {}),
-      sameAs:       [business.website, business.instagram, business.linkedin].filter(Boolean),
+      sameAs:       [business.website, business.instagram, business.linkedin].filter(Boolean).map(u => normalizeUrl(u)),
       address: {
         '@type':          'PostalAddress',
         addressLocality:  business.location.name,
@@ -196,7 +197,13 @@ export function BusinessProfilePage() {
   } : null
 
   const websiteHostname = business.website
-    ? new URL(business.website).hostname.replace('www.', '')
+    ? (() => {
+        try {
+          return new URL(normalizeUrl(business.website)).hostname.replace('www.', '')
+        } catch {
+          return business.website!.replace(/^https?:\/\//, '').replace('www.', '')
+        }
+      })()
     : null
 
   const PROG_TYPE_LABELS: Record<string, string> = {
@@ -247,8 +254,8 @@ export function BusinessProfilePage() {
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
             <div className="flex items-end gap-5 -mt-10 relative z-10 mb-6">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-surface shadow-lg bg-background flex-shrink-0">
-                <img src={business.logo} alt={`${business.name} logo`} className="w-full h-full object-cover" loading="eager" />
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-surface shadow-lg bg-background flex-shrink-0 flex items-center justify-center p-2.5">
+                <img src={business.logo} alt={`${business.name} logo`} className="w-full h-full object-contain" loading="eager" />
               </div>
               <div className="pb-1">
                 <span className="font-body text-xs font-semibold text-accent uppercase tracking-widest">
@@ -439,7 +446,7 @@ export function BusinessProfilePage() {
                             <span className="font-heading text-base font-semibold text-accent">{service.price}</span>
                           )}
                           <a
-                            href={service.ctaUrl}
+                            href={normalizeUrl(service.ctaUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-4 py-2 bg-accent text-charcoal text-sm font-semibold rounded-xl hover:bg-[#c4963e] transition-colors"
@@ -790,7 +797,7 @@ export function BusinessProfilePage() {
                     </p>
                     <p className="font-body text-sm text-muted leading-relaxed mb-4">{business.offers[0].description}</p>
                     <a
-                      href={business.offers[0].ctaUrl}
+                      href={normalizeUrl(business.offers[0].ctaUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block text-center px-4 py-2.5 bg-accent text-charcoal text-sm font-semibold rounded-xl hover:bg-[#c4963e] transition-colors"
@@ -946,7 +953,7 @@ export function BusinessProfilePage() {
                         <dd className="space-y-1">
                           {business.offers.map(o => (
                             <div key={o.id}>
-                              <a href={o.ctaUrl} target="_blank" rel="noopener noreferrer"
+                              <a href={normalizeUrl(o.ctaUrl)} target="_blank" rel="noopener noreferrer"
                                 className="text-charcoal hover:text-primary transition-colors text-sm">
                                 {o.title}
                               </a>
@@ -966,19 +973,19 @@ export function BusinessProfilePage() {
                         <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-2">Links</dt>
                         <dd className="flex flex-col gap-1.5">
                           {business.website && (
-                            <a href={business.website} target="_blank" rel="noopener noreferrer"
+                            <a href={normalizeUrl(business.website)} target="_blank" rel="noopener noreferrer"
                               className="text-primary hover:text-[#b05a35] transition-colors text-sm font-medium">
                               {websiteHostname} ↗
                             </a>
                           )}
                           {business.instagram && (
-                            <a href={business.instagram} target="_blank" rel="noopener noreferrer"
+                            <a href={normalizeUrl(business.instagram)} target="_blank" rel="noopener noreferrer"
                               className="text-primary hover:text-[#b05a35] transition-colors text-sm">
                               Instagram ↗
                             </a>
                           )}
                           {business.linkedin && (
-                            <a href={business.linkedin} target="_blank" rel="noopener noreferrer"
+                            <a href={normalizeUrl(business.linkedin)} target="_blank" rel="noopener noreferrer"
                               className="text-primary hover:text-[#b05a35] transition-colors text-sm">
                               LinkedIn ↗
                             </a>

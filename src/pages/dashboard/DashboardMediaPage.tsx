@@ -7,6 +7,7 @@ import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import type { Media, ApprovalStatus } from '../../types'
+import { normalizeUrl } from '../../utils/url'
 
 // ─── Detail panel ─────────────────────────────────────────────────────────────
 
@@ -151,7 +152,7 @@ function MediaDetailPanel({ item, onClose, onSave, onDuplicated, onDeleted }: Me
             {draft.sourceUrl && (
               <div className="pt-2 border-t border-[#F3EDE6]">
                 <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Source URL</p>
-                <a href={draft.sourceUrl} target="_blank" rel="noopener noreferrer"
+                <a href={normalizeUrl(draft.sourceUrl)} target="_blank" rel="noopener noreferrer"
                   className="text-xs text-[#C86A43] hover:underline break-all">{draft.sourceUrl}</a>
               </div>
             )}

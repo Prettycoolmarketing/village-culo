@@ -12,6 +12,7 @@ import { getLibraryMissingItems } from '../../utils/missingAssets'
 import { getLibraryItemFeaturedIn } from '../../utils/featuredIn'
 import { focusField } from '../../utils/focusField'
 import type { LibraryItem } from '../../types'
+import { normalizeUrl } from '../../utils/url'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
@@ -153,7 +154,7 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
               ))}
             </div>
             {draft.purchaseLinks.length > 0 && (
-              <a href={draft.purchaseLinks[0].url} target="_blank" rel="noopener noreferrer"
+              <a href={normalizeUrl(draft.purchaseLinks[0].url)} target="_blank" rel="noopener noreferrer"
                 className="text-xs text-[#C86A43] hover:underline">
                 {draft.purchaseLinks[0].label} ↗
               </a>

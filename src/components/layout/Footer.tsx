@@ -25,7 +25,6 @@ const sections = [
     heading: 'Publish',
     links: [
       { to: '/onboarding',     label: 'Become a Publisher' },
-      { to: '/media-curator',  label: 'Media Curator'      },
     ],
   },
 ]

@@ -1161,7 +1161,9 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
         <div className="flex flex-col gap-2">
           {[...suggestedBusinesses, ...extraBusinesses].map(b => (
             <div key={b.id} className="flex items-center gap-2 text-sm">
-              <img src={b.logo} alt="" className="w-6 h-6 rounded object-cover bg-[#F3EDE6] shrink-0" />
+              <div className="w-6 h-6 rounded bg-[#F3EDE6] shrink-0 flex items-center justify-center overflow-hidden p-0.5">
+                <img src={b.logo} alt="" className="w-full h-full object-contain" />
+              </div>
               <span className="flex-1 text-[#2D2A26]">{b.name}</span>
               <button
                 onClick={() => draft.extraBusinessIds.includes(b.id)
@@ -1222,7 +1224,9 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
           )}
           {singleBusiness && (
             <div className="flex items-center gap-3 px-3 py-2 bg-[#F8F5F0] rounded-xl">
-              <img src={singleBusiness.logo} alt="" className="w-7 h-7 rounded object-cover shrink-0" />
+              <div className="w-7 h-7 rounded bg-[#F3EDE6] shrink-0 flex items-center justify-center overflow-hidden p-0.5">
+                <img src={singleBusiness.logo} alt="" className="w-full h-full object-contain" />
+              </div>
               <p className="text-sm text-[#2D2A26] flex-1">{singleBusiness.name}</p>
               <span className="text-[10px] text-[#9CA3AF]">auto-selected</span>
             </div>

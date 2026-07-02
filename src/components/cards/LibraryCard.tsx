@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { LibraryItem } from '../../types'
 import { productTypeLabel, statusLabel } from '../../data/library'
+import { normalizeUrl } from '../../utils/url'
 
 interface LibraryCardProps {
   item: LibraryItem
@@ -133,7 +134,7 @@ export function LibraryCard({ item, variant = 'default' }: LibraryCardProps) {
         <div className="mt-auto pt-4 border-t border-border">
           {item.purchaseLinks.length === 1 ? (
             <a
-              href={item.purchaseLinks[0].url}
+              href={normalizeUrl(item.purchaseLinks[0].url)}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full text-center px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
@@ -146,7 +147,7 @@ export function LibraryCard({ item, variant = 'default' }: LibraryCardProps) {
               {item.purchaseLinks.map((link, i) => (
                 <a
                   key={i}
-                  href={link.url}
+                  href={normalizeUrl(link.url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`flex-1 text-center px-3 py-2 text-xs font-semibold rounded-xl transition-colors ${

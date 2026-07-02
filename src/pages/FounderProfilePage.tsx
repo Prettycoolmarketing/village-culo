@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
+import { normalizeUrl } from '../utils/url'
 import { getFounders } from '../services/founders'
 import { getBusiness, getBusinesses } from '../services/businesses'
 import { trustProfileService, recommendationService } from '../services/partnership'
@@ -362,49 +363,49 @@ export function FounderProfilePage() {
               {(founder.website || founder.instagram || founder.linkedin || founder.youtube || founder.tiktok || founder.podcast || founder.newsletter || (founder.socialLinks && founder.socialLinks.length > 0)) && (
                 <div className="flex items-center gap-2 flex-shrink-0 pb-1 flex-wrap">
                   {founder.website && (
-                    <a href={founder.website} target="_blank" rel="noopener noreferrer"
+                    <a href={normalizeUrl(founder.website)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm font-medium hover:border-primary hover:text-primary transition-colors"
                       aria-label={`Visit ${founder.name}'s website`}>
                       <WebIcon /><span className="hidden sm:inline">Website</span>
                     </a>
                   )}
                   {founder.instagram && (
-                    <a href={founder.instagram} target="_blank" rel="noopener noreferrer"
+                    <a href={normalizeUrl(founder.instagram)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
                       aria-label={`${founder.name} on Instagram`}>
                       <InstagramIcon />
                     </a>
                   )}
                   {founder.linkedin && (
-                    <a href={founder.linkedin} target="_blank" rel="noopener noreferrer"
+                    <a href={normalizeUrl(founder.linkedin)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
                       aria-label={`${founder.name} on LinkedIn`}>
                       <LinkedInIcon />
                     </a>
                   )}
                   {founder.youtube && (
-                    <a href={founder.youtube} target="_blank" rel="noopener noreferrer"
+                    <a href={normalizeUrl(founder.youtube)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-red-500 hover:text-red-500 transition-colors"
                       aria-label={`${founder.name} on YouTube`}>
                       <YouTubeIcon />
                     </a>
                   )}
                   {founder.tiktok && (
-                    <a href={founder.tiktok} target="_blank" rel="noopener noreferrer"
+                    <a href={normalizeUrl(founder.tiktok)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
                       aria-label={`${founder.name} on TikTok`}>
                       <TikTokIcon />
                     </a>
                   )}
                   {founder.podcast && (
-                    <a href={founder.podcast} target="_blank" rel="noopener noreferrer"
+                    <a href={normalizeUrl(founder.podcast)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-purple-500 hover:text-purple-500 transition-colors"
                       aria-label={`${founder.name}'s podcast`}>
                       <PodcastIcon />
                     </a>
                   )}
                   {founder.newsletter && (
-                    <a href={founder.newsletter} target="_blank" rel="noopener noreferrer"
+                    <a href={normalizeUrl(founder.newsletter)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
                       aria-label={`${founder.name}'s newsletter`}>
                       <NewsletterIcon />
@@ -414,7 +415,7 @@ export function FounderProfilePage() {
                     const Icon = SOCIAL_ICON[link.platform] ?? LinkIcon
                     const label = link.platform === 'custom' ? (link.label || 'Link') : SOCIAL_LABEL[link.platform]
                     return (
-                      <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+                      <a key={link.id} href={normalizeUrl(link.url)} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
                         aria-label={`${founder.name} on ${label}`}>
                         <Icon />{link.platform === 'custom' && <span className="hidden sm:inline">{label}</span>}
@@ -442,8 +443,8 @@ export function FounderProfilePage() {
                 <Link to={`/businesses/${business.slug}`}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
                   aria-label={`View ${business.name} business profile`}>
-                  <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border">
-                    <img src={business.logo} alt="" className="w-full h-full object-cover" />
+                  <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
+                    <img src={business.logo} alt="" className="w-full h-full object-contain" />
                   </div>
                   {business.name}
                   <span className="text-muted text-xs">→</span>
@@ -635,7 +636,7 @@ export function FounderProfilePage() {
                         </p>
                         <p className="font-body text-sm text-muted leading-relaxed">{talk.description}</p>
                         {talk.videoUrl && (
-                          <a href={talk.videoUrl} target="_blank" rel="noopener noreferrer"
+                          <a href={normalizeUrl(talk.videoUrl)} target="_blank" rel="noopener noreferrer"
                             className="mt-3 inline-block text-sm font-medium text-primary hover:text-[#b05a35] transition-colors">
                             Watch recording →
                           </a>
@@ -707,7 +708,7 @@ export function FounderProfilePage() {
                         <h3 className="font-heading text-base font-semibold text-charcoal mb-1">{entry.title}</h3>
                         <p className="font-body text-sm text-muted leading-relaxed">{entry.description}</p>
                         {entry.linkUrl && (
-                          <a href={entry.linkUrl} target="_blank" rel="noopener noreferrer"
+                          <a href={normalizeUrl(entry.linkUrl)} target="_blank" rel="noopener noreferrer"
                             className="mt-1.5 inline-block text-sm font-medium text-primary hover:text-[#b05a35] transition-colors">
                             {entry.linkLabel ?? 'Learn more'} →
                           </a>
@@ -833,7 +834,7 @@ export function FounderProfilePage() {
                     <div>
                       <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Website</dt>
                       <dd>
-                        <a href={founder.website} target="_blank" rel="noopener noreferrer"
+                        <a href={normalizeUrl(founder.website)} target="_blank" rel="noopener noreferrer"
                           className="text-primary hover:underline break-all">
                           {founder.website.replace(/^https?:\/\//, '')}
                         </a>
@@ -962,9 +963,9 @@ export function FounderProfilePage() {
                           className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-sm transition-all group"
                           aria-label={`View ${b.name}`}
                         >
-                          <div className="flex-shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-background ring-2 ring-border">
+                          <div className="flex-shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-background ring-2 ring-border flex items-center justify-center p-1">
                             {b.logo
-                              ? <img src={b.logo} alt="" className="w-full h-full object-cover" loading="lazy" />
+                              ? <img src={b.logo} alt="" className="w-full h-full object-contain" loading="lazy" />
                               : <span className="flex items-center justify-center h-full text-muted font-heading text-sm font-semibold">{b.name[0]}</span>
                             }
                           </div>

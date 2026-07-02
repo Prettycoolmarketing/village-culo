@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { ImportedContent } from '../../types/importedContent'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
 import { PLATFORM_LABELS, PLATFORM_COLORS } from '../../services/importedContent'
+import { normalizeUrl } from '../../utils/url'
 
 const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok'])
 
@@ -54,7 +55,7 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
             {platformLabel}
           </span>
           <a
-            href={content.originalUrl}
+            href={normalizeUrl(content.originalUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="font-body text-[10px] text-muted hover:text-primary transition-colors"

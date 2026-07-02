@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { Business, Founder } from '../../types'
 import { Badge } from '../ui/Badge'
+import { normalizeUrl } from '../../utils/url'
 
 interface BusinessCardProps {
   business: Business
@@ -40,11 +41,11 @@ export function BusinessCard({ business, founder, variant = 'default', className
           {/* Logo + name */}
           <div className="flex items-start gap-3 -mt-8 mb-3">
             <Link to={businessUrl} aria-label={`View ${business.name}`}>
-              <div className="w-14 h-14 rounded-xl overflow-hidden ring-4 ring-surface shadow-sm bg-background flex-shrink-0">
+              <div className="w-14 h-14 rounded-xl overflow-hidden ring-4 ring-surface shadow-sm bg-background flex-shrink-0 flex items-center justify-center p-1.5">
                 <img
                   src={business.logo}
                   alt={`${business.name} logo`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   loading="lazy"
                 />
               </div>
@@ -89,7 +90,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
           {/* Top offer CTA */}
           {business.offers[0] && (
             <a
-              href={business.offers[0].ctaUrl}
+              href={normalizeUrl(business.offers[0].ctaUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent text-charcoal text-sm font-medium rounded-xl hover:bg-[#c4963e] transition-colors"
@@ -114,8 +115,8 @@ export function BusinessCard({ business, founder, variant = 'default', className
         aria-label={`Business: ${business.name}`}
       >
         <Link to={businessUrl} tabIndex={-1} aria-hidden="true">
-          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-background">
-            <img src={business.logo} alt="" className="w-full h-full object-cover" loading="lazy" />
+          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-background flex items-center justify-center p-1">
+            <img src={business.logo} alt="" className="w-full h-full object-contain" loading="lazy" />
           </div>
         </Link>
         <div className="min-w-0 flex-1">
@@ -141,11 +142,11 @@ export function BusinessCard({ business, founder, variant = 'default', className
         {/* Logo + header */}
         <div className="flex items-start gap-3 mb-4">
           <Link to={businessUrl} aria-label={`View ${business.name}`}>
-            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border">
+            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border flex items-center justify-center p-1">
               <img
                 src={business.logo}
                 alt={`${business.name} logo`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 loading="lazy"
               />
             </div>
@@ -188,7 +189,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
 
         {business.offers[0] && (
           <a
-            href={business.offers[0].ctaUrl}
+            href={normalizeUrl(business.offers[0].ctaUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"

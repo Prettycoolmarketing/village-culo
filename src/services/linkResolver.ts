@@ -1,4 +1,5 @@
 import { enrollmentService, affiliateLinkService, programService } from './partnership'
+import { normalizeUrl } from '../utils/url'
 
 export type LinkType = 'village-program' | 'affiliate' | 'normal'
 
@@ -23,7 +24,7 @@ export function resolveRecommendationLink(
   if (enrollment) {
     const prog = programService.get(enrollment.programId)
     return {
-      url: prog?.landingPageUrl ?? businessWebsite ?? '',
+      url: normalizeUrl(prog?.landingPageUrl ?? businessWebsite),
       type: 'village-program',
       programId: enrollment.programId,
       trackingSlug: `${founderId}/${businessId}`,
@@ -33,11 +34,11 @@ export function resolveRecommendationLink(
   const affiliateLink = affiliateLinkService.getForBusiness(founderId, businessId)
   if (affiliateLink) {
     return {
-      url: affiliateLink.affiliateUrl,
+      url: normalizeUrl(affiliateLink.affiliateUrl),
       type: 'affiliate',
       affiliateLinkId: affiliateLink.id,
     }
   }
 
-  return { url: businessWebsite ?? '', type: 'normal' }
+  return { url: normalizeUrl(businessWebsite), type: 'normal' }
 }

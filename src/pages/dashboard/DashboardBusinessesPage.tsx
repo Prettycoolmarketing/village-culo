@@ -1156,7 +1156,9 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
       {/* Detail header */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
         <div className="flex items-center gap-3">
-          <img src={draft.logo} alt="" className="w-9 h-9 rounded-lg object-cover bg-[#F3EDE6] shrink-0" />
+          <div className="w-9 h-9 rounded-lg bg-[#F3EDE6] shrink-0 flex items-center justify-center overflow-hidden p-1">
+            <img src={draft.logo} alt="" className="w-full h-full object-contain" />
+          </div>
           <div>
             <p className="text-base font-bold text-[#2D2A26] truncate max-w-[200px]">{draft.name}</p>
             <HealthBadge missing={missing} />
@@ -1264,7 +1266,9 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
           <div className="flex flex-col gap-5">
             <Field label="Primary Logo" hint="Square, min 400×400px. Used in directories and profile pages.">
               <div className="flex gap-3 items-center mt-1">
-                <img src={draft.logo || '/placeholders/village-logo.svg'} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0 bg-[#F3EDE6] border border-[#E8E4DD]" />
+                <div className="w-14 h-14 rounded-xl shrink-0 bg-[#F3EDE6] border border-[#E8E4DD] flex items-center justify-center overflow-hidden p-1.5">
+                  <img src={draft.logo || '/placeholders/village-logo.svg'} alt="" className="w-full h-full object-contain" />
+                </div>
                 <input id="logo" type="url" value={draft.logo} onChange={e => set('logo', e.target.value)} className={inputClass} placeholder="/assets/brand-logo.jpg" />
               </div>
               {draft.logo.includes('/placeholders/') && <p className="text-xs text-red-600 mt-1.5">⚠ Using placeholder — add your real logo.</p>}
@@ -1598,7 +1602,9 @@ export function DashboardBusinessesPage() {
                   onChange={() => toggleChecked(biz.id)}
                   className="shrink-0 w-3.5 h-3.5 accent-[#C86A43]"
                 />
-                <img src={biz.logo} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                <div className="w-8 h-8 rounded-lg shrink-0 bg-[#F3EDE6] flex items-center justify-center overflow-hidden p-1">
+                  <img src={biz.logo} alt="" className="w-full h-full object-contain" />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#2D2A26] truncate">{biz.name}</p>
                   <HealthBadge missing={missing} />

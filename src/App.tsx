@@ -183,6 +183,7 @@ export default function App() {
             <Route path="village/analytics"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.analytics}><VillageAnalyticsPage /></RoleProtectedRoute>}               />
             <Route path="village/settings"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.settings}><VillageSettingsPage /></RoleProtectedRoute>}                />
             <Route path="village/team"         element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.team}><CapoTeamPage /></RoleProtectedRoute>}                          />
+            <Route path="village/media-curator" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.featured}><MediaCuratorPage /></RoleProtectedRoute>}                    />
             <Route path="settings"         element={<DashboardSettingsPage />}        />
           </Route>
 
@@ -205,7 +206,6 @@ export default function App() {
             <Route path="/expertise/:slug"    element={<ExpertiseDetailPage />}  />
             <Route path="/library"            element={<LibraryPage />}          />
             <Route path="/library/:slug"      element={<LibraryDetailPage />}    />
-            <Route path="/media-curator"      element={<MediaCuratorPage />}     />
             <Route path="/onboarding"         element={<OnboardingPage />}       />
             <Route path="/claim/:slug"        element={<ClaimProfilePage />}     />
             <Route path="*"                   element={<NotFound />}             />

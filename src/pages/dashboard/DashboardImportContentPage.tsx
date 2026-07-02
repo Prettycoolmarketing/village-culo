@@ -10,6 +10,7 @@ import {
   PLATFORM_LABELS,
   PLATFORM_COLORS,
 } from '../../services/importedContent'
+import { normalizeUrl } from '../../utils/url'
 import {
   enrichImportedContent,
   applyEnrichment,
@@ -77,7 +78,7 @@ function EmbedPreview({ content }: { content: ImportedContent }) {
     <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#F8F5F0] border border-[#E8E4DD]">
       <PlatformBadge platform={content.sourcePlatform} />
       <span className="text-xs text-[#6B7280] truncate flex-1">{content.originalUrl}</span>
-      <a href={content.originalUrl} target="_blank" rel="noopener noreferrer"
+      <a href={normalizeUrl(content.originalUrl)} target="_blank" rel="noopener noreferrer"
          className="text-xs text-[#C86A43] hover:underline shrink-0">
         View ↗
       </a>
@@ -690,7 +691,7 @@ function SavedRow({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
         <div className="flex items-center gap-2 mt-0.5">
-          <a href={item.originalUrl} target="_blank" rel="noopener noreferrer"
+          <a href={normalizeUrl(item.originalUrl)} target="_blank" rel="noopener noreferrer"
             className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors truncate max-w-xs">
             {item.originalUrl}
           </a>

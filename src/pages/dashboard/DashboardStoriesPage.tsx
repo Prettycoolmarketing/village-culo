@@ -20,6 +20,7 @@ import { getStoryFeaturedIn } from '../../utils/featuredIn'
 import { focusField } from '../../utils/focusField'
 import { computeReadability } from '../../utils/readability'
 import type { Story, ContentType, Topic } from '../../types'
+import { normalizeUrl } from '../../utils/url'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
@@ -250,7 +251,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                     <input id="reelUrl" type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
                   </Field>
                   {draft.reelUrl && (
-                    <a href={draft.reelUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C86A43] hover:underline mt-1 inline-block">Preview ↗</a>
+                    <a href={normalizeUrl(draft.reelUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C86A43] hover:underline mt-1 inline-block">Preview ↗</a>
                   )}
                 </div>
               </div>

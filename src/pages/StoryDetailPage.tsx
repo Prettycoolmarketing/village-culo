@@ -19,6 +19,7 @@ import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendatio
 import { InnerContainer }   from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType } from '../types'
+import { normalizeUrl } from '../utils/url'
 
 const DISCLOSURE_TYPE_LABELS: Record<string, string> = {
   affiliate:          'Affiliate Relationship',
@@ -200,7 +201,7 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
         </div>
         {reelUrl && (
           <a
-            href={reelUrl}
+            href={normalizeUrl(reelUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="absolute inset-0"
@@ -216,7 +217,7 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
         <p className="font-body text-base text-muted leading-relaxed mb-5">{summary}</p>
         {reelUrl && (
           <a
-            href={reelUrl}
+            href={normalizeUrl(reelUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
@@ -487,7 +488,7 @@ export function StoryDetailPage() {
               {/* CTA */}
               {story.ctaLabel && story.ctaUrl && (
                 <a
-                  href={story.ctaUrl}
+                  href={normalizeUrl(story.ctaUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl hover:bg-[#b05a35] transition-colors shadow-sm"
@@ -946,7 +947,7 @@ export function StoryDetailPage() {
                   {story.ctaLabel && story.ctaUrl && (
                     <div className="pt-3 border-t border-border">
                       <a
-                        href={story.ctaUrl}
+                        href={normalizeUrl(story.ctaUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors"

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { normalizeUrl } from '../../utils/url'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusiness } from '../../services/businesses'
 import {
@@ -191,7 +192,7 @@ function JoinProgramForm({
         </button>
         {program.termsUrl && (
           <a
-            href={program.termsUrl}
+            href={normalizeUrl(program.termsUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
@@ -341,7 +342,7 @@ function BusinessConnectionRow({
             </div>
             {row.businessWebsite && (
               <a
-                href={row.businessWebsite}
+                href={normalizeUrl(row.businessWebsite)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-[#9CA3AF] hover:text-[#C86A43] transition-colors font-mono truncate block"
