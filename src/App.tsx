@@ -20,7 +20,6 @@ import { getBusiness }          from './data/businesses'
 
 // ─── Public pages ───────────────────────────────────────────────────────────────
 import { VillagePage }        from './pages/VillagePage'
-import { PiazzaPage }         from './pages/PiazzaPage'
 import { FoundersPage }       from './pages/FoundersPage'
 import { FounderProfilePage } from './pages/FounderProfilePage'
 import { StoriesPage }        from './pages/StoriesPage'
@@ -109,8 +108,8 @@ function NotFound() {
           <Link to="/archive" className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors">
             Search the Archive
           </Link>
-          <Link to="/piazza" className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors">
-            Publish a Story
+          <Link to="/onboarding" className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors">
+            Become a Publisher
           </Link>
         </div>
       </div>
@@ -190,7 +189,7 @@ export default function App() {
           {/* ── Public site (with Navbar + Footer) ────────────────────────── */}
           <Route element={<PublicLayout />}>
             <Route path="/"                   element={<VillagePage />}          />
-            <Route path="/piazza"             element={<PiazzaPage />}           />
+            <Route path="/piazza"             element={<Navigate to="/" replace />}      />
             <Route path="/founders"           element={<FoundersPage />}         />
             <Route path="/founders/:slug"     element={<FounderProfilePage />}   />
             <Route path="/stories"            element={<StoriesPage />}          />

@@ -1,20 +1,70 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
-const navLinks = [
-  { to: '/',           label: 'Village',    exact: true  },
-  { to: '/piazza',     label: 'Piazza',     exact: false },
+// Primary: the three things a first-time visitor actually browses.
+// Secondary (Discover menu): real, valuable destinations that don't need to
+// compete for space in the main bar. Archive and Expertise keep their routes
+// and all SEO/GEO value — they're reached through search, widgets and
+// internal links rather than the navbar, same as any large content site.
+const primaryLinks = [
+  { to: '/',           label: 'Piazza',     exact: true  },
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/stories',    label: 'Stories',    exact: false },
-  { to: '/ideas',      label: 'Ideas',      exact: false },
-  { to: '/mercato',    label: 'Mercato',    exact: false },
-  { to: '/map',        label: 'Map',        exact: false },
-  { to: '/noticeboard',label: 'Noticeboard',exact: false },
-  { to: '/archive',    label: 'Archive',    exact: false },
-  { to: '/expertise',  label: 'Expertise',  exact: false },
-  { to: '/library',    label: 'Library',    exact: false },
 ]
+
+const discoverLinks = [
+  { to: '/ideas',       label: 'Ideas'       },
+  { to: '/mercato',     label: 'Mercato'     },
+  { to: '/map',         label: 'Map'         },
+  { to: '/noticeboard', label: 'Noticeboard' },
+  { to: '/library',     label: 'Library'     },
+]
+
+function DiscoverMenu() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium font-body text-charcoal hover:text-primary hover:bg-primary/5 transition-colors duration-150"
+      >
+        Discover
+        <svg className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div role="menu" className="absolute left-0 top-full mt-1 w-48 bg-surface border border-border rounded-xl shadow-lg py-1.5 z-50">
+          {discoverLinks.map(link => (
+            <Link
+              key={link.to}
+              to={link.to}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="block px-3.5 py-2 text-sm text-charcoal hover:bg-primary/5 hover:text-primary transition-colors"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -44,7 +94,7 @@ export function Navbar() {
 
           {/* Desktop navigation */}
           <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
-            {navLinks.map(link => (
+            {primaryLinks.map(link => (
               <NavLink
                 key={link.to}
                 to={link.to}
@@ -61,6 +111,7 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+            <DiscoverMenu />
           </nav>
 
           {/* Desktop CTA */}
@@ -126,11 +177,29 @@ export function Navbar() {
           aria-label="Mobile navigation"
         >
           <div className="px-4 py-3 space-y-1">
-            {navLinks.map(link => (
+            {primaryLinks.map(link => (
               <NavLink
                 key={link.to}
                 to={link.to}
                 end={link.exact}
+                onClick={() => setMobileOpen(false)}
+                className={({ isActive }) => `
+                  block px-3 py-2.5 rounded-xl text-sm font-medium font-body
+                  transition-colors duration-150
+                  ${isActive
+                    ? 'text-primary bg-primary/8'
+                    : 'text-charcoal hover:text-primary hover:bg-primary/5'
+                  }
+                `}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+            <p className="px-3 pt-3 text-xs font-semibold text-muted uppercase tracking-widest">Discover</p>
+            {discoverLinks.map(link => (
+              <NavLink
+                key={link.to}
+                to={link.to}
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) => `
                   block px-3 py-2.5 rounded-xl text-sm font-medium font-body

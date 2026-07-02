@@ -49,7 +49,7 @@ export function IdeaGrid({
         <EmptyState
           title={emptyTitle ?? 'No ideas yet'}
           message={emptyMessage ?? 'Ideas are extracted from published stories. Publish a story to generate ideas.'}
-          action={{ label: 'Publish in Piazza', href: '/piazza' }}
+          action={{ label: 'Become a Publisher', href: '/onboarding' }}
         />
       ) : (
         <div

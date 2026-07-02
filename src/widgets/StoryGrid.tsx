@@ -57,7 +57,7 @@ export function StoryGrid({
         <EmptyState
           title={emptyTitle ?? 'No stories yet'}
           message={emptyMessage ?? 'Be the first to publish a story here.'}
-          action={{ label: 'Publish in Piazza', href: '/piazza' }}
+          action={{ label: 'Become a Publisher', href: '/onboarding' }}
         />
       ) : (
         <div

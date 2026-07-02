@@ -279,10 +279,10 @@ export function MapPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                to="/piazza"
+                to="/onboarding"
                 className="px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
               >
-                Publish a Story
+                Become a Publisher
               </Link>
               <Link
                 to="/archive"

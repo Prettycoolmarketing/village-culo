@@ -4,7 +4,7 @@ const sections = [
   {
     heading: 'Discover',
     links: [
-      { to: '/',            label: 'Village'     },
+      { to: '/',            label: 'Piazza'      },
       { to: '/stories',     label: 'Stories'     },
       { to: '/ideas',       label: 'Ideas'       },
       { to: '/map',         label: 'Map'         },
@@ -25,7 +25,6 @@ const sections = [
     heading: 'Publish',
     links: [
       { to: '/onboarding',     label: 'Become a Publisher' },
-      { to: '/piazza',         label: 'Submit a Story'     },
       { to: '/media-curator',  label: 'Media Curator'      },
     ],
   },
