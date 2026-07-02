@@ -20,6 +20,7 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { getFounderMissingItems, getMissingCounts, type MissingItem } from '../../utils/missingAssets'
 import { getFounderFeaturedIn } from '../../utils/featuredIn'
+import { focusField } from '../../utils/focusField'
 import type { Founder, Topic } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
@@ -569,7 +570,7 @@ export function DashboardProfilePage() {
               <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Profile Progress</p>
               <MissingAssetsPanel
                 items={missing}
-                onAction={(item: MissingItem) => setTab(FIELD_TO_TAB[item.field] ?? 'content')}
+                onAction={(item: MissingItem) => { setTab(FIELD_TO_TAB[item.field] ?? 'content'); focusField(item.field) }}
               />
             </div>
 
@@ -596,7 +597,7 @@ export function DashboardProfilePage() {
               <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
             </Field>
             <Field label="Bio" hint="Write in your own voice — aim for 200+ characters.">
-              <textarea value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
+              <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{draft.bio.length} chars</p>
             </Field>
             <div className="grid grid-cols-2 gap-4">
@@ -649,7 +650,7 @@ export function DashboardProfilePage() {
               <div className="flex gap-4 items-start mt-2">
                 <img src={draft.avatar || '/placeholders/village-logo.svg'} alt="" className="w-20 h-20 rounded-full object-cover shrink-0 bg-[#F3EDE6] border border-[#E8E4DD]" />
                 <div className="flex-1">
-                  <input type="url" value={draft.avatar} onChange={e => set('avatar', e.target.value)} className={inputClass} placeholder="/assets/your-headshot.jpg" />
+                  <input id="avatar" type="url" value={draft.avatar} onChange={e => set('avatar', e.target.value)} className={inputClass} placeholder="/assets/your-headshot.jpg" />
                   {draft.avatar.includes('/placeholders/') && (
                     <p className="text-xs text-red-600 mt-1.5">⚠ Using a placeholder — upload a real photo.</p>
                   )}
@@ -662,7 +663,7 @@ export function DashboardProfilePage() {
                 {draft.coverImage && (
                   <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />
                 )}
-                <input type="url" value={draft.coverImage ?? ''} onChange={e => set('coverImage', e.target.value || undefined)} className={inputClass} placeholder="/assets/your-cover.jpg" />
+                <input id="coverImage" type="url" value={draft.coverImage ?? ''} onChange={e => set('coverImage', e.target.value || undefined)} className={inputClass} placeholder="/assets/your-cover.jpg" />
                 {draft.coverImage?.includes('/placeholders/') && (
                   <p className="text-xs text-amber-600">⚠ Using a placeholder — add a real cover image.</p>
                 )}
@@ -714,11 +715,11 @@ export function DashboardProfilePage() {
         {tab === 'seo' && (
           <div className="max-w-2xl flex flex-col gap-5">
             <Field label="SEO Title" hint="Shown in browser tab and search results. ~60 chars.">
-              <input type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
+              <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
             </Field>
             <Field label="SEO Description" hint="Shown in search results. 140–160 chars ideal.">
-              <textarea value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} placeholder="15+ years turning founder stories into content systems that build visibility, trust and sales." />
+              <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} placeholder="15+ years turning founder stories into content systems that build visibility, trust and sales." />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
             </Field>
             <div className="border-t border-[#E8E4DD] pt-5">
@@ -772,10 +773,10 @@ export function DashboardProfilePage() {
               <p className="text-sm font-semibold text-[#2D2A26] mb-2">Links</p>
               <div className="flex flex-col gap-3">
                 <Field label="Website">
-                  <input type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://yourwebsite.com" />
+                  <input id="website" type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://yourwebsite.com" />
                 </Field>
                 <Field label="Instagram">
-                  <input type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/handle" />
+                  <input id="socials" type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/handle" />
                 </Field>
                 <Field label="LinkedIn">
                   <input type="url" value={draft.linkedin ?? ''} onChange={e => set('linkedin', e.target.value || undefined)} className={inputClass} placeholder="https://linkedin.com/in/handle" />

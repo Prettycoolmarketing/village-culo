@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getMedia, getMediaUsedIn, updateMedia, deleteMedia, duplicateMedia } from '../../services/media'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { getMediaMissingItems } from '../../utils/missingAssets'
+import { focusField } from '../../utils/focusField'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
@@ -107,19 +108,19 @@ function MediaDetailPanel({ item, onClose, onSave, onDuplicated, onDeleted }: Me
             {/* Editable: Alt Text */}
             <div>
               <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Alt Text</p>
-              <input type="text" value={draft.altText} onChange={e => set('altText', e.target.value)}
+              <input id="altText" type="text" value={draft.altText} onChange={e => set('altText', e.target.value)}
                 className={inputClass} placeholder="Describe the image…" />
             </div>
 
             {/* Editable: Caption */}
             <div>
               <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Caption</p>
-              <input type="text" value={draft.caption ?? ''} onChange={e => set('caption', e.target.value || undefined)}
+              <input id="caption" type="text" value={draft.caption ?? ''} onChange={e => set('caption', e.target.value || undefined)}
                 className={inputClass} placeholder="Optional caption…" />
             </div>
 
             {/* Editable: Approval status */}
-            <div>
+            <div id="approved">
               <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Status</p>
               <div className="flex gap-2 flex-wrap">
                 {(['approved', 'needs-review', 'pending', 'rejected'] as const).map(s => (
@@ -217,7 +218,7 @@ function MediaDetailPanel({ item, onClose, onSave, onDuplicated, onDeleted }: Me
 
         {/* Improve */}
         {tab === 'improve' && (
-          <MissingAssetsPanel items={missing} onAction={() => setTab('details')} />
+          <MissingAssetsPanel items={missing} onAction={item => { setTab('details'); focusField(item.field) }} />
         )}
       </div>
     </div>
@@ -235,7 +236,7 @@ const statusOptions: { value: ApprovalStatus | 'all'; label: string }[] = [
 ]
 
 export function DashboardMediaPage() {
-  const [selected,     setSelected]     = useState<Media | null>(null)
+  const [selected,     setSelected]     = useState<Media | null>(() => getMedia()[0] ?? null)
   const [statusFilter, setStatusFilter] = useState<ApprovalStatus | 'all'>('all')
   const [typeFilter,   setTypeFilter]   = useState('all')
   const [tick, setTick] = useState(0)

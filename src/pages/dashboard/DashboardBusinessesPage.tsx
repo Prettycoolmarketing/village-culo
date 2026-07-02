@@ -17,6 +17,7 @@ import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { getBusinessMissingItems, getMissingCounts } from '../../utils/missingAssets'
 import { getBusinessFeaturedIn } from '../../utils/featuredIn'
+import { focusField } from '../../utils/focusField'
 import type { Business, Topic, Offer } from '../../types'
 
 const BUSINESS_FIELD_TO_TAB: Record<string, string> = {
@@ -1186,7 +1187,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
             </div>
             <MissingAssetsPanel
               items={missing}
-              onAction={(item) => setTab(BUSINESS_FIELD_TO_TAB[item.field] ?? 'content')}
+              onAction={(item) => { setTab(BUSINESS_FIELD_TO_TAB[item.field] ?? 'content'); focusField(item.field) }}
             />
           </div>
         )}
@@ -1201,7 +1202,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
               <input type="text" value={draft.tagline} onChange={e => set('tagline', e.target.value)} className={inputClass} />
             </Field>
             <Field label="Description">
-              <textarea value={draft.description} onChange={e => set('description', e.target.value)} rows={5} className={inputClass + ' resize-y'} />
+              <textarea id="description" value={draft.description} onChange={e => set('description', e.target.value)} rows={5} className={inputClass + ' resize-y'} />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Location">
@@ -1230,10 +1231,10 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
             </Field>
             <div className="flex flex-col gap-3 pt-3 border-t border-[#E8E4DD]">
               <Field label="Website">
-                <input type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://" />
+                <input id="website" type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://" />
               </Field>
               <Field label="Instagram">
-                <input type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/" />
+                <input id="socials" type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/" />
               </Field>
               <Field label="LinkedIn">
                 <input type="url" value={draft.linkedin ?? ''} onChange={e => set('linkedin', e.target.value || undefined)} className={inputClass} placeholder="https://linkedin.com/" />
@@ -1248,7 +1249,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
             <Field label="Primary Logo" hint="Square, min 400×400px. Used in directories and profile pages.">
               <div className="flex gap-3 items-center mt-1">
                 <img src={draft.logo || '/placeholders/village-logo.svg'} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0 bg-[#F3EDE6] border border-[#E8E4DD]" />
-                <input type="url" value={draft.logo} onChange={e => set('logo', e.target.value)} className={inputClass} placeholder="/assets/brand-logo.jpg" />
+                <input id="logo" type="url" value={draft.logo} onChange={e => set('logo', e.target.value)} className={inputClass} placeholder="/assets/brand-logo.jpg" />
               </div>
               {draft.logo.includes('/placeholders/') && <p className="text-xs text-red-600 mt-1.5">⚠ Using placeholder — add your real logo.</p>}
             </Field>
@@ -1256,7 +1257,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
             <Field label="Cover Image" hint="Shown at the top of your business profile page (16:9 or wider).">
               <div className="flex flex-col gap-2 mt-1">
                 {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-28 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />}
-                <input type="url" value={draft.coverImage} onChange={e => set('coverImage', e.target.value)} className={inputClass} placeholder="/assets/brand-cover.jpg" />
+                <input id="coverImage" type="url" value={draft.coverImage} onChange={e => set('coverImage', e.target.value)} className={inputClass} placeholder="/assets/brand-cover.jpg" />
                 {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-amber-600">⚠ Using placeholder — add a real cover image.</p>}
               </div>
             </Field>
@@ -1300,11 +1301,11 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
         {tab === 'seo' && (
           <div className="flex flex-col gap-4">
             <Field label="SEO Title" hint="~60 chars">
-              <input type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
+              <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
             </Field>
             <Field label="SEO Description" hint="140–160 chars">
-              <textarea value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
+              <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
             </Field>
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3 text-sm">

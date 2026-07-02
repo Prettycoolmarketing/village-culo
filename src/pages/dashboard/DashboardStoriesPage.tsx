@@ -16,10 +16,18 @@ import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { getStoryMissingItems, getMissingCounts } from '../../utils/missingAssets'
 import { getStoryFeaturedIn } from '../../utils/featuredIn'
+import { focusField } from '../../utils/focusField'
 import type { Story, ContentType, Topic } from '../../types'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
+
+const STORY_FIELD_TO_TAB: Record<string, string> = {
+  summary: 'content', blog: 'content', reelUrl: 'content', carouselImages: 'content', cta: 'content',
+  coverImage: 'media',
+  ideas: 'relationships',
+  seoTitle: 'seo', seoDescription: 'seo',
+}
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
@@ -176,7 +184,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 <p className="text-xs text-[#9CA3AF]">To Improve</p>
               </div>
             </div>
-            <MissingAssetsPanel items={missing} onAction={() => setTab('content')} />
+            <MissingAssetsPanel items={missing} onAction={item => { setTab(STORY_FIELD_TO_TAB[item.field] ?? 'content'); focusField(item.field) }} />
           </div>
         )}
 
@@ -187,7 +195,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
               <input type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
             </Field>
             <Field label="Summary">
-              <textarea value={draft.summary} onChange={e => set('summary', e.target.value)} rows={3} className={inputClass + ' resize-y'} />
+              <textarea id="summary" value={draft.summary} onChange={e => set('summary', e.target.value)} rows={3} className={inputClass + ' resize-y'} />
             </Field>
 
             <Field label="Content Types" hint="Select all formats this story is published in">
@@ -209,6 +217,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 </div>
                 <div className="px-4 py-3">
                   <textarea
+                    id="blog"
                     value={draft.blog ?? ''}
                     onChange={e => set('blog', e.target.value || undefined)}
                     rows={8}
@@ -227,7 +236,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 </div>
                 <div className="px-4 py-3">
                   <Field label="Reel URL">
-                    <input type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
+                    <input id="reelUrl" type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
                   </Field>
                   {draft.reelUrl && (
                     <a href={draft.reelUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C86A43] hover:underline mt-1 inline-block">Preview ↗</a>
@@ -263,6 +272,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                     </div>
                   ))}
                   <button
+                    id="carouselImages"
                     onClick={() => set('carouselImages', [...(draft.carouselImages ?? []), ''])}
                     className="text-xs text-[#C86A43] hover:underline text-left mt-1">
                     + Add slide
@@ -303,7 +313,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 <input type="text" value={draft.ctaLabel} onChange={e => set('ctaLabel', e.target.value)} className={inputClass} placeholder="Read more" />
               </Field>
               <Field label="CTA URL">
-                <input type="url" value={draft.ctaUrl} onChange={e => set('ctaUrl', e.target.value)} className={inputClass} placeholder="https://" />
+                <input id="cta" type="url" value={draft.ctaUrl} onChange={e => set('ctaUrl', e.target.value)} className={inputClass} placeholder="https://" />
               </Field>
             </div>
           </div>
@@ -315,7 +325,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
             <Field label="Cover Image" hint="Used on story card, story page header, and social share.">
               <div className="flex flex-col gap-2">
                 {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-36 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />}
-                <input type="url" value={draft.coverImage} onChange={e => set('coverImage', e.target.value)} className={inputClass} placeholder="/assets/story-cover.jpg" />
+                <input id="coverImage" type="url" value={draft.coverImage} onChange={e => set('coverImage', e.target.value)} className={inputClass} placeholder="/assets/story-cover.jpg" />
                 {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-red-600">⚠ Using placeholder — add a real cover image.</p>}
               </div>
             </Field>
@@ -358,11 +368,11 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
         {tab === 'seo' && (
           <div className="flex flex-col gap-4">
             <Field label="SEO Title" hint="~60 chars">
-              <input type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
+              <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
             </Field>
             <Field label="SEO Description" hint="140–160 chars">
-              <textarea value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
+              <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
             </Field>
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">

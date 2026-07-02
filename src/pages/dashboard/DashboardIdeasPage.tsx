@@ -180,7 +180,7 @@ function IdeaDetailPane({ idea, onClose, onSave, onDuplicated, onDeleted }: Idea
 
 export function DashboardIdeasPage() {
   const [search,     setSearch]     = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => getIdeas()[0]?.id ?? null)
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)
   void tick

@@ -8,6 +8,7 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { getServiceMissingItems } from '../../utils/missingAssets'
+import { focusField } from '../../utils/focusField'
 import type { Service } from '../../types'
 
 // ─── Detail pane ──────────────────────────────────────────────────────────────
@@ -118,22 +119,35 @@ function ServiceDetailPane({ service, onClose, onSave, onDuplicated, onDeleted }
             </div>
             <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1">Description</label>
-              <textarea value={draft.description} onChange={e => setDraft(prev => ({ ...prev, description: e.target.value }))} rows={4}
+              <textarea id="description" value={draft.description} onChange={e => setDraft(prev => ({ ...prev, description: e.target.value }))} rows={4}
                 className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]" />
             </div>
             <div className="flex flex-col gap-2 text-xs">
-              {draft.price && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#9CA3AF]">Price</span>
-                  <span className="font-medium text-[#C86A43]">{draft.price}{draft.priceType ? ` / ${draft.priceType}` : ''}</span>
-                </div>
-              )}
-              {draft.deliverable && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[#9CA3AF]">Deliverable</span>
-                  <span className="font-medium text-[#2D2A26]">{draft.deliverable}</span>
-                </div>
-              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-[#6B7280] mb-1">Price</label>
+                <input id="price" type="text" value={draft.price ?? ''} onChange={e => setDraft(prev => ({ ...prev, price: e.target.value || undefined }))}
+                  placeholder="$500"
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#6B7280] mb-1">Price Type</label>
+                <select value={draft.priceType ?? ''} onChange={e => setDraft(prev => ({ ...prev, priceType: (e.target.value || undefined) as Service['priceType'] }))}
+                  className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]">
+                  <option value="">—</option>
+                  <option value="flat">Flat</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="hourly">Hourly</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1">Deliverable</label>
+              <input id="deliverable" type="text" value={draft.deliverable ?? ''} onChange={e => setDraft(prev => ({ ...prev, deliverable: e.target.value || undefined }))}
+                placeholder="What people receive"
+                className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]" />
             </div>
             {draft.topicIds.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -165,7 +179,7 @@ function ServiceDetailPane({ service, onClose, onSave, onDuplicated, onDeleted }
         )}
 
         {tab === 'improve' && (
-          <MissingAssetsPanel items={missing} onAction={() => setTab('overview')} />
+          <MissingAssetsPanel items={missing} onAction={item => { setTab('overview'); focusField(item.field) }} />
         )}
       </div>
     </div>
@@ -175,7 +189,7 @@ function ServiceDetailPane({ service, onClose, onSave, onDuplicated, onDeleted }
 // ─── DashboardServicesPage ────────────────────────────────────────────────────
 
 export function DashboardServicesPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => getServices()[0]?.id ?? null)
   const [search,     setSearch]     = useState('')
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)

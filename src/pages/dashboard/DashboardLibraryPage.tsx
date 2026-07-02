@@ -10,6 +10,7 @@ import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { getLibraryMissingItems } from '../../utils/missingAssets'
 import { getLibraryItemFeaturedIn } from '../../utils/featuredIn'
+import { focusField } from '../../utils/focusField'
 import type { LibraryItem } from '../../types'
 
 const inputClass =
@@ -129,11 +130,11 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
             )}
             <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1">Title</label>
-              <input type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
+              <input id="title" type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1">Description</label>
-              <textarea value={draft.description} onChange={e => set('description', e.target.value)} rows={4} className={inputClass + ' resize-y'} />
+              <textarea id="description" value={draft.description} onChange={e => set('description', e.target.value)} rows={4} className={inputClass + ' resize-y'} />
             </div>
             <div className="flex flex-col gap-2 text-xs">
               {[
@@ -182,7 +183,7 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
         )}
 
         {tab === 'improve' && (
-          <MissingAssetsPanel items={missing} onAction={() => setTab('overview')} />
+          <MissingAssetsPanel items={missing} onAction={item => { setTab('overview'); focusField(item.field) }} />
         )}
       </div>
     </div>
@@ -192,7 +193,7 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
 // ─── DashboardLibraryPage ─────────────────────────────────────────────────────
 
 export function DashboardLibraryPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => getLibraryItems()[0]?.id ?? null)
   const [search,     setSearch]     = useState('')
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)
