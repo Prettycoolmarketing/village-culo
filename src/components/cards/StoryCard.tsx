@@ -262,7 +262,7 @@ export function StoryCard({
               </span>
             </div>
           )}
-          {showCTA && story.ctaLabel && (
+          {showCTA && story.ctaLabel && story.ctaUrl && (
             <a
               href={story.ctaUrl}
               target="_blank"

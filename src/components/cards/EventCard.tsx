@@ -193,11 +193,10 @@ export function EventCard({ event, variant = 'default', className = '' }: EventC
       </div>
 
       <a
-        href={event.ctaUrl}
-        target="_blank"
-        rel="noopener noreferrer"
+        href={eventUrl}
+        {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"
-        aria-label={`${event.ctaLabel} — ${event.title}`}
+        aria-label={`${event.ctaLabel}: ${event.title}`}
       >
         {event.ctaLabel} →
       </a>

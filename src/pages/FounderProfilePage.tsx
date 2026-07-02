@@ -82,6 +82,49 @@ function NewsletterIcon() {
   )
 }
 
+function FacebookIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.988h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+    </svg>
+  )
+}
+
+function XIcon() {
+  return (
+    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  )
+}
+
+function ThreadsIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c-5 0-8 3.5-8 9s3 9 8 9c4 0 6.5-2 6.5-5 0-2.5-2-4-4.5-4-2 0-3.5 1-3.5 2.5S11.5 17 13 17c2 0 3.5-1.5 3.5-4 0-4-3-6-6-6" />
+    </svg>
+  )
+}
+
+function LinkIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" />
+    </svg>
+  )
+}
+
+const SOCIAL_ICON: Record<string, () => JSX.Element> = {
+  linkedin: LinkedInIcon, instagram: InstagramIcon, facebook: FacebookIcon,
+  'facebook-page': FacebookIcon, youtube: YouTubeIcon, tiktok: TikTokIcon,
+  x: XIcon, threads: ThreadsIcon, podcast: PodcastIcon, newsletter: NewsletterIcon, custom: LinkIcon,
+}
+const SOCIAL_LABEL: Record<string, string> = {
+  linkedin: 'LinkedIn', instagram: 'Instagram', facebook: 'Facebook',
+  'facebook-page': 'Facebook Page', youtube: 'YouTube', tiktok: 'TikTok',
+  x: 'X', threads: 'Threads', podcast: 'Podcast', newsletter: 'Newsletter', custom: 'Link',
+}
+
 // ─── Resource type label ────────────────────────────────────────────────────────
 
 const resourceTypeLabel: Record<string, string> = {
@@ -316,7 +359,7 @@ export function FounderProfilePage() {
                   {founder.location.name}, {founder.location.state}, Australia
                 </p>
               </div>
-              {(founder.website || founder.instagram || founder.linkedin || founder.youtube || founder.tiktok || founder.podcast || founder.newsletter) && (
+              {(founder.website || founder.instagram || founder.linkedin || founder.youtube || founder.tiktok || founder.podcast || founder.newsletter || (founder.socialLinks && founder.socialLinks.length > 0)) && (
                 <div className="flex items-center gap-2 flex-shrink-0 pb-1 flex-wrap">
                   {founder.website && (
                     <a href={founder.website} target="_blank" rel="noopener noreferrer"
@@ -367,6 +410,17 @@ export function FounderProfilePage() {
                       <NewsletterIcon />
                     </a>
                   )}
+                  {founder.socialLinks?.map(link => {
+                    const Icon = SOCIAL_ICON[link.platform] ?? LinkIcon
+                    const label = link.platform === 'custom' ? (link.label || 'Link') : SOCIAL_LABEL[link.platform]
+                    return (
+                      <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm hover:border-primary hover:text-primary transition-colors"
+                        aria-label={`${founder.name} on ${label}`}>
+                        <Icon />{link.platform === 'custom' && <span className="hidden sm:inline">{label}</span>}
+                      </a>
+                    )
+                  })}
                 </div>
               )}
             </div>

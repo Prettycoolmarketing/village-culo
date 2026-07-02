@@ -341,6 +341,18 @@ export interface EvidenceMetrics {
 
 export type FounderProfileStatus = 'claimed' | 'village-curated' | 'claim-pending' | 'verified'
 
+export type SocialPlatform =
+  | 'linkedin' | 'instagram' | 'facebook' | 'facebook-page' | 'youtube'
+  | 'tiktok' | 'x' | 'threads' | 'podcast' | 'newsletter' | 'custom'
+
+export interface SocialLink {
+  id: string
+  platform: SocialPlatform
+  url: string
+  /** Only shown/used for the 'custom' platform — e.g. "My Substack". */
+  label?: string
+}
+
 export interface Founder {
   id: string
   slug: string
@@ -352,6 +364,11 @@ export interface Founder {
   industry: Industry
   businessId: string
   topics: Topic[]
+  // Website intentionally excluded — websites belong to the Business, not the
+  // founder personally (see Onboarding). The singular fields below predate
+  // socialLinks and are kept for founders created before it existed; new
+  // profiles write to socialLinks, which supports multiple accounts per
+  // platform (e.g. two YouTube channels) and unlimited custom links.
   website?: string
   instagram?: string
   linkedin?: string
@@ -359,6 +376,7 @@ export interface Founder {
   tiktok?: string
   podcast?: string
   newsletter?: string
+  socialLinks?: SocialLink[]
   status: Status
   featured: boolean
   createdAt: string
@@ -409,6 +427,8 @@ export interface Business {
   founderId: string
   category?: BusinessCategory
   location: Location
+  /** How this business actually operates — shown on the profile so visitors know what to expect. */
+  locationType?: 'online' | 'service-area' | 'physical' | 'storefront'
   industry: Industry
   industriesServed?: Industry[]
   topics: Topic[]
