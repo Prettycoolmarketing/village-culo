@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { getStories, updateStory, deleteStory, duplicateStory } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
+import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { getIdeas } from '../../services/ideas'
@@ -110,9 +111,13 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
       // Editing a published story regenerates intelligence — same engine,
       // same call shape as publishing it the first time (DashboardPublishPage),
       // so SEO/GEO/related-content all stay current with no separate refresh.
+      // Sprint 3.5: also re-runs idea sync + authority scores through the same
+      // single pipeline — editing a story is not a second, lesser code path.
       if (draft.status === 'published' || draft.status === 'featured') {
         const intel = villageContentIntelligenceService.analyse(storyToInput(draft))
         void villageContentIntelligenceService.upsert(intel)
+        void syncIdeasFromStory(draft, intel)
+        void refreshAuthorityScores(draft)
       }
       setSaved(true)
       onSave(draft)

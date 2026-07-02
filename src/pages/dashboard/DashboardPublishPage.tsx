@@ -7,6 +7,7 @@ import { getBusinesses } from '../../services/businesses'
 import { getStories, updateStory } from '../../services/stories'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
+import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
@@ -33,23 +34,26 @@ const FORMATS: { type: ContentType; emoji: string; label: string; desc: string }
 
 // ─── Steps ────────────────────────────────────────────────────────────────────
 
-// 'format'/'content'/'media' remain a short intake flow for getting raw content
-// into the draft (unchanged — still the right tool for "upload a file" style
-// input). Everything about ORGANISING and PUBLISHING that content — title,
-// summary, topics, location, connections, related entities, SEO/GEO, preview —
-// is now one consolidated 'builder' step instead of three separate ones
-// (previously info → connections → preview), so a founder edits it as one
-// continuous page instead of a multi-page form.
-type PublishStep = 'format' | 'content' | 'media' | 'builder' | 'done'
+// Village publishes knowledge, not content — the workflow reflects that: a
+// founder chooses where the knowledge already exists (format), optionally
+// brings in existing material (content), tells the story distraction-free
+// (story), watches Village extract topics/relationships/SEO/GEO from it in
+// real time (builder — "Village Intelligence"), sees exactly what publishing
+// will connect/create (preview), then publishes (done). Every step reads from
+// the same draft and the same villageContentIntelligenceService.analyse() —
+// nothing here is a parallel pipeline.
+type PublishStep = 'format' | 'content' | 'media' | 'story' | 'builder' | 'preview' | 'done'
 
-const STEPS: PublishStep[] = ['format', 'content', 'media', 'builder', 'done']
+const STEPS: PublishStep[] = ['format', 'content', 'media', 'story', 'builder', 'preview', 'done']
 
 const STEP_LABELS: Record<PublishStep, string> = {
-  format:  'Format',
-  content: 'Content',
-  media:   'Media',
-  builder: 'Story Builder',
-  done:    'Published',
+  format:  'Choose Formats',
+  content: 'Starting Point',
+  media:   'Attach Media',
+  story:   'Tell Your Story',
+  builder: 'Village Intelligence',
+  preview: 'Preview',
+  done:    'Publish',
 }
 
 // ─── Draft ────────────────────────────────────────────────────────────────────
@@ -99,6 +103,22 @@ interface PublishDraft {
 }
 
 type CtaPreset = 'website' | 'business' | 'book' | 'speaking' | 'newsletter' | 'custom'
+
+// Real counts, all read back from what syncIdeasFromStory/refreshAuthorityScores
+// actually wrote to the database — never fabricated for display. Sprint 3.5
+// made Ideas first-class persisted entities, so ideasCreated/ideasStrengthened
+// are genuine row counts, not a proxy over ephemeral lesson strings.
+interface PublishSummary {
+  ideasCreated: number
+  ideasStrengthened: number
+  relationships: number
+  founderLinks: number
+  businessLinks: number
+  internalLinks: number
+  seoComplete: boolean
+  geoComplete: boolean
+  authorityDelta: number
+}
 
 const CTA_PRESETS: { key: CtaPreset; label: string; ctaLabel: string }[] = [
   { key: 'website',   label: 'Visit my website',   ctaLabel: 'Visit website' },
@@ -708,6 +728,63 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
   )
 }
 
+// ─── Tell Your Story (distraction-free) ────────────────────────────────────────
+// Only the story itself — headline, hero image, summary, and the founder's own
+// words. No topics, no SEO, no relationships, no settings. Village Intelligence
+// (next step) reads this same draft to do everything else automatically.
+
+function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
+  draft: PublishDraft
+  onChange: (patch: Partial<PublishDraft>) => void
+  onNext: () => void
+  onBack: () => void
+}) {
+  const hasCarouselSlide  = draft.carouselSlides.filter(Boolean).length > 0
+  const missingCoverImage = !draft.coverImage && !hasCarouselSlide
+  const hasBlog           = draft.contentTypes.includes('blog')
+  const canContinue       = draft.title.trim().length > 0 && draft.summary.trim().length > 0
+
+  return (
+    <div className="max-w-xl mx-auto">
+      <StepHeader title="Tell Your Story" subtitle="Just the story. Village handles everything else on the next step." onBack={onBack} />
+      <div className="flex flex-col gap-5">
+        <Field label="Headline *">
+          <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
+            placeholder="What is this story about?" className={inp + ' text-lg font-semibold py-3'} autoFocus />
+        </Field>
+        <Field label="Summary *" hint="One or two sentences — the reader's takeaway.">
+          <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
+            placeholder="The honest story of…" className={inp + ' resize-y'} />
+        </Field>
+        <Field label="Your perspective" hint="What happened, what you learned, what you'd do differently. Write freely — Village will find the structure.">
+          <textarea
+            value={draft.blog}
+            onChange={e => onChange({ blog: e.target.value })}
+            rows={14}
+            placeholder="What happened? What did you learn? What would you do differently?"
+            className={inp + ' resize-y text-sm leading-relaxed'}
+          />
+        </Field>
+        <Field label="Hero image">
+          {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD] mb-2" />}
+          <input type="url" value={draft.coverImage} onChange={e => onChange({ coverImage: e.target.value })}
+            placeholder="/assets/my-photo.jpg or https://…" className={inp} />
+          {hasBlog && missingCoverImage && (
+            <p className="text-xs text-amber-700 mt-1.5">No cover image yet — a placeholder will be used until you add one.</p>
+          )}
+        </Field>
+        <button
+          onClick={onNext}
+          disabled={!canContinue}
+          className="py-3.5 bg-[#C86A43] text-white text-base font-bold rounded-2xl hover:bg-[#b05a35] disabled:opacity-50 transition-colors mt-2"
+        >
+          Continue — let Village understand this story →
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Story Builder (canonical publishing step) ─────────────────────────────────
 // Replaces the old Info → Connections → Preview steps with one scrolling,
 // card-based editor. Every card reuses the same draft state and the same
@@ -808,13 +885,11 @@ function EditableList({ items, onChange, placeholder }: {
   )
 }
 
-function StoryBuilderStep({ draft, onChange, onBack, onPublish, publishing, publishError }: {
+function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
   onBack: () => void
-  onPublish: (action: 'publish' | 'draft' | 'archive') => void
-  publishing: boolean
-  publishError?: string
+  onNext: () => void
 }) {
   const { user } = useAuth()
   const currentFounder = getCurrentFounder(user)
@@ -823,10 +898,6 @@ function StoryBuilderStep({ draft, onChange, onBack, onPublish, publishing, publ
   const singleFounder  = founders.length === 1  ? founders[0]   : null
   const singleBusiness = businesses.length === 1 ? businesses[0] : null
   const founder = getFounders().find(f => f.id === draft.founderId)
-
-  const hasCarouselSlide  = draft.carouselSlides.filter(Boolean).length > 0
-  const missingCoverImage = !draft.coverImage && !hasCarouselSlide
-  const hasBlog           = draft.contentTypes.includes('blog')
 
   // Live, non-persisted analysis — same engine as handlePublish, just previewed.
   const intel = useMemo(() => {
@@ -855,44 +926,42 @@ function StoryBuilderStep({ draft, onChange, onBack, onPublish, publishing, publ
     onChange({ topics: [topic, ...draft.topics.filter(t => t.id !== topic.id)] })
   }
 
+  const intelligenceRows = [
+    { label: 'Primary topic',       count: intel.canonicalTopics.length || draft.topics.length },
+    { label: 'Founders connected',  count: suggestedFounders.length + extraFounders.length },
+    { label: 'Businesses connected', count: suggestedBusinesses.length + extraBusinesses.length },
+    { label: 'Related content',     count: relatedContentItems.length },
+    { label: 'Lessons extracted',   count: lessons.length },
+    { label: 'Questions answered',  count: questions.length },
+    { label: 'SEO keywords',        count: intel.seoKeywords.length },
+    { label: 'GEO signals',         count: intel.geoKeywords.length },
+  ]
+
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
-      <StepHeader title="Story Builder" subtitle="Everything below publishes together — no separate refresh steps." onBack={onBack} />
+      <StepHeader title="Village Intelligence" subtitle="Village is reading your story and building everything else automatically." onBack={onBack} />
 
-      {/* ── 1. Story Overview ────────────────────────────────────────────── */}
-      <BuilderCard title="Story Overview" subtitle="Headline, summary and hero image — how this appears everywhere in the Village.">
-        <div className="flex flex-col gap-4">
-          <Field label="Headline *">
-            <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
-              placeholder="What is this story about?" className={inp + ' text-base font-semibold'} />
-          </Field>
-          <Field label="Summary *" hint="One or two sentences — the reader's takeaway.">
-            <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
-              placeholder="The honest story of…" className={inp + ' resize-y'} />
-          </Field>
-          <Field label="Hero image">
-            {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD] mb-2" />}
-            <input type="url" value={draft.coverImage} onChange={e => onChange({ coverImage: e.target.value })}
-              placeholder="/assets/my-photo.jpg or https://…" className={inp} />
-            {hasBlog && missingCoverImage && (
-              <p className="text-xs text-amber-700 mt-1.5">No cover image yet — a placeholder will be used until you add one.</p>
-            )}
-          </Field>
+      {/* ── Live extraction summary — this is the "watch it happen" moment ── */}
+      <div className="bg-[#2D2A26] rounded-2xl px-6 py-6 text-white">
+        <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-4">Understanding your story…</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {intelligenceRows.map((row, i) => (
+            <div
+              key={row.label}
+              className="transition-all duration-500"
+              style={{ transitionDelay: `${i * 60}ms`, opacity: row.count > 0 ? 1 : 0.35 }}
+            >
+              <p className="text-2xl font-bold">{row.count}</p>
+              <p className="text-[11px] text-white/60 leading-snug mt-0.5">{row.label}</p>
+            </div>
+          ))}
         </div>
-      </BuilderCard>
+        <p className="text-xs text-white/40 mt-5">
+          Keep writing on the previous step and come back — this updates automatically. Nothing here requires manual setup.
+        </p>
+      </div>
 
-      {/* ── 2. Founder's Perspective ─────────────────────────────────────── */}
-      <BuilderCard title="Founder's Perspective" subtitle="What happened, what you learned, what you'd do differently. Fully yours to rewrite.">
-        <textarea
-          value={draft.blog}
-          onChange={e => onChange({ blog: e.target.value })}
-          rows={10}
-          placeholder="What happened? What did you learn? What would you do differently?"
-          className={inp + ' resize-y text-sm leading-relaxed'}
-        />
-      </BuilderCard>
-
-      {/* ── 3. Lessons ───────────────────────────────────────────────────── */}
+      {/* ── 1. Lessons ───────────────────────────────────────────────────── */}
       <BuilderCard title="Lessons" subtitle="Extracted from your writing above — edit, remove or add your own." defaultOpen={false}
         badge={<span className="text-[10px] text-[#9CA3AF]">{lessons.length}</span>}>
         <EditableList items={lessons} onChange={v => onChange({ lessonsOverride: v })} placeholder="a lesson" />
@@ -1111,9 +1180,115 @@ function StoryBuilderStep({ draft, onChange, onBack, onPublish, publishing, publ
         </div>
       </BuilderCard>
 
-      {/* ── 14. Public Preview ───────────────────────────────────────────── */}
-      <BuilderCard title="Public Preview" subtitle="A simplified preview — not a pixel-perfect render of the live page." defaultOpen={false}>
-        <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
+      {/* ── One action: see exactly what publishing will do ─────────────── */}
+      <div className="sticky bottom-0 bg-[#F8F5F0]/95 backdrop-blur pt-3 pb-1 -mx-8 px-8 border-t border-[#E8E4DD] mt-2">
+        <button
+          onClick={onNext}
+          disabled={!draft.founderId}
+          className="w-full py-3.5 bg-[#C86A43] text-white text-base font-bold rounded-2xl hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+        >
+          Continue to Preview →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Preview — "publishing this will also…" ────────────────────────────────────
+// The moment the founder understands the value Village provides. Same analyse()
+// call as Village Intelligence and handlePublish — just framed as consequences
+// of hitting Publish, with the ability to remove anything before committing.
+
+function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishError }: {
+  draft: PublishDraft
+  onChange: (patch: Partial<PublishDraft>) => void
+  onBack: () => void
+  onPublish: (action: 'publish' | 'draft' | 'archive') => void
+  publishing: boolean
+  publishError?: string
+}) {
+  const founder = getFounders().find(f => f.id === draft.founderId)
+  const business = getBusinesses().find(b => b.id === draft.businessId)
+
+  const intel = useMemo(() => {
+    const previewStory = buildPreviewStory(draft, founder)
+    return villageContentIntelligenceService.analyse(storyToInput(previewStory))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.title, draft.summary, draft.blog, draft.topics, draft.locationId, draft.founderId, draft.businessId])
+
+  const lessons   = draft.lessonsOverride   ?? intel.lessons
+  const questions = draft.questionsOverride ?? [...intel.geoQuestions, ...intel.searchQuestions]
+
+  const suggestedFounders   = getFounders().filter(f => intel.relatedFounderIds.includes(f.id) && !draft.excludedFounderIds.includes(f.id))
+  const suggestedBusinesses = getBusinesses().filter(b => intel.relatedBusinessIds.includes(b.id) && !draft.excludedBusinessIds.includes(b.id))
+  const extraFounders   = getFounders().filter(f => draft.extraFounderIds.includes(f.id))
+  const extraBusinesses = getBusinesses().filter(b => draft.extraBusinessIds.includes(b.id))
+  const relatedContentItems = intel.relatedContentIds
+    .filter(id => !draft.excludedContentIds.includes(id))
+    .map(id => getStories().find(s => s.id === id) ?? importedContentService.get(id))
+    .filter((x): x is NonNullable<typeof x> => !!x)
+
+  const allFounders  = [...suggestedFounders, ...extraFounders]
+  const allBusinesses = business ? [business, ...suggestedBusinesses, ...extraBusinesses] : [...suggestedBusinesses, ...extraBusinesses]
+
+  return (
+    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+      <StepHeader title="Preview" subtitle="Exactly what happens when you publish — remove anything that isn't right." onBack={onBack} />
+
+      {/* ── Publishing this story will also… ─────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-[#E8E4DD] px-6 py-5">
+        <p className="text-sm font-bold text-[#2D2A26] mb-4">Publishing this story will also:</p>
+        <div className="flex flex-col gap-2.5">
+          {founder && <CheckItem label={`Strengthen your Founder Profile (${founder.name})`} />}
+          {allBusinesses.map(b => (
+            <div key={b.id} className="flex items-center gap-2.5 text-sm">
+              <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-[#5E6B4A]">
+                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <span className="flex-1 text-[#2D2A26]">Connect to {b.name}</span>
+              {b.id !== draft.businessId && (
+                <button onClick={() => draft.extraBusinessIds.includes(b.id)
+                  ? onChange({ extraBusinessIds: draft.extraBusinessIds.filter(id => id !== b.id) })
+                  : onChange({ excludedBusinessIds: [...draft.excludedBusinessIds, b.id] })}
+                  className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
+              )}
+            </div>
+          ))}
+          {allFounders.map(f => (
+            <div key={f.id} className="flex items-center gap-2.5 text-sm">
+              <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-[#5E6B4A]">
+                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <span className="flex-1 text-[#2D2A26]">Connect to {f.name}</span>
+              <button onClick={() => draft.extraFounderIds.includes(f.id)
+                ? onChange({ extraFounderIds: draft.extraFounderIds.filter(id => id !== f.id) })
+                : onChange({ excludedFounderIds: [...draft.excludedFounderIds, f.id] })}
+                className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
+            </div>
+          ))}
+          {relatedContentItems.length > 0 && (
+            <CheckItem label={`Link to ${relatedContentItems.length} related ${relatedContentItems.length === 1 ? 'story' : 'stories'}`} />
+          )}
+          {draft.topics.length > 0 && <CheckItem label={`Tag ${draft.topics.length} ${draft.topics.length === 1 ? 'topic' : 'topics'} (${draft.topics[0].name}${draft.topics.length > 1 ? ' + more' : ''})`} />}
+          {lessons.length > 0 && <CheckItem label={`Create or strengthen ${lessons.length} ${lessons.length === 1 ? 'idea' : 'ideas'} in your knowledge graph`} />}
+          <CheckItem label={`Generate SEO metadata (${intel.seoKeywords.length} keywords)`} done={intel.seoKeywords.length > 0} />
+          <CheckItem label={`Generate GEO metadata (${questions.length} questions answered)`} done={questions.length > 0} />
+          <CheckItem label="Improve Village Intelligence" />
+        </div>
+      </div>
+
+      {/* ── Where this appears ───────────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
+        <p className="text-sm font-bold text-[#2D2A26] mb-1">Once published, appears in:</p>
+        <div className="grid grid-cols-2 gap-2.5 mt-3">{DISTRIBUTION_LOCATIONS.map(loc => <CheckItem key={loc} label={loc} done />)}</div>
+      </div>
+
+      {/* ── Public Preview ───────────────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-[#E8E4DD] overflow-hidden">
+        <div className="px-5 pt-4">
+          <p className="text-sm font-bold text-[#2D2A26]">How this looks, published</p>
+        </div>
+        <div className="border border-[#E8E4DD] rounded-xl overflow-hidden m-5 mt-3">
           {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-40 object-cover bg-[#F3EDE6]" />}
           <div className="p-4">
             <p className="text-lg font-bold text-[#2D2A26] leading-snug">{draft.title || 'Untitled publication'}</p>
@@ -1125,28 +1300,9 @@ function StoryBuilderStep({ draft, onChange, onBack, onPublish, publishing, publ
             <button disabled className="mt-3 px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg opacity-90">{draft.ctaLabel || 'Read more'}</button>
           </div>
         </div>
-      </BuilderCard>
-
-      {/* ── Where this appears / what gets generated (informational) ─────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
-          <p className="text-sm font-bold text-[#2D2A26] mb-1">Once published, appears in:</p>
-          <div className="space-y-2.5 mt-3">{DISTRIBUTION_LOCATIONS.map(loc => <CheckItem key={loc} label={loc} done />)}</div>
-        </div>
-        <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
-          <p className="text-sm font-bold text-[#2D2A26] mb-1">Generated automatically on publish:</p>
-          <div className="space-y-2.5 mt-3">
-            <CheckItem label="Related founders, businesses & content" />
-            <CheckItem label="Search keywords (SEO)" />
-            <CheckItem label="AI-readable questions (GEO)" />
-            <CheckItem label="Canonical topics" />
-            <CheckItem label="FAQs" done={false} />
-            <CheckItem label="Automated resources" done={false} />
-          </div>
-        </div>
       </div>
 
-      {/* ── One publish action ───────────────────────────────────────────── */}
+      {/* ── Publish ───────────────────────────────────────────────────────── */}
       <div className="sticky bottom-0 bg-[#F8F5F0]/95 backdrop-blur pt-3 pb-1 -mx-8 px-8 flex flex-col gap-3 border-t border-[#E8E4DD] mt-2">
         {publishError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{publishError}</p>}
         <div className="flex items-center gap-3">
@@ -1171,24 +1327,38 @@ function StoryBuilderStep({ draft, onChange, onBack, onPublish, publishing, publ
 
 // ─── Step 7: Done ─────────────────────────────────────────────────────────────
 
-function DoneStep({ draft, publishedSlug, action, onPublishAnother }: {
+function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing, onPublishAnother }: {
   draft: PublishDraft
   publishedSlug: string
   action: 'publish' | 'draft' | 'archive'
+  summary: PublishSummary | null
+  onContinuePublishing: () => void
   onPublishAnother: () => void
 }) {
-  const label = action === 'publish' ? 'Published to the Village'
+  const [shared, setShared] = useState(false)
+  const storyUrl = typeof window !== 'undefined' ? `${window.location.origin}/stories/${publishedSlug}` : `/stories/${publishedSlug}`
+
+  const label = action === 'publish' ? 'Story Published'
               : action === 'draft'   ? 'Saved as Draft'
               : 'Archived'
 
   const msg = action === 'publish'
-    ? `"${draft.title}" is now live. It appears in your Founder Profile, the Story Archive and Search.`
+    ? `"${draft.title}" is live in the Village.`
     : action === 'draft'
     ? `"${draft.title}" has been saved as a draft. You can publish it any time from My Publications.`
     : `"${draft.title}" has been archived.`
 
+  async function handleShare() {
+    if (navigator.share) {
+      try { await navigator.share({ title: draft.title, url: storyUrl }); return } catch { /* user cancelled */ }
+    }
+    await navigator.clipboard.writeText(storyUrl)
+    setShared(true)
+    setTimeout(() => setShared(false), 2000)
+  }
+
   return (
-    <div className="max-w-md text-center">
+    <div className="max-w-md mx-auto text-center">
       <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
         action === 'publish' ? 'bg-green-100' : 'bg-[#F3EDE6]'
       }`}>
@@ -1197,28 +1367,64 @@ function DoneStep({ draft, publishedSlug, action, onPublishAnother }: {
         </svg>
       </div>
       <h1 className="text-2xl font-bold text-[#2D2A26] mb-2">{label}</h1>
-      <p className="text-sm text-[#6B7280] mb-8 leading-relaxed">{msg}</p>
+      <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">{msg}</p>
+
+      {action === 'publish' && summary && (
+        <div className="bg-[#2D2A26] rounded-2xl px-6 py-5 text-left mb-6">
+          <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">Village also created</p>
+          {summary.authorityDelta !== 0 && (
+            <p className="text-xs text-[#8FBF6F] font-semibold mb-3">
+              Founder Authority {summary.authorityDelta > 0 ? '↑' : '↓'} {summary.authorityDelta > 0 ? '+' : ''}{summary.authorityDelta}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+            {summary.ideasCreated > 0 && <CelebrationRow count={summary.ideasCreated} label={summary.ideasCreated === 1 ? 'Idea Created' : 'Ideas Created'} />}
+            {summary.ideasStrengthened > 0 && <CelebrationRow count={summary.ideasStrengthened} label={summary.ideasStrengthened === 1 ? 'Idea Strengthened' : 'Ideas Strengthened'} />}
+            {summary.relationships > 0 && <CelebrationRow count={summary.relationships} label={summary.relationships === 1 ? 'Relationship' : 'Relationships'} />}
+            {summary.founderLinks > 0 && <CelebrationRow count={summary.founderLinks} label={summary.founderLinks === 1 ? 'Founder Link' : 'Founder Links'} />}
+            {summary.businessLinks > 0 && <CelebrationRow count={summary.businessLinks} label={summary.businessLinks === 1 ? 'Business Link' : 'Business Links'} />}
+            {summary.internalLinks > 0 && <CelebrationRow count={summary.internalLinks} label="Internal Links" />}
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-4 border-t border-white/10">
+            <span className="text-xs text-white/70 flex items-center gap-1.5">{summary.seoComplete ? '✓' : '—'} SEO {summary.seoComplete ? 'Complete' : 'Skipped'}</span>
+            <span className="text-xs text-white/70 flex items-center gap-1.5">{summary.geoComplete ? '✓' : '—'} GEO {summary.geoComplete ? 'Complete' : 'Skipped'}</span>
+            <span className="text-xs text-white/70 flex items-center gap-1.5">✓ Knowledge Graph Updated</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3">
         {action === 'publish' && (
-          <a
-            href={`/stories/${publishedSlug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors block"
-          >
-            View in Village ↗
-          </a>
+          <>
+            <a
+              href={`/stories/${publishedSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors block"
+            >
+              View Story ↗
+            </a>
+            <button onClick={() => void handleShare()} className="w-full py-3 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-xl hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors">
+              {shared ? 'Link copied ✓' : 'Share Story'}
+            </button>
+          </>
         )}
-        <Link
-          to="/dashboard/stories"
-          className="w-full py-3 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-xl hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors block"
-        >
-          My Publications
-        </Link>
+        <button onClick={onContinuePublishing} className="w-full py-3 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-xl hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors">
+          Continue Publishing
+        </button>
         <button onClick={onPublishAnother} className="text-sm text-[#9CA3AF] hover:text-[#C86A43] transition-colors">
-          Publish something else →
+          Publish Another Story →
         </button>
       </div>
+    </div>
+  )
+}
+
+function CelebrationRow({ count, label }: { count: number; label: string }) {
+  return (
+    <div>
+      <p className="text-xl font-bold text-white">{count}</p>
+      <p className="text-[11px] text-white/50">{label}</p>
     </div>
   )
 }
@@ -1257,6 +1463,7 @@ export function DashboardPublishPage() {
   const [publishedSlug, setPublishedSlug] = useState('')
   const [publishError,  setPublishError]  = useState('')
   const [lastAction,    setLastAction]    = useState<'publish' | 'draft' | 'archive'>('publish')
+  const [summary,       setSummary]       = useState<PublishSummary | null>(null)
   const [autoSave,      setAutoSave]      = useState<AutoSaveStatus>('idle')
 
   // Debounced auto-save of the in-progress wizard state to localStorage.
@@ -1396,6 +1603,27 @@ export function DashboardPublishPage() {
         relatedContentIds: intel.relatedContentIds.filter(cid => !draft.excludedContentIds.includes(cid)),
       }
       void villageContentIntelligenceService.upsert(merged)
+
+      // Sprint 3.5: turn extracted lessons into real, deduplicated Idea
+      // records (create or strengthen), then recompute authority scores from
+      // what's actually now in the database — not the same call twice, this
+      // reads the graph syncIdeasFromStory just wrote.
+      const { created, strengthened } = await syncIdeasFromStory(story, merged)
+      const { founderDelta } = await refreshAuthorityScores(story)
+
+      setSummary({
+        ideasCreated: created.length,
+        ideasStrengthened: strengthened.length,
+        relationships: merged.relatedFounderIds.length + merged.relatedBusinessIds.length + merged.relatedContentIds.length,
+        founderLinks: merged.relatedFounderIds.length,
+        businessLinks: merged.relatedBusinessIds.length,
+        internalLinks: merged.relatedContentIds.length,
+        seoComplete: merged.seoKeywords.length > 0,
+        geoComplete: merged.geoQuestions.length > 0,
+        authorityDelta: founderDelta,
+      })
+    } else {
+      setSummary(null)
     }
 
     localStorage.removeItem(DRAFT_AUTOSAVE_KEY)
@@ -1410,6 +1638,7 @@ export function DashboardPublishPage() {
     setDraft(defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? ''))
     setStep('format')
     setPublishedSlug('')
+    setSummary(null)
   }
 
   return (
@@ -1425,11 +1654,13 @@ export function DashboardPublishPage() {
         </div>
       )}
 
-      {step === 'format'  && <FormatStep  draft={draft} onChange={patch} onNext={next} />}
-      {step === 'content' && <ContentStep draft={draft} onChange={patch} onNext={next} onBack={back} />}
-      {step === 'media'   && <MediaStep   draft={draft} onChange={patch} onNext={next} onBack={back} />}
-      {step === 'builder' && (
-        <StoryBuilderStep
+      {step === 'format'  && <FormatStep       draft={draft} onChange={patch} onNext={next} />}
+      {step === 'content' && <ContentStep      draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'media'   && <MediaStep        draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'story'   && <TellYourStoryStep draft={draft} onChange={patch} onNext={next} onBack={back} />}
+      {step === 'builder' && <StoryBuilderStep  draft={draft} onChange={patch} onBack={back} onNext={next} />}
+      {step === 'preview' && (
+        <PreviewStep
           draft={draft}
           onChange={patch}
           onBack={back}
@@ -1438,7 +1669,16 @@ export function DashboardPublishPage() {
           publishError={publishError}
         />
       )}
-      {step === 'done' && <DoneStep draft={draft} publishedSlug={publishedSlug} action={lastAction} onPublishAnother={reset} />}
+      {step === 'done' && (
+        <DoneStep
+          draft={draft}
+          publishedSlug={publishedSlug}
+          action={lastAction}
+          summary={summary}
+          onContinuePublishing={() => setStep('builder')}
+          onPublishAnother={reset}
+        />
+      )}
     </div>
   )
 }

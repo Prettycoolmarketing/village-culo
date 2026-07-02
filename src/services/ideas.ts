@@ -36,7 +36,7 @@ export function updateIdea(idea: Idea): Promise<WriteResult> {
     cacheKey: KEY,
     item: idea,
     table: TABLE,
-    toRow: i => ({ id: i.id, slug: i.slug, status: i.status ?? 'published', featured: i.featured, data: i }),
+    toRow: i => ({ id: i.id, slug: i.slug, status: i.status ?? 'published', featured: i.featured, founder_id: i.founderId ?? null, data: i }),
   })
 }
 

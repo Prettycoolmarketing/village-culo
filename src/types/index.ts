@@ -384,6 +384,11 @@ export interface Founder {
   claimEmail?: string
   claimNotes?: string
   isClaimable?: boolean
+  // Sprint 3.5 — Village Intelligence pipeline: a real, persisted, recomputed-
+  // on-publish score (see computeAuthorityScore in services/ideaSync.ts).
+  // Heuristic, not ML — deterministic from ideas created/strengthened, stories
+  // published and business connections. Never fabricated for display only.
+  authorityScore?: number
   // Metadata
   seoTitle?: string
   seoDescription?: string
@@ -422,6 +427,9 @@ export interface Business {
   testimonialIds?: string[]
   faqs?: FAQ[]
   resourceIds?: string[]
+  // Sprint 3.5 — Village Intelligence pipeline: same real, recomputed-on-publish
+  // score as Founder.authorityScore (see services/ideaSync.ts).
+  authorityScore?: number
   // Partnership Operating System fields (managed by Partnership Engine)
   partnerEnabled?: boolean       // Business is discoverable in the Partnership Engine
   villageProActive?: boolean     // Business has an active Village Pro account
@@ -489,6 +497,13 @@ export interface Idea {
   featured: boolean
   status?: Status
   createdAt: string
+  // Sprint 3.5 — Village Intelligence pipeline: the founder whose story caused
+  // Village to create this idea (RLS ownership; see migration 006). Distinct
+  // from relatedFounderIds, which can include other founders this idea also
+  // connects to. relatedStoryIds.length IS this idea's "strength" — every time
+  // a new story reinforces an existing idea instead of creating a duplicate,
+  // that story's id is appended here rather than adding a separate counter.
+  founderId?: string
 }
 
 // ─── Event / Notice ────────────────────────────────────────────────────────────
