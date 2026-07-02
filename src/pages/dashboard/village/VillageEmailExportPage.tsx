@@ -220,7 +220,7 @@ export function VillageEmailExportPage() {
     <div className="p-8 max-w-4xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       <div className="mb-8">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Village HQ</p>
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Email Export</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">
           Download CSV files for outreach, follow-up and community building. No emails are sent from Village.

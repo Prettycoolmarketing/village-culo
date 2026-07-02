@@ -1,7 +1,6 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { villageSettingsService } from '../../../services/villageSettings'
-import { VILLAGE_ROLE_CONFIGS } from '../../../types/villageSettings'
-import type { VillageRole } from '../../../types/villageSettings'
 
 const INPUT_CLS = 'w-full px-3 py-2.5 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] focus:outline-none focus:border-[#C86A43] bg-white placeholder:text-[#9CA3AF]'
 
@@ -13,13 +12,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       {hint && <p className="text-[10px] text-[#9CA3AF] mt-1">{hint}</p>}
     </div>
   )
-}
-
-const ROLE_COLORS: Record<VillageRole, string> = {
-  admin: 'bg-[#C86A43]/10 text-[#C86A43]',
-  editor: 'bg-blue-50 text-blue-700',
-  moderator: 'bg-amber-50 text-amber-700',
-  viewer: 'bg-[#F3EDE6] text-[#9CA3AF]',
 }
 
 export function VillageSettingsPage() {
@@ -55,13 +47,12 @@ export function VillageSettingsPage() {
     }
   }
 
-  const roles: VillageRole[] = ['admin', 'editor', 'moderator', 'viewer']
 
   return (
     <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       <div className="mb-8">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Village HQ</p>
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Village Settings</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">Configure global defaults for CULO Village.</p>
       </div>
@@ -136,42 +127,18 @@ export function VillageSettingsPage() {
         </div>
       </section>
 
-      {/* Permission roles — architecture only */}
+      {/* Permission roles — now real, enforced at the route level (see utils/permissions.ts) */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Permission Roles</p>
-          <span className="text-[10px] text-[#9CA3AF] bg-[#F3EDE6] px-2 py-0.5 rounded-full">Architecture only — auth not required yet</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {roles.map(role => {
-            const cfg = VILLAGE_ROLE_CONFIGS[role]
-            const perms = [
-              cfg.canPublish       ? 'Publish'   : null,
-              cfg.canCurate        ? 'Curate'    : null,
-              cfg.canModerate      ? 'Moderate'  : null,
-              cfg.canExport        ? 'Export'    : null,
-              cfg.canManageSettings? 'Settings'  : null,
-              cfg.canDeleteContent ? 'Delete'    : null,
-            ].filter((p): p is string => p !== null)
-
-            return (
-              <div key={role} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3.5">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full capitalize ${ROLE_COLORS[role]}`}>{role}</span>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {perms.map(p => (
-                    <span key={p} className="text-[10px] px-2 py-0.5 bg-[#F3EDE6] text-[#6B7280] rounded-full">{p}</span>
-                  ))}
-                  {perms.length === 0 && <span className="text-[10px] text-[#9CA3AF]">Read-only</span>}
-                </div>
-              </div>
-            )
-          })}
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+          <p className="text-sm text-[#2D2A26] mb-1">Manage who has staff access from the Team page.</p>
+          <p className="text-xs text-[#9CA3AF] mb-3">Assign roles to existing accounts, suspend access, or remove staff entirely. Owner-only.</p>
+          <Link to="/dashboard/village/team" className="inline-flex px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+            Go to Team →
+          </Link>
         </div>
-        <p className="text-[10px] text-[#9CA3AF] mt-2">
-          Role enforcement will be wired to Supabase auth in a future sprint. Architecture is in place.
-        </p>
       </section>
 
       {/* Save */}

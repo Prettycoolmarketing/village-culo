@@ -9,9 +9,9 @@ export function AccessDeniedPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
         </div>
-        <h1 className="font-heading text-xl font-bold text-[#2D2A26] mb-2">Village HQ access required</h1>
+        <h1 className="font-heading text-xl font-bold text-[#2D2A26] mb-2">CAPO access required</h1>
         <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
-          This area is for Village HQ admins. Your founder dashboard is still available.
+          This area is for Village staff. Your founder dashboard is still available — and this specific section may need a different role than the one you have.
         </p>
         <Link
           to="/dashboard/home"

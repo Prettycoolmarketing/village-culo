@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { canAccessCapoSection, hasAnyCapoAccess } from '../../utils/permissions'
 import type { ReactNode } from 'react'
 
 // ─── Icon helpers ───────────────────────────────────────────────────────────────
@@ -66,12 +67,10 @@ function SectionLabel({ label }: { label: string }) {
 
 // ─── DashboardLayout ────────────────────────────────────────────────────────────
 
-const VILLAGE_HQ_ROLES = ['admin', 'editor', 'moderator']
-
 export function DashboardLayout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
-  const hasVillageHQAccess = !!user && VILLAGE_HQ_ROLES.includes(user.role)
+  const showCapoNav = hasAnyCapoAccess(user?.role)
 
   async function handleSignOut() {
     await signOut()
@@ -129,17 +128,60 @@ export function DashboardLayout() {
           <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} />
           <NavItem to="/dashboard/revenue"        label="Revenue"         icon={<Icon path={icons.revenue}     />} />
 
-          {hasVillageHQAccess && (
+          {showCapoNav && (
             <>
-              <SectionLabel label="Village HQ" />
-              <NavItem to="/dashboard/village"           label="HQ Overview"       icon={<Icon path={icons.hq}         />} />
-              <NavItem to="/dashboard/village/founders"  label="Curated Founders"  icon={<Icon path={icons.curated}    />} />
-              <NavItem to="/dashboard/village/imports"   label="Bulk Import"       icon={<Icon path={icons.import}     />} />
-              <NavItem to="/dashboard/village/claims"    label="Claim Requests"    icon={<Icon path={icons.claims}     />} />
-              <NavItem to="/dashboard/village/emails"    label="Email Export"      icon={<Icon path={icons.email}      />} />
-              <NavItem to="/dashboard/village/featured"  label="Featured Content"  icon={<Icon path={icons.featured}   />} />
-              <NavItem to="/dashboard/village/analytics" label="Analytics"         icon={<Icon path={icons.analytics}  />} />
-              <NavItem to="/dashboard/village/settings"  label="HQ Settings"       icon={<Icon path={icons.settings}   />} />
+              <SectionLabel label="CAPO" />
+              <NavItem to="/dashboard/village" label="Overview" icon={<Icon path={icons.hq} />} />
+
+              {(canAccessCapoSection(user?.role, 'founders') || canAccessCapoSection(user?.role, 'team')) && (
+                <>
+                  <SectionLabel label="People" />
+                  {canAccessCapoSection(user?.role, 'founders') && (
+                    <NavItem to="/dashboard/village/founders" label="Founders" icon={<Icon path={icons.curated} />} />
+                  )}
+                  {canAccessCapoSection(user?.role, 'team') && (
+                    <NavItem to="/dashboard/village/team" label="Staff" icon={<Icon path={icons.profile} />} />
+                  )}
+                </>
+              )}
+
+              {(canAccessCapoSection(user?.role, 'claims') || canAccessCapoSection(user?.role, 'featured')) && (
+                <>
+                  <SectionLabel label="Content" />
+                  {canAccessCapoSection(user?.role, 'claims') && (
+                    <NavItem to="/dashboard/village/claims" label="Claims" icon={<Icon path={icons.claims} />} />
+                  )}
+                  {canAccessCapoSection(user?.role, 'featured') && (
+                    <NavItem to="/dashboard/village/featured" label="Featured" icon={<Icon path={icons.featured} />} />
+                  )}
+                </>
+              )}
+
+              {canAccessCapoSection(user?.role, 'emails') && (
+                <>
+                  <SectionLabel label="Growth" />
+                  <NavItem to="/dashboard/village/emails" label="Email Lists" icon={<Icon path={icons.email} />} />
+                </>
+              )}
+
+              {canAccessCapoSection(user?.role, 'analytics') && (
+                <>
+                  <SectionLabel label="Insights" />
+                  <NavItem to="/dashboard/village/analytics" label="Analytics" icon={<Icon path={icons.analytics} />} />
+                </>
+              )}
+
+              {(canAccessCapoSection(user?.role, 'imports') || canAccessCapoSection(user?.role, 'settings')) && (
+                <>
+                  <SectionLabel label="System" />
+                  {canAccessCapoSection(user?.role, 'imports') && (
+                    <NavItem to="/dashboard/village/imports" label="Imports" icon={<Icon path={icons.import} />} />
+                  )}
+                  {canAccessCapoSection(user?.role, 'settings') && (
+                    <NavItem to="/dashboard/village/settings" label="Settings" icon={<Icon path={icons.settings} />} />
+                  )}
+                </>
+              )}
             </>
           )}
 

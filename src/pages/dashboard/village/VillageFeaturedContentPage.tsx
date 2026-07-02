@@ -68,7 +68,7 @@ export function VillageFeaturedContentPage() {
 
       {/* Header */}
       <div className="mb-8">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Village HQ</p>
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Featured Content</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">
           Pin founders, businesses, stories and imported content for homepage and discovery visibility.

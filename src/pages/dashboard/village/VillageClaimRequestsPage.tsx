@@ -181,7 +181,7 @@ export function VillageClaimRequestsPage() {
 
       {/* Header */}
       <div className="mb-6">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Village HQ</p>
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[#2D2A26]">Claim Requests</h1>

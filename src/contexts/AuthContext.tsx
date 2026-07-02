@@ -2,15 +2,16 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { syncUserDataFromSupabase } from '../lib/sync'
 import type { User } from '@supabase/supabase-js'
-import type { VillageRole } from '../types/villageSettings'
 
 /**
- * 'founder' is the only role a real signup ever gets by default. 'admin' / 'editor' /
- * 'moderator' grant access to Village HQ (see RoleProtectedRoute) and must be assigned
- * explicitly — via Supabase user_metadata in production, or VITE_DEV_ADMIN_EMAILS in dev mode.
+ * 'founder' is the only role a real signup ever gets by default. 'moderator' / 'editor' /
+ * 'admin' / 'owner' grant access to CAPO (see RoleProtectedRoute + utils/permissions.ts)
+ * and must be assigned explicitly — via the CAPO Team page (Owner-only, migration 007),
+ * via Supabase user_metadata in production, or VITE_DEV_ADMIN_EMAILS in dev mode.
  * Never widen this default; see Sprint 19A audit for why that was previously a launch blocker.
+ * 'owner' is reserved for the platform owner — see permissions.ts for what each tier can do.
  */
-export type UserRole = 'founder' | 'admin' | 'editor' | 'moderator'
+export type UserRole = 'founder' | 'moderator' | 'editor' | 'admin' | 'owner'
 
 export interface AuthUser {
   id: string
@@ -18,8 +19,9 @@ export interface AuthUser {
   role: UserRole
   /** Links this account directly to a Founder record once set (claim approval, profile creation). */
   founderId?: string
-  /** Finer-grained Village HQ permission tier (see VILLAGE_ROLE_CONFIGS). Defaults to `role` when unset. */
-  villageRole?: VillageRole
+  /** Soft suspension — enforced by our own app (ProtectedRoute), not a Supabase Auth-level
+   * ban (that needs a service-role backend, which doesn't exist yet — see migration 007). */
+  suspended?: boolean
 }
 
 interface AuthContextValue {
@@ -33,7 +35,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-const ADMIN_ROLES: UserRole[] = ['admin', 'editor', 'moderator']
+const STAFF_ROLES: UserRole[] = ['moderator', 'editor', 'admin', 'owner']
 
 /** Comma-separated allowlist of dev-mode emails that should land as admin. Documented in .env.example. */
 const DEV_ADMIN_EMAILS = (import.meta.env.VITE_DEV_ADMIN_EMAILS ?? '')
@@ -49,21 +51,20 @@ const DEV_ADMIN_EMAILS = (import.meta.env.VITE_DEV_ADMIN_EMAILS ?? '')
  */
 async function toAuthUser(supaUser: User): Promise<AuthUser> {
   const meta = supaUser.user_metadata ?? {}
-  const fallbackRole: UserRole = ADMIN_ROLES.includes(meta.role) ? meta.role : 'founder'
+  const fallbackRole: UserRole = STAFF_ROLES.includes(meta.role) ? meta.role : 'founder'
 
   const base: AuthUser = {
     id: supaUser.id,
     email: supaUser.email ?? '',
     role: fallbackRole,
     founderId: typeof meta.founder_id === 'string' ? meta.founder_id : undefined,
-    villageRole: typeof meta.village_role === 'string' ? (meta.village_role as VillageRole) : undefined,
   }
 
   if (!supabase) return base
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, founder_id, village_role')
+    .select('role, founder_id, suspended')
     .eq('id', supaUser.id)
     .maybeSingle()
 
@@ -71,9 +72,9 @@ async function toAuthUser(supaUser: User): Promise<AuthUser> {
 
   return {
     ...base,
-    role: (['founder', ...ADMIN_ROLES].includes(profile.role) ? profile.role : base.role) as UserRole,
+    role: (['founder', ...STAFF_ROLES].includes(profile.role) ? profile.role : base.role) as UserRole,
     founderId: profile.founder_id ?? base.founderId,
-    villageRole: (profile.village_role as VillageRole | null) ?? base.villageRole,
+    suspended: profile.suspended ?? false,
   }
 }
 

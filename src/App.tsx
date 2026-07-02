@@ -66,11 +66,9 @@ import { VillageEmailExportPage }             from './pages/dashboard/village/Vi
 import { VillageFeaturedContentPage }         from './pages/dashboard/village/VillageFeaturedContentPage'
 import { VillageAnalyticsPage }               from './pages/dashboard/village/VillageAnalyticsPage'
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
+import { CapoTeamPage }                       from './pages/dashboard/village/CapoTeamPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
-import type { UserRole } from './contexts/AuthContext'
-
-// Village HQ / curated-profile / bulk-import routes are admin tooling, not founder-facing.
-const ADMIN_ROUTE_ROLES: UserRole[] = ['admin', 'editor', 'moderator']
+import { CAPO_PERMISSIONS } from './utils/permissions'
 
 // ─── Activity banner data ───────────────────────────────────────────────────────
 const recentStory   = stories[0]
@@ -176,17 +174,18 @@ export default function App() {
             <Route path="import-content" element={<DashboardImportContentPage />}/>
             <Route path="opportunities"  element={<DashboardPartnershipPage />}  />
             <Route path="revenue"           element={<DashboardRevenuePage />}         />
-            <Route path="curated-profiles" element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><DashboardCuratedProfilesPage /></RoleProtectedRoute>} />
-            <Route path="curated-profiles/new" element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><DashboardCuratedFounderBuilderPage /></RoleProtectedRoute>} />
-            <Route path="bulk-import"          element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><DashboardBulkImportPage /></RoleProtectedRoute>}            />
-            <Route path="village"              element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageHQOverviewPage /></RoleProtectedRoute>}              />
-            <Route path="village/founders"     element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageCuratedFoundersPage /></RoleProtectedRoute>}         />
-            <Route path="village/claims"       element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageClaimRequestsPage /></RoleProtectedRoute>}           />
-            <Route path="village/imports"      element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageBulkImportPage /></RoleProtectedRoute>}              />
-            <Route path="village/emails"       element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageEmailExportPage /></RoleProtectedRoute>}             />
-            <Route path="village/featured"     element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageFeaturedContentPage /></RoleProtectedRoute>}         />
-            <Route path="village/analytics"    element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageAnalyticsPage /></RoleProtectedRoute>}               />
-            <Route path="village/settings"     element={<RoleProtectedRoute allow={ADMIN_ROUTE_ROLES}><VillageSettingsPage /></RoleProtectedRoute>}                />
+            <Route path="curated-profiles" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><DashboardCuratedProfilesPage /></RoleProtectedRoute>} />
+            <Route path="curated-profiles/new" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><DashboardCuratedFounderBuilderPage /></RoleProtectedRoute>} />
+            <Route path="bulk-import"          element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.imports}><DashboardBulkImportPage /></RoleProtectedRoute>}            />
+            <Route path="village"              element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.overview}><VillageHQOverviewPage /></RoleProtectedRoute>}              />
+            <Route path="village/founders"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><VillageCuratedFoundersPage /></RoleProtectedRoute>}         />
+            <Route path="village/claims"       element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.claims}><VillageClaimRequestsPage /></RoleProtectedRoute>}           />
+            <Route path="village/imports"      element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.imports}><VillageBulkImportPage /></RoleProtectedRoute>}              />
+            <Route path="village/emails"       element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.emails}><VillageEmailExportPage /></RoleProtectedRoute>}             />
+            <Route path="village/featured"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.featured}><VillageFeaturedContentPage /></RoleProtectedRoute>}         />
+            <Route path="village/analytics"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.analytics}><VillageAnalyticsPage /></RoleProtectedRoute>}               />
+            <Route path="village/settings"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.settings}><VillageSettingsPage /></RoleProtectedRoute>}                />
+            <Route path="village/team"         element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.team}><CapoTeamPage /></RoleProtectedRoute>}                          />
             <Route path="settings"         element={<DashboardSettingsPage />}        />
           </Route>
 
