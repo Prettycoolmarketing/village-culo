@@ -6,8 +6,10 @@ import { getBusiness, getBusinesses } from '../services/businesses'
 import { trustProfileService, recommendationService } from '../services/partnership'
 import { importedContentService } from '../services/importedContent'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
+import { getFeaturedIn } from '../services/relationships'
 import { ImportedContentCard } from '../components/cards/ImportedContentCard'
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
+import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { LEVEL_LABELS, LEVEL_COLORS } from '../services/trustEngine'
 import { getFAQsForFounder } from '../data/faqs'
 import { getResourcesForFounder } from '../data/resources'
@@ -185,6 +187,7 @@ export function FounderProfilePage() {
   // Pre-guard lookups — hooks must be called unconditionally before any early return
   const business           = founder ? getBusiness(founder.businessId) : undefined
   const founderIntelRecords = founder ? villageContentIntelligenceService.getByFounder(founder.id) : []
+  const founderFeaturedIn  = founder ? getFeaturedIn('founder', founder.id) : []
 
   usePageMeta({
     title:       founder?.name,
@@ -202,7 +205,10 @@ export function FounderProfilePage() {
       description:  founder.bio ?? '',
       url:          `${window.location.origin}/founders/${founder.slug}`,
       ...(founder.avatar ? { image: founder.avatar } : {}),
-      sameAs:       [founder.website, founder.instagram, founder.linkedin, founder.youtube, founder.tiktok, founder.podcast, founder.newsletter].filter(Boolean),
+      sameAs:       [
+        founder.website, founder.instagram, founder.linkedin, founder.youtube, founder.tiktok, founder.podcast, founder.newsletter,
+        ...founderFeaturedIn.map(f => f.source.url),
+      ].filter(Boolean),
       knowsAbout:   [
         ...founder.topics.map(t => t.name),
         ...[...new Set(founderIntelRecords.flatMap(r => r.primaryTopics))].slice(0, 5),
@@ -456,6 +462,8 @@ export function FounderProfilePage() {
             <div className="mt-6">
               <CreateWithCuloCTA variant="inline" label="Continue your story with CULO" />
             </div>
+
+            <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-6" />
           </InnerContainer>
         </div>
       </section>

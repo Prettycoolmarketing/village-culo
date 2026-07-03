@@ -6,7 +6,9 @@ import { getFounder, getFounders } from '../services/founders'
 import { getBusiness } from '../services/businesses'
 import { recommendationService } from '../services/partnership'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
+import { getFeaturedIn } from '../services/relationships'
 import { importedContentService } from '../services/importedContent'
+import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { IdeaGrid }         from '../widgets/IdeaGrid'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
@@ -271,6 +273,7 @@ export function StoryDetailPage() {
   // Pre-guard lookups — hooks must be called unconditionally before any early return
   const founder = story ? getFounder(story.founderId) : undefined
   const intel   = story ? (villageContentIntelligenceService.getByContent('story', story.id) ?? null) : null
+  const storyFeaturedIn = story ? getFeaturedIn('story', story.id) : []
   const [activeTab, setActiveTab] = useState<ContentType>(story?.contentTypes[0] ?? 'blog')
 
   usePageMeta({
@@ -312,6 +315,7 @@ export function StoryDetailPage() {
         name:    'CULO Village',
         url:     window.location.origin,
       },
+      ...(storyFeaturedIn.length > 0 ? { sameAs: storyFeaturedIn.map(f => f.source.url).filter(Boolean) } : {}),
     } : undefined,
   })
 
@@ -786,6 +790,8 @@ export function StoryDetailPage() {
                   </ul>
                 </section>
               )}
+
+              <FeaturedInSection items={storyFeaturedIn} headingId="story-featured-in-heading" />
 
               {/* Related stories */}
               {related.length > 0 && (

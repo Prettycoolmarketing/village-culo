@@ -104,6 +104,10 @@ export const villageSourceService = {
     return this.getAll().find(s => s.slug === slug)
   },
 
+  get(id: string): VillageSource | undefined {
+    return this.getAll().find(s => s.id === id)
+  },
+
   /** CAPO-only in practice — enforced by RLS (village_sources_admin_write), not by this function. */
   async create(data: { name: string; slug: string; kind: VillageSourceKind; url?: string }): Promise<VillageSource> {
     const source: VillageSource = {
@@ -124,6 +128,26 @@ export const villageSourceService = {
   async remove(id: string): Promise<WriteResult> {
     return deleteEntity({ cacheKey: SOURCES_KEY, id, table: SOURCES_TABLE })
   },
+}
+
+// ─── Featured In ──────────────────────────────────────────────────────────────
+// Resolves real `featured_in` edges to the Source they point at. Returns an
+// empty array — never a placeholder — until CAPO has actually created the
+// relevant Source and edge (see Sprint: Editorial & Sources).
+
+export interface FeaturedInMatch {
+  source: VillageSource
+  why?: string
+}
+
+export function getFeaturedIn(entityType: GraphEntityType, entityId: string): FeaturedInMatch[] {
+  const matches: FeaturedInMatch[] = []
+  for (const r of relationshipService.getAll()) {
+    if (r.fromType !== entityType || r.fromId !== entityId || r.relationshipType !== 'featured_in' || r.toType !== 'source') continue
+    const source = villageSourceService.get(r.toId)
+    if (source) matches.push({ source, why: r.why })
+  }
+  return matches
 }
 
 // ─── Derived: similar founders ───────────────────────────────────────────────────

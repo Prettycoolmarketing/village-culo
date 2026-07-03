@@ -6,8 +6,11 @@ import { getBusinesses, getBusinessBySlug } from '../services/businesses'
 import { getFounder }                      from '../services/founders'
 import { programService, recommendationService } from '../services/partnership'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
+import { getFeaturedIn, relationshipService } from '../services/relationships'
+import { getStories } from '../services/stories'
 import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBlock'
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
+import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { getFAQsForBusiness }              from '../data/faqs'
 import { getServices }                     from '../services/serviceOfferings'
 import { getTestimonialsForBusiness } from '../data/testimonials'
@@ -114,6 +117,16 @@ export function BusinessProfilePage() {
   const businessIntelRecords = business
     ? villageContentIntelligenceService.getByFounder(business.founderId).filter(r => !r.businessId || r.businessId === business.id)
     : []
+  const businessFeaturedIn   = business ? getFeaturedIn('business', business.id) : []
+  // Real graph edges only — a story appears here because a `mentions` edge was
+  // actually created for it (see services/relationshipSync.ts), never because
+  // it merely shares a topic or founder.
+  const mentionedInStories   = business
+    ? relationshipService.getRelated('business', business.id)
+        .filter(r => r.relationshipType === 'mentions' && r.fromType === 'story' && r.toId === business.id)
+        .map(r => getStories().find(s => s.id === r.fromId))
+        .filter((s): s is NonNullable<typeof s> => !!s && (s.status === 'published' || s.status === 'featured'))
+    : []
 
   usePageMeta({
     title:       business?.name,
@@ -132,7 +145,8 @@ export function BusinessProfilePage() {
       url:          business.website ? normalizeUrl(business.website) : `${window.location.origin}/businesses/${business.slug}`,
       ...(business.logo ? { logo: business.logo } : {}),
       ...(business.coverImage ? { image: business.coverImage } : {}),
-      sameAs:       [business.website, business.instagram, business.linkedin].filter(Boolean).map(u => normalizeUrl(u)),
+      sameAs:       [business.website, business.instagram, business.linkedin, ...businessFeaturedIn.map(f => f.source.url)]
+                      .filter(Boolean).map(u => normalizeUrl(u)),
       address: {
         '@type':          'PostalAddress',
         addressLocality:  business.location.name,
@@ -150,6 +164,13 @@ export function BusinessProfilePage() {
         ...business.topics.map(t => t.name),
         ...[...new Set(businessIntelRecords.flatMap(r => r.primaryTopics))].slice(0, 5),
       ].slice(0, 10),
+      ...(mentionedInStories.length > 0 ? {
+        subjectOf: mentionedInStories.map(s => ({
+          '@type': 'Article',
+          headline: s.title,
+          url: `${window.location.origin}/stories/${s.slug}`,
+        })),
+      } : {}),
     } : undefined,
   })
 
@@ -325,6 +346,23 @@ export function BusinessProfilePage() {
                 } />
               )}
             </div>
+
+            <FeaturedInSection items={businessFeaturedIn} headingId="business-featured-in-heading" className="mt-6" />
+
+            {mentionedInStories.length > 0 && (
+              <section aria-labelledby="mentioned-in-stories-heading" className="mt-6">
+                <h2 id="mentioned-in-stories-heading" className="font-heading text-lg font-semibold text-charcoal mb-3">Mentioned In Stories</h2>
+                <ul className="flex flex-col gap-2">
+                  {mentionedInStories.map(s => (
+                    <li key={s.id}>
+                      <Link to={`/stories/${s.slug}`} className="text-sm text-primary hover:text-[#b05a35] transition-colors font-medium">
+                        {s.title} ↗
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </InnerContainer>
         </div>
       </section>
