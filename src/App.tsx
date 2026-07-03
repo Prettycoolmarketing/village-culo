@@ -65,6 +65,7 @@ import { VillageFeaturedContentPage }         from './pages/dashboard/village/Vi
 import { VillageAnalyticsPage }               from './pages/dashboard/village/VillageAnalyticsPage'
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
 import { CapoTeamPage }                       from './pages/dashboard/village/CapoTeamPage'
+import { CapoSourcesPage }                    from './pages/dashboard/village/CapoSourcesPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 import { CAPO_PERMISSIONS } from './utils/permissions'
 
@@ -180,6 +181,7 @@ export default function App() {
             <Route path="village/imports"      element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.imports}><VillageBulkImportPage /></RoleProtectedRoute>}              />
             <Route path="village/emails"       element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.emails}><VillageEmailExportPage /></RoleProtectedRoute>}             />
             <Route path="village/featured"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.featured}><VillageFeaturedContentPage /></RoleProtectedRoute>}         />
+            <Route path="village/sources"      element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.featured}><CapoSourcesPage /></RoleProtectedRoute>}                     />
             <Route path="village/analytics"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.analytics}><VillageAnalyticsPage /></RoleProtectedRoute>}               />
             <Route path="village/settings"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.settings}><VillageSettingsPage /></RoleProtectedRoute>}                />
             <Route path="village/team"         element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.team}><CapoTeamPage /></RoleProtectedRoute>}                          />
