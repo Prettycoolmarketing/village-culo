@@ -6,9 +6,10 @@ import { getFounder, getFounders } from '../services/founders'
 import { getBusiness } from '../services/businesses'
 import { recommendationService } from '../services/partnership'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
-import { getFeaturedIn } from '../services/relationships'
+import { getFeaturedIn, getConnectedTo } from '../services/relationships'
 import { importedContentService } from '../services/importedContent'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
+import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { IdeaGrid }         from '../widgets/IdeaGrid'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
@@ -274,6 +275,7 @@ export function StoryDetailPage() {
   const founder = story ? getFounder(story.founderId) : undefined
   const intel   = story ? (villageContentIntelligenceService.getByContent('story', story.id) ?? null) : null
   const storyFeaturedIn = story ? getFeaturedIn('story', story.id) : []
+  const storyConnectedTo = story ? getConnectedTo('story', story.id) : []
   const [activeTab, setActiveTab] = useState<ContentType>(story?.contentTypes[0] ?? 'blog')
 
   usePageMeta({
@@ -792,6 +794,8 @@ export function StoryDetailPage() {
               )}
 
               <FeaturedInSection items={storyFeaturedIn} headingId="story-featured-in-heading" />
+
+              <ConnectedToWidget items={storyConnectedTo} headingId="story-connected-to-heading" />
 
               {/* Related stories */}
               {related.length > 0 && (

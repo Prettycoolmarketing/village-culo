@@ -6,11 +6,12 @@ import { getBusinesses, getBusinessBySlug } from '../services/businesses'
 import { getFounder }                      from '../services/founders'
 import { programService, recommendationService } from '../services/partnership'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
-import { getFeaturedIn, relationshipService } from '../services/relationships'
+import { getFeaturedIn, relationshipService, getConnectedTo } from '../services/relationships'
 import { getStories } from '../services/stories'
 import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBlock'
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
+import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { getFAQsForBusiness }              from '../data/faqs'
 import { getServices }                     from '../services/serviceOfferings'
 import { getTestimonialsForBusiness } from '../data/testimonials'
@@ -118,6 +119,7 @@ export function BusinessProfilePage() {
     ? villageContentIntelligenceService.getByFounder(business.founderId).filter(r => !r.businessId || r.businessId === business.id)
     : []
   const businessFeaturedIn   = business ? getFeaturedIn('business', business.id) : []
+  const businessConnectedTo  = business ? getConnectedTo('business', business.id) : []
   // Real graph edges only — a story appears here because a `mentions` edge was
   // actually created for it (see services/relationshipSync.ts), never because
   // it merely shares a topic or founder.
@@ -348,6 +350,7 @@ export function BusinessProfilePage() {
             </div>
 
             <FeaturedInSection items={businessFeaturedIn} headingId="business-featured-in-heading" className="mt-6" />
+            <ConnectedToWidget items={businessConnectedTo} headingId="business-connected-to-heading" className="mt-6" />
 
             {mentionedInStories.length > 0 && (
               <section aria-labelledby="mentioned-in-stories-heading" className="mt-6">

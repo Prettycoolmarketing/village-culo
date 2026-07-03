@@ -1,6 +1,9 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
 import type { Relationship, RelationshipInput, RelationshipType, GraphEntityType, VillageSource, VillageSourceKind } from '../types'
 import { getFounders } from './founders'
+import { getBusinesses } from './businesses'
+import { getStories } from './stories'
+import { getIdeas } from './ideas'
 import { villageContentIntelligenceService } from './villageIntelligence'
 
 // Village Graph Foundation — see supabase/migrations/008_village_graph.sql for the
@@ -205,4 +208,78 @@ export function getSimilarFounders(founderId: string, limit = 5): SimilarFounder
   }
 
   return matches.sort((a, b) => b.confidence - a.confidence).slice(0, limit)
+}
+
+// ─── Connected To ─────────────────────────────────────────────────────────────
+// A single, ranked view across every explicit edge touching this entity, plus
+// (for founders) the derived similar-founder signal — the "Connected To"
+// widget from planning, not a flat dump of raw edges. Source-pointing edges
+// are excluded here on purpose: FeaturedInSection already covers those, and
+// showing the same edge in two different widgets on one page is exactly the
+// kind of visual noise the ranking rule exists to prevent.
+
+export interface ConnectedToMatch {
+  entityType: 'founder' | 'business' | 'story' | 'idea'
+  entityId: string
+  label: string
+  url: string
+  relationshipType: RelationshipType | 'similar_topic'
+  confidence: number
+  why?: string
+}
+
+function resolveEntityLink(type: GraphEntityType, id: string): { label: string; url: string } | undefined {
+  if (type === 'founder')  { const f = getFounders().find(x => x.id === id);  return f ? { label: f.name,  url: `/founders/${f.slug}`   } : undefined }
+  if (type === 'business') { const b = getBusinesses().find(x => x.id === id); return b ? { label: b.name,  url: `/businesses/${b.slug}` } : undefined }
+  if (type === 'story')    { const s = getStories().find(x => x.id === id);    return s ? { label: s.title, url: `/stories/${s.slug}`    } : undefined }
+  if (type === 'idea')     { const i = getIdeas().find(x => x.id === id);      return i ? { label: i.title, url: `/ideas/${i.slug}`      } : undefined }
+  return undefined
+}
+
+export function getConnectedTo(entityType: GraphEntityType, entityId: string, limit = 8): ConnectedToMatch[] {
+  const byKey = new Map<string, ConnectedToMatch>()
+
+  for (const edge of relationshipService.getRelated(entityType, entityId)) {
+    const isFrom = edge.fromType === entityType && edge.fromId === entityId
+    const otherType = isFrom ? edge.toType : edge.fromType
+    const otherId   = isFrom ? edge.toId   : edge.fromId
+    if (otherType === 'source') continue
+
+    const resolved = resolveEntityLink(otherType, otherId)
+    if (!resolved) continue
+
+    const key = `${otherType}:${otherId}`
+    const existing = byKey.get(key)
+    if (!existing || edge.confidence > existing.confidence) {
+      byKey.set(key, {
+        entityType: otherType,
+        entityId: otherId,
+        label: resolved.label,
+        url: resolved.url,
+        relationshipType: edge.relationshipType,
+        confidence: edge.confidence,
+        why: edge.why,
+      })
+    }
+  }
+
+  if (entityType === 'founder') {
+    for (const sim of getSimilarFounders(entityId, limit)) {
+      const key = `founder:${sim.founderId}`
+      if (byKey.has(key)) continue
+      const resolved = resolveEntityLink('founder', sim.founderId)
+      if (!resolved) continue
+      byKey.set(key, {
+        entityType: 'founder',
+        entityId: sim.founderId,
+        label: resolved.label,
+        url: resolved.url,
+        relationshipType: 'similar_topic',
+        confidence: sim.confidence,
+        why: sim.why,
+      })
+    }
+  }
+
+  return [...byKey.values()].sort((a, b) => b.confidence - a.confidence).slice(0, limit)
 }

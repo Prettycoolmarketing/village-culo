@@ -6,10 +6,11 @@ import { getBusiness, getBusinesses } from '../services/businesses'
 import { trustProfileService, recommendationService } from '../services/partnership'
 import { importedContentService } from '../services/importedContent'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
-import { getFeaturedIn } from '../services/relationships'
+import { getFeaturedIn, getConnectedTo } from '../services/relationships'
 import { ImportedContentCard } from '../components/cards/ImportedContentCard'
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
+import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { LEVEL_LABELS, LEVEL_COLORS } from '../services/trustEngine'
 import { getFAQsForFounder } from '../data/faqs'
 import { getResourcesForFounder } from '../data/resources'
@@ -188,6 +189,7 @@ export function FounderProfilePage() {
   const business           = founder ? getBusiness(founder.businessId) : undefined
   const founderIntelRecords = founder ? villageContentIntelligenceService.getByFounder(founder.id) : []
   const founderFeaturedIn  = founder ? getFeaturedIn('founder', founder.id) : []
+  const founderConnectedTo = founder ? getConnectedTo('founder', founder.id) : []
 
   usePageMeta({
     title:       founder?.name,
@@ -464,6 +466,7 @@ export function FounderProfilePage() {
             </div>
 
             <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-6" />
+            <ConnectedToWidget items={founderConnectedTo} headingId="founder-connected-to-heading" className="mt-6" />
           </InnerContainer>
         </div>
       </section>
