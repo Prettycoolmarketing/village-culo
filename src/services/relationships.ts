@@ -1,5 +1,7 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
 import type { Relationship, RelationshipInput, RelationshipType, GraphEntityType, VillageSource, VillageSourceKind } from '../types'
+import { getFounders } from './founders'
+import { villageContentIntelligenceService } from './villageIntelligence'
 
 // Village Graph Foundation — see supabase/migrations/008_village_graph.sql for the
 // full rationale. Structural ownership (Business -> Founder, Story -> Founder) is
@@ -122,4 +124,61 @@ export const villageSourceService = {
   async remove(id: string): Promise<WriteResult> {
     return deleteEntity({ cacheKey: SOURCES_KEY, id, table: SOURCES_TABLE })
   },
+}
+
+// ─── Derived: similar founders ───────────────────────────────────────────────────
+// Computed on read, never stored — see file header. Reuses the exact topic/
+// industry output Village Content Intelligence already produces on every
+// publish; this is not a second similarity algorithm, just a new consumer of
+// the existing one.
+
+export interface SimilarFounderMatch {
+  founderId: string
+  confidence: number
+  why: string
+  sharedTopics: string[]
+}
+
+function founderTopicProfile(founderId: string): { topics: Set<string>; names: Map<string, string> } {
+  const records = villageContentIntelligenceService.getByFounder(founderId)
+  const names = new Map<string, string>()
+  for (const r of records) {
+    for (const t of [...r.primaryTopics, ...r.secondaryTopics, ...r.industries]) {
+      names.set(t.toLowerCase(), t)
+    }
+  }
+  return { topics: new Set(names.keys()), names }
+}
+
+/**
+ * Founders whose published topic/industry footprint genuinely overlaps this
+ * one's. `confidence` is the real overlap ratio (never a separately-invented
+ * number — see the confidence field's rule in types/index.ts) and doubles as
+ * the ranking score. Founders with zero shared topics are never returned —
+ * there is no such thing as a 0%-confident "related founder".
+ */
+export function getSimilarFounders(founderId: string, limit = 5): SimilarFounderMatch[] {
+  const mine = founderTopicProfile(founderId)
+  if (mine.topics.size === 0) return []
+
+  const matches: SimilarFounderMatch[] = []
+  for (const other of getFounders()) {
+    if (other.id === founderId) continue
+    const theirs = founderTopicProfile(other.id)
+    if (theirs.topics.size === 0) continue
+
+    const shared = [...mine.topics].filter(t => theirs.topics.has(t))
+    if (shared.length === 0) continue
+
+    const confidence = shared.length / Math.min(mine.topics.size, theirs.topics.size)
+    const sharedNames = shared.map(t => mine.names.get(t) ?? t).slice(0, 3)
+    matches.push({
+      founderId: other.id,
+      confidence,
+      why: `Both publish about ${sharedNames.join(', ')}`,
+      sharedTopics: sharedNames,
+    })
+  }
+
+  return matches.sort((a, b) => b.confidence - a.confidence).slice(0, limit)
 }

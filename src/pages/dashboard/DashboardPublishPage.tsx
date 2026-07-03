@@ -9,6 +9,7 @@ import { getIdeas } from '../../services/ideas'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores, previewIdeaImpact } from '../../services/ideaSync'
+import { syncRelationshipsFromStory } from '../../services/relationshipSync'
 import { computeReadability } from '../../utils/readability'
 import { getStoryMissingItems } from '../../utils/missingAssets'
 import {
@@ -1738,6 +1739,7 @@ export function DashboardPublishPage() {
       // reads the graph syncIdeasFromStory just wrote.
       const { created, strengthened } = await syncIdeasFromStory(story, merged)
       const { founderDelta } = await refreshAuthorityScores(story)
+      await syncRelationshipsFromStory(story, merged)
       const totalRelationships = merged.relatedFounderIds.length + merged.relatedBusinessIds.length + merged.relatedContentIds.length
 
       // Exactly one milestone per publish, priority-ordered so a story that
