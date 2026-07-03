@@ -4,12 +4,12 @@ import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
-import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
+import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { getLibraryMissingItems } from '../../utils/missingAssets'
-import { getLibraryItemFeaturedIn } from '../../utils/featuredIn'
+import { getLibraryItemAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
 import type { LibraryItem } from '../../types'
 import { normalizeUrl } from '../../utils/url'
@@ -35,7 +35,7 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const missing    = getLibraryMissingItems(draft)
-  const featuredIn = getLibraryItemFeaturedIn(item.id)
+  const appearsOn = getLibraryItemAppearsOn(item.id)
 
   const itemFounders = getFounders().filter(f => draft.authorFounderId === f.id)
   const itemBizs     = getBusinesses().filter(b => draft.businessId === b.id)
@@ -86,7 +86,7 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
   const TABS = [
     { key: 'overview',      label: 'Overview'      },
     { key: 'relationships', label: 'Relationships', badge: itemFounders.length + itemBizs.length },
-    { key: 'featured-in',   label: 'Featured In',   badge: featuredIn.length },
+    { key: 'appears-on',   label: 'Appears On',   badge: appearsOn.length },
     { key: 'improve',       label: 'Improve',        badge: missing.length },
   ]
 
@@ -179,8 +179,8 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
           />
         )}
 
-        {tab === 'featured-in' && (
-          <FeaturedInPanel locations={featuredIn} />
+        {tab === 'appears-on' && (
+          <AppearsOnPanel locations={appearsOn} />
         )}
 
         {tab === 'improve' && (

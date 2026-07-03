@@ -1,25 +1,25 @@
-import type { FeaturedInLocation } from '../../utils/featuredIn'
+import type { AppearsOnLocation } from '../../utils/appearsOn'
 
-const typeLabel: Record<FeaturedInLocation['type'], string> = {
+const typeLabel: Record<AppearsOnLocation['type'], string> = {
   page:    'Page',
   profile: 'Profile',
   listing: 'Directory',
   detail:  'Detail',
 }
 
-const typeColor: Record<FeaturedInLocation['type'], string> = {
+const typeColor: Record<AppearsOnLocation['type'], string> = {
   page:    'bg-blue-100 text-blue-700',
   profile: 'bg-[#C86A43]/10 text-[#C86A43]',
   listing: 'bg-[#5E6B4A]/10 text-[#5E6B4A]',
   detail:  'bg-[#D6A94D]/15 text-[#A07520]',
 }
 
-interface FeaturedInPanelProps {
-  locations: FeaturedInLocation[]
+interface AppearsOnPanelProps {
+  locations: AppearsOnLocation[]
   className?: string
 }
 
-export function FeaturedInPanel({ locations, className = '' }: FeaturedInPanelProps) {
+export function AppearsOnPanel({ locations, className = '' }: AppearsOnPanelProps) {
   if (locations.length === 0) {
     return (
       <div className={`px-4 py-8 text-center bg-[#F8F5F0] rounded-xl border border-[#E8E4DD] ${className}`}>

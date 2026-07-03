@@ -10,13 +10,13 @@ import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
-import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
+import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { getStoryMissingItems, getMissingCounts } from '../../utils/missingAssets'
-import { getStoryFeaturedIn } from '../../utils/featuredIn'
+import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
 import { computeReadability } from '../../utils/readability'
 import type { Story, ContentType, Topic } from '../../types'
@@ -66,7 +66,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
 
   const missing    = getStoryMissingItems(draft)
   const counts     = getMissingCounts(missing)
-  const featuredIn = getStoryFeaturedIn(draft.id)
+  const appearsOn = getStoryAppearsOn(draft.id)
 
   const storyFounder   = getFounders().find(f => f.id === draft.founderId)
   const storyBusiness  = getBusinesses().find(b => b.id === draft.businessId)
@@ -83,7 +83,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
     { key: 'media',         label: 'Media'        },
     { key: 'relationships', label: 'Relationships', badge: connectedIdeas.length + relatedStories.length },
     { key: 'intelligence',  label: 'Intelligence',  badge: connectedIdeas.length },
-    { key: 'featured-in',   label: 'Featured In',   badge: featuredIn.length },
+    { key: 'appears-on',   label: 'Appears On',   badge: appearsOn.length },
     { key: 'seo',           label: 'SEO & GEO'    },
     { key: 'publishing',    label: 'Publishing'   },
   ]
@@ -423,11 +423,11 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
           </div>
         )}
 
-        {/* Featured In */}
-        {tab === 'featured-in' && (
+        {/* Appears On */}
+        {tab === 'appears-on' && (
           <div>
             <p className="text-sm text-[#6B7280] mb-4">Every location where this story is surfaced in the Village.</p>
-            <FeaturedInPanel locations={featuredIn} />
+            <AppearsOnPanel locations={appearsOn} />
           </div>
         )}
 

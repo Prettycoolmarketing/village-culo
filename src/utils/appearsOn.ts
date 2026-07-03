@@ -5,14 +5,14 @@ import { businesses }    from '../data/businesses'
 import { libraryItems }  from '../data/library'
 import { expertiseList } from '../data/expertise'
 
-export interface FeaturedInLocation {
+export interface AppearsOnLocation {
   label: string
   path: string
   type: 'page' | 'profile' | 'listing' | 'detail'
 }
 
-export function getFounderFeaturedIn(founderId: string): FeaturedInLocation[] {
-  const locs: FeaturedInLocation[] = []
+export function getFounderAppearsOn(founderId: string): AppearsOnLocation[] {
+  const locs: AppearsOnLocation[] = []
   const founder = founders.find(f => f.id === founderId)
 
   locs.push({ label: 'Founders Directory', path: '/founders', type: 'listing' })
@@ -33,8 +33,8 @@ export function getFounderFeaturedIn(founderId: string): FeaturedInLocation[] {
   return locs
 }
 
-export function getBusinessFeaturedIn(businessId: string): FeaturedInLocation[] {
-  const locs: FeaturedInLocation[] = []
+export function getBusinessAppearsOn(businessId: string): AppearsOnLocation[] {
+  const locs: AppearsOnLocation[] = []
   const biz = businesses.find(b => b.id === businessId)
 
   locs.push({ label: 'Mercato Directory', path: '/mercato', type: 'listing' })
@@ -51,8 +51,8 @@ export function getBusinessFeaturedIn(businessId: string): FeaturedInLocation[] 
   return locs
 }
 
-export function getStoryFeaturedIn(storyId: string): FeaturedInLocation[] {
-  const locs: FeaturedInLocation[] = []
+export function getStoryAppearsOn(storyId: string): AppearsOnLocation[] {
+  const locs: AppearsOnLocation[] = []
   const story = stories.find(s => s.id === storyId)
   if (!story) return locs
 
@@ -72,8 +72,8 @@ export function getStoryFeaturedIn(storyId: string): FeaturedInLocation[] {
   return locs
 }
 
-export function getIdeaFeaturedIn(ideaId: string): FeaturedInLocation[] {
-  const locs: FeaturedInLocation[] = []
+export function getIdeaAppearsOn(ideaId: string): AppearsOnLocation[] {
+  const locs: AppearsOnLocation[] = []
   const idea = ideas.find(i => i.id === ideaId)
   if (!idea) return locs
 
@@ -87,8 +87,8 @@ export function getIdeaFeaturedIn(ideaId: string): FeaturedInLocation[] {
   return locs
 }
 
-export function getLibraryItemFeaturedIn(itemId: string): FeaturedInLocation[] {
-  const locs: FeaturedInLocation[] = []
+export function getLibraryItemAppearsOn(itemId: string): AppearsOnLocation[] {
+  const locs: AppearsOnLocation[] = []
   const item = libraryItems.find(l => l.id === itemId)
   if (!item) return locs
 

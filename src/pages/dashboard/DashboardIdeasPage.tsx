@@ -4,10 +4,10 @@ import { getStories } from '../../services/stories'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { Tabs } from '../../components/dashboard/Tabs'
-import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
+import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
-import { getIdeaFeaturedIn } from '../../utils/featuredIn'
+import { getIdeaAppearsOn } from '../../utils/appearsOn'
 import type { Idea } from '../../types'
 
 const inputClass =
@@ -30,7 +30,7 @@ function IdeaDetailPane({ idea, onClose, onSave, onDuplicated, onDeleted }: Idea
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  const featuredIn     = getIdeaFeaturedIn(idea.id)
+  const appearsOn     = getIdeaAppearsOn(idea.id)
   const relatedStories = getStories({ ids: idea.relatedStoryIds })
   const relatedFnders  = getFounders({ ids: idea.relatedFounderIds })
   const relatedBizs    = getBusinesses({ ids: idea.relatedBusinessIds })
@@ -38,7 +38,7 @@ function IdeaDetailPane({ idea, onClose, onSave, onDuplicated, onDeleted }: Idea
   const TABS = [
     { key: 'overview',      label: 'Overview'      },
     { key: 'relationships', label: 'Relationships', badge: relatedStories.length + relatedFnders.length },
-    { key: 'featured-in',   label: 'Featured In',   badge: featuredIn.length },
+    { key: 'appears-on',   label: 'Appears On',   badge: appearsOn.length },
   ]
 
   function set<K extends keyof Idea>(key: K, value: Idea[K]) {
@@ -168,8 +168,8 @@ function IdeaDetailPane({ idea, onClose, onSave, onDuplicated, onDeleted }: Idea
           />
         )}
 
-        {tab === 'featured-in' && (
-          <FeaturedInPanel locations={featuredIn} />
+        {tab === 'appears-on' && (
+          <AppearsOnPanel locations={appearsOn} />
         )}
       </div>
     </div>

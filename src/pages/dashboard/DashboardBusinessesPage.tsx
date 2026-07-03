@@ -10,13 +10,13 @@ import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
-import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
+import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { getBusinessMissingItems, getMissingCounts, getServiceMissingItems } from '../../utils/missingAssets'
-import { getBusinessFeaturedIn } from '../../utils/featuredIn'
+import { getBusinessAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
 import type { Business, Topic, Offer, Service } from '../../types'
 
@@ -1057,7 +1057,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
 
   const missing    = getBusinessMissingItems(draft)
   const counts     = getMissingCounts(missing)
-  const featuredIn = getBusinessFeaturedIn(draft.id)
+  const appearsOn = getBusinessAppearsOn(draft.id)
 
   // Relationships
   const bizStories  = getStories({ businessId: draft.id })
@@ -1082,7 +1082,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
     { key: 'offers',        label: 'Offers',        badge: draft.offers.length },
     { key: 'services',      label: 'Services',      badge: bizServices.length },
     { key: 'relationships', label: 'Relationships', badge: bizStories.length + bizServices.length },
-    { key: 'featured-in',   label: 'Featured In',  badge: featuredIn.length },
+    { key: 'appears-on',   label: 'Appears On',  badge: appearsOn.length },
     { key: 'seo',           label: 'SEO & GEO'     },
     { key: 'publishing',    label: 'Publishing'    },
     { key: 'partnership',   label: 'Discovery Profile' },
@@ -1305,11 +1305,11 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
           />
         )}
 
-        {/* Featured In */}
-        {tab === 'featured-in' && (
+        {/* Appears On */}
+        {tab === 'appears-on' && (
           <div>
             <p className="text-sm text-[#6B7280] mb-4">Every location where this business is surfaced in the Village.</p>
-            <FeaturedInPanel locations={featuredIn} />
+            <AppearsOnPanel locations={appearsOn} />
           </div>
         )}
 

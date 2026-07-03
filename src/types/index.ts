@@ -740,3 +740,69 @@ export interface PiazzaSubmission {
   distributedTo?: string[]
   extractedIdeaIds?: string[]
 }
+
+// ─── Village Graph — Relationships & Sources ────────────────────────────────────
+// The generic connection layer every entity plugs into. Structural ownership
+// (Founder owns Business, Story authored by Founder) stays a foreign key on the
+// owning table — it never becomes a row here. This table is only for the
+// relationships a foreign key can't express: cross-entity mentions, editorial
+// recognition, and derived similarity. The Village Graph stores discoverability;
+// operational systems (Partnership, CAPO) remain the source of truth for their
+// own domains and are referenced, not duplicated, here.
+
+export type GraphEntityType = 'founder' | 'business' | 'story' | 'idea' | 'source'
+
+// Direction convention: every relationship points from the dependent entity
+// toward the entity it depends on (child → parent/context) — e.g.
+// `Business owned_by Founder`, `Story written_by Founder`, `Story featured_in Source`.
+export type RelationshipType =
+  | 'owned_by'      // Business → Founder (rare — usually the FK is enough; used when a business has no direct FK, e.g. co-owned)
+  | 'written_by'    // Story → Founder
+  | 'mentions'      // Story → Business | Founder
+  | 'featured_in'   // Story | Founder | Business → Source
+  | 'imported_from' // Story | Media → Source
+  | 'created_with'  // Story → Source (e.g. CULO)
+  | 'works_with'    // Founder → Founder
+
+// Who/what created this relationship — makes debugging and trust attribution possible.
+export type RelationshipOrigin = 'founder' | 'capo' | 'import' | 'village_intelligence' | 'migration'
+
+export interface Relationship {
+  id: string
+  fromType: GraphEntityType
+  fromId: string
+  toType: GraphEntityType
+  toId: string
+  relationshipType: RelationshipType
+  why?: string          // Generated from the same computation that created the edge — never hand-authored editorial text.
+  confidence: number    // 0–1. Explicit relationships are always 1. Derived relationships (not stored — see previewIdeaImpact-style computation) use their real overlap score.
+  origin: RelationshipOrigin
+  metadata?: Record<string, unknown>
+  createdAt: string
+}
+
+export interface RelationshipInput {
+  fromType: GraphEntityType
+  fromId: string
+  toType: GraphEntityType
+  toId: string
+  relationshipType: RelationshipType
+  why?: string
+  confidence?: number
+  origin: RelationshipOrigin
+  metadata?: Record<string, unknown>
+}
+
+// A canonical, un-owned reference point relationships can point to — the same
+// tier as Topic/Industry/Location, not an owned/permissioned entity like a
+// Publisher would be. Created by CAPO only (see Sprint: Editorial & Sources).
+export type VillageSourceKind = 'publication' | 'platform' | 'community' | 'person' | 'brand'
+
+export interface VillageSource {
+  id: string
+  slug: string
+  name: string
+  kind: VillageSourceKind
+  url?: string
+  createdAt: string
+}

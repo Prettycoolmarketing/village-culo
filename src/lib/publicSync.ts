@@ -15,6 +15,8 @@ const PUBLIC_TABLES: Array<{ table: string; cacheKey: string }> = [
   { table: 'events',                       cacheKey: 'events' },
   { table: 'village_content_intelligence', cacheKey: 'village_intelligence' },
   { table: 'trust_profiles',               cacheKey: 'partnership_trust_profiles' },
+  { table: 'relationships',                cacheKey: 'relationships' },
+  { table: 'village_sources',              cacheKey: 'village_sources' },
 ]
 
 // Called once on app init so Village public pages show real Supabase data, not just

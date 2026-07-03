@@ -16,11 +16,11 @@ import { topics as allTopics } from '../../data/topics'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
-import { FeaturedInPanel } from '../../components/dashboard/FeaturedInPanel'
+import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { getFounderMissingItems, getMissingCounts, type MissingItem } from '../../utils/missingAssets'
-import { getFounderFeaturedIn } from '../../utils/featuredIn'
+import { getFounderAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
 import type { Founder, Topic, FAQ, SocialLink, SocialPlatform, Status } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
@@ -454,7 +454,7 @@ export function DashboardProfilePage() {
 
   const missing     = getFounderMissingItems(draft)
   const counts      = getMissingCounts(missing)
-  const featuredIn  = getFounderFeaturedIn(draft.id)
+  const appearsOn  = getFounderAppearsOn(draft.id)
 
   // Relationships — everything this founder is connected to across the Village.
   const founderBusinesses = getBusinesses().filter(b => b.founderId === draft.id)
@@ -467,7 +467,7 @@ export function DashboardProfilePage() {
     { key: 'identity',      label: 'Identity'      },
     { key: 'expertise',     label: 'Expertise'     },
     { key: 'discovery',     label: 'Discovery'     },
-    { key: 'relationships', label: 'Relationships', badge: founderBusinesses.length + founderStories.length + founderIdeas.length + founderLibrary.length + featuredIn.length },
+    { key: 'relationships', label: 'Relationships', badge: founderBusinesses.length + founderStories.length + founderIdeas.length + founderLibrary.length + appearsOn.length },
     { key: 'settings',      label: 'Settings'      },
   ]
 
@@ -825,8 +825,8 @@ export function DashboardProfilePage() {
               ]}
             />
             <div>
-              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Featured In</p>
-              <FeaturedInPanel locations={featuredIn} />
+              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Appears On</p>
+              <AppearsOnPanel locations={appearsOn} />
             </div>
           </div>
         )}
