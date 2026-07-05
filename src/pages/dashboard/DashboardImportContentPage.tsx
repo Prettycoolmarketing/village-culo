@@ -11,6 +11,7 @@ import {
   PLATFORM_COLORS,
 } from '../../services/importedContent'
 import { normalizeUrl } from '../../utils/url'
+import { MediaUpload } from '../../components/ui/MediaUpload'
 import {
   enrichImportedContent,
   applyEnrichment,
@@ -342,11 +343,17 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           rows={3} className={TEXTAREA} placeholder="Short description of this content" />
       </div>
 
-      {/* Thumbnail URL */}
+      {/* Thumbnail */}
       <div className="mb-4">
-        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">
-          Thumbnail URL <span className="font-normal text-[#9CA3AF]">— paste a direct image URL</span>
-        </label>
+        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Thumbnail</label>
+        <MediaUpload
+          value={draft.thumbnailUrl}
+          onChange={v => field('thumbnailUrl', v || undefined)}
+          label="Upload thumbnail"
+          aspect="wide"
+          uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId }}
+        />
+        <p className="text-[10px] text-[#9CA3AF] mt-1.5 mb-1">Or use the thumbnail from the original source:</p>
         <input type="url" value={draft.thumbnailUrl ?? ''}
           onChange={e => field('thumbnailUrl', e.target.value || undefined)}
           className={INPUT} placeholder="https://..." />

@@ -6,6 +6,7 @@ import { focusField } from '../../utils/focusField'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
+import { MediaUpload } from '../../components/ui/MediaUpload'
 import type { Media, ApprovalStatus } from '../../types'
 import { normalizeUrl } from '../../utils/url'
 
@@ -83,10 +84,7 @@ function MediaDetailPanel({ item, onClose, onSave, onDuplicated, onDeleted }: Me
       {/* Preview */}
       <div className="mx-5 mt-4 rounded-xl overflow-hidden bg-[#F3EDE6] aspect-video flex items-center justify-center shrink-0">
         {isVideo ? (
-          <div className="text-center text-[#9CA3AF] text-sm p-4">
-            <p className="text-2xl mb-2">▶</p>
-            <p>Video asset</p>
-          </div>
+          <video src={draft.fileUrl} controls className="w-full h-full object-contain bg-charcoal" />
         ) : (
           <img src={draft.fileUrl} alt={draft.altText} className="w-full h-full object-contain" />
         )}
@@ -99,9 +97,17 @@ function MediaDetailPanel({ item, onClose, onSave, onDuplicated, onDeleted }: Me
         {/* Details */}
         {tab === 'details' && (
           <div className="flex flex-col gap-3">
-            {/* Editable: File URL */}
+            {/* Editable: File */}
             <div>
-              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">File URL</p>
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">File</p>
+              <MediaUpload
+                value={draft.fileUrl}
+                onChange={v => set('fileUrl', v)}
+                accept="any"
+                label="Upload file"
+                aspect="wide"
+              />
+              <p className="text-[10px] text-[#9CA3AF] mt-1.5 mb-1">Or reference an existing URL (e.g. a hosted YouTube/Instagram asset):</p>
               <input type="url" value={draft.fileUrl} onChange={e => set('fileUrl', e.target.value)}
                 className={inputClass} placeholder="/assets/image.jpg" />
             </div>

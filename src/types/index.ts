@@ -639,6 +639,35 @@ export type SourceType =
 
 export type ApprovalStatus = 'approved' | 'rejected' | 'needs-review' | 'pending'
 
+// ─── Tracked Media Upload ────────────────────────────────────────────────────
+// Media Upload Foundation — every file a founder (or CAPO, or a future
+// connector) uploads gets one of these, backed by media_uploads
+// (supabase/migrations/001 + 009). Distinct from `Media` below: that's the
+// curated, admin-facing content library (many-to-many relations, still
+// localStorage-only per migration 003's note); this is the raw upload
+// record with one clean owner, used by the shared MediaUpload component.
+
+export type TrackedMediaType = 'image' | 'video' | 'audio' | 'document'
+
+export interface TrackedMedia {
+  id: string
+  founderId?: string
+  businessId?: string
+  storagePath: string
+  publicUrl: string
+  bucket: string
+  mediaType: TrackedMediaType
+  fileName: string
+  fileSize?: number
+  mimeType?: string
+  altText?: string
+  caption?: string
+  credit?: string
+  usageType?: AssetRole
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Media {
   id: string
   slug: string

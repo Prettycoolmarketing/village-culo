@@ -8,6 +8,7 @@ import { getStories, updateStory } from '../../services/stories'
 import { getIdeas } from '../../services/ideas'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
+import { MediaUpload } from '../../components/ui/MediaUpload'
 import { syncIdeasFromStory, refreshAuthorityScores, previewIdeaImpact } from '../../services/ideaSync'
 import { syncRelationshipsFromStory } from '../../services/relationshipSync'
 import { computeReadability } from '../../utils/readability'
@@ -738,15 +739,12 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                 <p className="text-xs text-[#5E6B4A]">First slide will be used as cover automatically.</p>
               </div>
             )}
-            {draft.coverImage && (
-              <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />
-            )}
-            <input
-              type="url"
+            <MediaUpload
               value={draft.coverImage}
-              onChange={e => onChange({ coverImage: e.target.value })}
-              placeholder="/assets/my-photo.jpg or https://…"
-              className={inp}
+              onChange={v => onChange({ coverImage: v })}
+              label="Upload cover"
+              aspect="wide"
+              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
             />
             {uploadedImageUrls.length > 0 && !draft.coverImage && (
               <div className="flex flex-col gap-1">
@@ -816,9 +814,13 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
           />
         </Field>
         <Field label="Hero image">
-          {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD] mb-2" />}
-          <input type="url" value={draft.coverImage} onChange={e => onChange({ coverImage: e.target.value })}
-            placeholder="/assets/my-photo.jpg or https://…" className={inp} />
+          <MediaUpload
+            value={draft.coverImage}
+            onChange={v => onChange({ coverImage: v })}
+            label="Upload hero image"
+            aspect="wide"
+            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
+          />
           {hasBlog && missingCoverImage && (
             <p className="text-xs text-amber-700 mt-1.5">No cover image yet — a placeholder will be used until you add one.</p>
           )}

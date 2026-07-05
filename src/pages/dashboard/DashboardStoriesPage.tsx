@@ -15,6 +15,7 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
+import { MediaUpload } from '../../components/ui/MediaUpload'
 import { getStoryMissingItems, getMissingCounts } from '../../utils/missingAssets'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
@@ -335,11 +336,14 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
         {tab === 'media' && (
           <div className="flex flex-col gap-4">
             <Field label="Cover Image" hint="Used on story card, story page header, and social share.">
-              <div className="flex flex-col gap-2">
-                {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-36 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />}
-                <input id="coverImage" type="url" value={draft.coverImage} onChange={e => set('coverImage', e.target.value)} className={inputClass} placeholder="/assets/story-cover.jpg" />
-                {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-red-600">⚠ Using placeholder — add a real cover image.</p>}
-              </div>
+              <MediaUpload
+                value={draft.coverImage}
+                onChange={v => set('coverImage', v)}
+                label="Upload cover"
+                aspect="wide"
+                uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
+              />
+              {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-red-600">⚠ Using placeholder — add a real cover image.</p>}
             </Field>
           </div>
         )}

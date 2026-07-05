@@ -6,6 +6,7 @@ import { updateFounder, deleteFounder } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
+import { MediaUpload } from '../../components/ui/MediaUpload'
 import { publisherPartnerProfileService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
 import { getIdeas } from '../../services/ideas'
@@ -621,23 +622,24 @@ export function DashboardProfilePage() {
 
             <div className="grid grid-cols-2 gap-4">
               <Field label="Profile Photo" hint="Square, min 400×400px.">
-                <div className="flex gap-3 items-start mt-1">
-                  <img src={draft.avatar || '/placeholders/village-logo.svg'} alt="" className="w-16 h-16 rounded-full object-cover shrink-0 bg-[#F3EDE6] border border-[#E8E4DD]" />
-                  <div className="flex-1">
-                    <input id="avatar" type="url" value={draft.avatar} onChange={e => set('avatar', e.target.value)} className={inputClass} placeholder="/assets/your-headshot.jpg" />
-                    {draft.avatar.includes('/placeholders/') && (
-                      <p className="text-xs text-red-600 mt-1.5">Using a placeholder. Upload a real photo.</p>
-                    )}
-                  </div>
-                </div>
+                <MediaUpload
+                  value={draft.avatar}
+                  onChange={v => set('avatar', v)}
+                  label="Upload photo"
+                  uploadOptions={{ founderId: draft.id, usageType: 'profile-photo' }}
+                />
+                {draft.avatar.includes('/placeholders/') && (
+                  <p className="text-xs text-red-600 mt-1.5">Using a placeholder. Upload a real photo.</p>
+                )}
               </Field>
               <Field label="Cover Image" hint="16:9 recommended.">
-                <div className="flex flex-col gap-2 mt-1">
-                  {draft.coverImage && (
-                    <img src={draft.coverImage} alt="" className="w-full h-16 rounded-lg object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />
-                  )}
-                  <input id="coverImage" type="url" value={draft.coverImage ?? ''} onChange={e => set('coverImage', e.target.value || undefined)} className={inputClass} placeholder="/assets/your-cover.jpg" />
-                </div>
+                <MediaUpload
+                  value={draft.coverImage}
+                  onChange={v => set('coverImage', v || undefined)}
+                  label="Upload cover"
+                  aspect="wide"
+                  uploadOptions={{ founderId: draft.id, usageType: 'founder-cover' }}
+                />
               </Field>
             </div>
 

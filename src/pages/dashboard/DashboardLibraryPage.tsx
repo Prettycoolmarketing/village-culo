@@ -8,6 +8,7 @@ import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
+import { MediaUpload } from '../../components/ui/MediaUpload'
 import { getLibraryMissingItems } from '../../utils/missingAssets'
 import { getLibraryItemAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
@@ -126,9 +127,16 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
 
         {tab === 'overview' && (
           <div className="flex flex-col gap-4">
-            {draft.coverImage && (
-              <img src={draft.coverImage} alt="" className="w-full h-32 rounded-xl object-cover bg-[#F3EDE6]" />
-            )}
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1">Cover Image</label>
+              <MediaUpload
+                value={draft.coverImage}
+                onChange={v => set('coverImage', v)}
+                label="Upload cover"
+                aspect="wide"
+                uploadOptions={{ founderId: draft.authorFounderId, businessId: draft.businessId, usageType: 'library-cover' }}
+              />
+            </div>
             <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1">Title</label>
               <input id="title" type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />

@@ -15,6 +15,7 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
+import { MediaUpload } from '../../components/ui/MediaUpload'
 import { getBusinessMissingItems, getMissingCounts, getServiceMissingItems } from '../../utils/missingAssets'
 import { getBusinessAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
@@ -1265,21 +1266,24 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
         {tab === 'brand' && (
           <div className="flex flex-col gap-5">
             <Field label="Primary Logo" hint="Square, min 400×400px. Used in directories and profile pages.">
-              <div className="flex gap-3 items-center mt-1">
-                <div className="w-14 h-14 rounded-xl shrink-0 bg-[#F3EDE6] border border-[#E8E4DD] flex items-center justify-center overflow-hidden p-1.5">
-                  <img src={draft.logo || '/placeholders/village-logo.svg'} alt="" className="w-full h-full object-contain" />
-                </div>
-                <input id="logo" type="url" value={draft.logo} onChange={e => set('logo', e.target.value)} className={inputClass} placeholder="/assets/brand-logo.jpg" />
-              </div>
+              <MediaUpload
+                value={draft.logo}
+                onChange={v => set('logo', v)}
+                label="Upload logo"
+                uploadOptions={{ founderId: draft.founderId, businessId: draft.id, usageType: 'business-logo' }}
+              />
               {draft.logo.includes('/placeholders/') && <p className="text-xs text-red-600 mt-1.5">⚠ Using placeholder — add your real logo.</p>}
             </Field>
 
             <Field label="Cover Image" hint="Shown at the top of your business profile page (16:9 or wider).">
-              <div className="flex flex-col gap-2 mt-1">
-                {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-28 rounded-xl object-cover bg-[#F3EDE6] border border-[#E8E4DD]" />}
-                <input id="coverImage" type="url" value={draft.coverImage} onChange={e => set('coverImage', e.target.value)} className={inputClass} placeholder="/assets/brand-cover.jpg" />
-                {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-amber-600">⚠ Using placeholder — add a real cover image.</p>}
-              </div>
+              <MediaUpload
+                value={draft.coverImage}
+                onChange={v => set('coverImage', v)}
+                label="Upload cover"
+                aspect="wide"
+                uploadOptions={{ founderId: draft.founderId, businessId: draft.id, usageType: 'business-cover' }}
+              />
+              {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-amber-600">⚠ Using placeholder — add a real cover image.</p>}
             </Field>
 
             <div className="bg-[#F8F5F0] rounded-xl border border-[#E8E4DD] px-4 py-4">

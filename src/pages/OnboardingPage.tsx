@@ -7,8 +7,7 @@ import { linkOwnFounder } from '../services/currentFounder'
 import { updateFounder } from '../services/founders'
 import { updateBusiness } from '../services/businesses'
 import { updateService } from '../services/serviceOfferings'
-import { uploadFile } from '../lib/storage'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { MediaUpload } from '../components/ui/MediaUpload'
 import { locations } from '../data/locations'
 import { industries } from '../data/industries'
 import { topics } from '../data/topics'
@@ -215,66 +214,8 @@ function SearchSelect({ value, otherValue, onChange, onOtherChange, options, pla
   )
 }
 
-// ─── Image upload with local preview ───────────────────────────────────────────
-// Founders paste nothing. A file picked here uploads immediately and shows
-// exactly what will appear on the public profile.
-
-function ImageUpload({ value, onChange, label, aspect = 'square' }: {
-  value: string
-  onChange: (url: string) => void
-  label: string
-  aspect?: 'square' | 'wide'
-}) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState('')
-
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setError('')
-    if (!isSupabaseConfigured) {
-      setError('Connect Supabase to enable uploads.')
-      return
-    }
-    setUploading(true)
-    const result = await uploadFile(file)
-    setUploading(false)
-    if (result.error) setError(result.error)
-    else onChange(result.url)
-  }
-
-  return (
-    <div>
-      <input ref={inputRef} type="file" accept="image/*" onChange={e => void handleFile(e)} className="hidden" />
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className={`w-full border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-primary transition-colors overflow-hidden ${
-          aspect === 'square' ? 'h-32' : 'h-40'
-        }`}
-      >
-        {value ? (
-          <img src={value} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <>
-            <svg className="w-6 h-6 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            <span className="text-xs font-medium text-muted">{uploading ? 'Uploading…' : label}</span>
-          </>
-        )}
-      </button>
-      {value && (
-        <button type="button" onClick={() => onChange('')} className="text-xs text-muted hover:text-red-500 mt-1.5 transition-colors">
-          Remove
-        </button>
-      )}
-      {error && <p className="text-xs text-red-600 mt-1.5">{error}</p>}
-    </div>
-  )
-}
+// Image upload is now the shared MediaUpload component (see components/ui/) —
+// every workflow uses the same one, not a page-local copy.
 
 function TopicPicker({ selected, onChange }: { selected: string[]; onChange: (ids: string[]) => void }) {
   function toggle(id: string) {
@@ -459,10 +400,10 @@ function ProfileStep({ draft, set }: { draft: Draft; set: (k: keyof Draft, v: un
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <Field label="Profile photo">
-          <ImageUpload value={draft.avatar} onChange={v => set('avatar', v)} label="Upload Profile Photo" />
+          <MediaUpload value={draft.avatar} onChange={v => set('avatar', v)} label="Upload Profile Photo" uploadOptions={{ usageType: 'profile-photo' }} />
         </Field>
         <Field label="Cover image" hint="Optional">
-          <ImageUpload value={draft.coverImage} onChange={v => set('coverImage', v)} label="Upload Cover Image" aspect="wide" />
+          <MediaUpload value={draft.coverImage} onChange={v => set('coverImage', v)} label="Upload Cover Image" aspect="wide" uploadOptions={{ usageType: 'founder-cover' }} />
         </Field>
       </div>
       <Field label="Topics" hint="What would you like people to discover you for? Village connects your stories, ideas and businesses to the topics you choose here.">
@@ -612,10 +553,10 @@ function BusinessBlock({ business, index, onChange, onRemove, canRemove }: {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <Field label="Logo">
-          <ImageUpload value={business.logo} onChange={v => onChange({ logo: v })} label="Upload Logo" />
+          <MediaUpload value={business.logo} onChange={v => onChange({ logo: v })} label="Upload Logo" uploadOptions={{ usageType: 'business-logo' }} />
         </Field>
         <Field label="Cover image" hint="Optional">
-          <ImageUpload value={business.coverImage} onChange={v => onChange({ coverImage: v })} label="Upload Cover Image" aspect="wide" />
+          <MediaUpload value={business.coverImage} onChange={v => onChange({ coverImage: v })} label="Upload Cover Image" aspect="wide" uploadOptions={{ usageType: 'business-cover' }} />
         </Field>
       </div>
 
