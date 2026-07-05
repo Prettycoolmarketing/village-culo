@@ -20,6 +20,7 @@ import { getIdeas, updateIdea } from './ideas'
 import { getStories } from './stories'
 import { getFounders, updateFounder } from './founders'
 import { getBusinesses, updateBusiness } from './businesses'
+import { relationshipService } from './relationships'
 import { slugify } from '../utils/slugify'
 
 export interface IdeaSyncResult {
@@ -138,8 +139,36 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
 // publish; never drifts from the underlying graph. scoreFromSignals is the one
 // formula both the real (post-write) score and the read-only preview use.
 
-function scoreFromSignals(ideaCount: number, relationshipStrength: number, storiesPublished: number, businessConnections: number): number {
-  return Math.min(100, ideaCount * 3 + relationshipStrength + storiesPublished * 2 + businessConnections * 2)
+function scoreFromSignals(
+  ideaCount: number,
+  relationshipStrength: number,
+  storiesPublished: number,
+  businessConnections: number,
+  featuredInCount: number,
+  mentionsCount: number,
+): number {
+  return Math.min(100,
+    ideaCount * 3 +
+    relationshipStrength +
+    storiesPublished * 2 +
+    businessConnections * 2 +
+    featuredInCount * 5 +
+    mentionsCount,
+  )
+}
+
+/**
+ * Real Village Graph signals only — see supabase/migrations/008_village_graph.sql.
+ * featuredInCount is genuine editorial recognition (a CAPO-attached `featured_in`
+ * edge to a Source); mentionsCount is how many published stories actually
+ * mention this founder/business (see relationshipSync.ts). Both are zero until
+ * the graph has real edges — no signal here is ever inferred or estimated.
+ */
+function graphSignalsFor(entityType: 'founder' | 'business', entityId: string): { featuredInCount: number; mentionsCount: number } {
+  const edges = relationshipService.getRelated(entityType, entityId)
+  const featuredInCount = edges.filter(e => e.relationshipType === 'featured_in' && e.fromType === entityType && e.fromId === entityId).length
+  const mentionsCount = edges.filter(e => e.relationshipType === 'mentions' && e.toType === entityType && e.toId === entityId).length
+  return { featuredInCount, mentionsCount }
 }
 
 export function computeFounderAuthorityScore(founderId: string): number {
@@ -147,14 +176,16 @@ export function computeFounderAuthorityScore(founderId: string): number {
   const relationshipStrength = ideas.reduce((sum, i) => sum + i.relatedStoryIds.length, 0)
   const storiesPublished = getStories({ founderId, publicOnly: true }).length
   const businessConnections = new Set(ideas.flatMap(i => i.relatedBusinessIds)).size
-  return scoreFromSignals(ideas.length, relationshipStrength, storiesPublished, businessConnections)
+  const { featuredInCount, mentionsCount } = graphSignalsFor('founder', founderId)
+  return scoreFromSignals(ideas.length, relationshipStrength, storiesPublished, businessConnections, featuredInCount, mentionsCount)
 }
 
 export function computeBusinessAuthorityScore(businessId: string): number {
   const ideas = getIdeas().filter(i => i.relatedBusinessIds.includes(businessId))
   const relationshipStrength = ideas.reduce((sum, i) => sum + i.relatedStoryIds.length, 0)
   const storiesPublished = getStories({ businessId, publicOnly: true }).length
-  return scoreFromSignals(ideas.length, relationshipStrength, storiesPublished, 0)
+  const { featuredInCount, mentionsCount } = graphSignalsFor('business', businessId)
+  return scoreFromSignals(ideas.length, relationshipStrength, storiesPublished, 0, featuredInCount, mentionsCount)
 }
 
 /** Recomputes and persists both scores touched by a story — no-ops if unchanged. */
@@ -240,7 +271,16 @@ export function previewIdeaImpact(story: Story, intel: VillageContentIntelligenc
   const projectedRelationshipStrength = projectedIdeas.reduce((sum, i) => sum + i.relatedStoryIds.length, 0)
   const projectedStoriesPublished = getStories({ founderId: story.founderId, publicOnly: true }).length + (story.status === 'published' ? 0 : 1)
   const projectedBusinessConnections = new Set(projectedIdeas.flatMap(i => i.relatedBusinessIds)).size
-  const projectedAuthorityScore = scoreFromSignals(projectedIdeas.length, projectedRelationshipStrength, projectedStoriesPublished, projectedBusinessConnections)
+  // Editorial recognition and mentions don't change just from drafting — they
+  // only move once a story actually publishes (CAPO attaches featured_in;
+  // relationshipSync.ts writes mentions). Using the founder's real current
+  // counts here keeps the live preview honest rather than guessing at edges
+  // this draft hasn't created yet.
+  const { featuredInCount, mentionsCount } = graphSignalsFor('founder', story.founderId!)
+  const projectedAuthorityScore = scoreFromSignals(
+    projectedIdeas.length, projectedRelationshipStrength, projectedStoriesPublished, projectedBusinessConnections,
+    featuredInCount, mentionsCount,
+  )
 
   return {
     newIdeas,

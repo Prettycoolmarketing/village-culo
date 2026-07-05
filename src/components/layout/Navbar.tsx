@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { SearchInput } from '../ui/SearchInput'
 
 // Primary: the three things a first-time visitor actually browses.
 // Secondary (Discover menu): real, valuable destinations that don't need to
@@ -66,6 +67,88 @@ function DiscoverMenu() {
   )
 }
 
+// Village Discovery (Sprint 6) — the search entry point the comment above
+// promised but never wired in. Submits to Archive's existing search+facet
+// engine (utils/search.ts) via the same ?q= param it already reads; no new
+// search logic here, just a way to reach the one that already exists from
+// anywhere on the site.
+function NavSearch() {
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState('')
+  const navigate = useNavigate()
+  const ref = useRef<HTMLFormElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [open])
+
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    const q = value.trim()
+    if (!q) return
+    navigate(`/archive?q=${encodeURIComponent(q)}`)
+    setOpen(false)
+    setValue('')
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Search the Village"
+        className="p-2 rounded-lg text-charcoal hover:text-primary hover:bg-primary/5 transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </button>
+    )
+  }
+
+  return (
+    <form ref={ref} onSubmit={submit}>
+      <SearchInput
+        id="nav-search"
+        value={value}
+        onChange={setValue}
+        placeholder="Search founders, stories, ideas…"
+        size="sm"
+        className="w-56"
+      />
+    </form>
+  )
+}
+
+function MobileSearch({ onSubmitted }: { onSubmitted: () => void }) {
+  const [value, setValue] = useState('')
+  const navigate = useNavigate()
+
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    const q = value.trim()
+    if (!q) return
+    navigate(`/archive?q=${encodeURIComponent(q)}`)
+    onSubmitted()
+  }
+
+  return (
+    <form onSubmit={submit} className="px-1 pb-2">
+      <SearchInput
+        id="mobile-nav-search"
+        value={value}
+        onChange={setValue}
+        placeholder="Search the Village…"
+        size="sm"
+      />
+    </form>
+  )
+}
+
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, loading } = useAuth()
@@ -113,6 +196,11 @@ export function Navbar() {
             ))}
             <DiscoverMenu />
           </nav>
+
+          {/* Search */}
+          <div className="hidden lg:block">
+            <NavSearch />
+          </div>
 
           {/* Desktop CTA */}
           {!loading && (
@@ -177,6 +265,7 @@ export function Navbar() {
           aria-label="Mobile navigation"
         >
           <div className="px-4 py-3 space-y-1">
+            <MobileSearch onSubmitted={() => setMobileOpen(false)} />
             {primaryLinks.map(link => (
               <NavLink
                 key={link.to}
