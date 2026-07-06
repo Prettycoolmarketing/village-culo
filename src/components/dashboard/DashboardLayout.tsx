@@ -122,14 +122,9 @@ export function DashboardLayout() {
             Publish
           </NavLink>
 
-          <SectionLabel label="My Content" />
-          <NavItem to="/dashboard/profile"        label="Profile"         icon={<Icon path={icons.profile}  />} />
           <NavItem to="/dashboard/businesses"     label="Businesses"      icon={<Icon path={icons.biz}      />} />
-          <NavItem to="/dashboard/stories"        label="My Publications" icon={<Icon path={icons.stories}  />} />
-          <NavItem to="/dashboard/ideas"          label="Ideas"           icon={<Icon path={icons.ideas}    />} />
-          <NavItem to="/dashboard/library"        label="Library"         icon={<Icon path={icons.library}  />} />
-          <NavItem to="/dashboard/media"          label="Media"           icon={<Icon path={icons.media}    />} />
-          <NavItem to="/dashboard/import-content" label="Import Content"  icon={<Icon path={icons.importc}  />} />
+          <NavItem to="/dashboard/my-work"        label="My Work"         icon={<Icon path={icons.stories}  />} />
+          <NavItem to="/dashboard/profile"        label="Profile"         icon={<Icon path={icons.profile}  />} />
 
           <SectionLabel label="Opportunities" />
           <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} />

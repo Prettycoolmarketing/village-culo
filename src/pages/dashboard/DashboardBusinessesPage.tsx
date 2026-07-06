@@ -28,7 +28,7 @@ const BUSINESS_FIELD_TO_TAB: Record<string, string> = {
   description: 'brand', faqs: 'brand',
   website: 'brand', socials: 'brand',
   offers: 'services',
-  seoTitle: 'discovery', seoDescription: 'discovery',
+  seoTitle: 'brand', seoDescription: 'brand',
 }
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
@@ -1123,7 +1123,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
     { key: 'relationships', label: 'Relationships', badge: bizStories.length + bizServices.length },
     { key: 'appears-on',    label: 'Appears On',    badge: appearsOn.length },
     { key: 'publishing',    label: 'Publishing'    },
-    { key: 'discovery',     label: 'Discovery'     },
+    { key: 'discovery',     label: 'Partnerships'  },
     { key: 'programs',      label: 'Programs', badge: programService.getAll({ businessId: draft.id }).length },
   ]
 
@@ -1371,6 +1371,18 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
                 {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-amber-600">⚠ Using placeholder — add a real cover image.</p>}
               </Field>
             </div>
+
+            <div className="pt-3 border-t border-[#E8E4DD] flex flex-col gap-4">
+              <p className="text-sm font-semibold text-[#2D2A26]">How you appear in search</p>
+              <Field label="Search Title" hint="~60 characters. Shown as the clickable headline in search results.">
+                <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
+                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
+              </Field>
+              <Field label="Search Description" hint="140–160 characters. Shown under the title in search results.">
+                <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
+                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
+              </Field>
+            </div>
           </div>
         )}
 
@@ -1532,21 +1544,9 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
           <div className="flex flex-col gap-5">
             <div className="bg-[#F8F5F0] rounded-xl px-4 py-3">
               <p className="text-xs text-[#6B7280] leading-relaxed">
-                This controls how {draft.name || 'this business'} gets found — in search results, by AI answer
-                engines, and by publishers deciding whether to recommend it. Fill in what you can; none of it is required to publish.
+                Tell publishers what {draft.name || 'this business'} does and who it's a good fit for. This helps
+                other founders decide whether to recommend or collaborate with you — none of it is required to publish.
               </p>
-            </div>
-
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 flex flex-col gap-4">
-              <p className="text-sm font-semibold text-[#2D2A26]">Search Appearance</p>
-              <Field label="Search Title" hint="~60 characters. Shown as the clickable headline in search results.">
-                <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
-                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
-              </Field>
-              <Field label="Search Description" hint="140–160 characters. Shown under the title in search results.">
-                <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
-                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
-              </Field>
             </div>
 
             <BusinessDiscoveryProfile

@@ -49,6 +49,7 @@ import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPag
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
+import { DashboardMyWorkPage }       from './pages/dashboard/DashboardMyWorkPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
 import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
 import { DashboardPartnershipPage }      from './pages/dashboard/DashboardPartnershipPage'
@@ -164,6 +165,7 @@ export default function App() {
             <Route path="profile"        element={<DashboardProfilePage />}      />
             <Route path="businesses"     element={<DashboardBusinessesPage />}   />
             <Route path="publish"         element={<DashboardPublishPage />}      />
+            <Route path="my-work"        element={<DashboardMyWorkPage />}       />
             <Route path="stories"        element={<DashboardStoriesPage />}      />
             <Route path="ideas"          element={<DashboardIdeasPage />}        />
             <Route path="library"        element={<DashboardLibraryPage />}      />

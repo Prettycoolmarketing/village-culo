@@ -998,13 +998,13 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
-      <StepHeader title="Village Intelligence" subtitle="Village is reading your story and building everything else automatically." onBack={onBack} />
+      <StepHeader title="Building Your Reach" subtitle="Village is reading your story and building everything else automatically." onBack={onBack} />
 
-      {/* ── Authority Score — the number this whole screen is building toward ── */}
+      {/* ── Trust Score — the number this whole screen is building toward (internally: Authority Score) ── */}
       {draft.founderId && (
         <div className="bg-gradient-to-br from-[#2D2A26] to-[#3d3831] rounded-2xl px-6 py-6 text-white flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-1">Founder Authority Score</p>
+            <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-1">Your Trust Score</p>
             <p className="text-4xl font-bold">{impact.currentAuthorityScore}</p>
           </div>
           {impact.projectedAuthorityDelta !== 0 && (
@@ -1494,7 +1494,7 @@ function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing,
           <p className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-3">Village also created</p>
           {summary.authorityDelta !== 0 && (
             <p className="text-xs text-[#8FBF6F] font-semibold mb-3">
-              Founder Authority {summary.authorityDelta > 0 ? '↑' : '↓'} {summary.authorityDelta > 0 ? '+' : ''}{summary.authorityDelta}
+              Trust Score {summary.authorityDelta > 0 ? '↑' : '↓'} {summary.authorityDelta > 0 ? '+' : ''}{summary.authorityDelta}
             </p>
           )}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">

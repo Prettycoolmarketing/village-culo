@@ -378,12 +378,12 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
                 <p className="text-2xl font-bold text-[#2D2A26]">{storyFounder?.authorityScore ?? 0}</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Founder Authority Score</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Your Trust Score</p>
               </div>
               {storyBusiness && (
                 <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
                   <p className="text-2xl font-bold text-[#2D2A26]">{storyBusiness.authorityScore ?? 0}</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">Business Authority Score</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">Business Trust Score</p>
                 </div>
               )}
             </div>

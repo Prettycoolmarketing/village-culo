@@ -78,7 +78,7 @@ export function MissingAssetsPanel({ items, className = '', onAction }: MissingA
         onAction={onAction}
       />
       <Group
-        heading="Helps discovery"
+        heading="Helps people find you"
         items={niceToImprove}
         dotColor="bg-amber-400"
         headingColor="text-amber-700"

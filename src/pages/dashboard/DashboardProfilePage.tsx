@@ -438,7 +438,7 @@ export function DashboardProfilePage() {
     { key: 'overview',      label: 'Overview'      },
     { key: 'identity',      label: 'Identity'      },
     { key: 'expertise',     label: 'Expertise'     },
-    { key: 'discovery',     label: 'Discovery'     },
+    { key: 'discovery',     label: 'Profile Visibility' },
     { key: 'relationships', label: 'Relationships', badge: founderBusinesses.length + founderStories.length + founderIdeas.length + founderLibrary.length + appearsOn.length },
     { key: 'settings',      label: 'Settings'      },
   ]
@@ -723,11 +723,11 @@ export function DashboardProfilePage() {
               </p>
             </Field>
 
-            <Field label="SEO Title" hint="Shown in browser tab and search results. ~60 chars.">
+            <Field label="Search Title" hint="Shown in browser tab and search results. ~60 chars.">
               <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
             </Field>
-            <Field label="SEO Description" hint="Shown in search results. 140 to 160 characters is ideal.">
+            <Field label="Search Description" hint="Shown in search results. 140 to 160 characters is ideal.">
               <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} placeholder="15+ years turning founder stories into content systems that build visibility, trust and sales." />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
             </Field>
