@@ -1,4 +1,7 @@
 import type { FAQ } from '../types'
+import { getFounder } from '../services/founders'
+import { getBusiness } from '../services/businesses'
+import { getServices } from '../services/serviceOfferings'
 
 // ─── Founder FAQs ──────────────────────────────────────────────────────────────
 
@@ -277,5 +280,19 @@ export const businessFAQs: Record<string, FAQ[]> = {
   ],
 }
 
-export const getFAQsForFounder = (founderId: string): FAQ[] => founderFAQs[founderId] ?? []
-export const getFAQsForBusiness = (businessId: string): FAQ[] => businessFAQs[businessId] ?? []
+// Merges the static seed FAQs above with the real, founder-editable `faqs`
+// field on Founder/Business/Service — previously only the static list was
+// ever read here, so FAQs added via the dashboard (Founder Expertise tab,
+// or a Service's own FAQ editor) never actually reached the public page or
+// structured data. Fixed rather than left in place, since Service-level FAQs
+// depend on this same read path to be real.
+export const getFAQsForFounder = (founderId: string): FAQ[] => {
+  const founder = getFounder(founderId)
+  return [...(founderFAQs[founderId] ?? []), ...(founder?.faqs ?? [])]
+}
+
+export const getFAQsForBusiness = (businessId: string): FAQ[] => {
+  const business = getBusiness(businessId)
+  const serviceFaqs = getServices(undefined, businessId).flatMap(s => s.faqs ?? [])
+  return [...(businessFAQs[businessId] ?? []), ...(business?.faqs ?? []), ...serviceFaqs]
+}

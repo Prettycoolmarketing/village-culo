@@ -183,6 +183,13 @@ export interface Service {
   // Optional: services with no status are treated as 'published' (the only state
   // they could ever be in before Sprint 19B added a real status column/policy).
   status?: Status
+  // Business UX consolidation: Services and Offers are now presented as one
+  // founder-facing surface. FAQs live per-service (not a separate tab) so they
+  // read as help for that specific service, in public rendering and JSON-LD.
+  faqs?: FAQ[]
+  // Marks a service as a downloadable/digital resource, enabling "Add to
+  // Library" — does not create a second product system, just flags intent.
+  isDigitalProduct?: boolean
 }
 
 // ─── Product ───────────────────────────────────────────────────────────────────

@@ -33,7 +33,10 @@ interface MediaUploadProps {
   onChange: (url: string, media?: TrackedMedia) => void
   accept?: MediaAccept
   label?: string
-  aspect?: 'square' | 'wide' | 'auto'
+  // 'logo' is a small, centred, padded square with object-contain — for brand
+  // marks that must never be cropped or stretched to fill a wide container.
+  // 'square'/'wide' stay full-width (avatars, covers, hero images).
+  aspect?: 'square' | 'wide' | 'auto' | 'logo'
   uploadOptions?: UploadAndTrackOptions
   className?: string
 }
@@ -80,7 +83,9 @@ export function MediaUpload({
   }
 
   const kind = value ? inferKindFromUrl(value) : accept === 'any' ? 'image' : accept
-  const heightClass = aspect === 'square' ? 'h-32' : aspect === 'wide' ? 'h-40' : 'h-auto min-h-[8rem]'
+  const isLogo = aspect === 'logo'
+  const heightClass = aspect === 'square' ? 'h-32' : aspect === 'wide' ? 'h-40' : isLogo ? 'h-28' : 'h-auto min-h-[8rem]'
+  const widthClass = isLogo ? 'w-28 mx-auto' : 'w-full'
 
   return (
     <div className={className}>
@@ -99,7 +104,7 @@ export function MediaUpload({
         role="button"
         tabIndex={0}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click() }}
-        className={`w-full border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden cursor-pointer ${heightClass} ${
+        className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden cursor-pointer ${widthClass} ${heightClass} ${isLogo ? 'p-3 bg-white' : ''} ${
           dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary'
         } ${uploading ? 'opacity-70 pointer-events-none' : ''}`}
       >
@@ -120,7 +125,7 @@ export function MediaUpload({
               View document ↗
             </a>
           ) : (
-            <img src={value} alt="" className="w-full h-full object-cover" />
+            <img src={value} alt="" className={`w-full h-full ${isLogo ? 'object-contain' : 'object-cover'}`} />
           )
         ) : (
           <>
@@ -132,7 +137,7 @@ export function MediaUpload({
           </>
         )}
       </div>
-      <div className="flex items-center gap-3 mt-1.5">
+      <div className={`flex items-center gap-3 mt-1.5 ${isLogo ? 'justify-center' : ''}`}>
         {value && !uploading && (
           <>
             <button type="button" onClick={() => inputRef.current?.click()} className="text-xs text-muted hover:text-primary transition-colors">

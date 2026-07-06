@@ -7,6 +7,7 @@ import { getBusinesses } from '../../services/businesses'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
 import { getIdeas } from '../../services/ideas'
@@ -23,7 +24,7 @@ import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { getFounderMissingItems, getMissingCounts, type MissingItem } from '../../utils/missingAssets'
 import { getFounderAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
-import type { Founder, Topic, FAQ, SocialLink, SocialPlatform, Status } from '../../types'
+import type { Founder, Topic, SocialLink, SocialPlatform, Status } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
 // Every existing field keeps its home; this map only changed which tab a
@@ -396,38 +397,8 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
   )
 }
 
-// ─── FAQ editor ─────────────────────────────────────────────────────────────────
-
-function FAQEditor({ faqs, onChange }: { faqs: FAQ[]; onChange: (faqs: FAQ[]) => void }) {
-  function add() {
-    onChange([...faqs, { id: `faq-${Date.now()}`, question: '', answer: '', topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [] }])
-  }
-  function update(i: number, patch: Partial<FAQ>) {
-    onChange(faqs.map((f, idx) => idx === i ? { ...f, ...patch } : f))
-  }
-  function remove(i: number) {
-    onChange(faqs.filter((_, idx) => idx !== i))
-  }
-  return (
-    <div className="flex flex-col gap-3">
-      {faqs.map((faq, i) => (
-        <div key={faq.id} className="border border-[#E8E4DD] rounded-xl p-3 flex flex-col gap-2 bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Question {i + 1}</span>
-            <button onClick={() => remove(i)} className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
-          </div>
-          <input type="text" value={faq.question} onChange={e => update(i, { question: e.target.value })}
-            placeholder="A question people ask you" className={inputClass} />
-          <textarea value={faq.answer} onChange={e => update(i, { answer: e.target.value })} rows={2}
-            placeholder="Your answer" className={inputClass + ' resize-none'} />
-        </div>
-      ))}
-      <button onClick={add} className="text-xs font-semibold text-[#C86A43] hover:underline text-left">
-        + Add a question
-      </button>
-    </div>
-  )
-}
+// FAQEditor is now the shared components/dashboard/FAQEditor.tsx — used here
+// and under each Service in the Business workspace.
 
 // ─── DashboardProfilePage ──────────────────────────────────────────────────────
 

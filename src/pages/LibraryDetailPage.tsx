@@ -8,6 +8,7 @@ import { Avatar } from '../components/ui/Avatar'
 import { Badge } from '../components/ui/Badge'
 import { LibraryCard } from '../components/cards/LibraryCard'
 import { InnerContainer } from '../components/layout/PageContainer'
+import { normalizeUrl } from '../utils/url'
 
 // ─── Provider button label ──────────────────────────────────────────────────────
 
@@ -197,7 +198,7 @@ export function LibraryDetailPage() {
                     {item.purchaseLinks.map((link, i) => (
                       <a
                         key={i}
-                        href={link.url}
+                        href={normalizeUrl(link.url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-colors ${
@@ -229,7 +230,7 @@ export function LibraryDetailPage() {
                   <p className="font-heading text-lg font-semibold text-white mb-2">Coming Soon</p>
                   {item.purchaseLinks[0] && (
                     <a
-                      href={item.purchaseLinks[0].url}
+                      href={normalizeUrl(item.purchaseLinks[0].url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-block px-5 py-3 bg-white/10 text-white rounded-xl text-sm font-semibold hover:bg-white/20 transition-colors border border-white/20"

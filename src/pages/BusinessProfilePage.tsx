@@ -129,6 +129,9 @@ export function BusinessProfilePage() {
         .map(r => getStories().find(s => s.id === r.fromId))
         .filter((s): s is NonNullable<typeof s> => !!s && (s.status === 'published' || s.status === 'featured'))
     : []
+  // Merges static seed FAQs with real founder-added ones (business.faqs and
+  // every service's own faqs) — see data/faqs.ts.
+  const faqs = business ? getFAQsForBusiness(business.id) : []
 
   usePageMeta({
     title:       business?.name,
@@ -173,11 +176,17 @@ export function BusinessProfilePage() {
           url: `${window.location.origin}/stories/${s.slug}`,
         })),
       } : {}),
+      ...(faqs.length > 0 ? {
+        mainEntity: faqs.map(f => ({
+          '@type': 'Question',
+          name: f.question,
+          acceptedAnswer: { '@type': 'Answer', text: f.answer },
+        })),
+      } : {}),
     } : undefined,
   })
 
   if (!business || (business.status !== 'published' && business.status !== 'featured')) return <BusinessNotFound slug={slug ?? ''} />
-  const faqs           = getFAQsForBusiness(business.id)
   const services       = getServices(undefined, business.id)
   const testimonials   = getTestimonialsForBusiness(business.id)
   const caseStudies    = getCaseStudiesForBusiness(business.id)
@@ -496,6 +505,21 @@ export function BusinessProfilePage() {
                             {service.ctaLabel}
                           </a>
                         </div>
+                        {service.faqs && service.faqs.length > 0 && (
+                          <div className="border-t border-border pt-3 flex flex-col gap-2">
+                            {service.faqs.map(faq => (
+                              <details key={faq.id} className="group">
+                                <summary className="text-sm font-medium text-charcoal cursor-pointer list-none flex items-center justify-between gap-2">
+                                  {faq.question}
+                                  <svg className="w-3.5 h-3.5 text-muted flex-shrink-0 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                  </svg>
+                                </summary>
+                                <p className="font-body text-sm text-muted leading-relaxed mt-1.5">{faq.answer}</p>
+                              </details>
+                            ))}
+                          </div>
+                        )}
                       </article>
                     ))}
                   </div>

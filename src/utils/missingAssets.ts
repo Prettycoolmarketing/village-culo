@@ -39,7 +39,11 @@ export function getFounderMissingItems(founder: Founder): MissingItem[] {
   return m
 }
 
-export function getBusinessMissingItems(business: Business): MissingItem[] {
+// `services` defaults to [] so existing callers that haven't been updated to
+// pass the business's real Service records still compile — Offers and
+// Services are presented as one workspace now, so "add a service" should
+// only nag if the business genuinely has neither.
+export function getBusinessMissingItems(business: Business, services: Service[] = []): MissingItem[] {
   const m: MissingItem[] = []
   if (isPlaceholder(business.logo))
     m.push({ field: 'logo',            label: 'Upload a logo so people recognise your brand',       action: 'Upload Logo',     severity: 'critical'      })
@@ -51,8 +55,8 @@ export function getBusinessMissingItems(business: Business): MissingItem[] {
     m.push({ field: 'website',         label: 'Add your website',                                   action: 'Add Website',     severity: 'important'     })
   if (!business.instagram && !business.linkedin)
     m.push({ field: 'socials',         label: 'Link your social profiles',                          action: 'Add Social Links', severity: 'important'    })
-  if (!business.offers || business.offers.length === 0)
-    m.push({ field: 'offers',          label: 'Add an offer so people know how to work with you',   action: 'Add Offer',       severity: 'important'     })
+  if ((!business.offers || business.offers.length === 0) && services.length === 0)
+    m.push({ field: 'offers',          label: 'Add a service so people know how to work with you',  action: 'Add Service',     severity: 'important'     })
   if (!business.faqs || business.faqs.length === 0)
     m.push({ field: 'faqs',            label: 'Answer a few FAQs for your customers',                action: 'Add FAQs',        severity: 'nice-to-have'  })
   if (!business.seoTitle)

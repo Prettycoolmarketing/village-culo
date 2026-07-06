@@ -145,19 +145,39 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
               <label className="block text-xs font-medium text-[#6B7280] mb-1">Description</label>
               <textarea id="description" value={draft.description} onChange={e => set('description', e.target.value)} rows={4} className={inputClass + ' resize-y'} />
             </div>
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Availability</label>
+              <div className="flex gap-1.5 flex-wrap">
+                {(['available', 'coming-soon', 'pre-order', 'free-download', 'external', 'members-only', 'early-access', 'sold-out'] as const).map(s => (
+                  <button
+                    key={s}
+                    onClick={() => set('status', s)}
+                    className={`px-2.5 py-1 rounded-full text-xs border font-medium transition-colors capitalize ${
+                      draft.status === s ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                    }`}
+                  >
+                    {s.replace('-', ' ')}
+                  </button>
+                ))}
+              </div>
+              <p className={`text-xs mt-1.5 ${
+                draft.status === 'available' || draft.status === 'free-download' ? 'text-green-600' :
+                draft.status === 'coming-soon' ? 'text-amber-600' : 'text-[#9CA3AF]'
+              }`}>
+                {draft.status === 'available' ? 'Visible and purchasable on the public page.' :
+                 draft.status === 'coming-soon' ? 'Shown publicly, marked as not yet available.' :
+                 draft.status === 'archived' ? 'Hidden from public pages.' :
+                 'Shown publicly with this status.'}
+              </p>
+            </div>
             <div className="flex flex-col gap-2 text-xs">
               {[
-                ['Type',   draft.productType],
-                ['Status', draft.status],
-                ['Price',  draft.price ?? 'Free'],
+                ['Type',  draft.productType],
+                ['Price', draft.price ?? 'Free'],
               ].map(([label, val]) => (
                 <div key={label} className="flex items-center justify-between">
                   <span className="text-[#9CA3AF]">{label}</span>
-                  <span className={`font-medium ${
-                    label === 'Status' && (draft.status === 'available' || draft.status === 'free-download') ? 'text-green-600' :
-                    label === 'Status' && draft.status === 'coming-soon' ? 'text-amber-600' :
-                    'text-[#2D2A26]'
-                  }`}>{val}</span>
+                  <span className="font-medium text-[#2D2A26]">{val}</span>
                 </div>
               ))}
             </div>

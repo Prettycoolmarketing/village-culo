@@ -4,6 +4,7 @@ import { businessPartnerProfileService, programService, enrollmentService } from
 import type { BusinessPartnerProfile, PartnerProgram, PartnerProgramType, DisclosureType } from '../../types/partnership'
 import { getStories } from '../../services/stories'
 import { getServices, updateService, deleteService, duplicateService } from '../../services/serviceOfferings'
+import { updateLibraryItem } from '../../services/library'
 import { getFounders } from '../../services/founders'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
@@ -16,6 +17,7 @@ import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { getBusinessMissingItems, getMissingCounts, getServiceMissingItems } from '../../utils/missingAssets'
 import { getBusinessAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
@@ -23,10 +25,10 @@ import type { Business, Topic, Offer, Service } from '../../types'
 
 const BUSINESS_FIELD_TO_TAB: Record<string, string> = {
   logo: 'brand', coverImage: 'brand',
-  description: 'content', faqs: 'content',
-  website: 'publishing', socials: 'publishing',
-  offers: 'offers',
-  seoTitle: 'seo', seoDescription: 'seo',
+  description: 'brand', faqs: 'brand',
+  website: 'brand', socials: 'brand',
+  offers: 'services',
+  seoTitle: 'discovery', seoDescription: 'discovery',
 }
 
 // ─── Shared helpers ────────────────────────────────────────────────────────────
@@ -1053,17 +1055,19 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
   const [tab, setTab]       = useState('overview')
   const [serviceTick, setServiceTick] = useState(0)
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
+  const [addedToLibraryIds, setAddedToLibraryIds] = useState<Set<string>>(new Set())
   const refreshServices = () => setServiceTick(t => t + 1)
   void serviceTick
 
-  const missing    = getBusinessMissingItems(draft)
-  const counts     = getMissingCounts(missing)
   const appearsOn = getBusinessAppearsOn(draft.id)
 
   // Relationships
   const bizStories  = getStories({ businessId: draft.id })
   const bizServices = getServices(undefined, draft.id)
   const owner       = getFounders().find(f => f.businessId === draft.id)
+
+  const missing    = getBusinessMissingItems(draft, bizServices)
+  const counts     = getMissingCounts(missing)
 
   async function handleAddService() {
     const id = `service-${Date.now()}`
@@ -1076,17 +1080,50 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
     if (result.success) { setEditingServiceId(id); refreshServices() }
   }
 
+  // Offers and Services present as one workspace now, but the underlying
+  // Offer/Service data model stays exactly as it was — this just gives a
+  // founder a one-click way to move a legacy offer onto the fuller Service
+  // model (price, FAQs, digital product flag) without losing anything.
+  async function convertOfferToService(index: number) {
+    const offer = draft.offers[index]
+    const id = `service-${Date.now()}`
+    const newService: Service = {
+      id, slug: id, name: offer.title, description: offer.description,
+      businessId: draft.id, founderId: owner?.id ?? draft.founderId,
+      topicIds: [], expertiseIds: [],
+      ctaLabel: offer.ctaLabel || 'Learn more', ctaUrl: offer.ctaUrl, status: 'published',
+    }
+    const result = await updateService(newService)
+    if (result.success) { removeOffer(index); refreshServices() }
+  }
+
+  async function addServiceToLibrary(service: Service) {
+    const id = `library-${Date.now()}`
+    const result = await updateLibraryItem({
+      id, slug: id,
+      title: service.name,
+      description: service.description,
+      authorFounderId: service.founderId,
+      businessId: service.businessId,
+      coverImage: '/placeholders/village-library.svg',
+      productType: 'guide',
+      topics: [],
+      status: 'coming-soon',
+      purchaseLinks: service.ctaUrl ? [{ label: service.ctaLabel || 'View', url: service.ctaUrl, provider: 'url' }] : [],
+      featured: false,
+      createdAt: new Date().toISOString(),
+    })
+    if (result.success) setAddedToLibraryIds(prev => new Set([...prev, service.id]))
+  }
+
   const TABS = [
     { key: 'overview',      label: 'Overview'      },
-    { key: 'content',       label: 'Content'       },
-    { key: 'brand',         label: 'Brand & Media' },
-    { key: 'offers',        label: 'Offers',        badge: draft.offers.length },
-    { key: 'services',      label: 'Services',      badge: bizServices.length },
+    { key: 'brand',         label: 'Brand'         },
+    { key: 'services',      label: 'Services',      badge: bizServices.length + draft.offers.length },
     { key: 'relationships', label: 'Relationships', badge: bizStories.length + bizServices.length },
-    { key: 'appears-on',   label: 'Appears On',  badge: appearsOn.length },
-    { key: 'seo',           label: 'SEO & GEO'     },
+    { key: 'appears-on',    label: 'Appears On',    badge: appearsOn.length },
     { key: 'publishing',    label: 'Publishing'    },
-    { key: 'partnership',   label: 'Discovery Profile' },
+    { key: 'discovery',     label: 'Discovery'     },
     { key: 'programs',      label: 'Programs', badge: programService.getAll({ businessId: draft.id }).length },
   ]
 
@@ -1112,28 +1149,12 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
     })
   }
 
-  function addOffer() {
-    setDraft(prev => ({
-      ...prev,
-      offers: [...prev.offers, { id: `offer-${Date.now()}`, title: '', description: '', ctaLabel: 'Learn more', ctaUrl: '' }],
-    }))
-    setSaved(false)
-  }
-
+  // New offers are no longer created — Services is the primary path now —
+  // but existing offers stay fully editable/removable/convertible, so
+  // nothing already saved is lost or silently hidden.
   function removeOffer(index: number) {
     setDraft(prev => {
       const next = prev.offers.filter((_, i) => i !== index)
-      setSaved(false)
-      return { ...prev, offers: next }
-    })
-  }
-
-  function moveOffer(index: number, direction: -1 | 1) {
-    setDraft(prev => {
-      const next = [...prev.offers]
-      const target = index + direction
-      if (target < 0 || target >= next.length) return prev
-      ;[next[index], next[target]] = [next[target], next[index]]
       setSaved(false)
       return { ...prev, offers: next }
     })
@@ -1196,24 +1217,91 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
                 <p className="text-xs text-[#9CA3AF]">Stories</p>
               </div>
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{bizServices.length}</p>
+                <p className="text-xl font-bold text-[#2D2A26]">{bizServices.length + draft.offers.length}</p>
                 <p className="text-xs text-[#9CA3AF]">Services</p>
               </div>
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{counts.total > 0 ? counts.total : '✓'}</p>
-                <p className="text-xs text-[#9CA3AF]">To Improve</p>
+                <p className="text-xl font-bold text-[#2D2A26]">{appearsOn.length}</p>
+                <p className="text-xs text-[#9CA3AF]">Appears On</p>
               </div>
             </div>
-            <MissingAssetsPanel
-              items={missing}
-              onAction={(item) => { setTab(BUSINESS_FIELD_TO_TAB[item.field] ?? 'content'); focusField(item.field) }}
-            />
+
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[#2D2A26]">{draft.name}</p>
+                <p className="text-xs text-[#9CA3AF]">See exactly what visitors see on the public business page.</p>
+              </div>
+              <a href={`/businesses/${draft.slug}`} target="_blank" rel="noopener noreferrer"
+                className="shrink-0 px-3 py-1.5 text-xs font-semibold text-[#C86A43] border border-[#C86A43]/30 rounded-lg hover:bg-[#C86A43]/5 transition-colors">
+                View public page ↗
+              </a>
+            </div>
+
+            {counts.total > 0 ? (
+              <div>
+                <p className="text-sm font-semibold text-[#2D2A26] mb-2">Next steps to be more discoverable</p>
+                <MissingAssetsPanel
+                  items={missing}
+                  onAction={(item) => { setTab(BUSINESS_FIELD_TO_TAB[item.field] ?? 'brand'); focusField(item.field) }}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-4 py-4 rounded-xl bg-green-50 border border-green-100">
+                <span className="text-green-500 text-lg">✓</span>
+                <div>
+                  <p className="text-sm font-medium text-green-700">This business is fully set up</p>
+                  <p className="text-xs text-green-600 mt-0.5">Brand, services and discovery details are all in place.</p>
+                </div>
+              </div>
+            )}
+
+            {(bizStories.length > 0 || bizServices.length > 0 || draft.offers.length > 0 || appearsOn.length > 0) ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {bizStories.length > 0 && (
+                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+                    <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Connected Stories</p>
+                    <ul className="flex flex-col gap-1">
+                      {bizStories.slice(0, 3).map(s => (
+                        <li key={s.id} className="text-sm text-[#2D2A26] truncate">{s.title}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(bizServices.length > 0 || draft.offers.length > 0) && (
+                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+                    <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Connected Services</p>
+                    <ul className="flex flex-col gap-1">
+                      {bizServices.slice(0, 3).map(s => (
+                        <li key={s.id} className="text-sm text-[#2D2A26] truncate">{s.name}</li>
+                      ))}
+                      {draft.offers.slice(0, 3 - bizServices.length).map(o => (
+                        <li key={o.id} className="text-sm text-[#2D2A26] truncate">{o.title}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {appearsOn.length > 0 && (
+                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+                    <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Appears On</p>
+                    <ul className="flex flex-col gap-1">
+                      {appearsOn.slice(0, 3).map((loc, i) => (
+                        <li key={i} className="text-sm text-[#2D2A26] truncate">{loc.label}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="px-4 py-6 rounded-xl bg-[#F8F5F0] border border-[#E8E4DD] text-center">
+                <p className="text-sm text-[#6B7280]">Once this business has services, stories and relationships, a summary will appear here.</p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Content */}
-        {tab === 'content' && (
-          <div className="flex flex-col gap-4">
+        {/* Brand */}
+        {tab === 'brand' && (
+          <div className="flex flex-col gap-5">
             <Field label="Business Name">
               <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
             </Field>
@@ -1259,36 +1347,29 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
                 <input type="url" value={draft.linkedin ?? ''} onChange={e => set('linkedin', e.target.value || undefined)} className={inputClass} placeholder="https://linkedin.com/" />
               </Field>
             </div>
-          </div>
-        )}
 
-        {/* Brand & Media */}
-        {tab === 'brand' && (
-          <div className="flex flex-col gap-5">
-            <Field label="Primary Logo" hint="Square, min 400×400px. Used in directories and profile pages.">
-              <MediaUpload
-                value={draft.logo}
-                onChange={v => set('logo', v)}
-                label="Upload logo"
-                uploadOptions={{ founderId: draft.founderId, businessId: draft.id, usageType: 'business-logo' }}
-              />
-              {draft.logo.includes('/placeholders/') && <p className="text-xs text-red-600 mt-1.5">⚠ Using placeholder — add your real logo.</p>}
-            </Field>
+            <div className="pt-3 border-t border-[#E8E4DD] flex flex-col gap-5">
+              <Field label="Primary Logo" hint="Square, min 400×400px. Shown small and centred wherever this business appears.">
+                <MediaUpload
+                  value={draft.logo}
+                  onChange={v => set('logo', v)}
+                  label="Upload logo"
+                  aspect="logo"
+                  uploadOptions={{ founderId: draft.founderId, businessId: draft.id, usageType: 'business-logo' }}
+                />
+                {draft.logo.includes('/placeholders/') && <p className="text-xs text-red-600 mt-1.5 text-center">⚠ Using placeholder — add your real logo.</p>}
+              </Field>
 
-            <Field label="Cover Image" hint="Shown at the top of your business profile page (16:9 or wider).">
-              <MediaUpload
-                value={draft.coverImage}
-                onChange={v => set('coverImage', v)}
-                label="Upload cover"
-                aspect="wide"
-                uploadOptions={{ founderId: draft.founderId, businessId: draft.id, usageType: 'business-cover' }}
-              />
-              {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-amber-600">⚠ Using placeholder — add a real cover image.</p>}
-            </Field>
-
-            <div className="bg-[#F8F5F0] rounded-xl border border-[#E8E4DD] px-4 py-4">
-              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Coming Next Sprint</p>
-              <p className="text-xs text-[#6B7280]">Full brand management — light/dark logos, brand colours, media kit, gallery, and downloadable brand assets — will be added when the Brand field model is finalised.</p>
+              <Field label="Cover Image" hint="Shown at the top of your business profile page (16:9 or wider).">
+                <MediaUpload
+                  value={draft.coverImage}
+                  onChange={v => set('coverImage', v)}
+                  label="Upload cover"
+                  aspect="wide"
+                  uploadOptions={{ founderId: draft.founderId, businessId: draft.id, usageType: 'business-cover' }}
+                />
+                {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-amber-600">⚠ Using placeholder — add a real cover image.</p>}
+              </Field>
             </div>
           </div>
         )}
@@ -1317,85 +1398,13 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
           </div>
         )}
 
-        {/* SEO & GEO */}
-        {tab === 'seo' && (
-          <div className="flex flex-col gap-4">
-            <Field label="SEO Title" hint="~60 chars">
-              <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
-            </Field>
-            <Field label="SEO Description" hint="140–160 chars">
-              <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
-            </Field>
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3 text-sm">
-              <p className="font-medium text-[#2D2A26] mb-1.5">Location</p>
-              <p className="text-[#6B7280]">{draft.location.name}, {draft.location.state} · {draft.location.country}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Offers */}
-        {tab === 'offers' && (
-          <div className="flex flex-col gap-3">
-            {draft.offers.length === 0 && (
-              <p className="text-xs text-[#9CA3AF] text-center py-4">No offers yet. Add one below.</p>
-            )}
-            {draft.offers.map((offer, i) => (
-              <div key={offer.id} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-widest">Offer {i + 1}</p>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => moveOffer(i, -1)}
-                      disabled={i === 0}
-                      className="px-1.5 py-0.5 text-xs text-[#9CA3AF] hover:text-[#2D2A26] disabled:opacity-30 transition-colors"
-                      title="Move up"
-                    >↑</button>
-                    <button
-                      onClick={() => moveOffer(i, 1)}
-                      disabled={i === draft.offers.length - 1}
-                      className="px-1.5 py-0.5 text-xs text-[#9CA3AF] hover:text-[#2D2A26] disabled:opacity-30 transition-colors"
-                      title="Move down"
-                    >↓</button>
-                    <button
-                      onClick={() => removeOffer(i)}
-                      className="px-1.5 py-0.5 text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
-                      title="Remove offer"
-                    >✕</button>
-                  </div>
-                </div>
-                <Field label="Title">
-                  <input type="text" value={offer.title} onChange={e => setOffer(i, 'title', e.target.value)} className={inputClass} placeholder="e.g. Brand Strategy Session" />
-                </Field>
-                <Field label="Description">
-                  <textarea value={offer.description} onChange={e => setOffer(i, 'description', e.target.value)} rows={2} className={inputClass + ' resize-none'} placeholder="What does this offer include?" />
-                </Field>
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label="CTA Label">
-                    <input type="text" value={offer.ctaLabel} onChange={e => setOffer(i, 'ctaLabel', e.target.value)} className={inputClass} placeholder="Book now" />
-                  </Field>
-                  <Field label="CTA URL">
-                    <input type="url" value={offer.ctaUrl} onChange={e => setOffer(i, 'ctaUrl', e.target.value)} className={inputClass} placeholder="https://" />
-                  </Field>
-                </div>
-              </div>
-            ))}
-            <button
-              onClick={addOffer}
-              className="w-full py-2.5 rounded-xl border border-dashed border-[#C86A43]/40 text-xs font-semibold text-[#C86A43] hover:bg-[#C86A43]/5 transition-colors"
-            >
-              + Add Offer
-            </button>
-          </div>
-        )}
-
-        {/* Services — nested under the business they belong to, not a separate top-level page. */}
+        {/* Services — combines real Services and legacy Offers into one workspace. */}
         {tab === 'services' && (
           <div className="flex flex-col gap-3">
-            {bizServices.length === 0 && (
-              <p className="text-xs text-[#9CA3AF] text-center py-4">No services yet. Add a service people can book below.</p>
+            {bizServices.length === 0 && draft.offers.length === 0 && (
+              <p className="text-xs text-[#9CA3AF] text-center py-4">No services yet. Add one people can book or buy below.</p>
             )}
+
             {bizServices.map(service => {
               const svcMissing = getServiceMissingItems(service)
               const isEditing = editingServiceId === service.id
@@ -1406,6 +1415,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
                       <p className="text-sm font-semibold text-[#2D2A26] truncate">{service.name}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         {service.price && <span className="text-xs text-[#C86A43] font-medium">{service.price}{service.priceType ? ` / ${service.priceType}` : ''}</span>}
+                        {service.isDigitalProduct && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">Digital resource</span>}
                         <HealthBadge missing={svcMissing} size="sm" />
                       </div>
                     </button>
@@ -1430,16 +1440,84 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
                         <Field label="Price">
                           <input type="text" value={service.price ?? ''} onChange={e => { void updateService({ ...service, price: e.target.value || undefined }).then(refreshServices) }} className={inputClass} placeholder="$500" />
                         </Field>
-                        <Field label="Booking Link">
-                          <input type="url" value={service.ctaUrl} onChange={e => { void updateService({ ...service, ctaUrl: e.target.value }).then(refreshServices) }} className={inputClass} placeholder="https://" />
+                        <Field label="CTA Label">
+                          <input type="text" value={service.ctaLabel} onChange={e => { void updateService({ ...service, ctaLabel: e.target.value }).then(refreshServices) }} className={inputClass} placeholder="Book now" />
                         </Field>
                       </div>
+                      <Field label="Booking Link">
+                        <input type="url" value={service.ctaUrl} onChange={e => { void updateService({ ...service, ctaUrl: e.target.value }).then(refreshServices) }} className={inputClass} placeholder="https://" />
+                      </Field>
+
+                      <label className="flex items-center gap-2 text-xs text-[#4B4845]">
+                        <input
+                          type="checkbox"
+                          checked={service.isDigitalProduct ?? false}
+                          onChange={e => { void updateService({ ...service, isDigitalProduct: e.target.checked }).then(refreshServices) }}
+                        />
+                        This is a digital product or downloadable resource
+                      </label>
+
+                      {service.isDigitalProduct && (
+                        <button
+                          onClick={() => void addServiceToLibrary(service)}
+                          disabled={addedToLibraryIds.has(service.id)}
+                          className="text-xs font-semibold text-[#C86A43] hover:underline text-left disabled:text-[#9CA3AF] disabled:no-underline w-fit"
+                        >
+                          {addedToLibraryIds.has(service.id) ? 'Added to Library ✓' : 'Feature this in Library →'}
+                        </button>
+                      )}
+
+                      <div className="border-t border-[#F3EDE6] pt-3">
+                        <p className="text-xs font-semibold text-[#2D2A26] mb-2">FAQs for this service</p>
+                        <p className="text-xs text-[#9CA3AF] mb-2">Real questions customers ask. Helps people understand this service and helps search engines and AI find it.</p>
+                        <FAQEditor
+                          faqs={service.faqs ?? []}
+                          onChange={faqs => { void updateService({ ...service, faqs }).then(refreshServices) }}
+                        />
+                      </div>
+
                       <button onClick={() => setEditingServiceId(null)} className="text-xs text-[#9CA3AF] hover:text-[#2D2A26] self-start">Done</button>
                     </div>
                   )}
                 </div>
               )
             })}
+
+            {draft.offers.map((offer, i) => (
+              <div key={offer.id} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-widest">{offer.title || 'Offer'}</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => void convertOfferToService(i)}
+                      className="text-xs font-semibold text-[#C86A43] hover:underline"
+                    >
+                      Upgrade to Service →
+                    </button>
+                    <button
+                      onClick={() => removeOffer(i)}
+                      className="px-1.5 py-0.5 text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
+                      title="Remove offer"
+                    >✕</button>
+                  </div>
+                </div>
+                <Field label="Title">
+                  <input type="text" value={offer.title} onChange={e => setOffer(i, 'title', e.target.value)} className={inputClass} placeholder="e.g. Brand Strategy Session" />
+                </Field>
+                <Field label="Description">
+                  <textarea value={offer.description} onChange={e => setOffer(i, 'description', e.target.value)} rows={2} className={inputClass + ' resize-none'} placeholder="What does this offer include?" />
+                </Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="CTA Label">
+                    <input type="text" value={offer.ctaLabel} onChange={e => setOffer(i, 'ctaLabel', e.target.value)} className={inputClass} placeholder="Book now" />
+                  </Field>
+                  <Field label="CTA URL">
+                    <input type="url" value={offer.ctaUrl} onChange={e => setOffer(i, 'ctaUrl', e.target.value)} className={inputClass} placeholder="https://" />
+                  </Field>
+                </div>
+              </div>
+            ))}
+
             <button
               onClick={() => void handleAddService()}
               className="w-full py-2.5 rounded-xl border border-dashed border-[#C86A43]/40 text-xs font-semibold text-[#C86A43] hover:bg-[#C86A43]/5 transition-colors"
@@ -1449,16 +1527,37 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
           </div>
         )}
 
-        {/* Discovery Profile */}
-        {tab === 'partnership' && (
-          <BusinessDiscoveryProfile
-            businessId={draft.id}
-            business={draft}
-            onBusinessUpdate={updated => {
-              setDraft(updated)
-              onSave(updated)
-            }}
-          />
+        {/* Discovery — how this business is found, by search engines, AI, and publishers */}
+        {tab === 'discovery' && (
+          <div className="flex flex-col gap-5">
+            <div className="bg-[#F8F5F0] rounded-xl px-4 py-3">
+              <p className="text-xs text-[#6B7280] leading-relaxed">
+                This controls how {draft.name || 'this business'} gets found — in search results, by AI answer
+                engines, and by publishers deciding whether to recommend it. Fill in what you can; none of it is required to publish.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 flex flex-col gap-4">
+              <p className="text-sm font-semibold text-[#2D2A26]">Search Appearance</p>
+              <Field label="Search Title" hint="~60 characters. Shown as the clickable headline in search results.">
+                <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
+                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
+              </Field>
+              <Field label="Search Description" hint="140–160 characters. Shown under the title in search results.">
+                <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
+                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
+              </Field>
+            </div>
+
+            <BusinessDiscoveryProfile
+              businessId={draft.id}
+              business={draft}
+              onBusinessUpdate={updated => {
+                setDraft(updated)
+                onSave(updated)
+              }}
+            />
+          </div>
         )}
 
         {tab === 'programs' && (
@@ -1589,7 +1688,7 @@ export function DashboardBusinessesPage() {
         )}
         <div className="flex-1 overflow-y-auto">
           {bizList.map(biz => {
-            const missing = getBusinessMissingItems(biz)
+            const missing = getBusinessMissingItems(biz, getServices(undefined, biz.id))
             const recommended = missing.filter(m => m.severity === 'critical').length
             return (
               <div
