@@ -15,20 +15,22 @@ import type { Founder, Business, Service, Topic, Location, Industry, SocialLink,
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
-type Step = 'welcome' | 'account' | 'profile' | 'social' | 'business' | 'offers' | 'services' | 'review' | 'done'
+// Offers and Services used to be two separate steps asking for nearly the
+// same thing twice — merged into one, matching the dashboard's already-
+// unified Services model.
+type Step = 'welcome' | 'account' | 'profile' | 'social' | 'business' | 'services' | 'review' | 'done'
 
-const STEPS: Step[] = ['welcome', 'account', 'profile', 'social', 'business', 'offers', 'services', 'review', 'done']
+const STEPS: Step[] = ['welcome', 'account', 'profile', 'social', 'business', 'services', 'review', 'done']
 
 function stepIndex(s: Step) { return STEPS.indexOf(s) }
 function stepLabel(s: Step) {
-  return { welcome: 'Welcome', account: 'Your Account', profile: 'Your Profile', social: 'Links', business: 'Your Business', offers: 'Offers', services: 'Services', review: 'Review', done: 'Published' }[s]
+  return { welcome: 'Welcome', account: 'Your Account', profile: 'Your Profile', social: 'Links', business: 'Your Business', services: 'Services', review: 'Review', done: 'Published' }[s]
 }
 
 const OTHER_ID = '__other__'
 
 // ─── Draft state ──────────────────────────────────────────────────────────────
 
-interface DraftOffer { id: string; title: string; description: string; ctaLabel: string; ctaUrl: string }
 interface DraftService { id: string; name: string; description: string; price: string; ctaLabel: string; ctaUrl: string }
 interface DraftSocialLink { id: string; platform: SocialPlatform; url: string; label: string }
 
@@ -59,17 +61,21 @@ interface Draft {
   topicIds: string[]
   socialLinks: DraftSocialLink[]
   businesses: DraftBusiness[]
-  offers: DraftOffer[]
   services: DraftService[]
 }
 
-function newBusiness(): DraftBusiness {
+// Defaults a new business to the founder's own industry/location — most
+// businesses match their founder, so pre-filling (editable) removes a
+// re-ask instead of a founder retyping something they answered one screen
+// ago. Empty strings still work exactly as before for callers that don't
+// have a founder's answers yet.
+function newBusiness(defaults?: { industryId?: string; locationId?: string }): DraftBusiness {
   return {
     id: `biz-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     name: '', tagline: '', description: '',
     logo: '', coverImage: '',
-    industryId: '', industryOther: '',
-    locationId: '', locationOther: '',
+    industryId: defaults?.industryId ?? '', industryOther: '',
+    locationId: defaults?.locationId ?? '', locationOther: '',
     locationType: 'physical',
     website: '',
   }
@@ -80,7 +86,6 @@ const empty: Draft = {
   locationId: '', locationOther: '', industryId: '', industryOther: '', topicIds: [],
   socialLinks: [],
   businesses: [newBusiness()],
-  offers: [],
   services: [],
 }
 
@@ -110,11 +115,12 @@ function TextInput({ value, onChange, placeholder, type = 'text' }: { value: str
   )
 }
 
-function TextArea({ value, onChange, placeholder, rows = 4 }: { value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }) {
+function TextArea({ value, onChange, onBlur, placeholder, rows = 4 }: { value: string; onChange: (v: string) => void; onBlur?: () => void; placeholder?: string; rows?: number }) {
   return (
     <textarea
       value={value}
       onChange={e => onChange(e.target.value)}
+      onBlur={onBlur}
       placeholder={placeholder}
       rows={rows}
       className="w-full border border-border rounded-xl px-3 py-2 text-sm text-charcoal placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white resize-none"
@@ -501,11 +507,22 @@ function BusinessBlock({ business, index, onChange, onRemove, canRemove }: {
       <Field label="Business name" required>
         <TextInput value={business.name} onChange={v => onChange({ name: v })} placeholder="e.g. Pretty Cool Marketing" />
       </Field>
-      <Field label="Tagline" required>
-        <TextInput value={business.tagline} onChange={v => onChange({ tagline: v })} placeholder="One line that says what you do." />
-      </Field>
       <Field label="Description" required>
-        <TextArea value={business.description} onChange={v => onChange({ description: v })} placeholder="A few sentences about the business: its story, purpose and what makes it worth discovering." rows={5} />
+        <TextArea
+          value={business.description}
+          onChange={v => onChange({ description: v })}
+          onBlur={() => {
+            if (!business.tagline.trim()) {
+              const drafted = draftTagline(business.description)
+              if (drafted) onChange({ tagline: drafted })
+            }
+          }}
+          placeholder="A few sentences about the business: its story, purpose and what makes it worth discovering."
+          rows={5}
+        />
+      </Field>
+      <Field label="Tagline" required hint="Drafted from your description above once you finish typing it — edit it to make it your own.">
+        <TextInput value={business.tagline} onChange={v => onChange({ tagline: v })} placeholder="One line that says what you do." />
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -575,7 +592,7 @@ function BusinessStep({ draft, set }: { draft: Draft; set: (k: keyof Draft, v: u
     set('businesses', draft.businesses.filter((_, idx) => idx !== i))
   }
   function addBusiness() {
-    set('businesses', [...draft.businesses, newBusiness()])
+    set('businesses', [...draft.businesses, newBusiness({ industryId: draft.industryId, locationId: draft.locationId })])
   }
 
   return (
@@ -607,52 +624,6 @@ function BusinessStep({ draft, set }: { draft: Draft; set: (k: keyof Draft, v: u
   )
 }
 
-function OffersStep({ draft, set }: { draft: Draft; set: (k: keyof Draft, v: unknown) => void }) {
-  function addOffer() {
-    const next: DraftOffer = { id: `offer-${Date.now()}`, title: '', description: '', ctaLabel: 'Learn more', ctaUrl: '' }
-    set('offers', [...draft.offers, next])
-  }
-  function updateOffer(i: number, k: keyof DraftOffer, v: string) {
-    const next = draft.offers.map((o, idx) => idx === i ? { ...o, [k]: v } : o)
-    set('offers', next)
-  }
-  function removeOffer(i: number) {
-    set('offers', draft.offers.filter((_, idx) => idx !== i))
-  }
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="font-heading text-xl font-bold text-charcoal">Offers</h2>
-        <p className="font-body text-sm text-muted mt-1">
-          An offer is what someone can buy or enquire about: a product, a package, a spot in your community. Each one gets its own button telling visitors exactly what to do next.
-        </p>
-      </div>
-      {draft.offers.map((o, i) => (
-        <div key={o.id} className="border border-border rounded-2xl p-4 space-y-3 bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted uppercase tracking-widest">Offer {i + 1}</span>
-            <button type="button" onClick={() => removeOffer(i)} className="text-xs text-muted hover:text-red-500 transition-colors">Remove</button>
-          </div>
-          <TextInput value={o.title} onChange={v => updateOffer(i, 'title', v)} placeholder="What can someone buy or enquire about?" />
-          <TextArea value={o.description} onChange={v => updateOffer(i, 'description', v)} placeholder="Short description…" rows={2} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <TextInput value={o.ctaLabel} onChange={v => updateOffer(i, 'ctaLabel', v)} placeholder="Button label, e.g. Book Now" />
-            <TextInput value={o.ctaUrl} onChange={v => updateOffer(i, 'ctaUrl', v)} placeholder="https://…" />
-          </div>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={addOffer}
-        className="w-full border-2 border-dashed border-border rounded-2xl py-4 text-sm font-medium text-muted hover:border-primary hover:text-primary transition-colors"
-      >
-        + Add an offer
-      </button>
-      <p className="text-xs text-muted">Optional. You can skip this step and add offers later.</p>
-    </div>
-  )
-}
-
 function ServicesStep({ draft, set }: { draft: Draft; set: (k: keyof Draft, v: unknown) => void }) {
   function addService() {
     const next: DraftService = { id: `svc-${Date.now()}`, name: '', description: '', price: '', ctaLabel: 'Book now', ctaUrl: '' }
@@ -670,7 +641,7 @@ function ServicesStep({ draft, set }: { draft: Draft; set: (k: keyof Draft, v: u
       <div>
         <h2 className="font-heading text-xl font-bold text-charcoal">Services</h2>
         <p className="font-body text-sm text-muted mt-1">
-          A service describes how you help people: the actual work you do. Where an offer is something to buy, a service is a skill or process visitors can book you for.
+          What can someone book, buy, or enquire about? Each one gets its own button telling visitors exactly what to do next.
         </p>
       </div>
       {draft.services.map((s, i) => (
@@ -742,9 +713,8 @@ function ReviewStep({ draft }: { draft: Draft }) {
       })}
 
       <div className="bg-surface rounded-2xl border border-border p-5">
-        <p className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">Offers &amp; Services</p>
-        <Row label="Offers" value={draft.offers.length > 0 ? `${draft.offers.length} offer${draft.offers.length !== 1 ? 's' : ''}` : 'None'} />
-        <Row label="Services" value={draft.services.length > 0 ? `${draft.services.length} service${draft.services.length !== 1 ? 's' : ''}` : 'None'} />
+        <p className="text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">Services</p>
+        <Row label="Services" value={draft.services.length > 0 ? `${draft.services.length} service${draft.services.length !== 1 ? 's' : ''}` : 'None yet'} />
       </div>
 
       <p className="font-body text-sm text-muted">
@@ -801,6 +771,24 @@ function resolveIndustry(id: string, otherText: string): Industry {
   return industries.find(i => i.id === id) ?? industries[0]!
 }
 
+// Real keyword matching against the actual topic list — not a model call,
+// just the same "does this word already appear" heuristic used elsewhere in
+// Village. Gives the founder a head start instead of a blank taxonomy;
+// never overwrites topics they've already picked themselves.
+function suggestTopicIds(bio: string): string[] {
+  const text = bio.toLowerCase()
+  return topics.filter(t => text.includes(t.name.toLowerCase())).map(t => t.id).slice(0, 6)
+}
+
+// A real, deterministic "first sentence, trimmed to fit" — not fabricated
+// copywriting. Only ever offered as a starting point the founder edits or
+// replaces; never silently published as-is.
+function draftTagline(description: string): string {
+  const firstSentence = description.split(/(?<=[.!?])\s/)[0]?.trim() ?? ''
+  if (!firstSentence) return ''
+  return firstSentence.length > 80 ? `${firstSentence.slice(0, 77).trimEnd()}…` : firstSentence
+}
+
 // ─── Main onboarding page ────────────────────────────────────────────────────
 
 export function OnboardingPage() {
@@ -826,7 +814,28 @@ export function OnboardingPage() {
 
   function next() {
     const idx = stepIndex(step)
-    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1])
+    if (idx >= STEPS.length - 1) return
+    const nextStep = STEPS[idx + 1]
+    // Pre-fill the first business's industry/location from the founder's own
+    // answers the moment this step is first reached — editable, never
+    // overwrites anything already typed if the founder goes back and forth.
+    if (nextStep === 'business') {
+      setDraft(prev => ({
+        ...prev,
+        businesses: prev.businesses.map((b, i) =>
+          i === 0 && !b.industryId && !b.locationId
+            ? { ...b, industryId: prev.industryId, locationId: prev.locationId }
+            : b
+        ),
+      }))
+    }
+    // Suggest topics from the bio just written, instead of a blank taxonomy —
+    // only if the founder hasn't already picked any themselves.
+    if (step === 'profile' && draft.topicIds.length === 0) {
+      const suggested = suggestTopicIds(draft.bio)
+      if (suggested.length > 0) setDraft(prev => ({ ...prev, topicIds: suggested }))
+    }
+    setStep(nextStep)
   }
 
   function back() {
@@ -894,7 +903,9 @@ export function OnboardingPage() {
       createdAt: now,
     }))
     // Offers collected during onboarding attach to the first business.
-    if (businessRecords[0]) businessRecords[0].offers = draft.offers.map(o => ({ id: o.id, title: o.title, description: o.description, ctaLabel: o.ctaLabel, ctaUrl: o.ctaUrl }))
+    // New businesses are never created with legacy Offers — Services is the
+    // one model going forward (see the Business workspace consolidation);
+    // businessRecords[i].offers stays [] from its own default above.
 
     const founder: Founder = {
       id: founderId,
@@ -988,7 +999,6 @@ export function OnboardingPage() {
           {step === 'profile'  && <ProfileStep draft={draft} set={set} />}
           {step === 'social'   && <SocialStep draft={draft} set={set} />}
           {step === 'business' && <BusinessStep draft={draft} set={set} />}
-          {step === 'offers'   && <OffersStep draft={draft} set={set} />}
           {step === 'services' && <ServicesStep draft={draft} set={set} />}
           {step === 'review'   && <ReviewStep draft={draft} />}
           {step === 'done'     && <DoneStep founderSlug={founderSlug} founderName={draft.name} />}
