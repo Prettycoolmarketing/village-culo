@@ -759,9 +759,6 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                 ))}
               </div>
             )}
-            <button disabled className="text-xs text-[#9CA3AF] px-2.5 py-1.5 rounded-lg border border-[#E8E4DD] cursor-not-allowed w-fit">
-              Media Library (coming soon)
-            </button>
           </div>
         </div>
 
@@ -1426,9 +1423,6 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
           </button>
           <button onClick={() => onPublish('draft')} disabled={publishing} className="px-4 py-3.5 border-2 border-[#E8E4DD] text-[#2D2A26] text-sm font-semibold rounded-xl hover:border-[#C86A43]/40 disabled:opacity-50 transition-colors">
             Save Draft
-          </button>
-          <button onClick={() => onPublish('archive')} disabled={publishing} className="px-4 py-3.5 border-2 border-[#E8E4DD] text-[#6B7280] text-sm font-medium rounded-xl hover:border-[#E8E4DD] disabled:opacity-50 transition-colors">
-            Archive
           </button>
         </div>
       </div>

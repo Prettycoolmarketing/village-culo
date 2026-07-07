@@ -99,13 +99,6 @@ export function DashboardLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 px-2 py-3 flex flex-col">
-          <Link
-            to="/"
-            className="flex items-center gap-2.5 px-2.5 py-2 mb-1 rounded-lg text-sm text-[#6B7280] hover:bg-[#F3EDE6] hover:text-[#2D2A26] transition-colors"
-          >
-            <Icon path={icons.back} />
-            Explore Village
-          </Link>
           <NavItem to="/dashboard/home" label="Overview"       icon={<Icon path={icons.home}    />} />
 
           <NavLink
