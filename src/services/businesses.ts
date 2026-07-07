@@ -12,6 +12,7 @@ export function getBusinesses(filter?: BusinessFilter): Business[] {
   let result = live()
   if (!filter) return result
   if (filter.ids)        result = result.filter(b => filter.ids!.includes(b.id))
+  if (filter.founderId)  result = result.filter(b => b.founderId === filter.founderId)
   if (filter.locationId) result = result.filter(b => b.location.id === filter.locationId)
   if (filter.industryId) result = result.filter(b => b.industry.id === filter.industryId)
   if (filter.topicId)    result = result.filter(b => b.topics.some(t => t.id === filter.topicId))

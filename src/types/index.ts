@@ -583,6 +583,7 @@ export interface FounderFilter {
 
 export interface BusinessFilter {
   ids?: string[]
+  founderId?: string
   locationId?: string
   industryId?: string
   topicId?: string

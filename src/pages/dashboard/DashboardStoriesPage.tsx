@@ -5,6 +5,8 @@ import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaS
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { getIdeas } from '../../services/ideas'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
@@ -513,8 +515,11 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
 // ─── DashboardStoriesPage ──────────────────────────────────────────────────────
 
 export function DashboardStoriesPage() {
-  const [storyList,  setStoryList]  = useState<Story[]>(() => getStories())
-  const [selectedId, setSelectedId] = useState<string | null>(() => getStories()[0]?.id ?? null)
+  const { user } = useAuth()
+  const founderId = getCurrentFounder(user)?.id
+
+  const [storyList,  setStoryList]  = useState<Story[]>(() => getStories({ founderId }))
+  const [selectedId, setSelectedId] = useState<string | null>(() => getStories({ founderId })[0]?.id ?? null)
   const [search,     setSearch]     = useState('')
   const [checked,    setChecked]    = useState<Set<string>>(new Set())
 
@@ -532,7 +537,7 @@ export function DashboardStoriesPage() {
   async function handleBulkArchive() {
     const targets = storyList.filter(s => checked.has(s.id))
     await Promise.all(targets.map(s => updateStory({ ...s, status: 'archived' })))
-    setStoryList(getStories())
+    setStoryList(getStories({ founderId }))
     setChecked(new Set())
   }
 
@@ -551,7 +556,7 @@ export function DashboardStoriesPage() {
   async function handleDuplicate(story: Story) {
     const result = await duplicateStory(story.id)
     if (result.success) {
-      const fresh = getStories()
+      const fresh = getStories({ founderId })
       setStoryList(fresh)
       const copy = fresh.find(s => s.title === `${story.title} (Copy)`)
       if (copy) setSelectedId(copy.id)

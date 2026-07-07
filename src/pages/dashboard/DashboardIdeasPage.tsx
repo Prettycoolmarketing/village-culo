@@ -3,6 +3,8 @@ import { getIdeas, updateIdea, deleteIdea, duplicateIdea } from '../../services/
 import { getStories } from '../../services/stories'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
@@ -179,13 +181,16 @@ function IdeaDetailPane({ idea, onClose, onSave, onDuplicated, onDeleted }: Idea
 // ─── DashboardIdeasPage ────────────────────────────────────────────────────────
 
 export function DashboardIdeasPage() {
+  const { user } = useAuth()
+  const founderId = getCurrentFounder(user)?.id
+
   const [search,     setSearch]     = useState('')
-  const [selectedId, setSelectedId] = useState<string | null>(() => getIdeas()[0]?.id ?? null)
+  const [selectedId, setSelectedId] = useState<string | null>(() => getIdeas({ founderId })[0]?.id ?? null)
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)
   void tick
 
-  const allIdeas = getIdeas()
+  const allIdeas = getIdeas({ founderId })
   const ideaList = search
     ? allIdeas.filter(i => i.title.toLowerCase().includes(search.toLowerCase()) || i.description.toLowerCase().includes(search.toLowerCase()))
     : allIdeas

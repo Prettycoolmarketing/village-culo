@@ -6,6 +6,8 @@ import { getStories } from '../../services/stories'
 import { getServices, updateService, deleteService, duplicateService } from '../../services/serviceOfferings'
 import { updateLibraryItem } from '../../services/library'
 import { getFounders } from '../../services/founders'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
@@ -1606,11 +1608,43 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
 // ─── DashboardBusinessesPage ───────────────────────────────────────────────────
 
 export function DashboardBusinessesPage() {
-  const [bizList,    setBizList]    = useState<Business[]>(() => getBusinesses())
-  const [selectedId, setSelectedId] = useState<string | null>(() => getBusinesses()[0]?.id ?? null)
+  const { user } = useAuth()
+  const currentFounder = getCurrentFounder(user)
+  const founderId = currentFounder?.id
+
+  const [bizList,    setBizList]    = useState<Business[]>(() => getBusinesses({ founderId }))
+  const [selectedId, setSelectedId] = useState<string | null>(() => getBusinesses({ founderId })[0]?.id ?? null)
   const [checked,    setChecked]    = useState<Set<string>>(new Set())
 
   const selected = bizList.find(b => b.id === selectedId) ?? null
+
+  async function handleAddBusiness() {
+    const ts = new Date().toISOString()
+    const defaultLocation = currentFounder?.location ?? locations[0]
+    const defaultIndustry = currentFounder?.industry ?? industries[0]
+    const draft: Business = {
+      id: crypto.randomUUID(),
+      slug: '',
+      name: '',
+      tagline: '',
+      description: '',
+      logo: '',
+      coverImage: '',
+      founderId: founderId ?? '',
+      location: defaultLocation,
+      industry: defaultIndustry,
+      topics: [],
+      offers: [],
+      status: 'draft',
+      featured: false,
+      createdAt: ts,
+    }
+    const result = await updateBusiness(draft)
+    if (result.success) {
+      setBizList(getBusinesses({ founderId }))
+      setSelectedId(draft.id)
+    }
+  }
 
   function toggleChecked(id: string) {
     setChecked(prev => {
@@ -1623,7 +1657,7 @@ export function DashboardBusinessesPage() {
   async function handleBulkArchive() {
     const targets = bizList.filter(b => checked.has(b.id))
     await Promise.all(targets.map(b => updateBusiness({ ...b, status: 'archived' })))
-    setBizList(getBusinesses())
+    setBizList(getBusinesses({ founderId }))
     setChecked(new Set())
   }
 
@@ -1648,7 +1682,7 @@ export function DashboardBusinessesPage() {
   async function handleDuplicate(biz: Business) {
     const result = await duplicateBusiness(biz.id)
     if (result.success) {
-      const fresh = getBusinesses()
+      const fresh = getBusinesses({ founderId })
       setBizList(fresh)
       const copy = fresh.find(b => b.name === `${biz.name} (Copy)`)
       if (copy) setSelectedId(copy.id)
@@ -1668,9 +1702,17 @@ export function DashboardBusinessesPage() {
 
       {/* ── List ──────────────────────────────────────────────────────── */}
       <div className="w-64 shrink-0 border-r border-[#E8E4DD] bg-white flex flex-col overflow-hidden">
-        <div className="px-4 pt-5 pb-3 shrink-0">
-          <h1 className="text-base font-bold text-[#2D2A26]">Businesses</h1>
-          <p className="text-xs text-[#9CA3AF] mt-0.5">{bizList.length} total</p>
+        <div className="px-4 pt-5 pb-3 shrink-0 flex items-start justify-between gap-2">
+          <div>
+            <h1 className="text-base font-bold text-[#2D2A26]">Businesses</h1>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">{bizList.length} total</p>
+          </div>
+          <button
+            onClick={() => void handleAddBusiness()}
+            className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0 pt-0.5"
+          >
+            + Add
+          </button>
         </div>
         {checked.size > 0 && (
           <div className="px-4 py-2 bg-[#FBF1EB] border-y border-[#F0DDD2] flex items-center justify-between gap-2 shrink-0">
@@ -1687,6 +1729,20 @@ export function DashboardBusinessesPage() {
           </div>
         )}
         <div className="flex-1 overflow-y-auto">
+          {bizList.length === 0 && (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm font-medium text-[#2D2A26] mb-1">You haven't added a business yet</p>
+              <p className="text-xs text-[#9CA3AF] mb-4 leading-relaxed">
+                Add the business you publish through, so services, offers and partnerships have somewhere to live.
+              </p>
+              <button
+                onClick={() => void handleAddBusiness()}
+                className="text-xs font-semibold text-white bg-[#C86A43] px-4 py-2 rounded-lg hover:bg-[#b05a35] transition-colors"
+              >
+                + Add a business
+              </button>
+            </div>
+          )}
           {bizList.map(biz => {
             const missing = getBusinessMissingItems(biz, getServices(undefined, biz.id))
             const recommended = missing.filter(m => m.severity === 'critical').length

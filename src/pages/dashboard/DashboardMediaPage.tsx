@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { getMedia, getMediaUsedIn, updateMedia, deleteMedia, duplicateMedia } from '../../services/media'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { getMediaMissingItems } from '../../utils/missingAssets'
 import { focusField } from '../../utils/focusField'
@@ -243,14 +245,17 @@ const statusOptions: { value: ApprovalStatus | 'all'; label: string }[] = [
 ]
 
 export function DashboardMediaPage() {
-  const [selected,     setSelected]     = useState<Media | null>(() => getMedia()[0] ?? null)
+  const { user } = useAuth()
+  const founderId = getCurrentFounder(user)?.id
+
+  const [selected,     setSelected]     = useState<Media | null>(() => getMedia({ founderId })[0] ?? null)
   const [statusFilter, setStatusFilter] = useState<ApprovalStatus | 'all'>('all')
   const [typeFilter,   setTypeFilter]   = useState('all')
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)
   void tick
 
-  const allMedia  = getMedia()
+  const allMedia  = getMedia({ founderId })
   const filtered  = allMedia.filter(m => {
     if (statusFilter !== 'all' && m.approvalStatus !== statusFilter) return false
     if (typeFilter   !== 'all' && m.mediaType !== typeFilter)        return false
