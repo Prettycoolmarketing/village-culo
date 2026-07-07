@@ -466,7 +466,6 @@ export function FounderProfilePage() {
             </div>
 
             <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-6" />
-            <ConnectedToWidget items={founderConnectedTo} headingId="founder-connected-to-heading" className="mt-6" />
           </InnerContainer>
         </div>
       </section>
@@ -610,6 +609,25 @@ export function FounderProfilePage() {
                 </section>
               )}
 
+              {/* Also asked about — search-style questions surfaced from founder's content */}
+              {aggregatedIntel && aggregatedIntel.questions.length > 0 && (
+                <section aria-labelledby="founder-also-asked-heading">
+                  <h2 id="founder-also-asked-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Also Asked About
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Common questions people search for related to {founder.name}'s work.
+                  </p>
+                  <ul className="space-y-2">
+                    {aggregatedIntel.questions.slice(0, 4).map((q, i) => (
+                      <li key={i} className="font-body text-sm text-charcoal/80 leading-relaxed italic pl-3 border-l-2 border-border">
+                        {q}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
               {/* Stories */}
               <StoryGrid
                 heading={`Stories by ${founder.name}`}
@@ -623,6 +641,17 @@ export function FounderProfilePage() {
                 showCTA
                 emptyTitle={`No stories yet from ${founder.name}`}
                 emptyMessage="This founder hasn't published their first story yet. Check back soon."
+              />
+
+              {/* Ideas */}
+              <IdeaGrid
+                heading={`Ideas ${founder.name} talks about`}
+                subheading={`Knowledge and insights connected to ${founder.name}'s stories and experiences.`}
+                filter={{ founderId: founder.id, publicOnly: true }}
+                columns={2}
+                cardVariant="default"
+                emptyTitle="No ideas linked yet"
+                emptyMessage={`Ideas are extracted from published stories. Check back once ${founder.name} publishes more.`}
               />
 
               {/* Talks */}
@@ -692,16 +721,40 @@ export function FounderProfilePage() {
                 </section>
               )}
 
-              {/* Ideas */}
-              <IdeaGrid
-                heading={`Ideas ${founder.name} talks about`}
-                subheading={`Knowledge and insights connected to ${founder.name}'s stories and experiences.`}
-                filter={{ founderId: founder.id, publicOnly: true }}
-                columns={2}
-                cardVariant="default"
-                emptyTitle="No ideas linked yet"
-                emptyMessage={`Ideas are extracted from published stories. Check back once ${founder.name} publishes more.`}
-              />
+              {/* Approved recommendations */}
+              {approvedRecs.length > 0 && (
+                <section aria-labelledby="founder-recs-heading">
+                  <h2 id="founder-recs-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Genuine Recommendations
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Tools and businesses {founder.name} has mentioned in stories and approved with a disclosure.
+                  </p>
+                  <ul className="flex flex-col gap-2.5" role="list">
+                    {approvedRecs.map(rec => (
+                      <li key={rec.id} className="bg-surface rounded-xl border border-border px-4 py-3">
+                        <p className="font-body text-sm font-semibold text-charcoal leading-snug">{rec.entityName}</p>
+                        {rec.disclosureText && (
+                          <p className="font-body text-xs text-muted mt-1 leading-relaxed line-clamp-2 italic">
+                            {rec.disclosureText}
+                          </p>
+                        )}
+                        {rec.businessId && (
+                          <TrackedRecommendationLink
+                            founderId={rec.founderId}
+                            businessId={rec.businessId}
+                            recommendationId={rec.id}
+                            storyId={rec.storyId}
+                            businessWebsite={getBusiness(rec.businessId)?.website}
+                            sourcePage="founder"
+                            className="font-body text-xs font-semibold text-primary hover:text-[#b05a35] transition-colors mt-2 block"
+                          />
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               {/* Timeline */}
               {founder.timeline && founder.timeline.length > 0 && (
@@ -796,106 +849,6 @@ export function FounderProfilePage() {
                 </section>
               )}
 
-              {/* About */}
-              <section className="bg-surface rounded-2xl p-5 border border-border" aria-labelledby="founder-about-heading">
-                <h2 id="founder-about-heading" className="font-heading text-base font-semibold text-charcoal mb-4">
-                  About {founder.name}
-                </h2>
-                <dl className="space-y-3 font-body text-sm">
-                  <div>
-                    <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Location</dt>
-                    <dd className="text-charcoal">{founder.location.name}, {founder.location.state}, Australia</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Industry</dt>
-                    <dd className="text-charcoal">{founder.industry.name}</dd>
-                  </div>
-                  {founder.topics.length > 0 && (
-                    <div>
-                      <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Topics</dt>
-                      <dd>
-                        <ul className="flex flex-wrap gap-1.5" role="list">
-                          {founder.topics.map(t => (
-                            <li key={t.id}><Badge label={t.name} variant="secondary" /></li>
-                          ))}
-                        </ul>
-                      </dd>
-                    </div>
-                  )}
-                  {expertiseAreas.length > 0 && (
-                    <div>
-                      <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Expertise</dt>
-                      <dd>
-                        <ul className="flex flex-wrap gap-1.5" role="list">
-                          {expertiseAreas.map(area => (
-                            <li key={area.id}>
-                              <Link
-                                to={`/expertise/${area.slug}`}
-                                className="font-body text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
-                              >
-                                {area.name}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      </dd>
-                    </div>
-                  )}
-                  {founder.website && (
-                    <div>
-                      <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Website</dt>
-                      <dd>
-                        <a href={normalizeUrl(founder.website)} target="_blank" rel="noopener noreferrer"
-                          className="text-primary hover:underline break-all">
-                          {founder.website.replace(/^https?:\/\//, '')}
-                        </a>
-                      </dd>
-                    </div>
-                  )}
-                  <div>
-                    <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Publishing since</dt>
-                    <dd className="text-charcoal">
-                      {new Date(founder.createdAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-
-              {/* Approved recommendations */}
-              {approvedRecs.length > 0 && (
-                <section aria-labelledby="founder-recs-heading">
-                  <h2 id="founder-recs-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-                    Genuine Recommendations
-                  </h2>
-                  <p className="font-body text-xs text-muted mb-3 leading-relaxed">
-                    Tools and businesses {founder.name} has mentioned in stories and approved with a disclosure.
-                  </p>
-                  <ul className="flex flex-col gap-2.5" role="list">
-                    {approvedRecs.map(rec => (
-                      <li key={rec.id} className="bg-surface rounded-xl border border-border px-4 py-3">
-                        <p className="font-body text-sm font-semibold text-charcoal leading-snug">{rec.entityName}</p>
-                        {rec.disclosureText && (
-                          <p className="font-body text-xs text-muted mt-1 leading-relaxed line-clamp-2 italic">
-                            {rec.disclosureText}
-                          </p>
-                        )}
-                        {rec.businessId && (
-                          <TrackedRecommendationLink
-                            founderId={rec.founderId}
-                            businessId={rec.businessId}
-                            recommendationId={rec.id}
-                            storyId={rec.storyId}
-                            businessWebsite={getBusiness(rec.businessId)?.website}
-                            sourcePage="founder"
-                            className="font-body text-xs font-semibold text-primary hover:text-[#b05a35] transition-colors mt-2 block"
-                          />
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
               {/* Imported content */}
               {publicImports.length > 0 && (
                 <section aria-labelledby="founder-imports-heading">
@@ -910,11 +863,11 @@ export function FounderProfilePage() {
                 </section>
               )}
 
-              {/* Village Intelligence — aggregated across founder's content */}
-              {aggregatedIntel && (aggregatedIntel.topics.length > 0 || aggregatedIntel.questions.length > 0) && (
-                <section aria-labelledby="founder-intel-heading">
-                  <h2 id="founder-intel-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-                    Village Intelligence
+              {/* Explore Further — aggregated topics/locations across founder's content */}
+              {aggregatedIntel && (aggregatedIntel.topics.length > 0 || aggregatedIntel.locations.length > 0) && (
+                <section aria-labelledby="founder-explore-heading">
+                  <h2 id="founder-explore-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
+                    Explore Further
                   </h2>
 
                   {aggregatedIntel.topics.length > 0 && (
@@ -931,7 +884,7 @@ export function FounderProfilePage() {
                   )}
 
                   {aggregatedIntel.locations.length > 0 && (
-                    <div className="mb-4">
+                    <div>
                       <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Locations</p>
                       <div className="flex flex-wrap gap-1.5">
                         {aggregatedIntel.locations.map(l => (
@@ -942,21 +895,10 @@ export function FounderProfilePage() {
                       </div>
                     </div>
                   )}
-
-                  {aggregatedIntel.questions.length > 0 && (
-                    <div>
-                      <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Questions this founder answers</p>
-                      <ul className="space-y-1.5">
-                        {aggregatedIntel.questions.slice(0, 4).map((q, i) => (
-                          <li key={i} className="font-body text-xs text-muted leading-relaxed italic pl-2 border-l border-border">
-                            {q}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </section>
               )}
+
+              <ConnectedToWidget items={founderConnectedTo} headingId="founder-connected-to-heading" />
 
               {/* Intel-driven related businesses */}
               {intelRelatedBusinesses.length > 0 && (
