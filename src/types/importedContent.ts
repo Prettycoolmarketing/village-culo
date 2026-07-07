@@ -34,6 +34,10 @@ export interface ImportedContent {
   // Builder — the Story mirrors this back via its own importedContentId.
   relatedStoryId?: string
 
+  // Set when this draft was created by a connector scan (see services/connectedSources.ts)
+  // rather than a manual paste-a-link import — lets a re-scan skip URLs already imported.
+  connectedSourceId?: string
+
   // Transcript
   transcriptText?: string
   transcriptSource?: 'manual' | 'youtube' | 'platform' | 'generated' | 'unknown'

@@ -137,6 +137,7 @@ export const importedContentService = {
         status: i.status,
         visibility: i.visibility,
         source_platform: i.sourcePlatform,
+        connected_source_id: i.connectedSourceId ?? null,
         published_at: i.status === 'published' || i.status === 'featured' ? new Date().toISOString() : null,
         data: i,
       }),

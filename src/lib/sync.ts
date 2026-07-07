@@ -17,6 +17,7 @@ const SYNCED_TABLES: Array<{ table: string; cacheKey: string }> = [
   { table: 'ideas',                          cacheKey: 'ideas' },
   { table: 'events',                         cacheKey: 'events' },
   { table: 'imported_content',               cacheKey: 'imported_content' },
+  { table: 'connected_sources',              cacheKey: 'connected_sources' },
   { table: 'founder_claim_requests',         cacheKey: 'founder_claims' },
   { table: 'import_batches',                 cacheKey: 'village_import_batches' },
   { table: 'village_content_intelligence',   cacheKey: 'village_intelligence' },
