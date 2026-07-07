@@ -308,8 +308,8 @@ export function ExpertiseDetailPage() {
                         className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-sm transition-all group"
                         aria-label={`View ${biz.name}`}
                       >
-                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-border flex-shrink-0">
-                          <img src={biz.logo} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-background flex items-center justify-center p-1 flex-shrink-0">
+                          <img src={biz.logo} alt="" className="w-full h-full object-contain" loading="lazy" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="font-body text-sm font-semibold text-charcoal group-hover:text-primary transition-colors truncate">

@@ -249,18 +249,27 @@ export function DashboardMediaPage() {
   const founderId = getCurrentFounder(user)?.id
 
   const [selected,     setSelected]     = useState<Media | null>(() => getMedia({ founderId })[0] ?? null)
+  const [search,       setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState<ApprovalStatus | 'all'>('all')
   const [typeFilter,   setTypeFilter]   = useState('all')
+  const [sortBy,       setSortBy]       = useState<'newest' | 'oldest' | 'name'>('newest')
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)
   void tick
 
   const allMedia  = getMedia({ founderId })
-  const filtered  = allMedia.filter(m => {
-    if (statusFilter !== 'all' && m.approvalStatus !== statusFilter) return false
-    if (typeFilter   !== 'all' && m.mediaType !== typeFilter)        return false
-    return true
-  })
+  const filtered  = allMedia
+    .filter(m => {
+      if (statusFilter !== 'all' && m.approvalStatus !== statusFilter) return false
+      if (typeFilter   !== 'all' && m.mediaType !== typeFilter)        return false
+      if (search && !m.title.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === 'name')    return a.title.localeCompare(b.title)
+      if (sortBy === 'oldest')  return a.createdAt.localeCompare(b.createdAt)
+      return b.createdAt.localeCompare(a.createdAt)
+    })
 
   const mediaTypes = [...new Set(allMedia.map(m => m.mediaType))]
   const pendingCount = allMedia.filter(m => m.approvalStatus === 'needs-review' || m.approvalStatus === 'pending').length
@@ -285,6 +294,13 @@ export function DashboardMediaPage() {
         </div>
 
         <div className="px-8 pb-5 flex gap-3 flex-wrap shrink-0">
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by title…"
+            className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors min-w-[180px]"
+          />
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as ApprovalStatus | 'all')}
             className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors">
             {statusOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -293,6 +309,12 @@ export function DashboardMediaPage() {
             className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors">
             <option value="all">All Types</option>
             {mediaTypes.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value as 'newest' | 'oldest' | 'name')}
+            className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="name">Name (A–Z)</option>
           </select>
         </div>
 
@@ -305,6 +327,8 @@ export function DashboardMediaPage() {
                 const missing  = getMediaMissingItems(item)
                 const recommended = missing.filter(m => m.severity === 'critical').length
                 const isVideo2 = item.mediaType === 'video' || item.mediaType === 'reel' || item.mediaType === 'youtube-video'
+                const usedIn = getMediaUsedIn(item.id)
+                const usedInCount = usedIn.founders.length + usedIn.businesses.length + usedIn.stories.length + usedIn.library.length
                 return (
                   <div key={item.id} onClick={() => setSelected(item.id === selected?.id ? null : item)}
                     className={`text-left rounded-xl overflow-hidden border transition-all cursor-pointer ${
@@ -330,6 +354,11 @@ export function DashboardMediaPage() {
                       {recommended > 0 && (
                         <span className="absolute bottom-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#C86A43] text-white">
                           {recommended}
+                        </span>
+                      )}
+                      {usedInCount > 0 && (
+                        <span className="absolute bottom-2 right-2 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-black/60 text-white">
+                          Used in {usedInCount}
                         </span>
                       )}
                     </div>

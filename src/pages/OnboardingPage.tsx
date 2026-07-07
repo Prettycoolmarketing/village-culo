@@ -570,7 +570,7 @@ function BusinessBlock({ business, index, onChange, onRemove, canRemove }: {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <Field label="Logo">
-          <MediaUpload value={business.logo} onChange={v => onChange({ logo: v })} label="Upload Logo" uploadOptions={{ usageType: 'business-logo' }} />
+          <MediaUpload value={business.logo} onChange={v => onChange({ logo: v })} label="Upload Logo" aspect="logo" uploadOptions={{ usageType: 'business-logo' }} />
         </Field>
         <Field label="Cover image" hint="Optional">
           <MediaUpload value={business.coverImage} onChange={v => onChange({ coverImage: v })} label="Upload Cover Image" aspect="wide" uploadOptions={{ usageType: 'business-cover' }} />
