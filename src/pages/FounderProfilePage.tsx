@@ -192,8 +192,8 @@ export function FounderProfilePage() {
   const founderConnectedTo = founder ? getConnectedTo('founder', founder.id) : []
 
   usePageMeta({
-    title:       founder?.name,
-    description: founder?.bio?.slice(0, 160),
+    title:       founder?.seoTitle || founder?.name,
+    description: founder?.seoDescription || founder?.bio?.slice(0, 160),
     keywords:    [
       ...(founder?.topics.map(t => t.name) ?? []),
       ...[...new Set(founderIntelRecords.flatMap(r => r.seoKeywords))].slice(0, 8),

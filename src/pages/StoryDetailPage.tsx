@@ -280,8 +280,8 @@ export function StoryDetailPage() {
   const [activeTab, setActiveTab] = useState<ContentType>(story?.contentTypes[0] ?? 'blog')
 
   usePageMeta({
-    title:       story?.title,
-    description: story?.summary?.slice(0, 160),
+    title:       story?.seoTitle || story?.title,
+    description: story?.seoDescription || story?.summary?.slice(0, 160),
     keywords:    intel?.seoKeywords.slice(0, 15),
     ogType:      'article',
     ogImage:     story?.coverImage,

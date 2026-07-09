@@ -134,8 +134,8 @@ export function BusinessProfilePage() {
   const faqs = business ? getFAQsForBusiness(business.id) : []
 
   usePageMeta({
-    title:       business?.name,
-    description: business?.description?.slice(0, 160),
+    title:       business?.seoTitle || business?.name,
+    description: business?.seoDescription || business?.description?.slice(0, 160),
     keywords:    [
       ...(business?.topics.map(t => t.name) ?? []),
       ...[...new Set(businessIntelRecords.flatMap(r => r.seoKeywords))].slice(0, 8),

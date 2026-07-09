@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
 import { StoryGrid }         from '../widgets/StoryGrid'
 import { FilterBar }         from '../components/ui/FilterBar'
@@ -43,11 +44,19 @@ const topicOptions = [
 
 export function StoriesPage() {
   usePageTitle('Stories')
-  const [activeFormat,   setActiveFormat]   = useState('all')
-  const [activeLocation, setActiveLocation] = useState('all')
-  const [activeIndustry, setActiveIndustry] = useState('all')
-  const [activeTopic,    setActiveTopic]    = useState('all')
-  const [filtersOpen,    setFiltersOpen]    = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [filtersOpen, setFiltersOpen] = useState(() => searchParams.toString().length > 0)
+
+  const activeFormat   = searchParams.get('format')   ?? 'all'
+  const activeLocation = searchParams.get('location') ?? 'all'
+  const activeIndustry = searchParams.get('industry') ?? 'all'
+  const activeTopic    = searchParams.get('topic')    ?? 'all'
+
+  function setParam(key: string, value: string) {
+    const next = new URLSearchParams(searchParams)
+    if (value === 'all') next.delete(key); else next.set(key, value)
+    setSearchParams(next, { replace: true })
+  }
 
   const filter: StoryFilter = {
     publicOnly: true,
@@ -61,10 +70,7 @@ export function StoriesPage() {
   const hasActiveFilter = activeFormat !== 'all' || activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all'
 
   function clearFilters() {
-    setActiveFormat('all')
-    setActiveLocation('all')
-    setActiveIndustry('all')
-    setActiveTopic('all')
+    setSearchParams({}, { replace: true })
   }
 
   return (
@@ -128,11 +134,11 @@ export function StoriesPage() {
 
             {filtersOpen && (
               <div id="stories-filter-panel" className="flex flex-col gap-3">
-                <FilterBar options={contentTypeOptions} active={activeFormat} onChange={setActiveFormat} label="Filter by content format" />
-                <FilterBar options={topicOptions} active={activeTopic} onChange={setActiveTopic} label="Filter by topic" />
+                <FilterBar options={contentTypeOptions} active={activeFormat} onChange={v => setParam('format', v)} label="Filter by content format" />
+                <FilterBar options={topicOptions} active={activeTopic} onChange={v => setParam('topic', v)} label="Filter by topic" />
                 <div className="flex flex-wrap gap-3">
-                  <FilterBar options={locationOptions} active={activeLocation} onChange={setActiveLocation} label="Filter by location" />
-                  <FilterBar options={industryOptions} active={activeIndustry} onChange={setActiveIndustry} label="Filter by industry" />
+                  <FilterBar options={locationOptions} active={activeLocation} onChange={v => setParam('location', v)} label="Filter by location" />
+                  <FilterBar options={industryOptions} active={activeIndustry} onChange={v => setParam('industry', v)} label="Filter by industry" />
                 </div>
               </div>
             )}
