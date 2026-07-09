@@ -1,4 +1,4 @@
-import type { StoryFilter } from '../types'
+import type { Story, StoryFilter } from '../types'
 import { getStories } from '../services/stories'
 import { getFounder } from '../services/founders'
 import { getBusiness } from '../services/businesses'
@@ -8,6 +8,10 @@ import { SectionHeading } from '../components/layout/PageContainer'
 
 interface StoryGridProps {
   filter?: StoryFilter
+  // Pre-filtered list, for callers whose filter logic isn't expressible as a
+  // StoryFilter (e.g. filtering by an imported item's source platform). When
+  // set, `filter` is ignored and this list is rendered as-is.
+  stories?: Story[]
   heading?: string
   subheading?: string
   action?: { label: string; href: string }
@@ -32,6 +36,7 @@ const columnClasses = {
 
 export function StoryGrid({
   filter = {},
+  stories: explicitStories,
   heading,
   subheading,
   action,
@@ -45,7 +50,7 @@ export function StoryGrid({
   emptyTitle,
   emptyMessage,
 }: StoryGridProps) {
-  const stories = getStories(filter)
+  const stories = explicitStories ?? getStories(filter)
 
   return (
     <section aria-label={heading ?? 'Stories'} className={className}>
