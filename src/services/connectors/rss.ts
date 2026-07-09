@@ -1,4 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
+import type { ConnectedSource } from '../../types/connectedSource'
+import type { NormalizedImportItem } from './types'
 
 export interface FeedItem {
   title: string
@@ -33,4 +35,17 @@ export async function fetchFeed(feedUrl: string): Promise<FeedItem[]> {
     throw new RssConnectorError(data.error)
   }
   return data?.items ?? []
+}
+
+/** The Connector contract: authenticate, fetch, normalize — nothing more. Used for both podcast-rss and website-rss source types. */
+export async function fetchRssItems(source: ConnectedSource): Promise<NormalizedImportItem[]> {
+  if (!source.config.feedUrl) throw new RssConnectorError('This feed source has no feed URL configured.')
+  const items = await fetchFeed(source.config.feedUrl)
+  return items.map(item => ({
+    originalUrl: item.link,
+    title: item.title,
+    description: item.description,
+    thumbnailUrl: item.imageUrl,
+    publishedAt: item.publishedAt,
+  }))
 }

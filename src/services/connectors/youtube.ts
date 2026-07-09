@@ -5,6 +5,9 @@
 // referrer restriction in Google Cloud Console rather than by RLS) is enough —
 // there's no need for a per-user consent flow to read public data.
 
+import type { ConnectedSource } from '../../types/connectedSource'
+import type { NormalizedImportItem } from './types'
+
 export interface YouTubeVideo {
   videoId: string
   title: string
@@ -62,4 +65,18 @@ export async function fetchChannelVideos(channelId: string, maxResults = 15): Pr
       thumbnailUrl: item.snippet.thumbnails?.high?.url ?? item.snippet.thumbnails?.default?.url,
       publishedAt: item.snippet.publishedAt,
     }))
+}
+
+/** The Connector contract: authenticate, fetch, normalize — nothing more. */
+export async function fetchYouTubeItems(source: ConnectedSource): Promise<NormalizedImportItem[]> {
+  if (!source.config.channelId) throw new YouTubeConnectorError('This YouTube source has no channel configured.')
+  const videos = await fetchChannelVideos(source.config.channelId)
+  return videos.map(v => ({
+    originalUrl: `https://www.youtube.com/watch?v=${v.videoId}`,
+    title: v.title,
+    description: v.description,
+    thumbnailUrl: v.thumbnailUrl,
+    publishedAt: v.publishedAt,
+    embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
+  }))
 }

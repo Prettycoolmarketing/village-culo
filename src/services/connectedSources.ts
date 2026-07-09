@@ -1,13 +1,31 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
-import type { ConnectedSource, ConnectedSourceFilter } from '../types/connectedSource'
+import type { ConnectedSource, ConnectedSourceFilter, ConnectedSourceType } from '../types/connectedSource'
 import type { ImportedContent } from '../types/importedContent'
 import { importedContentService, PLATFORM_LABELS } from './importedContent'
-import { fetchChannelVideos, YouTubeConnectorError } from './connectors/youtube'
-import { fetchFeed, RssConnectorError } from './connectors/rss'
+import { fetchYouTubeItems } from './connectors/youtube'
+import { fetchRssItems } from './connectors/rss'
+import type { NormalizedImportItem } from './connectors/types'
 import { villageContentIntelligenceService, importedContentToInput } from './villageIntelligence'
 
 const KEY = 'connected_sources'
 const TABLE = 'connected_sources'
+
+// Every connector's entire surface area, from the pipeline's point of view:
+// one function, source in, normalized items out. Adding a new connector
+// (Website, LinkedIn, Canva, Drive, Dropbox, OneDrive...) means writing one
+// module that implements this and adding one line here — nothing about
+// scanSource below changes.
+const CONNECTORS: Record<ConnectedSourceType, (source: ConnectedSource) => Promise<NormalizedImportItem[]>> = {
+  'youtube':     fetchYouTubeItems,
+  'podcast-rss': fetchRssItems,
+  'website-rss': fetchRssItems,
+}
+
+const PLATFORM_BY_SOURCE_TYPE: Record<ConnectedSourceType, ImportedContent['sourcePlatform']> = {
+  'youtube':     'youtube',
+  'podcast-rss': 'podcast',
+  'website-rss': 'website',
+}
 
 function now() { return new Date().toISOString() }
 
@@ -51,25 +69,17 @@ function alreadyImportedUrls(sourceId: string): Set<string> {
   )
 }
 
-function draftFrom(founderId: string, sourceId: string, opts: {
-  originalUrl: string
-  title: string
-  description?: string
-  thumbnailUrl?: string
-  publishedAt?: string
-  platform: ImportedContent['sourcePlatform']
-  embedUrl?: string
-}): ImportedContent {
+function draftFrom(founderId: string, sourceId: string, platform: ImportedContent['sourcePlatform'], item: NormalizedImportItem): ImportedContent {
   return {
     id: crypto.randomUUID(),
     founderId,
-    sourcePlatform: opts.platform,
-    originalUrl: opts.originalUrl,
-    embedUrl: opts.embedUrl,
-    thumbnailUrl: opts.thumbnailUrl,
-    title: opts.title || `Imported from ${PLATFORM_LABELS[opts.platform]}`,
-    description: opts.description,
-    publishedAt: opts.publishedAt,
+    sourcePlatform: platform,
+    originalUrl: item.originalUrl,
+    embedUrl: item.embedUrl,
+    thumbnailUrl: item.thumbnailUrl,
+    title: item.title || `Imported from ${PLATFORM_LABELS[platform]}`,
+    description: item.description,
+    publishedAt: item.publishedAt,
     topics: [],
     locations: [],
     importedAt: now(),
@@ -82,39 +92,13 @@ function draftFrom(founderId: string, sourceId: string, opts: {
 /** Scans a connected source, writing any newly-discovered items as ImportedContent drafts. Returns the count of new items found. */
 export async function scanSource(source: ConnectedSource): Promise<number> {
   const seen = alreadyImportedUrls(source.id)
-  let drafts: ImportedContent[] = []
 
   try {
-    if (source.sourceType === 'youtube') {
-      if (!source.config.channelId) throw new YouTubeConnectorError('This YouTube source has no channel configured.')
-      const videos = await fetchChannelVideos(source.config.channelId)
-      drafts = videos
-        .map(v => ({ v, url: `https://www.youtube.com/watch?v=${v.videoId}` }))
-        .filter(({ url }) => !seen.has(url))
-        .map(({ v, url }) => draftFrom(source.founderId, source.id, {
-          originalUrl: url,
-          title: v.title,
-          description: v.description,
-          thumbnailUrl: v.thumbnailUrl,
-          publishedAt: v.publishedAt,
-          platform: 'youtube',
-          embedUrl: `https://www.youtube.com/embed/${v.videoId}`,
-        }))
-    } else {
-      if (!source.config.feedUrl) throw new RssConnectorError('This feed source has no feed URL configured.')
-      const items = await fetchFeed(source.config.feedUrl)
-      const platform = source.sourceType === 'podcast-rss' ? 'podcast' : 'website'
-      drafts = items
-        .filter(item => !seen.has(item.link))
-        .map(item => draftFrom(source.founderId, source.id, {
-          originalUrl: item.link,
-          title: item.title,
-          description: item.description,
-          thumbnailUrl: item.imageUrl,
-          publishedAt: item.publishedAt,
-          platform,
-        }))
-    }
+    const items = await CONNECTORS[source.sourceType](source)
+    const platform = PLATFORM_BY_SOURCE_TYPE[source.sourceType]
+    const drafts = items
+      .filter(item => !seen.has(item.originalUrl))
+      .map(item => draftFrom(source.founderId, source.id, platform, item))
 
     await Promise.all(drafts.map(d => importedContentService.upsert(d)))
     // Village does the work first — analyse every connector-discovered draft
