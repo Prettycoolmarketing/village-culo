@@ -7,7 +7,7 @@ import { getBusiness } from '../services/businesses'
 import { recommendationService } from '../services/partnership'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
-import { importedContentService } from '../services/importedContent'
+import { importedContentService, PLATFORM_LABELS } from '../services/importedContent'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { IdeaGrid }         from '../widgets/IdeaGrid'
@@ -274,6 +274,7 @@ export function StoryDetailPage() {
   // Pre-guard lookups — hooks must be called unconditionally before any early return
   const founder = story ? getFounder(story.founderId) : undefined
   const intel   = story ? (villageContentIntelligenceService.getByContent('story', story.id) ?? null) : null
+  const jsonLdSource = story?.importedContentId ? importedContentService.get(story.importedContentId) : undefined
   const storyFeaturedIn = story ? getFeaturedIn('story', story.id) : []
   const storyConnectedTo = story ? getConnectedTo('story', story.id) : []
   const [activeTab, setActiveTab] = useState<ContentType>(story?.contentTypes[0] ?? 'blog')
@@ -318,12 +319,20 @@ export function StoryDetailPage() {
         url:     window.location.origin,
       },
       ...(storyFeaturedIn.length > 0 ? { sameAs: storyFeaturedIn.map(f => f.source.url).filter(Boolean) } : {}),
+      ...(jsonLdSource ? {
+        isBasedOn: {
+          '@type': 'CreativeWork',
+          url: jsonLdSource.originalUrl,
+          ...(jsonLdSource.originalAuthor ? { author: jsonLdSource.originalAuthor } : {}),
+        },
+      } : {}),
     } : undefined,
   })
 
   if (!story || (story.status !== 'published' && story.status !== 'featured')) return <StoryNotFound slug={slug ?? ''} />
 
   const business = getBusiness(story.businessId)
+  const sourceImport = story.importedContentId ? importedContentService.get(story.importedContentId) : undefined
   const approvedRecs = recommendationService.getAll({ storyId: story.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
 
@@ -490,6 +499,22 @@ export function StoryDetailPage() {
                   <Badge key={t.id} label={t.name} variant="secondary" />
                 ))}
               </div>
+
+              {/* Original source attribution */}
+              {sourceImport && (
+                <p className="text-sm text-muted mb-6">
+                  Originally published on{' '}
+                  <a
+                    href={normalizeUrl(sourceImport.originalUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {PLATFORM_LABELS[sourceImport.sourcePlatform] ?? sourceImport.sourcePlatform}
+                  </a>
+                  {sourceImport.originalAuthor ? ` by ${sourceImport.originalAuthor}` : ''}.
+                </p>
+              )}
 
               {/* CTA */}
               {story.ctaLabel && story.ctaUrl && (

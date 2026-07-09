@@ -1601,6 +1601,11 @@ export function DashboardPublishPage() {
     if (!importedContentId) return
     const item = importedContentService.get(importedContentId)
     if (!item) return
+    // The import's topics/locations are free text (from paste or Village
+    // Intelligence suggestions) — only carry forward the ones that match a
+    // real Topic/Location in the taxonomy, same as everywhere else in the app.
+    const matchedTopics = allTopics.filter(t => item.topics.some(it => it.toLowerCase() === t.name.toLowerCase()))
+    const matchedLocation = locations.find(l => item.locations.some(il => il.toLowerCase() === l.name.toLowerCase()))
     setDraft(prev => ({
       ...prev,
       importedContentId,
@@ -1608,6 +1613,8 @@ export function DashboardPublishPage() {
       summary: prev.summary || item.autoSummary || item.description || '',
       blog: prev.blog || item.diaryNote || item.transcriptText || '',
       coverImage: prev.coverImage || item.thumbnailUrl || '',
+      topics: prev.topics.length > 0 ? prev.topics : matchedTopics,
+      locationId: prev.locationId || matchedLocation?.id || prev.locationId,
     }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
+import { getFounder, updateFounder } from '../../services/founders'
 import {
   importedContentService,
   buildDraftImport,
@@ -25,6 +26,7 @@ import type {
   ImportedContentStatus,
   ImportedContentVisibility,
 } from '../../types/importedContent'
+import type { FAQ } from '../../types'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -89,10 +91,16 @@ function EmbedPreview({ content }: { content: ImportedContent }) {
 
 // ─── Village Intelligence Preview ────────────────────────────────────────────
 
-function VillageIntelligencePreview({ draft }: { draft: ImportedContent }) {
+function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ }: {
+  draft: ImportedContent
+  onAddTopic: (t: string) => void
+  onAddLocation: (l: string) => void
+  onAddFAQ: (question: string) => void
+}) {
   const [open, setOpen] = useState(false)
   const [intel, setIntel] = useState<VillageContentIntelligence | null>(null)
   const [analysing, setAnalysing] = useState(false)
+  const [addedFAQs, setAddedFAQs] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const existing = villageContentIntelligenceService.getByContent('imported', draft.id)
@@ -119,6 +127,28 @@ function VillageIntelligencePreview({ draft }: { draft: ImportedContent }) {
         <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">{title}</p>
         <div className="flex flex-wrap gap-1.5">
           {items.map(item => <Chip key={item} label={item} color={color} />)}
+        </div>
+      </div>
+    ) : null
+
+  const AddableSection = ({ title, items, added, onAdd }: { title: string; items: string[]; added: string[]; onAdd: (v: string) => void }) =>
+    items.length > 0 ? (
+      <div className="mb-3">
+        <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">{title} <span className="font-normal normal-case">— tap to add</span></p>
+        <div className="flex flex-wrap gap-1.5">
+          {items.map(item => {
+            const isAdded = added.includes(item)
+            return (
+              <button key={item} type="button" onClick={() => onAdd(item)} disabled={isAdded}
+                className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                  isAdded
+                    ? 'border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A] cursor-default'
+                    : 'border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]'
+                }`}>
+                {isAdded ? '✓ ' : '+ '}{item}
+              </button>
+            )
+          })}
         </div>
       </div>
     ) : null
@@ -156,7 +186,8 @@ function VillageIntelligencePreview({ draft }: { draft: ImportedContent }) {
             <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#D6A94D]/20 text-amber-700">{intel.emotionalTone}</span>
           </div>
 
-          <Section title="Primary Topics" items={intel.primaryTopics} color="bg-[#5E6B4A]/10 text-[#5E6B4A]" />
+          <AddableSection title="Primary Topics" items={intel.primaryTopics} added={draft.topics} onAdd={onAddTopic} />
+          <AddableSection title="Locations" items={intel.locations} added={draft.locations} onAdd={onAddLocation} />
           <Section title="Industries" items={intel.industries} />
           <Section title="People" items={intel.people} />
           <Section title="Businesses" items={intel.businesses} />
@@ -195,24 +226,30 @@ function VillageIntelligencePreview({ draft }: { draft: ImportedContent }) {
             </div>
           )}
 
-          {intel.searchQuestions.length > 0 && (
+          {(intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (
             <div className="mb-3">
-              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">Search Questions</p>
-              <ul className="space-y-0.5">
-                {intel.searchQuestions.slice(0, 3).map((q, i) => (
-                  <li key={i} className="text-[10px] text-[#6B7280] italic">{q}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {intel.geoQuestions.length > 0 && (
-            <div className="mb-3">
-              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">GEO Questions</p>
-              <ul className="space-y-0.5">
-                {intel.geoQuestions.slice(0, 3).map((q, i) => (
-                  <li key={i} className="text-[10px] text-[#6B7280] italic">{q}</li>
-                ))}
+              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">
+                Questions this content answers <span className="font-normal normal-case">— add as an FAQ, then write the answer</span>
+              </p>
+              <ul className="space-y-1">
+                {[...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6).map((q, i) => {
+                  const isAdded = addedFAQs.has(q)
+                  return (
+                    <li key={i} className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-[#6B7280] italic flex-1">{q}</span>
+                      <button type="button"
+                        disabled={isAdded}
+                        onClick={() => { onAddFAQ(q); setAddedFAQs(prev => new Set(prev).add(q)) }}
+                        className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 transition-colors ${
+                          isAdded
+                            ? 'border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A] cursor-default'
+                            : 'border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]'
+                        }`}>
+                        {isAdded ? '✓ Added' : '+ Add as FAQ'}
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )}
@@ -304,6 +341,13 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
 
   function addLocation(l: string) {
     if (!draft.locations.includes(l)) onChange({ ...draft, locations: [...draft.locations, l] })
+  }
+
+  function addFAQ(question: string) {
+    const founder = getFounder(draft.founderId)
+    if (!founder) return
+    const faq: FAQ = { id: crypto.randomUUID(), question, answer: '', topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [] }
+    void updateFounder({ ...founder, faqs: [...(founder.faqs ?? []), faq] })
   }
 
   const INPUT = 'w-full px-3 py-2 text-sm border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]'
@@ -605,7 +649,7 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       )}
 
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
-      <VillageIntelligencePreview draft={draft} />
+      <VillageIntelligencePreview draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} />
 
       {/* ── Publishing fields ──────────────────────────────────────────────── */}
       <div className="border-t border-[#E8E4DD] pt-5 mt-4">
@@ -776,8 +820,13 @@ export function DashboardImportContentPage() {
       return
     }
     setUrlError('')
-    setDraft(buildDraftImport(founderId, trimmed))
+    const newDraft = buildDraftImport(founderId, trimmed)
+    setDraft(newDraft)
     setUrlInput('')
+    // Analyse immediately so the review screen opens with suggestions already
+    // there, rather than founders hitting a blank "Analyse Content" prompt.
+    const intel = villageContentIntelligenceService.analyse(importedContentToInput(newDraft))
+    void villageContentIntelligenceService.upsert(intel)
   }
 
   async function handleSave() {
@@ -788,11 +837,11 @@ export function DashboardImportContentPage() {
       setSaveError(result.error ?? 'Save failed. Please try again.')
       return
     }
-    if (draft.status === 'published' || draft.status === 'featured') {
-      const input = importedContentToInput(draft)
-      const intel = villageContentIntelligenceService.analyse(input)
-      void villageContentIntelligenceService.upsert(intel)
-    }
+    // Village should do the work first — analyse on every save, not just once
+    // published, so the review screen always has fresh suggestions to show.
+    const input = importedContentToInput(draft)
+    const intel = villageContentIntelligenceService.analyse(input)
+    void villageContentIntelligenceService.upsert(intel)
     setDraft(null)
     loadItems()
   }

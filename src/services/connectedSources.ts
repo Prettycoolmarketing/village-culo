@@ -4,6 +4,7 @@ import type { ImportedContent } from '../types/importedContent'
 import { importedContentService, PLATFORM_LABELS } from './importedContent'
 import { fetchChannelVideos, YouTubeConnectorError } from './connectors/youtube'
 import { fetchFeed, RssConnectorError } from './connectors/rss'
+import { villageContentIntelligenceService, importedContentToInput } from './villageIntelligence'
 
 const KEY = 'connected_sources'
 const TABLE = 'connected_sources'
@@ -116,6 +117,13 @@ export async function scanSource(source: ConnectedSource): Promise<number> {
     }
 
     await Promise.all(drafts.map(d => importedContentService.upsert(d)))
+    // Village does the work first — analyse every connector-discovered draft
+    // immediately, so it lands in the founder's review queue with suggestions
+    // already attached rather than a blank item to fill in by hand.
+    await Promise.all(drafts.map(d => {
+      const intel = villageContentIntelligenceService.analyse(importedContentToInput(d))
+      return villageContentIntelligenceService.upsert(intel)
+    }))
 
     await connectedSourcesService.upsert({
       ...source,

@@ -286,13 +286,18 @@ export const businessFAQs: Record<string, FAQ[]> = {
 // or a Service's own FAQ editor) never actually reached the public page or
 // structured data. Fixed rather than left in place, since Service-level FAQs
 // depend on this same read path to be real.
+// Filters out FAQs whose answer hasn't been written yet (e.g. a question added
+// from an import's suggestions but not yet answered) — never show a blank
+// answer publicly.
+const hasAnswer = (faq: FAQ): boolean => faq.answer.trim().length > 0
+
 export const getFAQsForFounder = (founderId: string): FAQ[] => {
   const founder = getFounder(founderId)
-  return [...(founderFAQs[founderId] ?? []), ...(founder?.faqs ?? [])]
+  return [...(founderFAQs[founderId] ?? []), ...(founder?.faqs ?? [])].filter(hasAnswer)
 }
 
 export const getFAQsForBusiness = (businessId: string): FAQ[] => {
   const business = getBusiness(businessId)
   const serviceFaqs = getServices(undefined, businessId).flatMap(s => s.faqs ?? [])
-  return [...(businessFAQs[businessId] ?? []), ...(business?.faqs ?? []), ...serviceFaqs]
+  return [...(businessFAQs[businessId] ?? []), ...(business?.faqs ?? []), ...serviceFaqs].filter(hasAnswer)
 }
