@@ -99,8 +99,6 @@ export function DashboardLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 px-2 py-3 flex flex-col">
-          <NavItem to="/dashboard/home" label="Overview"       icon={<Icon path={icons.home}    />} />
-
           <NavLink
             to="/dashboard/publish"
             className={({ isActive }) =>

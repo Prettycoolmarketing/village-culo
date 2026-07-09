@@ -42,7 +42,6 @@ import { OnboardingPage }    from './pages/OnboardingPage'
 
 // ─── Dashboard pages ────────────────────────────────────────────────────────────
 import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
-import { DashboardHomePage }         from './pages/dashboard/DashboardHomePage'
 import { DashboardProfilePage }      from './pages/dashboard/DashboardProfilePage'
 import { DashboardBusinessesPage }   from './pages/dashboard/DashboardBusinessesPage'
 import { DashboardStoriesPage }      from './pages/dashboard/DashboardStoriesPage'
@@ -163,8 +162,8 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="home" replace />} />
-            <Route path="home"           element={<DashboardHomePage />}         />
+            <Route index element={<Navigate to="profile" replace />} />
+            <Route path="home"           element={<Navigate to="/dashboard/profile" replace />} />
             <Route path="profile"        element={<DashboardProfilePage />}      />
             <Route path="businesses"     element={<DashboardBusinessesPage />}   />
             <Route path="publish"         element={<DashboardPublishPage />}      />

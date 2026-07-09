@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder } from '../../services/founders'
@@ -12,6 +12,7 @@ import { publisherPartnerProfileService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
+import { getMedia } from '../../services/media'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
@@ -21,7 +22,13 @@ import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPane
 import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
-import { getFounderMissingItems, getMissingCounts, type MissingItem } from '../../utils/missingAssets'
+import {
+  getFounderMissingItems,
+  getBusinessMissingItems,
+  getStoryMissingItems,
+  getMissingCounts,
+  type MissingItem,
+} from '../../utils/missingAssets'
 import { getFounderAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
 import type { Founder, Topic, SocialLink, SocialPlatform, Status } from '../../types'
@@ -433,6 +440,42 @@ export function DashboardProfilePage() {
   const founderStories    = getStories({ founderId: draft.id })
   const founderIdeas      = getIdeas({ founderId: draft.id })
   const founderLibrary    = getLibraryItems({ founderId: draft.id })
+  const founderMedia      = getMedia({ founderId: draft.id })
+
+  // "Today's Recommendations" + "Recent Stories" — folded in from the old
+  // standalone Overview/home page (/dashboard/home), merged here so the
+  // founder only has one landing place instead of two.
+  interface Recommendation { key: string; title: string; action: MissingItem; path: string }
+  const recommendations: Recommendation[] = []
+  const [founderTop] = missing
+  if (founderTop) recommendations.push({ key: `founder-${draft.id}`, title: 'Your founder profile', action: founderTop, path: '/dashboard/profile' })
+  for (const b of founderBusinesses) {
+    const [top] = getBusinessMissingItems(b)
+    if (top) recommendations.push({ key: `biz-${b.id}`, title: b.name, action: top, path: '/dashboard/businesses' })
+  }
+  for (const s of founderStories) {
+    const [top] = getStoryMissingItems(s)
+    if (top) recommendations.push({ key: `story-${s.id}`, title: s.title, action: top, path: '/dashboard/stories' })
+  }
+  if (founderStories.length === 0) {
+    recommendations.push({
+      key: 'first-story',
+      title: 'You haven\'t published a story yet',
+      action: { field: 'first-story', label: 'Publish your first story to start growing your presence', action: 'Publish Story', severity: 'critical' },
+      path: '/dashboard/publish',
+    })
+  }
+  const pendingMedia = founderMedia.filter(m => m.approvalStatus === 'needs-review' || m.approvalStatus === 'pending').length
+  if (pendingMedia > 0) {
+    recommendations.push({
+      key: 'media-review',
+      title: `${pendingMedia} ${pendingMedia === 1 ? 'asset' : 'assets'} uploaded`,
+      action: { field: 'media', label: 'Review your uploaded media', action: 'Review Media', severity: 'important' },
+      path: '/dashboard/media',
+    })
+  }
+  const topRecommendations = recommendations.slice(0, 6)
+  const recentStories = founderStories.slice(0, 5)
 
   const TABS = [
     { key: 'overview',      label: 'Overview'      },
@@ -532,7 +575,36 @@ export function DashboardProfilePage() {
         {/* ── Overview ─────────────────────────────────────────────────── */}
         {tab === 'overview' && (
           <div className="max-w-2xl flex flex-col gap-6">
-            <div className="grid grid-cols-4 gap-4">
+
+            {/* Today's Recommendations */}
+            <div>
+              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Today's Recommendations</p>
+              {topRecommendations.length === 0 ? (
+                <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                  <p className="text-sm font-semibold text-[#2D2A26]">You're all caught up.</p>
+                  <p className="text-xs text-[#9CA3AF] mt-1">Nothing needs your attention right now — great work.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                  {topRecommendations.map(rec => (
+                    <Link
+                      key={rec.key}
+                      to={rec.path}
+                      className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors group"
+                    >
+                      <span className="w-5 h-5 rounded-md border-2 border-[#E8E4DD] shrink-0 group-hover:border-[#C86A43] transition-colors" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#2D2A26]">{rec.action.label}</p>
+                        <p className="text-xs text-[#9CA3AF] mt-0.5 truncate">{rec.title}</p>
+                      </div>
+                      <span className="text-xs font-semibold text-[#C86A43] shrink-0">{rec.action.action} →</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-5 gap-3">
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderBusinesses.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Businesses</p>
@@ -548,6 +620,10 @@ export function DashboardProfilePage() {
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderLibrary.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Library</p>
+              </div>
+              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
+                <p className="text-2xl font-bold text-[#2D2A26]">{founderMedia.length}</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Media</p>
               </div>
             </div>
 
@@ -571,6 +647,55 @@ export function DashboardProfilePage() {
                   <p className="text-sm text-[#6B7280] mt-2 line-clamp-2">{draft.bio}</p>
                 </div>
               </div>
+            </div>
+
+            {/* Recent Stories */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Your Recent Stories</p>
+                <Link to="/dashboard/stories" className="text-xs text-[#C86A43] hover:underline">View all</Link>
+              </div>
+              {recentStories.length === 0 ? (
+                <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                  <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
+                  <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+                    Publish Story
+                  </Link>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                  {recentStories.map(story => {
+                    const storyMissing = getStoryMissingItems(story)
+                    return (
+                      <div key={story.id} className="flex items-center gap-4 px-5 py-3.5">
+                        <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#2D2A26] truncate">{story.title}</p>
+                          <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
+                        </div>
+                        {storyMissing.length === 0 ? (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
+                            Ready to publish
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
+                            {storyMissing.length} recommended
+                          </span>
+                        )}
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                          story.status === 'published' || story.status === 'featured'
+                            ? 'bg-green-100 text-green-700'
+                            : story.status === 'draft'
+                            ? 'bg-[#F3EDE6] text-[#9CA3AF]'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {story.status}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
