@@ -16,7 +16,7 @@ import type { UserRole } from '../contexts/AuthContext'
  */
 export type CapoSection =
   | 'overview' | 'founders' | 'imports' | 'claims' | 'emails'
-  | 'featured' | 'analytics' | 'settings' | 'team'
+  | 'featured' | 'analytics' | 'settings' | 'team' | 'editorial'
 
 export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
   overview:  ['moderator', 'editor', 'admin', 'owner'],
@@ -28,6 +28,7 @@ export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
   analytics: ['admin', 'owner'],
   settings:  ['owner'],
   team:      ['owner'],
+  editorial: ['editor', 'admin', 'owner'],
 }
 
 export function canAccessCapoSection(role: UserRole | undefined, section: CapoSection): boolean {

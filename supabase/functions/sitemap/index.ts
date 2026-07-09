@@ -51,12 +51,13 @@ function urlEntry(loc: string, lastmod?: string): string {
 
 serve(async () => {
   try {
-    const [stories, founders, businesses, ideas, importedContent] = await Promise.all([
+    const [stories, founders, businesses, ideas, importedContent, editorial] = await Promise.all([
       fetchSlugs<StoryRow>('stories'),
       fetchSlugs('founders'),
       fetchSlugs('businesses'),
       fetchSlugs('ideas'),
       fetchSlugs<ImportedContentRow>('imported_content', 'id, data'),
+      fetchSlugs('editorial_features'),
     ])
 
     // Source-by-platform Collection pages (/from/:platform) — only once a
@@ -76,6 +77,7 @@ serve(async () => {
       ...businesses.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/businesses/${r.data.slug}`, r.updated_at)),
       ...ideas.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/ideas/${r.data.slug}`, r.updated_at)),
       ...richPlatforms.map(p => urlEntry(`${SITE_URL}/from/${p}`)),
+      ...editorial.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/editorial/${r.data.slug}`, r.updated_at)),
     ]
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>`
