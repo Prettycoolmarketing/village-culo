@@ -126,7 +126,7 @@ export function DashboardLayout() {
           {showCapoNav && (
             <>
               <SectionLabel label="CAPO" />
-              <NavItem to="/dashboard/village" label="Overview" icon={<Icon path={icons.hq} />} />
+              <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
 
               {(canAccessCapoSection(user?.role, 'founders') || canAccessCapoSection(user?.role, 'team')) && (
                 <>

@@ -20,7 +20,7 @@ export function Tabs({ tabs, active, onChange, className = '' }: TabsProps) {
           onClick={() => onChange(tab.key)}
           className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${
             active === tab.key
-              ? 'border-[#C86A43] text-[#C86A43]'
+              ? 'border-[#C86A43] text-[#B05A35]'
               : 'border-transparent text-[#6B7280] hover:text-[#2D2A26]'
           }`}
         >
@@ -28,7 +28,7 @@ export function Tabs({ tabs, active, onChange, className = '' }: TabsProps) {
           {tab.badge !== undefined && tab.badge > 0 && (
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${
               active === tab.key
-                ? 'bg-[#C86A43]/15 text-[#C86A43]'
+                ? 'bg-[#C86A43]/15 text-[#B05A35]'
                 : 'bg-red-100 text-red-600'
             }`}>
               {tab.badge}
