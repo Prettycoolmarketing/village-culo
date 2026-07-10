@@ -290,13 +290,20 @@ export function StoryDetailPage() {
   const jsonLdSource = story?.importedContentId ? importedContentService.get(story.importedContentId) : undefined
   const storyFeaturedIn = story ? getFeaturedIn('story', story.id) : []
   const storyConnectedTo = story ? getConnectedTo('story', story.id) : []
+  // A video link pasted into the wrong wizard field (e.g. "Document/External
+  // Link" instead of "YouTube/Video URL") shouldn't mean the video never
+  // plays — fall back to ctaUrl when it's clearly a video source itself.
+  const VIDEO_PLATFORMS = new Set(['youtube', 'vimeo', 'tiktok'])
+  const effectiveReelUrl = story?.reelUrl
+    || (story?.ctaUrl && VIDEO_PLATFORMS.has(detectPlatform(story.ctaUrl)) ? story.ctaUrl : undefined)
+
   // Base the tabs actually offered on what content is really there, not just
   // which formats were checked in the wizard — a founder who wrote a blog but
   // only selected "Reel" as the format shouldn't have that writing become
   // unreachable.
   const availableTypes: ContentType[] = story ? [...new Set([
     ...(story.blog ? ['blog' as const] : []),
-    ...(story.reelUrl ? ['reel' as const] : []),
+    ...(effectiveReelUrl ? ['reel' as const] : []),
     ...(story.carouselImages && story.carouselImages.length > 0 ? ['carousel' as const] : []),
     ...story.contentTypes,
   ])] : []
@@ -609,7 +616,7 @@ export function StoryDetailPage() {
                     hidden={activeTab !== 'reel'}
                   >
                     <ReelContent
-                      reelUrl={story.reelUrl}
+                      reelUrl={effectiveReelUrl}
                       title={story.title}
                       summary={story.summary}
                     />
@@ -656,7 +663,7 @@ export function StoryDetailPage() {
                             ? <CarouselContent images={story.carouselImages} title={story.title} />
                             : <p className="font-body text-muted text-sm italic">Photo gallery will appear here once published.</p>
                         ) : (type === 'talking-head' || type === 'youtube-video') ? (
-                          <ReelContent reelUrl={story.reelUrl} title={story.title} summary={story.summary} />
+                          <ReelContent reelUrl={effectiveReelUrl} title={story.title} summary={story.summary} />
                         ) : url ? (
                           <div className="py-2">
                             <a href={url} target="_blank" rel="noopener noreferrer"
