@@ -4,19 +4,14 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
-import { getStories, updateStory } from '../../services/stories'
-import { getIdeas } from '../../services/ideas'
+import { getStories } from '../../services/stories'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
+import { publishStoryCore } from '../../services/publishStory'
 import { MediaUpload } from '../../components/ui/MediaUpload'
-import { syncIdeasFromStory, refreshAuthorityScores, previewIdeaImpact } from '../../services/ideaSync'
-import { syncRelationshipsFromStory } from '../../services/relationshipSync'
+import { previewIdeaImpact } from '../../services/ideaSync'
 import { computeReadability } from '../../utils/readability'
 import { getStoryMissingItems } from '../../utils/missingAssets'
-import {
-  formatCheCuloFirstStory, formatCheCuloFirstIdea,
-  formatCheCuloFirstAuthority, formatCheCuloKnowledgeGraphMilestone,
-} from '../../utils/checulo'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
@@ -1668,19 +1663,7 @@ export function DashboardPublishPage() {
     setPublishing(true)
     setLastAction(action)
 
-    const allFounders = getFounders()
-    const founder     = allFounders.find(f => f.id === draft.founderId)
-
-    // Snapshot "before" state for milestone detection — captured before any
-    // writes happen, so these can never be confused with the post-publish state.
-    const priorStoryCount  = draft.founderId ? getStories({ founderId: draft.founderId, publicOnly: true }).length : 0
-    const priorIdeas       = draft.founderId ? getIdeas({ founderId: draft.founderId }) : []
-    const priorIdeaCount   = priorIdeas.length
-    const priorAuthority   = founder?.authorityScore ?? 0
-    const priorRelationshipTotal = priorIdeas.reduce(
-      (sum, i) => sum + i.relatedBusinessIds.length + i.relatedFounderIds.filter(fid => fid !== draft.founderId).length, 0,
-    )
-
+    const founder     = getFounders().find(f => f.id === draft.founderId)
     const loc         = locations.find(l => l.id === draft.locationId) ?? founder?.location ?? locations[0]!
     const industry    = founder?.industry ?? industries[0]!
     const titleSlug   = slugify(draft.title) || `pub-${Date.now()}`
@@ -1724,7 +1707,16 @@ export function DashboardPublishPage() {
       updatedAt:      nowIso,
     }
 
-    const result = await updateStory(story)
+    const result = await publishStoryCore(story, {
+      lessonsOverride: draft.lessonsOverride,
+      questionsOverride: draft.questionsOverride,
+      excludedFounderIds: draft.excludedFounderIds,
+      excludedBusinessIds: draft.excludedBusinessIds,
+      excludedContentIds: draft.excludedContentIds,
+      extraFounderIds: draft.extraFounderIds,
+      extraBusinessIds: draft.extraBusinessIds,
+    })
+
     if (!result.success) {
       setPublishing(false)
       // Surfaced via the Preview step's publishError prop below.
@@ -1732,69 +1724,7 @@ export function DashboardPublishPage() {
       return
     }
 
-    if (draft.importedContentId) {
-      const source = importedContentService.get(draft.importedContentId)
-      if (source) void importedContentService.upsert({ ...source, relatedStoryId: id })
-    }
-
-    if (status === 'published') {
-      // Same engine the Story Builder's live preview used — re-run once more
-      // against the final story, then merge in whatever the founder explicitly
-      // edited in the Lessons/Questions/Related-entity cards. Nothing here is a
-      // second pipeline: analyse() + upsert() is the one call every publish path
-      // (Import, wizard, edit) goes through.
-      const intel = villageContentIntelligenceService.analyse(storyToInput(story))
-      const merged = {
-        ...intel,
-        lessons: draft.lessonsOverride ?? intel.lessons,
-        geoQuestions: draft.questionsOverride ?? intel.geoQuestions,
-        relatedFounderIds: [
-          ...intel.relatedFounderIds.filter(fid => !draft.excludedFounderIds.includes(fid)),
-          ...draft.extraFounderIds,
-        ],
-        relatedBusinessIds: [
-          ...intel.relatedBusinessIds.filter(bid => !draft.excludedBusinessIds.includes(bid)),
-          ...draft.extraBusinessIds,
-        ],
-        relatedContentIds: intel.relatedContentIds.filter(cid => !draft.excludedContentIds.includes(cid)),
-      }
-      void villageContentIntelligenceService.upsert(merged)
-
-      // Sprint 3.5: turn extracted lessons into real, deduplicated Idea
-      // records (create or strengthen), then recompute authority scores from
-      // what's actually now in the database — not the same call twice, this
-      // reads the graph syncIdeasFromStory just wrote.
-      const { created, strengthened } = await syncIdeasFromStory(story, merged)
-      const { founderDelta } = await refreshAuthorityScores(story)
-      await syncRelationshipsFromStory(story, merged)
-      const totalRelationships = merged.relatedFounderIds.length + merged.relatedBusinessIds.length + merged.relatedContentIds.length
-
-      // Exactly one milestone per publish, priority-ordered so a story that
-      // happens to be several "firsts" at once doesn't fire more than one
-      // Che CULO — reserved language, not a running commentary.
-      const milestone =
-        priorStoryCount === 0 ? formatCheCuloFirstStory(founder?.name ?? 'Founder') :
-        (priorIdeaCount === 0 && created.length > 0) ? formatCheCuloFirstIdea() :
-        (priorAuthority === 0 && founderDelta > 0) ? formatCheCuloFirstAuthority() :
-        (priorRelationshipTotal === 0 && totalRelationships > 0) ? formatCheCuloKnowledgeGraphMilestone() :
-        null
-
-      setSummary({
-        ideasCreated: created.length,
-        ideasStrengthened: strengthened.length,
-        relationships: totalRelationships,
-        founderLinks: merged.relatedFounderIds.length,
-        businessLinks: merged.relatedBusinessIds.length,
-        internalLinks: merged.relatedContentIds.length,
-        seoComplete: merged.seoKeywords.length > 0,
-        geoComplete: merged.geoQuestions.length > 0,
-        authorityDelta: founderDelta,
-        milestone,
-      })
-    } else {
-      setSummary(null)
-    }
-
+    setSummary(result.summary ?? null)
     localStorage.removeItem(DRAFT_AUTOSAVE_KEY)
     setPublishError('')
     setPublishedSlug(titleSlug)

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
 import { getFounder, updateFounder } from '../../services/founders'
+import { getStory } from '../../services/stories'
 import {
   importedContentService,
   buildDraftImport,
@@ -11,6 +12,7 @@ import {
   PLATFORM_LABELS,
   PLATFORM_COLORS,
 } from '../../services/importedContent'
+import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
 import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import {
@@ -714,18 +716,31 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
 
 // ─── Saved content row ────────────────────────────────────────────────────────
 
+// An item is ready to quick-publish once it's no longer just the auto-generated
+// placeholder — i.e. a founder (or a connector's auto-analysis) has actually
+// given it real content, not "we don't know anything about this yet."
+function isReadyToPublish(item: ImportedContent): boolean {
+  return item.title.trim().length > 0 && item.title !== `Imported from ${PLATFORM_LABELS[item.sourcePlatform]}`
+}
+
 function SavedRow({
   item,
+  checked,
+  onToggleCheck,
   onEdit,
   onDelete,
   onStatusChange,
 }: {
   item: ImportedContent
+  checked: boolean
+  onToggleCheck: () => void
   onEdit: () => void
   onDelete: () => void
   onStatusChange: (status: ImportedContentStatus) => void
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const ready = isReadyToPublish(item)
+  const publishedStory = item.relatedStoryId ? getStory(item.relatedStoryId) : undefined
 
   const statusColors: Record<ImportedContentStatus, string> = {
     draft:     'bg-[#F3EDE6] text-[#9CA3AF]',
@@ -736,6 +751,16 @@ function SavedRow({
 
   return (
     <div className="flex items-center gap-4 px-5 py-4">
+      {!item.relatedStoryId && (
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onToggleCheck}
+          disabled={!ready}
+          className="shrink-0 w-4 h-4 accent-[#C86A43] disabled:opacity-30"
+          aria-label={ready ? `Select "${item.title}" to publish` : 'Not ready to publish yet'}
+        />
+      )}
       <div className="shrink-0">
         <PlatformBadge platform={item.sourcePlatform} />
       </div>
@@ -751,6 +776,9 @@ function SavedRow({
               · {item.diaryGenerationMode === 'transcript' ? 'transcript diary' : item.diaryGenerationMode === 'metadata' ? 'metadata diary' : 'manual diary'}
             </span>
           )}
+          {!item.relatedStoryId && !ready && (
+            <span className="text-[10px] text-amber-600 shrink-0">· needs a title before it can publish</span>
+          )}
         </div>
       </div>
       <select
@@ -762,7 +790,13 @@ function SavedRow({
       </select>
       <div className="flex items-center gap-2 shrink-0">
         {item.relatedStoryId ? (
-          <span className="text-xs text-[#5E6B4A] font-medium">✓ Story published</span>
+          publishedStory ? (
+            <Link to={`/stories/${publishedStory.slug}`} className="text-xs text-[#5E6B4A] font-medium hover:underline">
+              ✓ View published story →
+            </Link>
+          ) : (
+            <span className="text-xs text-[#5E6B4A] font-medium">✓ Story published</span>
+          )
         ) : (
           <Link
             to="/dashboard/publish"
@@ -802,6 +836,9 @@ export function DashboardImportContentPage() {
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [allItems, setAllItems] = useState<ImportedContent[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [bulkPublishing, setBulkPublishing] = useState(false)
+  const [bulkResult, setBulkResult] = useState<{ published: { title: string; slug: string }[]; failed: { title: string; error: string }[] } | null>(null)
 
   function loadItems() {
     setAllItems(
@@ -860,6 +897,49 @@ export function DashboardImportContentPage() {
 
   function handleStatusChange(id: string, status: ImportedContentStatus) {
     importedContentService.updateStatus(id, status)
+    loadItems()
+  }
+
+  function toggleChecked(id: string) {
+    setChecked(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  const readyItems = allItems.filter(i => !i.relatedStoryId && isReadyToPublish(i))
+
+  function toggleSelectAllReady() {
+    setChecked(prev => prev.size === readyItems.length ? new Set() : new Set(readyItems.map(i => i.id)))
+  }
+
+  // Publishes every checked, reviewed import directly — no wizard. Each item's
+  // format/fields are derived entirely from its source platform (buildStoryFromImport),
+  // since the founder already told Village what this is by importing it.
+  async function handleBulkPublish() {
+    const founder = getFounder(founderId)
+    if (!founder) return
+    setBulkPublishing(true)
+    setBulkResult(null)
+
+    const targets = readyItems.filter(i => checked.has(i.id))
+    const published: { title: string; slug: string }[] = []
+    const failed: { title: string; error: string }[] = []
+
+    for (const item of targets) {
+      const story = buildStoryFromImport(item, founder)
+      const result = await publishStoryCore(story)
+      if (result.success && result.story) {
+        published.push({ title: result.story.title, slug: result.story.slug })
+      } else {
+        failed.push({ title: item.title, error: result.error ?? 'Could not publish.' })
+      }
+    }
+
+    setBulkResult({ published, failed })
+    setChecked(new Set())
+    setBulkPublishing(false)
     loadItems()
   }
 
@@ -937,6 +1017,41 @@ export function DashboardImportContentPage() {
         </div>
       )}
 
+      {/* Bulk publish result */}
+      {bulkResult && (
+        <div className="mb-6 bg-white rounded-xl border border-[#E8E4DD] p-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-[#2D2A26]">
+              {bulkResult.published.length} {bulkResult.published.length === 1 ? 'story' : 'stories'} published
+            </p>
+            <button onClick={() => setBulkResult(null)} className="text-xs text-[#9CA3AF] hover:text-[#2D2A26]">
+              Dismiss
+            </button>
+          </div>
+          {bulkResult.published.length > 0 && (
+            <ul className="flex flex-col gap-1.5 mb-3">
+              {bulkResult.published.map(p => (
+                <li key={p.slug}>
+                  <Link to={`/stories/${p.slug}`} className="text-xs text-[#C86A43] font-medium hover:underline">
+                    {p.title} →
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          {bulkResult.failed.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-red-600 mb-1">{bulkResult.failed.length} couldn't publish</p>
+              <ul className="flex flex-col gap-1">
+                {bulkResult.failed.map((f, i) => (
+                  <li key={i} className="text-xs text-red-500">{f.title} — {f.error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Saved imports list */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -954,6 +1069,27 @@ export function DashboardImportContentPage() {
           )}
         </div>
 
+        {readyItems.length > 0 && (
+          <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg">
+            <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={checked.size > 0 && checked.size === readyItems.length}
+                onChange={toggleSelectAllReady}
+                className="w-4 h-4 accent-[#C86A43]"
+              />
+              Select all ready to publish ({readyItems.length})
+            </label>
+            <button
+              onClick={() => void handleBulkPublish()}
+              disabled={checked.size === 0 || bulkPublishing}
+              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+            >
+              {bulkPublishing ? 'Publishing…' : `Publish ${checked.size || ''} selected`}
+            </button>
+          </div>
+        )}
+
         {allItems.length === 0 ? (
           <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-10 text-center">
             <p className="text-sm font-semibold text-[#2D2A26] mb-2">No imports yet</p>
@@ -967,6 +1103,8 @@ export function DashboardImportContentPage() {
               <SavedRow
                 key={item.id}
                 item={item}
+                checked={checked.has(item.id)}
+                onToggleCheck={() => toggleChecked(item.id)}
                 onEdit={() => handleEdit(item)}
                 onDelete={() => handleDelete(item.id)}
                 onStatusChange={status => handleStatusChange(item.id, status)}
