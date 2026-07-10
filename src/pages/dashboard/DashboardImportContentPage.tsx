@@ -990,7 +990,7 @@ export function DashboardImportContentPage() {
           </div>
           {urlError && <p className="text-xs text-red-500 mt-2">{urlError}</p>}
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {(['youtube', 'vimeo', 'instagram', 'linkedin', 'tiktok', 'podcast', 'website'] as const).map(p => (
+            {(['youtube', 'podcast', 'website'] as const).map(p => (
               <span key={p} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${PLATFORM_COLORS[p]}`}>
                 {PLATFORM_LABELS[p]}
               </span>
