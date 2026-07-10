@@ -268,7 +268,7 @@ function FormatStep({ draft, onChange, onNext }: {
             <span className="text-2xl">⚡</span>
           </div>
           <p className="text-sm font-semibold text-[#C86A43] mb-0.5">Bulk import</p>
-          <p className="text-[11px] text-[#6B7280] leading-snug">Bringing in a bunch of existing YouTube videos, blog posts or a whole channel? Skip this wizard — publish many at once.</p>
+          <p className="text-[11px] text-[#6B7280] leading-snug">Already have YouTube videos, blog posts or a whole channel out there? Bring it all into the Village at once.</p>
         </Link>
         {FORMATS.map(f => {
           const active = draft.contentTypes.includes(f.type)
