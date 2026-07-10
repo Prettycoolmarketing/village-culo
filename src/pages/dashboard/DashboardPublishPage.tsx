@@ -1297,6 +1297,11 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
         >
           Continue to Preview →
         </button>
+        {!draft.founderId && (
+          <p className="text-xs text-red-600 text-center mt-2">
+            We couldn't find your founder profile, so this can't continue yet — try refreshing the page, or contact support if this keeps happening.
+          </p>
+        )}
       </div>
     </div>
   )
@@ -1421,10 +1426,15 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
           >
             {publishing ? 'Publishing…' : 'Publish to Village'}
           </button>
-          <button onClick={() => onPublish('draft')} disabled={publishing} className="px-4 py-3.5 border-2 border-[#E8E4DD] text-[#2D2A26] text-sm font-semibold rounded-xl hover:border-[#C86A43]/40 disabled:opacity-50 transition-colors">
+          <button onClick={() => onPublish('draft')} disabled={publishing || !draft.founderId} className="px-4 py-3.5 border-2 border-[#E8E4DD] text-[#2D2A26] text-sm font-semibold rounded-xl hover:border-[#C86A43]/40 disabled:opacity-50 transition-colors">
             Save Draft
           </button>
         </div>
+        {!draft.founderId && (
+          <p className="text-xs text-red-600 text-center">
+            We couldn't find your founder profile, so this can't publish yet — try refreshing the page, or contact support if this keeps happening.
+          </p>
+        )}
       </div>
     </div>
   )
@@ -1618,6 +1628,20 @@ export function DashboardPublishPage() {
     }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Self-heal a draft whose founderId never got set — e.g. an auto-saved
+  // localStorage draft from before the founder profile had finished loading
+  // on a prior visit. Never overwrites an already-set founderId, and never
+  // touches anything else the founder has typed.
+  useEffect(() => {
+    if (draft.founderId || !currentFounder) return
+    setDraft(prev => prev.founderId ? prev : ({
+      ...prev,
+      founderId: currentFounder.id,
+      businessId: prev.businessId || currentFounder.businessId || '',
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentFounder])
 
   function patch(changes: Partial<PublishDraft>) {
     setDraft(prev => ({ ...prev, ...changes }))
