@@ -7,7 +7,7 @@ import { getBusiness } from '../services/businesses'
 import { recommendationService } from '../services/partnership'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
-import { importedContentService, PLATFORM_LABELS } from '../services/importedContent'
+import { importedContentService, PLATFORM_LABELS, detectPlatform, generateEmbedUrl } from '../services/importedContent'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { IdeaGrid }         from '../widgets/IdeaGrid'
@@ -184,38 +184,54 @@ function BlogContent({ content }: { content: string }) {
 // ─── Reel tab ───────────────────────────────────────────────────────────────────
 
 function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: string; summary: string }) {
+  const platform = reelUrl ? detectPlatform(reelUrl) : undefined
+  const embedUrl = reelUrl && platform ? generateEmbedUrl(reelUrl, platform) : undefined
+  const platformLabel = platform ? PLATFORM_LABELS[platform] : 'the original platform'
+
   return (
-    <div className="flex flex-col sm:flex-row gap-6 items-start" aria-label="Reel content">
+    <div className="flex flex-col sm:flex-row gap-6 items-start" aria-label="Video content">
       {/* Vertical phone frame */}
       <div
         className="flex-shrink-0 w-full sm:w-56 bg-charcoal rounded-2xl overflow-hidden relative"
         style={{ aspectRatio: '9/16' }}
-        aria-label="Reel preview"
+        aria-label="Video preview"
       >
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
-          <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
-            <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-          <p className="font-body text-xs text-white/60 leading-relaxed">
-            Watch on Instagram
-          </p>
-        </div>
-        {reelUrl && (
-          <a
-            href={normalizeUrl(reelUrl)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="absolute inset-0"
-            aria-label={`Watch "${title}" on Instagram`}
+        {embedUrl ? (
+          <iframe
+            src={embedUrl}
+            title={title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full"
           />
+        ) : (
+          <>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
+                <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+              <p className="font-body text-xs text-white/60 leading-relaxed">
+                Watch on {platformLabel}
+              </p>
+            </div>
+            {reelUrl && (
+              <a
+                href={normalizeUrl(reelUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute inset-0"
+                aria-label={`Watch "${title}" on ${platformLabel}`}
+              />
+            )}
+          </>
         )}
       </div>
 
-      {/* Reel context */}
+      {/* Video context */}
       <div className="flex-1 min-w-0">
-        <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Reel</p>
+        <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Video</p>
         <h3 className="font-heading text-xl font-semibold text-charcoal leading-snug mb-3">{title}</h3>
         <p className="font-body text-base text-muted leading-relaxed mb-5">{summary}</p>
         {reelUrl && (
@@ -225,10 +241,7 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
           >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-            </svg>
-            Watch on Instagram
+            Watch on {platformLabel} ↗
           </a>
         )}
       </div>
@@ -277,7 +290,19 @@ export function StoryDetailPage() {
   const jsonLdSource = story?.importedContentId ? importedContentService.get(story.importedContentId) : undefined
   const storyFeaturedIn = story ? getFeaturedIn('story', story.id) : []
   const storyConnectedTo = story ? getConnectedTo('story', story.id) : []
-  const [activeTab, setActiveTab] = useState<ContentType>(story?.contentTypes[0] ?? 'blog')
+  // Base the tabs actually offered on what content is really there, not just
+  // which formats were checked in the wizard — a founder who wrote a blog but
+  // only selected "Reel" as the format shouldn't have that writing become
+  // unreachable.
+  const availableTypes: ContentType[] = story ? [...new Set([
+    ...(story.blog ? ['blog' as const] : []),
+    ...(story.reelUrl ? ['reel' as const] : []),
+    ...(story.carouselImages && story.carouselImages.length > 0 ? ['carousel' as const] : []),
+    ...story.contentTypes,
+  ])] : []
+  const [activeTab, setActiveTab] = useState<ContentType>(
+    story?.blog ? 'blog' : (story?.contentTypes[0] ?? 'blog')
+  )
 
   usePageMeta({
     title:       story?.seoTitle || story?.title,
@@ -547,12 +572,12 @@ export function StoryDetailPage() {
               {/* Content format tabs + panel */}
               <section aria-label="Story content">
                 <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">
-                  {story.contentTypes.length > 1 ? 'Read or Watch' : contentTypeLabel(story.contentTypes[0])}
+                  {availableTypes.length > 1 ? 'Read or Watch' : contentTypeLabel(availableTypes[0] ?? story.contentTypes[0])}
                 </h2>
 
-                {story.contentTypes.length > 1 && (
+                {availableTypes.length > 1 && (
                   <ContentTabs
-                    available={story.contentTypes}
+                    available={availableTypes}
                     active={activeTab}
                     onChange={setActiveTab}
                   />
