@@ -259,18 +259,17 @@ function FormatStep({ draft, onChange, onNext }: {
         title="What are you publishing?"
         subtitle="Select every format this content exists in. You can choose more than one."
       />
-      <div className="flex items-center justify-between gap-3 mb-6 px-4 py-3 rounded-xl bg-[#F8F5F0] border border-[#E8E4DD]">
-        <p className="text-xs text-[#6B7280] leading-relaxed">
-          Bringing in a bunch of existing YouTube videos, blog posts or a whole channel? Skip this wizard.
-        </p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
         <Link
           to="/dashboard/import-content"
-          className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0"
+          className="text-left p-4 rounded-2xl border-2 border-[#C86A43] bg-[#FDF6F3] hover:bg-[#FBEBE3] transition-all sm:col-span-2"
         >
-          Bulk import →
+          <div className="flex items-start justify-between mb-2">
+            <span className="text-2xl">⚡</span>
+          </div>
+          <p className="text-sm font-semibold text-[#C86A43] mb-0.5">Bulk import</p>
+          <p className="text-[11px] text-[#6B7280] leading-snug">Bringing in a bunch of existing YouTube videos, blog posts or a whole channel? Skip this wizard — publish many at once.</p>
         </Link>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
         {FORMATS.map(f => {
           const active = draft.contentTypes.includes(f.type)
           return (
