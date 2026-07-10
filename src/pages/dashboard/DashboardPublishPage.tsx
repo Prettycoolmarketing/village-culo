@@ -792,7 +792,11 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
   const hasCarouselSlide  = draft.carouselSlides.filter(Boolean).length > 0
   const missingCoverImage = !draft.coverImage && !hasCarouselSlide
   const hasBlog           = draft.contentTypes.includes('blog')
-  const canContinue       = draft.title.trim().length > 0 && draft.summary.trim().length > 0
+  // A video link, audio link, slides or a document already make the story
+  // complete on their own — the short summary is only required when there's
+  // no other content to fall back on (writing from scratch).
+  const hasOtherContent   = !!(draft.reelUrl || draft.audioUrl || hasCarouselSlide || draft.documentUrl)
+  const canContinue       = draft.title.trim().length > 0 && (draft.summary.trim().length > 0 || hasOtherContent)
 
   return (
     <div className="max-w-xl mx-auto">
@@ -802,7 +806,12 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
           <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
             placeholder="What is this story about?" className={inp + ' text-lg font-semibold py-3'} autoFocus />
         </Field>
-        <Field label="Summary *" hint="One or two sentences — the reader's takeaway.">
+        <Field
+          label={hasOtherContent ? 'Summary' : 'Summary *'}
+          hint={hasOtherContent
+            ? 'Optional — you\'ve already added a video, audio, slides or a link, so this is complete without it.'
+            : 'One or two sentences — the reader\'s takeaway.'}
+        >
           <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
             placeholder="The honest story of…" className={inp + ' resize-y'} />
         </Field>
