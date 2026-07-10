@@ -22,18 +22,18 @@ import type { ContentType, Topic, Story } from '../../types'
 
 // ─── Content formats ──────────────────────────────────────────────────────────
 
+// Trimmed to the 4 formats that are actually distinct end to end (own storage
+// field, own render treatment). The rest (Talking Head, Voice Over, Photo
+// Story, Document, External Article, YouTube Video, Social Post) were
+// cosmetic labels over these same 4 buckets — removed from the picker, but
+// the ContentType values themselves and their rendering are untouched, so
+// any already-published story using one of them keeps working exactly as
+// before.
 const FORMATS: { type: ContentType; emoji: string; label: string; desc: string }[] = [
-  { type: 'blog',             emoji: '📝', label: 'Blog',             desc: 'Written article or post'      },
-  { type: 'reel',             emoji: '🎥', label: 'Reel',             desc: 'Short-form vertical video'    },
-  { type: 'carousel',         emoji: '🎠', label: 'Carousel',         desc: 'Swipeable image slides'       },
-  { type: 'podcast',          emoji: '🎙️', label: 'Podcast',          desc: 'Audio episode'                },
-  { type: 'talking-head',     emoji: '🎤', label: 'Talking Head',     desc: 'On-camera video'              },
-  { type: 'voice-over',       emoji: '🎧', label: 'Voice Over',       desc: 'Audio narration with visuals' },
-  { type: 'photo-story',      emoji: '📷', label: 'Photo Story',      desc: 'Photo series or gallery'      },
-  { type: 'document',         emoji: '📄', label: 'Document',         desc: 'PDF, Word or guide'           },
-  { type: 'external-article', emoji: '🌐', label: 'External Article', desc: 'Piece published elsewhere'    },
-  { type: 'youtube-video',    emoji: '▶️', label: 'YouTube Video',    desc: 'Long-form video content'      },
-  { type: 'social-post',      emoji: '📱', label: 'Social Post',      desc: 'LinkedIn, Instagram, TikTok'  },
+  { type: 'blog',     emoji: '📝', label: 'Blog',     desc: 'Written article or post'   },
+  { type: 'reel',     emoji: '🎥', label: 'Reel',     desc: 'Short-form vertical video' },
+  { type: 'carousel', emoji: '🎠', label: 'Carousel', desc: 'Swipeable image slides'    },
+  { type: 'podcast',  emoji: '🎙️', label: 'Podcast',  desc: 'Audio episode'             },
 ]
 
 // ─── Steps ────────────────────────────────────────────────────────────────────
