@@ -465,10 +465,10 @@ export function StoryDetailPage() {
           </div>
         </div>
 
-        {/* Hero content — overlaps cover slightly */}
+        {/* Hero content */}
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
-            <div className="max-w-3xl -mt-10 relative z-10">
+            <div className="max-w-3xl pt-8">
               {/* H1 */}
               <h1
                 id="story-title"

@@ -9,6 +9,7 @@ import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { publishStoryCore } from '../../services/publishStory'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { previewIdeaImpact } from '../../services/ideaSync'
 import { computeReadability } from '../../utils/readability'
 import { getStoryMissingItems } from '../../utils/missingAssets'
@@ -52,7 +53,7 @@ const STEPS: PublishStep[] = ['format', 'content', 'media', 'story', 'builder', 
 
 const STEP_LABELS: Record<PublishStep, string> = {
   format:  'Choose Formats',
-  content: 'Starting Point',
+  content: 'Upload',
   media:   'Attach Media',
   story:   'Tell Your Story',
   builder: 'Village Intelligence',
@@ -251,8 +252,6 @@ function FormatStep({ draft, onChange, onNext }: {
     onChange({ contentTypes: has ? draft.contentTypes.filter(t => t !== type) : [...draft.contentTypes, type] })
   }
 
-  const firstLabel = FORMATS.find(f => f.type === draft.contentTypes[0])?.label ?? draft.contentTypes[0]
-
   return (
     <div className="max-w-2xl">
       <StepHeader
@@ -303,11 +302,7 @@ function FormatStep({ draft, onChange, onNext }: {
         disabled={draft.contentTypes.length === 0}
         className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        {draft.contentTypes.length === 0
-          ? 'Select at least one format'
-          : draft.contentTypes.length === 1
-          ? `Continue — ${firstLabel}`
-          : `Continue — ${draft.contentTypes.length} formats selected`}
+        {draft.contentTypes.length === 0 ? 'Select at least one format' : 'Continue'}
       </button>
     </div>
   )
@@ -365,35 +360,16 @@ function ContentStep({ draft, onChange, onNext, onBack }: {
     draft.pastedText.trim().length > 0
 
   const CONTENT_TABS: { key: ContentTab; label: string; soon?: boolean }[] = [
-    { key: 'upload',  label: 'Upload' },
-    { key: 'url',     label: 'Paste URL' },
-    { key: 'text',    label: 'Paste Text' },
-    { key: 'library', label: 'From Imported Content' },
+    { key: 'upload', label: 'Upload' },
+    { key: 'url',    label: 'Paste URL' },
   ]
 
-  // Anything already captured via Import Content that hasn't become a story yet —
-  // Publish is the one place a founder actually starts a story, whether from
-  // scratch or from something they saved earlier. No second publishing entry point.
-  const importCandidates = importedContentService
-    .getAll({ founderId: draft.founderId || undefined })
-    .filter(item => !item.relatedStoryId)
-
-  function selectImportedContent(item: (typeof importCandidates)[number]) {
-    onChange({
-      importedContentId: item.id,
-      title: draft.title || item.title,
-      summary: draft.summary || item.autoSummary || item.description || '',
-      blog: draft.blog || item.diaryNote || item.transcriptText || '',
-      coverImage: draft.coverImage || item.thumbnailUrl || '',
-    })
-    onNext()
-  }
 
   return (
     <div className="max-w-lg">
       <StepHeader
         title="Add Your Content"
-        subtitle="Upload, link or paste your existing content. Skip if writing from scratch."
+        subtitle="Upload, link or paste your existing content."
         onBack={onBack}
       />
 
@@ -485,47 +461,6 @@ function ContentStep({ draft, onChange, onNext, onBack }: {
           </button>
           <p className="text-[11px] text-[#9CA3AF]">Add multiple URLs if the content exists across different platforms.</p>
         </div>
-      )}
-
-      {contentTab === 'text' && (
-        <Field label="Paste your content" hint="Blog post, article, social caption, transcript or any text you want to publish.">
-          <textarea
-            value={draft.pastedText}
-            onChange={e => onChange({ pastedText: e.target.value })}
-            rows={10}
-            placeholder="Paste your content here…"
-            className={inp + ' resize-y'}
-          />
-        </Field>
-      )}
-
-      {contentTab === 'library' && (
-        importCandidates.length === 0 ? (
-          <div className="bg-[#F8F5F0] rounded-2xl p-8 text-center">
-            <p className="text-sm font-semibold text-[#2D2A26] mb-2">Nothing imported yet</p>
-            <p className="text-xs text-[#9CA3AF] mb-4">Save content from Import Content and it'll show up here as a starting point.</p>
-            <Link to="/dashboard/import-content" className="inline-flex text-xs font-semibold text-[#C86A43] hover:underline">
-              Go to Import Content →
-            </Link>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {importCandidates.map(item => (
-              <button
-                key={item.id}
-                onClick={() => selectImportedContent(item)}
-                className="flex items-center gap-3 px-4 py-3 bg-white border border-[#E8E4DD] rounded-xl hover:border-[#C86A43]/40 transition-colors text-left"
-              >
-                {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#2D2A26] truncate">{item.title}</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">{item.sourcePlatform ?? 'Imported'}</p>
-                </div>
-                <span className="text-xs font-semibold text-[#C86A43] shrink-0">Use this →</span>
-              </button>
-            ))}
-          </div>
-        )
       )}
 
       <div className="mt-6 flex gap-3">
@@ -789,33 +724,19 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
   onNext: () => void
   onBack: () => void
 }) {
-  const hasCarouselSlide  = draft.carouselSlides.filter(Boolean).length > 0
-  const missingCoverImage = !draft.coverImage && !hasCarouselSlide
-  const hasBlog           = draft.contentTypes.includes('blog')
-  // A video link, audio link, slides or a document already make the story
-  // complete on their own — the short summary is only required when there's
-  // no other content to fall back on (writing from scratch).
-  const hasOtherContent   = !!(draft.reelUrl || draft.audioUrl || hasCarouselSlide || draft.documentUrl)
-  const canContinue       = draft.title.trim().length > 0 && (draft.summary.trim().length > 0 || hasOtherContent)
-
   return (
     <div className="max-w-xl mx-auto">
       <StepHeader title="Tell Your Story" subtitle="Just the story. Village handles everything else on the next step." onBack={onBack} />
       <div className="flex flex-col gap-5">
-        <Field label="Headline *">
+        <Field label="Headline" hint="Optional — Village can draft one from your content if you leave this blank.">
           <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
             placeholder="What is this story about?" className={inp + ' text-lg font-semibold py-3'} autoFocus />
         </Field>
-        <Field
-          label={hasOtherContent ? 'Summary' : 'Summary *'}
-          hint={hasOtherContent
-            ? 'Optional — you\'ve already added a video, audio, slides or a link, so this is complete without it.'
-            : 'One or two sentences — the reader\'s takeaway.'}
-        >
+        <Field label="Summary" hint="Optional — one or two sentences, the reader's takeaway.">
           <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
             placeholder="The honest story of…" className={inp + ' resize-y'} />
         </Field>
-        <Field label="Your perspective" hint="What happened, what you learned, what you'd do differently. Write freely — Village will find the structure.">
+        <Field label="Your perspective" hint="Optional — what happened, what you learned, what you'd do differently. Write freely — Village will find the structure.">
           <textarea
             value={draft.blog}
             onChange={e => onChange({ blog: e.target.value })}
@@ -824,21 +745,8 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
             className={inp + ' resize-y text-sm leading-relaxed'}
           />
         </Field>
-        <Field label="Hero image">
-          <MediaUpload
-            value={draft.coverImage}
-            onChange={v => onChange({ coverImage: v })}
-            label="Upload hero image"
-            aspect="wide"
-            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
-          />
-          {hasBlog && missingCoverImage && (
-            <p className="text-xs text-amber-700 mt-1.5">No cover image yet — a placeholder will be used until you add one.</p>
-          )}
-        </Field>
         <button
           onClick={onNext}
-          disabled={!canContinue}
           className="py-3.5 bg-[#C86A43] text-white text-base font-bold rounded-2xl hover:bg-[#b05a35] disabled:opacity-50 transition-colors mt-2"
         >
           Continue — let Village understand this story →
@@ -1456,13 +1364,12 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
 
 // ─── Step 7: Done ─────────────────────────────────────────────────────────────
 
-function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing, onPublishAnother }: {
+function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing }: {
   draft: PublishDraft
   publishedSlug: string
   action: 'publish' | 'draft' | 'archive'
   summary: PublishSummary | null
   onContinuePublishing: () => void
-  onPublishAnother: () => void
 }) {
   const [shared, setShared] = useState(false)
   const storyUrl = typeof window !== 'undefined' ? `${window.location.origin}/stories/${publishedSlug}` : `/stories/${publishedSlug}`
@@ -1550,9 +1457,9 @@ function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing,
         <button onClick={onContinuePublishing} className="w-full py-3 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-xl hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors">
           Continue Publishing
         </button>
-        <button onClick={onPublishAnother} className="text-sm text-[#9CA3AF] hover:text-[#C86A43] transition-colors">
-          Publish Another Story →
-        </button>
+        <div className="flex justify-center">
+          <CreateWithCuloCTA label="Create with CULO in Canva" />
+        </div>
       </div>
     </div>
   )
@@ -1751,14 +1658,6 @@ export function DashboardPublishPage() {
     setStep('done')
   }
 
-  function reset() {
-    localStorage.removeItem(DRAFT_AUTOSAVE_KEY)
-    setDraft(defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? ''))
-    setStep('format')
-    setPublishedSlug('')
-    setSummary(null)
-  }
-
   return (
     <div className="min-h-full p-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {step !== 'done' && (
@@ -1794,7 +1693,6 @@ export function DashboardPublishPage() {
           action={lastAction}
           summary={summary}
           onContinuePublishing={() => setStep('builder')}
-          onPublishAnother={reset}
         />
       )}
     </div>
