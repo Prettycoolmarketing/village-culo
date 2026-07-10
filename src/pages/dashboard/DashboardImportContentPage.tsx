@@ -761,6 +761,17 @@ function SavedRow({
           aria-label={ready ? `Select "${item.title}" to publish` : 'Not ready to publish yet'}
         />
       )}
+      <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center">
+        {item.thumbnailUrl ? (
+          <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <span className="text-[#C4BDB4]">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 6h16M4 6a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2H4z" />
+            </svg>
+          </span>
+        )}
+      </div>
       <div className="shrink-0">
         <PlatformBadge platform={item.sourcePlatform} />
       </div>
