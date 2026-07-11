@@ -19,6 +19,7 @@ import { topics as allTopics } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { uploadFile } from '../../lib/storage'
+import { looksLikeChannelUrl } from '../../utils/url'
 import type { ContentType, Topic, Story } from '../../types'
 
 // ─── Content formats ──────────────────────────────────────────────────────────
@@ -536,6 +537,13 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                   className={inp}
                 />
               </Field>
+              {looksLikeChannelUrl(draft.reelUrl) && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
+                  This looks like your channel page, not a single video — there's nothing to play here. Paste one video's link instead, or go to{' '}
+                  <Link to="/dashboard/import-sources" className="font-semibold underline">Import Sources</Link>{' '}
+                  to connect your whole channel and bring in every video at once.
+                </p>
+              )}
               {uploadedVideoUrls.length > 0 && !draft.reelUrl && (
                 <button
                   onClick={() => onChange({ reelUrl: uploadedVideoUrls[0] })}

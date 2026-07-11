@@ -22,7 +22,7 @@ import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendatio
 import { InnerContainer }   from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType } from '../types'
-import { normalizeUrl } from '../utils/url'
+import { normalizeUrl, looksLikeChannelUrl } from '../utils/url'
 
 const DISCLOSURE_TYPE_LABELS: Record<string, string> = {
   affiliate:          'Affiliate Relationship',
@@ -184,8 +184,9 @@ function BlogContent({ content }: { content: string }) {
 // ─── Reel tab ───────────────────────────────────────────────────────────────────
 
 function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: string; summary: string }) {
+  const isChannelLink = looksLikeChannelUrl(reelUrl)
   const platform = reelUrl ? detectPlatform(reelUrl) : undefined
-  const embedUrl = reelUrl && platform ? generateEmbedUrl(reelUrl, platform) : undefined
+  const embedUrl = reelUrl && platform && !isChannelLink ? generateEmbedUrl(reelUrl, platform) : undefined
   const platformLabel = platform ? PLATFORM_LABELS[platform] : 'the original platform'
 
   return (
@@ -208,12 +209,18 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
           <>
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
               <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
+                {isChannelLink ? (
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
               </div>
               <p className="font-body text-xs text-white/60 leading-relaxed">
-                Watch on {platformLabel}
+                {isChannelLink ? `Visit their ${platformLabel} channel` : `Watch on ${platformLabel}`}
               </p>
             </div>
             {reelUrl && (
@@ -222,7 +229,7 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
                 target="_blank"
                 rel="noopener noreferrer"
                 className="absolute inset-0"
-                aria-label={`Watch "${title}" on ${platformLabel}`}
+                aria-label={isChannelLink ? `Visit "${title}" on ${platformLabel}` : `Watch "${title}" on ${platformLabel}`}
               />
             )}
           </>
@@ -241,7 +248,7 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
           >
-            Watch on {platformLabel} ↗
+            {isChannelLink ? `Visit ${platformLabel} channel` : `Watch on ${platformLabel}`} ↗
           </a>
         )}
       </div>
