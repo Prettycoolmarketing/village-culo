@@ -28,6 +28,21 @@ const PLATFORM_BY_SOURCE_TYPE: Record<ConnectedSourceType, ImportedContent['sour
 }
 
 function now() { return new Date().toISOString() }
+function today() { return new Date().toISOString().slice(0, 10) }
+
+// New items only ever arrive 20 at a time per calendar day, per source —
+// keeps every scan small and predictable instead of pulling a channel's
+// whole history in one go.
+const DAILY_IMPORT_LIMIT = 20
+
+export interface ScanResult {
+  imported: number
+  /** True when there's more unseen content than this scan brought in — either the
+   *  channel has further pages we didn't reach, or today's allowance ran out first. */
+  moreAvailable: boolean
+  /** True when the scan was skipped entirely because today's allowance is already spent. */
+  dailyLimitReached: boolean
+}
 
 export const connectedSourcesService = {
   getAll(filter?: ConnectedSourceFilter): ConnectedSource[] {
@@ -89,16 +104,26 @@ function draftFrom(founderId: string, sourceId: string, platform: ImportedConten
   }
 }
 
-/** Scans a connected source, writing any newly-discovered items as ImportedContent drafts. Returns the count of new items found. */
-export async function scanSource(source: ConnectedSource): Promise<number> {
+/** Scans a connected source, writing up to today's remaining allowance of newly-discovered items as ImportedContent drafts. */
+export async function scanSource(source: ConnectedSource): Promise<ScanResult> {
+  const isNewDay = source.lastScanDate !== today()
+  const usedToday = isNewDay ? 0 : (source.importedToday ?? 0)
+  const remainingToday = Math.max(0, DAILY_IMPORT_LIMIT - usedToday)
+
+  // Allowance already spent for today — skip the fetch entirely rather than
+  // scan and immediately discard what it finds.
+  if (remainingToday === 0) {
+    return { imported: 0, moreAvailable: true, dailyLimitReached: true }
+  }
+
   const seen = alreadyImportedUrls(source.id)
 
   try {
     const items = await CONNECTORS[source.sourceType](source)
     const platform = PLATFORM_BY_SOURCE_TYPE[source.sourceType]
-    const drafts = items
-      .filter(item => !seen.has(item.originalUrl))
-      .map(item => draftFrom(source.founderId, source.id, platform, item))
+    const unseen = items.filter(item => !seen.has(item.originalUrl))
+    const toImport = unseen.slice(0, remainingToday)
+    const drafts = toImport.map(item => draftFrom(source.founderId, source.id, platform, item))
 
     await Promise.all(drafts.map(d => importedContentService.upsert(d)))
     // Village does the work first — analyse every connector-discovered draft
@@ -115,9 +140,11 @@ export async function scanSource(source: ConnectedSource): Promise<number> {
       lastScannedAt: now(),
       lastError: undefined,
       discoveredCount: source.discoveredCount + drafts.length,
+      lastScanDate: today(),
+      importedToday: usedToday + drafts.length,
     })
 
-    return drafts.length
+    return { imported: drafts.length, moreAvailable: unseen.length > toImport.length, dailyLimitReached: false }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Scan failed.'
     await connectedSourcesService.upsert({ ...source, status: 'error', lastError: message, lastScannedAt: now() })

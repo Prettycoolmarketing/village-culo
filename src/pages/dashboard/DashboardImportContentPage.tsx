@@ -924,11 +924,11 @@ export function DashboardImportContentPage() {
         const channelId = await resolveChannelId(trimmed)
         const source = newConnectedSource(founderId, 'youtube', trimmed, { channelId })
         await connectedSourcesService.upsert(source)
-        const count = await scanSource(source)
+        const result = await scanSource(source)
         setUrlInput('')
         setImportNotice(
-          count > 0
-            ? `Connected this channel — pulled its ${count} most recent video${count === 1 ? '' : 's'} in below.`
+          result.imported > 0
+            ? `Connected this channel — pulled in ${result.imported} video${result.imported === 1 ? '' : 's'}.${result.moreAvailable ? ' Your next batch unlocks tomorrow.' : ''}`
             : "Connected this channel, but didn't find any new videos to pull in."
         )
         loadItems()

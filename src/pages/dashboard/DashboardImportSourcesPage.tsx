@@ -80,11 +80,22 @@ function ConnectForm({ founderId, onConnected }: { founderId: string; onConnecte
 
 function SourceRow({ source, onChanged }: { source: ConnectedSource; onChanged: () => void }) {
   const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
   async function handleScan() {
     setBusy(true)
+    setNotice(null)
     try {
-      await scanSource(source)
+      const result = await scanSource(source)
+      if (result.dailyLimitReached) {
+        setNotice("You've added your videos for today — your next 20 unlock tomorrow.")
+      } else if (result.imported === 0) {
+        setNotice("You're all caught up — no new videos found.")
+      } else if (result.moreAvailable) {
+        setNotice(`Added ${result.imported} — your next 20 unlock tomorrow.`)
+      } else {
+        setNotice(`Added ${result.imported} — you're all caught up!`)
+      }
     } catch {
       // error state is persisted on the source itself and rendered below
     } finally {
@@ -110,9 +121,11 @@ function SourceRow({ source, onChanged }: { source: ConnectedSource; onChanged: 
         <p className="text-xs text-[#9CA3AF] mt-1">
           {source.status === 'error' && source.lastError
             ? <span className="text-red-600">{source.lastError}</span>
-            : source.lastScannedAt
-              ? `Last scanned ${new Date(source.lastScannedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} · ${source.discoveredCount} imported`
-              : 'Not scanned yet'}
+            : notice
+              ? <span className="text-[#5E6B4A] font-medium">{notice}</span>
+              : source.lastScannedAt
+                ? `Last scanned ${new Date(source.lastScannedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} · ${source.discoveredCount} imported`
+                : 'Not scanned yet'}
         </p>
       </div>
       <button

@@ -13,6 +13,11 @@ export interface ConnectedSource {
   lastScannedAt?: string
   lastError?: string
   discoveredCount: number
+  // Daily import drip — a scan only ever brings in up to DAILY_IMPORT_LIMIT
+  // new items per calendar day. lastScanDate is the day importedToday last
+  // reset; importedToday is how much of today's allowance has been used.
+  lastScanDate?: string
+  importedToday?: number
 }
 
 export interface ConnectedSourceFilter {
