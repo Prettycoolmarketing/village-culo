@@ -13,7 +13,7 @@ import {
   PLATFORM_COLORS,
 } from '../../services/importedContent'
 import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
-import { normalizeUrl } from '../../utils/url'
+import { normalizeUrl, looksLikeChannelUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import {
   enrichImportedContent,
@@ -23,6 +23,8 @@ import {
   villageContentIntelligenceService,
   importedContentToInput,
 } from '../../services/villageIntelligence'
+import { connectedSourcesService, newConnectedSource, scanSource } from '../../services/connectedSources'
+import { resolveChannelId } from '../../services/connectors/youtube'
 import type {
   ImportedContent,
   ImportedContentStatus,
@@ -888,6 +890,8 @@ export function DashboardImportContentPage() {
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [bulkPublishing, setBulkPublishing] = useState(false)
   const [bulkResult, setBulkResult] = useState<{ published: { title: string; slug: string }[]; failed: { title: string; error: string }[] } | null>(null)
+  const [importBusy, setImportBusy] = useState(false)
+  const [importNotice, setImportNotice] = useState<string | null>(null)
 
   function loadItems() {
     setAllItems(
@@ -910,6 +914,34 @@ export function DashboardImportContentPage() {
     }
     setUrlError('')
     setSaveError(null)
+    setImportNotice(null)
+
+    // A channel/profile link has no single video to import — it means "pull
+    // everything from this channel," same as connecting it on Import Sources.
+    // Handling that here too means founders don't have to know the difference
+    // between the two pages to get what they're actually asking for.
+    if (looksLikeChannelUrl(trimmed)) {
+      setImportBusy(true)
+      try {
+        const channelId = await resolveChannelId(trimmed)
+        const source = newConnectedSource(founderId, 'youtube', trimmed, { channelId })
+        await connectedSourcesService.upsert(source)
+        const count = await scanSource(source)
+        setUrlInput('')
+        setImportNotice(
+          count > 0
+            ? `Connected this channel — pulled its ${count} most recent video${count === 1 ? '' : 's'} in below.`
+            : "Connected this channel, but didn't find any new videos to pull in."
+        )
+        loadItems()
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : 'Could not connect this channel.')
+      } finally {
+        setImportBusy(false)
+      }
+      return
+    }
+
     const newItem = buildDraftImport(founderId, trimmed)
     const intel = villageContentIntelligenceService.analyse(importedContentToInput(newItem))
     void villageContentIntelligenceService.upsert(intel)
@@ -1059,12 +1091,17 @@ export function DashboardImportContentPage() {
               )}
             </div>
             <button onClick={() => void handleImport()}
-              className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors shrink-0">
-              Import
+              disabled={importBusy}
+              className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors shrink-0">
+              {importBusy ? 'Pulling videos…' : 'Import'}
             </button>
           </div>
+          {looksLikeChannelUrl(urlInput.trim()) && !importBusy && (
+            <p className="text-xs text-[#C86A43] mt-2">This looks like a channel link — we'll pull in its recent videos, not just this link.</p>
+          )}
           {urlError && <p className="text-xs text-red-500 mt-2">{urlError}</p>}
           {saveError && <p className="text-xs text-red-600 font-medium mt-2">{saveError}</p>}
+          {importNotice && <p className="text-xs text-[#5E6B4A] font-medium mt-2">{importNotice}</p>}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {(['youtube', 'podcast', 'website'] as const).map(p => (
               <span key={p} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${PLATFORM_COLORS[p]}`}>
