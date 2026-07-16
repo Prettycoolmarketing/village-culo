@@ -243,8 +243,8 @@ function FormatStep({ draft, onChange, onNext }: {
   return (
     <div className="max-w-2xl">
       <StepHeader
-        title="What are you publishing?"
-        subtitle="Select every format this content exists in. You can choose more than one."
+        title="What's Your Story?"
+        subtitle="Update The Village or edit with CULO in Canva to continue curating your life's work."
       />
 
       {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
@@ -259,7 +259,7 @@ function FormatStep({ draft, onChange, onNext }: {
           <div>
             <p className="font-heading text-base font-semibold text-white leading-snug">CULO Creatives — exclusively on Canva</p>
             <p className="font-body text-sm text-white/60 mt-0.5">
-              Turn this into scroll-stopping visuals with templates built for founder stories.
+              Structure your messy thoughts and raw footage into different formats of reels, carousels, blogs and voice overs — only available in Canva.
             </p>
           </div>
           <span className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl">
@@ -268,7 +268,7 @@ function FormatStep({ draft, onChange, onNext }: {
         </div>
       </a>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-2 gap-3 mb-8">
         {FORMATS.map(f => {
           const active = draft.contentTypes.includes(f.type)
           return (
