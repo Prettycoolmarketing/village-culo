@@ -211,86 +211,6 @@ function JoinProgramForm({
   )
 }
 
-// ─── Affiliate link form ──────────────────────────────────────────────────────
-
-function AffiliateLinkForm({
-  founderId,
-  businessId,
-  businessWebsite,
-  existingLink,
-  onSaved,
-  onCancel,
-}: {
-  founderId: string
-  businessId: string
-  businessWebsite?: string
-  existingLink?: FounderAffiliateLink
-  onSaved: () => void
-  onCancel: () => void
-}) {
-  const [url, setUrl] = useState(existingLink?.affiliateUrl ?? '')
-
-  function handleSave() {
-    const trimmed = url.trim()
-    if (!trimmed) return
-    const link: FounderAffiliateLink = {
-      id:              existingLink?.id ?? crypto.randomUUID(),
-      founderId,
-      businessId,
-      businessWebsite: businessWebsite,
-      affiliateUrl:    trimmed,
-      createdAt:       existingLink?.createdAt ?? new Date().toISOString(),
-      updatedAt:       new Date().toISOString(),
-    }
-    affiliateLinkService.upsert(link)
-    onSaved()
-  }
-
-  return (
-    <div className="border-t border-[#E8E4DD] bg-[#F8F5F0] px-5 py-4">
-      <p className="text-xs font-semibold text-[#2D2A26] mb-1">
-        {existingLink ? 'Edit Affiliate Link' : 'Use My Affiliate Link'}
-      </p>
-      <p className="text-xs text-[#9CA3AF] mb-4 leading-relaxed">
-        Paste your affiliate URL. Village will use this link whenever this business is mentioned in your published stories.
-      </p>
-      {businessWebsite && (
-        <div className="mb-3">
-          <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Business Website</p>
-          <p className="text-xs text-[#6B7280] font-mono truncate">{businessWebsite}</p>
-        </div>
-      )}
-      <div className="mb-4">
-        <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">
-          Your Affiliate URL
-        </label>
-        <input
-          type="url"
-          value={url}
-          onChange={e => setUrl(e.target.value)}
-          placeholder="https://example.com?ref=yourname"
-          className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-xs text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] font-mono"
-        />
-      </div>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={!url.trim()}
-          className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
-        >
-          Save Link
-        </button>
-        <button
-          onClick={onCancel}
-          className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── Business connection row ──────────────────────────────────────────────────
 
 function BusinessConnectionRow({
@@ -302,18 +222,11 @@ function BusinessConnectionRow({
   founderId: string
   onRefresh: () => void
 }) {
-  const [joinOpen,      setJoinOpen]      = useState(false)
-  const [affiliateOpen, setAffiliateOpen] = useState(false)
+  const [joinOpen, setJoinOpen] = useState(false)
 
   function handleLeave() {
     if (!row.enrollment) return
     enrollmentService.leave(row.enrollment.id)
-    onRefresh()
-  }
-
-  function handleRemoveAffiliate() {
-    if (!row.affiliateLink) return
-    affiliateLinkService.delete(row.affiliateLink.id)
     onRefresh()
   }
 
@@ -364,7 +277,7 @@ function BusinessConnectionRow({
               </div>
             )}
 
-            {/* Affiliate link */}
+            {/* Affiliate link — read only here, managed from Opportunities */}
             {row.affiliateLink && (
               <div className="mt-1.5 flex items-center gap-2">
                 <span className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Affiliate URL:</span>
@@ -378,9 +291,9 @@ function BusinessConnectionRow({
           {/* Actions */}
           <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
             {/* Program actions */}
-            {row.status === 'pending-program' && !joinOpen && !affiliateOpen && (
+            {row.status === 'pending-program' && !joinOpen && (
               <button
-                onClick={() => { setJoinOpen(true); setAffiliateOpen(false) }}
+                onClick={() => setJoinOpen(true)}
                 className="px-3 py-1.5 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5538] transition-colors"
               >
                 Join Program
@@ -395,22 +308,13 @@ function BusinessConnectionRow({
               </button>
             )}
 
-            {/* Affiliate link actions */}
-            {!affiliateOpen && row.status !== 'program' && (
-              <button
-                onClick={() => { setAffiliateOpen(true); setJoinOpen(false) }}
+            {row.status !== 'program' && (
+              <Link
+                to="/dashboard/opportunities"
                 className="px-3 py-1.5 bg-white border border-[#E8E4DD] text-[#6B7280] text-xs font-medium rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
               >
-                {row.affiliateLink ? 'Edit Link' : 'Use Affiliate Link'}
-              </button>
-            )}
-            {row.status === 'affiliate' && !affiliateOpen && (
-              <button
-                onClick={handleRemoveAffiliate}
-                className="px-3 py-1.5 text-xs text-[#9CA3AF] hover:text-red-400 transition-colors"
-              >
-                Remove
-              </button>
+                {row.affiliateLink ? 'Manage Link' : 'Add Affiliate Link'}
+              </Link>
             )}
           </div>
         </div>
@@ -424,16 +328,6 @@ function BusinessConnectionRow({
           businessId={row.businessId}
           onEnrolled={() => { setJoinOpen(false); onRefresh() }}
           onCancel={() => setJoinOpen(false)}
-        />
-      )}
-      {affiliateOpen && (
-        <AffiliateLinkForm
-          founderId={founderId}
-          businessId={row.businessId}
-          businessWebsite={row.businessWebsite ?? getBusiness(row.businessId)?.website}
-          existingLink={row.affiliateLink}
-          onSaved={() => { setAffiliateOpen(false); onRefresh() }}
-          onCancel={() => setAffiliateOpen(false)}
         />
       )}
     </div>
