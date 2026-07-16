@@ -51,7 +51,7 @@ export function VillageAnalyticsPage() {
   const published  = founders.filter(f => f.status === 'published' || f.status === 'featured')
   const curated    = founders.filter(f => f.profileStatus === 'village-curated')
   const claimed    = founders.filter(f => f.profileStatus === 'claimed' || f.profileStatus === 'verified')
-  const withBiz    = founders.filter(f => !!f.businessId)
+  const withBiz    = founders.filter(f => businesses.some(b => b.founderId === f.id))
   const withYT     = founders.filter(f => !!f.youtube)
   const withPodcast = founders.filter(f => !!f.podcast)
 

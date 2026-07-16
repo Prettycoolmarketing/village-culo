@@ -147,7 +147,7 @@ export function VillageCuratedFoundersPage() {
     if (filterStatus   !== 'all') list = list.filter(f => (f.profileStatus ?? f.status) === filterStatus)
     if (filterHasYT)              list = list.filter(f => !!f.youtube)
     if (filterHasWeb)             list = list.filter(f => !!f.website)
-    if (filterHasBiz)             list = list.filter(f => !!f.businessId)
+    if (filterHasBiz)             list = list.filter(f => businesses.some(b => b.founderId === f.id))
     if (filterHasContent)         list = list.filter(f => (contentCountByFounder.get(f.id) ?? 0) > 0)
     if (filterHasClaim)           list = list.filter(f => claimByFounder.has(f.id))
     if (filterHasEmail)           list = list.filter(f => claimEmailByFounder.has(f.id))
@@ -161,7 +161,7 @@ export function VillageCuratedFoundersPage() {
     })
 
     return list
-  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, founders, contentCountByFounder, claimByFounder, claimEmailByFounder])
+  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, founders, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder])
 
   // Bulk operations — one Supabase upsert/delete + one cache rewrite per batch,
   // not one round-trip per founder (see Sprint 19B-Fix audit for the O(n²) bug
@@ -191,7 +191,7 @@ export function VillageCuratedFoundersPage() {
       .filter(f => ids.has(f.id))
       .map(f => {
         const parts = f.name.split(' ')
-        const biz   = businesses.find(b => b.id === f.businessId)
+        const biz   = businesses.find(b => b.founderId === f.id)
         return [
           claimEmailByFounder.get(f.id) ?? '',
           parts[0] ?? '', parts.length > 1 ? parts[parts.length - 1] : '',
@@ -379,7 +379,7 @@ export function VillageCuratedFoundersPage() {
         ) : (
           <div className="divide-y divide-[#F3EDE6]">
             {filtered.map(f => {
-              const biz          = businesses.find(b => b.id === f.businessId)
+              const biz          = businesses.find(b => b.founderId === f.id)
               const contentCount = contentCountByFounder.get(f.id) ?? 0
               const hasEmail     = claimEmailByFounder.has(f.id)
               const isSelected   = selected.has(f.id)

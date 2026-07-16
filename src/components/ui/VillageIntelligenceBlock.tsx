@@ -27,18 +27,25 @@ export function VillageIntelligenceBlock({ intel, variant = 'full' }: Props) {
         Village Intelligence
       </h2>
 
-      {/* Intent / Stage / Tone */}
-      {variant === 'full' && (
+      {/* Intent / Stage / Tone — omitted rather than shown blank when Village
+          couldn't confidently classify the content */}
+      {variant === 'full' && (intel.intent || intel.contentStage || intel.emotionalTone) && (
         <div className="flex flex-wrap gap-1.5 mb-4">
-          <span className="font-body text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
-            {intel.intent}
-          </span>
-          <span className="font-body text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-charcoal/10 text-charcoal">
-            {intel.contentStage}
-          </span>
-          <span className="font-body text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-accent/15 text-amber-700">
-            {intel.emotionalTone}
-          </span>
+          {intel.intent && (
+            <span className="font-body text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+              {intel.intent}
+            </span>
+          )}
+          {intel.contentStage && (
+            <span className="font-body text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-charcoal/10 text-charcoal">
+              {intel.contentStage}
+            </span>
+          )}
+          {intel.emotionalTone && (
+            <span className="font-body text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-accent/15 text-amber-700">
+              {intel.emotionalTone}
+            </span>
+          )}
         </div>
       )}
 

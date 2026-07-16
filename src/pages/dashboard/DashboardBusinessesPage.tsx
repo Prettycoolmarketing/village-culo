@@ -1066,7 +1066,7 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
   // Relationships
   const bizStories  = getStories({ businessId: draft.id })
   const bizServices = getServices(undefined, draft.id)
-  const owner       = getFounders().find(f => f.businessId === draft.id)
+  const owner       = getFounders().find(f => f.id === draft.founderId)
 
   const missing    = getBusinessMissingItems(draft, bizServices)
   const counts     = getMissingCounts(missing)

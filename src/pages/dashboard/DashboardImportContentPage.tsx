@@ -310,7 +310,7 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
           >
             <span className={`inline-block transition-transform ${open ? 'rotate-90' : ''}`}>›</span>
             Village Intelligence
-            {intel && <span className="font-normal text-[#9CA3AF] ml-1">— {intel.primaryTopics.length} topics · {intel.intent}</span>}
+            {intel && <span className="font-normal text-[#9CA3AF] ml-1">— {intel.primaryTopics.length} topics{intel.intent ? ` · ${intel.intent}` : ''}</span>}
           </button>
         </div>
         <button
@@ -325,12 +325,15 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
 
       {open && intel && (
         <div className="bg-[#F8F5F0] rounded-lg p-4 mt-2 space-y-1">
-          {/* Intent / Stage / Tone */}
-          <div className="flex flex-wrap gap-2 mb-3">
-            <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#C86A43]/15 text-[#C86A43]">{intel.intent}</span>
-            <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#2D2A26]/10 text-[#2D2A26]">{intel.contentStage}</span>
-            <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#D6A94D]/20 text-amber-700">{intel.emotionalTone}</span>
-          </div>
+          {/* Intent / Stage / Tone — omitted rather than shown blank when Village
+              couldn't confidently classify the content */}
+          {(intel.intent || intel.contentStage || intel.emotionalTone) && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {intel.intent && <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#C86A43]/15 text-[#C86A43]">{intel.intent}</span>}
+              {intel.contentStage && <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#2D2A26]/10 text-[#2D2A26]">{intel.contentStage}</span>}
+              {intel.emotionalTone && <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-[#D6A94D]/20 text-amber-700">{intel.emotionalTone}</span>}
+            </div>
+          )}
 
           <AddableSection title="Primary Topics" items={intel.primaryTopics} added={draft.topics} onAdd={onAddTopic} />
           <AddableSection title="Locations" items={intel.locations} added={draft.locations} onAdd={onAddLocation} />

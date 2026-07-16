@@ -47,9 +47,12 @@ export interface VillageContentIntelligence {
   recommendations: string[]
   opportunitySignals: string[]
 
-  intent: ContentIntent
-  contentStage: ContentStage
-  emotionalTone: EmotionalTone
+  // Undefined when the content didn't clearly match any known category —
+  // left unset rather than defaulted, since a guess presented as fact is
+  // worse than no classification at all.
+  intent?: ContentIntent
+  contentStage?: ContentStage
+  emotionalTone?: EmotionalTone
 
   searchQuestions: string[]
   geoQuestions: string[]

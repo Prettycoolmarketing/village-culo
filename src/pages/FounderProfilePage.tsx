@@ -195,7 +195,15 @@ export function FounderProfilePage() {
   const founder = getFounders().find(f => f.slug === slug)
 
   // Pre-guard lookups — hooks must be called unconditionally before any early return
-  const business           = founder ? getBusiness(founder.businessId) : undefined
+  // Business.founderId is the real ownership FK (one founder can own many
+  // businesses); Founder.businessId is only a "primary business" convenience
+  // pointer, and can be stale for a founder's second/third business — so the
+  // real owned set comes first, with the pointer used only to pick which one
+  // is primary when it's still valid.
+  const founderOwnedBusinesses = founder ? getBusinesses({ founderId: founder.id }) : []
+  const business           = founder
+    ? founderOwnedBusinesses.find(b => b.id === founder.businessId) ?? founderOwnedBusinesses[0]
+    : undefined
   const founderIntelRecords = founder ? villageContentIntelligenceService.getByFounder(founder.id) : []
   const founderFeaturedIn  = founder ? getFeaturedIn('founder', founder.id) : []
   const founderConnectedTo = founder ? getConnectedTo('founder', founder.id) : []

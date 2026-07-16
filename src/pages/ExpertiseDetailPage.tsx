@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
 import { getExpertiseBySlug } from '../data/expertise'
-import { getServicesForExpertise } from '../data/services'
+import { getServices } from '../services/serviceOfferings'
 import { getResourcesForExpertise } from '../data/resources'
 import { getCaseStudiesForExpertise } from '../data/caseStudies'
 import { getTalksForExpertise } from '../data/talks'
@@ -53,7 +53,7 @@ export function ExpertiseDetailPage() {
 
   const expertiseFounders = getFounders({ publicOnly: true }).filter(f => expertise.founderIds.includes(f.id))
   const expertiseBusinesses = getBusinesses({ publicOnly: true }).filter(b => expertise.businessIds.includes(b.id))
-  const expertiseServices = getServicesForExpertise(expertise.id)
+  const expertiseServices = getServices().filter(s => s.expertiseIds.includes(expertise.id))
   const expertiseResources = getResourcesForExpertise(expertise.id)
   const expertiseCaseStudies = getCaseStudiesForExpertise(expertise.id)
   const expertiseTalks = getTalksForExpertise(expertise.id)

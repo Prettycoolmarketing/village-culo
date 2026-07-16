@@ -179,8 +179,11 @@ function scoreKeywords(text: string, keywords: string[]): number {
   return keywords.reduce((n, kw) => n + (has(text, kw) ? 1 : 0), 0)
 }
 
-function classifyByMap<T extends string>(text: string, map: [T, string[]][]): T {
-  let best: T = map[0][0]
+// Returns undefined when nothing scores — guessing the first category in the
+// list would be a confident, wrong answer, not a fallback. Absence of a
+// classification is real information; a fabricated one isn't.
+function classifyByMap<T extends string>(text: string, map: [T, string[]][]): T | undefined {
+  let best: T | undefined
   let bestScore = 0
   for (const [label, keywords] of map) {
     const score = scoreKeywords(text, keywords)
