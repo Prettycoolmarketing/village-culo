@@ -27,6 +27,7 @@ import type {
   ImportedContent,
   ImportedContentStatus,
   ImportedContentVisibility,
+  ImportedContentPlatform,
 } from '../../types/importedContent'
 import type { ConnectedSource, ConnectedSourceType } from '../../types/connectedSource'
 import type { FAQ } from '../../types'
@@ -53,6 +54,8 @@ const TRANSCRIPT_STATUS_OPTIONS = [
   { value: 'manual',      label: 'Pasted manually'                       },
   { value: 'unavailable', label: 'Not available for this content/platform' },
 ]
+
+const PLATFORM_TAB_ORDER: ImportedContentPlatform[] = ['youtube', 'podcast', 'website']
 
 const SOURCE_TYPE_LABELS: Record<ConnectedSourceType, string> = {
   'youtube':      'YouTube',
@@ -990,6 +993,12 @@ export function DashboardImportContentPage() {
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [bulkPublishing, setBulkPublishing] = useState(false)
   const [bulkResult, setBulkResult] = useState<{ published: { title: string; slug: string }[]; failed: { title: string; error: string }[] } | null>(null)
+  const [activeTab, setActiveTab] = useState<ImportedContentPlatform>('youtube')
+
+  function switchTab(tab: ImportedContentPlatform) {
+    setActiveTab(tab)
+    setChecked(new Set())
+  }
 
   function loadItems() {
     setAllItems(
@@ -1046,7 +1055,15 @@ export function DashboardImportContentPage() {
     })
   }
 
-  const readyItems = allItems.filter(i => !i.relatedStoryId && isReadyToPublish(i))
+  // Base tabs always show (they're the three connector types founders can
+  // actually create today); any platform an older/legacy item still carries
+  // gets its own tab too, so nothing already imported becomes unreachable.
+  const tabs = [
+    ...PLATFORM_TAB_ORDER,
+    ...Array.from(new Set(allItems.map(i => i.sourcePlatform))).filter(p => !PLATFORM_TAB_ORDER.includes(p)),
+  ]
+  const visibleItems = allItems.filter(i => i.sourcePlatform === activeTab)
+  const readyItems = visibleItems.filter(i => !i.relatedStoryId && isReadyToPublish(i))
 
   function toggleSelectAllReady() {
     setChecked(prev => prev.size === readyItems.length ? new Set() : new Set(readyItems.map(i => i.id)))
@@ -1179,19 +1196,27 @@ export function DashboardImportContentPage() {
 
       {/* Saved imports list */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-[#2D2A26]">
-            Imported Content
-            {allItems.length > 0 && (
-              <span className="ml-2 text-[#9CA3AF] font-normal">{allItems.length}</span>
-            )}
-          </p>
-          {draft && (
-            <button onClick={() => setDraft(null)}
-              className="text-xs text-[#C86A43] font-semibold hover:underline">
-              + Import another URL
-            </button>
-          )}
+        <p className="text-sm font-semibold text-[#2D2A26] mb-3">Imported Content</p>
+
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {tabs.map(platform => {
+            const count = allItems.filter(i => i.sourcePlatform === platform).length
+            const active = activeTab === platform
+            return (
+              <button
+                key={platform}
+                onClick={() => switchTab(platform)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                  active
+                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
+                    : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                }`}
+              >
+                {PLATFORM_LABELS[platform]}
+                {count > 0 && <span className={active ? 'text-white/70' : 'text-[#9CA3AF]'}> {count}</span>}
+              </button>
+            )
+          })}
         </div>
 
         {readyItems.length > 0 && (
@@ -1215,16 +1240,16 @@ export function DashboardImportContentPage() {
           </div>
         )}
 
-        {allItems.length === 0 ? (
+        {visibleItems.length === 0 ? (
           <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-10 text-center">
-            <p className="text-sm font-semibold text-[#2D2A26] mb-2">No imports yet</p>
+            <p className="text-sm font-semibold text-[#2D2A26] mb-2">No {PLATFORM_LABELS[activeTab]} imports yet</p>
             <p className="text-xs text-[#9CA3AF] leading-relaxed max-w-sm mx-auto">
               Bring your old content into the Village so it can become searchable, connected and discoverable again.
             </p>
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-            {allItems.map(item => (
+            {visibleItems.map(item => (
               <SavedRow
                 key={item.id}
                 item={item}
