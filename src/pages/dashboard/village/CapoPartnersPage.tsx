@@ -1,9 +1,16 @@
 import { useState } from 'react'
-import { partnerService, partnerFlagService } from '../../../services/partner'
+import { partnerService, partnerFlagService, partnerConversionService, newPartnerConversion } from '../../../services/partner'
+import { stripeAccountService, payoutService, newManualPayout } from '../../../services/payouts'
 import { getBusiness } from '../../../services/businesses'
 import { getStory } from '../../../services/stories'
-import { getFounder } from '../../../services/founders'
-import type { Partner } from '../../../types/partner'
+import { getFounder, getFounders } from '../../../services/founders'
+import { supabase } from '../../../lib/supabase'
+import { pullVisibleRows } from '../../../lib/entityStore'
+import type { Partner, PartnerConversion } from '../../../types/partner'
+
+function formatCents(cents: number, currency = 'usd'): string {
+  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: currency.toUpperCase() })
+}
 
 const inputClass = 'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
 
@@ -218,9 +225,219 @@ function FlagsSection() {
   )
 }
 
+// ─── Record a conversion ────────────────────────────────────────────────────
+
+function RecordConversionForm({ onSaved }: { onSaved: () => void }) {
+  const activePartners = partnerService.getAll({ status: 'active' })
+  const founders = getFounders()
+  const [partnerId, setPartnerId] = useState('')
+  const [founderId, setFounderId] = useState('')
+  const [saleAmount, setSaleAmount] = useState('')
+  const [commissionAmount, setCommissionAmount] = useState('')
+  const [status, setStatus] = useState<PartnerConversion['status']>('confirmed')
+  const [notes, setNotes] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const partner = activePartners.find(p => p.id === partnerId)
+  const commissionCents = Math.round(Number(commissionAmount || 0) * 100)
+  const founderShareCents = partner ? Math.round(commissionCents * (partner.founderRevenueSharePercent / 100)) : 0
+
+  async function handleSave() {
+    setError(null)
+    if (!partner || !founderId || !commissionAmount) { setError('Pick a partner, a founder, and enter the commission amount.'); return }
+    const conversion = newPartnerConversion({
+      partner,
+      founderId,
+      saleAmountCents: Math.round(Number(saleAmount || 0) * 100),
+      commissionAmountCents: commissionCents,
+      status,
+      notes: notes.trim() || undefined,
+    })
+    const result = await partnerConversionService.upsert(conversion)
+    if (!result.success) { setError(result.error ?? 'Could not save. Please try again.'); return }
+    setPartnerId(''); setFounderId(''); setSaleAmount(''); setCommissionAmount(''); setNotes(''); setStatus('confirmed')
+    onSaved()
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-6">
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Record confirmed spend</p>
+      <p className="text-xs text-[#9CA3AF] mb-4">Enter what you see in the partner's own affiliate dashboard — sale amount and the commission Village actually earned.</p>
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Partner</label>
+          <select value={partnerId} onChange={e => setPartnerId(e.target.value)} className={inputClass}>
+            <option value="">Select…</option>
+            {activePartners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Founder who wrote about them</label>
+          <select value={founderId} onChange={e => setFounderId(e.target.value)} className={inputClass}>
+            <option value="">Select…</option>
+            {founders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <div>
+          <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Sale amount ($)</label>
+          <input type="number" min={0} step="0.01" value={saleAmount} onChange={e => setSaleAmount(e.target.value)} className={inputClass} />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Commission earned ($)</label>
+          <input type="number" min={0} step="0.01" value={commissionAmount} onChange={e => setCommissionAmount(e.target.value)} className={inputClass} />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Status</label>
+          <select value={status} onChange={e => setStatus(e.target.value as PartnerConversion['status'])} className={inputClass}>
+            <option value="pending">Pending (return window)</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="reversed">Reversed</option>
+          </select>
+        </div>
+      </div>
+      {partner && commissionCents > 0 && (
+        <p className="text-xs text-[#5E6B4A] mb-3">Founder share at {partner.founderRevenueSharePercent}%: <strong>{formatCents(founderShareCents)}</strong></p>
+      )}
+      <div className="mb-3">
+        <label className="text-xs font-semibold text-[#2D2A26] block mb-1">Notes (optional)</label>
+        <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Order #1029 from their dashboard" className={inputClass} />
+      </div>
+      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+      <button onClick={() => void handleSave()} className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+        Record conversion
+      </button>
+    </div>
+  )
+}
+
+// ─── Earnings & payouts ─────────────────────────────────────────────────────
+
+function EarningsSection() {
+  const [, setTick] = useState(0)
+  const [payingFounderId, setPayingFounderId] = useState<string | null>(null)
+  const [payError, setPayError] = useState<string | null>(null)
+  const conversions = partnerConversionService.getAll()
+
+  const unpaidByFounder = new Map<string, PartnerConversion[]>()
+  for (const c of conversions) {
+    if (c.status !== 'confirmed' || c.payoutId) continue
+    const list = unpaidByFounder.get(c.founderId) ?? []
+    list.push(c)
+    unpaidByFounder.set(c.founderId, list)
+  }
+
+  async function markPaid(founderId: string, items: PartnerConversion[]) {
+    const total = items.reduce((sum, c) => sum + c.founderShareCents, 0)
+    const payout = newManualPayout({ founderId, amountCents: total, note: `${items.length} conversion(s)` })
+    const result = await payoutService.upsert(payout)
+    if (!result.success) return
+    for (const c of items) {
+      await partnerConversionService.upsert({ ...c, payoutId: payout.id })
+    }
+    setTick(t => t + 1)
+  }
+
+  async function payViaStripe(founderId: string, items: PartnerConversion[]) {
+    setPayError(null)
+    if (!supabase) { setPayError('Not available in this environment.'); return }
+    setPayingFounderId(founderId)
+    const { data, error } = await supabase.functions.invoke<{ error?: string }>('stripe-run-payout', {
+      body: { founderId, conversionIds: items.map(c => c.id) },
+    })
+    setPayingFounderId(null)
+    if (error || data?.error) { setPayError(data?.error ?? 'Stripe payout failed. Please try again.'); return }
+    await Promise.all([
+      pullVisibleRows('partner_conversions', 'partner_conversions'),
+      pullVisibleRows('partner_payouts', 'partner_payouts'),
+    ])
+    setTick(t => t + 1)
+  }
+
+  return (
+    <div>
+      <RecordConversionForm onSaved={() => setTick(t => t + 1)} />
+
+      <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Owed to founders</p>
+      {unpaidByFounder.size === 0 ? (
+        <p className="text-sm text-[#9CA3AF] mb-6">Nothing confirmed and unpaid right now.</p>
+      ) : (
+        <div className="flex flex-col gap-3 mb-8">
+          {[...unpaidByFounder.entries()].map(([founderId, items]) => {
+            const founder = getFounder(founderId)
+            const stripe = stripeAccountService.get(founderId)
+            const total = items.reduce((sum, c) => sum + c.founderShareCents, 0)
+            return (
+              <div key={founderId} className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#2D2A26]">{founder?.name ?? 'Unknown founder'}</p>
+                  <p className="text-xs text-[#9CA3AF]">
+                    {items.length} confirmed conversion{items.length === 1 ? '' : 's'}
+                    {stripe?.payoutsEnabled ? ' · Stripe connected' : ' · No Stripe account connected — will be paid manually'}
+                  </p>
+                </div>
+                <p className="text-lg font-bold text-[#2D2A26] shrink-0">{formatCents(total)}</p>
+                {stripe?.payoutsEnabled ? (
+                  <button
+                    onClick={() => void payViaStripe(founderId, items)}
+                    disabled={payingFounderId === founderId}
+                    className="shrink-0 px-3 py-1.5 bg-[#635BFF] text-white text-xs font-semibold rounded-lg hover:bg-[#5147e5] disabled:opacity-60 transition-colors"
+                  >
+                    {payingFounderId === founderId ? 'Paying…' : 'Pay via Stripe'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => void markPaid(founderId, items)}
+                    className="shrink-0 px-3 py-1.5 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5538] transition-colors"
+                  >
+                    Mark paid manually
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {payError && <p className="text-xs text-red-600 mb-6">{payError}</p>}
+
+      <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">All conversions</p>
+      {conversions.length === 0 ? (
+        <p className="text-sm text-[#9CA3AF]">No conversions recorded yet.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {[...conversions].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map(c => {
+            const partner = partnerService.get(c.partnerId)
+            const founder = getFounder(c.founderId)
+            return (
+              <div key={c.id} className="bg-white rounded-lg border border-[#E8E4DD] px-4 py-3 flex items-center gap-3 text-xs">
+                <span className={`shrink-0 font-semibold px-2 py-0.5 rounded-full capitalize ${
+                  c.status === 'confirmed' ? 'bg-green-50 text-green-700' :
+                  c.status === 'reversed'  ? 'bg-red-50 text-red-600' :
+                  'bg-amber-50 text-amber-700'
+                }`}>
+                  {c.status}
+                </span>
+                <span className="flex-1 min-w-0 truncate text-[#2D2A26]">
+                  <strong>{partner?.name ?? 'Unknown partner'}</strong> · {founder?.name ?? 'Unknown founder'}
+                  {c.notes && <span className="text-[#9CA3AF]"> — {c.notes}</span>}
+                </span>
+                <span className="shrink-0 text-[#9CA3AF]">Sale {formatCents(c.saleAmountCents, c.currency)}</span>
+                <span className="shrink-0 text-[#9CA3AF]">Commission {formatCents(c.commissionAmountCents, c.currency)}</span>
+                <span className="shrink-0 font-semibold text-[#5E6B4A]">Founder {formatCents(c.founderShareCents, c.currency)}</span>
+                {c.payoutId && <span className="shrink-0 text-[10px] text-[#9CA3AF]">Paid</span>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-type Tab = 'pending' | 'active' | 'flags'
+type Tab = 'pending' | 'active' | 'flags' | 'earnings'
 
 export function CapoPartnersPage() {
   const [partners, setPartners] = useState(() => partnerService.getAll())
@@ -289,6 +506,7 @@ export function CapoPartnersPage() {
               { key: 'pending', label: 'Pending Requests', count: pending.length },
               { key: 'active',  label: 'Partners',          count: active.length },
               { key: 'flags',   label: 'Flagged Stories',   count: partnerFlagService.getAll({ status: 'pending' }).length },
+              { key: 'earnings', label: 'Earnings & Payouts', count: 0 },
             ] as const).map(t => (
               <button
                 key={t.key}
@@ -346,6 +564,7 @@ export function CapoPartnersPage() {
           )}
 
           {tab === 'flags' && <FlagsSection />}
+          {tab === 'earnings' && <EarningsSection />}
         </>
       )}
     </div>

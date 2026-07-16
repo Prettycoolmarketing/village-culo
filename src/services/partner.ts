@@ -1,14 +1,16 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
-import type { Partner, PartnerFilter, PartnerFlag, PartnerFlagFilter } from '../types/partner'
+import type { Partner, PartnerFilter, PartnerFlag, PartnerFlagFilter, PartnerConversion, PartnerConversionFilter } from '../types/partner'
 
 const KEYS = {
-  partners: 'partners',
-  flags:    'partner_flags',
+  partners:    'partners',
+  flags:       'partner_flags',
+  conversions: 'partner_conversions',
 } as const
 
 const TABLES = {
-  partners: 'partners',
-  flags:    'partner_flags',
+  partners:    'partners',
+  flags:       'partner_flags',
+  conversions: 'partner_conversions',
 } as const
 
 function now() { return new Date().toISOString() }
@@ -119,6 +121,73 @@ export function newPartnerFlag(input: { partnerId: string; storyId?: string; fou
     status: 'pending',
     reason: input.reason,
     contextSnippet: input.contextSnippet,
+    createdAt: now(),
+    updatedAt: now(),
+  }
+}
+
+// ─── Conversions ─────────────────────────────────────────────────────────────
+
+function toConversionRow(c: PartnerConversion, userId: string) {
+  return {
+    id:                       c.id,
+    user_id:                  userId,
+    partner_id:               c.partnerId,
+    founder_id:               c.founderId,
+    story_id:                 c.storyId ?? null,
+    status:                   c.status,
+    sale_amount_cents:        c.saleAmountCents,
+    commission_amount_cents:  c.commissionAmountCents,
+    founder_share_cents:      c.founderShareCents,
+    currency:                 c.currency,
+    payout_id:                c.payoutId ?? null,
+    data:                     c,
+  }
+}
+
+export const partnerConversionService = {
+  getAll(filter?: PartnerConversionFilter): PartnerConversion[] {
+    let items = readCache<PartnerConversion>(KEYS.conversions)
+    if (filter?.founderId) items = items.filter(c => c.founderId === filter.founderId)
+    if (filter?.partnerId) items = items.filter(c => c.partnerId === filter.partnerId)
+    if (filter?.status)    items = items.filter(c => c.status === filter.status)
+    if (filter?.unpaid)    items = items.filter(c => !c.payoutId)
+    return items
+  },
+
+  upsert(conversion: PartnerConversion): Promise<WriteResult> {
+    return writeEntity<PartnerConversion>({
+      cacheKey: KEYS.conversions,
+      item: { ...conversion, updatedAt: now() },
+      table: TABLES.conversions,
+      toRow: toConversionRow,
+    })
+  },
+}
+
+/** commissionAmountCents × partner.founderRevenueSharePercent, frozen at record time. */
+export function newPartnerConversion(input: {
+  partner: Partner
+  founderId: string
+  storyId?: string
+  saleAmountCents: number
+  commissionAmountCents: number
+  currency?: string
+  status?: PartnerConversion['status']
+  notes?: string
+}): PartnerConversion {
+  const founderShareCents = Math.round(input.commissionAmountCents * (input.partner.founderRevenueSharePercent / 100))
+  return {
+    id: crypto.randomUUID(),
+    partnerId: input.partner.id,
+    founderId: input.founderId,
+    storyId: input.storyId,
+    status: input.status ?? 'confirmed',
+    saleAmountCents: input.saleAmountCents,
+    commissionAmountCents: input.commissionAmountCents,
+    founderShareCents,
+    currency: input.currency ?? 'usd',
+    notes: input.notes,
     createdAt: now(),
     updatedAt: now(),
   }

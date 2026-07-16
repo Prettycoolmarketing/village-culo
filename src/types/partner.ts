@@ -78,3 +78,63 @@ export interface PartnerFlagFilter {
   status?: PartnerFlagStatus
   partnerId?: string
 }
+
+// ─── Conversions & payouts ──────────────────────────────────────────────────
+// A conversion is one confirmed (or pending/reversed) sale attributed to a
+// Partner's affiliate link, entered manually by PCM staff from the brand's
+// own affiliate dashboard until a given partner's network supports
+// automated postbacks. founderShareCents is computed and frozen at record
+// time from the Partner's founderRevenueSharePercent, so changing that
+// percentage later never rewrites historical conversions.
+
+export type ConversionStatus = 'pending' | 'confirmed' | 'reversed'
+
+export interface PartnerConversion {
+  id: string
+  partnerId: string
+  founderId: string
+  storyId?: string
+  status: ConversionStatus
+  saleAmountCents: number
+  commissionAmountCents: number
+  founderShareCents: number
+  currency: string
+  payoutId?: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PartnerConversionFilter {
+  founderId?: string
+  partnerId?: string
+  status?: ConversionStatus
+  unpaid?: boolean
+}
+
+export interface FounderStripeAccount {
+  /** Same value as founderId — one account per founder, kept for the {id:string} cache contract. */
+  id: string
+  founderId: string
+  stripeAccountId: string
+  onboardingComplete: boolean
+  payoutsEnabled: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type PayoutMethod = 'stripe' | 'manual'
+export type PayoutStatus = 'pending' | 'paid' | 'failed'
+
+export interface PartnerPayout {
+  id: string
+  founderId: string
+  method: PayoutMethod
+  status: PayoutStatus
+  amountCents: number
+  currency: string
+  stripeTransferId?: string
+  note?: string
+  createdAt: string
+  updatedAt: string
+}

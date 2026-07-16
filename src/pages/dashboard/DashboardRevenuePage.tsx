@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { normalizeUrl } from '../../utils/url'
 import { getCurrentFounderId } from '../../services/currentFounder'
@@ -11,7 +11,15 @@ import {
   affiliateLinkService,
   trackingService,
 } from '../../services/partnership'
+import { partnerConversionService } from '../../services/partner'
+import { stripeAccountService, payoutService } from '../../services/payouts'
+import { supabase } from '../../lib/supabase'
+import { pullVisibleRows } from '../../lib/entityStore'
 import type { FounderProgramEnrollment, FounderAffiliateLink, PartnerProgram } from '../../types/partnership'
+
+function formatCents(cents: number): string {
+  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -354,6 +362,69 @@ const SOURCE_PAGE_LABELS: Record<string, string> = {
   business:'Business page',
 }
 
+function PartnershipsEarningsSection({ founderId }: { founderId: string }) {
+  const [connecting, setConnecting] = useState(false)
+  const [connectError, setConnectError] = useState<string | null>(null)
+
+  const conversions = partnerConversionService.getAll({ founderId })
+  const confirmed = conversions.filter(c => c.status === 'confirmed')
+  const pending   = conversions.filter(c => c.status === 'pending')
+  const unpaid    = confirmed.filter(c => !c.payoutId)
+  const paidOut   = payoutService.getAll({ founderId, status: 'paid' })
+
+  const pendingCents = pending.reduce((sum, c) => sum + c.founderShareCents, 0)
+  const owedCents    = unpaid.reduce((sum, c) => sum + c.founderShareCents, 0)
+  const paidCents    = paidOut.reduce((sum, p) => sum + p.amountCents, 0)
+
+  const stripeAccount = stripeAccountService.get(founderId)
+
+  async function handleConnectStripe() {
+    setConnectError(null)
+    if (!supabase) { setConnectError('Not available in this environment.'); return }
+    setConnecting(true)
+    const { data, error } = await supabase.functions.invoke<{ url: string }>('stripe-connect-onboarding', {
+      body: { founderId },
+    })
+    setConnecting(false)
+    if (error || !data?.url) {
+      setConnectError('Stripe payouts aren\'t set up yet. Ask CULO Village to enable this.')
+      return
+    }
+    window.location.href = data.url
+  }
+
+  if (conversions.length === 0 && !stripeAccount) return null
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-bold text-[#2D2A26]">Partnerships Program Earnings</h2>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">Confirmed spend recorded by CULO Village from your Partnerships Program deals.</p>
+        </div>
+        {stripeAccount?.payoutsEnabled ? (
+          <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">Stripe connected</span>
+        ) : (
+          <button
+            onClick={() => void handleConnectStripe()}
+            disabled={connecting}
+            className="px-4 py-2 bg-[#2D2A26] text-white text-xs font-semibold rounded-xl hover:bg-[#1a1816] disabled:opacity-60 transition-colors"
+          >
+            {connecting ? 'Connecting…' : 'Connect Stripe for payouts'}
+          </button>
+        )}
+      </div>
+      {connectError && <p className="text-xs text-red-600 mb-3">{connectError}</p>}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <StatCard label="Owed to you"  value={formatCents(owedCents)}    sub="Confirmed, not yet paid" />
+        <StatCard label="Pending"      value={formatCents(pendingCents)} sub="In the return window" />
+        <StatCard label="Paid out"     value={formatCents(paidCents)} />
+      </div>
+    </div>
+  )
+}
+
 function RevenueDashboard({ founderId }: { founderId: string }) {
   const allClicks       = trackingService.getAll({ founderId })
   const programClicks   = trackingService.getAll({ founderId, linkType: 'village-program' })
@@ -473,6 +544,18 @@ export function DashboardRevenuePage() {
 
   const [tick, setTick] = useState(0)
   function refresh() { setTick(t => t + 1) }
+
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('stripe') !== 'connected' || !supabase) return
+    void supabase.functions.invoke('stripe-connect-refresh', { body: { founderId } })
+      .then(() => pullVisibleRows('founder_stripe_accounts', 'founder_stripe_accounts'))
+      .then(() => {
+        setSearchParams(prev => { prev.delete('stripe'); return prev }, { replace: true })
+        refresh()
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Derive business connection rows from approved recommendations
   const approved   = recommendationService.getAll({ founderId, status: 'approved' })
@@ -601,6 +684,8 @@ export function DashboardRevenuePage() {
       </div>
 
       {/* Revenue Dashboard */}
+      <PartnershipsEarningsSection founderId={founderId} />
+
       <RevenueDashboard founderId={founderId} />
     </div>
   )
