@@ -7,13 +7,11 @@ import { getFounder, updateFounder } from '../../services/founders'
 import { getStory } from '../../services/stories'
 import {
   importedContentService,
-  buildDraftImport,
-  detectPlatform,
   PLATFORM_LABELS,
   PLATFORM_COLORS,
 } from '../../services/importedContent'
 import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
-import { normalizeUrl, looksLikeChannelUrl } from '../../utils/url'
+import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import {
   enrichImportedContent,
@@ -30,6 +28,7 @@ import type {
   ImportedContentStatus,
   ImportedContentVisibility,
 } from '../../types/importedContent'
+import type { ConnectedSource, ConnectedSourceType } from '../../types/connectedSource'
 import type { FAQ } from '../../types'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
 
@@ -54,6 +53,147 @@ const TRANSCRIPT_STATUS_OPTIONS = [
   { value: 'manual',      label: 'Pasted manually'                       },
   { value: 'unavailable', label: 'Not available for this content/platform' },
 ]
+
+const SOURCE_TYPE_LABELS: Record<ConnectedSourceType, string> = {
+  'youtube':      'YouTube',
+  'podcast-rss':  'Podcast',
+  'website-rss':  'Website',
+}
+
+const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
+  'youtube':      'Paste your channel URL, @handle, or channel ID.',
+  'podcast-rss':  'Paste your podcast’s RSS feed URL.',
+  'website-rss':  'Paste your blog’s RSS feed URL.',
+}
+
+// ─── Connect a source ───────────────────────────────────────────────────────────
+
+function ConnectSourceForm({ founderId, onConnected }: { founderId: string; onConnected: () => void }) {
+  const [type, setType]   = useState<ConnectedSourceType>('youtube')
+  const [value, setValue] = useState('')
+  const [busy, setBusy]   = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleConnect() {
+    if (!value.trim()) return
+    setBusy(true)
+    setError(null)
+    try {
+      const config = type === 'youtube'
+        ? { channelId: await resolveChannelId(value) }
+        : { feedUrl: value.trim() }
+      const label = type === 'youtube' ? value.trim() : new URL(value.trim()).hostname
+      const source = newConnectedSource(founderId, type, label, config)
+      await connectedSourcesService.upsert(source)
+      await scanSource(source)
+      setValue('')
+      onConnected()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not connect this source.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
+      <p className="text-sm font-semibold text-[#2D2A26] mb-3">Connect a source</p>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <select
+          value={type}
+          onChange={e => { setType(e.target.value as ConnectedSourceType); setError(null) }}
+          className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+        >
+          {(Object.keys(SOURCE_TYPE_LABELS) as ConnectedSourceType[]).map(t => (
+            <option key={t} value={t}>{SOURCE_TYPE_LABELS[t]}</option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          placeholder={SOURCE_TYPE_HINTS[type]}
+          className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+        />
+        <button
+          onClick={() => void handleConnect()}
+          disabled={busy || !value.trim()}
+          className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+        >
+          {busy ? 'Connecting…' : 'Connect'}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+    </div>
+  )
+}
+
+function ConnectedSourceRow({ source, onChanged }: { source: ConnectedSource; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  async function handleScan() {
+    setBusy(true)
+    setNotice(null)
+    try {
+      const result = await scanSource(source)
+      if (result.dailyLimitReached) {
+        setNotice("You've added your videos for today — your next 20 unlock tomorrow.")
+      } else if (result.imported === 0) {
+        setNotice("You're all caught up — no new videos found.")
+      } else if (result.moreAvailable) {
+        setNotice(`Added ${result.imported} — your next 20 unlock tomorrow.`)
+      } else {
+        setNotice(`Added ${result.imported} — you're all caught up!`)
+      }
+    } catch {
+      // error state is persisted on the source itself and rendered below
+    } finally {
+      setBusy(false)
+      onChanged()
+    }
+  }
+
+  async function handleRemove() {
+    await connectedSourcesService.delete(source.id)
+    onChanged()
+  }
+
+  return (
+    <div className="flex items-center gap-3 bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">
+            {SOURCE_TYPE_LABELS[source.sourceType]}
+          </span>
+          <p className="text-sm font-medium text-[#2D2A26] truncate">{source.label}</p>
+        </div>
+        <p className="text-xs text-[#9CA3AF] mt-1">
+          {source.status === 'error' && source.lastError
+            ? <span className="text-red-600">{source.lastError}</span>
+            : notice
+              ? <span className="text-[#5E6B4A] font-medium">{notice}</span>
+              : source.lastScannedAt
+                ? `Last scanned ${new Date(source.lastScannedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} · ${source.discoveredCount} imported`
+                : 'Not scanned yet'}
+        </p>
+      </div>
+      <button
+        onClick={() => void handleScan()}
+        disabled={busy}
+        className="text-xs font-semibold text-[#C86A43] hover:underline disabled:opacity-50 shrink-0"
+      >
+        {busy ? 'Scanning…' : 'Scan now'}
+      </button>
+      <button
+        onClick={() => void handleRemove()}
+        className="text-xs font-semibold text-[#9CA3AF] hover:text-red-600 shrink-0"
+      >
+        Remove
+      </button>
+    </div>
+  )
+}
 
 // ─── Small display components ─────────────────────────────────────────────────
 
@@ -734,7 +874,6 @@ function SavedRow({
   item,
   checked,
   onToggleCheck,
-  onSaveDescription,
   onAdvancedEdit,
   onDelete,
   onStatusChange,
@@ -742,14 +881,11 @@ function SavedRow({
   item: ImportedContent
   checked: boolean
   onToggleCheck: () => void
-  onSaveDescription: (description: string) => void
   onAdvancedEdit: () => void
   onDelete: () => void
   onStatusChange: (status: ImportedContentStatus) => void
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [editingDesc, setEditingDesc] = useState(false)
-  const [descDraft, setDescDraft] = useState(item.description ?? '')
   const ready = isReadyToPublish(item)
   const publishedStory = item.relatedStoryId ? getStory(item.relatedStoryId) : undefined
 
@@ -758,16 +894,6 @@ function SavedRow({
     published: 'bg-[#5E6B4A]/10 text-[#5E6B4A]',
     featured:  'bg-[#D6A94D]/20 text-amber-700',
     archived:  'bg-[#F3EDE6] text-[#6B7280]',
-  }
-
-  function startEditingDesc() {
-    setDescDraft(item.description ?? '')
-    setEditingDesc(true)
-  }
-
-  function saveDesc() {
-    onSaveDescription(descDraft.trim())
-    setEditingDesc(false)
   }
 
   return (
@@ -811,26 +937,9 @@ function SavedRow({
           )}
         </div>
 
-        {editingDesc ? (
-          <div className="mt-1.5 max-w-xl">
-            <textarea
-              value={descDraft}
-              onChange={e => setDescDraft(e.target.value)}
-              rows={3}
-              autoFocus
-              className="w-full px-2.5 py-2 text-xs border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43] resize-none"
-              placeholder="Describe this for the Village..."
-            />
-            <div className="flex items-center gap-3 mt-1.5">
-              <button onClick={saveDesc} className="text-xs font-semibold text-[#C86A43] hover:underline">Save</button>
-              <button onClick={() => setEditingDesc(false)} className="text-xs text-[#9CA3AF] hover:text-[#2D2A26]">Cancel</button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-1 max-w-xl">
-            {item.description || <span className="text-[#C4BDB4] italic">No description yet — click Edit to add one.</span>}
-          </p>
-        )}
+        <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-1 max-w-xl">
+          {item.description || <span className="text-[#C4BDB4] italic">No description yet.</span>}
+        </p>
       </div>
       <select
         value={item.status}
@@ -849,13 +958,8 @@ function SavedRow({
             <span className="text-xs text-[#5E6B4A] font-medium">✓ Story published</span>
           )
         )}
-        {!editingDesc && (
-          <button onClick={startEditingDesc} className="text-xs text-[#6B7280] hover:text-[#C86A43] transition-colors">
-            Edit
-          </button>
-        )}
         <button onClick={onAdvancedEdit} className="text-xs text-[#9CA3AF] hover:text-[#C86A43] transition-colors">
-          Continue your story
+          Edit your story
         </button>
         {confirmDelete ? (
           <>
@@ -879,16 +983,13 @@ export function DashboardImportContentPage() {
   const { user } = useAuth()
   const founderId = getCurrentFounderId(user) ?? 'dev-user'
 
-  const [urlInput, setUrlInput] = useState('')
-  const [urlError, setUrlError] = useState('')
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [allItems, setAllItems] = useState<ImportedContent[]>([])
+  const [sources, setSources]   = useState<ConnectedSource[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [bulkPublishing, setBulkPublishing] = useState(false)
   const [bulkResult, setBulkResult] = useState<{ published: { title: string; slug: string }[]; failed: { title: string; error: string }[] } | null>(null)
-  const [importBusy, setImportBusy] = useState(false)
-  const [importNotice, setImportNotice] = useState<string | null>(null)
 
   function loadItems() {
     setAllItems(
@@ -897,60 +998,11 @@ export function DashboardImportContentPage() {
     )
   }
 
-  useEffect(() => { loadItems() }, [founderId])
-
-  // Imports land straight in the list below, already analysed — the list itself
-  // *is* the review screen (thumbnail, title, description, edit/delete), rather
-  // than sending founders through a separate one-item-at-a-time review form.
-  async function handleImport() {
-    const trimmed = urlInput.trim()
-    if (!trimmed) { setUrlError('Paste a URL to import.'); return }
-    try { new URL(trimmed) } catch {
-      setUrlError("That doesn't look like a valid URL. Include https://...")
-      return
-    }
-    setUrlError('')
-    setSaveError(null)
-    setImportNotice(null)
-
-    // A channel/profile link has no single video to import — it means "pull
-    // everything from this channel," same as connecting it on Import Sources.
-    // Handling that here too means founders don't have to know the difference
-    // between the two pages to get what they're actually asking for.
-    if (looksLikeChannelUrl(trimmed)) {
-      setImportBusy(true)
-      try {
-        const channelId = await resolveChannelId(trimmed)
-        const source = newConnectedSource(founderId, 'youtube', trimmed, { channelId })
-        await connectedSourcesService.upsert(source)
-        const result = await scanSource(source)
-        setUrlInput('')
-        setImportNotice(
-          result.imported > 0
-            ? `Connected this channel — pulled in ${result.imported} video${result.imported === 1 ? '' : 's'}.${result.moreAvailable ? ' Your next batch unlocks tomorrow.' : ''}`
-            : "Connected this channel, but didn't find any new videos to pull in."
-        )
-        loadItems()
-      } catch (err) {
-        setSaveError(err instanceof Error ? err.message : 'Could not connect this channel.')
-      } finally {
-        setImportBusy(false)
-      }
-      return
-    }
-
-    const newItem = buildDraftImport(founderId, trimmed)
-    const intel = villageContentIntelligenceService.analyse(importedContentToInput(newItem))
-    void villageContentIntelligenceService.upsert(intel)
-
-    const result = await importedContentService.upsert(newItem)
-    if (!result.success) {
-      setSaveError(result.error ?? 'Import failed. Please try again.')
-      return
-    }
-    setUrlInput('')
-    loadItems()
+  function loadSources() {
+    setSources(connectedSourcesService.getAll({ founderId }))
   }
+
+  useEffect(() => { loadItems(); loadSources() }, [founderId])
 
   async function handleSave() {
     if (!draft) return
@@ -974,16 +1026,6 @@ export function DashboardImportContentPage() {
   function handleAdvancedEdit(item: ImportedContent) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setDraft(item)
-  }
-
-  async function handleSaveDescription(item: ImportedContent, description: string) {
-    setSaveError(null)
-    const result = await importedContentService.upsert({ ...item, description: description || undefined })
-    if (!result.success) {
-      setSaveError(result.error ?? 'Could not save. Please try again.')
-      return
-    }
-    loadItems()
   }
 
   function handleDelete(id: string) {
@@ -1039,25 +1081,15 @@ export function DashboardImportContentPage() {
     loadItems()
   }
 
-  const detectedPlatform = urlInput.trim() ? detectPlatform(urlInput.trim()) : null
-
   return (
     <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[#2D2A26]">Import Content</h1>
-          <p className="text-sm text-[#6B7280] mt-1">
-            Bring your old YouTube videos, LinkedIn articles, podcasts and more into the Village — so they can become searchable, connected and discoverable again.
-          </p>
-        </div>
-        <Link
-          to="/dashboard/import-sources"
-          className="shrink-0 px-4 py-2.5 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors whitespace-nowrap"
-        >
-          Connect a channel/feed →
-        </Link>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[#2D2A26]">Import Content</h1>
+        <p className="text-sm text-[#6B7280] mt-1">
+          Bring your old YouTube videos, LinkedIn articles, podcasts and more into the Village — so they can become searchable, connected and discoverable again.
+        </p>
       </div>
 
       {/* Ethics notice */}
@@ -1065,47 +1097,32 @@ export function DashboardImportContentPage() {
         CULO Village embeds content from its original platform and always links back to the source. Your content is not downloaded or re-uploaded. Authorship and platform attribution are preserved.
       </div>
 
-      {/* URL import box */}
+      {/* Connect a channel or feed */}
       {!draft && (
-        <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-8">
-          <p className="text-sm font-semibold text-[#2D2A26] mb-3">Paste a URL to import</p>
-          <div className="flex gap-3">
-            <div className="flex-1 relative">
-              <input
-                type="url"
-                value={urlInput}
-                onChange={e => { setUrlInput(e.target.value); setUrlError('') }}
-                onKeyDown={e => e.key === 'Enter' && void handleImport()}
-                placeholder="https://youtube.com/watch?v=... or any URL"
-                className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none transition-colors ${
-                  urlError ? 'border-red-300 focus:border-red-400' : 'border-[#E8E4DD] focus:border-[#C86A43]'
-                }`}
-              />
-              {detectedPlatform && (
-                <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold px-1.5 py-0.5 rounded ${PLATFORM_COLORS[detectedPlatform]}`}>
-                  {PLATFORM_LABELS[detectedPlatform]}
-                </span>
-              )}
+        <div className="mb-8">
+          <p className="text-sm text-[#6B7280] mb-4">
+            Connect a channel or feed so Village can pull in your own already-public content automatically.
+          </p>
+
+          <ConnectSourceForm founderId={founderId} onConnected={() => { loadSources(); loadItems() }} />
+
+          {sources.length > 0 && (
+            <div className="flex flex-col gap-2 mt-3">
+              {sources.map(source => (
+                <ConnectedSourceRow
+                  key={source.id}
+                  source={source}
+                  onChanged={() => { loadSources(); loadItems() }}
+                />
+              ))}
             </div>
-            <button onClick={() => void handleImport()}
-              disabled={importBusy}
-              className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors shrink-0">
-              {importBusy ? 'Pulling videos…' : 'Import'}
-            </button>
-          </div>
-          {looksLikeChannelUrl(urlInput.trim()) && !importBusy && (
-            <p className="text-xs text-[#C86A43] mt-2">This looks like a channel link — we'll pull in its recent videos, not just this link.</p>
           )}
-          {urlError && <p className="text-xs text-red-500 mt-2">{urlError}</p>}
-          {saveError && <p className="text-xs text-red-600 font-medium mt-2">{saveError}</p>}
-          {importNotice && <p className="text-xs text-[#5E6B4A] font-medium mt-2">{importNotice}</p>}
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {(['youtube', 'podcast', 'website'] as const).map(p => (
-              <span key={p} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${PLATFORM_COLORS[p]}`}>
-                {PLATFORM_LABELS[p]}
-              </span>
-            ))}
-          </div>
+
+          {saveError && <p className="text-xs text-red-600 font-medium mt-3">{saveError}</p>}
+
+          <p className="text-xs text-[#9CA3AF] mt-3">
+            Instagram, LinkedIn, TikTok and Canva connections aren't available yet — they each require going through that platform's own app review process.
+          </p>
         </div>
       )}
 
@@ -1213,7 +1230,6 @@ export function DashboardImportContentPage() {
                 item={item}
                 checked={checked.has(item.id)}
                 onToggleCheck={() => toggleChecked(item.id)}
-                onSaveDescription={description => void handleSaveDescription(item, description)}
                 onAdvancedEdit={() => handleAdvancedEdit(item)}
                 onDelete={() => handleDelete(item.id)}
                 onStatusChange={status => handleStatusChange(item.id, status)}
