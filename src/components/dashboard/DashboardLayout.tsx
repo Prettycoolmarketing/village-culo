@@ -100,6 +100,20 @@ export function DashboardLayout() {
         {/* Navigation */}
         <nav className="flex-1 px-2 py-3 flex flex-col">
           <NavLink
+            to="/dashboard/import-content"
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
+                isActive
+                  ? 'bg-[#C86A43] text-white'
+                  : 'bg-[#C86A43]/10 text-[#C86A43] hover:bg-[#C86A43]/20'
+              }`
+            }
+          >
+            <Icon path={icons.importc} />
+            Import
+          </NavLink>
+
+          <NavLink
             to="/dashboard/publish"
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
@@ -113,8 +127,6 @@ export function DashboardLayout() {
             Publish
           </NavLink>
 
-          <NavItem to="/dashboard/businesses"     label="Businesses"      icon={<Icon path={icons.biz}      />} />
-          <NavItem to="/dashboard/my-work"        label="My Work"         icon={<Icon path={icons.stories}  />} />
           <NavItem to="/dashboard/profile"        label="Profile"         icon={<Icon path={icons.profile}  />} />
 
           <SectionLabel label="Opportunities" />

@@ -960,11 +960,19 @@ export function DashboardImportContentPage() {
     <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Import Content</h1>
-        <p className="text-sm text-[#6B7280] mt-1">
-          Bring your old YouTube videos, LinkedIn articles, podcasts and more into the Village — so they can become searchable, connected and discoverable again.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#2D2A26]">Import Content</h1>
+          <p className="text-sm text-[#6B7280] mt-1">
+            Bring your old YouTube videos, LinkedIn articles, podcasts and more into the Village — so they can become searchable, connected and discoverable again.
+          </p>
+        </div>
+        <Link
+          to="/dashboard/import-sources"
+          className="shrink-0 px-4 py-2.5 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors whitespace-nowrap"
+        >
+          Connect a channel/feed →
+        </Link>
       </div>
 
       {/* Ethics notice */}

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { connectedSourcesService, scanSource, newConnectedSource } from '../../services/connectedSources'
@@ -142,11 +143,19 @@ export function DashboardImportSourcesPage() {
 
   return (
     <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Import Sources</h1>
-        <p className="text-sm text-[#6B7280] mt-1">
-          Connect a channel or feed so Village can pull in your own already-public content automatically.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#2D2A26]">Import Sources</h1>
+          <p className="text-sm text-[#6B7280] mt-1">
+            Connect a channel or feed so Village can pull in your own already-public content automatically.
+          </p>
+        </div>
+        <Link
+          to="/dashboard/import-content"
+          className="shrink-0 px-4 py-2.5 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors whitespace-nowrap"
+        >
+          Review imports →
+        </Link>
       </div>
 
       {!founderId ? (

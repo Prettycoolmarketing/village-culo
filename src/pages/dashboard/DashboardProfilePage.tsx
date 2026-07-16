@@ -605,26 +605,26 @@ export function DashboardProfilePage() {
             </div>
 
             <div className="grid grid-cols-5 gap-3">
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
+              <Link to="/dashboard/businesses" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderBusinesses.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Businesses</p>
-              </div>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
+              </Link>
+              <Link to="/dashboard/stories" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderStories.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Stories</p>
-              </div>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
+              </Link>
+              <Link to="/dashboard/ideas" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderIdeas.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Ideas</p>
-              </div>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
+              </Link>
+              <Link to="/dashboard/library" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderLibrary.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Library</p>
-              </div>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center">
+              </Link>
+              <Link to="/dashboard/media" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderMedia.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Media</p>
-              </div>
+              </Link>
             </div>
 
             <div>
