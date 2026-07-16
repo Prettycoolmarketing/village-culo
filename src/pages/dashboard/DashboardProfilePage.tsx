@@ -37,9 +37,9 @@ import type { PublisherPartnerProfile } from '../../types/partnership'
 // Every existing field keeps its home; this map only changed which tab a
 // recommendation jumps to, not what data exists.
 const FIELD_TO_TAB: Record<string, string> = {
-  avatar: 'identity', coverImage: 'identity', bio: 'identity', socials: 'identity',
+  avatar: 'overview', coverImage: 'overview', bio: 'overview', socials: 'overview',
   topics: 'expertise', faqs: 'expertise',
-  website: 'identity',
+  website: 'overview',
   seoTitle: 'discovery', seoDescription: 'discovery',
 }
 
@@ -500,10 +500,8 @@ export function DashboardProfilePage() {
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
     { key: 'life-work',     label: "My Life's Work" },
-    { key: 'identity',      label: 'Identity'      },
     { key: 'expertise',     label: 'Expertise'     },
     { key: 'discovery',     label: 'Profile Visibility' },
-    { key: 'relationships', label: 'Relationships', badge: founderBusinesses.length + founderStories.length + founderIdeas.length + founderLibrary.length + appearsOn.length },
     { key: 'settings',      label: 'Settings'      },
   ]
 
@@ -736,7 +734,7 @@ export function DashboardProfilePage() {
               <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Profile Progress</p>
               <MissingAssetsPanel
                 items={missing}
-                onAction={(item: MissingItem) => { setTab(FIELD_TO_TAB[item.field] ?? 'identity'); focusField(item.field) }}
+                onAction={(item: MissingItem) => { setTab(FIELD_TO_TAB[item.field] ?? 'overview'); focusField(item.field) }}
               />
             </div>
 
@@ -796,17 +794,6 @@ export function DashboardProfilePage() {
           </div>
         )}
 
-        {/* ── Identity: name, bio, photo, cover, links ────────────────────── */}
-        {tab === 'identity' && (
-          <div className="max-w-2xl flex flex-col gap-5">
-            <TabIntro>
-              This is how people first recognise you across the Village: your name, your photo and the
-              story you tell about yourself. It's the foundation everything else builds on.
-            </TabIntro>
-            {renderIdentityFields(draft)}
-          </div>
-        )}
-
         {/* ── Expertise: topics, industry, location, FAQs ─────────────────── */}
         {tab === 'expertise' && (
           <div className="max-w-2xl flex flex-col gap-5">
@@ -862,6 +849,25 @@ export function DashboardProfilePage() {
               <Field label="Frequently Asked Questions" hint="Real questions people ask you. These help both search engines and AI systems understand what you know.">
                 <FAQEditor faqs={draft.faqs ?? []} onChange={v => set('faqs', v)} />
               </Field>
+            </div>
+
+            <div className="border-t border-[#E8E4DD] pt-5">
+              <RelationshipsPanel
+                groups={[
+                  {
+                    title: 'Ideas',
+                    items: founderIdeas.map(i => ({
+                      id: i.id, label: i.title, sublabel: i.topics.map(t => t.name).join(', '),
+                      path: `/ideas/${i.slug}`,
+                    })),
+                  },
+                ]}
+              />
+            </div>
+
+            <div className="border-t border-[#E8E4DD] pt-5">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Appears On</p>
+              <AppearsOnPanel locations={appearsOn} />
             </div>
           </div>
         )}
@@ -925,53 +931,6 @@ export function DashboardProfilePage() {
                 founderTopics={draft.topics ?? []}
                 onEditTopics={() => setTab('expertise')}
               />
-            </div>
-          </div>
-        )}
-
-        {/* ── Relationships: businesses, stories, ideas, library, featured ── */}
-        {tab === 'relationships' && (
-          <div className="max-w-2xl flex flex-col gap-6">
-            <TabIntro>
-              Everything you've published connects back to you. This is where you can see and jump to
-              every business, story, idea and piece of content linked to your profile, and everywhere
-              in the Village you're featured.
-            </TabIntro>
-            <RelationshipsPanel
-              groups={[
-                {
-                  title: 'Businesses',
-                  items: founderBusinesses.map(b => ({
-                    id: b.id, label: b.name, sublabel: b.tagline,
-                    path: `/businesses/${b.slug}`, image: b.logo,
-                  })),
-                },
-                {
-                  title: 'Stories',
-                  items: founderStories.map(s => ({
-                    id: s.id, label: s.title, sublabel: s.contentTypes.join(' · ') + ' · ' + s.status,
-                    path: `/stories/${s.slug}`, image: s.coverImage,
-                  })),
-                },
-                {
-                  title: 'Ideas',
-                  items: founderIdeas.map(i => ({
-                    id: i.id, label: i.title, sublabel: i.topics.map(t => t.name).join(', '),
-                    path: `/ideas/${i.slug}`,
-                  })),
-                },
-                {
-                  title: 'Library',
-                  items: founderLibrary.map(l => ({
-                    id: l.id, label: l.title, sublabel: l.productType + ' · ' + l.status,
-                    path: `/library/${l.slug}`, image: l.coverImage,
-                  })),
-                },
-              ]}
-            />
-            <div>
-              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Appears On</p>
-              <AppearsOnPanel locations={appearsOn} />
             </div>
           </div>
         )}
