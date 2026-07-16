@@ -47,7 +47,10 @@ export async function resolveChannelId(input: string): Promise<string> {
   return channelId
 }
 
-export async function fetchChannelVideos(channelId: string, maxResults = 15): Promise<YouTubeVideo[]> {
+// 50 is YouTube Data API's hard per-request cap on search.list — pulling more
+// than that in one scan would need paging through nextPageToken across
+// multiple requests, which isn't implemented yet.
+export async function fetchChannelVideos(channelId: string, maxResults = 50): Promise<YouTubeVideo[]> {
   const apiKey = getApiKey()
   const res = await fetch(
     `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${encodeURIComponent(channelId)}&order=date&type=video&maxResults=${maxResults}&key=${apiKey}`

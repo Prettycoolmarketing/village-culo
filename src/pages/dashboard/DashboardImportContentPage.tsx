@@ -299,12 +299,18 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   }
 
   function handleSaveTranscript() {
-    onChange({
+    const updated: ImportedContent = {
       ...draft,
       transcriptStatus:     'manual',
       transcriptSource:     'manual',
       transcriptImportedAt: new Date().toISOString(),
-    })
+    }
+    onChange(updated)
+    // Re-analyse immediately with the transcript included — the knowledge graph
+    // shouldn't wait for a full form save to pick up what's likely the richest
+    // text this item will ever have.
+    const intel = villageContentIntelligenceService.analyse(importedContentToInput(updated))
+    void villageContentIntelligenceService.upsert(intel)
     setTranscriptFlash(true)
     setTimeout(() => setTranscriptFlash(false), 2000)
   }
@@ -493,7 +499,7 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       <div className="border-t border-[#E8E4DD] pt-5 mt-4 mb-1">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-sm font-semibold text-[#2D2A26]">Auto Diary Engine</p>
+            <p className="text-sm font-semibold text-[#2D2A26]">Shape Your Story</p>
             {draft.diaryGenerationMode && (
               <p className="text-[10px] text-[#9CA3AF] mt-0.5">
                 {draft.diaryGenerationMode === 'transcript'
@@ -653,7 +659,7 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       )}
 
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
-      <VillageIntelligencePreview draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} />
+      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} />
 
       {/* ── Publishing fields ──────────────────────────────────────────────── */}
       <div className="border-t border-[#E8E4DD] pt-5 mt-4">
@@ -835,7 +841,7 @@ function SavedRow({
         {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
       <div className="flex items-center gap-2 shrink-0 pt-0.5">
-        {item.relatedStoryId ? (
+        {item.relatedStoryId && (
           publishedStory ? (
             <Link to={`/stories/${publishedStory.slug}`} className="text-xs text-[#5E6B4A] font-medium hover:underline">
               ✓ View published story →
@@ -843,14 +849,6 @@ function SavedRow({
           ) : (
             <span className="text-xs text-[#5E6B4A] font-medium">✓ Story published</span>
           )
-        ) : (
-          <Link
-            to="/dashboard/publish"
-            state={{ importedContentId: item.id }}
-            className="text-xs text-[#C86A43] font-semibold hover:underline"
-          >
-            Turn into Story →
-          </Link>
         )}
         {!editingDesc && (
           <button onClick={startEditingDesc} className="text-xs text-[#6B7280] hover:text-[#C86A43] transition-colors">
@@ -858,7 +856,7 @@ function SavedRow({
           </button>
         )}
         <button onClick={onAdvancedEdit} className="text-xs text-[#9CA3AF] hover:text-[#C86A43] transition-colors">
-          Advanced
+          Continue your story
         </button>
         {confirmDelete ? (
           <>
