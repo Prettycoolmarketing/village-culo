@@ -1,4 +1,5 @@
 import type { Topic } from '../types'
+import { slugify } from '../utils/slugify'
 
 export const topics: Topic[] = [
   { id: 'ai-marketing', slug: 'ai-marketing', name: 'AI Marketing', description: 'Using artificial intelligence to create, distribute and optimise content.', count: 12 },
@@ -20,3 +21,15 @@ export const topics: Topic[] = [
 
 export const getTopic = (id: string) => topics.find(t => t.id === id)
 export const getTopics = (ids: string[]) => topics.filter(t => ids.includes(t.id))
+
+// A founder-typed topic that isn't in the curated list yet. Topics live embedded
+// on each Story (not a separate table), so "creating" one is just building a
+// well-formed Topic object — it becomes real the moment a story carries it, and
+// /topics/:slug finds it by scanning stories for a matching slug, curated or not.
+export function createCustomTopic(name: string, existing: Topic[] = topics): Topic {
+  const trimmed = name.trim()
+  const slug = slugify(trimmed)
+  const match = existing.find(t => t.slug === slug)
+  if (match) return match
+  return { id: crypto.randomUUID(), slug, name: trimmed, description: '', count: 0 }
+}

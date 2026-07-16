@@ -24,6 +24,7 @@ import { FoundersPage }       from './pages/FoundersPage'
 import { FounderProfilePage } from './pages/FounderProfilePage'
 import { StoriesPage }        from './pages/StoriesPage'
 import { SourcePlatformPage } from './pages/SourcePlatformPage'
+import { TopicPage }          from './pages/TopicPage'
 import { EditorialDetailPage } from './pages/EditorialDetailPage'
 import { StoryDetailPage }    from './pages/StoryDetailPage'
 import { IdeasPage }          from './pages/IdeasPage'
@@ -206,6 +207,7 @@ export default function App() {
             <Route path="/founders/:slug"     element={<FounderProfilePage />}   />
             <Route path="/stories"            element={<StoriesPage />}          />
             <Route path="/from/:platform"     element={<SourcePlatformPage />}   />
+            <Route path="/topics/:slug"       element={<TopicPage />}            />
             <Route path="/editorial/:slug"    element={<EditorialDetailPage />}  />
             <Route path="/stories/:slug"      element={<StoryDetailPage />}      />
             <Route path="/ideas"              element={<IdeasPage />}            />

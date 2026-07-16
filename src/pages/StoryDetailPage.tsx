@@ -559,7 +559,9 @@ export function StoryDetailPage() {
               {/* Topic badges */}
               <div className="flex flex-wrap gap-2 mb-6" aria-label="Topics">
                 {story.topics.map(t => (
-                  <Badge key={t.id} label={t.name} variant="secondary" />
+                  <Link key={t.id} to={`/topics/${t.slug}`}>
+                    <Badge label={t.name} variant="secondary" />
+                  </Link>
                 ))}
               </div>
 
@@ -1031,7 +1033,9 @@ export function StoryDetailPage() {
                       <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Topics</dt>
                       <dd className="flex flex-wrap gap-1.5">
                         {story.topics.map(t => (
-                          <Badge key={t.id} label={t.name} variant="secondary" />
+                          <Link key={t.id} to={`/topics/${t.slug}`}>
+                            <Badge label={t.name} variant="secondary" />
+                          </Link>
                         ))}
                       </dd>
                     </div>

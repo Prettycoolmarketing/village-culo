@@ -15,7 +15,7 @@ import { computeReadability } from '../../utils/readability'
 import { getStoryMissingItems } from '../../utils/missingAssets'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
-import { topics as allTopics } from '../../data/topics'
+import { topics as allTopics, createCustomTopic } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
 import { looksLikeChannelUrl } from '../../utils/url'
 import type { ContentType, Topic, Story } from '../../types'
@@ -53,7 +53,7 @@ const STEPS: PublishStep[] = ['format', 'media', 'story', 'builder', 'preview', 
 const STEP_LABELS: Record<PublishStep, string> = {
   format:  'Choose Formats',
   media:   'Attach Media',
-  story:   'Tell Your Story',
+  story:   'Transcript',
   builder: 'Village Intelligence',
   preview: 'Preview',
   done:    'Publish',
@@ -71,6 +71,7 @@ interface PublishDraft {
   audioUrl:           string
   carouselSlides:     string[]
   documentUrl:        string
+  contentUrl:         string
   blog:               string
   founderId:          string
   businessId:         string
@@ -139,6 +140,7 @@ function defaultDraft(founderId: string, businessId: string): PublishDraft {
     audioUrl:          '',
     carouselSlides:    [''],
     documentUrl:       '',
+    contentUrl:        '',
     blog:              '',
     founderId,
     businessId,
@@ -473,7 +475,7 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
         {hasBlog && (
           <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
             <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
-              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Blog Content</p>
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Content</p>
             </div>
             <div className="px-4 py-3 flex flex-col gap-2">
               <textarea
@@ -482,6 +484,24 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                 rows={8}
                 placeholder="Write or paste your full blog post. Markdown supported: ## headings, **bold**, - lists."
                 className={inp + ' resize-y'}
+              />
+              <p className="text-[11px] text-[#9CA3AF] text-center -my-0.5">or</p>
+              <Field label="URL" hint="Link to where this already lives — your blog, Medium, Substack, etc.">
+                <input
+                  type="url"
+                  value={draft.contentUrl}
+                  onChange={e => onChange({ contentUrl: e.target.value })}
+                  placeholder="https://…"
+                  className={inp}
+                />
+              </Field>
+              <p className="text-[11px] text-[#9CA3AF] text-center -my-0.5">or</p>
+              <MediaUpload
+                onChange={v => onChange({ reelUrl: v })}
+                accept="video"
+                label="Upload a video instead"
+                aspect="auto"
+                uploadOptions={{ ...uploadOpts, usageType: 'reel-preview' }}
               />
             </div>
           </div>
@@ -534,7 +554,7 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
 }) {
   return (
     <div className="max-w-xl mx-auto">
-      <StepHeader title="Tell Your Story" subtitle="Just the story. Village handles everything else on the next step." onBack={onBack} />
+      <StepHeader title="Transcript" subtitle="Just the story. Village handles everything else on the next step." onBack={onBack} />
       <div className="flex flex-col gap-5">
         <Field label="Headline" hint="Optional — Village can draft one from your content if you leave this blank.">
           <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
@@ -544,7 +564,7 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
           <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
             placeholder="The honest story of…" className={inp + ' resize-y'} />
         </Field>
-        <Field label="Your perspective" hint="Optional — what happened, what you learned, what you'd do differently. Write freely — Village will find the structure.">
+        <Field label="Transcript" hint="Optional — paste a transcript, or just write what happened, what you learned, what you'd do differently. Write freely — Village will find the structure.">
           <textarea
             value={draft.blog}
             onChange={e => onChange({ blog: e.target.value })}
@@ -677,6 +697,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
   const singleFounder  = founders.length === 1  ? founders[0]   : null
   const singleBusiness = businesses.length === 1 ? businesses[0] : null
   const founder = getFounders().find(f => f.id === draft.founderId)
+  const [customTopicInput, setCustomTopicInput] = useState('')
 
   // Live, non-persisted analysis — same engine as handlePublish, just previewed.
   const intel = useMemo(() => {
@@ -808,7 +829,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
       </BuilderCard>
 
       {/* ── 5. Topics ────────────────────────────────────────────────────── */}
-      <BuilderCard title="Topics" subtitle="First topic is primary. Click a topic to make it primary.">
+      <BuilderCard title="Topics" subtitle="First topic is primary. Click a topic to make it primary. Don't see yours? Write your own below — it gets its own page in the Village.">
         <div className="flex flex-wrap gap-1.5">
           {allTopics.map(topic => {
             const idx = draft.topics.findIndex(t => t.id === topic.id)
@@ -829,7 +850,50 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
               </button>
             )
           })}
+          {draft.topics.filter(t => !allTopics.some(at => at.id === t.id)).map((topic, i) => {
+            const idx = draft.topics.findIndex(t => t.id === topic.id)
+            return (
+              <button
+                key={topic.id}
+                onClick={() => makePrimaryTopic(topic)}
+                onDoubleClick={() => toggleTopic(topic)}
+                title={idx === 0 ? 'Primary topic' : 'Click to make primary, double-click to remove'}
+                className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                  idx === 0 ? 'bg-[#C86A43] text-white border-[#C86A43] font-semibold' : 'bg-[#F3EDE6] text-[#C86A43] border-[#C86A43]/40'
+                }`}
+              >
+                {idx === 0 && '★ '}{topic.name}{i === 0 && ' ✎'}
+              </button>
+            )
+          })}
         </div>
+
+        <div className="flex gap-2 mt-3">
+          <input
+            type="text"
+            value={customTopicInput}
+            onChange={e => setCustomTopicInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key !== 'Enter' || !customTopicInput.trim()) return
+              toggleTopic(createCustomTopic(customTopicInput, [...allTopics, ...draft.topics]))
+              setCustomTopicInput('')
+            }}
+            placeholder="Write your own topic…"
+            className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-[#E8E4DD] focus:outline-none focus:border-[#C86A43]"
+          />
+          <button
+            onClick={() => {
+              if (!customTopicInput.trim()) return
+              toggleTopic(createCustomTopic(customTopicInput, [...allTopics, ...draft.topics]))
+              setCustomTopicInput('')
+            }}
+            disabled={!customTopicInput.trim()}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#2D2A26] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1a1815] transition-colors shrink-0"
+          >
+            Add
+          </button>
+        </div>
+
         {draft.topics.length > 0 && (
           <button onClick={() => toggleTopic(draft.topics[0])} className="text-xs text-[#9CA3AF] hover:text-red-500 mt-2">
             Remove primary topic ({draft.topics[0].name})
@@ -1405,7 +1469,7 @@ export function DashboardPublishPage() {
     const status      = action === 'publish' ? 'published' as const
                       : action === 'archive' ? 'archived'  as const
                       : 'draft'              as const
-    const ctaUrl      = draft.ctaUrl || draft.documentUrl || ''
+    const ctaUrl      = draft.ctaUrl || draft.documentUrl || draft.contentUrl || ''
     const nowIso       = new Date().toISOString().split('T')[0]
 
     const story: Story = {
@@ -1434,7 +1498,7 @@ export function DashboardPublishPage() {
       status,
       featured:       false,
       publishingSource: draft.importedContentId ? 'website-import'
-                      : (draft.reelUrl || draft.audioUrl || draft.documentUrl || draft.carouselSlides.some(Boolean))
+                      : (draft.reelUrl || draft.audioUrl || draft.documentUrl || draft.contentUrl || draft.carouselSlides.some(Boolean))
                           ? 'website-import'
                           : 'manual-dashboard',
       createdAt:      nowIso,
