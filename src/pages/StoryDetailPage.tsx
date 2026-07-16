@@ -4,7 +4,7 @@ import { usePageMeta } from '../utils/usePageMeta'
 import { getStories, getStoryBySlug, getStory } from '../services/stories'
 import { getFounder, getFounders } from '../services/founders'
 import { getBusiness } from '../services/businesses'
-import { recommendationService } from '../services/partnership'
+import { recommendationService, publisherPartnerProfileService } from '../services/partnership'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
 import { importedContentService, PLATFORM_LABELS, detectPlatform, generateEmbedUrl } from '../services/importedContent'
@@ -305,6 +305,7 @@ export function StoryDetailPage() {
   const jsonLdSource = story?.importedContentId ? importedContentService.get(story.importedContentId) : undefined
   const storyFeaturedIn = story ? getFeaturedIn('story', story.id) : []
   const storyConnectedTo = story ? getConnectedTo('story', story.id) : []
+  const bookingUrl = founder ? publisherPartnerProfileService.get(founder.id)?.bookingUrl : undefined
   // A video link pasted into the wrong wizard field (e.g. "Document/External
   // Link" instead of "YouTube/Video URL") shouldn't mean the video never
   // plays — fall back to ctaUrl when it's clearly a video source itself.
@@ -523,6 +524,21 @@ export function StoryDetailPage() {
                   >
                     {business.name}
                   </Link>
+                )}
+                {bookingUrl && (
+                  <a
+                    href={normalizeUrl(bookingUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 text-primary font-medium hover:bg-primary/15 transition-colors"
+                    aria-label={`Book a call with ${founder?.name}`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Book a call
+                  </a>
                 )}
                 <span className="flex items-center gap-1">
                   <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">

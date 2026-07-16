@@ -222,6 +222,23 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
         </div>
       </DiscoverySection>
 
+      {/* Book a Call */}
+      <DiscoverySection
+        title="Book a Call"
+        description="Optional — add a Calendly, Cal.com or other booking link. It'll show as a 'Book a call' link on your public profile and on stories you publish, so anyone who discovers you can grab time with you directly."
+      >
+        <div>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Booking link</label>
+          <input
+            type="url"
+            value={profile.bookingUrl ?? ''}
+            onChange={e => setP('bookingUrl', e.target.value || undefined)}
+            className={discoveryInputClass}
+            placeholder="https://calendly.com/your-name"
+          />
+        </div>
+      </DiscoverySection>
+
       {/* For the Record */}
       <DiscoverySection
         title="For the Record"
@@ -829,7 +846,7 @@ export function DashboardProfilePage() {
 
             <Field label="Public Visibility" hint="Only published profiles are indexed by search and appear across the Village.">
               <div className="flex gap-2 flex-wrap">
-                {(['draft', 'submitted', 'published', 'featured', 'archived'] as Status[]).map(s => (
+                {(['draft', 'submitted', 'published', 'archived'] as Status[]).map(s => (
                   <button
                     key={s}
                     onClick={() => set('status', s)}

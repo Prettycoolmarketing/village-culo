@@ -40,7 +40,6 @@ const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok'])
 const STATUS_OPTIONS: { value: ImportedContentStatus; label: string }[] = [
   { value: 'draft',     label: 'Draft'     },
   { value: 'published', label: 'Published' },
-  { value: 'featured',  label: 'Featured'  },
   { value: 'archived',  label: 'Archived'  },
 ]
 

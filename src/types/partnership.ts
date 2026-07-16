@@ -267,6 +267,10 @@ export interface PublisherPartnerProfile {
   // Contact & visibility
   contactPreference?: 'open' | 'email' | 'direct-message' | 'application-form'
   profileVisibility?: 'public' | 'discoverable' | 'private'
+  // Optional booking link (Calendly, Cal.com, etc.) — shown as "Book a call" on
+  // the public profile and on any stories they publish, so anyone who
+  // discovers them can grab time directly.
+  bookingUrl?: string
 
   // Content preferences
   publishingFrequency?: string

@@ -3,7 +3,7 @@ import { usePageMeta } from '../utils/usePageMeta'
 import { normalizeUrl } from '../utils/url'
 import { getFounders } from '../services/founders'
 import { getBusiness, getBusinesses } from '../services/businesses'
-import { trustProfileService, recommendationService } from '../services/partnership'
+import { trustProfileService, recommendationService, publisherPartnerProfileService } from '../services/partnership'
 import { importedContentService } from '../services/importedContent'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
@@ -34,6 +34,15 @@ function WebIcon() {
     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    </svg>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   )
 }
@@ -190,6 +199,7 @@ export function FounderProfilePage() {
   const founderIntelRecords = founder ? villageContentIntelligenceService.getByFounder(founder.id) : []
   const founderFeaturedIn  = founder ? getFeaturedIn('founder', founder.id) : []
   const founderConnectedTo = founder ? getConnectedTo('founder', founder.id) : []
+  const bookingUrl         = founder ? publisherPartnerProfileService.get(founder.id)?.bookingUrl : undefined
 
   usePageMeta({
     title:       founder?.seoTitle || founder?.name,
@@ -368,8 +378,15 @@ export function FounderProfilePage() {
                   {founder.location.name}, {founder.location.state}, Australia
                 </p>
               </div>
-              {(founder.website || founder.instagram || founder.linkedin || founder.youtube || founder.tiktok || founder.podcast || founder.newsletter || (founder.socialLinks && founder.socialLinks.length > 0)) && (
+              {(bookingUrl || founder.website || founder.instagram || founder.linkedin || founder.youtube || founder.tiktok || founder.podcast || founder.newsletter || (founder.socialLinks && founder.socialLinks.length > 0)) && (
                 <div className="flex items-center gap-2 flex-shrink-0 pb-1 flex-wrap">
+                  {bookingUrl && (
+                    <a href={normalizeUrl(bookingUrl)} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-[#b05a35] transition-colors"
+                      aria-label={`Book a call with ${founder.name}`}>
+                      <CalendarIcon /><span>Book a call</span>
+                    </a>
+                  )}
                   {founder.website && (
                     <a href={normalizeUrl(founder.website)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-charcoal text-sm font-medium hover:border-primary hover:text-primary transition-colors"
