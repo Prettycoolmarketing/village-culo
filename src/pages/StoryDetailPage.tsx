@@ -785,12 +785,17 @@ export function StoryDetailPage() {
               {/* Questions this answers — from Village Intelligence */}
               {intel && (intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (
                 <section aria-labelledby="story-questions-heading">
-                  <h2
-                    id="story-questions-heading"
-                    className="font-heading text-2xl font-semibold text-charcoal mb-2"
-                  >
-                    Questions this answers
-                  </h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h2
+                      id="story-questions-heading"
+                      className="font-heading text-2xl font-semibold text-charcoal"
+                    >
+                      Questions this answers
+                    </h2>
+                    <span className="font-body text-[9px] font-semibold text-muted bg-border/60 px-2 py-0.5 rounded-full">
+                      Auto-detected
+                    </span>
+                  </div>
                   <p className="font-body text-sm text-muted mb-6">
                     Common questions this story helps you think through.
                   </p>

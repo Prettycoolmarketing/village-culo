@@ -637,9 +637,14 @@ export function FounderProfilePage() {
               {/* Also asked about — search-style questions surfaced from founder's content */}
               {aggregatedIntel && aggregatedIntel.questions.length > 0 && (
                 <section aria-labelledby="founder-also-asked-heading">
-                  <h2 id="founder-also-asked-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Also Asked About
-                  </h2>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h2 id="founder-also-asked-heading" className="font-heading text-2xl font-semibold text-charcoal">
+                      Also Asked About
+                    </h2>
+                    <span className="font-body text-[9px] font-semibold text-muted bg-border/60 px-2 py-0.5 rounded-full">
+                      Auto-detected
+                    </span>
+                  </div>
                   <p className="font-body text-sm text-muted mb-6">
                     Common questions people search for related to {founder.name}'s work.
                   </p>

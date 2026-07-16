@@ -6,6 +6,14 @@ interface Props {
   variant?: 'full' | 'sidebar'
 }
 
+function AutoDetectedBadge() {
+  return (
+    <span className="font-body text-[9px] font-semibold text-muted bg-border/60 px-2 py-0.5 rounded-full">
+      Auto-detected
+    </span>
+  )
+}
+
 export function VillageIntelligenceBlock({ intel, variant = 'full' }: Props) {
   const allQuestions = [...new Set([...intel.searchQuestions, ...intel.geoQuestions])]
   const displayQuestions = variant === 'sidebar' ? allQuestions.slice(0, 3) : allQuestions.slice(0, 6)
@@ -88,7 +96,10 @@ export function VillageIntelligenceBlock({ intel, variant = 'full' }: Props) {
       {/* What this helps you understand */}
       {variant === 'full' && hasSignals && (
         <div className="mb-4 border-t border-border pt-4">
-          <p className="font-body text-xs font-semibold text-charcoal mb-3">What this helps you understand</p>
+          <div className="flex items-center gap-2 mb-3">
+            <p className="font-body text-xs font-semibold text-charcoal">What this helps you understand</p>
+            <AutoDetectedBadge />
+          </div>
           {displayLessons.length > 0 && (
             <ul className="space-y-1.5 mb-3">
               {displayLessons.map((l, i) => (
@@ -127,7 +138,10 @@ export function VillageIntelligenceBlock({ intel, variant = 'full' }: Props) {
       {/* Questions this answers */}
       {hasQuestions && (
         <div className="border-t border-border pt-4">
-          <p className="font-body text-xs font-semibold text-charcoal mb-3">Questions this answers</p>
+          <div className="flex items-center gap-2 mb-3">
+            <p className="font-body text-xs font-semibold text-charcoal">Questions this answers</p>
+            <AutoDetectedBadge />
+          </div>
           <ul className="space-y-2" role="list">
             {displayQuestions.map((q, i) => (
               <li key={i} className="font-body text-xs text-muted leading-relaxed italic">
