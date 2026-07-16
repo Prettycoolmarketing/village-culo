@@ -702,7 +702,7 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         <div className="flex items-center gap-3">
           <button onClick={onSave}
             className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
-            Save Import
+            Save Changes
           </button>
           <button onClick={onCancel}
             className="px-4 py-2.5 text-sm text-[#6B7280] hover:text-[#2D2A26] transition-colors">
@@ -727,18 +727,22 @@ function SavedRow({
   item,
   checked,
   onToggleCheck,
-  onEdit,
+  onSaveDescription,
+  onAdvancedEdit,
   onDelete,
   onStatusChange,
 }: {
   item: ImportedContent
   checked: boolean
   onToggleCheck: () => void
-  onEdit: () => void
+  onSaveDescription: (description: string) => void
+  onAdvancedEdit: () => void
   onDelete: () => void
   onStatusChange: (status: ImportedContentStatus) => void
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [editingDesc, setEditingDesc] = useState(false)
+  const [descDraft, setDescDraft] = useState(item.description ?? '')
   const ready = isReadyToPublish(item)
   const publishedStory = item.relatedStoryId ? getStory(item.relatedStoryId) : undefined
 
@@ -749,19 +753,35 @@ function SavedRow({
     archived:  'bg-[#F3EDE6] text-[#6B7280]',
   }
 
+  function startEditingDesc() {
+    setDescDraft(item.description ?? '')
+    setEditingDesc(true)
+  }
+
+  function saveDesc() {
+    onSaveDescription(descDraft.trim())
+    setEditingDesc(false)
+  }
+
   return (
-    <div className="flex items-center gap-4 px-5 py-4">
+    <div className="flex items-start gap-4 px-5 py-4">
       {!item.relatedStoryId && (
         <input
           type="checkbox"
           checked={checked}
           onChange={onToggleCheck}
           disabled={!ready}
-          className="shrink-0 w-4 h-4 accent-[#C86A43] disabled:opacity-30"
+          className="shrink-0 w-4 h-4 mt-1.5 accent-[#C86A43] disabled:opacity-30"
           aria-label={ready ? `Select "${item.title}" to publish` : 'Not ready to publish yet'}
         />
       )}
-      <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center">
+      <a
+        href={normalizeUrl(item.originalUrl)}
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Open original"
+        className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center hover:opacity-80 transition-opacity"
+      >
         {item.thumbnailUrl ? (
           <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
         ) : (
@@ -771,35 +791,48 @@ function SavedRow({
             </svg>
           </span>
         )}
-      </div>
-      <div className="shrink-0">
-        <PlatformBadge platform={item.sourcePlatform} />
-      </div>
+      </a>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <PlatformBadge platform={item.sourcePlatform} />
           <a href={normalizeUrl(item.originalUrl)} target="_blank" rel="noopener noreferrer"
-            className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors truncate max-w-xs">
-            {item.originalUrl}
+            className="text-sm font-semibold text-[#2D2A26] truncate hover:text-[#C86A43] transition-colors">
+            {item.title}
           </a>
-          {item.diaryGenerationMode && (
-            <span className="text-[10px] text-[#9CA3AF] shrink-0">
-              · {item.diaryGenerationMode === 'transcript' ? 'transcript diary' : item.diaryGenerationMode === 'metadata' ? 'metadata diary' : 'manual diary'}
-            </span>
-          )}
           {!item.relatedStoryId && !ready && (
-            <span className="text-[10px] text-amber-600 shrink-0">· needs a title before it can publish</span>
+            <span className="text-[10px] text-amber-600 shrink-0">needs a title before it can publish</span>
           )}
         </div>
+
+        {editingDesc ? (
+          <div className="mt-1.5 max-w-xl">
+            <textarea
+              value={descDraft}
+              onChange={e => setDescDraft(e.target.value)}
+              rows={3}
+              autoFocus
+              className="w-full px-2.5 py-2 text-xs border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43] resize-none"
+              placeholder="Describe this for the Village..."
+            />
+            <div className="flex items-center gap-3 mt-1.5">
+              <button onClick={saveDesc} className="text-xs font-semibold text-[#C86A43] hover:underline">Save</button>
+              <button onClick={() => setEditingDesc(false)} className="text-xs text-[#9CA3AF] hover:text-[#2D2A26]">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-1 max-w-xl">
+            {item.description || <span className="text-[#C4BDB4] italic">No description yet — click Edit to add one.</span>}
+          </p>
+        )}
       </div>
       <select
         value={item.status}
         onChange={e => onStatusChange(e.target.value as ImportedContentStatus)}
-        className={`text-[10px] font-semibold px-2 py-1 rounded-full border-0 focus:outline-none cursor-pointer ${statusColors[item.status]}`}
+        className={`text-[10px] font-semibold px-2 py-1 rounded-full border-0 focus:outline-none cursor-pointer shrink-0 ${statusColors[item.status]}`}
       >
         {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-2 shrink-0 pt-0.5">
         {item.relatedStoryId ? (
           publishedStory ? (
             <Link to={`/stories/${publishedStory.slug}`} className="text-xs text-[#5E6B4A] font-medium hover:underline">
@@ -817,8 +850,13 @@ function SavedRow({
             Turn into Story →
           </Link>
         )}
-        <button onClick={onEdit} className="text-xs text-[#6B7280] hover:text-[#C86A43] transition-colors">
-          Edit
+        {!editingDesc && (
+          <button onClick={startEditingDesc} className="text-xs text-[#6B7280] hover:text-[#C86A43] transition-colors">
+            Edit
+          </button>
+        )}
+        <button onClick={onAdvancedEdit} className="text-xs text-[#9CA3AF] hover:text-[#C86A43] transition-colors">
+          Advanced
         </button>
         {confirmDelete ? (
           <>
@@ -860,7 +898,10 @@ export function DashboardImportContentPage() {
 
   useEffect(() => { loadItems() }, [founderId])
 
-  function handleImport() {
+  // Imports land straight in the list below, already analysed — the list itself
+  // *is* the review screen (thumbnail, title, description, edit/delete), rather
+  // than sending founders through a separate one-item-at-a-time review form.
+  async function handleImport() {
     const trimmed = urlInput.trim()
     if (!trimmed) { setUrlError('Paste a URL to import.'); return }
     try { new URL(trimmed) } catch {
@@ -868,13 +909,18 @@ export function DashboardImportContentPage() {
       return
     }
     setUrlError('')
-    const newDraft = buildDraftImport(founderId, trimmed)
-    setDraft(newDraft)
-    setUrlInput('')
-    // Analyse immediately so the review screen opens with suggestions already
-    // there, rather than founders hitting a blank "Analyse Content" prompt.
-    const intel = villageContentIntelligenceService.analyse(importedContentToInput(newDraft))
+    setSaveError(null)
+    const newItem = buildDraftImport(founderId, trimmed)
+    const intel = villageContentIntelligenceService.analyse(importedContentToInput(newItem))
     void villageContentIntelligenceService.upsert(intel)
+
+    const result = await importedContentService.upsert(newItem)
+    if (!result.success) {
+      setSaveError(result.error ?? 'Import failed. Please try again.')
+      return
+    }
+    setUrlInput('')
+    loadItems()
   }
 
   async function handleSave() {
@@ -896,9 +942,19 @@ export function DashboardImportContentPage() {
 
   function handleCancel() { setDraft(null) }
 
-  function handleEdit(item: ImportedContent) {
+  function handleAdvancedEdit(item: ImportedContent) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setDraft(item)
+  }
+
+  async function handleSaveDescription(item: ImportedContent, description: string) {
+    setSaveError(null)
+    const result = await importedContentService.upsert({ ...item, description: description || undefined })
+    if (!result.success) {
+      setSaveError(result.error ?? 'Could not save. Please try again.')
+      return
+    }
+    loadItems()
   }
 
   function handleDelete(id: string) {
@@ -990,7 +1046,7 @@ export function DashboardImportContentPage() {
                 type="url"
                 value={urlInput}
                 onChange={e => { setUrlInput(e.target.value); setUrlError('') }}
-                onKeyDown={e => e.key === 'Enter' && handleImport()}
+                onKeyDown={e => e.key === 'Enter' && void handleImport()}
                 placeholder="https://youtube.com/watch?v=... or any URL"
                 className={`w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none transition-colors ${
                   urlError ? 'border-red-300 focus:border-red-400' : 'border-[#E8E4DD] focus:border-[#C86A43]'
@@ -1002,12 +1058,13 @@ export function DashboardImportContentPage() {
                 </span>
               )}
             </div>
-            <button onClick={handleImport}
+            <button onClick={() => void handleImport()}
               className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors shrink-0">
               Import
             </button>
           </div>
           {urlError && <p className="text-xs text-red-500 mt-2">{urlError}</p>}
+          {saveError && <p className="text-xs text-red-600 font-medium mt-2">{saveError}</p>}
           <div className="flex flex-wrap gap-1.5 mt-3">
             {(['youtube', 'podcast', 'website'] as const).map(p => (
               <span key={p} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${PLATFORM_COLORS[p]}`}>
@@ -1018,12 +1075,10 @@ export function DashboardImportContentPage() {
         </div>
       )}
 
-      {/* Edit form */}
+      {/* Advanced edit form — transcript, diary generation, topics, business link */}
       {draft && (
         <div className="mb-8">
-          <p className="text-sm font-semibold text-[#2D2A26] mb-3">
-            {allItems.some(i => i.id === draft.id) ? 'Edit imported content' : 'Review & save your import'}
-          </p>
+          <p className="text-sm font-semibold text-[#2D2A26] mb-3">Advanced edit</p>
           {saveError && (
             <p className="text-sm text-red-600 font-medium mb-2">{saveError}</p>
           )}
@@ -1124,7 +1179,8 @@ export function DashboardImportContentPage() {
                 item={item}
                 checked={checked.has(item.id)}
                 onToggleCheck={() => toggleChecked(item.id)}
-                onEdit={() => handleEdit(item)}
+                onSaveDescription={description => void handleSaveDescription(item, description)}
+                onAdvancedEdit={() => handleAdvancedEdit(item)}
                 onDelete={() => handleDelete(item.id)}
                 onStatusChange={status => handleStatusChange(item.id, status)}
               />
