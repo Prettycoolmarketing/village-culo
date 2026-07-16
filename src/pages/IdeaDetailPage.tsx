@@ -292,7 +292,7 @@ export function IdeaDetailPage() {
                     id="idea-context-heading"
                     className="font-heading text-base font-semibold text-charcoal mb-4"
                   >
-                    Knowledge Graph
+                    Connections
                   </h2>
                   <dl className="space-y-4 font-body text-sm">
 

@@ -216,7 +216,7 @@ export function calculateTrust(founderId: string): TrustCalculation {
   // ── What's working (positive summary) ────────────────────────────────────
 
   const positives: string[] = []
-  if (storyCount >= 1) positives.push(`${storyCount} published ${storyCount === 1 ? 'story' : 'stories'} in your Knowledge Graph`)
+  if (storyCount >= 1) positives.push(`${storyCount} published ${storyCount === 1 ? 'story' : 'stories'} in the Village`)
   if (approvedCount >= 1) positives.push(`${approvedCount} approved ${approvedCount === 1 ? 'recommendation' : 'recommendations'} with disclosure`)
   if (profile?.enabled) positives.push('Publisher Discovery Profile is active')
   if ((profile?.genuineRecommendations ?? []).length > 0) positives.push(`${profile!.genuineRecommendations!.length} genuine ${profile!.genuineRecommendations!.length === 1 ? 'tool' : 'tools'} in your recommendations list`)
@@ -227,7 +227,7 @@ export function calculateTrust(founderId: string): TrustCalculation {
   // ── Next best actions ─────────────────────────────────────────────────────
 
   const nextActions: string[] = []
-  if (storyCount === 0) nextActions.push('Publish your first story to start building your Knowledge Graph')
+  if (storyCount === 0) nextActions.push('Publish your first story to start building your presence in the Village')
   else if (storyCount < 5) nextActions.push(`Publish ${5 - storyCount} more ${5 - storyCount === 1 ? 'story' : 'stories'} to strengthen your publishing score`)
   if (approvedCount === 0) nextActions.push('Scan your stories and approve your first genuine recommendation')
   if (!profile?.enabled) nextActions.push('Enable your Publisher Discovery Profile so CULO can start matching you')

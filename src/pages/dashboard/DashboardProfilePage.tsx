@@ -798,7 +798,7 @@ export function DashboardProfilePage() {
         {tab === 'expertise' && (
           <div className="max-w-2xl flex flex-col gap-5">
             <TabIntro>
-              This is what connects you to the Village knowledge graph. Topics, industry and location
+              This is what connects you across the Village. Topics, industry and location
               determine which stories, ideas and businesses you're linked to, and what you show up for
               in search.
             </TabIntro>
@@ -824,7 +824,7 @@ export function DashboardProfilePage() {
               </Field>
             </div>
 
-            <Field label="Topics" hint="What would you like people to discover you for? These power the knowledge graph.">
+            <Field label="Topics" hint="What would you like people to discover you for? These power how you're connected across the Village.">
               <div className="flex flex-wrap gap-2 mt-1">
                 {allTopics.map(topic => {
                   const active = draft.topics.some(t => t.id === topic.id)

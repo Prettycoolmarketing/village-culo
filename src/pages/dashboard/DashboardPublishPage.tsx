@@ -597,7 +597,7 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
 
 const DISTRIBUTION_LOCATIONS = [
   'Founder Profile', 'Business Profile', 'Story Archive',
-  'Homepage (if featured)', 'Search', 'Related Stories', 'Knowledge Graph',
+  'Homepage (if featured)', 'Search', 'Related Stories', 'Ideas & Topics',
 ]
 
 function buildPreviewStory(draft: PublishDraft, founder: ReturnType<typeof getFounders>[number] | undefined): Story {
@@ -1177,7 +1177,7 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
             <CheckItem label={`Link to ${relatedContentItems.length} related ${relatedContentItems.length === 1 ? 'story' : 'stories'}`} />
           )}
           {draft.topics.length > 0 && <CheckItem label={`Tag ${draft.topics.length} ${draft.topics.length === 1 ? 'topic' : 'topics'} (${draft.topics[0].name}${draft.topics.length > 1 ? ' + more' : ''})`} />}
-          {lessons.length > 0 && <CheckItem label={`Create or strengthen ${lessons.length} ${lessons.length === 1 ? 'idea' : 'ideas'} in your knowledge graph`} />}
+          {lessons.length > 0 && <CheckItem label={`Create or strengthen ${lessons.length} ${lessons.length === 1 ? 'idea' : 'ideas'} in the Village`} />}
           <CheckItem label={`Generate SEO metadata (${intel.seoKeywords.length} keywords)`} done={intel.seoKeywords.length > 0} />
           <CheckItem label={`Generate GEO metadata (${questions.length} questions answered)`} done={questions.length > 0} />
           <CheckItem label="Improve Village Intelligence" />
@@ -1305,7 +1305,7 @@ function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing 
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-4 border-t border-white/10">
             <span className="text-xs text-white/70 flex items-center gap-1.5">{summary.seoComplete ? '✓' : '—'} SEO {summary.seoComplete ? 'Complete' : 'Skipped'}</span>
             <span className="text-xs text-white/70 flex items-center gap-1.5">{summary.geoComplete ? '✓' : '—'} GEO {summary.geoComplete ? 'Complete' : 'Skipped'}</span>
-            <span className="text-xs text-white/70 flex items-center gap-1.5">✓ Knowledge Graph Updated</span>
+            <span className="text-xs text-white/70 flex items-center gap-1.5">✓ Village Updated</span>
           </div>
         </div>
       )}

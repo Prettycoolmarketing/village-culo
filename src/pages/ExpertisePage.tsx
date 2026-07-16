@@ -13,7 +13,7 @@ export function ExpertisePage() {
         {/* Header */}
         <div className="pt-8 pb-10 max-w-2xl">
           <p className="font-body text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-            Knowledge Graph
+            CULO Village
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl font-bold text-charcoal leading-tight mb-4">
             Expertise

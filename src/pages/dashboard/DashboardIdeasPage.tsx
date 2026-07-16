@@ -205,7 +205,7 @@ export function DashboardIdeasPage() {
         <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
           <div>
             <h1 className="text-2xl font-bold text-[#2D2A26]">Ideas</h1>
-            <p className="text-sm text-[#6B7280] mt-1">{allIdeas.length} ideas in the knowledge graph</p>
+            <p className="text-sm text-[#6B7280] mt-1">{allIdeas.length} ideas across the Village</p>
           </div>
         </div>
 

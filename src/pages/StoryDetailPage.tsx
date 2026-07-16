@@ -734,7 +734,7 @@ export function StoryDetailPage() {
                   columns={2}
                   cardVariant="default"
                   emptyTitle="No ideas extracted yet"
-                  emptyMessage="Ideas are connected to this story through the Village knowledge graph. Check back as the Village grows."
+                  emptyMessage="Ideas are connected to this story through the Village. Check back as the Village grows."
                 />
               </section>
 

@@ -195,7 +195,7 @@ export function MapPage() {
             <p className="font-body text-lg text-muted leading-relaxed">
               Knowledge, stories, founders and businesses belong to places. The Village Map lets
               you explore everything published by location — discover what founders in your city
-              are building, sharing and creating across the knowledge graph.
+              are building, sharing and creating across the Village.
             </p>
           </div>
         </InnerContainer>
@@ -273,7 +273,7 @@ export function MapPage() {
               The Village is growing across Australia
             </h2>
             <p className="font-body text-sm text-muted leading-relaxed mb-5">
-              Every founder who publishes a story adds to the knowledge graph of their city. As the
+              Every founder who publishes a story adds to the Village's presence in their city. As the
               Village grows, each location becomes richer — more stories, more ideas, more
               connections between the people building real things in real places.
             </p>

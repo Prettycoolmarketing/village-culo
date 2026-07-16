@@ -85,7 +85,7 @@ export const founders: Founder[] = [
         id: 't6',
         date: '2024-01-15',
         title: 'Launched CULO Village',
-        description: 'Opened the Village as the permanent knowledge graph for the CULO ecosystem — where founder stories, ideas and expertise live forever.',
+        description: 'Opened the Village as the permanent home for the CULO ecosystem — where founder stories, ideas and expertise live forever.',
         type: 'product',
       },
     ],

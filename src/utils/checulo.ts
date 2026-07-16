@@ -60,7 +60,7 @@ export function formatCheCuloFirstProfile(founderName: string): string {
 }
 
 export function formatCheCuloFirstIdea(): string {
-  return 'Che CULO!! Village just extracted your first Idea from a story — it\'s now part of the knowledge graph.'
+  return 'Che CULO!! Village just extracted your first Idea from a story — it\'s now part of the Village.'
 }
 
 export function formatCheCuloFirstAuthority(): string {

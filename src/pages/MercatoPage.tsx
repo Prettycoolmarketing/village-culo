@@ -79,7 +79,7 @@ export function MercatoPage() {
             <p className="font-body text-lg text-muted leading-relaxed">
               Mercato is the Village business directory — but businesses here are not just listings.
               Every business is connected to the founder behind it, the stories they've shared, and
-              the ideas they've contributed to the Village knowledge graph. Discover businesses
+              the ideas they've contributed to the Village. Discover businesses
               through their knowledge, not just their category.
             </p>
           </div>
