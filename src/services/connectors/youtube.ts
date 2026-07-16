@@ -47,27 +47,52 @@ export async function resolveChannelId(input: string): Promise<string> {
   return channelId
 }
 
-// 50 is YouTube Data API's hard per-request cap on search.list — pulling more
-// than that in one scan would need paging through nextPageToken across
-// multiple requests, which isn't implemented yet.
-export async function fetchChannelVideos(channelId: string, maxResults = 50): Promise<YouTubeVideo[]> {
-  const apiKey = getApiKey()
-  const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${encodeURIComponent(channelId)}&order=date&type=video&maxResults=${maxResults}&key=${apiKey}`
-  )
-  if (!res.ok) throw new YouTubeConnectorError(`YouTube API error (${res.status}). The channel may be private or the key misconfigured.`)
-  const json = await res.json()
-  const items = Array.isArray(json.items) ? json.items : []
+// 50 is YouTube Data API's hard per-request cap on search.list, so pulling
+// more means paging through nextPageToken. Each page still costs 100 quota
+// units (search.list is expensive relative to the default 10,000/day quota),
+// so this stops at a safety cap rather than paging until the channel is
+// exhausted — 200 videos is 4 requests, plenty for "the last while" without
+// a single scan being able to blow the daily quota on its own.
+const MAX_VIDEOS_PER_SCAN = 200
 
-  return items
-    .filter((item: { id?: { videoId?: string } }) => item.id?.videoId)
-    .map((item: { id: { videoId: string }; snippet: { title: string; description: string; publishedAt: string; thumbnails?: Record<string, { url: string }> } }) => ({
-      videoId: item.id.videoId,
-      title: item.snippet.title,
-      description: item.snippet.description,
-      thumbnailUrl: item.snippet.thumbnails?.high?.url ?? item.snippet.thumbnails?.default?.url,
-      publishedAt: item.snippet.publishedAt,
-    }))
+type YouTubeSearchItem = {
+  id?: { videoId?: string }
+  snippet: { title: string; description: string; publishedAt: string; thumbnails?: Record<string, { url: string }> }
+}
+
+function mapSearchItem(item: YouTubeSearchItem & { id: { videoId: string } }): YouTubeVideo {
+  return {
+    videoId: item.id.videoId,
+    title: item.snippet.title,
+    description: item.snippet.description,
+    thumbnailUrl: item.snippet.thumbnails?.high?.url ?? item.snippet.thumbnails?.default?.url,
+    publishedAt: item.snippet.publishedAt,
+  }
+}
+
+export async function fetchChannelVideos(channelId: string, maxTotal = MAX_VIDEOS_PER_SCAN): Promise<YouTubeVideo[]> {
+  const apiKey = getApiKey()
+  const videos: YouTubeVideo[] = []
+  let pageToken: string | undefined
+
+  do {
+    const pageParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''
+    const res = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${encodeURIComponent(channelId)}&order=date&type=video&maxResults=50&key=${apiKey}${pageParam}`
+    )
+    if (!res.ok) throw new YouTubeConnectorError(`YouTube API error (${res.status}). The channel may be private or the key misconfigured.`)
+    const json = await res.json()
+    const items: YouTubeSearchItem[] = Array.isArray(json.items) ? json.items : []
+
+    videos.push(
+      ...items
+        .filter((item): item is YouTubeSearchItem & { id: { videoId: string } } => !!item.id?.videoId)
+        .map(mapSearchItem)
+    )
+    pageToken = json.nextPageToken
+  } while (pageToken && videos.length < maxTotal)
+
+  return videos.slice(0, maxTotal)
 }
 
 /** The Connector contract: authenticate, fetch, normalize — nothing more. */
