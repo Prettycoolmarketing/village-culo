@@ -42,6 +42,8 @@ import { OnboardingPage }    from './pages/OnboardingPage'
 
 // ─── Dashboard pages ────────────────────────────────────────────────────────────
 import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
+import { DashboardForgotPasswordPage } from './pages/dashboard/DashboardForgotPasswordPage'
+import { DashboardResetPasswordPage }  from './pages/dashboard/DashboardResetPasswordPage'
 import { DashboardProfilePage }      from './pages/dashboard/DashboardProfilePage'
 import { DashboardBusinessesPage }   from './pages/dashboard/DashboardBusinessesPage'
 import { DashboardStoriesPage }      from './pages/dashboard/DashboardStoriesPage'
@@ -154,6 +156,8 @@ export default function App() {
 
           {/* ── Dashboard (no public nav) ──────────────────────────────────── */}
           <Route path="/dashboard/login" element={<DashboardLoginPage />} />
+          <Route path="/dashboard/forgot-password" element={<DashboardForgotPasswordPage />} />
+          <Route path="/dashboard/reset-password" element={<DashboardResetPasswordPage />} />
           <Route
             path="/dashboard"
             element={

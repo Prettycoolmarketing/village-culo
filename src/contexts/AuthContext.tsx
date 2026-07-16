@@ -31,6 +31,8 @@ interface AuthContextValue {
   signIn:  (email: string, password: string) => Promise<{ error: string | null }>
   signUp:  (email: string, password: string) => Promise<{ error: string | null; needsConfirmation: boolean }>
   signOut: () => Promise<void>
+  resetPasswordForEmail: (email: string) => Promise<{ error: string | null }>
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -140,6 +142,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function resetPasswordForEmail(email: string): Promise<{ error: string | null }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase not configured. Password reset is unavailable in dev mode.' }
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/dashboard/reset-password`,
+    })
+    return { error: error?.message ?? null }
+  }
+
+  async function updatePassword(newPassword: string): Promise<{ error: string | null }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return { error: 'Supabase not configured. Password reset is unavailable in dev mode.' }
+    }
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    return { error: error?.message ?? null }
+  }
+
   async function signOut(): Promise<void> {
     if (!isSupabaseConfigured || !supabase) {
       setUser(null)
@@ -150,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isConfigured: isSupabaseConfigured, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isConfigured: isSupabaseConfigured, signIn, signUp, signOut, resetPasswordForEmail, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )

@@ -129,7 +129,14 @@ export function DashboardLoginPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="login-password" className="block text-sm font-medium text-[#2D2A26] mb-1.5">Password</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="login-password" className="block text-sm font-medium text-[#2D2A26]">Password</label>
+                    {mode === 'signin' && (
+                      <Link to="/dashboard/forgot-password" className="text-xs text-[#C86A43] hover:underline font-medium">
+                        Forgot password?
+                      </Link>
+                    )}
+                  </div>
                   <input
                     id="login-password"
                     type="password"
