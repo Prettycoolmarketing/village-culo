@@ -35,6 +35,8 @@ const SYNCED_TABLES: Array<{ table: string; cacheKey: string }> = [
   { table: 'founder_program_enrollments',    cacheKey: 'partnership_enrollments' },
   { table: 'founder_affiliate_links',        cacheKey: 'partnership_affiliate_links' },
   { table: 'media_uploads',                  cacheKey: 'media_uploads' },
+  { table: 'partners',                       cacheKey: 'partners' },
+  { table: 'partner_flags',                  cacheKey: 'partner_flags' },
 ]
 
 // RLS scopes every table's result to what this session can see, so no userId param

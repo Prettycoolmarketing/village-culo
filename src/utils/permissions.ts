@@ -16,7 +16,7 @@ import type { UserRole } from '../contexts/AuthContext'
  */
 export type CapoSection =
   | 'overview' | 'founders' | 'imports' | 'claims' | 'emails'
-  | 'featured' | 'analytics' | 'settings' | 'team' | 'editorial'
+  | 'featured' | 'analytics' | 'settings' | 'team' | 'editorial' | 'partners'
 
 export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
   overview:  ['moderator', 'editor', 'admin', 'owner'],
@@ -29,6 +29,8 @@ export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
   settings:  ['owner'],
   team:      ['owner'],
   editorial: ['editor', 'admin', 'owner'],
+  // Involves real affiliate deals and revenue splits — admin/owner only, not editor/moderator.
+  partners:  ['admin', 'owner'],
 }
 
 export function canAccessCapoSection(role: UserRole | undefined, section: CapoSection): boolean {

@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { getBusinesses, updateBusiness, deleteBusiness, duplicateBusiness } from '../../services/businesses'
 import { businessPartnerProfileService, programService, enrollmentService } from '../../services/partnership'
+import { partnerService, newPartnerRequest } from '../../services/partner'
+import type { Partner } from '../../types/partner'
 import type { BusinessPartnerProfile, PartnerProgram, PartnerProgramType, DisclosureType } from '../../types/partnership'
 import { getStories } from '../../services/stories'
 import { getServices, updateService, deleteService, duplicateService } from '../../services/serviceOfferings'
@@ -150,6 +152,102 @@ const CONNECT_PROGRAMS: ProgramItem[] = [
 
 const CONTENT_TYPE_OPTIONS = ['Blog Post', 'Short-form Reel', 'Carousel', 'Podcast Episode', 'Case Study', 'Tutorial', 'Review', 'Interview']
 
+// ─── Become a Partner ─────────────────────────────────────────────────────────
+
+function BecomePartnerCard({ businessId, business }: { businessId: string; business: Business }) {
+  const [partner, setPartner] = useState<Partner | undefined>(
+    () => partnerService.getAll({ businessId }).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+  )
+  const [applying, setApplying] = useState(false)
+  const [applicationUrl, setApplicationUrl] = useState('')
+  const [pitch, setPitch] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const active   = partner && (partner.status === 'pending' || partner.status === 'active')
+  const declined = partner?.status === 'declined'
+
+  async function handleApply() {
+    setError(null)
+    if (!applicationUrl.trim() || !pitch.trim()) { setError('Add your program signup link and a short pitch.'); return }
+    const request = newPartnerRequest({
+      businessId,
+      name: business.name,
+      logo: business.logo,
+      website: business.website,
+      pitch: pitch.trim(),
+      applicationUrl: applicationUrl.trim(),
+    })
+    const result = await partnerService.upsert(request)
+    if (!result.success) { setError(result.error ?? 'Could not submit. Please try again.'); return }
+    setPartner(request)
+    setApplying(false)
+  }
+
+  return (
+    <SectionCard
+      title="Partnerships Program"
+      description="Become a CULO partner — get featured for founders to write about, with an affiliate revenue share on anything sold through their stories."
+    >
+      {active ? (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#5E6B4A]/5 border border-[#5E6B4A]/20">
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
+            partner!.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+          }`}>
+            {partner!.status}
+          </span>
+          <p className="text-xs text-[#6B7280]">
+            {partner!.status === 'active'
+              ? `You're a live partner. Founders can write about you and you'll earn ${partner!.founderRevenueSharePercent ? 100 - partner!.founderRevenueSharePercent : ''}% of the commission.`
+              : 'Your request is with CULO Village staff. We\'ll email you once your affiliate program is set up.'}
+          </p>
+        </div>
+      ) : applying ? (
+        <div className="flex flex-col gap-3">
+          <Field label="Your affiliate program signup link" hint="Where CULO Village staff can sign up to become an affiliate for your brand">
+            <input
+              type="url"
+              value={applicationUrl}
+              onChange={e => setApplicationUrl(e.target.value)}
+              placeholder="https://yourbrand.com/affiliates"
+              className="w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+            />
+          </Field>
+          <Field label="Pitch" hint="What should founders write about?">
+            <textarea
+              value={pitch}
+              onChange={e => setPitch(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+            />
+          </Field>
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => void handleApply()}
+              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+            >
+              Submit request
+            </button>
+            <button onClick={() => { setApplying(false); setError(null) }} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          {declined && <p className="text-xs text-[#9CA3AF] mb-3">Your last request wasn't approved. You're welcome to apply again.</p>}
+          <button
+            onClick={() => setApplying(true)}
+            className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
+          >
+            Apply to become a partner
+          </button>
+        </div>
+      )}
+    </SectionCard>
+  )
+}
+
 function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdate }: {
   businessId: string
   business: Business
@@ -229,6 +327,8 @@ function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdate }: {
           disabled={!(localBiz.partnerEnabled ?? false)}
         />
       </SectionCard>
+
+      <BecomePartnerCard businessId={businessId} business={localBiz} />
 
       {/* For Publishers */}
       <SectionCard

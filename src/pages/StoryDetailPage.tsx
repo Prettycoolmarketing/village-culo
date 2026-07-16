@@ -4,7 +4,8 @@ import { usePageMeta } from '../utils/usePageMeta'
 import { getStories, getStoryBySlug, getStory } from '../services/stories'
 import { getFounder, getFounders } from '../services/founders'
 import { getBusiness } from '../services/businesses'
-import { recommendationService, publisherPartnerProfileService } from '../services/partnership'
+import { recommendationService, publisherPartnerProfileService, trackingService } from '../services/partnership'
+import { partnerService } from '../services/partner'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
 import { importedContentService, PLATFORM_LABELS, detectPlatform, generateEmbedUrl } from '../services/importedContent'
@@ -306,6 +307,19 @@ export function StoryDetailPage() {
   const storyFeaturedIn = story ? getFeaturedIn('story', story.id) : []
   const storyConnectedTo = story ? getConnectedTo('story', story.id) : []
   const bookingUrl = founder ? publisherPartnerProfileService.get(founder.id)?.bookingUrl : undefined
+  const partner = story?.partnerId ? partnerService.get(story.partnerId) : undefined
+
+  function handleCtaClick() {
+    if (!partner || !story) return
+    void trackingService.record({
+      founderId: story.founderId,
+      businessId: partner.id,
+      linkType: 'affiliate',
+      sourcePage: 'story',
+      storyId: story.id,
+      redirectUrl: story.ctaUrl,
+    })
+  }
   // A video link pasted into the wrong wizard field (e.g. "Document/External
   // Link" instead of "YouTube/Video URL") shouldn't mean the video never
   // plays — fall back to ctaUrl when it's clearly a video source itself.
@@ -592,6 +606,7 @@ export function StoryDetailPage() {
                   href={normalizeUrl(story.ctaUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={handleCtaClick}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl hover:bg-[#b05a35] transition-colors shadow-sm"
                   aria-label={`${story.ctaLabel} — related to ${story.title}`}
                 >
@@ -1064,6 +1079,7 @@ export function StoryDetailPage() {
                         href={normalizeUrl(story.ctaUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={handleCtaClick}
                         className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors"
                         aria-label={`${story.ctaLabel} — ${story.title}`}
                       >

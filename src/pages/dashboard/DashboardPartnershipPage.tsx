@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   recommendationService,
@@ -10,6 +10,7 @@ import {
   programService,
   trackingService,
 } from '../../services/partnership'
+import { partnerService } from '../../services/partner'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getStory } from '../../services/stories'
 import { getBusiness, getBusinesses } from '../../services/businesses'
@@ -18,6 +19,7 @@ import { runMatching, oppLabel } from '../../services/opportunityMatching'
 import { saveTrustProfile, LEVEL_LABELS, LEVEL_COLORS } from '../../services/trustEngine'
 import { normalizeUrl } from '../../utils/url'
 import type { Recommendation, Opportunity, TrustProfile, FounderAffiliateLink } from '../../types/partnership'
+import type { Partner } from '../../types/partner'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -25,6 +27,7 @@ type Tab =
   | 'overview'
   | 'recommendations'
   | 'opportunities'
+  | 'partnerships'
   | 'trust'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -42,6 +45,7 @@ const icons = {
   recommendations: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z',
   opportunities:   'M13 10V3L4 14h7v7l9-11h-7z',
   trust:           'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+  partnerships:    'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6-4a4 4 0 10-4-4',
 }
 
 // ─── Empty State ─────────────────────────────────────────────────────────────
@@ -166,11 +170,12 @@ function OverviewSection({ founderId, onNavigate }: { founderId: string; onNavig
       {/* Quick actions */}
       <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-8">
         <h3 className="text-sm font-semibold text-[#2D2A26] mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: 'Complete your partnership profile', icon: icons.overview, description: 'Tell us what you recommend and what opportunities you want', tab: 'overview' as Tab },
             { label: 'Manage your affiliate links', icon: icons.recommendations, description: 'CULO has found brands and products in your stories', tab: 'recommendations' as Tab },
             { label: 'Explore opportunities', icon: icons.opportunities, description: 'Speaking, podcasts, campaigns and collaborations', tab: 'opportunities' as Tab },
+            { label: 'Browse partners', icon: icons.partnerships, description: 'Write about a CULO partner and earn a revenue share', tab: 'partnerships' as Tab },
           ].map(a => (
             <button
               key={a.label}
@@ -977,6 +982,85 @@ function OpportunitiesSection({ founderId }: { founderId: string }) {
   )
 }
 
+// ─── Partner card ─────────────────────────────────────────────────────────────
+
+function PartnerCard({ partner, onWrite }: { partner: Partner; onWrite: (partner: Partner) => void }) {
+  return (
+    <div className={`bg-white rounded-xl border overflow-hidden ${partner.sponsored ? 'border-[#D6A94D]/40' : 'border-[#E8E4DD]'}`}>
+      <div className="px-5 pt-4 pb-4">
+        <div className="flex items-start gap-3 mb-2">
+          {partner.logo && <img src={partner.logo} alt="" className="w-10 h-10 rounded-lg object-cover bg-[#F3EDE6] shrink-0" />}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-bold text-[#2D2A26]">{partner.name}</p>
+              {partner.sponsored && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#D6A94D]/20 text-amber-700">Sponsored</span>
+              )}
+            </div>
+            <p className="text-[11px] text-[#9CA3AF] mt-0.5">{partner.founderRevenueSharePercent}% revenue share when you write about them</p>
+          </div>
+        </div>
+        <p className="text-xs text-[#6B7280] leading-relaxed mb-3">{partner.pitch}</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onWrite(partner)}
+            className="px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+          >
+            Write about this partner
+          </button>
+          {partner.website && (
+            <a
+              href={normalizeUrl(partner.website)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 bg-white text-[#6B7280] text-xs font-medium rounded-lg border border-[#E8E4DD] hover:border-[#9CA3AF] transition-colors"
+            >
+              Visit site
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Partnerships Program section ──────────────────────────────────────────────
+
+function PartnershipsProgramSection() {
+  const navigate = useNavigate()
+  const partners = partnerService.getAll({ status: 'active' })
+  const sponsored = partners.filter(p => p.sponsored)
+  const regular   = partners.filter(p => !p.sponsored)
+
+  function handleWrite(partner: Partner) {
+    navigate('/dashboard/publish', { state: { partnerId: partner.id } })
+  }
+
+  return (
+    <div className="p-8 max-w-4xl">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-[#2D2A26]">Partnerships Program</h2>
+        <p className="text-sm text-[#6B7280] mt-1">
+          Brands CULO Village has negotiated real affiliate deals with. Write about a partner and earn a revenue share whenever someone buys through your story.
+        </p>
+      </div>
+
+      {partners.length === 0 ? (
+        <EmptyState
+          title="No partners yet"
+          description="CULO Village is still onboarding partners. Check back soon, or ask about becoming a partner from your Business dashboard."
+        />
+      ) : (
+        <div className="space-y-3">
+          {[...sponsored, ...regular].map(partner => (
+            <PartnerCard key={partner.id} partner={partner} onWrite={handleWrite} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Reputation component card ────────────────────────────────────────────────
 
 function ReputationCard({ label, score, max, pct, signals }: {
@@ -1234,6 +1318,7 @@ const tabs: Array<{ id: Tab; label: string; icon: string }> = [
   { id: 'overview',        label: 'Overview',         icon: icons.overview },
   { id: 'recommendations', label: 'My Links',         icon: icons.recommendations },
   { id: 'opportunities',   label: 'Opportunities',    icon: icons.opportunities },
+  { id: 'partnerships',    label: 'Partnerships Program', icon: icons.partnerships },
   { id: 'trust',           label: 'Reputation',       icon: icons.trust },
 ]
 
@@ -1274,6 +1359,7 @@ export function DashboardPartnershipPage() {
         {activeTab === 'overview'        && <OverviewSection founderId={founderId} onNavigate={setActiveTab} />}
         {activeTab === 'recommendations' && <MyPicksSection founderId={founderId} onNavigate={setActiveTab} />}
         {activeTab === 'opportunities'   && <OpportunitiesSection founderId={founderId} />}
+        {activeTab === 'partnerships'    && <PartnershipsProgramSection />}
         {activeTab === 'trust'           && <TrustSection founderId={founderId} />}
       </main>
     </div>

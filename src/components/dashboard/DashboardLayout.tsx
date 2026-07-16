@@ -168,6 +168,9 @@ export function DashboardLayout() {
                   {canAccessCapoSection(user?.role, 'editorial') && (
                     <NavItem to="/dashboard/village/editorial" label="Editorial" icon={<Icon path={icons.featured} />} />
                   )}
+                  {canAccessCapoSection(user?.role, 'partners') && (
+                    <NavItem to="/dashboard/village/partners" label="Partners" icon={<Icon path={icons.partnership} />} />
+                  )}
                 </>
               )}
 

@@ -5,6 +5,7 @@ import { importedContentService, PLATFORM_LABELS } from './importedContent'
 import { villageContentIntelligenceService, storyToInput } from './villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from './ideaSync'
 import { syncRelationshipsFromStory } from './relationshipSync'
+import { scanStoryForPartnerFlags } from './partnerFlagDetection'
 import {
   formatCheCuloFirstStory, formatCheCuloFirstIdea,
   formatCheCuloFirstAuthority, formatCheCuloKnowledgeGraphMilestone,
@@ -103,6 +104,7 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
   const { created, strengthened } = await syncIdeasFromStory(story, merged)
   const { founderDelta } = await refreshAuthorityScores(story)
   await syncRelationshipsFromStory(story, merged)
+  void scanStoryForPartnerFlags(story)
   const totalRelationships = merged.relatedFounderIds.length + merged.relatedBusinessIds.length + merged.relatedContentIds.length
 
   const milestone =

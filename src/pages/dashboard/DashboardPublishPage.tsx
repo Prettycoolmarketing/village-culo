@@ -18,6 +18,7 @@ import { industries } from '../../data/industries'
 import { topics as allTopics, createCustomTopic } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
 import { looksLikeChannelUrl } from '../../utils/url'
+import { partnerService } from '../../services/partner'
 import type { ContentType, Topic, Story } from '../../types'
 
 // ─── Content formats ──────────────────────────────────────────────────────────
@@ -115,6 +116,9 @@ interface PublishDraft {
   // see DashboardImportContentPage's SavedRow and the effect that prefills this
   // page from router state below.
   importedContentId?: string
+  // Set when this draft started from "Write about this partner" in
+  // Opportunities' Partnerships Program tab — see the matching effect below.
+  partnerId?: string
 }
 
 type CtaPreset = 'website' | 'business' | 'book' | 'speaking' | 'newsletter' | 'custom'
@@ -1412,8 +1416,9 @@ export function DashboardPublishPage() {
   const location = useLocation()
   const [step,          setStep]          = useState<PublishStep>('format')
   const [draft,         setDraft]         = useState<PublishDraft>(() => {
-    // Don't resurrect a stale wizard draft over a fresh "Turn into Story" prefill.
-    if ((location.state as { importedContentId?: string } | null)?.importedContentId) {
+    // Don't resurrect a stale wizard draft over a fresh "Turn into Story"/"Write about this partner" prefill.
+    const navState = location.state as { importedContentId?: string; partnerId?: string } | null
+    if (navState?.importedContentId || navState?.partnerId) {
       return defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
     }
     return loadAutoSavedDraft() ?? defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
@@ -1460,6 +1465,24 @@ export function DashboardPublishPage() {
       coverImage: prev.coverImage || item.thumbnailUrl || '',
       topics: prev.topics.length > 0 ? prev.topics : matchedTopics,
       locationId: prev.locationId || matchedLocation?.id || prev.locationId,
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Arrived via "Write about this partner" in Opportunities — pre-select
+  // Blog and set the partner's real affiliate link as the story's CTA.
+  useEffect(() => {
+    const partnerId = (location.state as { partnerId?: string } | null)?.partnerId
+    if (!partnerId) return
+    const partner = partnerService.get(partnerId)
+    if (!partner) return
+    setDraft(prev => ({
+      ...prev,
+      partnerId,
+      contentTypes: prev.contentTypes.length > 0 ? prev.contentTypes : ['blog'],
+      title: prev.title || `Why I recommend ${partner.name}`,
+      ctaLabel: prev.ctaLabel || `Visit ${partner.name}`,
+      ctaUrl: prev.ctaUrl || partner.affiliateUrl || partner.website || '',
     }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -1537,6 +1560,7 @@ export function DashboardPublishPage() {
       ideaIds:        [],
       relatedStoryIds: [],
       importedContentId: draft.importedContentId,
+      partnerId:      draft.partnerId,
       ctaLabel:       draft.ctaLabel,
       ctaUrl,
       status,

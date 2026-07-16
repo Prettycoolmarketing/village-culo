@@ -493,6 +493,10 @@ export interface Story {
   // Builder's "Turn into Story" entry point — the source ImportedContent record
   // mirrors this back via its own relatedStoryId.
   importedContentId?: string
+  // Set when this Story was written from the Partnerships Program's "Write
+  // about this partner" entry point — drives the tracked partner CTA on the
+  // story page (src/types/partner.ts).
+  partnerId?: string
   // CTA
   ctaLabel: string
   ctaUrl: string
