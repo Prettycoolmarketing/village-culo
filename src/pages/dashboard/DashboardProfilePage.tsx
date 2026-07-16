@@ -498,7 +498,8 @@ export function DashboardProfilePage() {
   const recentStories = founderStories.slice(0, 5)
 
   const TABS = [
-    { key: 'overview',      label: 'Overview'      },
+    { key: 'overview',      label: 'Profile'       },
+    { key: 'life-work',     label: "My Life's Work" },
     { key: 'identity',      label: 'Identity'      },
     { key: 'expertise',     label: 'Expertise'     },
     { key: 'discovery',     label: 'Profile Visibility' },
@@ -509,6 +510,65 @@ export function DashboardProfilePage() {
   function set<K extends keyof Founder>(key: K, value: Founder[K]) {
     setDraft(prev => prev ? { ...prev, [key]: value } : prev)
     setSaved(false)
+  }
+
+  // Shared with the Profile tab (rendered right under Explore Your Life's Work) so editing
+  // your name/photo/links doesn't require a separate tab — same draft/set, one
+  // source of truth, just shown in two places.
+  function renderIdentityFields(draft: Founder) {
+    return (
+      <>
+        <Field label="Display Name">
+          <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
+        </Field>
+        <Field label="Bio" hint="Write in your own voice — aim for 200+ characters.">
+          <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
+          <p className="text-xs text-right text-[#9CA3AF] mt-1">{draft.bio.length} chars</p>
+        </Field>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Profile Photo" hint="Square, min 400×400px.">
+            <MediaUpload
+              value={draft.avatar}
+              onChange={v => set('avatar', v)}
+              label="Upload photo"
+              uploadOptions={{ founderId: draft.id, usageType: 'profile-photo' }}
+            />
+            {draft.avatar.includes('/placeholders/') && (
+              <p className="text-xs text-red-600 mt-1.5">Using a placeholder. Upload a real photo.</p>
+            )}
+          </Field>
+          <Field label="Cover Image" hint="16:9 recommended.">
+            <MediaUpload
+              value={draft.coverImage}
+              onChange={v => set('coverImage', v || undefined)}
+              label="Upload cover"
+              aspect="wide"
+              uploadOptions={{ founderId: draft.id, usageType: 'founder-cover' }}
+            />
+          </Field>
+        </div>
+
+        <div className="border-t border-[#E8E4DD] pt-5">
+          <p className="text-sm font-semibold text-[#2D2A26] mb-1">Links</p>
+          <p className="text-xs text-[#9CA3AF] mb-3">Where people can follow you. A business website belongs on the Business profile, not here.</p>
+          <div className="flex flex-col gap-3 mb-4">
+            <Field label="Website">
+              <input id="website" type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://yourwebsite.com" />
+            </Field>
+            <Field label="Instagram">
+              <input id="socials" type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/handle" />
+            </Field>
+            <Field label="LinkedIn">
+              <input type="url" value={draft.linkedin ?? ''} onChange={e => set('linkedin', e.target.value || undefined)} className={inputClass} placeholder="https://linkedin.com/in/handle" />
+            </Field>
+          </div>
+          <Field label="Additional links" hint="Add more accounts, including more than one of the same kind.">
+            <SocialLinksEditor links={draft.socialLinks ?? []} onChange={v => set('socialLinks', v)} />
+          </Field>
+        </div>
+      </>
+    )
   }
 
   function toggleTopic(topic: Topic) {
@@ -592,9 +652,34 @@ export function DashboardProfilePage() {
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto px-8 py-6">
 
-        {/* ── Overview ─────────────────────────────────────────────────── */}
+        {/* ── Overview (Profile) ───────────────────────────────────────── */}
         {tab === 'overview' && (
           <div className="max-w-2xl flex flex-col gap-6">
+
+            <a
+              href={`/founders/${draft.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-white rounded-xl border border-[#E8E4DD] overflow-hidden hover:border-[#C86A43]/40 transition-colors"
+            >
+              <div className="px-5 py-4 border-b border-[#F3EDE6] flex items-center justify-between">
+                <p className="text-sm font-semibold text-[#2D2A26]">Explore Your Life's Work</p>
+                <span className="text-xs text-[#C86A43] font-medium">View public profile ↗</span>
+              </div>
+              <div className="px-5 py-4 flex gap-4">
+                <img src={draft.avatar} alt="" className="w-16 h-16 rounded-full object-cover bg-[#F3EDE6] shrink-0" />
+                <div>
+                  <p className="font-semibold text-[#2D2A26]">{draft.name}</p>
+                  <p className="text-sm text-[#6B7280] mt-1">{draft.location.name} · {draft.industry.name}</p>
+                  <p className="text-sm text-[#6B7280] mt-2 line-clamp-2">{draft.bio}</p>
+                </div>
+              </div>
+            </a>
+
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
+              <p className="text-sm font-semibold text-[#2D2A26]">Identity</p>
+              {renderIdentityFields(draft)}
+            </div>
 
             {/* Today's Recommendations */}
             <div>
@@ -655,21 +740,12 @@ export function DashboardProfilePage() {
               />
             </div>
 
-            <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
-              <div className="px-5 py-4 border-b border-[#F3EDE6]">
-                <p className="text-sm font-semibold text-[#2D2A26]">Quick Preview</p>
-              </div>
-              <div className="px-5 py-4 flex gap-4">
-                <img src={draft.avatar} alt="" className="w-16 h-16 rounded-full object-cover bg-[#F3EDE6] shrink-0" />
-                <div>
-                  <p className="font-semibold text-[#2D2A26]">{draft.name}</p>
-                  <p className="text-sm text-[#6B7280] mt-1">{draft.location.name} · {draft.industry.name}</p>
-                  <p className="text-sm text-[#6B7280] mt-2 line-clamp-2">{draft.bio}</p>
-                </div>
-              </div>
-            </div>
+          </div>
+        )}
 
-            {/* Recent Stories */}
+        {/* ── My Life's Work ───────────────────────────────────────────── */}
+        {tab === 'life-work' && (
+          <div className="max-w-2xl flex flex-col gap-6">
             <div>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Your Recent Stories</p>
@@ -727,56 +803,7 @@ export function DashboardProfilePage() {
               This is how people first recognise you across the Village: your name, your photo and the
               story you tell about yourself. It's the foundation everything else builds on.
             </TabIntro>
-
-            <Field label="Display Name">
-              <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Bio" hint="Write in your own voice — aim for 200+ characters.">
-              <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{draft.bio.length} chars</p>
-            </Field>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Profile Photo" hint="Square, min 400×400px.">
-                <MediaUpload
-                  value={draft.avatar}
-                  onChange={v => set('avatar', v)}
-                  label="Upload photo"
-                  uploadOptions={{ founderId: draft.id, usageType: 'profile-photo' }}
-                />
-                {draft.avatar.includes('/placeholders/') && (
-                  <p className="text-xs text-red-600 mt-1.5">Using a placeholder. Upload a real photo.</p>
-                )}
-              </Field>
-              <Field label="Cover Image" hint="16:9 recommended.">
-                <MediaUpload
-                  value={draft.coverImage}
-                  onChange={v => set('coverImage', v || undefined)}
-                  label="Upload cover"
-                  aspect="wide"
-                  uploadOptions={{ founderId: draft.id, usageType: 'founder-cover' }}
-                />
-              </Field>
-            </div>
-
-            <div className="border-t border-[#E8E4DD] pt-5">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Links</p>
-              <p className="text-xs text-[#9CA3AF] mb-3">Where people can follow you. A business website belongs on the Business profile, not here.</p>
-              <div className="flex flex-col gap-3 mb-4">
-                <Field label="Website">
-                  <input id="website" type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://yourwebsite.com" />
-                </Field>
-                <Field label="Instagram">
-                  <input id="socials" type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/handle" />
-                </Field>
-                <Field label="LinkedIn">
-                  <input type="url" value={draft.linkedin ?? ''} onChange={e => set('linkedin', e.target.value || undefined)} className={inputClass} placeholder="https://linkedin.com/in/handle" />
-                </Field>
-              </div>
-              <Field label="Additional links" hint="Add more accounts, including more than one of the same kind.">
-                <SocialLinksEditor links={draft.socialLinks ?? []} onChange={v => set('socialLinks', v)} />
-              </Field>
-            </div>
+            {renderIdentityFields(draft)}
           </div>
         )}
 
