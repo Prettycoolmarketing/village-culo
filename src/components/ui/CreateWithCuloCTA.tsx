@@ -35,7 +35,7 @@ export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
             {label ?? 'Turn your experience into content'}
           </p>
           <p className="font-body text-sm text-white/60 mt-0.5">
-            Create with CULO in Canva and publish to the Village.
+            Exclusively in CULO in Canva — publish directly to the Village to be discovered.
           </p>
         </div>
         <Link

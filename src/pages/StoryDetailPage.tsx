@@ -942,7 +942,7 @@ export function StoryDetailPage() {
               {/* Create with CULO CTA */}
               <CreateWithCuloCTA
                 variant="banner"
-                label="Have a story like this? Create with CULO in Canva"
+                label="Create content from your messy thoughts and raw footage"
               />
 
             </div>

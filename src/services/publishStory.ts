@@ -191,12 +191,18 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     updatedAt: nowIso,
   }
 
-  if (contentType === 'blog') {
-    story.blog = item.diaryNote || item.transcriptText || item.description || item.autoSummary || ''
-  } else if (contentType === 'podcast') {
+  // The full written description — a founder's diary note, a transcript, or
+  // the platform's own description text — is featured as its own Blog tab
+  // regardless of format, so a video/podcast story doesn't lose its full
+  // written context just because `summary` only ever holds a short blurb.
+  const fullDescription = item.diaryNote || item.transcriptText || item.description
+    || (contentType === 'blog' ? item.autoSummary : undefined) || ''
+  if (fullDescription) story.blog = fullDescription
+
+  if (contentType === 'podcast') {
     story.audioUrl = item.originalUrl
-  } else {
-    // youtube-video / reel / social-post — the video/post URL itself is the content
+  } else if (contentType !== 'blog') {
+    // youtube-video / reel / social-post — the video/post URL itself is the primary content
     story.reelUrl = item.originalUrl
   }
 
