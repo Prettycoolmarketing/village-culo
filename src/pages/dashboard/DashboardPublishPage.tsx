@@ -59,6 +59,23 @@ const STEP_LABELS: Record<PublishStep, string> = {
   done:    'Publish',
 }
 
+// Transcript only means something for formats with actual spoken/recorded
+// audio — a blog or carousel has no recording to transcribe, so that step is
+// skipped entirely for those and the writing happens directly in Attach Media.
+const AUDIO_VIDEO_TYPES = new Set<ContentType>(['reel', 'talking-head', 'youtube-video', 'podcast', 'voice-over'])
+
+function needsTranscriptStep(types: ContentType[]): boolean {
+  return types.some(t => AUDIO_VIDEO_TYPES.has(t))
+}
+
+function visibleSteps(types: ContentType[]): PublishStep[] {
+  return needsTranscriptStep(types) ? STEPS : STEPS.filter(s => s !== 'story')
+}
+
+function isBlogOnly(types: ContentType[]): boolean {
+  return types.length === 1 && types[0] === 'blog'
+}
+
 // ─── Draft ────────────────────────────────────────────────────────────────────
 
 interface PublishDraft {
@@ -205,13 +222,19 @@ function StepHeader({ title, subtitle, onBack }: { title: string; subtitle?: str
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
-function ProgressBar({ step }: { step: PublishStep }) {
-  const currentIdx = STEPS.indexOf(step)
+function ProgressBar({ step, steps, labels, onStepClick }: {
+  step: PublishStep
+  steps: PublishStep[]
+  labels: Record<PublishStep, string>
+  onStepClick: (s: PublishStep) => void
+}) {
+  const currentIdx = steps.indexOf(step)
   return (
     <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-1">
-      {STEPS.map((s, i) => (
-        <div key={s} className="flex items-center gap-1 shrink-0">
-          <div className={`flex items-center gap-1.5 ${i <= currentIdx ? 'text-[#C86A43]' : 'text-[#9CA3AF]'}`}>
+      {steps.map((s, i) => {
+        const clickable = i <= currentIdx
+        const inner = (
+          <>
             <div className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
               i < currentIdx   ? 'bg-[#5E6B4A] text-white'
               : i === currentIdx ? 'bg-[#C86A43] text-white'
@@ -219,13 +242,30 @@ function ProgressBar({ step }: { step: PublishStep }) {
             }`}>
               {i < currentIdx ? '✓' : i + 1}
             </div>
-            <span className="text-[11px] font-medium hidden sm:inline">{STEP_LABELS[s]}</span>
+            <span className="text-[11px] font-medium hidden sm:inline">{labels[s]}</span>
+          </>
+        )
+        return (
+          <div key={s} className="flex items-center gap-1 shrink-0">
+            {clickable ? (
+              <button
+                type="button"
+                onClick={() => onStepClick(s)}
+                className={`flex items-center gap-1.5 ${i <= currentIdx ? 'text-[#C86A43]' : 'text-[#9CA3AF]'} hover:opacity-70 transition-opacity`}
+              >
+                {inner}
+              </button>
+            ) : (
+              <div className={`flex items-center gap-1.5 ${i <= currentIdx ? 'text-[#C86A43]' : 'text-[#9CA3AF]'}`}>
+                {inner}
+              </div>
+            )}
+            {i < steps.length - 1 && (
+              <div className={`w-4 h-px ml-1 ${i < currentIdx ? 'bg-[#5E6B4A]' : 'bg-[#E8E4DD]'}`} />
+            )}
           </div>
-          {i < STEPS.length - 1 && (
-            <div className={`w-4 h-px ml-1 ${i < currentIdx ? 'bg-[#5E6B4A]' : 'bg-[#E8E4DD]'}`} />
-          )}
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -255,17 +295,17 @@ function FormatStep({ draft, onChange, onNext }: {
         href="https://www.prettycoolmarketing.com/culo"
         target="_blank"
         rel="noopener noreferrer"
-        className="block bg-[#2D2A26] rounded-2xl px-6 py-5 mb-6 hover:bg-[#1a1815] transition-colors"
+        className="block bg-[#2D2A26] rounded-2xl px-8 py-8 mb-6 hover:bg-[#1a1815] transition-colors"
       >
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div>
-            <p className="font-heading text-base font-semibold text-white leading-snug">CULO Creatives — exclusively on Canva</p>
-            <p className="font-body text-sm text-white/60 mt-0.5">
-              Structure your messy thoughts and raw footage into different formats of reels, carousels, blogs and voice overs — only available in Canva.
+            <p className="font-heading text-2xl font-semibold text-white leading-snug">CULO Creatives: exclusively on Canva</p>
+            <p className="font-body text-base text-white/60 mt-1.5">
+              Structure your messy thoughts and raw footage into different formats of reels, carousels, blogs and voice overs. Only available in Canva.
             </p>
           </div>
-          <span className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl">
-            Open CULO Creatives ↗
+          <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+            Open CULO
           </span>
         </div>
       </a>
@@ -327,11 +367,13 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
   const autocover   = hasSlides && draft.carouselSlides.filter(Boolean).length > 0
   const uploadOpts  = { founderId: draft.founderId, businessId: draft.businessId }
 
+  const blogOnly = isBlogOnly(types)
+
   return (
     <div className="max-w-xl">
       <StepHeader
-        title="Add Media"
-        subtitle="Only fill in what you have. You can always add more later from My Publications."
+        title={blogOnly ? 'Write Blog' : 'Add Media'}
+        subtitle="Bring what you have today. The Village always has room for more."
         onBack={onBack}
       />
       <div className="flex flex-col gap-6">
@@ -355,7 +397,7 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
               </Field>
               {looksLikeChannelUrl(draft.reelUrl) && (
                 <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed">
-                  This looks like your channel page, not a single video — there's nothing to play here. Paste one video's link instead, or go to{' '}
+                  This looks like your channel page, not a single video. There's nothing to play here. Paste one video's link instead, or go to{' '}
                   <Link to="/dashboard/import-sources" className="font-semibold underline">Import Sources</Link>{' '}
                   to connect your whole channel and bring in every video at once.
                 </p>
@@ -407,6 +449,9 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
               </p>
             </div>
             <div className="px-4 py-3 flex flex-col gap-2.5">
+              <p className="text-xs text-[#9CA3AF]">
+                Don't want to start from scratch? Use CULO Creatives in Canva to design your slides.
+              </p>
               {draft.carouselSlides.map((slide, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="text-xs text-[#9CA3AF] w-5 shrink-0 text-right">{i + 1}</span>
@@ -451,7 +496,7 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
               <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Document / External Link</p>
             </div>
             <div className="px-4 py-3 flex flex-col gap-2">
-              <Field label="URL" hint="Link to the document, article or social post">
+              <Field label="URL" hint="Link to the document, article or social post.">
                 <input
                   type="url"
                   value={draft.documentUrl}
@@ -472,37 +517,30 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
           </div>
         )}
 
-        {hasBlog && (
+        {(hasBlog || hasSlides) && (
           <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
             <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
-              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Content</p>
+              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Today's Blog</p>
             </div>
-            <div className="px-4 py-3 flex flex-col gap-2">
-              <textarea
-                value={draft.blog}
-                onChange={e => onChange({ blog: e.target.value })}
-                rows={8}
-                placeholder="Write or paste your full blog post. Markdown supported: ## headings, **bold**, - lists."
-                className={inp + ' resize-y'}
-              />
-              <p className="text-[11px] text-[#9CA3AF] text-center -my-0.5">or</p>
-              <Field label="URL" hint="Link to where this already lives — your blog, Medium, Substack, etc.">
+            <div className="px-4 py-3 flex flex-col gap-3">
+              <Field label="Title">
                 <input
-                  type="url"
-                  value={draft.contentUrl}
-                  onChange={e => onChange({ contentUrl: e.target.value })}
-                  placeholder="https://…"
+                  type="text"
+                  value={draft.title}
+                  onChange={e => onChange({ title: e.target.value })}
+                  placeholder="What is this story about?"
                   className={inp}
                 />
               </Field>
-              <p className="text-[11px] text-[#9CA3AF] text-center -my-0.5">or</p>
-              <MediaUpload
-                onChange={v => onChange({ reelUrl: v })}
-                accept="video"
-                label="Upload a video instead"
-                aspect="auto"
-                uploadOptions={{ ...uploadOpts, usageType: 'reel-preview' }}
-              />
+              <Field label="Content">
+                <textarea
+                  value={draft.blog}
+                  onChange={e => onChange({ blog: e.target.value })}
+                  rows={10}
+                  placeholder="Don't want to start from scratch? Use CULO Creatives in Canva to shape your messy thoughts."
+                  className={inp + ' resize-y'}
+                />
+              </Field>
             </div>
           </div>
         )}
@@ -554,17 +592,21 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
 }) {
   return (
     <div className="max-w-xl mx-auto">
-      <StepHeader title="Transcript" subtitle="Just the story. Village handles everything else on the next step." onBack={onBack} />
+      <StepHeader
+        title="Transcript"
+        subtitle="Paste a transcript to unlock richer diary generation. On YouTube, click ··· below any video, then Show transcript, to copy and paste here. Or just write your story below."
+        onBack={onBack}
+      />
       <div className="flex flex-col gap-5">
-        <Field label="Headline" hint="Optional — Village can draft one from your content if you leave this blank.">
+        <Field label="Headline" hint="Optional. Village can draft one from your content if you leave this blank.">
           <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
             placeholder="What is this story about?" className={inp + ' text-lg font-semibold py-3'} autoFocus />
         </Field>
-        <Field label="Summary" hint="Optional — one or two sentences, the reader's takeaway.">
+        <Field label="Summary" hint="Optional. One or two sentences, the reader's takeaway.">
           <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
             placeholder="The honest story of…" className={inp + ' resize-y'} />
         </Field>
-        <Field label="Transcript" hint="Optional — paste a transcript, or just write what happened, what you learned, what you'd do differently. Write freely — Village will find the structure.">
+        <Field label="Transcript" hint="Optional. Paste it above, or just write freely. Village will find the structure.">
           <textarea
             value={draft.blog}
             onChange={e => onChange({ blog: e.target.value })}
@@ -577,7 +619,7 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
           onClick={onNext}
           className="py-3.5 bg-[#C86A43] text-white text-base font-bold rounded-2xl hover:bg-[#b05a35] disabled:opacity-50 transition-colors mt-2"
         >
-          Continue — let Village understand this story →
+          Continue to Village Intelligence →
         </button>
       </div>
     </div>
@@ -788,7 +830,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
           </div>
         </div>
         <p className="text-xs text-white/40 mt-5">
-          Keep writing on the previous step and come back — this updates automatically. Nothing here requires manual setup.
+          Keep writing on the previous step and come back. This updates automatically, nothing here requires manual setup.
         </p>
       </div>
 
@@ -805,7 +847,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-5 py-4">
           <p className="text-sm font-bold text-[#2D2A26] mb-2">Recommended improvements</p>
           {recommendedImprovements.length === 0 ? (
-            <p className="text-xs text-green-600 mt-2">Nothing left to improve — this story is ready.</p>
+            <p className="text-xs text-green-600 mt-2">Nothing left to improve. This story is ready.</p>
           ) : (
             <div className="flex flex-col gap-1.5 mt-2">
               {recommendedImprovements.slice(0, 3).map(item => (
@@ -817,19 +859,19 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
       </div>
 
       {/* ── 1. Lessons ───────────────────────────────────────────────────── */}
-      <BuilderCard title="Lessons" subtitle="Extracted from your writing above — edit, remove or add your own." defaultOpen={false}
+      <BuilderCard title="Lessons" subtitle="Extracted from your writing above. Edit, remove or add your own." defaultOpen={false}
         badge={<span className="text-[10px] text-[#9CA3AF]">{lessons.length}</span>}>
         <EditableList items={lessons} onChange={v => onChange({ lessonsOverride: v })} placeholder="a lesson" />
       </BuilderCard>
 
       {/* ── 4. Questions this story answers ──────────────────────────────── */}
-      <BuilderCard title="Questions this story answers" subtitle="Powers SEO and GEO — how AI systems and search understand this story." defaultOpen={false}
+      <BuilderCard title="Questions this story answers" subtitle="Powers SEO and GEO: how AI systems and search understand this story." defaultOpen={false}
         badge={<span className="text-[10px] text-[#9CA3AF]">{questions.length}</span>}>
         <EditableList items={questions} onChange={v => onChange({ questionsOverride: v })} placeholder="a question" />
       </BuilderCard>
 
       {/* ── 5. Topics ────────────────────────────────────────────────────── */}
-      <BuilderCard title="Topics" subtitle="First topic is primary. Click a topic to make it primary. Don't see yours? Write your own below — it gets its own page in the Village.">
+      <BuilderCard title="Topics" subtitle="First topic is primary. Click a topic to make it primary. Don't see yours? Write your own below: it gets its own page in the Village.">
         <div className="flex flex-wrap gap-1.5">
           {allTopics.map(topic => {
             const idx = draft.topics.findIndex(t => t.id === topic.id)
@@ -936,7 +978,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
               >Remove</button>
             </div>
           ))}
-          {suggestedFounders.length + extraFounders.length === 0 && <p className="text-xs text-[#9CA3AF]">None detected yet — mention another founder by name in your writing.</p>}
+          {suggestedFounders.length + extraFounders.length === 0 && <p className="text-xs text-[#9CA3AF]">None detected yet. Mention another founder by name in your writing.</p>}
           <select
             value=""
             onChange={e => e.target.value && onChange({ extraFounderIds: [...draft.extraFounderIds, e.target.value] })}
@@ -967,7 +1009,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
               >Remove</button>
             </div>
           ))}
-          {suggestedBusinesses.length + extraBusinesses.length === 0 && <p className="text-xs text-[#9CA3AF]">None detected yet — mention a business by name in your writing.</p>}
+          {suggestedBusinesses.length + extraBusinesses.length === 0 && <p className="text-xs text-[#9CA3AF]">None detected yet. Mention a business by name in your writing.</p>}
           <select
             value=""
             onChange={e => e.target.value && onChange({ extraBusinessIds: [...draft.extraBusinessIds, e.target.value] })}
@@ -982,7 +1024,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
       </BuilderCard>
 
       {/* ── 9. Related content ───────────────────────────────────────────── */}
-      <BuilderCard title="Related Content" subtitle="Stories and imports this connects to — computed automatically, remove anything incorrect." defaultOpen={false}
+      <BuilderCard title="Related Content" subtitle="Stories and imports this connects to, computed automatically. Remove anything incorrect." defaultOpen={false}
         badge={<span className="text-[10px] text-[#9CA3AF]">{relatedContentItems.length}</span>}>
         <div className="flex flex-col gap-2">
           {relatedContentItems.map(item => (
@@ -991,7 +1033,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
               <button onClick={() => onChange({ excludedContentIds: [...draft.excludedContentIds, item.id] })} className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
             </div>
           ))}
-          {relatedContentItems.length === 0 && <p className="text-xs text-[#9CA3AF]">Nothing connected yet — add topics or write more detail above.</p>}
+          {relatedContentItems.length === 0 && <p className="text-xs text-[#9CA3AF]">Nothing connected yet. Add topics or write more detail above.</p>}
         </div>
       </BuilderCard>
 
@@ -1054,7 +1096,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
       </BuilderCard>
 
       {/* ── 12. SEO Preview ──────────────────────────────────────────────── */}
-      <BuilderCard title="SEO Preview" subtitle="Read-only — generated automatically from the content above." defaultOpen={false}>
+      <BuilderCard title="SEO Preview" subtitle="Read-only: generated automatically from the content above." defaultOpen={false}>
         <div className="space-y-2 text-xs">
           <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Title</p><p className="text-[#2D2A26] font-medium">{draft.title || 'Untitled'}</p></div>
           <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Description</p><p className="text-[#2D2A26]">{draft.summary || '—'}</p></div>
@@ -1093,7 +1135,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
         </button>
         {!draft.founderId && (
           <p className="text-xs text-red-600 text-center mt-2">
-            We couldn't find your founder profile, so this can't continue yet — try refreshing the page, or contact support if this keeps happening.
+            We couldn't find your founder profile, so this can't continue yet. Try refreshing the page, or contact support if this keeps happening.
           </p>
         )}
       </div>
@@ -1140,7 +1182,7 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
 
   return (
     <div className="max-w-3xl mx-auto flex flex-col gap-4">
-      <StepHeader title="Preview" subtitle="Exactly what happens when you publish — remove anything that isn't right." onBack={onBack} />
+      <StepHeader title="Preview" subtitle="Exactly what happens when you publish. Remove anything that isn't right." onBack={onBack} />
 
       {/* ── Publishing this story will also… ─────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-[#E8E4DD] px-6 py-5">
@@ -1226,7 +1268,7 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
         </div>
         {!draft.founderId && (
           <p className="text-xs text-red-600 text-center">
-            We couldn't find your founder profile, so this can't publish yet — try refreshing the page, or contact support if this keeps happening.
+            We couldn't find your founder profile, so this can't publish yet. Try refreshing the page, or contact support if this keeps happening.
           </p>
         )}
       </div>
@@ -1440,14 +1482,16 @@ export function DashboardPublishPage() {
     setDraft(prev => ({ ...prev, ...changes }))
   }
 
+  const stepList = visibleSteps(draft.contentTypes)
+
   function next() {
-    const idx = STEPS.indexOf(step)
-    if (idx < STEPS.length - 1) setStep(STEPS[idx + 1])
+    const idx = stepList.indexOf(step)
+    if (idx < stepList.length - 1) setStep(stepList[idx + 1])
   }
 
   function back() {
-    const idx = STEPS.indexOf(step)
-    if (idx > 0) setStep(STEPS[idx - 1])
+    const idx = stepList.indexOf(step)
+    if (idx > 0) setStep(stepList[idx - 1])
   }
 
   // The single canonical publish path: write the Story, link it to its source
@@ -1534,7 +1578,12 @@ export function DashboardPublishPage() {
     <div className="min-h-full p-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {step !== 'done' && (
         <div className="flex items-center justify-between mb-2">
-          <ProgressBar step={step} />
+          <ProgressBar
+            step={step}
+            steps={stepList}
+            labels={isBlogOnly(draft.contentTypes) ? { ...STEP_LABELS, media: 'Write Blog' } : STEP_LABELS}
+            onStepClick={setStep}
+          />
           <p className="text-[11px] text-[#9CA3AF] shrink-0 ml-4">
             {autoSave === 'saving' && 'Saving…'}
             {autoSave === 'saved' && 'Saved just now'}
