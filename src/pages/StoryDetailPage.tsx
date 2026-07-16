@@ -316,10 +316,15 @@ export function StoryDetailPage() {
   // Base the tabs actually offered on what content is really there, not just
   // which formats were checked in the wizard — a founder who wrote a blog but
   // only selected "Reel" as the format shouldn't have that writing become
-  // unreachable.
+  // unreachable. The "reel" fallback below is only for a video URL that
+  // landed somewhere with no matching contentType at all (e.g. pasted into
+  // the wrong field) — if contentTypes already names the real format
+  // (youtube-video, talking-head, reel), don't also synthesize a second,
+  // identical tab pointing at the same video.
+  const REEL_ALIASES = new Set<ContentType>(['reel', 'youtube-video', 'talking-head'])
   const availableTypes: ContentType[] = story ? [...new Set([
     ...(story.blog ? ['blog' as const] : []),
-    ...(effectiveReelUrl ? ['reel' as const] : []),
+    ...(effectiveReelUrl && !story.contentTypes.some(t => REEL_ALIASES.has(t)) ? ['reel' as const] : []),
     ...(story.carouselImages && story.carouselImages.length > 0 ? ['carousel' as const] : []),
     ...story.contentTypes,
   ])] : []
