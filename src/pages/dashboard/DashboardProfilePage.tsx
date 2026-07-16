@@ -530,6 +530,7 @@ export function DashboardProfilePage() {
               value={draft.avatar}
               onChange={v => set('avatar', v)}
               label="Upload photo"
+              aspect="wide"
               uploadOptions={{ founderId: draft.id, usageType: 'profile-photo' }}
             />
             {draft.avatar.includes('/placeholders/') && (
