@@ -246,6 +246,28 @@ function FormatStep({ draft, onChange, onNext }: {
         title="What are you publishing?"
         subtitle="Select every format this content exists in. You can choose more than one."
       />
+
+      {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
+          for the real Canva app link once CULO in Canva ships. */}
+      <a
+        href="https://www.prettycoolmarketing.com/culo"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block bg-[#2D2A26] rounded-2xl px-6 py-5 mb-6 hover:bg-[#1a1815] transition-colors"
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <p className="font-heading text-base font-semibold text-white leading-snug">CULO Creatives — exclusively on Canva</p>
+            <p className="font-body text-sm text-white/60 mt-0.5">
+              Turn this into scroll-stopping visuals with templates built for founder stories.
+            </p>
+          </div>
+          <span className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl">
+            Open CULO Creatives ↗
+          </span>
+        </div>
+      </a>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
         {FORMATS.map(f => {
           const active = draft.contentTypes.includes(f.type)

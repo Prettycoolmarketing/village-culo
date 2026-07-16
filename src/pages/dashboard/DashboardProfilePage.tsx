@@ -236,6 +236,9 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
             className={discoveryInputClass}
             placeholder="https://calendly.com/your-name"
           />
+          <p className="text-xs text-[#9CA3AF] mt-1.5">
+            One link, everywhere — update it here and it changes instantly on your profile and on every story you've published, no need to update anything else.
+          </p>
         </div>
       </DiscoverySection>
 
