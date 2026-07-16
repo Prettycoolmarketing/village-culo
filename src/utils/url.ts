@@ -19,3 +19,14 @@ export function looksLikeChannelUrl(url?: string | null): boolean {
   if (!url || !/youtube\.com/i.test(url)) return false
   return /youtube\.com\/(@[\w.-]+|channel\/|c\/|user\/)/i.test(url) && !/[?&]v=|\/shorts\//i.test(url)
 }
+
+// A raw uploaded file (Supabase Storage or any other direct host) has no
+// platform to embed via iframe — it needs a native <video>/<audio> player
+// instead. Distinguishes "founder uploaded a file directly" from "founder
+// linked to YouTube/Spotify/etc", which need very different playback.
+export function isDirectVideoUrl(url?: string | null): boolean {
+  return !!url && /\.(mp4|mov|webm|m4v|avi|mkv)(\?|$)/i.test(url)
+}
+export function isDirectAudioUrl(url?: string | null): boolean {
+  return !!url && /\.(mp3|m4a|wav|ogg|aac)(\?|$)/i.test(url)
+}

@@ -22,7 +22,7 @@ import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendatio
 import { InnerContainer }   from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType } from '../types'
-import { normalizeUrl, looksLikeChannelUrl } from '../utils/url'
+import { normalizeUrl, looksLikeChannelUrl, isDirectVideoUrl, isDirectAudioUrl } from '../utils/url'
 
 const DISCLOSURE_TYPE_LABELS: Record<string, string> = {
   affiliate:          'Affiliate Relationship',
@@ -185,8 +185,9 @@ function BlogContent({ content }: { content: string }) {
 
 function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: string; summary: string }) {
   const isChannelLink = looksLikeChannelUrl(reelUrl)
+  const isUploadedFile = isDirectVideoUrl(reelUrl)
   const platform = reelUrl ? detectPlatform(reelUrl) : undefined
-  const embedUrl = reelUrl && platform && !isChannelLink ? generateEmbedUrl(reelUrl, platform) : undefined
+  const embedUrl = reelUrl && platform && !isChannelLink && !isUploadedFile ? generateEmbedUrl(reelUrl, platform) : undefined
   const platformLabel = platform ? PLATFORM_LABELS[platform] : 'the original platform'
 
   return (
@@ -197,7 +198,14 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
         style={{ aspectRatio: '9/16' }}
         aria-label="Video preview"
       >
-        {embedUrl ? (
+        {isUploadedFile ? (
+          <video
+            src={reelUrl}
+            controls
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+          />
+        ) : embedUrl ? (
           <iframe
             src={embedUrl}
             title={title}
@@ -241,7 +249,7 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
         <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Video</p>
         <h3 className="font-heading text-xl font-semibold text-charcoal leading-snug mb-3">{title}</h3>
         <p className="font-body text-base text-muted leading-relaxed mb-5">{summary}</p>
-        {reelUrl && (
+        {reelUrl && !isUploadedFile && (
           <a
             href={normalizeUrl(reelUrl)}
             target="_blank"
@@ -671,6 +679,8 @@ export function StoryDetailPage() {
                             : <p className="font-body text-muted text-sm italic">Photo gallery will appear here once published.</p>
                         ) : (type === 'talking-head' || type === 'youtube-video') ? (
                           <ReelContent reelUrl={effectiveReelUrl} title={story.title} summary={story.summary} />
+                        ) : (type === 'podcast' || type === 'voice-over') && isDirectAudioUrl(url) ? (
+                          <audio src={url} controls className="w-full" />
                         ) : url ? (
                           <div className="py-2">
                             <a href={url} target="_blank" rel="noopener noreferrer"
