@@ -133,7 +133,7 @@ export async function runDetection(founderId: string): Promise<DetectionResult> 
         reason = `"${name}" was mentioned once in a positive context in this story.`
       } else {
         confidence = 0.38
-        reason = `"${name}" was mentioned once in this story — check if this is a genuine recommendation.`
+        reason = `"${name}" was mentioned once in this story. Add your affiliate link for them to connect it.`
       }
 
       const rec: Recommendation = {

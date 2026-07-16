@@ -8,14 +8,16 @@ import {
   enrollmentService,
   affiliateLinkService,
   programService,
+  trackingService,
 } from '../../services/partnership'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getStory } from '../../services/stories'
-import { getBusiness } from '../../services/businesses'
+import { getBusiness, getBusinesses } from '../../services/businesses'
 import { runDetection, DEFAULT_DISCLOSURE } from '../../services/recommendationDetection'
 import { runMatching, oppLabel } from '../../services/opportunityMatching'
 import { saveTrustProfile, LEVEL_LABELS, LEVEL_COLORS } from '../../services/trustEngine'
-import type { Recommendation, Opportunity, TrustProfile } from '../../types/partnership'
+import { normalizeUrl } from '../../utils/url'
+import type { Recommendation, Opportunity, TrustProfile, FounderAffiliateLink } from '../../types/partnership'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -107,7 +109,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 
 // ─── Tab Sections ─────────────────────────────────────────────────────────────
 
-function OverviewSection({ founderId }: { founderId: string }) {
+function OverviewSection({ founderId, onNavigate }: { founderId: string; onNavigate: (tab: Tab) => void }) {
   const settings = publisherSettingsService.getOrCreate(founderId)
   const recCounts = recommendationService.countByStatus(founderId)
   const opportunities = opportunityService.getAll({ founderId, limit: 3 })
@@ -116,7 +118,7 @@ function OverviewSection({ founderId }: { founderId: string }) {
     <div className="p-8 max-w-4xl">
       <div className="mb-8">
         <h2 className="text-xl font-bold text-[#2D2A26]">Opportunities</h2>
-        <p className="text-sm text-[#6B7280] mt-1">Your hub for recommendations, partnerships and opportunities.</p>
+        <p className="text-sm text-[#6B7280] mt-1">Your affiliate links, automatically connected wherever you mention that brand, plus partnership and speaking opportunities.</p>
       </div>
 
       {!settings.partnershipEnabled && (
@@ -141,7 +143,7 @@ function OverviewSection({ founderId }: { founderId: string }) {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-        <StatCard label="Approved Picks" value={recCounts.approved} />
+        <StatCard label="Connected Brands" value={recCounts.approved} />
         <StatCard label="Pending Review" value={recCounts.pending} />
         <StatCard label="Opportunities" value={opportunities.length} />
       </div>
@@ -162,34 +164,163 @@ function OverviewSection({ founderId }: { founderId: string }) {
       </div>
 
       {/* Quick actions */}
-      <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
+      <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-8">
         <h3 className="text-sm font-semibold text-[#2D2A26] mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: 'Complete your partnership profile', icon: icons.overview, description: 'Tell us what you recommend and what opportunities you want' },
-            { label: 'Review detected recommendations', icon: icons.recommendations, description: 'CULO has found brands and products in your stories' },
-            { label: 'Explore opportunities', icon: icons.opportunities, description: 'Speaking, podcasts, campaigns and collaborations' },
+            { label: 'Complete your partnership profile', icon: icons.overview, description: 'Tell us what you recommend and what opportunities you want', tab: 'overview' as Tab },
+            { label: 'Manage your affiliate links', icon: icons.recommendations, description: 'CULO has found brands and products in your stories', tab: 'recommendations' as Tab },
+            { label: 'Explore opportunities', icon: icons.opportunities, description: 'Speaking, podcasts, campaigns and collaborations', tab: 'opportunities' as Tab },
           ].map(a => (
-            <div key={a.label} className="p-4 bg-[#F8F5F0] rounded-xl">
+            <button
+              key={a.label}
+              onClick={() => onNavigate(a.tab)}
+              className="p-4 bg-[#F8F5F0] rounded-xl text-left hover:bg-[#F3EDE6] transition-colors"
+            >
               <div className="w-8 h-8 rounded-lg bg-white border border-[#E8E4DD] flex items-center justify-center mb-3">
                 <Icon path={a.icon} className="w-4 h-4 text-[#C86A43]" />
               </div>
               <p className="text-xs font-semibold text-[#2D2A26] mb-1">{a.label}</p>
               <p className="text-xs text-[#9CA3AF] leading-relaxed">{a.description}</p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      <AffiliateLinksOverview founderId={founderId} />
     </div>
   )
 }
 
-// ─── Confidence badge ─────────────────────────────────────────────────────────
+// ─── Affiliate links overview (add/manage brand + URL, with click counts) ─────
 
-function ConfidenceBadge({ score }: { score: number }) {
-  if (score >= 0.80) return <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] font-semibold">High confidence</span>
-  if (score >= 0.55) return <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">Medium confidence</span>
-  return <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#9CA3AF] font-semibold">Low confidence</span>
+function AffiliateLinksOverview({ founderId }: { founderId: string }) {
+  const [links, setLinks] = useState<FounderAffiliateLink[]>(() => affiliateLinkService.getAll({ founderId }))
+  const [adding, setAdding] = useState(false)
+  const [businessId, setBusinessId] = useState('')
+  const [url, setUrl] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const businesses = getBusinesses()
+
+  function refresh() {
+    setLinks(affiliateLinkService.getAll({ founderId }))
+  }
+
+  async function handleAdd() {
+    setError(null)
+    if (!businessId || !url.trim()) { setError('Pick a brand and paste your affiliate link.'); return }
+    const biz = getBusiness(businessId)
+    const link: FounderAffiliateLink = {
+      id: crypto.randomUUID(),
+      founderId,
+      businessId,
+      businessWebsite: biz?.website,
+      affiliateUrl: url.trim(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    const result = await affiliateLinkService.upsert(link)
+    if (!result.success) { setError(result.error ?? 'Could not save. Please try again.'); return }
+    setBusinessId('')
+    setUrl('')
+    setAdding(false)
+    refresh()
+  }
+
+  async function handleRemove(id: string) {
+    await affiliateLinkService.delete(id)
+    refresh()
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-sm font-semibold text-[#2D2A26]">Your Affiliate Links</h3>
+        {!adding && (
+          <button
+            onClick={() => setAdding(true)}
+            className="text-xs font-semibold text-[#C86A43] hover:underline"
+          >
+            + Add Link
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-[#9CA3AF] mb-4 leading-relaxed">
+        Add a brand and your affiliate link for them. Village automatically shows it whenever you mention that brand in a published story, and tracks every click here.
+      </p>
+
+      {adding && (
+        <div className="bg-[#F8F5F0] rounded-xl p-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Brand</label>
+              <select
+                value={businessId}
+                onChange={e => setBusinessId(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-xs text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+              >
+                <option value="">Select a brand…</option>
+                {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Affiliate URL</label>
+              <input
+                type="url"
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                placeholder="https://example.com?ref=yourname"
+                className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-xs text-[#2D2A26] bg-white font-mono focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+              />
+            </div>
+          </div>
+          {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => void handleAdd()}
+              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+            >
+              Save Link
+            </button>
+            <button
+              onClick={() => { setAdding(false); setError(null) }}
+              className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {links.length === 0 ? (
+        <p className="text-xs text-[#9CA3AF]">No affiliate links yet. Add one above to start earning when you mention that brand.</p>
+      ) : (
+        <div className="divide-y divide-[#F3EDE6]">
+          {links.map(link => {
+            const biz = getBusiness(link.businessId)
+            const clicks = trackingService.getAll({ founderId, businessId: link.businessId, linkType: 'affiliate' }).length
+            return (
+              <div key={link.id} className="flex items-center gap-3 py-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[#2D2A26]">{biz?.name ?? 'Unknown brand'}</p>
+                  <p className="text-xs text-[#9CA3AF] font-mono truncate">{link.affiliateUrl}</p>
+                </div>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] shrink-0">
+                  {clicks} {clicks === 1 ? 'click' : 'clicks'}
+                </span>
+                <button
+                  onClick={() => void handleRemove(link.id)}
+                  className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors shrink-0"
+                >
+                  Remove
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ─── Revenue connection badge ──────────────────────────────────────────────────
@@ -228,39 +359,31 @@ function RevenueStatusBadge({ founderId, businessId }: { founderId: string; busi
 
 // ─── Pick card ────────────────────────────────────────────────────────────────
 
-function PickCard({ rec, founderId, onApprove, onIgnore, onReject }: {
+function PickCard({ rec, founderId, onCancel, onNavigateToLinks }: {
   rec: Recommendation
   founderId: string
-  onApprove: (id: string, disclosureText: string) => void
-  onIgnore:  (id: string) => void
-  onReject:  (id: string) => void
+  onCancel: (id: string) => void
+  onNavigateToLinks: () => void
 }) {
-  const [approving, setApproving]       = useState(false)
-  const [disclosureText, setDisclosure] = useState(rec.disclosureText ?? DEFAULT_DISCLOSURE)
   const story = rec.storyId ? getStory(rec.storyId) : undefined
-
-  const isPending = rec.status === 'pending_review' || rec.status === 'detected'
+  const business = rec.businessId ? getBusiness(rec.businessId) : undefined
+  const isConnected = rec.status === 'approved'
+  const isCancelled = rec.status === 'ignored' || rec.status === 'rejected'
+  const isPending   = !isConnected && !isCancelled
 
   return (
-    <div className={`bg-white rounded-xl border overflow-hidden transition-colors ${
-      approving ? 'border-[#5E6B4A]/40 shadow-sm' : 'border-[#E8E4DD]'
-    }`}>
+    <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
       <div className="px-5 pt-4 pb-3">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
               <p className="text-sm font-bold text-[#2D2A26]">{rec.entityName}</p>
-              <ConfidenceBadge score={rec.confidence} />
-              {!isPending && (
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize ${
-                  rec.status === 'approved' ? 'bg-green-50 text-green-700' :
-                  rec.status === 'ignored'  ? 'bg-[#F3EDE6] text-[#9CA3AF]' :
-                  rec.status === 'rejected' ? 'bg-red-50 text-red-500' :
-                  'bg-amber-50 text-amber-700'
-                }`}>
-                  {rec.status.replace('_', ' ')}
-                </span>
+              {isConnected && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-green-50 text-green-700">Connected</span>
+              )}
+              {isCancelled && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-[#F3EDE6] text-[#9CA3AF]">Unconnected</span>
               )}
             </div>
             <p className="text-xs text-[#9CA3AF] capitalize">
@@ -271,7 +394,7 @@ function PickCard({ rec, founderId, onApprove, onIgnore, onReject }: {
         </div>
 
         {/* Why CULO found it */}
-        {rec.confidenceReason && (
+        {isPending && rec.confidenceReason && (
           <p className="text-xs text-[#6B7280] bg-[#F8F5F0] rounded-lg px-3 py-2 mb-2 leading-relaxed">
             {rec.confidenceReason}
           </p>
@@ -284,109 +407,94 @@ function PickCard({ rec, founderId, onApprove, onIgnore, onReject }: {
           </p>
         )}
 
-        {/* Approved disclosure summary */}
-        {rec.status === 'approved' && rec.disclosureText && (
+        {/* Connected disclosure summary */}
+        {isConnected && rec.disclosureText && (
           <div className="mt-1 mb-1 px-3 py-2 bg-green-50 rounded-lg">
             <p className="text-[10px] font-semibold text-green-700 uppercase tracking-wide mb-0.5">Disclosure</p>
             <p className="text-xs text-green-800">{rec.disclosureText}</p>
           </div>
         )}
 
-        {/* Revenue connection status for approved recs */}
-        {rec.status === 'approved' && (
+        {/* Revenue connection status once connected */}
+        {isConnected && (
           <div className="mt-2">
             <RevenueStatusBadge founderId={founderId} businessId={rec.businessId} />
           </div>
         )}
 
         {/* Actions */}
-        {isPending && !approving && (
-          <div className="flex items-center gap-2 mt-3">
+        {isPending && (
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
             <button
-              onClick={() => setApproving(true)}
+              onClick={onNavigateToLinks}
               className="px-3 py-1.5 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5538] transition-colors"
             >
-              Approve
+              Add your link
             </button>
+            {business?.website && (
+              <a
+                href={normalizeUrl(business.website)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 bg-white text-[#6B7280] text-xs font-medium rounded-lg border border-[#E8E4DD] hover:border-[#9CA3AF] transition-colors"
+              >
+                Visit brand site
+              </a>
+            )}
             <button
-              onClick={() => onIgnore(rec.id)}
-              className="px-3 py-1.5 bg-white text-[#6B7280] text-xs font-medium rounded-lg border border-[#E8E4DD] hover:border-[#9CA3AF] transition-colors"
-            >
-              Ignore
-            </button>
-            <button
-              onClick={() => onReject(rec.id)}
+              onClick={() => onCancel(rec.id)}
               className="px-3 py-1.5 text-[#9CA3AF] text-xs hover:text-red-500 transition-colors"
-            >
-              Reject
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Approve confirmation */}
-      {approving && (
-        <div className="px-5 pb-4 border-t border-[#F3EDE6] pt-3 bg-[#F8F5F0]">
-          <p className="text-xs font-medium text-[#2D2A26] mb-1.5">Confirm disclosure before approving</p>
-          <p className="text-xs text-[#9CA3AF] mb-2">Every approved recommendation must have a disclosure statement. Edit if needed.</p>
-          <textarea
-            value={disclosureText}
-            onChange={e => setDisclosure(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-xs text-[#2D2A26] bg-white resize-none focus:outline-none focus:ring-2 focus:ring-[#5E6B4A]/30 focus:border-[#5E6B4A] mb-3"
-          />
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (!disclosureText.trim()) return
-                onApprove(rec.id, disclosureText.trim())
-                setApproving(false)
-              }}
-              disabled={!disclosureText.trim()}
-              className="px-4 py-1.5 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5538] disabled:opacity-50 transition-colors"
-            >
-              Confirm & Approve
-            </button>
-            <button
-              onClick={() => setApproving(false)}
-              className="px-3 py-1.5 text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
             >
               Cancel
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
 
 // ─── My Picks section ─────────────────────────────────────────────────────────
 
-type PicksFilter = 'pending' | 'approved' | 'ignored' | 'rejected'
+type PicksFilter = 'pending' | 'connected' | 'unconnected'
 
-function MyPicksSection({ founderId }: { founderId: string }) {
+function MyPicksSection({ founderId, onNavigate }: { founderId: string; onNavigate: (tab: Tab) => void }) {
   const [allRecs, setAllRecs] = useState<Recommendation[]>(
-    () => recommendationService.getAll({ founderId })
+    () => reconcile(recommendationService.getAll({ founderId }), founderId)
   )
   const [filterTab, setFilterTab] = useState<PicksFilter>('pending')
   const [scanning,  setScanning]  = useState(false)
   const [scanResult, setScanResult] = useState<{ detected: number; skipped: number; stories: number } | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  function refresh() {
-    setAllRecs(recommendationService.getAll({ founderId }))
+  // A rec is "connected" the moment the founder has their own affiliate link
+  // for that business — no manual approval needed, Village just picks it up.
+  function reconcile(recs: Recommendation[], fid: string): Recommendation[] {
+    for (const rec of recs) {
+      if (rec.status !== 'pending_review' && rec.status !== 'detected') continue
+      if (!rec.businessId) continue
+      const link = affiliateLinkService.getForBusiness(fid, rec.businessId)
+      if (!link) continue
+      rec.status = 'approved'
+      rec.disclosureText = rec.disclosureText ?? DEFAULT_DISCLOSURE
+      rec.disclosureVisible = true
+      void recommendationService.upsert(rec)
+    }
+    return recs
   }
 
-  const pending  = allRecs.filter(r => r.status === 'pending_review' || r.status === 'detected')
-  const approved = allRecs.filter(r => r.status === 'approved')
-  const ignored  = allRecs.filter(r => r.status === 'ignored')
-  const rejected = allRecs.filter(r => r.status === 'rejected')
+  function refresh() {
+    setAllRecs(reconcile(recommendationService.getAll({ founderId }), founderId))
+  }
+
+  const pending     = allRecs.filter(r => r.status === 'pending_review' || r.status === 'detected')
+  const connected   = allRecs.filter(r => r.status === 'approved')
+  const unconnected = allRecs.filter(r => r.status === 'ignored' || r.status === 'rejected')
 
   const visible: Recommendation[] =
-    filterTab === 'pending'  ? pending  :
-    filterTab === 'approved' ? approved :
-    filterTab === 'ignored'  ? ignored  :
-    rejected
+    filterTab === 'pending'   ? pending   :
+    filterTab === 'connected' ? connected :
+    unconnected
 
   function handleScan() {
     setScanning(true)
@@ -404,42 +512,17 @@ function MyPicksSection({ founderId }: { founderId: string }) {
     }, 50)
   }
 
-  async function handleApprove(id: string, disclosureText: string) {
+  async function handleCancel(id: string) {
     setActionError(null)
-    const rec = recommendationService.get(id)
-    if (rec) {
-      rec.disclosureText    = disclosureText
-      rec.disclosureVisible = true
-      const result = await recommendationService.upsert(rec)
-      if (!result.success) { setActionError(result.error ?? 'Failed to approve. Please try again.'); return }
-    }
-    const result = await recommendationService.approve(id)
-    if (!result.success) { setActionError(result.error ?? 'Failed to approve. Please try again.'); return }
-    refresh()
-  }
-
-  async function handleIgnore(id: string) {
-    setActionError(null)
-    const rec = recommendationService.get(id)
-    if (!rec) return
-    rec.status = 'ignored'
-    const result = await recommendationService.upsert(rec)
+    const result = await recommendationService.reject(id)
     if (!result.success) { setActionError(result.error ?? 'Failed to update. Please try again.'); return }
     refresh()
   }
 
-  async function handleReject(id: string) {
-    setActionError(null)
-    const result = await recommendationService.reject(id)
-    if (!result.success) { setActionError(result.error ?? 'Failed to reject. Please try again.'); return }
-    refresh()
-  }
-
   const filterTabs: Array<{ key: PicksFilter; label: string; count: number }> = [
-    { key: 'pending',  label: 'Pending Review', count: pending.length  },
-    { key: 'approved', label: 'Approved',        count: approved.length },
-    { key: 'ignored',  label: 'Ignored',         count: ignored.length  },
-    { key: 'rejected', label: 'Rejected',        count: rejected.length },
+    { key: 'pending',     label: 'Pending Review', count: pending.length     },
+    { key: 'connected',   label: 'Connected',      count: connected.length   },
+    { key: 'unconnected', label: 'Unconnected',    count: unconnected.length },
   ]
 
   return (
@@ -447,9 +530,9 @@ function MyPicksSection({ founderId }: { founderId: string }) {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-[#2D2A26]">My Picks</h2>
+          <h2 className="text-xl font-bold text-[#2D2A26]">My Links</h2>
           <p className="text-sm text-[#6B7280] mt-1">
-            Businesses and products CULO found in your stories. You decide what becomes a genuine recommendation.
+            Your affiliate link portal. Add your links in Overview, and Village automatically connects them wherever you mention that brand.
           </p>
         </div>
         <button
@@ -476,14 +559,14 @@ function MyPicksSection({ founderId }: { founderId: string }) {
         }`}>
           {scanResult.detected > 0 ? (
             <>
-              Found <strong>{scanResult.detected}</strong> possible{scanResult.detected === 1 ? ' pick' : ' picks'} across{' '}
+              Found <strong>{scanResult.detected}</strong> possible{scanResult.detected === 1 ? ' brand' : ' brands'} across{' '}
               <strong>{scanResult.stories}</strong>{scanResult.stories === 1 ? ' story' : ' stories'}.
-              {scanResult.skipped > 0 && <> Skipped {scanResult.skipped} already detected.</>}
+              {scanResult.skipped > 0 && <> Skipped {scanResult.skipped} already found.</>}
             </>
           ) : (
             <>
-              Scanned {scanResult.stories} {scanResult.stories === 1 ? 'story' : 'stories'} — no new picks found.
-              {scanResult.skipped > 0 && <> ({scanResult.skipped} already detected.)</>}
+              Scanned {scanResult.stories} {scanResult.stories === 1 ? 'story' : 'stories'}. No new brands found.
+              {scanResult.skipped > 0 && <> ({scanResult.skipped} already found.)</>}
             </>
           )}
         </div>
@@ -517,15 +600,14 @@ function MyPicksSection({ founderId }: { founderId: string }) {
       {visible.length === 0 ? (
         <EmptyState
           title={
-            filterTab === 'pending'  ? 'No picks waiting for review' :
-            filterTab === 'approved' ? 'No approved picks yet' :
-            filterTab === 'ignored'  ? 'Nothing ignored' :
-            'Nothing rejected'
+            filterTab === 'pending'   ? 'Nothing waiting on a link' :
+            filterTab === 'connected' ? 'No connected brands yet' :
+            'Nothing unconnected'
           }
           description={
             filterTab === 'pending'
-              ? 'CULO will start finding possible picks when your stories mention tools, businesses, products or services you genuinely use. Hit "Scan my stories" to run detection now.'
-              : `No ${filterTab} picks to show.`
+              ? 'Village will find brands here when your stories mention businesses, products or services you genuinely use. Hit "Scan my stories" to run it now.'
+              : `No ${filterTab} brands to show.`
           }
           action={filterTab === 'pending' ? { label: 'Scan my stories', onClick: handleScan } : undefined}
         />
@@ -536,24 +618,23 @@ function MyPicksSection({ founderId }: { founderId: string }) {
               key={rec.id}
               rec={rec}
               founderId={founderId}
-              onApprove={handleApprove}
-              onIgnore={handleIgnore}
-              onReject={handleReject}
+              onCancel={handleCancel}
+              onNavigateToLinks={() => onNavigate('overview')}
             />
           ))}
         </div>
       )}
 
-      {/* How picks work */}
+      {/* How My Links works */}
       {allRecs.length === 0 && (
         <div className="mt-8 bg-white rounded-xl border border-[#E8E4DD] p-5">
-          <p className="text-xs font-semibold text-[#2D2A26] mb-3">How My Picks works</p>
+          <p className="text-xs font-semibold text-[#2D2A26] mb-3">How My Links works</p>
           <div className="space-y-2.5">
             {[
-              { step: '1', text: 'CULO scans your published stories for mentions of businesses, tools and products.' },
-              { step: '2', text: 'Possible picks appear here for you to review — CULO never auto-publishes.' },
-              { step: '3', text: 'You approve, ignore or reject each one. Approved picks include a disclosure.' },
-              { step: '4', text: 'Approved picks power future recommendations, matching and trust scores.' },
+              { step: '1', text: 'Village scans your published stories for mentions of businesses, tools and products.' },
+              { step: '2', text: 'Add your own affiliate link for a brand in Overview, any time.' },
+              { step: '3', text: 'The moment you have a link for a brand you mention, Village connects it automatically. No approval step.' },
+              { step: '4', text: 'Every click on a connected link is tracked here and on Revenue.' },
             ].map(s => (
               <div key={s.step} className="flex items-start gap-3">
                 <span className="w-5 h-5 rounded-full bg-[#C86A43]/10 text-[#C86A43] text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
@@ -1151,7 +1232,7 @@ function TrustSection({ founderId }: { founderId: string }) {
 
 const tabs: Array<{ id: Tab; label: string; icon: string }> = [
   { id: 'overview',        label: 'Overview',         icon: icons.overview },
-  { id: 'recommendations', label: 'My Picks',         icon: icons.recommendations },
+  { id: 'recommendations', label: 'My Links',         icon: icons.recommendations },
   { id: 'opportunities',   label: 'Opportunities',    icon: icons.opportunities },
   { id: 'trust',           label: 'Reputation',       icon: icons.trust },
 ]
@@ -1190,8 +1271,8 @@ export function DashboardPartnershipPage() {
 
       {/* ── Content area ───────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto bg-[#F8F5F0]">
-        {activeTab === 'overview'        && <OverviewSection founderId={founderId} />}
-        {activeTab === 'recommendations' && <MyPicksSection founderId={founderId} />}
+        {activeTab === 'overview'        && <OverviewSection founderId={founderId} onNavigate={setActiveTab} />}
+        {activeTab === 'recommendations' && <MyPicksSection founderId={founderId} onNavigate={setActiveTab} />}
         {activeTab === 'opportunities'   && <OpportunitiesSection founderId={founderId} />}
         {activeTab === 'trust'           && <TrustSection founderId={founderId} />}
       </main>
