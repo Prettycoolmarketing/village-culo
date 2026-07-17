@@ -28,10 +28,10 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
     >
       {/* ── Background ─────────────────────────────────────────────────────── */}
       <div className="absolute inset-0 bg-background" aria-hidden="true">
-        {/* Warm decorative circle — top right */}
+        {/* Sky-blue decorative circle — top right, soft Mediterranean-cloud feel */}
         <div
           className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(circle, #C86A43 0%, transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }}
         />
         {/* Olive circle — bottom left */}
         <div

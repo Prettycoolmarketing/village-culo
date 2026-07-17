@@ -60,12 +60,23 @@ type YouTubeSearchItem = {
   snippet: { title: string; description: string; publishedAt: string; thumbnails?: Record<string, { url: string }> }
 }
 
+// YouTube's API returns whatever sizes actually exist for a video — 'high'
+// (480x360) is only middling once stretched to fill a large card, so prefer
+// the sharper sizes when they're available and fall back down the chain.
+function bestThumbnail(thumbnails?: Record<string, { url: string }>): string | undefined {
+  return thumbnails?.maxres?.url
+    ?? thumbnails?.standard?.url
+    ?? thumbnails?.high?.url
+    ?? thumbnails?.medium?.url
+    ?? thumbnails?.default?.url
+}
+
 function mapSearchItem(item: YouTubeSearchItem & { id: { videoId: string } }): YouTubeVideo {
   return {
     videoId: item.id.videoId,
     title: item.snippet.title,
     description: item.snippet.description,
-    thumbnailUrl: item.snippet.thumbnails?.high?.url ?? item.snippet.thumbnails?.default?.url,
+    thumbnailUrl: bestThumbnail(item.snippet.thumbnails),
     publishedAt: item.snippet.publishedAt,
   }
 }
