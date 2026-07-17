@@ -71,6 +71,8 @@ serve(async (req) => {
 
     const totalCents = conversions.reduce((sum: number, c: { founder_share_cents: number }) => sum + c.founder_share_cents, 0)
     const currency = conversions[0].currency ?? 'usd'
+    // USD only for now — no FX conversion anywhere in this system yet.
+    if (currency !== 'usd') throw new Error(`Only USD payouts are supported right now (got ${currency}).`)
     if (totalCents <= 0) throw new Error('Total is zero — nothing to transfer.')
 
     const form = new URLSearchParams({

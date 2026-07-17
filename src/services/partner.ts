@@ -165,14 +165,19 @@ export const partnerConversionService = {
   },
 }
 
-/** commissionAmountCents × partner.founderRevenueSharePercent, frozen at record time. */
+/**
+ * commissionAmountCents × partner.founderRevenueSharePercent, frozen at
+ * record time. Currency is hardcoded to USD for now — Stripe transfers,
+ * founder payouts, and every $ figure in CAPO/Revenue assume USD throughout,
+ * and there's no FX conversion anywhere in this system. Don't add a
+ * currency param back here without also handling conversion at payout time.
+ */
 export function newPartnerConversion(input: {
   partner: Partner
   founderId: string
   storyId?: string
   saleAmountCents: number
   commissionAmountCents: number
-  currency?: string
   status?: PartnerConversion['status']
   notes?: string
 }): PartnerConversion {
@@ -186,7 +191,7 @@ export function newPartnerConversion(input: {
     saleAmountCents: input.saleAmountCents,
     commissionAmountCents: input.commissionAmountCents,
     founderShareCents,
-    currency: input.currency ?? 'usd',
+    currency: 'usd',
     notes: input.notes,
     createdAt: now(),
     updatedAt: now(),

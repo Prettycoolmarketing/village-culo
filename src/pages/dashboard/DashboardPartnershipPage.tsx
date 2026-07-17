@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   recommendationService,
@@ -1027,13 +1027,15 @@ function PartnerCard({ partner, onWrite }: { partner: Partner; onWrite: (partner
 // ─── Partnerships Program section ──────────────────────────────────────────────
 
 function PartnershipsProgramSection() {
-  const navigate = useNavigate()
   const partners = partnerService.getAll({ status: 'active' })
   const sponsored = partners.filter(p => p.sponsored)
   const regular   = partners.filter(p => !p.sponsored)
 
+  // Opens in a new tab (not router state, which a new tab can't see) so the
+  // founder can pick a partner, start writing, and switch straight back to
+  // this list to pick another one without losing their place.
   function handleWrite(partner: Partner) {
-    navigate('/dashboard/publish', { state: { partnerId: partner.id } })
+    window.open(`/dashboard/publish?partnerId=${encodeURIComponent(partner.id)}`, '_blank', 'noopener,noreferrer')
   }
 
   return (

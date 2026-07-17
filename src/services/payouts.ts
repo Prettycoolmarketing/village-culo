@@ -57,15 +57,15 @@ export const payoutService = {
   },
 }
 
-/** A manual payout PCM staff paid outside Stripe (bank transfer, etc.) and are just recording. */
-export function newManualPayout(input: { founderId: string; amountCents: number; currency?: string; note?: string }): PartnerPayout {
+/** A manual payout PCM staff paid outside Stripe (bank transfer, etc.) and are just recording. USD only — see newPartnerConversion. */
+export function newManualPayout(input: { founderId: string; amountCents: number; note?: string }): PartnerPayout {
   return {
     id: crypto.randomUUID(),
     founderId: input.founderId,
     method: 'manual',
     status: 'paid',
     amountCents: input.amountCents,
-    currency: input.currency ?? 'usd',
+    currency: 'usd',
     note: input.note,
     createdAt: now(),
     updatedAt: now(),

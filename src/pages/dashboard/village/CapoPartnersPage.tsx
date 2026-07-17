@@ -168,6 +168,52 @@ function PartnerRow({ partner, onEdit, onDecline, onDeactivate, onRefresh }: {
   )
 }
 
+// ─── Active partners list (capo-added first, searchable once it gets long) ────
+
+function ActivePartnersList({ partners, onEdit, onDecline, onDeactivate, onRefresh }: {
+  partners: Partner[]
+  onEdit: (p: Partner) => void
+  onDecline: (p: Partner) => void
+  onDeactivate: (p: Partner) => void
+  onRefresh: () => void
+}) {
+  const [query, setQuery] = useState('')
+
+  const sorted = [...partners].sort((a, b) => {
+    if (a.source !== b.source) return a.source === 'capo-added' ? -1 : 1
+    return a.createdAt.localeCompare(b.createdAt)
+  })
+  const isLong = sorted.length > 15
+  const q = query.trim().toLowerCase()
+  const filtered = q ? sorted.filter(p => p.name.toLowerCase().includes(q)) : sorted
+  const visible = isLong && !q ? filtered.slice(0, 5) : filtered
+
+  return (
+    <div>
+      {isLong && (
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder={`Search ${sorted.length} partners…`}
+          className={`${inputClass} mb-4`}
+        />
+      )}
+      <div className="flex flex-col gap-3">
+        {visible.map(p => (
+          <PartnerRow key={p.id} partner={p} onEdit={() => onEdit(p)} onDecline={() => onDecline(p)} onDeactivate={() => onDeactivate(p)} onRefresh={onRefresh} />
+        ))}
+      </div>
+      {isLong && !q && (
+        <p className="text-xs text-[#9CA3AF] mt-3">Showing 5 of {sorted.length} — search above to find the rest.</p>
+      )}
+      {q && filtered.length === 0 && (
+        <p className="text-xs text-[#9CA3AF] mt-3">No partners match "{query}".</p>
+      )}
+    </div>
+  )
+}
+
 // ─── Flags section ───────────────────────────────────────────────────────────
 
 function FlagsSection() {
@@ -327,6 +373,11 @@ function EarningsSection() {
     list.push(c)
     unpaidByFounder.set(c.founderId, list)
   }
+  // A clawback (see handleReverse) can bring a founder's unpaid total to zero
+  // or negative — nothing to pay out until a new positive conversion lands.
+  for (const [founderId, items] of unpaidByFounder) {
+    if (items.reduce((sum, c) => sum + c.founderShareCents, 0) <= 0) unpaidByFounder.delete(founderId)
+  }
 
   async function markPaid(founderId: string, items: PartnerConversion[]) {
     const total = items.reduce((sum, c) => sum + c.founderShareCents, 0)
@@ -335,6 +386,33 @@ function EarningsSection() {
     if (!result.success) return
     for (const c of items) {
       await partnerConversionService.upsert({ ...c, payoutId: payout.id })
+    }
+    setTick(t => t + 1)
+  }
+
+  // A brand can reverse a commission after it's already been marked confirmed
+  // (or even after it's been paid out). If it was never paid, flipping the
+  // status is enough — it just drops out of the unpaid total below. If it
+  // WAS already paid, we can't silently un-pay a founder, so this records an
+  // equal-and-opposite negative conversion instead — it nets off their next
+  // payout rather than trying to claw back money that already moved.
+  async function handleReverse(c: PartnerConversion) {
+    const wasPaid = Boolean(c.payoutId)
+    await partnerConversionService.upsert({ ...c, status: 'reversed' })
+    if (wasPaid) {
+      const partner = partnerService.get(c.partnerId)
+      if (partner) {
+        const clawback = newPartnerConversion({
+          partner,
+          founderId: c.founderId,
+          storyId: c.storyId,
+          saleAmountCents: -c.saleAmountCents,
+          commissionAmountCents: -c.commissionAmountCents,
+          status: 'confirmed',
+          notes: `Clawback — reversal of a previously paid conversion (was ${formatCents(c.founderShareCents)})`,
+        })
+        await partnerConversionService.upsert(clawback)
+      }
     }
     setTick(t => t + 1)
   }
@@ -426,6 +504,11 @@ function EarningsSection() {
                 <span className="shrink-0 text-[#9CA3AF]">Commission {formatCents(c.commissionAmountCents, c.currency)}</span>
                 <span className="shrink-0 font-semibold text-[#5E6B4A]">Founder {formatCents(c.founderShareCents, c.currency)}</span>
                 {c.payoutId && <span className="shrink-0 text-[10px] text-[#9CA3AF]">Paid</span>}
+                {c.status !== 'reversed' && (
+                  <button onClick={() => void handleReverse(c)} className="shrink-0 text-[10px] text-[#9CA3AF] hover:text-red-500 transition-colors">
+                    Mark reversed
+                  </button>
+                )}
               </div>
             )
           })}
@@ -548,18 +631,13 @@ export function CapoPartnersPage() {
             active.length === 0 ? (
               <p className="text-sm text-[#9CA3AF]">No partners yet. Add one, or wait for a business to request partner status.</p>
             ) : (
-              <div className="flex flex-col gap-3">
-                {active.map(p => (
-                  <PartnerRow
-                    key={p.id}
-                    partner={p}
-                    onEdit={() => setEditing(p)}
-                    onDecline={() => void handleDecline(p)}
-                    onDeactivate={() => void handleDeactivate(p)}
-                    onRefresh={refresh}
-                  />
-                ))}
-              </div>
+              <ActivePartnersList
+                partners={active}
+                onEdit={setEditing}
+                onDecline={p => void handleDecline(p)}
+                onDeactivate={p => void handleDeactivate(p)}
+                onRefresh={refresh}
+              />
             )
           )}
 

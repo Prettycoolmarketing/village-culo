@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounders } from '../../services/founders'
@@ -1414,11 +1414,17 @@ export function DashboardPublishPage() {
   const { user } = useAuth()
   const currentFounder = getCurrentFounder(user)
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+  // "Write about this partner" opens in a new tab (see DashboardPartnershipPage),
+  // so it arrives via a ?partnerId= query param rather than router state, which
+  // a fresh tab has no access to. "Turn into Story" still uses router state
+  // since it navigates in the same tab.
+  const partnerIdFromQuery = searchParams.get('partnerId') ?? undefined
   const [step,          setStep]          = useState<PublishStep>('format')
   const [draft,         setDraft]         = useState<PublishDraft>(() => {
     // Don't resurrect a stale wizard draft over a fresh "Turn into Story"/"Write about this partner" prefill.
     const navState = location.state as { importedContentId?: string; partnerId?: string } | null
-    if (navState?.importedContentId || navState?.partnerId) {
+    if (navState?.importedContentId || navState?.partnerId || partnerIdFromQuery) {
       return defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
     }
     return loadAutoSavedDraft() ?? defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
@@ -1472,7 +1478,7 @@ export function DashboardPublishPage() {
   // Arrived via "Write about this partner" in Opportunities — pre-select
   // Blog and set the partner's real affiliate link as the story's CTA.
   useEffect(() => {
-    const partnerId = (location.state as { partnerId?: string } | null)?.partnerId
+    const partnerId = (location.state as { partnerId?: string } | null)?.partnerId ?? partnerIdFromQuery
     if (!partnerId) return
     const partner = partnerService.get(partnerId)
     if (!partner) return
