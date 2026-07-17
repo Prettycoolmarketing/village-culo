@@ -38,18 +38,6 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
           className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full opacity-10"
           style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }}
         />
-        {/* Subtle grid pattern */}
-        <svg
-          className="absolute inset-0 w-full h-full opacity-[0.03]"
-          aria-hidden="true"
-        >
-          <defs>
-            <pattern id="village-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2D2A26" strokeWidth="1" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#village-grid)" />
-        </svg>
       </div>
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
