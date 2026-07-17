@@ -36,15 +36,15 @@ export function StoryCard({
   if (variant === 'vertical') {
     return (
       <article
-        className={`group relative bg-surface rounded-2xl overflow-hidden shadow-card hover:shadow-md transition-all duration-300 flex flex-col ${className}`}
+        className={`group relative bg-surface rounded-b-2xl overflow-hidden shadow-card hover:shadow-md transition-all duration-300 flex flex-col ${className}`}
         aria-label={`Story: ${story.title}`}
       >
-        {/* Cover image — reel-sized (3:4 portrait) */}
+        {/* Cover image — Instagram-post portrait (4:5), arched top to read as the Village's own shape rather than a generic social thumbnail */}
         <Link
           to={storyUrl}
           className="block relative overflow-hidden"
           aria-label={`Read ${story.title}`}
-          style={{ aspectRatio: '3/4' }}
+          style={{ aspectRatio: '4/5', borderTopLeftRadius: '50% 48px', borderTopRightRadius: '50% 48px' }}
           tabIndex={0}
         >
           <img
@@ -55,20 +55,6 @@ export function StoryCard({
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent" aria-hidden="true" />
-
-          {/* Content type badges — on the image */}
-          {story.contentTypes.length > 0 && (
-            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5" aria-label="Content formats">
-              {story.contentTypes.map(type => (
-                <span
-                  key={type}
-                  className="px-2 py-0.5 rounded-full text-xs font-medium bg-surface/90 backdrop-blur-sm text-charcoal"
-                >
-                  {contentTypeLabel(type)}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Featured badge */}
           {story.featured && (
