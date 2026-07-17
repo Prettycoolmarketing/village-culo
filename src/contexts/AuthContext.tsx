@@ -149,7 +149,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/dashboard/reset-password`,
     })
-    return { error: error?.message ?? null }
+    // Auth server errors from a misconfigured/failing email provider can come
+    // back with no real message (supabase-js then falls back to the raw,
+    // unhelpful response body, e.g. literally "{}") — never show that raw text.
+    const message = error?.message?.trim()
+    const isUninformative = !message || message === '{}' || message.startsWith('{')
+    return { error: error ? (isUninformative ? 'Could not send the reset email. Please try again shortly.' : message!) : null }
   }
 
   async function updatePassword(newPassword: string): Promise<{ error: string | null }> {
@@ -157,7 +162,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: 'Supabase not configured. Password reset is unavailable in dev mode.' }
     }
     const { error } = await supabase.auth.updateUser({ password: newPassword })
-    return { error: error?.message ?? null }
+    const message = error?.message?.trim()
+    const isUninformative = !message || message === '{}' || message.startsWith('{')
+    return { error: error ? (isUninformative ? 'Could not update your password. Please try again.' : message!) : null }
   }
 
   async function signOut(): Promise<void> {
