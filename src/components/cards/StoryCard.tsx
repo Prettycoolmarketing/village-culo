@@ -37,14 +37,19 @@ export function StoryCard({
     return (
       <article
         className={`group relative bg-surface rounded-b-2xl overflow-hidden shadow-card hover:shadow-md transition-all duration-300 flex flex-col ${className}`}
+        style={{ borderTopLeftRadius: '50% 48px', borderTopRightRadius: '50% 48px' }}
         aria-label={`Story: ${story.title}`}
       >
-        {/* Cover image — Instagram-post portrait (4:5), arched top to read as the Village's own shape rather than a generic social thumbnail */}
+        {/* Cover image — narrow, video-proportioned (9:16). The arch lives on
+            this outer article (which already clips everything via
+            overflow-hidden), not on this inner link — putting it on a nested
+            element left a gap where the article's own square corner showed
+            through behind the curve. One clip boundary, no seam. */}
         <Link
           to={storyUrl}
-          className="block relative overflow-hidden"
+          className="block relative"
           aria-label={`Read ${story.title}`}
-          style={{ aspectRatio: '4/5', borderTopLeftRadius: '50% 48px', borderTopRightRadius: '50% 48px' }}
+          style={{ aspectRatio: '9/16' }}
           tabIndex={0}
         >
           <img
