@@ -8,8 +8,8 @@ import { supabase } from '../../../lib/supabase'
 import { pullVisibleRows } from '../../../lib/entityStore'
 import type { Partner, PartnerConversion } from '../../../types/partner'
 
-function formatCents(cents: number, currency = 'usd'): string {
-  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: currency.toUpperCase() })
+function formatCents(cents: number, currency = 'aud'): string {
+  return (cents / 100).toLocaleString('en-AU', { style: 'currency', currency: currency.toUpperCase() })
 }
 
 const inputClass = 'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'

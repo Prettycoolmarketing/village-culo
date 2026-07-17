@@ -18,7 +18,7 @@ import { pullVisibleRows } from '../../lib/entityStore'
 import type { FounderProgramEnrollment, FounderAffiliateLink, PartnerProgram } from '../../types/partnership'
 
 function formatCents(cents: number): string {
-  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+  return (cents / 100).toLocaleString('en-AU', { style: 'currency', currency: 'AUD' })
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

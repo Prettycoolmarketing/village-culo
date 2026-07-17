@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS partner_conversions (
   sale_amount_cents          INTEGER NOT NULL DEFAULT 0,
   commission_amount_cents    INTEGER NOT NULL DEFAULT 0,
   founder_share_cents        INTEGER NOT NULL DEFAULT 0,
-  currency          TEXT        NOT NULL DEFAULT 'usd',
+  currency          TEXT        NOT NULL DEFAULT 'aud',
   payout_id         TEXT, -- set once rolled into a partner_payouts row
   data              JSONB       NOT NULL,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS partner_payouts (
   method            TEXT        NOT NULL DEFAULT 'manual', -- stripe | manual
   status            TEXT        NOT NULL DEFAULT 'pending', -- pending | paid | failed
   amount_cents      INTEGER     NOT NULL DEFAULT 0,
-  currency          TEXT        NOT NULL DEFAULT 'usd',
+  currency          TEXT        NOT NULL DEFAULT 'aud',
   stripe_transfer_id TEXT,
   note              TEXT,
   data              JSONB       NOT NULL,
