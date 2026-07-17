@@ -146,6 +146,7 @@ const PLATFORM_CONTENT_TYPE: Record<ImportedContentPlatform, ContentType> = {
   podcast:   'podcast',
   linkedin:  'social-post',
   website:   'blog',
+  canva:     'carousel',
 }
 
 function uniqueSlug(base: string): string {
@@ -188,7 +189,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     ctaUrl: item.originalUrl,
     status: 'published',
     featured: false,
-    publishingSource: 'website-import',
+    publishingSource: item.sourcePlatform === 'canva' ? 'canva-api' : 'website-import',
     createdAt: nowIso,
     updatedAt: nowIso,
   }
@@ -203,6 +204,8 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
 
   if (contentType === 'podcast') {
     story.audioUrl = item.originalUrl
+  } else if (contentType === 'carousel') {
+    story.carouselImages = item.imageUrls?.filter(Boolean) ?? []
   } else if (contentType !== 'blog') {
     // youtube-video / reel / social-post — the video/post URL itself is the primary content
     story.reelUrl = item.originalUrl

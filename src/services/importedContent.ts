@@ -73,6 +73,7 @@ export const PLATFORM_LABELS: Record<ImportedContentPlatform, string> = {
   tiktok:    'TikTok',
   podcast:   'Podcast',
   website:   'Website',
+  canva:     'Canva',
 }
 
 export const PLATFORM_COLORS: Record<ImportedContentPlatform, string> = {
@@ -83,6 +84,7 @@ export const PLATFORM_COLORS: Record<ImportedContentPlatform, string> = {
   tiktok:    'bg-neutral-100 text-neutral-800',
   podcast:   'bg-purple-100 text-purple-700',
   website:   'bg-[#F3EDE6] text-[#6B7280]',
+  canva:     'bg-cyan-100 text-cyan-700',
 }
 
 export function buildDraftImport(founderId: string, url: string): ImportedContent {

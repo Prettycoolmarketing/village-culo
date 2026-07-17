@@ -23,6 +23,15 @@ import {
 } from '../../services/villageIntelligence'
 import { connectedSourcesService, newConnectedSource, scanSource } from '../../services/connectedSources'
 import { resolveChannelId } from '../../services/connectors/youtube'
+import {
+  isCanvaConfigured,
+  getCanvaStatus,
+  startCanvaConnect,
+  listCanvaDesigns,
+  importCanvaDesign,
+  type CanvaDesignSummary,
+  type CanvaImportResult,
+} from '../../services/canva'
 import type {
   ImportedContent,
   ImportedContentStatus,
@@ -55,7 +64,7 @@ const TRANSCRIPT_STATUS_OPTIONS = [
   { value: 'unavailable', label: 'Not available for this content/platform' },
 ]
 
-const PLATFORM_TAB_ORDER: ImportedContentPlatform[] = ['youtube', 'podcast', 'website']
+const PLATFORM_TAB_ORDER: ImportedContentPlatform[] = ['youtube', 'podcast', 'website', 'canva']
 
 const SOURCE_TYPE_LABELS: Record<ConnectedSourceType, string> = {
   'youtube':      'YouTube',
@@ -67,6 +76,181 @@ const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
   'youtube':      'Paste your channel URL, @handle, or channel ID.',
   'podcast-rss':  'Paste your podcast’s RSS feed URL.',
   'website-rss':  'Paste your blog’s RSS feed URL.',
+}
+
+// ─── Import from Canva ────────────────────────────────────────────────────────
+// A one-off "pick a design" flow, not a connected source — no periodic
+// scanning, matches how "Turn into Story" already works elsewhere in this
+// app. The founder authorizes once (OAuth, see services/canva.ts), then
+// picks a design each time they want to bring one in.
+
+type CanvaPanelStep = 'connect' | 'pick' | 'importing' | 'review'
+
+function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImported: () => void }) {
+  const [step, setStep] = useState<CanvaPanelStep>('connect')
+  const [checkedConnection, setCheckedConnection] = useState(false)
+  const [designs, setDesigns] = useState<CanvaDesignSummary[]>([])
+  const [result, setResult] = useState<CanvaImportResult | null>(null)
+  const [coverIndex, setCoverIndex] = useState(0)
+  const [editableTitle, setEditableTitle] = useState('')
+  const [editableText, setEditableText] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [designId, setDesignId] = useState('')
+
+  useEffect(() => {
+    void getCanvaStatus(founderId).then(connected => {
+      setStep(connected ? 'pick' : 'connect')
+      setCheckedConnection(true)
+    })
+  }, [founderId])
+
+  async function handleBrowse() {
+    setError(null)
+    try {
+      setDesigns(await listCanvaDesigns(founderId))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load your Canva designs.')
+    }
+  }
+
+  async function handlePick(id: string) {
+    setError(null)
+    setDesignId(id)
+    setStep('importing')
+    try {
+      const imported = await importCanvaDesign(founderId, id)
+      setResult(imported)
+      setEditableTitle(imported.title)
+      setEditableText(imported.combinedText)
+      setCoverIndex(0)
+      setStep('review')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not import that design.')
+      setStep('pick')
+    }
+  }
+
+  async function handleSaveAsImport() {
+    if (!result) return
+    const now = new Date().toISOString()
+    const item: ImportedContent = {
+      id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      founderId,
+      sourcePlatform: 'canva',
+      originalUrl: `https://www.canva.com/design/${designId}/view`,
+      thumbnailUrl: result.imageUrls[coverIndex] ?? result.imageUrls[0],
+      imageUrls: result.imageUrls,
+      title: editableTitle || result.title,
+      description: editableText.slice(0, 400),
+      diaryNote: editableText,
+      importedAt: now,
+      status: 'draft',
+      topics: [],
+      locations: [],
+      visibility: 'private',
+    }
+    const saveResult = await importedContentService.upsert(item)
+    if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
+    setStep('pick')
+    setResult(null)
+    onImported()
+  }
+
+  if (!isCanvaConfigured()) return null
+  if (!checkedConnection) return null
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-4">
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Import from Canva</p>
+      <p className="text-xs text-[#9CA3AF] mb-3">Bring in a Canva project's slides as a carousel or static photo — the words on each slide become your blog/caption copy.</p>
+
+      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+
+      {step === 'connect' && (
+        <button
+          onClick={() => void startCanvaConnect(founderId)}
+          className="px-4 py-2 bg-[#00C4CC] text-white text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity"
+        >
+          Connect Canva
+        </button>
+      )}
+
+      {step === 'pick' && (
+        <div>
+          {designs.length === 0 ? (
+            <button
+              onClick={() => void handleBrowse()}
+              className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
+            >
+              Browse my Canva designs
+            </button>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {designs.map(d => (
+                <button
+                  key={d.id}
+                  onClick={() => void handlePick(d.id)}
+                  className="text-left rounded-lg overflow-hidden border border-[#E8E4DD] hover:border-[#C86A43]/40 transition-colors"
+                >
+                  {d.thumbnailUrl && <img src={d.thumbnailUrl} alt="" className="w-full aspect-video object-cover bg-[#F3EDE6]" />}
+                  <p className="text-[11px] text-[#2D2A26] px-2 py-1.5 truncate">{d.title}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {step === 'importing' && (
+        <p className="text-xs text-[#9CA3AF]">Importing your slides — this can take a moment…</p>
+      )}
+
+      {step === 'review' && result && (
+        <div>
+          <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Title</label>
+          <input
+            type="text" value={editableTitle} onChange={e => setEditableTitle(e.target.value)}
+            className="w-full mb-3 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+          />
+
+          {result.imageUrls.length > 0 && (
+            <>
+              <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Slides — click one to use as the cover photo</label>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-3">
+                {result.imageUrls.map((url, i) => (
+                  <button
+                    key={url}
+                    onClick={() => setCoverIndex(i)}
+                    className={`rounded-lg overflow-hidden border-2 transition-colors ${coverIndex === i ? 'border-[#C86A43]' : 'border-transparent'}`}
+                  >
+                    <img src={url} alt="" className="w-full aspect-square object-cover bg-[#F3EDE6]" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Words from your slides — becomes your caption/blog copy</label>
+          <textarea
+            value={editableText} onChange={e => setEditableText(e.target.value)} rows={5}
+            className="w-full mb-3 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+          />
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => void handleSaveAsImport()}
+              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+            >
+              Save to Import Content
+            </button>
+            <button onClick={() => { setStep('pick'); setResult(null) }} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ─── Connect a source ───────────────────────────────────────────────────────────
@@ -1123,6 +1307,8 @@ export function DashboardImportContentPage() {
           <p className="text-sm text-[#6B7280] mb-4">
             Connect a channel or feed so Village can pull in your own already-public content automatically.
           </p>
+
+          <CanvaImportPanel founderId={founderId} onImported={loadItems} />
 
           <ConnectSourceForm founderId={founderId} onConnected={() => { loadSources(); loadItems() }} />
 

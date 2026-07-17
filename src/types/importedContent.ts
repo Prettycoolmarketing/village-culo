@@ -6,6 +6,7 @@ export type ImportedContentPlatform =
   | 'tiktok'
   | 'podcast'
   | 'website'
+  | 'canva'
 
 export type ImportedContentStatus = 'draft' | 'published' | 'featured' | 'archived'
 export type ImportedContentVisibility = 'private' | 'discoverable' | 'public'
@@ -43,6 +44,11 @@ export interface ImportedContent {
   transcriptSource?: 'manual' | 'youtube' | 'platform' | 'generated' | 'unknown'
   transcriptImportedAt?: string
   transcriptStatus?: 'none' | 'available' | 'unavailable' | 'manual' | 'generated'
+
+  // Every exported slide image, in Canva's page order — only set for
+  // sourcePlatform 'canva'. thumbnailUrl holds whichever one the founder
+  // picked as the cover; this holds the full set for a carousel.
+  imageUrls?: string[]
 
   // Auto enrichment
   autoSummary?: string

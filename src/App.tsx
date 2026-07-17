@@ -53,6 +53,7 @@ import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPag
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
+import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardMyWorkPage }       from './pages/dashboard/DashboardMyWorkPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
 import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
@@ -180,6 +181,7 @@ export default function App() {
             <Route path="media"          element={<DashboardMediaPage />}        />
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
             <Route path="import-content" element={<DashboardImportContentPage />}/>
+            <Route path="canva/callback" element={<DashboardCanvaCallbackPage />}/>
             <Route path="opportunities"  element={<DashboardPartnershipPage />}  />
             <Route path="revenue"           element={<DashboardRevenuePage />}         />
             <Route path="curated-profiles" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><DashboardCuratedProfilesPage /></RoleProtectedRoute>} />
