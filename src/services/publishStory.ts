@@ -201,11 +201,15 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     updatedAt: nowIso,
   }
 
-  // The full written description — a founder's diary note, a transcript, or
-  // the platform's own description text — is featured as its own Blog tab
-  // regardless of format, so a video/podcast story doesn't lose its full
-  // written context just because `summary` only ever holds a short blurb.
-  const fullDescription = item.diaryNote || item.transcriptText || item.description
+  // The full written description — whatever's in the Blog field, or a
+  // transcript/diary note as a fallback when Blog itself is empty — is
+  // featured as its own Blog tab regardless of format, so a video/podcast
+  // story doesn't lose its full written context just because `summary` only
+  // ever holds a short blurb. description (the Blog field a founder actually
+  // edits) must win first: it used to rank below diaryNote/transcriptText,
+  // which meant editing Blog on a Canva import or anything with a saved
+  // transcript silently had no effect on the published story.
+  const fullDescription = item.description || item.diaryNote || item.transcriptText
     || (contentType === 'blog' ? item.autoSummary : undefined) || ''
   if (fullDescription) story.blog = fullDescription
 
@@ -239,7 +243,7 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
   if (!story) return
 
   const contentType = story.contentTypes[0]
-  const fullDescription = item.diaryNote || item.transcriptText || item.description
+  const fullDescription = item.description || item.diaryNote || item.transcriptText
     || (contentType === 'blog' ? item.autoSummary : undefined) || ''
 
   await updateStory({

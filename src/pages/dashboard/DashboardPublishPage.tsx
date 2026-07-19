@@ -1076,11 +1076,55 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
 
       {/* ── 11. Call To Action ───────────────────────────────────────────── */}
       <BuilderCard title="Call To Action" subtitle="Pick one primary action for readers to take." defaultOpen={false}>
+        {draft.partnerId && (() => {
+          const linkedPartner = partnerService.get(draft.partnerId)
+          return linkedPartner ? (
+            <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-[#5E6B4A]/10 rounded-lg">
+              <p className="text-xs text-[#5E6B4A] flex-1">
+                Linked to partner <span className="font-semibold">{linkedPartner.name}</span> — this click will be tracked as an affiliate referral.
+              </p>
+              <button type="button" onClick={() => onChange({ partnerId: undefined })} className="text-[10px] font-semibold text-[#5E6B4A] hover:underline shrink-0">
+                Unlink
+              </button>
+            </div>
+          ) : null
+        })()}
+
+        <div className="mb-3">
+          <Field label="Affiliate partner">
+            <select value={draft.partnerId ?? ''} className={inp}
+              onChange={e => {
+                const partnerId = e.target.value || undefined
+                if (!partnerId) { onChange({ partnerId: undefined }); return }
+                const partner = partnerService.get(partnerId)
+                onChange({
+                  partnerId,
+                  ctaPreset: 'custom',
+                  ctaLabel: partner ? `Visit ${partner.name}` : draft.ctaLabel,
+                  ctaUrl: partner?.affiliateUrl || partner?.website || draft.ctaUrl,
+                })
+              }}>
+              <option value="">None — custom link</option>
+              {partnerService.getAll({ status: 'active' }).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </Field>
+        </div>
+
         <div className="flex flex-wrap gap-2 mb-3">
           {CTA_PRESETS.map(p => (
             <button
               key={p.key}
-              onClick={() => onChange({ ctaPreset: p.key, ctaLabel: p.ctaLabel, ctaUrl: p.key === 'business' && singleBusiness ? `/businesses/${singleBusiness.slug}` : draft.ctaUrl })}
+              onClick={() => onChange({
+                ctaPreset: p.key,
+                ctaLabel: p.ctaLabel,
+                ctaUrl: p.key === 'business' && singleBusiness ? `/businesses/${singleBusiness.slug}` : draft.ctaUrl,
+                // A preset is a different action than the linked partner's
+                // link — clearing partnerId here is what actually fixes the
+                // bug where ctaUrl/ctaLabel changed but partnerId silently
+                // stayed attached, misattributing tracked affiliate clicks
+                // to a partner the link no longer points to.
+                partnerId: undefined,
+              })}
               className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                 draft.ctaPreset === p.key ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
               }`}
@@ -1091,10 +1135,10 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Button label">
-            <input type="text" value={draft.ctaLabel} onChange={e => onChange({ ctaLabel: e.target.value })} className={inp} placeholder="Read more" />
+            <input type="text" value={draft.ctaLabel} onChange={e => onChange({ ctaLabel: e.target.value, partnerId: undefined })} className={inp} placeholder="Read more" />
           </Field>
           <Field label="Link">
-            <input type="url" value={draft.ctaUrl} onChange={e => onChange({ ctaUrl: e.target.value })} className={inp} placeholder="https://" />
+            <input type="url" value={draft.ctaUrl} onChange={e => onChange({ ctaUrl: e.target.value, partnerId: undefined })} className={inp} placeholder="https://" />
           </Field>
         </div>
       </BuilderCard>

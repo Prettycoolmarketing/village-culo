@@ -153,8 +153,12 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
       thumbnailUrl: result.imageUrls[coverIndex] ?? result.imageUrls[0],
       imageUrls: result.imageUrls,
       title: editableTitle || result.title,
-      description: editableText.slice(0, 400),
-      diaryNote: editableText,
+      // The full text, not truncated — this is what shows in the Blog field
+      // and what publishes as the story body. Previously stored the full
+      // text separately as diaryNote (truncating description to 400 chars),
+      // which meant editing Blog afterward had no effect since diaryNote
+      // silently outranked description at publish time.
+      description: editableText,
       importedAt: now,
       status: 'draft',
       topics: [],
