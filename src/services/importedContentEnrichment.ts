@@ -1,6 +1,7 @@
 import type { ImportedContent, ImportedContentPlatform } from '../types/importedContent'
 import { PLATFORM_LABELS } from './importedContent'
 import { getBusiness } from './businesses'
+import { getFounder } from './founders'
 
 export interface EnrichmentResult {
   diaryNote: string
@@ -170,7 +171,9 @@ function buildDiaryNote(
   const dateSuffix  = item.publishedAt
     ? ` in ${new Date(item.publishedAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}`
     : ''
-  const biz     = item.businessId ? getBusiness(item.businessId) : undefined
+  const founder = getFounder(item.founderId)
+  const biz     = item.businessId ? getBusiness(item.businessId)
+    : founder?.businessId ? getBusiness(founder.businessId) : undefined
   const bizPart = biz ? ` — part of ${biz.name}'s story` : ''
 
   const covering    = [...themes.slice(0, 2), ...locations.slice(0, 1)]
@@ -188,7 +191,26 @@ function buildDiaryNote(
 
   const context = `Shared on ${platform}${dateSuffix}${coveringStr}${bizPart}.`
 
-  return `${lead}${/[.!?]$/.test(lead) ? '' : '.'} ${context}`
+  // Structured facts pulled straight from the founder's real Village
+  // profile/business — name, location, bio, tagline, industry — never
+  // invented. Grounds the piece in a real named person/business, which
+  // both search engines and AI answer engines weight heavily (entity
+  // clarity), and gives GEO something concrete to cite beyond the video
+  // itself.
+  const aboutSentences: string[] = []
+  if (founder) {
+    const locationPart = founder.location ? `, based in ${founder.location.name}${founder.location.state ? `, ${founder.location.state}` : ''}` : ''
+    aboutSentences.push(`${founder.name}${biz ? ` runs ${biz.name}` : ''}${locationPart}.`)
+    const bioLead = founder.bio ? splitSentences(founder.bio)[0] : undefined
+    if (bioLead) aboutSentences.push(bioLead)
+  }
+  if (biz) {
+    const bizFacts = [biz.tagline, biz.industry ? `working in ${biz.industry.name}` : undefined].filter((s): s is string => !!s)
+    if (bizFacts.length > 0) aboutSentences.push(`${biz.name} — ${bizFacts.join(', ')}.`)
+  }
+  const about = aboutSentences.length > 0 ? `\n\n${aboutSentences.join(' ')}` : ''
+
+  return `${lead}${/[.!?]$/.test(lead) ? '' : '.'} ${context}${about}`
 }
 
 // ─── Auto summary builder ─────────────────────────────────────────────────────
