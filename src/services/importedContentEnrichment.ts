@@ -176,14 +176,19 @@ function buildDiaryNote(
   const covering    = [...themes.slice(0, 2), ...locations.slice(0, 1)]
   const coveringStr = covering.length > 0 ? `, covering ${covering.join(' and ')}` : ''
 
-  const lead =
+  const rawLead =
     mode === 'transcript' && transcriptOpening ? transcriptOpening :
     item.description ? item.description :
     `${item.title} — a ${contentType} from ${biz ? biz.name : platform}.`
 
+  // Platform descriptions are often cut off mid-sentence ("...") — trim any
+  // trailing ellipsis/dangling punctuation so the context sentence reads as
+  // a clean continuation instead of following a broken-off fragment.
+  const lead = rawLead.trim().replace(/[.\s]*\.{3,}[.\s]*$/, '').trim()
+
   const context = `Shared on ${platform}${dateSuffix}${coveringStr}${bizPart}.`
 
-  return `${lead.trim()} ${context}`
+  return `${lead}${/[.!?]$/.test(lead) ? '' : '.'} ${context}`
 }
 
 // ─── Auto summary builder ─────────────────────────────────────────────────────

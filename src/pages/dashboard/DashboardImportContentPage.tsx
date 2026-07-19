@@ -745,16 +745,19 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
     onChange({ ...draft, [key]: value })
   }
 
-  // A blank Blog box is a missed SEO/GEO opportunity, so it opens pre-filled
-  // with a real starter paragraph (rule-based, no API cost) instead of
-  // requiring a click — founders edit or replace it, never start from empty.
+  // A blank Blog box — or one that's just the platform's own raw, often
+  // unfinished description (cut off mid-sentence with "...") — is a missed
+  // SEO/GEO opportunity, so it's enhanced once with real supporting context
+  // (rule-based, no API cost) instead of requiring a click. Runs once per
+  // item (guarded by diaryGeneratedAt) so it never clobbers what a founder
+  // writes afterwards.
   useEffect(() => {
-    if (!draft.description) {
+    if (!draft.diaryGeneratedAt) {
       const result = enrichImportedContent(draft)
       const bullets = result.keyMoments.length > 0
         ? `\n\nKey moments:\n${result.keyMoments.map(m => `- ${m}`).join('\n')}`
         : ''
-      onChange({ ...draft, description: `${result.diaryNote}${bullets}` })
+      onChange({ ...draft, description: `${result.diaryNote}${bullets}`, diaryGeneratedAt: new Date().toISOString() })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.id])
