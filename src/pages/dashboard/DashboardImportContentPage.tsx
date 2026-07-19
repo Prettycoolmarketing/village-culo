@@ -456,7 +456,10 @@ function questionKeywords(text: string): Set<string> {
 // Only ever called from an explicit "Shape these as Q&As" click — picks a
 // distinct sentence per question out of the founder's own just-written Blog
 // text (plus transcript/lessons if present), never invented text and never
-// run automatically. Rule-based keyword overlap, no API calls.
+// run automatically. Rule-based keyword overlap, no API calls. A question
+// with no real keyword overlap to any sentence gets left blank rather than
+// filled with an unrelated leftover sentence — an irrelevant "answer" is
+// worse than an empty box the founder actually writes into.
 function seedAnswersForQuestions(questions: string[], intel: VillageContentIntelligence, draft: ImportedContent): string[] {
   const pool = [
     ...intel.lessons,
@@ -467,8 +470,6 @@ function seedAnswersForQuestions(questions: string[], intel: VillageContentIntel
   ].filter((s, i, arr) => arr.indexOf(s) === i)
 
   const used = new Set<number>()
-  const fallback = draft.description || draft.title
-  let roundRobin = 0
 
   return questions.map(q => {
     const kw = questionKeywords(q)
@@ -479,11 +480,7 @@ function seedAnswersForQuestions(questions: string[], intel: VillageContentIntel
       const score = [...questionKeywords(sentence)].filter(w => kw.has(w)).length
       if (score > bestScore) { bestScore = score; bestIdx = idx }
     })
-    if (bestIdx === -1) {
-      while (roundRobin < pool.length && used.has(roundRobin)) roundRobin++
-      bestIdx = roundRobin < pool.length ? roundRobin : -1
-    }
-    if (bestIdx === -1) return fallback
+    if (bestIdx === -1) return ''
     used.add(bestIdx)
     return pool[bestIdx]!
   })
