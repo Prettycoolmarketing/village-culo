@@ -839,8 +839,8 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           rows={6} className={TEXTAREA} placeholder="Tell us about your experience with this — what happened, what you learned, why it's worth sharing." />
         {(draft.description ?? '').trim().length > 0 && (
           <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
-            className="mt-1.5 text-[10px] font-semibold text-[#C86A43] hover:underline">
-            Shape these as Q&As
+            className="mt-2 px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors">
+            Shape these as Q&A to boost your online presence
           </button>
         )}
       </div>
@@ -944,7 +944,9 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       </div>
 
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
-      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} shapeTrigger={shapeTrigger} />
+      {shapeTrigger > 0 && (
+        <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} shapeTrigger={shapeTrigger} />
+      )}
 
       {/* ── Publishing fields ──────────────────────────────────────────────── */}
       <div className="border-t border-[#E8E4DD] pt-5 mt-4">
