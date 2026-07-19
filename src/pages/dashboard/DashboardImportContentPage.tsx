@@ -439,17 +439,15 @@ function EmbedPreview({ content }: { content: ImportedContent }) {
 
 // ─── Village Intelligence Preview ────────────────────────────────────────────
 
-function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ, onSaveFAQAnswer }: {
+function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ }: {
   draft: ImportedContent
   onAddTopic: (t: string) => void
   onAddLocation: (l: string) => void
-  onAddFAQ: (question: string) => string
-  onSaveFAQAnswer: (id: string, answer: string) => void
+  onAddFAQ: (question: string, answer: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [intel, setIntel] = useState<VillageContentIntelligence | null>(null)
   const [analysing, setAnalysing] = useState(false)
-  const [addedFAQs, setAddedFAQs] = useState<Record<string, string>>({})
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({})
   const [savedFAQs, setSavedFAQs] = useState<Set<string>>(new Set())
 
@@ -591,53 +589,51 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
             </div>
           )}
 
-          {(intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (
-            <div className="mb-3">
-              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">
-                Questions this content answers <span className="font-normal normal-case">— an FAQ with no answer does nothing for SEO or GEO, so add the answer right after</span>
-              </p>
-              <ul className="space-y-2">
-                {[...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6).map((q, i) => {
-                  const faqId = addedFAQs[q]
-                  const isSaved = faqId ? savedFAQs.has(faqId) : false
-                  return (
-                    <li key={i}>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] text-[#6B7280] italic flex-1">{q}</span>
-                        {!faqId && (
-                          <button type="button"
-                            onClick={() => setAddedFAQs(prev => ({ ...prev, [q]: onAddFAQ(q) }))}
-                            className="text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 transition-colors border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]">
-                            + Add as FAQ
-                          </button>
-                        )}
-                        {faqId && isSaved && (
-                          <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A]">
-                            ✓ Answered
-                          </span>
-                        )}
-                      </div>
-                      {faqId && !isSaved && (
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <input type="text"
-                            value={answerDrafts[faqId] ?? ''}
-                            onChange={e => setAnswerDrafts(prev => ({ ...prev, [faqId]: e.target.value }))}
-                            placeholder="Write the answer…"
-                            className="flex-1 px-2 py-1 text-[10px] border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
-                          <button type="button"
-                            disabled={!(answerDrafts[faqId] ?? '').trim()}
-                            onClick={() => { onSaveFAQAnswer(faqId, (answerDrafts[faqId] ?? '').trim()); setSavedFAQs(prev => new Set(prev).add(faqId)) }}
-                            className="text-[9px] font-semibold px-2 py-1 rounded-md bg-[#2D2A26] text-white shrink-0 disabled:opacity-40">
-                            Save
-                          </button>
+          {(intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (() => {
+            // Best already-extracted text to pre-fill an answer with — so
+            // hitting Save without editing still produces a real, non-blank
+            // FAQ instead of an empty one that does nothing for SEO/GEO.
+            const answerSeed = intel.lessons[0] || intel.solutions[0] || intel.problems[0] || draft.description || ''
+            return (
+              <div className="mb-3">
+                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">
+                  Questions this content answers <span className="font-normal normal-case">— pre-filled from your content, edit before saving if you like</span>
+                </p>
+                <ul className="space-y-2">
+                  {[...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6).map((q, i) => {
+                    const isSaved = savedFAQs.has(q)
+                    return (
+                      <li key={i}>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <span className="text-[10px] text-[#6B7280] italic flex-1">{q}</span>
+                          {isSaved && (
+                            <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A]">
+                              ✓ Added
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          )}
+                        {!isSaved && (
+                          <div className="flex items-center gap-1.5">
+                            <input type="text"
+                              value={answerDrafts[q] ?? answerSeed}
+                              onChange={e => setAnswerDrafts(prev => ({ ...prev, [q]: e.target.value }))}
+                              placeholder="Write the answer…"
+                              className="flex-1 px-2 py-1 text-[10px] border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
+                            <button type="button"
+                              disabled={!(answerDrafts[q] ?? answerSeed).trim()}
+                              onClick={() => { onAddFAQ(q, (answerDrafts[q] ?? answerSeed).trim()); setSavedFAQs(prev => new Set(prev).add(q)) }}
+                              className="text-[9px] font-semibold px-2 py-1 rounded-md bg-[#2D2A26] text-white shrink-0 disabled:opacity-40">
+                              Save
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )
+          })()}
 
           {intel.relatedContentIds.length > 0 && (
             <p className="text-[10px] text-[#9CA3AF]">
@@ -714,20 +710,11 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
     if (!draft.locations.includes(l)) onChange({ ...draft, locations: [...draft.locations, l] })
   }
 
-  function addFAQ(question: string): string {
-    const founder = getFounder(draft.founderId)
-    const faq: FAQ = { id: crypto.randomUUID(), question, answer: '', topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [] }
-    if (founder) void updateFounder({ ...founder, faqs: [...(founder.faqs ?? []), faq] })
-    return faq.id
-  }
-
-  function saveFAQAnswer(id: string, answer: string) {
+  function addFAQ(question: string, answer: string) {
     const founder = getFounder(draft.founderId)
     if (!founder) return
-    void updateFounder({
-      ...founder,
-      faqs: (founder.faqs ?? []).map(f => f.id === id ? { ...f, answer } : f),
-    })
+    const faq: FAQ = { id: crypto.randomUUID(), question, answer, topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [] }
+    void updateFounder({ ...founder, faqs: [...(founder.faqs ?? []), faq] })
   }
 
   const INPUT = 'w-full px-3 py-2 text-sm border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]'
@@ -863,7 +850,7 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       </div>
 
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
-      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} onSaveFAQAnswer={saveFAQAnswer} />
+      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} />
 
       {/* ── Publishing fields ──────────────────────────────────────────────── */}
       <div className="border-t border-[#E8E4DD] pt-5 mt-4">
