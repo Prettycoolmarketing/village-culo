@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
@@ -11,7 +11,7 @@ import {
   PLATFORM_COLORS,
 } from '../../services/importedContent'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
-import { enrichImportedContent } from '../../services/importedContentEnrichment'
+import { enrichImportedContent, splitSentences } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
@@ -440,17 +440,68 @@ function EmbedPreview({ content }: { content: ImportedContent }) {
 
 // ─── Village Intelligence Preview ────────────────────────────────────────────
 
-function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ }: {
+const QUESTION_STOPWORDS = new Set([
+  'the', 'a', 'an', 'is', 'are', 'was', 'were', 'this', 'that', 'what', 'how',
+  'to', 'of', 'in', 'on', 'for', 'does', 'do', 'content', 'about', 'and',
+  'with', 'your', 'it', 'from', 'you', 'can',
+])
+
+function questionKeywords(text: string): Set<string> {
+  return new Set(
+    text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+      .filter(w => w.length > 3 && !QUESTION_STOPWORDS.has(w))
+  )
+}
+
+// Only ever called from an explicit "Shape these as Q&As" click — picks a
+// distinct sentence per question out of the founder's own just-written Blog
+// text (plus transcript/lessons if present), never invented text and never
+// run automatically. Rule-based keyword overlap, no API calls.
+function seedAnswersForQuestions(questions: string[], intel: VillageContentIntelligence, draft: ImportedContent): string[] {
+  const pool = [
+    ...intel.lessons,
+    ...intel.solutions,
+    ...intel.problems,
+    ...splitSentences(draft.description ?? ''),
+    ...splitSentences(draft.transcriptText ?? ''),
+  ].filter((s, i, arr) => arr.indexOf(s) === i)
+
+  const used = new Set<number>()
+  const fallback = draft.description || draft.title
+  let roundRobin = 0
+
+  return questions.map(q => {
+    const kw = questionKeywords(q)
+    let bestIdx = -1
+    let bestScore = 0
+    pool.forEach((sentence, idx) => {
+      if (used.has(idx)) return
+      const score = [...questionKeywords(sentence)].filter(w => kw.has(w)).length
+      if (score > bestScore) { bestScore = score; bestIdx = idx }
+    })
+    if (bestIdx === -1) {
+      while (roundRobin < pool.length && used.has(roundRobin)) roundRobin++
+      bestIdx = roundRobin < pool.length ? roundRobin : -1
+    }
+    if (bestIdx === -1) return fallback
+    used.add(bestIdx)
+    return pool[bestIdx]!
+  })
+}
+
+function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ, shapeTrigger }: {
   draft: ImportedContent
   onAddTopic: (t: string) => void
   onAddLocation: (l: string) => void
   onAddFAQ: (question: string, answer: string) => void
+  shapeTrigger: number
 }) {
   const [open, setOpen] = useState(false)
   const [intel, setIntel] = useState<VillageContentIntelligence | null>(null)
   const [analysing, setAnalysing] = useState(false)
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({})
   const [savedFAQs, setSavedFAQs] = useState<Set<string>>(new Set())
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // Runs analysis immediately rather than waiting for a manual "Analyse
   // Content" click — a founder opening the edit panel should see Village
@@ -466,6 +517,27 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
     setOpen(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.id])
+
+  // "Shape these as Q&As" (under the Blog field) re-analyses the founder's
+  // current Blog text for fresh questions, then pre-fills each unsaved
+  // answer with a matching sentence pulled from that same text — a starter
+  // to edit, sourced only from what they actually wrote, never fabricated.
+  useEffect(() => {
+    if (shapeTrigger === 0) return
+    const result = villageContentIntelligenceService.analyse(importedContentToInput(draft))
+    void villageContentIntelligenceService.upsert(result)
+    setIntel(result)
+    setOpen(true)
+    const questions = [...new Set([...result.searchQuestions, ...result.geoQuestions])].slice(0, 6)
+    const seeds = seedAnswersForQuestions(questions, result, draft)
+    setAnswerDrafts(prev => {
+      const next = { ...prev }
+      questions.forEach((q, i) => { if (!savedFAQs.has(q)) next[q] = seeds[i] ?? '' })
+      return next
+    })
+    requestAnimationFrame(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shapeTrigger])
 
   function handleAnalyse() {
     setAnalysing(true)
@@ -514,7 +586,7 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
     ) : null
 
   return (
-    <div className="border-t border-[#E8E4DD] pt-4 mt-4">
+    <div ref={containerRef} className="border-t border-[#E8E4DD] pt-4 mt-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <button
@@ -667,6 +739,7 @@ interface EditFormProps {
 function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   const businesses = getBusinesses()
   const [transcriptFlash, setTranscriptFlash] = useState(false)
+  const [shapeTrigger, setShapeTrigger] = useState(0)
 
   function field<K extends keyof ImportedContent>(key: K, value: ImportedContent[K]) {
     onChange({ ...draft, [key]: value })
@@ -764,6 +837,12 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         <textarea value={draft.description ?? ''}
           onChange={e => field('description', e.target.value || undefined)}
           rows={6} className={TEXTAREA} placeholder="Tell us about your experience with this — what happened, what you learned, why it's worth sharing." />
+        {(draft.description ?? '').trim().length > 0 && (
+          <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
+            className="mt-1.5 text-[10px] font-semibold text-[#C86A43] hover:underline">
+            Shape these as Q&As
+          </button>
+        )}
       </div>
 
       {/* Thumbnail */}
@@ -865,7 +944,7 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       </div>
 
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
-      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} />
+      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} shapeTrigger={shapeTrigger} />
 
       {/* ── Publishing fields ──────────────────────────────────────────────── */}
       <div className="border-t border-[#E8E4DD] pt-5 mt-4">
