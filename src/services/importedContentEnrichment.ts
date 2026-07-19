@@ -152,41 +152,38 @@ function extractBusinessMentions(text: string): string[] {
 
 // ─── Diary note builder ───────────────────────────────────────────────────────
 
+// Leads with the founder's own words — already the most specific, human,
+// keyword-rich text available — then folds platform/date/topics/location
+// into one short trailing context sentence. Search engines and AI answer
+// engines weight the opening sentence heaviest, so administrative framing
+// ("this video was published on...") or flowery narration about the content
+// belongs after the substance, not before it, and never in place of it.
 function buildDiaryNote(
   item: ImportedContent,
   mode: 'transcript' | 'metadata',
   themes: string[],
+  locations: string[],
   transcriptOpening: string,
 ): string {
   const platform    = PLATFORM_LABELS[item.sourcePlatform] ?? item.sourcePlatform
   const contentType = CONTENT_TYPE[item.sourcePlatform] ?? 'piece'
-  const dateStr     = item.publishedAt
-    ? `in ${new Date(item.publishedAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}`
-    : 'previously'
-  const biz    = item.businessId ? getBusiness(item.businessId) : undefined
-  const bizRef = biz ? ` connected to ${biz.name}` : ''
-
-  const themeStr = themes.length > 0
-    ? `, capturing ${themes.slice(0, 3).join(', ')}`
+  const dateSuffix  = item.publishedAt
+    ? ` in ${new Date(item.publishedAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}`
     : ''
+  const biz     = item.businessId ? getBusiness(item.businessId) : undefined
+  const bizPart = biz ? ` — part of ${biz.name}'s story` : ''
 
-  let opening: string
-  if (mode === 'transcript' && transcriptOpening) {
-    opening = `This ${platform} ${contentType}${bizRef} was originally shared ${dateStr}${themeStr}. ${transcriptOpening}`
-  } else if (item.description) {
-    const desc = item.description.length > 200
-      ? item.description.slice(0, 200) + '...'
-      : item.description
-    opening = `This ${contentType}${bizRef} was originally published ${dateStr} on ${platform}, titled "${item.title}". ${desc}`
-  } else {
-    opening = `This ${contentType}${bizRef}, titled "${item.title}", was originally published ${dateStr} on ${platform}${themeStr}.`
-  }
+  const covering    = [...themes.slice(0, 2), ...locations.slice(0, 1)]
+  const coveringStr = covering.length > 0 ? `, covering ${covering.join(' and ')}` : ''
 
-  const reflection = biz
-    ? `Looking back, it becomes more than a ${platform} ${contentType} — it becomes part of the evidence of what ${biz.name} actually built and lived.`
-    : `Looking back, it becomes more than a ${platform} ${contentType} — it becomes part of the Village archive, a record of the work and thinking that happened during that time.`
+  const lead =
+    mode === 'transcript' && transcriptOpening ? transcriptOpening :
+    item.description ? item.description :
+    `${item.title} — a ${contentType} from ${biz ? biz.name : platform}.`
 
-  return `${opening.trim()} ${reflection}`
+  const context = `Shared on ${platform}${dateSuffix}${coveringStr}${bizPart}.`
+
+  return `${lead.trim()} ${context}`
 }
 
 // ─── Auto summary builder ─────────────────────────────────────────────────────
@@ -227,7 +224,7 @@ export function enrichImportedContent(item: ImportedContent): EnrichmentResult {
 
   const themes     = extractSuggestedTopics(fullText)
   const autoSummary = buildAutoSummary(item)
-  const diaryNote   = buildDiaryNote(item, mode, themes, transcriptOpening)
+  const diaryNote   = buildDiaryNote(item, mode, themes, suggestedLocations, transcriptOpening)
 
   return {
     diaryNote,
