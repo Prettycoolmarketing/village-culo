@@ -223,6 +223,17 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
 
       {step === 'review' && result && (
         <div>
+          {(result.textExtractionSkipped || (result.imagesSkipped ?? 0) > 0 || result.slidesTruncated) && (
+            <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-xs text-amber-700 leading-relaxed">
+                This design was large, so {[
+                  result.textExtractionSkipped && 'the slide text couldn’t be pulled in automatically — write your own below',
+                  (result.imagesSkipped ?? 0) > 0 && `${result.imagesSkipped} image${result.imagesSkipped === 1 ? '' : 's'} couldn't be imported`,
+                  result.slidesTruncated && 'only the first 30 slides were brought in',
+                ].filter(Boolean).join('; ')}.
+              </p>
+            </div>
+          )}
           <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Title</label>
           <input
             type="text" value={editableTitle} onChange={e => setEditableTitle(e.target.value)}

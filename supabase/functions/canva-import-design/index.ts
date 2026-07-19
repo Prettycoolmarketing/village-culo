@@ -56,6 +56,42 @@ async function waitForExportJob(accessToken: string, jobId: string): Promise<str
   throw new Error('Canva export took too long — try again.')
 }
 
+// ─── Size-capped fetch ──────────────────────────────────────────────────────
+// A photo-heavy Canva carousel's PPTX export (or even a single high-res JPEG
+// slide) can be large enough on its own to blow the Edge Function's memory
+// ceiling (WORKER_RESOURCE_LIMIT) when buffered whole. Every download in
+// this function goes through here so an oversized file degrades gracefully
+// (skipped, not fatal) instead of crashing the entire import.
+async function fetchWithLimit(url: string, maxBytes: number): Promise<ArrayBuffer | null> {
+  const res = await fetch(url)
+  if (!res.ok) return null
+  const lengthHeader = res.headers.get('content-length')
+  if (lengthHeader && Number(lengthHeader) > maxBytes) { void res.body?.cancel(); return null }
+
+  const reader = res.body?.getReader()
+  if (!reader) {
+    const buf = await res.arrayBuffer()
+    return buf.byteLength > maxBytes ? null : buf
+  }
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > maxBytes) { void reader.cancel(); return null }
+    chunks.push(value)
+  }
+  const combined = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) { combined.set(chunk, offset); offset += chunk.byteLength }
+  return combined.buffer
+}
+
+const MAX_PPTX_BYTES  = 25_000_000  // ~25MB — text-only extraction; skip rather than crash on bigger
+const MAX_IMAGE_BYTES = 12_000_000  // ~12MB per slide image
+const MAX_SLIDES       = 30          // bounds total loop memory/time regardless of per-item size
+
 // ─── PPTX text extraction (no OCR — real text runs from the XML) ──────────
 
 function decodeXmlEntities(s: string): string {
@@ -136,40 +172,52 @@ serve(async (req) => {
     if (!designRes.ok) throw new Error(designBody.message ?? 'Could not load that Canva design.')
     const title: string = designBody.design?.title || 'Untitled design'
 
-    // Slide text, via PPTX export
+    // Slide text, via PPTX export — skipped (not fatal) if the export is too
+    // large to safely buffer in this function's memory.
     const pptxJobId = await createExportJob(accessToken, designId, { type: 'pptx' })
     const pptxUrls = await waitForExportJob(accessToken, pptxJobId)
     let slideTexts: string[] = []
+    let textExtractionSkipped = false
     if (pptxUrls[0]) {
-      const pptxRes = await fetch(pptxUrls[0])
-      const pptxBytes = await pptxRes.arrayBuffer()
-      slideTexts = await extractSlideTexts(pptxBytes)
+      const pptxBytes = await fetchWithLimit(pptxUrls[0], MAX_PPTX_BYTES)
+      if (pptxBytes) {
+        slideTexts = await extractSlideTexts(pptxBytes)
+      } else {
+        textExtractionSkipped = true
+      }
     }
 
-    // Slide images, via JPG export — one URL per page, in page order
+    // Slide images, via JPG export — one URL per page, in page order. Capped
+    // to MAX_SLIDES pages and MAX_IMAGE_BYTES per image so one huge design
+    // can't exhaust memory across the loop.
     const imageJobId = await createExportJob(accessToken, designId, { type: 'jpg' })
-    const imageUrls = await waitForExportJob(accessToken, imageJobId)
+    const allImageUrls = await waitForExportJob(accessToken, imageJobId)
+    const imageUrls = allImageUrls.slice(0, MAX_SLIDES)
+    const slidesTruncated = allImageUrls.length > imageUrls.length
 
     // Canva's export URLs expire in 24h — re-host each image in our own
     // Storage so the story keeps working indefinitely.
     const uploadedImageUrls: string[] = []
+    let imagesSkipped = 0
     for (const url of imageUrls) {
-      const imgRes = await fetch(url)
-      if (!imgRes.ok) continue
-      const bytes = await imgRes.arrayBuffer()
+      const bytes = await fetchWithLimit(url, MAX_IMAGE_BYTES)
+      if (!bytes) { imagesSkipped++; continue }
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
       const path = `${founderId}/${filename}`
       const { error: uploadError } = await admin.storage.from('media').upload(path, bytes, {
         cacheControl: '3600', upsert: false, contentType: 'image/jpeg',
       })
-      if (uploadError) continue
+      if (uploadError) { imagesSkipped++; continue }
       const { data: publicUrlData } = admin.storage.from('media').getPublicUrl(path)
       uploadedImageUrls.push(publicUrlData.publicUrl)
     }
 
     const combinedText = slideTexts.filter(Boolean).join('\n\n')
 
-    return new Response(JSON.stringify({ title, imageUrls: uploadedImageUrls, slideTexts, combinedText }), {
+    return new Response(JSON.stringify({
+      title, imageUrls: uploadedImageUrls, slideTexts, combinedText,
+      textExtractionSkipped, imagesSkipped, slidesTruncated,
+    }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })
   } catch (err) {

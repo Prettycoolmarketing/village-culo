@@ -116,6 +116,12 @@ export interface CanvaImportResult {
   imageUrls: string[]
   slideTexts: string[]
   combinedText: string
+  // Graceful-degradation flags — a very large/photo-heavy design can exceed
+  // what the import function safely holds in memory. When these are set the
+  // import still succeeds, just with less than the full design.
+  textExtractionSkipped?: boolean
+  imagesSkipped?: number
+  slidesTruncated?: boolean
 }
 
 export async function importCanvaDesign(founderId: string, designId: string): Promise<CanvaImportResult> {
