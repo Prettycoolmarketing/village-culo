@@ -208,6 +208,7 @@ export function FounderProfilePage() {
   const founderFeaturedIn  = founder ? getFeaturedIn('founder', founder.id) : []
   const founderConnectedTo = founder ? getConnectedTo('founder', founder.id) : []
   const bookingUrl         = founder ? publisherPartnerProfileService.get(founder.id)?.bookingUrl : undefined
+  const isVillagePartner   = founder ? (publisherPartnerProfileService.get(founder.id)?.enabled ?? false) : false
 
   usePageMeta({
     title:       founder?.seoTitle || founder?.name,
@@ -373,8 +374,13 @@ export function FounderProfilePage() {
               <Avatar src={founder.avatar} alt={founder.name} size="xl"
                 className="ring-4 ring-surface shadow-lg flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 text-2xl" />
               <div className="flex-1 min-w-0 pt-2">
-                <h1 id="founder-name" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
+                <h1 id="founder-name" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight flex items-center gap-2.5">
                   {founder.name}
+                  {isVillagePartner && (
+                    <img src="/village-partnership-logo.png" alt="Village Partnership Program member"
+                      title="Village Partnership Program member"
+                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full shrink-0" />
+                  )}
                 </h1>
                 <p className="font-body text-base text-primary font-medium mt-1" aria-label="Industry">
                   {founder.industry.name}

@@ -196,6 +196,20 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
           </button>
         </div>
 
+        {profile.enabled && (
+          <div className="flex items-center gap-4 px-4 py-3 bg-[#F8F5F0] rounded-xl">
+            <img src="/village-partnership-logo.png" alt="Village Partnership Program badge" className="w-14 h-14 rounded-full shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[#2D2A26]">You're a Village Partner</p>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">This badge shows on your public profile automatically — download it to add to your own website too.</p>
+            </div>
+            <a href="/village-partnership-logo.png" download="village-partnership-badge.png"
+              className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shrink-0">
+              Download badge
+            </a>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Availability</label>
           <p className="text-xs text-[#9CA3AF] mb-2">Let businesses know how open you are right now</p>
