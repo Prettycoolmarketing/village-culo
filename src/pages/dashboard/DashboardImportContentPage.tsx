@@ -196,7 +196,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
           {designs.length === 0 ? (
             <button
               onClick={() => void handleBrowse()}
-              className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors"
             >
               Browse my Canva designs
             </button>

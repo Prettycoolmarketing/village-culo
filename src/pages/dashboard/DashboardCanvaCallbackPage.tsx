@@ -36,7 +36,7 @@ export function DashboardCanvaCallbackPage() {
         {status === 'done' && (
           <>
             <p className="text-sm font-semibold text-[#2D2A26] mb-3">Canva connected</p>
-            <Link to="/dashboard/import" className="text-sm text-[#C86A43] font-semibold hover:underline">
+            <Link to="/dashboard/import-content" className="text-sm text-[#C86A43] font-semibold hover:underline">
               Back to Import Content →
             </Link>
           </>
@@ -45,7 +45,7 @@ export function DashboardCanvaCallbackPage() {
           <>
             <p className="text-sm font-semibold text-red-600 mb-2">Couldn't connect Canva</p>
             <p className="text-xs text-[#9CA3AF] mb-4">{error}</p>
-            <Link to="/dashboard/import" className="text-sm text-[#C86A43] font-semibold hover:underline">
+            <Link to="/dashboard/import-content" className="text-sm text-[#C86A43] font-semibold hover:underline">
               Back to Import Content →
             </Link>
           </>
