@@ -48,14 +48,31 @@ function rejectUnsafeXml(xml: string) {
   }
 }
 
+const HTML_ENTITIES: Record<string, string> = {
+  '&amp;': '&', '&nbsp;': ' ', '&quot;': '"', '&apos;': "'",
+  '&lt;': '<', '&gt;': '>', '&#39;': "'", '&#8217;': '’', '&#8216;': '‘',
+  '&#8220;': '“', '&#8221;': '”', '&#8211;': '–', '&#8212;': '—',
+}
+
+function decodeEntities(text: string): string {
+  return text.replace(/&#?\w+;/g, m => HTML_ENTITIES[m] ?? m)
+}
+
 function textBetween(block: string, tag: string): string | undefined {
   const match = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'))
   if (!match) return undefined
-  return match[1]
-    .replace(/^<!\[CDATA\[([\s\S]*?)\]\]>$/, '$1')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return decodeEntities(
+    match[1]
+      // Unanchored and global — some feed generators emit trailing
+      // whitespace or even a duplicated "]]>" after the real CDATA close,
+      // which an anchored ^...$ match silently fails on, leaking the raw
+      // "]]>" into the output.
+      .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\]\]>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  )
 }
 
 function attrOf(block: string, tag: string, attr: string): string | undefined {
