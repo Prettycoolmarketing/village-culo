@@ -115,6 +115,57 @@ function extractKeyMoments(transcript: string): string[] {
     .map(x => x.s)
 }
 
+// ─── Blog-grounded Q&A ─────────────────────────────────────────────────────────
+// Every question here is one of a small fixed set of honest, generic framings
+// ("What did they learn?", "What challenge did they face?"...) — never
+// templated off a topic keyword the way the old search/geo question
+// generators were ("travel tips from Australia"). The ANSWER is always a
+// verbatim sentence pulled from what the founder actually wrote in the Blog
+// (or pasted transcript) — never invented, never paraphrased. A category is
+// only included if a real matching sentence was found.
+
+export interface BlogQaPair {
+  question: string
+  answer: string
+}
+
+const QA_CATEGORIES: { question: string; signals: string[] }[] = [
+  { question: 'What did they learn?',            signals: ['learned', 'realised', 'realized', 'discovered', 'lesson'] },
+  { question: 'What challenge did they face?',   signals: ['challenge', 'struggle', 'difficult', 'hard', 'problem', 'obstacle'] },
+  { question: 'How did they solve it?',          signals: ['solved', 'solution', 'overcame', 'fixed', 'figured out', 'worked out'] },
+  { question: 'What made them start?',           signals: ['decided', 'started', 'began', 'launched', 'quit our jobs', 'quit my job'] },
+  { question: 'What happened next?',             signals: ['then', 'eventually', 'after that', 'turning point', 'from there'] },
+  { question: 'Why did they do it?',             signals: ['because', 'reason', 'so that', 'in order to'] },
+]
+
+/** Extracts real Q&A pairs directly from the founder's own written text — never a topic-templated question, never a fabricated answer. */
+export function extractQaFromBlog(title: string, text: string): BlogQaPair[] {
+  const sentences = splitSentences(text)
+  const pairs: BlogQaPair[] = []
+  const used = new Set<number>()
+
+  if (sentences.length > 0) {
+    pairs.push({ question: `What is "${title}" about?`, answer: sentences[0]! })
+    used.add(0)
+  }
+
+  for (const category of QA_CATEGORIES) {
+    let bestIdx = -1
+    let bestScore = 0
+    sentences.forEach((s, i) => {
+      if (used.has(i)) return
+      const score = category.signals.reduce((n, w) => n + (lowerIncludes(s, w) ? 1 : 0), 0)
+      if (score > bestScore) { bestScore = score; bestIdx = i }
+    })
+    if (bestIdx !== -1) {
+      pairs.push({ question: category.question, answer: sentences[bestIdx]! })
+      used.add(bestIdx)
+    }
+  }
+
+  return pairs.slice(0, 6)
+}
+
 function extractCapitalisedPhrases(text: string): string[] {
   const pattern = /\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,})+)\b/g
   const found = new Set<string>()

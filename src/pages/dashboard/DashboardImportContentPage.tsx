@@ -12,7 +12,7 @@ import {
   PLATFORM_COLORS,
 } from '../../services/importedContent'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
-import { enrichImportedContent, splitSentences } from '../../services/importedContentEnrichment'
+import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
@@ -756,55 +756,10 @@ function EmbedPreview({ content }: { content: ImportedContent }) {
 
 // ─── Village Intelligence Preview ────────────────────────────────────────────
 
-const QUESTION_STOPWORDS = new Set([
-  'the', 'a', 'an', 'is', 'are', 'was', 'were', 'this', 'that', 'what', 'how',
-  'to', 'of', 'in', 'on', 'for', 'does', 'do', 'content', 'about', 'and',
-  'with', 'your', 'it', 'from', 'you', 'can',
-])
-
-function questionKeywords(text: string): Set<string> {
-  return new Set(
-    text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
-      .filter(w => w.length > 3 && !QUESTION_STOPWORDS.has(w))
-  )
-}
-
-// Only ever called from an explicit "Shape these as Q&As" click — picks a
-// distinct sentence per question out of the founder's own just-written Blog
-// text (plus transcript/lessons if present), never invented text and never
-// run automatically. Rule-based keyword overlap, no API calls. A question
-// with no real keyword overlap to any sentence gets left blank rather than
-// filled with an unrelated leftover sentence — an irrelevant "answer" is
-// worse than an empty box the founder actually writes into.
-function seedAnswersForQuestions(questions: string[], intel: VillageContentIntelligence, draft: ImportedContent): string[] {
-  const pool = [
-    ...intel.lessons,
-    ...intel.solutions,
-    ...intel.problems,
-    ...splitSentences(draft.description ?? ''),
-    ...splitSentences(draft.transcriptText ?? ''),
-  ].filter((s, i, arr) => arr.indexOf(s) === i)
-
-  const used = new Set<number>()
-
-  return questions.map(q => {
-    const kw = questionKeywords(q)
-    let bestIdx = -1
-    let bestScore = 0
-    pool.forEach((sentence, idx) => {
-      if (used.has(idx)) return
-      const score = [...questionKeywords(sentence)].filter(w => kw.has(w)).length
-      if (score > bestScore) { bestScore = score; bestIdx = idx }
-    })
-    if (bestIdx === -1) return ''
-    used.add(bestIdx)
-    return pool[bestIdx]!
-  })
-}
-
-function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ, shapeTrigger }: {
+function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLocation, onAddFAQ, shapeTrigger }: {
   draft: ImportedContent
   onAddTopic: (t: string) => void
+  onRemoveTopic: (t: string) => void
   onAddLocation: (l: string) => void
   onAddFAQ: (question: string, answer: string) => void
   shapeTrigger: number
@@ -814,6 +769,9 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
   const [analysing, setAnalysing] = useState(false)
   const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({})
   const [savedFAQs, setSavedFAQs] = useState<Set<string>>(new Set())
+  const [blogQaPairs, setBlogQaPairs] = useState<BlogQaPair[]>([])
+  const [customQuestion, setCustomQuestion] = useState('')
+  const [customAnswer, setCustomAnswer] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Runs analysis immediately rather than waiting for a manual "Analyse
@@ -832,20 +790,23 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
   }, [draft.id])
 
   // "Shape these as Q&As" (under the Blog field) re-analyses the founder's
-  // current Blog text for fresh questions, then pre-fills each unsaved
-  // answer with a matching sentence pulled from that same text — a starter
-  // to edit, sourced only from what they actually wrote, never fabricated.
+  // current Blog text, auto-adds every detected topic (founder un-ticks any
+  // that don't fit rather than having to hunt for and click each one), and
+  // extracts real Q&A pairs straight from the Blog/transcript text itself —
+  // never a topic-templated question, never a fabricated answer.
   useEffect(() => {
     if (shapeTrigger === 0) return
     const result = villageContentIntelligenceService.analyse(importedContentToInput(draft))
     void villageContentIntelligenceService.upsert(result)
     setIntel(result)
     setOpen(true)
-    const questions = [...new Set([...result.searchQuestions, ...result.geoQuestions])].slice(0, 6)
-    const seeds = seedAnswersForQuestions(questions, result, draft)
+    for (const t of [...result.primaryTopics, ...result.secondaryTopics]) onAddTopic(t)
+    const combinedText = [draft.description, draft.transcriptText].filter(Boolean).join(' ')
+    const pairs = extractQaFromBlog(draft.title, combinedText)
+    setBlogQaPairs(pairs)
     setAnswerDrafts(prev => {
       const next = { ...prev }
-      questions.forEach((q, i) => { if (!savedFAQs.has(q)) next[q] = seeds[i] ?? '' })
+      pairs.forEach(p => { if (!savedFAQs.has(p.question)) next[p.question] = p.answer })
       return next
     })
     requestAnimationFrame(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
@@ -898,6 +859,31 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
       </div>
     ) : null
 
+  // Used for topics — Shape already auto-added every detected one to
+  // draft.topics, so the natural interaction here is "un-tick what doesn't
+  // fit" rather than "click to add each one yourself."
+  const ToggleSection = ({ title, items, added, onAdd, onRemove }: { title: string; items: string[]; added: string[]; onAdd: (v: string) => void; onRemove: (v: string) => void }) =>
+    items.length > 0 ? (
+      <div className="mb-3">
+        <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">{title} <span className="font-normal normal-case">— tap to remove</span></p>
+        <div className="flex flex-wrap gap-1.5">
+          {items.map(item => {
+            const isAdded = added.includes(item)
+            return (
+              <button key={item} type="button" onClick={() => isAdded ? onRemove(item) : onAdd(item)}
+                className={`text-[10px] px-2.5 py-1 rounded-full border transition-colors ${
+                  isAdded
+                    ? 'border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A] hover:border-red-300 hover:text-red-500'
+                    : 'border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]'
+                }`}>
+                {isAdded ? '✓ ' : '+ '}{item}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    ) : null
+
   return (
     <div ref={containerRef} className="border-t border-[#E8E4DD] pt-4 mt-4">
       <div className="flex items-center justify-between mb-2">
@@ -934,8 +920,8 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
             </div>
           )}
 
-          <AddableSection title="Primary Topics" items={intel.primaryTopics} added={draft.topics} onAdd={onAddTopic} />
-          <AddableSection title="Related Topics" items={intel.secondaryTopics} added={draft.topics} onAdd={onAddTopic} />
+          <ToggleSection title="Primary Topics" items={intel.primaryTopics} added={draft.topics} onAdd={onAddTopic} onRemove={onRemoveTopic} />
+          <ToggleSection title="Related Topics" items={intel.secondaryTopics} added={draft.topics} onAdd={onAddTopic} onRemove={onRemoveTopic} />
           <AddableSection title="Locations" items={intel.locations} added={draft.locations} onAdd={onAddLocation} />
           <Section title="Industries" items={intel.industries} />
           <Section title="People" items={intel.people} />
@@ -975,51 +961,71 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
             </div>
           )}
 
-          {(intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (() => {
-            const questions = [...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6)
-            return (
-              <div className="mb-3">
-                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">
-                  Questions this content answers
-                </p>
-                <p className="text-[10px] text-[#9CA3AF] mb-2 leading-relaxed">
-                  Only questions you write a real answer for and save become public FAQs — and only once this story is published.
-                </p>
-                <ul className="space-y-2">
-                  {questions.map((q, i) => {
-                    const isSaved = savedFAQs.has(q)
-                    return (
-                      <li key={i} className="border border-[#E8E4DD] rounded-lg p-2.5 bg-white">
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="text-[11px] font-medium text-[#2D2A26] flex-1">{q}</span>
-                          {isSaved && (
-                            <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A]">
-                              ✓ Saved
-                            </span>
-                          )}
-                        </div>
-                        {!isSaved && (
-                          <div className="flex flex-col gap-1.5">
-                            <textarea rows={2}
-                              value={answerDrafts[q] ?? ''}
-                              onChange={e => setAnswerDrafts(prev => ({ ...prev, [q]: e.target.value }))}
-                              placeholder="Write the answer…"
-                              className="w-full px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
-                            <button type="button"
-                              disabled={!(answerDrafts[q] ?? '').trim()}
-                              onClick={() => { onAddFAQ(q, (answerDrafts[q] ?? '').trim()); setSavedFAQs(prev => new Set(prev).add(q)) }}
-                              className="self-end text-[9px] font-semibold px-2.5 py-1 rounded-md bg-[#2D2A26] text-white disabled:opacity-40">
-                              Save FAQ
-                            </button>
-                          </div>
+          {blogQaPairs.length > 0 && (
+            <div className="mb-3">
+              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">
+                Questions this content answers
+              </p>
+              <p className="text-[10px] text-[#9CA3AF] mb-2 leading-relaxed">
+                Pulled straight from what you wrote in the Blog — edit the answer if you like, then save. Only saved FAQs become public, and only once this story is published.
+              </p>
+              <ul className="space-y-2">
+                {blogQaPairs.map((pair, i) => {
+                  const isSaved = savedFAQs.has(pair.question)
+                  return (
+                    <li key={i} className="border border-[#E8E4DD] rounded-lg p-2.5 bg-white">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-[11px] font-medium text-[#2D2A26] flex-1">{pair.question}</span>
+                        {isSaved && (
+                          <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A]">
+                            ✓ Saved
+                          </span>
                         )}
-                      </li>
-                    )
-                  })}
-                </ul>
+                      </div>
+                      {!isSaved && (
+                        <div className="flex flex-col gap-1.5">
+                          <textarea rows={2}
+                            value={answerDrafts[pair.question] ?? pair.answer}
+                            onChange={e => setAnswerDrafts(prev => ({ ...prev, [pair.question]: e.target.value }))}
+                            placeholder="Write the answer…"
+                            className="w-full px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                          <button type="button"
+                            disabled={!(answerDrafts[pair.question] ?? pair.answer).trim()}
+                            onClick={() => { onAddFAQ(pair.question, (answerDrafts[pair.question] ?? pair.answer).trim()); setSavedFAQs(prev => new Set(prev).add(pair.question)) }}
+                            className="self-end text-[9px] font-semibold px-2.5 py-1 rounded-md bg-[#2D2A26] text-white disabled:opacity-40">
+                            Save FAQ
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {/* Manual addition — for a question the founder wants to answer that
+                  Shape didn't pick up, written entirely in their own words. */}
+              <div className="border border-dashed border-[#E8E4DD] rounded-lg p-2.5 mt-2">
+                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">Add your own</p>
+                <input type="text" value={customQuestion} onChange={e => setCustomQuestion(e.target.value)}
+                  placeholder="A question you want to answer…"
+                  className="w-full mb-1.5 px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
+                <textarea rows={2} value={customAnswer} onChange={e => setCustomAnswer(e.target.value)}
+                  placeholder="Your answer…"
+                  className="w-full mb-1.5 px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                <button type="button"
+                  disabled={!customQuestion.trim() || !customAnswer.trim()}
+                  onClick={() => {
+                    onAddFAQ(customQuestion.trim(), customAnswer.trim())
+                    setBlogQaPairs(prev => [...prev, { question: customQuestion.trim(), answer: customAnswer.trim() }])
+                    setSavedFAQs(prev => new Set(prev).add(customQuestion.trim()))
+                    setCustomQuestion(''); setCustomAnswer('')
+                  }}
+                  className="text-[9px] font-semibold px-2.5 py-1 rounded-md bg-[#2D2A26] text-white disabled:opacity-40">
+                  Add FAQ
+                </button>
               </div>
-            )
-          })()}
+            </div>
+          )}
 
           {intel.relatedContentIds.length > 0 && (
             <p className="text-[10px] text-[#9CA3AF]">
@@ -1109,6 +1115,10 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
 
   function addTopic(t: string) {
     if (!draft.topics.includes(t)) onChange({ ...draft, topics: [...draft.topics, t] })
+  }
+
+  function removeTopic(t: string) {
+    onChange({ ...draft, topics: draft.topics.filter(existing => existing !== t) })
   }
 
   function addLocation(l: string) {
@@ -1306,7 +1316,7 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
 
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
       {shapeTrigger > 0 && (
-        <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} shapeTrigger={shapeTrigger} />
+        <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onRemoveTopic={removeTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} shapeTrigger={shapeTrigger} />
       )}
 
       {/* ── Publishing fields ──────────────────────────────────────────────── */}

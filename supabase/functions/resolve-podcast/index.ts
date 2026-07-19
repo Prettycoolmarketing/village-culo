@@ -63,7 +63,15 @@ async function validateFeed(feedUrl: string): Promise<{ show: PodcastShow; episo
 }
 
 function candidateFrom(show: PodcastShow, episodes: PodcastEpisode[], feedUrl: string, method: ConnectionMethod, extra: Partial<PodcastCandidate> = {}): PodcastCandidate {
-  const latest = episodes.map(e => e.publishedAt).filter((d): d is string => !!d).sort().reverse()[0]
+  // Dates come from the feed as RFC822 strings ("Wed, 29 Jul 2015 ...") —
+  // sorting those lexicographically is wrong (weekday/month names sort
+  // alphabetically, not chronologically), so parse to a timestamp first.
+  const latest = episodes
+    .map(e => e.publishedAt)
+    .filter((d): d is string => !!d)
+    .map(d => ({ raw: d, t: new Date(d).getTime() }))
+    .filter(x => !Number.isNaN(x.t))
+    .sort((a, b) => b.t - a.t)[0]?.raw
   return {
     title: show.title,
     description: show.description,
