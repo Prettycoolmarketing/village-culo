@@ -61,7 +61,7 @@ const CONTENT_TYPE: Partial<Record<ImportedContentPlatform, string>> = {
 
 // ─── Text utilities ───────────────────────────────────────────────────────────
 
-function splitSentences(text: string): string[] {
+export function splitSentences(text: string): string[] {
   return text
     .replace(/\n+/g, ' ')
     .split(/(?<=[.!?])\s+/)

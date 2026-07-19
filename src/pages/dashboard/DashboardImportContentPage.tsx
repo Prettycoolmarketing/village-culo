@@ -11,6 +11,7 @@ import {
   PLATFORM_COLORS,
 } from '../../services/importedContent'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
+import { enrichImportedContent, splitSentences } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
@@ -439,6 +440,55 @@ function EmbedPreview({ content }: { content: ImportedContent }) {
 
 // ─── Village Intelligence Preview ────────────────────────────────────────────
 
+const QUESTION_STOPWORDS = new Set([
+  'the', 'a', 'an', 'is', 'are', 'was', 'were', 'this', 'that', 'what', 'how',
+  'to', 'of', 'in', 'on', 'for', 'does', 'do', 'content', 'about', 'and',
+  'with', 'your', 'it', 'from', 'you', 'can',
+])
+
+function questionKeywords(text: string): Set<string> {
+  return new Set(
+    text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+      .filter(w => w.length > 3 && !QUESTION_STOPWORDS.has(w))
+  )
+}
+
+// Rule-based, no API calls — picks a distinct sentence per question instead
+// of one generic fallback repeated everywhere, since identical answers
+// across different questions reads as templated/duplicate content and
+// undermines the exact SEO/GEO value an FAQ section is meant to add.
+function seedAnswersForQuestions(questions: string[], intel: VillageContentIntelligence, draft: ImportedContent): string[] {
+  const pool = [
+    ...intel.lessons,
+    ...intel.solutions,
+    ...intel.problems,
+    ...splitSentences(draft.transcriptText ?? ''),
+    ...splitSentences(draft.description ?? ''),
+  ].filter((s, i, arr) => arr.indexOf(s) === i)
+
+  const used = new Set<number>()
+  const fallback = draft.description || draft.title
+  let roundRobin = 0
+
+  return questions.map(q => {
+    const kw = questionKeywords(q)
+    let bestIdx = -1
+    let bestScore = 0
+    pool.forEach((sentence, idx) => {
+      if (used.has(idx)) return
+      const score = [...questionKeywords(sentence)].filter(w => kw.has(w)).length
+      if (score > bestScore) { bestScore = score; bestIdx = idx }
+    })
+    if (bestIdx === -1) {
+      while (roundRobin < pool.length && used.has(roundRobin)) roundRobin++
+      bestIdx = roundRobin < pool.length ? roundRobin : -1
+    }
+    if (bestIdx === -1) return fallback
+    used.add(bestIdx)
+    return pool[bestIdx]!
+  })
+}
+
 function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ }: {
   draft: ImportedContent
   onAddTopic: (t: string) => void
@@ -590,18 +640,17 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
           )}
 
           {(intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (() => {
-            // Best already-extracted text to pre-fill an answer with — so
-            // hitting Save without editing still produces a real, non-blank
-            // FAQ instead of an empty one that does nothing for SEO/GEO.
-            const answerSeed = intel.lessons[0] || intel.solutions[0] || intel.problems[0] || draft.description || ''
+            const questions = [...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6)
+            const seeds = seedAnswersForQuestions(questions, intel, draft)
             return (
               <div className="mb-3">
                 <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">
                   Questions this content answers <span className="font-normal normal-case">— pre-filled from your content, edit before saving if you like</span>
                 </p>
                 <ul className="space-y-2">
-                  {[...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6).map((q, i) => {
+                  {questions.map((q, i) => {
                     const isSaved = savedFAQs.has(q)
+                    const seed = seeds[i] ?? ''
                     return (
                       <li key={i}>
                         <div className="flex items-center justify-between gap-2 mb-1">
@@ -615,13 +664,13 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
                         {!isSaved && (
                           <div className="flex items-center gap-1.5">
                             <input type="text"
-                              value={answerDrafts[q] ?? answerSeed}
+                              value={answerDrafts[q] ?? seed}
                               onChange={e => setAnswerDrafts(prev => ({ ...prev, [q]: e.target.value }))}
                               placeholder="Write the answer…"
                               className="flex-1 px-2 py-1 text-[10px] border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
                             <button type="button"
-                              disabled={!(answerDrafts[q] ?? answerSeed).trim()}
-                              onClick={() => { onAddFAQ(q, (answerDrafts[q] ?? answerSeed).trim()); setSavedFAQs(prev => new Set(prev).add(q)) }}
+                              disabled={!(answerDrafts[q] ?? seed).trim()}
+                              onClick={() => { onAddFAQ(q, (answerDrafts[q] ?? seed).trim()); setSavedFAQs(prev => new Set(prev).add(q)) }}
                               className="text-[9px] font-semibold px-2 py-1 rounded-md bg-[#2D2A26] text-white shrink-0 disabled:opacity-40">
                               Save
                             </button>
@@ -702,6 +751,14 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
     })
   }
 
+  function handleInsertStarter() {
+    const result = enrichImportedContent(draft)
+    const bullets = result.keyMoments.length > 0
+      ? `\n\nKey moments:\n${result.keyMoments.map(m => `- ${m}`).join('\n')}`
+      : ''
+    field('description', `${result.diaryNote}${bullets}`)
+  }
+
   function addTopic(t: string) {
     if (!draft.topics.includes(t)) onChange({ ...draft, topics: [...draft.topics, t] })
   }
@@ -745,7 +802,13 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
 
       {/* Blog */}
       <div className="mb-4">
-        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Blog</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-xs font-semibold text-[#2D2A26]">Blog</label>
+          <button type="button" onClick={handleInsertStarter}
+            className="text-[10px] font-semibold text-[#C86A43] hover:underline">
+            Insert SEO/GEO starter
+          </button>
+        </div>
         <textarea value={draft.description ?? ''}
           onChange={e => field('description', e.target.value || undefined)}
           rows={6} className={TEXTAREA} placeholder="Tell us about your experience with this — what happened, what you learned, why it's worth sharing." />
@@ -989,7 +1052,7 @@ function SavedRow({
           )}
         </div>
 
-        <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-1 max-w-xl">
+        <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-2 max-w-xl">
           {item.description || <span className="text-[#C4BDB4] italic">No description yet.</span>}
         </p>
       </div>
