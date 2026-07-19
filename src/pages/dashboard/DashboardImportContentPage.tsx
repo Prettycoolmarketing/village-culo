@@ -15,10 +15,6 @@ import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import {
-  enrichImportedContent,
-  applyEnrichment,
-} from '../../services/importedContentEnrichment'
-import {
   villageContentIntelligenceService,
   importedContentToInput,
 } from '../../services/villageIntelligence'
@@ -443,16 +439,19 @@ function EmbedPreview({ content }: { content: ImportedContent }) {
 
 // ─── Village Intelligence Preview ────────────────────────────────────────────
 
-function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ }: {
+function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ, onSaveFAQAnswer }: {
   draft: ImportedContent
   onAddTopic: (t: string) => void
   onAddLocation: (l: string) => void
-  onAddFAQ: (question: string) => void
+  onAddFAQ: (question: string) => string
+  onSaveFAQAnswer: (id: string, answer: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [intel, setIntel] = useState<VillageContentIntelligence | null>(null)
   const [analysing, setAnalysing] = useState(false)
-  const [addedFAQs, setAddedFAQs] = useState<Set<string>>(new Set())
+  const [addedFAQs, setAddedFAQs] = useState<Record<string, string>>({})
+  const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({})
+  const [savedFAQs, setSavedFAQs] = useState<Set<string>>(new Set())
 
   // Runs analysis immediately rather than waiting for a manual "Analyse
   // Content" click — a founder opening the edit panel should see Village
@@ -552,6 +551,7 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
           )}
 
           <AddableSection title="Primary Topics" items={intel.primaryTopics} added={draft.topics} onAdd={onAddTopic} />
+          <AddableSection title="Related Topics" items={intel.secondaryTopics} added={draft.topics} onAdd={onAddTopic} />
           <AddableSection title="Locations" items={intel.locations} added={draft.locations} onAdd={onAddLocation} />
           <Section title="Industries" items={intel.industries} />
           <Section title="People" items={intel.people} />
@@ -594,24 +594,44 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
           {(intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (
             <div className="mb-3">
               <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">
-                Questions this content answers <span className="font-normal normal-case">— add as an FAQ, then write the answer</span>
+                Questions this content answers <span className="font-normal normal-case">— an FAQ with no answer does nothing for SEO or GEO, so add the answer right after</span>
               </p>
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {[...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6).map((q, i) => {
-                  const isAdded = addedFAQs.has(q)
+                  const faqId = addedFAQs[q]
+                  const isSaved = faqId ? savedFAQs.has(faqId) : false
                   return (
-                    <li key={i} className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-[#6B7280] italic flex-1">{q}</span>
-                      <button type="button"
-                        disabled={isAdded}
-                        onClick={() => { onAddFAQ(q); setAddedFAQs(prev => new Set(prev).add(q)) }}
-                        className={`text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 transition-colors ${
-                          isAdded
-                            ? 'border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A] cursor-default'
-                            : 'border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]'
-                        }`}>
-                        {isAdded ? '✓ Added' : '+ Add as FAQ'}
-                      </button>
+                    <li key={i}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] text-[#6B7280] italic flex-1">{q}</span>
+                        {!faqId && (
+                          <button type="button"
+                            onClick={() => setAddedFAQs(prev => ({ ...prev, [q]: onAddFAQ(q) }))}
+                            className="text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 transition-colors border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]">
+                            + Add as FAQ
+                          </button>
+                        )}
+                        {faqId && isSaved && (
+                          <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A]">
+                            ✓ Answered
+                          </span>
+                        )}
+                      </div>
+                      {faqId && !isSaved && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <input type="text"
+                            value={answerDrafts[faqId] ?? ''}
+                            onChange={e => setAnswerDrafts(prev => ({ ...prev, [faqId]: e.target.value }))}
+                            placeholder="Write the answer…"
+                            className="flex-1 px-2 py-1 text-[10px] border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
+                          <button type="button"
+                            disabled={!(answerDrafts[faqId] ?? '').trim()}
+                            onClick={() => { onSaveFAQAnswer(faqId, (answerDrafts[faqId] ?? '').trim()); setSavedFAQs(prev => new Set(prev).add(faqId)) }}
+                            className="text-[9px] font-semibold px-2 py-1 rounded-md bg-[#2D2A26] text-white shrink-0 disabled:opacity-40">
+                            Save
+                          </button>
+                        </div>
+                      )}
                     </li>
                   )
                 })}
@@ -686,26 +706,6 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
     })
   }
 
-  function handleGenerate() {
-    const result = enrichImportedContent(draft)
-    onChange(applyEnrichment(draft, result))
-  }
-
-  function handleClearDiary() {
-    onChange({
-      ...draft,
-      diaryNote:           undefined,
-      autoSummary:         undefined,
-      keyMoments:          undefined,
-      peopleMentions:      undefined,
-      businessMentions:    undefined,
-      suggestedTopics:     undefined,
-      suggestedLocations:  undefined,
-      diaryGeneratedAt:    undefined,
-      diaryGenerationMode: undefined,
-    })
-  }
-
   function addTopic(t: string) {
     if (!draft.topics.includes(t)) onChange({ ...draft, topics: [...draft.topics, t] })
   }
@@ -714,19 +714,25 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
     if (!draft.locations.includes(l)) onChange({ ...draft, locations: [...draft.locations, l] })
   }
 
-  function addFAQ(question: string) {
+  function addFAQ(question: string): string {
+    const founder = getFounder(draft.founderId)
+    const faq: FAQ = { id: crypto.randomUUID(), question, answer: '', topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [] }
+    if (founder) void updateFounder({ ...founder, faqs: [...(founder.faqs ?? []), faq] })
+    return faq.id
+  }
+
+  function saveFAQAnswer(id: string, answer: string) {
     const founder = getFounder(draft.founderId)
     if (!founder) return
-    const faq: FAQ = { id: crypto.randomUUID(), question, answer: '', topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [] }
-    void updateFounder({ ...founder, faqs: [...(founder.faqs ?? []), faq] })
+    void updateFounder({
+      ...founder,
+      faqs: (founder.faqs ?? []).map(f => f.id === id ? { ...f, answer } : f),
+    })
   }
 
   const INPUT = 'w-full px-3 py-2 text-sm border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]'
   const TEXTAREA = `${INPUT} resize-none`
   const SELECT = `${INPUT} bg-white`
-
-  const hasSuggestedTopics    = (draft.suggestedTopics?.length ?? 0) > 0
-  const hasSuggestedLocations = (draft.suggestedLocations?.length ?? 0) > 0
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
@@ -750,12 +756,12 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           className={INPUT} placeholder="Title for this imported piece" />
       </div>
 
-      {/* Description */}
+      {/* Blog */}
       <div className="mb-4">
-        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Description</label>
+        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Blog</label>
         <textarea value={draft.description ?? ''}
           onChange={e => field('description', e.target.value || undefined)}
-          rows={3} className={TEXTAREA} placeholder="Short description of this content" />
+          rows={6} className={TEXTAREA} placeholder="Tell us about your experience with this — what happened, what you learned, why it's worth sharing." />
       </div>
 
       {/* Thumbnail */}
@@ -856,171 +862,8 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         </div>
       </div>
 
-      {/* ── Auto Diary Engine ──────────────────────────────────────────────── */}
-      <div className="border-t border-[#E8E4DD] pt-5 mt-4 mb-1">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <p className="text-sm font-semibold text-[#2D2A26]">Shape Your Story</p>
-            {draft.diaryGenerationMode && (
-              <p className="text-[10px] text-[#9CA3AF] mt-0.5">
-                {draft.diaryGenerationMode === 'transcript'
-                  ? '✓ Generated from transcript'
-                  : draft.diaryGenerationMode === 'metadata'
-                  ? 'Generated from title and description only'
-                  : 'Written manually'}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0 ml-4">
-            <button
-              type="button"
-              onClick={handleGenerate}
-              className="px-4 py-2 bg-[#2D2A26] text-white text-xs font-semibold rounded-lg hover:bg-[#1a1815] transition-colors"
-            >
-              {draft.diaryGeneratedAt ? 'Regenerate' : 'Generate Diary'}
-            </button>
-            {draft.diaryGeneratedAt && (
-              <button type="button" onClick={handleClearDiary}
-                className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors">
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Metadata-only warning */}
-        {draft.diaryGenerationMode === 'metadata' && (
-          <div className="mb-4 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-            <p className="text-xs text-amber-700 leading-relaxed">
-              This diary was generated from limited metadata. Please review before publishing.
-            </p>
-          </div>
-        )}
-
-        {/* Auto summary */}
-        {draft.autoSummary && (
-          <div className="mb-4 bg-[#F8F5F0] rounded-lg px-4 py-3">
-            <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Auto Summary</p>
-            <p className="text-xs text-[#6B7280] leading-relaxed">{draft.autoSummary}</p>
-          </div>
-        )}
-
-        {/* Key moments */}
-        {draft.keyMoments && draft.keyMoments.length > 0 && (
-          <div className="mb-4">
-            <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-2">Key Moments from Transcript</p>
-            <ul className="space-y-2">
-              {draft.keyMoments.map((m, i) => (
-                <li key={i} className="text-xs text-[#6B7280] leading-relaxed pl-3 border-l-2 border-[#E8E4DD]">
-                  {m}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* People + business mentions */}
-        {((draft.peopleMentions?.length ?? 0) > 0 || (draft.businessMentions?.length ?? 0) > 0) && (
-          <div className="mb-4 flex flex-wrap gap-5">
-            {draft.peopleMentions && draft.peopleMentions.length > 0 && (
-              <div>
-                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">People Mentioned</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {draft.peopleMentions.map(p => (
-                    <span key={p} className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">{p}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {draft.businessMentions && draft.businessMentions.length > 0 && (
-              <div>
-                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">Businesses Mentioned</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {draft.businessMentions.map(b => (
-                    <span key={b} className="text-[10px] px-2 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">{b}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Diary note — editable output */}
-        <div>
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">
-            Diary Note
-            <span className="font-normal text-[#9CA3AF] ml-1">— edit before publishing</span>
-          </label>
-          <textarea
-            value={draft.diaryNote ?? ''}
-            onChange={e => onChange({
-              ...draft,
-              diaryNote: e.target.value || undefined,
-              diaryGenerationMode: draft.diaryGeneratedAt ? draft.diaryGenerationMode : 'manual',
-            })}
-            rows={5}
-            className={TEXTAREA}
-            placeholder={draft.diaryGeneratedAt
-              ? 'Edit the generated diary note here.'
-              : 'Click Generate Diary to auto-create a diary entry, or write your own reflection.'}
-          />
-        </div>
-      </div>
-
-      {/* ── Suggested tags ─────────────────────────────────────────────────── */}
-      {(hasSuggestedTopics || hasSuggestedLocations) && (
-        <div className="border-t border-[#E8E4DD] pt-4 mt-4">
-          <p className="text-xs font-semibold text-[#2D2A26] mb-0.5">Suggested Tags</p>
-          <p className="text-[10px] text-[#9CA3AF] mb-3">Click to add to your topics and locations below</p>
-
-          {hasSuggestedTopics && (
-            <div className="mb-3">
-              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">Topics</p>
-              <div className="flex flex-wrap gap-1.5">
-                {draft.suggestedTopics!.map(t => {
-                  const added = draft.topics.includes(t)
-                  return (
-                    <button key={t} type="button"
-                      onClick={() => addTopic(t)} disabled={added}
-                      className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                        added
-                          ? 'border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A] cursor-default'
-                          : 'border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]'
-                      }`}>
-                      {added ? '✓ ' : '+ '}{t}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {hasSuggestedLocations && (
-            <div>
-              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">Locations</p>
-              <div className="flex flex-wrap gap-1.5">
-                {draft.suggestedLocations!.map(l => {
-                  const added = draft.locations.includes(l)
-                  return (
-                    <button key={l} type="button"
-                      onClick={() => addLocation(l)} disabled={added}
-                      className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                        added
-                          ? 'border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A] cursor-default'
-                          : 'border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]'
-                      }`}>
-                      {added ? '✓ ' : '+ '}{l}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
-      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} />
+      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} onSaveFAQAnswer={saveFAQAnswer} />
 
       {/* ── Publishing fields ──────────────────────────────────────────────── */}
       <div className="border-t border-[#E8E4DD] pt-5 mt-4">
