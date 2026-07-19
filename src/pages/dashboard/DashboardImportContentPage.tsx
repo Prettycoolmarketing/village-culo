@@ -454,9 +454,19 @@ function VillageIntelligencePreview({ draft, onAddTopic, onAddLocation, onAddFAQ
   const [analysing, setAnalysing] = useState(false)
   const [addedFAQs, setAddedFAQs] = useState<Set<string>>(new Set())
 
+  // Runs analysis immediately rather than waiting for a manual "Analyse
+  // Content" click — a founder opening the edit panel should see Village
+  // Intelligence already filled in, not an empty section they have to know
+  // to trigger themselves.
   useEffect(() => {
-    const existing = villageContentIntelligenceService.getByContent('imported', draft.id)
-    if (existing) setIntel(existing)
+    let result = villageContentIntelligenceService.getByContent('imported', draft.id)
+    if (!result) {
+      result = villageContentIntelligenceService.analyse(importedContentToInput(draft))
+      void villageContentIntelligenceService.upsert(result)
+    }
+    setIntel(result)
+    setOpen(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.id])
 
   function handleAnalyse() {
@@ -1247,7 +1257,6 @@ export function DashboardImportContentPage() {
   function handleCancel() { setDraft(null) }
 
   function handleAdvancedEdit(item: ImportedContent) {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
     setDraft(item)
   }
 
@@ -1369,20 +1378,42 @@ export function DashboardImportContentPage() {
         </div>
       )}
 
-      {/* Advanced edit form — transcript, diary generation, topics, business link */}
+      {/* Advanced edit — a right-side slide-over rather than an inline block, so
+          opening it from row 300 of a long list doesn't yank the founder back
+          to the top of the page to find it. */}
       {draft && (
-        <div className="mb-8">
-          <p className="text-sm font-semibold text-[#2D2A26] mb-3">Advanced edit</p>
-          {saveError && (
-            <p className="text-sm text-red-600 font-medium mb-2">{saveError}</p>
-          )}
-          <EditForm
-            draft={draft}
-            onChange={setDraft}
-            onSave={() => void handleSave()}
-            onCancel={handleCancel}
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={handleCancel}
+            aria-hidden="true"
           />
-        </div>
+          <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[520px] bg-[#F8F5F0] shadow-2xl overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+                <button
+                  onClick={handleCancel}
+                  aria-label="Close"
+                  className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {saveError && (
+                <p className="text-sm text-red-600 font-medium mb-2">{saveError}</p>
+              )}
+              <EditForm
+                draft={draft}
+                onChange={setDraft}
+                onSave={() => void handleSave()}
+                onCancel={handleCancel}
+              />
+            </div>
+          </div>
+        </>
       )}
 
       {/* Bulk publish result */}
