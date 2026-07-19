@@ -109,7 +109,14 @@ export async function fetchChannelVideos(channelId: string, maxTotal = MAX_VIDEO
 /** The Connector contract: authenticate, fetch, normalize — nothing more. */
 export async function fetchYouTubeItems(source: ConnectedSource): Promise<NormalizedImportItem[]> {
   if (!source.config.channelId) throw new YouTubeConnectorError('This YouTube source has no channel configured.')
-  const videos = await fetchChannelVideos(source.config.channelId)
+  // A raised dailyLimitOverride (see connectedSources.ts) implies the founder
+  // wants deep history, not just new uploads — fetch further than the normal
+  // 200-video ceiling to actually reach it, instead of quietly capping the
+  // pool the daily drip draws from.
+  const fetchCeiling = source.dailyLimitOverride
+    ? Math.max(source.dailyLimitOverride, MAX_VIDEOS_PER_SCAN)
+    : undefined
+  const videos = await fetchChannelVideos(source.config.channelId, fetchCeiling)
   return videos.map(v => ({
     originalUrl: `https://www.youtube.com/watch?v=${v.videoId}`,
     title: v.title,

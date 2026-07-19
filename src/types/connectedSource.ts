@@ -18,6 +18,10 @@ export interface ConnectedSource {
   // reset; importedToday is how much of today's allowance has been used.
   lastScanDate?: string
   importedToday?: number
+  // Per-source override of the platform-wide daily import drip — set only
+  // for allowlisted high-volume founders (see VITE_HIGH_VOLUME_IMPORT_EMAILS
+  // in DashboardImportContentPage.tsx), never a general-purpose setting.
+  dailyLimitOverride?: number
 }
 
 export interface ConnectedSourceFilter {

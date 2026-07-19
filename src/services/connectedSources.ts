@@ -106,9 +106,10 @@ function draftFrom(founderId: string, sourceId: string, platform: ImportedConten
 
 /** Scans a connected source, writing up to today's remaining allowance of newly-discovered items as ImportedContent drafts. */
 export async function scanSource(source: ConnectedSource): Promise<ScanResult> {
+  const dailyLimit = source.dailyLimitOverride ?? DAILY_IMPORT_LIMIT
   const isNewDay = source.lastScanDate !== today()
   const usedToday = isNewDay ? 0 : (source.importedToday ?? 0)
-  const remainingToday = Math.max(0, DAILY_IMPORT_LIMIT - usedToday)
+  const remainingToday = Math.max(0, dailyLimit - usedToday)
 
   // Allowance already spent for today — skip the fetch entirely rather than
   // scan and immediately discard what it finds.

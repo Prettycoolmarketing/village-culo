@@ -10,7 +10,7 @@ import {
   PLATFORM_LABELS,
   PLATFORM_COLORS,
 } from '../../services/importedContent'
-import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
+import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
@@ -42,6 +42,16 @@ import type {
 import type { ConnectedSource, ConnectedSourceType } from '../../types/connectedSource'
 import type { FAQ } from '../../types'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
+
+// Comma-separated allowlist of emails allowed to pull far more than the
+// normal daily import drip (see connectedSources.ts's DAILY_IMPORT_LIMIT) —
+// a deliberate one-off for founders bringing in a whole channel's back
+// catalogue, not a general setting. Mirrors VITE_DEV_ADMIN_EMAILS's pattern.
+const HIGH_VOLUME_IMPORT_EMAILS = (import.meta.env.VITE_HIGH_VOLUME_IMPORT_EMAILS ?? '')
+  .split(',')
+  .map((e: string) => e.trim().toLowerCase())
+  .filter(Boolean)
+const HIGH_VOLUME_DAILY_LIMIT = 2000
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -256,7 +266,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
 
 // ─── Connect a source ───────────────────────────────────────────────────────────
 
-function ConnectSourceForm({ founderId, onConnected }: { founderId: string; onConnected: () => void }) {
+function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
   const [type, setType]   = useState<ConnectedSourceType>('youtube')
   const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
@@ -272,6 +282,7 @@ function ConnectSourceForm({ founderId, onConnected }: { founderId: string; onCo
         : { feedUrl: value.trim() }
       const label = type === 'youtube' ? value.trim() : new URL(value.trim()).hostname
       const source = newConnectedSource(founderId, type, label, config)
+      if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
       await connectedSourcesService.upsert(source)
       await scanSource(source)
       setValue('')
@@ -316,7 +327,7 @@ function ConnectSourceForm({ founderId, onConnected }: { founderId: string; onCo
   )
 }
 
-function ConnectedSourceRow({ source, onChanged }: { source: ConnectedSource; onChanged: () => void }) {
+function ConnectedSourceRow({ source, isHighVolume, onChanged }: { source: ConnectedSource; isHighVolume: boolean; onChanged: () => void }) {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -324,13 +335,23 @@ function ConnectedSourceRow({ source, onChanged }: { source: ConnectedSource; on
     setBusy(true)
     setNotice(null)
     try {
-      const result = await scanSource(source)
+      // A source connected before the allowlist was set (or before this
+      // founder was added to it) won't have the override on it yet —
+      // apply it here so re-scanning an already-connected channel benefits
+      // too, not just brand-new connections.
+      let target = source
+      if (isHighVolume && source.dailyLimitOverride !== HIGH_VOLUME_DAILY_LIMIT) {
+        target = { ...source, dailyLimitOverride: HIGH_VOLUME_DAILY_LIMIT }
+        await connectedSourcesService.upsert(target)
+      }
+      const limitLabel = isHighVolume ? String(HIGH_VOLUME_DAILY_LIMIT) : '20'
+      const result = await scanSource(target)
       if (result.dailyLimitReached) {
-        setNotice("You've added your videos for today — your next 20 unlock tomorrow.")
+        setNotice(`You've added your videos for today — your next ${limitLabel} unlock tomorrow.`)
       } else if (result.imported === 0) {
         setNotice("You're all caught up — no new videos found.")
       } else if (result.moreAvailable) {
-        setNotice(`Added ${result.imported} — your next 20 unlock tomorrow.`)
+        setNotice(`Added ${result.imported} — your next ${limitLabel} unlock tomorrow.`)
       } else {
         setNotice(`Added ${result.imported} — you're all caught up!`)
       }
@@ -1173,6 +1194,7 @@ function SavedRow({
 export function DashboardImportContentPage() {
   const { user } = useAuth()
   const founderId = getCurrentFounderId(user) ?? 'dev-user'
+  const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [allItems, setAllItems] = useState<ImportedContent[]>([])
@@ -1214,6 +1236,10 @@ export function DashboardImportContentPage() {
     const input = importedContentToInput(draft)
     const intel = villageContentIntelligenceService.analyse(input)
     void villageContentIntelligenceService.upsert(intel)
+    // Already published from this import? Push the edit through to the live
+    // story too — otherwise "Edit your story" silently only touches the
+    // import record and the founder's edit never actually shows up.
+    if (draft.relatedStoryId) await syncImportEditsToStory(draft)
     setDraft(null)
     loadItems()
   }
@@ -1320,7 +1346,7 @@ export function DashboardImportContentPage() {
 
           <CanvaImportPanel founderId={founderId} onImported={loadItems} />
 
-          <ConnectSourceForm founderId={founderId} onConnected={() => { loadSources(); loadItems() }} />
+          <ConnectSourceForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
           {sources.length > 0 && (
             <div className="flex flex-col gap-2 mt-3">
@@ -1328,6 +1354,7 @@ export function DashboardImportContentPage() {
                 <ConnectedSourceRow
                   key={source.id}
                   source={source}
+                  isHighVolume={isHighVolume}
                   onChanged={() => { loadSources(); loadItems() }}
                 />
               ))}

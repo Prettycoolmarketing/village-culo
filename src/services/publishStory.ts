@@ -213,3 +213,31 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
 
   return story
 }
+
+/**
+ * "Edit your story" on an already-published import used to only save the
+ * ImportedContent copy — the founder edits something, sees no error, and the
+ * live Story silently keeps showing the old text. Mirrors the same field
+ * derivation as buildStoryFromImport (title/summary/cover/blog) but applies
+ * it to the existing Story in place instead of creating a new one, so the
+ * slug, contentTypes, publishing history etc. are all left untouched — only
+ * the fields this edit form actually exposes get updated.
+ */
+export async function syncImportEditsToStory(item: ImportedContent): Promise<void> {
+  if (!item.relatedStoryId) return
+  const story = getStories().find(s => s.id === item.relatedStoryId)
+  if (!story) return
+
+  const contentType = story.contentTypes[0]
+  const fullDescription = item.diaryNote || item.transcriptText || item.description
+    || (contentType === 'blog' ? item.autoSummary : undefined) || ''
+
+  await updateStory({
+    ...story,
+    title: item.title || story.title,
+    summary: item.autoSummary || item.description || story.summary,
+    coverImage: item.thumbnailUrl || story.coverImage,
+    blog: fullDescription || story.blog,
+    updatedAt: new Date().toISOString().split('T')[0]!,
+  })
+}
