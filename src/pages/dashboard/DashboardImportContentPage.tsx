@@ -13,6 +13,7 @@ import {
 import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
 import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import {
   enrichImportedContent,
   applyEnrichment,
@@ -1229,6 +1230,15 @@ export function DashboardImportContentPage() {
     loadItems()
   }
 
+  // Only clears the import record for the currently-viewed platform tab —
+  // never touches a Story that was already published from one of these
+  // (importedContentService.delete only removes the import, not the Story).
+  function handleDeleteAll() {
+    for (const item of visibleItems) importedContentService.delete(item.id)
+    setChecked(new Set())
+    loadItems()
+  }
+
   function handleStatusChange(id: string, status: ImportedContentStatus) {
     importedContentService.updateStatus(id, status)
     loadItems()
@@ -1385,7 +1395,18 @@ export function DashboardImportContentPage() {
 
       {/* Saved imports list */}
       <div>
-        <p className="text-sm font-semibold text-[#2D2A26] mb-3">Imported Content</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold text-[#2D2A26]">Imported Content</p>
+          {visibleItems.length > 0 && (
+            <ConfirmButton
+              label={`Delete all ${visibleItems.length}`}
+              confirmLabel="Yes, delete all"
+              message={`Delete all ${visibleItems.length} ${PLATFORM_LABELS[activeTab]} imports? This can't be undone.`}
+              onConfirm={handleDeleteAll}
+              className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
+            />
+          )}
+        </div>
 
         <div className="flex flex-wrap gap-1.5 mb-4">
           {tabs.map(platform => {
