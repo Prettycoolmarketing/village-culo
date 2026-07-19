@@ -71,6 +71,21 @@ export interface ImportedContent {
   partnerId?: string
   ctaLabel?: string
   ctaUrl?: string
+
+  // Podcast episode fields — only set for sourcePlatform 'podcast' items
+  // discovered via the RSS connector (services/connectors/podcastRss.ts).
+  // Never invented: each is only populated when the feed itself supplied it.
+  episodeGuid?: string
+  enclosureUrl?: string
+  enclosureType?: string
+  durationSeconds?: number
+  episodeNumber?: number
+  seasonNumber?: number
+  episodeKind?: 'full' | 'trailer' | 'bonus'
+  explicit?: boolean
+  showNotes?: string
+  chapters?: { title: string; startSeconds: number }[]
+  podcastTitle?: string
 }
 
 export interface ImportedContentFilter {

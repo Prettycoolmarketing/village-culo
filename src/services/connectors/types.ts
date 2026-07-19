@@ -11,4 +11,21 @@ export interface NormalizedImportItem {
   thumbnailUrl?: string
   publishedAt?: string
   embedUrl?: string
+
+  // Podcast-only fields — left undefined by every other connector. Only
+  // ever set from what the feed itself actually supplied (see
+  // connectors/podcastRss.ts) — never invented.
+  episodeGuid?: string
+  enclosureUrl?: string
+  enclosureType?: string
+  durationSeconds?: number
+  episodeNumber?: number
+  seasonNumber?: number
+  episodeKind?: 'full' | 'trailer' | 'bonus'
+  explicit?: boolean
+  showNotes?: string
+  chapters?: { title: string; startSeconds: number }[]
+  transcriptUrl?: string
+  transcriptText?: string
+  podcastTitle?: string
 }

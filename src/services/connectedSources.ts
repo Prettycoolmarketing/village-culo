@@ -4,6 +4,7 @@ import type { ImportedContent } from '../types/importedContent'
 import { importedContentService, PLATFORM_LABELS } from './importedContent'
 import { fetchYouTubeItems } from './connectors/youtube'
 import { fetchRssItems } from './connectors/rss'
+import { fetchPodcastItems } from './connectors/podcastRss'
 import type { NormalizedImportItem } from './connectors/types'
 import { villageContentIntelligenceService, importedContentToInput } from './villageIntelligence'
 
@@ -17,7 +18,10 @@ const TABLE = 'connected_sources'
 // scanSource below changes.
 const CONNECTORS: Record<ConnectedSourceType, (source: ConnectedSource) => Promise<NormalizedImportItem[]>> = {
   'youtube':     fetchYouTubeItems,
-  'podcast-rss': fetchRssItems,
+  // Podcast gets its own richer connector (GUID/enclosure/duration/season-
+  // episode/transcript/chapters) — website-rss stays on the older generic
+  // one, unaffected.
+  'podcast-rss': fetchPodcastItems,
   'website-rss': fetchRssItems,
 }
 
@@ -78,10 +82,27 @@ export const connectedSourcesService = {
   },
 }
 
-function alreadyImportedUrls(sourceId: string): Set<string> {
-  return new Set(
-    importedContentService.getAll().filter(i => i.connectedSourceId === sourceId).map(i => i.originalUrl)
-  )
+// Podcast feeds can change an episode's title, show notes or enclosure URL
+// between syncs while keeping the same GUID (or vice versa — some feeds
+// don't set a GUID at all and only the enclosure/link stays stable), so a
+// single identifier isn't reliable. Every non-empty identifier an item has
+// goes in the set; a match on any one of them counts as "already imported."
+function alreadyImportedKeys(sourceId: string): Set<string> {
+  const keys = new Set<string>()
+  for (const item of importedContentService.getAll()) {
+    if (item.connectedSourceId !== sourceId) continue
+    if (item.originalUrl) keys.add(item.originalUrl)
+    if (item.episodeGuid) keys.add(`guid:${item.episodeGuid}`)
+    if (item.enclosureUrl) keys.add(`enclosure:${item.enclosureUrl}`)
+  }
+  return keys
+}
+
+function itemKeys(item: NormalizedImportItem): string[] {
+  const keys = [item.originalUrl]
+  if (item.episodeGuid) keys.push(`guid:${item.episodeGuid}`)
+  if (item.enclosureUrl) keys.push(`enclosure:${item.enclosureUrl}`)
+  return keys
 }
 
 function draftFrom(founderId: string, sourceId: string, platform: ImportedContent['sourcePlatform'], item: NormalizedImportItem): ImportedContent {
@@ -101,6 +122,21 @@ function draftFrom(founderId: string, sourceId: string, platform: ImportedConten
     status: 'draft',
     visibility: 'private',
     connectedSourceId: sourceId,
+    // Podcast-only fields — undefined for every other platform.
+    episodeGuid: item.episodeGuid,
+    enclosureUrl: item.enclosureUrl,
+    enclosureType: item.enclosureType,
+    durationSeconds: item.durationSeconds,
+    episodeNumber: item.episodeNumber,
+    seasonNumber: item.seasonNumber,
+    episodeKind: item.episodeKind,
+    explicit: item.explicit,
+    showNotes: item.showNotes,
+    chapters: item.chapters,
+    podcastTitle: item.podcastTitle,
+    transcriptText: item.transcriptText,
+    transcriptSource: item.transcriptText ? 'platform' : undefined,
+    transcriptStatus: item.transcriptText ? 'available' : undefined,
   }
 }
 
@@ -117,12 +153,12 @@ export async function scanSource(source: ConnectedSource): Promise<ScanResult> {
     return { imported: 0, moreAvailable: true, dailyLimitReached: true }
   }
 
-  const seen = alreadyImportedUrls(source.id)
+  const seen = alreadyImportedKeys(source.id)
 
   try {
     const items = await CONNECTORS[source.sourceType](source)
     const platform = PLATFORM_BY_SOURCE_TYPE[source.sourceType]
-    const unseen = items.filter(item => !seen.has(item.originalUrl))
+    const unseen = items.filter(item => !itemKeys(item).some(k => seen.has(k)))
     const toImport = unseen.slice(0, remainingToday)
     const drafts = toImport.map(item => draftFrom(source.founderId, source.id, platform, item))
 
@@ -163,4 +199,36 @@ export function newConnectedSource(founderId: string, sourceType: ConnectedSourc
     status: 'idle',
     discoveredCount: 0,
   }
+}
+
+/**
+ * Podcast connect is deliberately not the same "auto-drip up to today's
+ * limit" model YouTube uses — after confirming a show, the founder sees the
+ * full episode catalogue and explicitly picks which ones to bring in (see
+ * the "Connect your podcast" flow in DashboardImportContentPage.tsx), the
+ * same one-off "pick from a catalogue" shape as Canva import. This writes
+ * exactly the given items regardless of the daily drip allowance — it's a
+ * single deliberate founder action, not an automatic scan — while still
+ * running through the same dedup/analysis pipeline as every other import.
+ */
+export async function importSelectedPodcastEpisodes(source: ConnectedSource, items: NormalizedImportItem[]): Promise<{ imported: number }> {
+  const seen = alreadyImportedKeys(source.id)
+  const unseen = items.filter(item => !itemKeys(item).some(k => seen.has(k)))
+  const drafts = unseen.map(item => draftFrom(source.founderId, source.id, 'podcast', item))
+
+  await Promise.all(drafts.map(d => importedContentService.upsert(d)))
+  await Promise.all(drafts.map(d => {
+    const intel = villageContentIntelligenceService.analyse(importedContentToInput(d))
+    return villageContentIntelligenceService.upsert(intel)
+  }))
+
+  await connectedSourcesService.upsert({
+    ...source,
+    status: 'idle',
+    lastScannedAt: now(),
+    lastError: undefined,
+    discoveredCount: source.discoveredCount + drafts.length,
+  })
+
+  return { imported: drafts.length }
 }

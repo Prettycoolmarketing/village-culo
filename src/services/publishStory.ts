@@ -210,7 +210,10 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
   if (fullDescription) story.blog = fullDescription
 
   if (contentType === 'podcast') {
-    story.audioUrl = item.originalUrl
+    // originalUrl is the episode's webpage (kept as ctaUrl/"View original"
+    // above); enclosureUrl is the actual playable audio file when the feed
+    // supplied one — falls back to originalUrl only if it didn't.
+    story.audioUrl = item.enclosureUrl || item.originalUrl
   } else if (contentType === 'carousel') {
     story.carouselImages = item.imageUrls?.filter(Boolean) ?? []
   } else if (contentType !== 'blog') {
