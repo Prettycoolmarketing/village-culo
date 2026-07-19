@@ -128,6 +128,7 @@ export function DashboardLayout() {
           </NavLink>
 
           <NavItem to="/dashboard/profile"        label="Profile"         icon={<Icon path={icons.profile}  />} />
+          <NavItem to="/dashboard/businesses"     label="Businesses"      icon={<Icon path={icons.biz}      />} />
 
           <SectionLabel label="Opportunities" />
           <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} />
