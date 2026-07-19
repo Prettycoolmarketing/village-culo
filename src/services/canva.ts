@@ -71,7 +71,21 @@ export async function exchangeCanvaCode(founderId: string, code: string, codeVer
   const { data, error } = await supabase.functions.invoke<{ error?: string }>('canva-oauth-exchange', {
     body: { founderId, code, codeVerifier, redirectUri: canvaRedirectUri() },
   })
-  if (error || data?.error) throw new Error(data?.error ?? 'Could not connect your Canva account.')
+  if (error || data?.error) {
+    // supabase-js's FunctionsHttpError carries the raw Response on `.context`
+    // — read the body text directly rather than assuming it's JSON shaped
+    // like { error }, so a gateway-level failure (bad JWT, function crash
+    // before our own try/catch) shows its real message instead of a generic
+    // fallback that hides what actually went wrong.
+    let detail = data?.error
+    if (!detail && error && typeof error === 'object' && 'context' in error) {
+      const ctx = (error as { context?: Response }).context
+      if (ctx && typeof ctx.text === 'function') {
+        try { detail = (await ctx.text()).slice(0, 300) } catch { /* ignore */ }
+      }
+    }
+    throw new Error(detail || (error instanceof Error ? error.message : 'Could not connect your Canva account.'))
+  }
 }
 
 export async function getCanvaStatus(founderId: string): Promise<boolean> {
