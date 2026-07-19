@@ -66,26 +66,28 @@ export function consumeCanvaPkceVerifier(state: string): { verifier: string; fou
   return { verifier, founderId }
 }
 
+// supabase-js's FunctionsHttpError carries the raw Response on `.context` —
+// when a call fails before our own function's try/catch runs (a gateway-
+// level JWT rejection, a crash, a timeout), `data` never gets our own
+// { error } shape. Reading the raw body text instead of falling back to a
+// generic message is what actually surfaces the real cause in the UI.
+async function canvaFunctionError(data: { error?: string } | null, error: unknown, fallback: string): Promise<Error> {
+  let detail = data?.error
+  if (!detail && error && typeof error === 'object' && 'context' in error) {
+    const ctx = (error as { context?: Response }).context
+    if (ctx && typeof ctx.text === 'function') {
+      try { detail = (await ctx.text()).slice(0, 300) } catch { /* ignore */ }
+    }
+  }
+  return new Error(detail || (error instanceof Error ? error.message : fallback))
+}
+
 export async function exchangeCanvaCode(founderId: string, code: string, codeVerifier: string): Promise<void> {
   if (!supabase) throw new Error('Not available in this environment.')
   const { data, error } = await supabase.functions.invoke<{ error?: string }>('canva-oauth-exchange', {
     body: { founderId, code, codeVerifier, redirectUri: canvaRedirectUri() },
   })
-  if (error || data?.error) {
-    // supabase-js's FunctionsHttpError carries the raw Response on `.context`
-    // — read the body text directly rather than assuming it's JSON shaped
-    // like { error }, so a gateway-level failure (bad JWT, function crash
-    // before our own try/catch) shows its real message instead of a generic
-    // fallback that hides what actually went wrong.
-    let detail = data?.error
-    if (!detail && error && typeof error === 'object' && 'context' in error) {
-      const ctx = (error as { context?: Response }).context
-      if (ctx && typeof ctx.text === 'function') {
-        try { detail = (await ctx.text()).slice(0, 300) } catch { /* ignore */ }
-      }
-    }
-    throw new Error(detail || (error instanceof Error ? error.message : 'Could not connect your Canva account.'))
-  }
+  if (error || data?.error) throw await canvaFunctionError(data ?? null, error, 'Could not connect your Canva account.')
 }
 
 export async function getCanvaStatus(founderId: string): Promise<boolean> {
@@ -105,7 +107,7 @@ export async function listCanvaDesigns(founderId: string): Promise<CanvaDesignSu
   const { data, error } = await supabase.functions.invoke<{ designs?: CanvaDesignSummary[]; error?: string }>('canva-list-designs', {
     body: { founderId },
   })
-  if (error || data?.error) throw new Error(data?.error ?? 'Could not load your Canva designs.')
+  if (error || data?.error) throw await canvaFunctionError(data ?? null, error, 'Could not load your Canva designs.')
   return data?.designs ?? []
 }
 
@@ -121,6 +123,6 @@ export async function importCanvaDesign(founderId: string, designId: string): Pr
   const { data, error } = await supabase.functions.invoke<CanvaImportResult & { error?: string }>('canva-import-design', {
     body: { founderId, designId },
   })
-  if (error || data?.error) throw new Error(data?.error ?? 'Could not import that design.')
+  if (error || data?.error) throw await canvaFunctionError(data ?? null, error, 'Could not import that design.')
   return data as CanvaImportResult
 }
