@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
 import { getFounder, updateFounder } from '../../services/founders'
+import { partnerService } from '../../services/partner'
 import { getStory } from '../../services/stories'
 import {
   importedContentService,
@@ -735,6 +736,7 @@ interface EditFormProps {
 
 function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   const businesses = getBusinesses()
+  const activePartners = partnerService.getAll({ status: 'active' })
   const [transcriptFlash, setTranscriptFlash] = useState(false)
   const [shapeTrigger, setShapeTrigger] = useState(0)
 
@@ -877,6 +879,50 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           <input type="date" value={draft.publishedAt ? draft.publishedAt.slice(0, 10) : ''}
             onChange={e => field('publishedAt', e.target.value || undefined)}
             className={INPUT} />
+        </div>
+      </div>
+
+      {/* ── Affiliate / Partner link ───────────────────────────────────────── */}
+      <div className="border-t border-[#E8E4DD] pt-4 mt-1 mb-4">
+        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Affiliate Link</p>
+        <p className="text-xs text-[#9CA3AF] mb-3 leading-relaxed">
+          Attach a partner from your Partnership Program to turn this into a tracked affiliate story, or set a custom link.
+        </p>
+        <div className="mb-3">
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Partner</label>
+          <select value={draft.partnerId ?? ''}
+            onChange={e => {
+              const partnerId = e.target.value || undefined
+              if (!partnerId) { onChange({ ...draft, partnerId: undefined }); return }
+              const partner = partnerService.get(partnerId)
+              onChange({
+                ...draft,
+                partnerId,
+                ctaLabel: draft.ctaLabel || (partner ? `Visit ${partner.name}` : draft.ctaLabel),
+                ctaUrl: partner?.affiliateUrl || partner?.website || draft.ctaUrl,
+              })
+            }}
+            className={SELECT}>
+            <option value="">None — custom link</option>
+            {activePartners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          {activePartners.length === 0 && (
+            <p className="text-[10px] text-[#9CA3AF] mt-1">No active partners yet — add one in the Partnership Program tab.</p>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Link Label</label>
+            <input type="text" value={draft.ctaLabel ?? ''}
+              onChange={e => field('ctaLabel', e.target.value || undefined)}
+              className={INPUT} placeholder="e.g. Visit Partner Co" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Link URL</label>
+            <input type="url" value={draft.ctaUrl ?? ''}
+              onChange={e => field('ctaUrl', e.target.value || undefined)}
+              className={INPUT} placeholder="https://..." />
+          </div>
         </div>
       </div>
 

@@ -61,6 +61,16 @@ export interface ImportedContent {
   // Diary generation metadata
   diaryGeneratedAt?: string
   diaryGenerationMode?: 'transcript' | 'metadata' | 'manual'
+
+  // Affiliate / partner link — connects this piece to the Partnership
+  // Program. When partnerId is set, ctaUrl is expected to be that partner's
+  // affiliateUrl (kept as its own field so a founder can still hand-edit the
+  // URL without losing the partner attribution). Carried onto the published
+  // Story's ctaLabel/ctaUrl/partnerId by buildStoryFromImport / synced back
+  // by syncImportEditsToStory.
+  partnerId?: string
+  ctaLabel?: string
+  ctaUrl?: string
 }
 
 export interface ImportedContentFilter {

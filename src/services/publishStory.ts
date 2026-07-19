@@ -6,6 +6,7 @@ import { villageContentIntelligenceService, storyToInput } from './villageIntell
 import { syncIdeasFromStory, refreshAuthorityScores } from './ideaSync'
 import { syncRelationshipsFromStory } from './relationshipSync'
 import { scanStoryForPartnerFlags } from './partnerFlagDetection'
+import { runMatching } from './opportunityMatching'
 import {
   formatCheCuloFirstStory, formatCheCuloFirstIdea,
   formatCheCuloFirstAuthority, formatCheCuloKnowledgeGraphMilestone,
@@ -105,6 +106,11 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
   const { founderDelta } = await refreshAuthorityScores(story)
   await syncRelationshipsFromStory(story, merged)
   void scanStoryForPartnerFlags(story)
+  // Feeds the just-published content into partner/opportunity matching
+  // automatically — a founder shouldn't have to remember to go click "Find
+  // opportunities" separately every time they publish. Fire-and-forget: a
+  // slow/failed match pass should never hold up or fail the publish itself.
+  if (story.founderId) void runMatching(story.founderId)
   const totalRelationships = merged.relatedFounderIds.length + merged.relatedBusinessIds.length + merged.relatedContentIds.length
 
   const milestone =
@@ -185,8 +191,9 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     ideaIds: [],
     relatedStoryIds: [],
     importedContentId: item.id,
-    ctaLabel: 'View original',
-    ctaUrl: item.originalUrl,
+    partnerId: item.partnerId,
+    ctaLabel: item.ctaLabel || 'View original',
+    ctaUrl: item.ctaUrl || item.originalUrl,
     status: 'published',
     featured: false,
     publishingSource: item.sourcePlatform === 'canva' ? 'canva-api' : 'website-import',
@@ -238,6 +245,9 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
     summary: item.autoSummary || item.description || story.summary,
     coverImage: item.thumbnailUrl || story.coverImage,
     blog: fullDescription || story.blog,
+    partnerId: item.partnerId ?? story.partnerId,
+    ctaLabel: item.ctaLabel || story.ctaLabel,
+    ctaUrl: item.ctaUrl || story.ctaUrl,
     updatedAt: new Date().toISOString().split('T')[0]!,
   })
 }
