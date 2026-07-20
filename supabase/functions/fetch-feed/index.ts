@@ -36,6 +36,30 @@ function textBetween(block: string, tag: string): string | undefined {
     .trim()
 }
 
+// Same idea as textBetween, but for description/summary/content fields
+// specifically — those hold real HTML article bodies, and stripping tags
+// with no regard for paragraph boundaries collapses a multi-paragraph blog
+// post into one unreadable run-on line. Block-level closing tags become
+// line breaks first, so BlogContent's per-line paragraph rendering
+// downstream actually has something to split on.
+function htmlBlockToText(block: string, tag: string): string | undefined {
+  const match = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'))
+  if (!match) return undefined
+  return match[1]
+    .replace(/^<!\[CDATA\[([\s\S]*?)\]\]>$/, '$1')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"').replace(/&#0?39;/gi, '\'')
+    .split('\n')
+    .map(line => line.replace(/[ \t]+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+}
+
 function attrOf(block: string, tag: string, attr: string): string | undefined {
   const match = block.match(new RegExp(`<${tag}[^>]*\\b${attr}=["']([^"']+)["'][^>]*\\/?>`, 'i'))
   return match?.[1]
@@ -57,7 +81,7 @@ function parseFeed(xml: string): FeedItem[] {
   return blocks.map(block => {
     const title = textBetween(block, 'title') ?? 'Untitled'
     const link = linkOf(block) ?? ''
-    const description = textBetween(block, 'description') ?? textBetween(block, 'summary') ?? textBetween(block, 'content')
+    const description = htmlBlockToText(block, 'description') ?? htmlBlockToText(block, 'summary') ?? htmlBlockToText(block, 'content')
     const publishedAt = textBetween(block, 'pubDate') ?? textBetween(block, 'published') ?? textBetween(block, 'updated')
     const enclosureUrl = attrOf(block, 'enclosure', 'url')
     const imageUrl = attrOf(block, 'media:thumbnail', 'url') ?? attrOf(block, 'itunes:image', 'href')

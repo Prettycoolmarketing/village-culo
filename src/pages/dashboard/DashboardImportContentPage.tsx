@@ -430,7 +430,7 @@ function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founder
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-4">
-      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Connect your podcast</p>
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Connect your podcast channel</p>
       <p className="text-xs text-[#9CA3AF] mb-3">
         Paste your Spotify, Apple Podcasts, website or RSS URL — or just the podcast name — and Village will find the show and its episode catalogue.
       </p>
@@ -567,15 +567,21 @@ function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founder
           </button>
         </div>
       )}
+
+      <div className="border-t border-[#E8E4DD] mt-5 pt-4">
+        <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
+      </div>
     </div>
   )
 }
 
 // ─── Add a single episode (no RSS) ───────────────────────────────────────────
-// The RSS-free complement to "Connect your podcast" — one Spotify or Apple
-// Podcasts episode link, a real embedded player, and the founder writes
-// their own blog. No catalogue, no feed, just like a single YouTube video
-// or website article import.
+// The RSS-free complement to "Connect your podcast channel" above — one
+// Spotify or Apple Podcasts episode link, a real embedded player, and the
+// founder writes their own blog. No catalogue, no feed, just like a single
+// YouTube video or website article import. Nested inside the same card
+// rather than its own box, since it's the same "podcast" job, just a
+// lighter-weight path.
 
 type EpisodePanelStep = 'input' | 'resolving' | 'review'
 
@@ -629,8 +635,8 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-4">
-      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Add a podcast episode</p>
+    <div>
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Or add a single episode</p>
       <p className="text-xs text-[#9CA3AF] mb-3">
         Paste a link to one Spotify or Apple Podcasts episode — no feed needed. Village embeds the player and you write the blog.
       </p>
@@ -685,10 +691,59 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
   )
 }
 
-// ─── Connect a source ───────────────────────────────────────────────────────────
+// ─── Connect your YouTube channel ────────────────────────────────────────────
 
-function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
-  const [type, setType]   = useState<ConnectedSourceType>('youtube')
+function YouTubeConnectForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
+  const [value, setValue] = useState('')
+  const [busy, setBusy]   = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleConnect() {
+    if (!value.trim()) return
+    setBusy(true)
+    setError(null)
+    try {
+      const config = { channelId: await resolveChannelId(value) }
+      const source = newConnectedSource(founderId, 'youtube', value.trim(), config)
+      if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
+      await connectedSourcesService.upsert(source)
+      await scanSource(source)
+      setValue('')
+      onConnected()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not connect this channel.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-4">
+      <p className="text-sm font-semibold text-[#2D2A26] mb-3">Connect your YouTube channel</p>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          placeholder={SOURCE_TYPE_HINTS.youtube}
+          className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+        />
+        <button
+          onClick={() => void handleConnect()}
+          disabled={busy || !value.trim()}
+          className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+        >
+          {busy ? 'Connecting…' : 'Connect'}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+    </div>
+  )
+}
+
+// ─── Connect your website ────────────────────────────────────────────────────
+
+function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
   const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -710,20 +765,9 @@ function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId
     setError(null)
     setCandidates([])
     try {
-      if (type === 'youtube') {
-        const config = { channelId: await resolveChannelId(value) }
-        const source = newConnectedSource(founderId, type, value.trim(), config)
-        if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
-        await connectedSourcesService.upsert(source)
-        await scanSource(source)
-        setValue('')
-        onConnected()
-        return
-      }
-
-      // website-rss: try auto-discovery first (paste the site itself, not
-      // necessarily the exact feed URL) — falls back cleanly to treating the
-      // input as a direct feed URL when it already is one.
+      // Try auto-discovery first (paste the site itself, not necessarily the
+      // exact feed URL) — falls back cleanly to treating the input as a
+      // direct feed URL when it already is one.
       const result = await resolveWebsiteFeed(value.trim())
       if (result.status === 'candidates') {
         if (result.candidates.length === 1) {
@@ -735,7 +779,7 @@ function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId
         setError(result.message)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not connect this source.')
+      setError(err instanceof Error ? err.message : 'Could not connect this website.')
     } finally {
       setBusy(false)
     }
@@ -743,25 +787,14 @@ function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
-      <p className="text-sm font-semibold text-[#2D2A26] mb-3">Connect a source</p>
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Connect your website</p>
+      <p className="text-xs text-[#9CA3AF] mb-3">Paste your blog or website URL — Village finds the feed automatically.</p>
       <div className="flex flex-col sm:flex-row gap-2">
-        <select
-          value={type}
-          onChange={e => { setType(e.target.value as ConnectedSourceType); setError(null); setCandidates([]) }}
-          className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
-        >
-          {/* Podcast is deliberately not offered here — "Connect your podcast" above
-              guides resolution (and covers manual RSS entry as its own fallback
-              step) instead of requiring a raw feed URL paste as the first move. */}
-          {(Object.keys(SOURCE_TYPE_LABELS) as ConnectedSourceType[]).filter(t => t !== 'podcast-rss').map(t => (
-            <option key={t} value={t}>{SOURCE_TYPE_LABELS[t]}</option>
-          ))}
-        </select>
         <input
           type="text"
           value={value}
           onChange={e => setValue(e.target.value)}
-          placeholder={type === 'website-rss' ? 'Paste your website URL — Village finds the feed automatically' : SOURCE_TYPE_HINTS[type]}
+          placeholder="Paste your website URL"
           className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <button
@@ -1831,9 +1864,9 @@ export function DashboardImportContentPage() {
 
           <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
-          <EpisodeEmbedPanel founderId={founderId} onImported={loadItems} />
+          <YouTubeConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
-          <ConnectSourceForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
+          <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
           {sources.length > 0 && (
             <div className="flex flex-col gap-2 mt-3">

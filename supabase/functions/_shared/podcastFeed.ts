@@ -75,6 +75,27 @@ function textBetween(block: string, tag: string): string | undefined {
   )
 }
 
+// Same idea as textBetween, but for description/summary/show-notes fields —
+// those hold real HTML article bodies (especially content:encoded show
+// notes), and stripping tags with no regard for paragraph boundaries
+// collapses a multi-paragraph write-up into one unreadable run-on line.
+function htmlBlockToText(block: string, tag: string): string | undefined {
+  const match = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'))
+  if (!match) return undefined
+  const withBreaks = match[1]
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|blockquote)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\]\]>/g, '')
+  return decodeEntities(withBreaks)
+    .split('\n')
+    .map(line => line.replace(/[ \t]+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+}
+
 function attrOf(block: string, tag: string, attr: string): string | undefined {
   const match = block.match(new RegExp(`<${tag}[^>]*\\b${attr}=["']([^"']+)["'][^>]*\\/?>`, 'i'))
   return match?.[1]
@@ -130,7 +151,7 @@ export function parsePodcastFeed(xml: string): { show: PodcastShow; episodes: Po
 
   const show: PodcastShow = {
     title: textBetween(channelBlock, 'title') ?? 'Untitled podcast',
-    description: textBetween(channelBlock, 'description') ?? textBetween(channelBlock, 'itunes:summary'),
+    description: htmlBlockToText(channelBlock, 'description') ?? htmlBlockToText(channelBlock, 'itunes:summary'),
     artworkUrl: attrOf(channelBlock, 'itunes:image', 'href') ?? textBetween(channelBlock, 'url'),
     author: textBetween(channelBlock, 'itunes:author') ?? textBetween(channelBlock, 'managingEditor'),
     website: linkOf(channelBlock),
@@ -148,8 +169,8 @@ export function parsePodcastFeed(xml: string): { show: PodcastShow; episodes: Po
     return {
       originalUrl: linkOf(block) ?? enclosureUrl ?? '',
       title: textBetween(block, 'title') ?? 'Untitled episode',
-      description: textBetween(block, 'description') ?? textBetween(block, 'itunes:summary'),
-      showNotes: textBetween(block, 'content:encoded'),
+      description: htmlBlockToText(block, 'description') ?? htmlBlockToText(block, 'itunes:summary'),
+      showNotes: htmlBlockToText(block, 'content:encoded'),
       publishedAt: textBetween(block, 'pubDate'),
       thumbnailUrl: attrOf(block, 'itunes:image', 'href'),
       episodeGuid: textBetween(block, 'guid'),
