@@ -1511,8 +1511,18 @@ export function DashboardPublishPage() {
       importedContentId,
       title: prev.title || item.title,
       summary: prev.summary || item.autoSummary || item.description || '',
-      blog: prev.blog || item.diaryNote || item.transcriptText || '',
+      // description is the actual Blog field a founder edits — it must be
+      // checked first, same fix as buildStoryFromImport/syncImportEditsToStory
+      // (previously diaryNote/transcriptText could silently outrank it, and
+      // since Canva imports stopped setting diaryNote, this left Blog empty
+      // for Canva imports specifically).
+      blog: prev.blog || item.description || item.diaryNote || item.transcriptText || '',
       coverImage: prev.coverImage || item.thumbnailUrl || '',
+      // Canva slide images — lets the Carousel format actually have images
+      // instead of showing up empty when arriving from a Canva import.
+      carouselSlides: prev.carouselSlides.filter(Boolean).length > 0
+        ? prev.carouselSlides
+        : (item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : prev.carouselSlides),
       topics: prev.topics.length > 0 ? prev.topics : matchedTopics,
       locationId: prev.locationId || matchedLocation?.id || prev.locationId,
     }))

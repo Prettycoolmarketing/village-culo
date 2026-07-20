@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
@@ -104,6 +104,7 @@ const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
 type CanvaPanelStep = 'connect' | 'pick' | 'importing' | 'review'
 
 function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImported: () => void }) {
+  const navigate = useNavigate()
   const [step, setStep] = useState<CanvaPanelStep>('connect')
   const [checkedConnection, setCheckedConnection] = useState(false)
   const [designs, setDesigns] = useState<CanvaDesignSummary[]>([])
@@ -172,9 +173,11 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
     }
     const saveResult = await importedContentService.upsert(item)
     if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
-    setStep('pick')
-    setResult(null)
     onImported()
+    // Into the Publish wizard to choose formats (reel/blog/carousel) rather
+    // than quick-saving straight to a private draft — a Canva design is
+    // usually meant to become more than one thing at once.
+    navigate('/dashboard/publish', { state: { importedContentId: item.id } })
   }
 
   if (!isCanvaConfigured()) return null
@@ -273,7 +276,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
               onClick={() => void handleSaveAsImport()}
               className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
             >
-              Save to Import Content
+              Continue to Publish
             </button>
             <button onClick={() => { setStep('pick'); setResult(null) }} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
               Cancel
