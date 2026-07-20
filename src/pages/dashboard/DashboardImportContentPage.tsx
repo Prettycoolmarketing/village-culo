@@ -1862,9 +1862,9 @@ export function DashboardImportContentPage() {
 
           <CanvaImportPanel founderId={founderId} onImported={loadItems} />
 
-          <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
-
           <YouTubeConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
+
+          <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
           <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
