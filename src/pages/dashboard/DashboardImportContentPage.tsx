@@ -24,6 +24,7 @@ import { connectedSourcesService, newConnectedSource, scanSource, importSelected
 import { resolveChannelId } from '../../services/connectors/youtube'
 import { fetchPodcastFeed, type PodcastFeedShow, type PodcastFeedEpisode } from '../../services/connectors/podcastRss'
 import { resolvePodcast, type PodcastCandidate } from '../../services/podcastResolve'
+import { resolveEpisode, type ResolvedEpisode } from '../../services/episodeResolve'
 import {
   isCanvaConfigured,
   getCanvaStatus,
@@ -56,7 +57,10 @@ const HIGH_VOLUME_DAILY_LIMIT = 2000
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok'])
+// 'podcast' embeds only when embedUrl is actually set — true for a
+// single-episode import (Spotify/Apple embed player) but not for an
+// RSS-connector-discovered episode, which never has one.
+const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok', 'podcast'])
 
 const STATUS_OPTIONS: { value: ImportedContentStatus; label: string }[] = [
   { value: 'draft',     label: 'Draft'     },
@@ -559,6 +563,120 @@ function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founder
           </p>
           <button onClick={reset} className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0">
             Connect another podcast
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Add a single episode (no RSS) ───────────────────────────────────────────
+// The RSS-free complement to "Connect your podcast" — one Spotify or Apple
+// Podcasts episode link, a real embedded player, and the founder writes
+// their own blog. No catalogue, no feed, just like a single YouTube video
+// or website article import.
+
+type EpisodePanelStep = 'input' | 'resolving' | 'review'
+
+function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImported: () => void }) {
+  const [step, setStep] = useState<EpisodePanelStep>('input')
+  const [url, setUrl] = useState('')
+  const [episode, setEpisode] = useState<ResolvedEpisode | null>(null)
+  const [editableTitle, setEditableTitle] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+
+  async function handleResolve() {
+    if (!url.trim()) return
+    setStep('resolving')
+    setError(null)
+    try {
+      const result = await resolveEpisode(url.trim())
+      setEpisode(result)
+      setEditableTitle(result.title)
+      setStep('review')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not resolve this episode.')
+      setStep('input')
+    }
+  }
+
+  async function handleSave() {
+    if (!episode) return
+    const item: ImportedContent = {
+      id: crypto.randomUUID(),
+      founderId,
+      sourcePlatform: 'podcast',
+      originalUrl: url.trim(),
+      embedUrl: episode.embedUrl,
+      thumbnailUrl: episode.thumbnailUrl,
+      title: editableTitle || episode.title,
+      importedAt: new Date().toISOString(),
+      status: 'draft',
+      topics: [],
+      locations: [],
+      visibility: 'private',
+    }
+    const result = await importedContentService.upsert(item)
+    if (!result.success) { setError(result.error ?? 'Could not save. Please try again.'); return }
+    setSaved(true)
+    onImported()
+  }
+
+  function reset() {
+    setStep('input'); setUrl(''); setEpisode(null); setEditableTitle(''); setError(null); setSaved(false)
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-4">
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Add a podcast episode</p>
+      <p className="text-xs text-[#9CA3AF] mb-3">
+        Paste a link to one Spotify or Apple Podcasts episode — no feed needed. Village embeds the player and you write the blog.
+      </p>
+
+      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+
+      {step === 'input' && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input type="url" value={url} onChange={e => setUrl(e.target.value)}
+            placeholder="https://open.spotify.com/episode/... or https://podcasts.apple.com/.../id...?i=..."
+            className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
+          <button onClick={() => void handleResolve()} disabled={!url.trim()}
+            className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
+            Add episode
+          </button>
+        </div>
+      )}
+
+      {step === 'resolving' && <p className="text-xs text-[#9CA3AF]">Looking up that episode…</p>}
+
+      {step === 'review' && episode && !saved && (
+        <div>
+          <div className="relative w-full max-w-sm rounded-lg overflow-hidden bg-black mb-3" style={{ paddingTop: episode.platform === 'spotify' ? '40%' : '56.25%' }}>
+            <iframe src={episode.embedUrl} title={editableTitle}
+              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
+              className="absolute inset-0 w-full h-full" />
+          </div>
+          <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Title</label>
+          <input type="text" value={editableTitle} onChange={e => setEditableTitle(e.target.value)}
+            className="w-full mb-3 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]" />
+          <div className="flex items-center gap-3">
+            <button onClick={() => void handleSave()}
+              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+              Save to Import Content
+            </button>
+            <button onClick={reset} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {saved && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-[#5E6B4A] font-medium">Added to Imported Content — private until you review and publish.</p>
+          <button onClick={reset} className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0">
+            Add another episode
           </button>
         </div>
       )}
@@ -1668,6 +1786,8 @@ export function DashboardImportContentPage() {
           <CanvaImportPanel founderId={founderId} onImported={loadItems} />
 
           <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
+
+          <EpisodeEmbedPanel founderId={founderId} onImported={loadItems} />
 
           <ConnectSourceForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
