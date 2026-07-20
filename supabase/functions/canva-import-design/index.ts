@@ -42,7 +42,9 @@ async function createExportJob(accessToken: string, designId: string, format: Re
 }
 
 async function waitForExportJob(accessToken: string, jobId: string): Promise<string[]> {
-  for (let attempt = 0; attempt < 30; attempt++) {
+  // Both export jobs now run in parallel (see caller), so this ceiling is
+  // the actual worst-case wait, not additive — safe to raise a bit.
+  for (let attempt = 0; attempt < 45; attempt++) {
     const res = await fetch(`https://api.canva.com/rest/v1/exports/${jobId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
@@ -172,10 +174,22 @@ serve(async (req) => {
     if (!designRes.ok) throw new Error(designBody.message ?? 'Could not load that Canva design.')
     const title: string = designBody.design?.title || 'Untitled design'
 
-    // Slide text, via PPTX export — skipped (not fatal) if the export is too
-    // large to safely buffer in this function's memory.
-    const pptxJobId = await createExportJob(accessToken, designId, { type: 'pptx' })
-    const pptxUrls = await waitForExportJob(accessToken, pptxJobId)
+    // Slide text (PPTX) and slide images (JPG) are two independent Canva
+    // export jobs — kicking both off up front and waiting on them together
+    // roughly halves total wait versus doing one after the other, which is
+    // what was causing "export took too long" on anything but the smallest
+    // designs (each job already gets up to 90s on its own).
+    const [pptxJobId, imageJobId] = await Promise.all([
+      createExportJob(accessToken, designId, { type: 'pptx' }),
+      createExportJob(accessToken, designId, { type: 'jpg' }),
+    ])
+    const [pptxUrls, allImageUrls] = await Promise.all([
+      waitForExportJob(accessToken, pptxJobId),
+      waitForExportJob(accessToken, imageJobId),
+    ])
+
+    // Slide text — skipped (not fatal) if the export is too large to safely
+    // buffer in this function's memory.
     let slideTexts: string[] = []
     let textExtractionSkipped = false
     if (pptxUrls[0]) {
@@ -187,11 +201,9 @@ serve(async (req) => {
       }
     }
 
-    // Slide images, via JPG export — one URL per page, in page order. Capped
-    // to MAX_SLIDES pages and MAX_IMAGE_BYTES per image so one huge design
-    // can't exhaust memory across the loop.
-    const imageJobId = await createExportJob(accessToken, designId, { type: 'jpg' })
-    const allImageUrls = await waitForExportJob(accessToken, imageJobId)
+    // Slide images, one URL per page, in page order. Capped to MAX_SLIDES
+    // pages and MAX_IMAGE_BYTES per image so one huge design can't exhaust
+    // memory across the loop.
     const imageUrls = allImageUrls.slice(0, MAX_SLIDES)
     const slidesTruncated = allImageUrls.length > imageUrls.length
 
