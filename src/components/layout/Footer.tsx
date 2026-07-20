@@ -46,7 +46,7 @@ export function Footer() {
               Publish to the Village.<br />
               Be discovered for what you know.
             </p>
-            <Link to="/" aria-label="CULO Village — Home" className="inline-block mt-5">
+            <Link to="/" aria-label="CULO Village — Home" className="inline-block mt-5 -ml-3 sm:-ml-4">
               <img src="/culo_logo.png" alt="CULO Village" className="w-40 h-40 sm:w-56 sm:h-56 opacity-80 hover:opacity-100 transition-opacity" />
             </Link>
           </div>
