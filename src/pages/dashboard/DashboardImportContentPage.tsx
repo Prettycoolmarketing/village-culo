@@ -25,6 +25,7 @@ import { resolveChannelId } from '../../services/connectors/youtube'
 import { fetchPodcastFeed, type PodcastFeedShow, type PodcastFeedEpisode } from '../../services/connectors/podcastRss'
 import { resolvePodcast, type PodcastCandidate } from '../../services/podcastResolve'
 import { resolveEpisode, type ResolvedEpisode } from '../../services/episodeResolve'
+import { resolveWebsiteFeed, type WebsiteFeedCandidate } from '../../services/websiteResolve'
 import {
   isCanvaConfigured,
   getCanvaStatus,
@@ -691,22 +692,48 @@ function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId
   const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [candidates, setCandidates] = useState<WebsiteFeedCandidate[]>([])
+
+  async function connectWithFeedUrl(feedUrl: string, label: string) {
+    const source = newConnectedSource(founderId, 'website-rss', label, { feedUrl })
+    if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
+    await connectedSourcesService.upsert(source)
+    await scanSource(source)
+    setValue('')
+    setCandidates([])
+    onConnected()
+  }
 
   async function handleConnect() {
     if (!value.trim()) return
     setBusy(true)
     setError(null)
+    setCandidates([])
     try {
-      const config = type === 'youtube'
-        ? { channelId: await resolveChannelId(value) }
-        : { feedUrl: value.trim() }
-      const label = type === 'youtube' ? value.trim() : new URL(value.trim()).hostname
-      const source = newConnectedSource(founderId, type, label, config)
-      if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
-      await connectedSourcesService.upsert(source)
-      await scanSource(source)
-      setValue('')
-      onConnected()
+      if (type === 'youtube') {
+        const config = { channelId: await resolveChannelId(value) }
+        const source = newConnectedSource(founderId, type, value.trim(), config)
+        if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
+        await connectedSourcesService.upsert(source)
+        await scanSource(source)
+        setValue('')
+        onConnected()
+        return
+      }
+
+      // website-rss: try auto-discovery first (paste the site itself, not
+      // necessarily the exact feed URL) — falls back cleanly to treating the
+      // input as a direct feed URL when it already is one.
+      const result = await resolveWebsiteFeed(value.trim())
+      if (result.status === 'candidates') {
+        if (result.candidates.length === 1) {
+          await connectWithFeedUrl(result.candidates[0]!.feedUrl, result.candidates[0]!.title)
+        } else {
+          setCandidates(result.candidates)
+        }
+      } else {
+        setError(result.message)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not connect this source.')
     } finally {
@@ -720,7 +747,7 @@ function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId
       <div className="flex flex-col sm:flex-row gap-2">
         <select
           value={type}
-          onChange={e => { setType(e.target.value as ConnectedSourceType); setError(null) }}
+          onChange={e => { setType(e.target.value as ConnectedSourceType); setError(null); setCandidates([]) }}
           className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         >
           {/* Podcast is deliberately not offered here — "Connect your podcast" above
@@ -734,7 +761,7 @@ function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId
           type="text"
           value={value}
           onChange={e => setValue(e.target.value)}
-          placeholder={SOURCE_TYPE_HINTS[type]}
+          placeholder={type === 'website-rss' ? 'Paste your website URL — Village finds the feed automatically' : SOURCE_TYPE_HINTS[type]}
           className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <button
@@ -746,6 +773,23 @@ function ConnectSourceForm({ founderId, isHighVolume, onConnected }: { founderId
         </button>
       </div>
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+      {candidates.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          <p className="text-xs text-[#9CA3AF]">Found {candidates.length} feeds on that site — which one?</p>
+          {candidates.map(c => (
+            <div key={c.feedUrl} className="flex items-center gap-2 border border-[#E8E4DD] rounded-lg px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-[#2D2A26] truncate">{c.title}</p>
+                <p className="text-[10px] text-[#9CA3AF] truncate">{c.feedUrl} · {c.itemCount} items</p>
+              </div>
+              <button onClick={() => void connectWithFeedUrl(c.feedUrl, c.title)}
+                className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shrink-0">
+                Use this
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
