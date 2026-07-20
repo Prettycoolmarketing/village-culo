@@ -181,7 +181,9 @@ serve(async (req) => {
     // designs (each job already gets up to 90s on its own).
     const [pptxJobId, imageJobId] = await Promise.all([
       createExportJob(accessToken, designId, { type: 'pptx' }),
-      createExportJob(accessToken, designId, { type: 'jpg' }),
+      // Canva's export API now requires 'quality' explicitly for jpg — it's
+      // not optional/nullable despite being undocumented as required.
+      createExportJob(accessToken, designId, { type: 'jpg', quality: 100 }),
     ])
     const [pptxUrls, allImageUrls] = await Promise.all([
       waitForExportJob(accessToken, pptxJobId),
