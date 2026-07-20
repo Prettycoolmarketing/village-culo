@@ -1,3 +1,5 @@
+import type { ContentType } from './index'
+
 export type ImportedContentPlatform =
   | 'youtube'
   | 'vimeo'
@@ -86,6 +88,13 @@ export interface ImportedContent {
   showNotes?: string
   chapters?: { title: string; startSeconds: number }[]
   podcastTitle?: string
+
+  // Overrides the platform's default content-type mapping (see
+  // PLATFORM_CONTENT_TYPE in services/publishStory.ts) when set. Used by the
+  // Canva slide-grouping flow, where one Canva design produces several
+  // separate ImportedContent items (a Reel+blog, a Carousel, a standalone
+  // Blog) that each need a different format than the platform-wide default.
+  contentTypeHint?: ContentType[]
 }
 
 export interface ImportedContentFilter {

@@ -43,7 +43,7 @@ import type {
 } from '../../types/importedContent'
 import type { ConnectedSource, ConnectedSourceType, PodcastSourceMeta } from '../../types/connectedSource'
 import type { NormalizedImportItem } from '../../services/connectors/types'
-import type { FAQ } from '../../types'
+import type { FAQ, ContentType } from '../../types'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
 
 // Comma-separated allowlist of emails allowed to pull far more than the
@@ -102,6 +102,18 @@ const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
 // picks a design each time they want to bring one in.
 
 type CanvaPanelStep = 'connect' | 'pick' | 'importing' | 'review'
+type CanvaPieceKind = 'reel' | 'carousel' | 'blog'
+
+interface CanvaPiece {
+  id: string
+  kind: CanvaPieceKind
+  slideIndices: number[]        // every slide in this group, in selection order
+  captionIndex: number | null   // which slide's text is the caption/blog (null only for blog, whose single slide IS the caption source)
+  coverIndex: number            // which slide's image is the cover
+  caption: string               // editable
+  title: string                 // editable
+  savedId?: string               // set once "Create pieces" has saved it
+}
 
 function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImported: () => void }) {
   const navigate = useNavigate()
@@ -109,11 +121,13 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
   const [checkedConnection, setCheckedConnection] = useState(false)
   const [designs, setDesigns] = useState<CanvaDesignSummary[]>([])
   const [result, setResult] = useState<CanvaImportResult | null>(null)
-  const [coverIndex, setCoverIndex] = useState(0)
-  const [editableTitle, setEditableTitle] = useState('')
-  const [editableText, setEditableText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [designId, setDesignId] = useState('')
+
+  const [pieces, setPieces] = useState<CanvaPiece[]>([])
+  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set())
+  const [groupError, setGroupError] = useState<string | null>(null)
+  const [created, setCreated] = useState(false)
 
   useEffect(() => {
     void getCanvaStatus(founderId).then(connected => {
@@ -138,9 +152,9 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
     try {
       const imported = await importCanvaDesign(founderId, id)
       setResult(imported)
-      setEditableTitle(imported.title)
-      setEditableText(imported.combinedText)
-      setCoverIndex(0)
+      setPieces([])
+      setSelectedIndices(new Set())
+      setCreated(false)
       setStep('review')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not import that design.')
@@ -148,36 +162,102 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
     }
   }
 
-  async function handleSaveAsImport() {
-    if (!result) return
-    const now = new Date().toISOString()
-    const item: ImportedContent = {
-      id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      founderId,
-      sourcePlatform: 'canva',
-      originalUrl: `https://www.canva.com/design/${designId}/view`,
-      thumbnailUrl: result.imageUrls[coverIndex] ?? result.imageUrls[0],
-      imageUrls: result.imageUrls,
-      title: editableTitle || result.title,
-      // The full text, not truncated — this is what shows in the Blog field
-      // and what publishes as the story body. Previously stored the full
-      // text separately as diaryNote (truncating description to 400 chars),
-      // which meant editing Blog afterward had no effect since diaryNote
-      // silently outranked description at publish time.
-      description: editableText,
-      importedAt: now,
-      status: 'draft',
-      topics: [],
-      locations: [],
-      visibility: 'private',
+  function toggleSlide(i: number) {
+    setSelectedIndices(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i); else next.add(i)
+      return next
+    })
+  }
+
+  const usedIndices = new Set(pieces.flatMap(p => p.slideIndices))
+  const remainingIndices = result ? result.imageUrls.map((_, i) => i).filter(i => !usedIndices.has(i)) : []
+
+  // The slide most likely to be a caption/title rather than a photo — the
+  // longest extracted text among the given slides. Best-effort: if text
+  // extraction was skipped for this design, falls back to the last-selected
+  // slide, and the founder can always re-pick via the piece card afterward.
+  function likelyCaptionIndex(indices: number[]): number {
+    if (!result || result.slideTexts.length === 0) return indices[indices.length - 1]!
+    let best = indices[0]!
+    let bestLen = -1
+    for (const i of indices) {
+      const len = (result.slideTexts[i] ?? '').length
+      if (len > bestLen) { bestLen = len; best = i }
     }
-    const saveResult = await importedContentService.upsert(item)
-    if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
+    return best
+  }
+
+  function makePiece(kind: CanvaPieceKind) {
+    if (!result) return
+    setGroupError(null)
+    const indices = [...selectedIndices].sort((a, b) => a - b)
+    if (kind === 'reel' && indices.length !== 2) { setGroupError('Select exactly 2 slides for a Reel — the video slide and its caption.'); return }
+    if (kind === 'carousel' && (indices.length < 2 || indices.length > 6)) { setGroupError('Select 2–6 slides for a Carousel — the images plus its caption slide.'); return }
+    if (kind === 'blog' && indices.length !== 1) { setGroupError('Select exactly 1 slide for a Blog.'); return }
+
+    const captionIndex = kind === 'blog' ? null : likelyCaptionIndex(indices)
+    const coverIndex = kind === 'blog' ? indices[0]! : indices.find(i => i !== captionIndex) ?? indices[0]!
+    const caption = kind === 'blog'
+      ? (result.slideTexts[indices[0]!] ?? '')
+      : (captionIndex !== null ? result.slideTexts[captionIndex] ?? '' : '')
+    const countOfKind = pieces.filter(p => p.kind === kind).length + 1
+    const title = `${result.title}${countOfKind > 1 || pieces.some(p => p.kind === kind) ? ` — ${kind} ${countOfKind}` : ` — ${kind}`}`
+
+    setPieces(prev => [...prev, {
+      id: `piece-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      kind, slideIndices: indices, captionIndex, coverIndex, caption, title,
+    }])
+    setSelectedIndices(new Set())
+  }
+
+  function removePiece(id: string) {
+    setPieces(prev => prev.filter(p => p.id !== id))
+  }
+
+  function updatePiece(id: string, changes: Partial<CanvaPiece>) {
+    setPieces(prev => prev.map(p => p.id === id ? { ...p, ...changes } : p))
+  }
+
+  async function handleCreatePieces() {
+    if (!result || pieces.length === 0) return
+    const now = new Date().toISOString()
+    for (const piece of pieces) {
+      const contentTypeHint: ContentType[] =
+        piece.kind === 'reel' ? ['reel', 'blog'] : piece.kind === 'carousel' ? ['carousel'] : ['blog']
+      // Carousel/Reel images exclude the caption slide — only the visual
+      // slides belong in the piece itself, the caption is text-only (its
+      // words already live in `caption`, not as a picture).
+      const imageIndices = piece.captionIndex !== null
+        ? piece.slideIndices.filter(i => i !== piece.captionIndex)
+        : piece.slideIndices
+      const item: ImportedContent = {
+        id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        founderId,
+        sourcePlatform: 'canva',
+        originalUrl: `https://www.canva.com/design/${designId}/view`,
+        thumbnailUrl: result.imageUrls[piece.coverIndex],
+        imageUrls: imageIndices.map(i => result.imageUrls[i]!),
+        title: piece.title,
+        description: piece.caption,
+        contentTypeHint,
+        importedAt: now,
+        status: 'draft',
+        topics: [],
+        locations: [],
+        visibility: 'private',
+      }
+      const saveResult = await importedContentService.upsert(item)
+      if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
+      updatePiece(piece.id, { savedId: item.id })
+    }
+    setCreated(true)
     onImported()
-    // Into the Publish wizard to choose formats (reel/blog/carousel) rather
-    // than quick-saving straight to a private draft — a Canva design is
-    // usually meant to become more than one thing at once.
-    navigate('/dashboard/publish', { state: { importedContentId: item.id } })
+  }
+
+  function reset() {
+    setStep('pick'); setResult(null); setPieces([]); setSelectedIndices(new Set())
+    setGroupError(null); setCreated(false)
   }
 
   if (!isCanvaConfigured()) return null
@@ -186,7 +266,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-4">
       <p className="text-sm font-semibold text-[#2D2A26] mb-1">Import from Canva</p>
-      <p className="text-xs text-[#9CA3AF] mb-3">Bring in a Canva project's slides as a carousel or static photo — the words on each slide become your blog/caption copy.</p>
+      <p className="text-xs text-[#9CA3AF] mb-3">Bring in a Canva project's slides — group them into a Reel, Carousel or Blog, one design can become several pieces at once.</p>
 
       {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
 
@@ -242,46 +322,141 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
               </p>
             </div>
           )}
-          <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Title</label>
-          <input
-            type="text" value={editableTitle} onChange={e => setEditableTitle(e.target.value)}
-            className="w-full mb-3 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
-          />
 
-          {result.imageUrls.length > 0 && (
+          {!created && (
             <>
-              <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Slides — click one to use as the cover photo</label>
-              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-3">
-                {result.imageUrls.map((url, i) => (
-                  <button
-                    key={url}
-                    onClick={() => setCoverIndex(i)}
-                    className={`rounded-lg overflow-hidden border-2 transition-colors ${coverIndex === i ? 'border-[#C86A43]' : 'border-transparent'}`}
-                  >
-                    <img src={url} alt="" className="w-full aspect-square object-cover bg-[#F3EDE6]" />
-                  </button>
-                ))}
+              <p className="text-xs text-[#9CA3AF] mb-2 leading-relaxed">
+                Select the slides that belong together, then group them into a Reel, Carousel or Blog. Repeat until every slide you want to use is grouped — a design can produce several pieces.
+              </p>
+
+              {remainingIndices.length > 0 ? (
+                <>
+                  <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Ungrouped slides — click to select</label>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-2">
+                    {remainingIndices.map(i => {
+                      const isSelected = selectedIndices.has(i)
+                      return (
+                        <button key={i} type="button" onClick={() => toggleSlide(i)}
+                          className={`rounded-lg overflow-hidden border-2 transition-colors relative ${isSelected ? 'border-[#C86A43]' : 'border-transparent hover:border-[#E8E4DD]'}`}>
+                          <img src={result.imageUrls[i]} alt="" className="w-full aspect-square object-cover bg-[#F3EDE6]" />
+                          {isSelected && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C86A43] text-white text-[9px] flex items-center justify-center">✓</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {groupError && <p className="text-xs text-red-600 mb-2">{groupError}</p>}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <button type="button" onClick={() => makePiece('reel')} disabled={selectedIndices.size === 0}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
+                      Make into Reel + Caption (2 slides)
+                    </button>
+                    <button type="button" onClick={() => makePiece('carousel')} disabled={selectedIndices.size === 0}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
+                      Make into Carousel + Caption (2–6 slides)
+                    </button>
+                    <button type="button" onClick={() => makePiece('blog')} disabled={selectedIndices.size === 0}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
+                      Make into Blog (1 slide)
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-[#5E6B4A] font-medium mb-4">Every slide is grouped.</p>
+              )}
+
+              {pieces.length > 0 && (
+                <div className="space-y-3 mb-4">
+                  {pieces.map(piece => (
+                    <div key={piece.id} className="border border-[#E8E4DD] rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">
+                          {piece.kind}
+                        </span>
+                        <button type="button" onClick={() => removePiece(piece.id)} className="text-[10px] text-[#9CA3AF] hover:text-red-500">
+                          Ungroup
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {piece.slideIndices.map(i => (
+                          <div key={i} className="flex flex-col items-center gap-1">
+                            <div className={`rounded-lg overflow-hidden border-2 ${piece.coverIndex === i ? 'border-[#C86A43]' : piece.captionIndex === i ? 'border-[#5E6B4A]' : 'border-transparent'}`}>
+                              <img src={result.imageUrls[i]} alt="" className="w-16 h-16 object-cover bg-[#F3EDE6]" />
+                            </div>
+                            <div className="flex gap-1">
+                              {i !== piece.captionIndex && (
+                                <button type="button" onClick={() => updatePiece(piece.id, { coverIndex: i })}
+                                  className={`text-[8px] px-1.5 py-0.5 rounded ${piece.coverIndex === i ? 'bg-[#C86A43] text-white' : 'bg-[#F3EDE6] text-[#9CA3AF]'}`}>
+                                  cover
+                                </button>
+                              )}
+                              {piece.kind !== 'blog' && (
+                                <button type="button"
+                                  onClick={() => updatePiece(piece.id, {
+                                    captionIndex: i,
+                                    caption: result.slideTexts[i] ?? piece.caption,
+                                    coverIndex: piece.coverIndex === i ? (piece.slideIndices.find(s => s !== i) ?? i) : piece.coverIndex,
+                                  })}
+                                  className={`text-[8px] px-1.5 py-0.5 rounded ${piece.captionIndex === i ? 'bg-[#5E6B4A] text-white' : 'bg-[#F3EDE6] text-[#9CA3AF]'}`}>
+                                  caption
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <input type="text" value={piece.title} onChange={e => updatePiece(piece.id, { title: e.target.value })}
+                        placeholder="Title"
+                        className="w-full mb-1.5 px-2 py-1.5 text-xs border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
+                      <textarea value={piece.caption} onChange={e => updatePiece(piece.id, { caption: e.target.value })} rows={2}
+                        placeholder={piece.kind === 'blog' ? 'Blog text' : 'Caption — becomes the blog text'}
+                        className="w-full px-2 py-1.5 text-xs border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => void handleCreatePieces()} disabled={pieces.length === 0}
+                  className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
+                  Create {pieces.length > 0 ? pieces.length : ''} piece{pieces.length === 1 ? '' : 's'}
+                </button>
+                <button type="button" onClick={reset} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
+                  Cancel
+                </button>
               </div>
             </>
           )}
 
-          <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Words from your slides — becomes your caption/blog copy</label>
-          <textarea
-            value={editableText} onChange={e => setEditableText(e.target.value)} rows={5}
-            className="w-full mb-3 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
-          />
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => void handleSaveAsImport()}
-              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
-            >
-              Continue to Publish
-            </button>
-            <button onClick={() => { setStep('pick'); setResult(null) }} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
-              Cancel
-            </button>
-          </div>
+          {created && (
+            <div>
+              <p className="text-xs text-[#5E6B4A] font-medium mb-3">
+                {pieces.length} piece{pieces.length === 1 ? '' : 's'} saved to Imported Content — private until you review and publish each one.
+              </p>
+              <div className="space-y-2 mb-3">
+                {pieces.map(piece => (
+                  <div key={piece.id} className="flex items-center gap-3 border border-[#E8E4DD] rounded-lg px-3 py-2">
+                    <img src={result.imageUrls[piece.coverIndex]} alt="" className="w-10 h-10 rounded object-cover bg-[#F3EDE6] shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-[#2D2A26] truncate">{piece.title}</p>
+                      <p className="text-[10px] text-[#9CA3AF] uppercase">{piece.kind}</p>
+                    </div>
+                    {piece.savedId && (
+                      <button type="button"
+                        onClick={() => navigate('/dashboard/publish', { state: { importedContentId: piece.savedId } })}
+                        className="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shrink-0">
+                        Publish →
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={reset} className="text-xs font-semibold text-[#C86A43] hover:underline">
+                Import another design
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

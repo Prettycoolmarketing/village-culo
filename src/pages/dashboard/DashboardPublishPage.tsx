@@ -1523,6 +1523,12 @@ export function DashboardPublishPage() {
       carouselSlides: prev.carouselSlides.filter(Boolean).length > 0
         ? prev.carouselSlides
         : (item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : prev.carouselSlides),
+      // Set by the Canva slide-grouping flow (a Reel+blog group, a Carousel
+      // group, a standalone Blog group) so the wizard opens with the right
+      // formats already checked instead of the founder re-selecting them.
+      contentTypes: prev.contentTypes.length > 0
+        ? prev.contentTypes
+        : (item.contentTypeHint && item.contentTypeHint.length > 0 ? item.contentTypeHint : prev.contentTypes),
       topics: prev.topics.length > 0 ? prev.topics : matchedTopics,
       locationId: prev.locationId || matchedLocation?.id || prev.locationId,
     }))

@@ -166,7 +166,14 @@ function uniqueSlug(base: string): string {
 
 /** Builds a complete, publishable Story directly from an already-reviewed ImportedContent item — no wizard. */
 export function buildStoryFromImport(item: ImportedContent, founder: Founder): Story {
-  const contentType = PLATFORM_CONTENT_TYPE[item.sourcePlatform]
+  // contentTypeHint overrides the platform default when set — used by the
+  // Canva slide-grouping flow, where one Canva design produces several
+  // separate items (a Reel+blog, a Carousel, a standalone Blog) that each
+  // need a different, possibly multi-format, contentTypes array.
+  const contentTypes = item.contentTypeHint && item.contentTypeHint.length > 0
+    ? item.contentTypeHint
+    : [PLATFORM_CONTENT_TYPE[item.sourcePlatform]]
+  const contentType = contentTypes[0]!
   const matchedTopics = allTopics.filter(t => item.topics.some(it => it.toLowerCase() === t.name.toLowerCase()))
   const matchedLocation = locations.find(l => item.locations.some(il => il.toLowerCase() === l.name.toLowerCase()))
     ?? founder.location ?? locations[0]!
@@ -187,7 +194,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     location: matchedLocation,
     industry,
     topics: matchedTopics,
-    contentTypes: [contentType],
+    contentTypes,
     ideaIds: [],
     relatedStoryIds: [],
     importedContentId: item.id,
@@ -213,14 +220,18 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     || (contentType === 'blog' ? item.autoSummary : undefined) || ''
   if (fullDescription) story.blog = fullDescription
 
-  if (contentType === 'podcast') {
+  // Independent checks (not else-if) — a multi-format item like a Canva
+  // Reel+blog group needs both story.reelUrl AND story.blog set together.
+  if (contentTypes.includes('podcast')) {
     // originalUrl is the episode's webpage (kept as ctaUrl/"View original"
     // above); enclosureUrl is the actual playable audio file when the feed
     // supplied one — falls back to originalUrl only if it didn't.
     story.audioUrl = item.enclosureUrl || item.originalUrl
-  } else if (contentType === 'carousel') {
+  }
+  if (contentTypes.includes('carousel')) {
     story.carouselImages = item.imageUrls?.filter(Boolean) ?? []
-  } else if (contentType !== 'blog') {
+  }
+  if (contentTypes.some(ct => ct === 'reel' || ct === 'youtube-video' || ct === 'social-post')) {
     // youtube-video / reel / social-post — the video/post URL itself is the primary content
     story.reelUrl = item.originalUrl
   }
