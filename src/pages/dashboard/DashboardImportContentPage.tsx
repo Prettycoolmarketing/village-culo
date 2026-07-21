@@ -32,7 +32,6 @@ import {
   startCanvaConnect,
   listCanvaDesigns,
   importCanvaDesign,
-  fetchCanvaSlideTexts,
   exportCanvaReelVideo,
   type CanvaDesignSummary,
   type CanvaImportResult,
@@ -110,12 +109,10 @@ interface CanvaPiece {
   id: string
   kind: CanvaPieceKind
   slideIndices: number[]        // every slide in this group, in selection order
-  captionIndex: number | null   // which slide's text is the caption/blog (null only for blog, whose single slide IS the caption source)
+  captionIndex: number | null   // which slide is the text/caption slide, excluded from the piece's own images (null only for blog, whose single slide IS the caption source)
   coverIndex: number            // which slide's image is the cover
-  caption: string               // editable
-  title: string                 // editable
-  texts: Record<number, string> // fetched only for this group's slideIndices (0-indexed, matching slideIndices) — not the whole design
-  textExtractionSkipped: boolean
+  caption: string               // typed in by the founder, copy-pasted from Canva Desktop
+  title: string                 // typed in by the founder
   savedId?: string               // set once "Create pieces" has saved it
 }
 
@@ -131,14 +128,14 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
   const [pieces, setPieces] = useState<CanvaPiece[]>([])
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set())
   const [groupError, setGroupError] = useState<string | null>(null)
-  const [groupBusy, setGroupBusy] = useState(false)
   const [created, setCreated] = useState(false)
-  // Canva's own text extraction is unreliable for large/photo-heavy designs
-  // (see the WORKER_RESOURCE_LIMIT saga) — this is the actual fallback that
-  // always works: show the slide big enough to read, type the words in
-  // right next to it. The image alone means nothing to a crawler; this is
-  // what gets the real text into the field that becomes indexable copy.
-  const [readingSlide, setReadingSlide] = useState<{ pieceId: string; slideIndex: number; field: 'caption' | 'title' } | null>(null)
+  // Canva's own text export is unreliable for large/photo-heavy designs (see
+  // the WORKER_RESOURCE_LIMIT saga) — so text is never pulled automatically.
+  // Instead, clicking a slide opens this side panel: the founder copies the
+  // words straight from Canva Desktop and pastes them into the title/caption
+  // fields here, and can reassign which slide is the cover from the same
+  // place.
+  const [activePieceId, setActivePieceId] = useState<string | null>(null)
   // Reel video export (Phase 2) runs after the piece is already saved — it's
   // much slower than the image/text import, so it's tracked separately per
   // piece rather than blocking "Create pieces" from finishing.
@@ -189,28 +186,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
   const usedIndices = new Set(pieces.flatMap(p => p.slideIndices))
   const remainingIndices = result ? result.imageUrls.map((_, i) => i).filter(i => !usedIndices.has(i)) : []
 
-  // The slide most likely to be a caption/title rather than a photo — the
-  // longest extracted text among the given slides. Best-effort: if text
-  // extraction was skipped for this group, falls back to the last-selected
-  // slide, and the founder can always re-pick via the piece card afterward.
-  function likelyCaptionIndex(indices: number[], texts: Record<number, string>): number {
-    let best = indices[indices.length - 1]!
-    let bestLen = -1
-    for (const i of indices) {
-      const len = (texts[i] ?? '').length
-      if (len > bestLen) { bestLen = len; best = i }
-    }
-    return best
-  }
-
-  function firstLine(text: string): string {
-    return text.split('\n').map(l => l.trim()).find(Boolean) ?? ''
-  }
-  function afterFirstLine(text: string): string {
-    return text.split('\n').map(l => l.trim()).filter(Boolean).slice(1).join('\n')
-  }
-
-  async function makePiece(kind: CanvaPieceKind) {
+  function makePiece(kind: CanvaPieceKind) {
     if (!result) return
     setGroupError(null)
     const indices = [...selectedIndices].sort((a, b) => a - b)
@@ -218,66 +194,40 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
     if (kind === 'carousel' && (indices.length < 2 || indices.length > 6)) { setGroupError('Select 2–6 slides for a Carousel — the images plus its caption slide.'); return }
     if (kind === 'blog' && indices.length !== 1) { setGroupError('Select exactly 1 slide for a Blog.'); return }
 
-    setGroupBusy(true)
-    // Text is pulled only for these specific slides, not the whole design —
-    // keeps the underlying export tiny regardless of how large the overall
-    // Canva project is (see fetchCanvaSlideTexts).
-    let texts: Record<number, string> = {}
-    let textExtractionSkipped = false
-    try {
-      const pageNumbers = indices.map(i => i + 1) // Canva pages are 1-indexed
-      const fetched = await fetchCanvaSlideTexts(founderId, designId, pageNumbers)
-      indices.forEach(i => { texts[i] = fetched.textsByPage[i + 1] ?? '' })
-      textExtractionSkipped = fetched.textExtractionSkipped
-    } catch (err) {
-      setGroupError(err instanceof Error ? err.message : 'Could not read text for those slides — you can still write your own below.')
-      texts = {}
-      textExtractionSkipped = true
-    }
-    setGroupBusy(false)
-
     const countOfKind = pieces.filter(p => p.kind === kind).length + 1
     const fallbackTitle = `${result.title}${countOfKind > 1 || pieces.some(p => p.kind === kind) ? ` — ${kind} ${countOfKind}` : ` — ${kind}`}`
 
-    let captionIndex: number | null
-    let coverIndex: number
-    let title: string
-    let caption: string
+    // No text is read automatically — Canva's own export kept hitting a
+    // platform memory ceiling on larger designs. The founder copies each
+    // slide's words straight from Canva Desktop into the side panel instead
+    // (see activePieceId). These are just sensible starting defaults for
+    // which slide is the cover vs. the text/caption slide to exclude.
+    const captionIndex = kind === 'blog' ? null : indices[indices.length - 1]!
+    const coverIndex = kind === 'blog' ? indices[0]! : (indices.find(i => i !== captionIndex) ?? indices[0]!)
 
-    if (kind === 'blog') {
-      // A blog slide has its own title line at the top, body below — split
-      // the one slide's text rather than needing a separate caption slide.
-      captionIndex = null
-      coverIndex = indices[0]!
-      const text = texts[indices[0]!] ?? ''
-      const lead = firstLine(text)
-      const rest = afterFirstLine(text)
-      title = rest ? lead || fallbackTitle : fallbackTitle
-      caption = rest || lead
-    } else {
-      // Reel/Carousel: the cover slide carries the short "hook" text
-      // overlaid on the image/video itself — that becomes the Title. The
-      // caption slide's own (usually longer) text becomes the caption/blog.
-      captionIndex = likelyCaptionIndex(indices, texts)
-      coverIndex = indices.find(i => i !== captionIndex) ?? indices[0]!
-      const hook = firstLine(texts[coverIndex] ?? '')
-      title = hook || fallbackTitle
-      caption = texts[captionIndex] ?? ''
-    }
-
-    setPieces(prev => [...prev, {
+    const newPiece: CanvaPiece = {
       id: `piece-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      kind, slideIndices: indices, captionIndex, coverIndex, caption, title, texts, textExtractionSkipped,
-    }])
+      kind, slideIndices: indices, captionIndex, coverIndex, caption: '', title: fallbackTitle,
+    }
+    setPieces(prev => [...prev, newPiece])
     setSelectedIndices(new Set())
+    setActivePieceId(newPiece.id)
   }
 
   function removePiece(id: string) {
     setPieces(prev => prev.filter(p => p.id !== id))
+    setActivePieceId(prev => prev === id ? null : prev)
   }
 
   function updatePiece(id: string, changes: Partial<CanvaPiece>) {
     setPieces(prev => prev.map(p => p.id === id ? { ...p, ...changes } : p))
+  }
+
+  /** Sets a slide as the piece's cover — if it was the text/caption slide, the previous cover takes over as the caption slide instead. */
+  function setCoverSlide(piece: CanvaPiece, index: number) {
+    if (piece.coverIndex === index) return
+    const nextCaptionIndex = piece.captionIndex === index ? piece.coverIndex : piece.captionIndex
+    updatePiece(piece.id, { coverIndex: index, captionIndex: nextCaptionIndex })
   }
 
   async function handleCreatePieces() {
@@ -422,17 +372,16 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                     })}
                   </div>
                   {groupError && <p className="text-xs text-red-600 mb-2">{groupError}</p>}
-                  {groupBusy && <p className="text-xs text-[#9CA3AF] mb-2">Reading text from those slides…</p>}
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <button type="button" onClick={() => void makePiece('reel')} disabled={selectedIndices.size === 0 || groupBusy}
+                    <button type="button" onClick={() => makePiece('reel')} disabled={selectedIndices.size === 0}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
                       Make into Reel + Caption (2 slides)
                     </button>
-                    <button type="button" onClick={() => void makePiece('carousel')} disabled={selectedIndices.size === 0 || groupBusy}
+                    <button type="button" onClick={() => makePiece('carousel')} disabled={selectedIndices.size === 0}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
                       Make into Carousel + Caption (2–6 slides)
                     </button>
-                    <button type="button" onClick={() => void makePiece('blog')} disabled={selectedIndices.size === 0 || groupBusy}
+                    <button type="button" onClick={() => makePiece('blog')} disabled={selectedIndices.size === 0}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
                       Make into Blog (1 slide)
                     </button>
@@ -457,45 +406,21 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
 
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {piece.slideIndices.map(i => (
-                          <div key={i} className="flex flex-col items-center gap-1">
-                            <button type="button"
-                              onClick={() => setReadingSlide({ pieceId: piece.id, slideIndex: i, field: (i === piece.captionIndex || piece.kind === 'blog') ? 'caption' : 'title' })}
-                              className={`rounded-lg overflow-hidden border-2 ${piece.coverIndex === i ? 'border-[#C86A43]' : piece.captionIndex === i ? 'border-[#5E6B4A]' : 'border-transparent'}`}>
-                              <img src={result.imageUrls[i]} alt="" className="w-16 h-16 object-cover bg-[#F3EDE6]" />
-                            </button>
-                            <div className="flex gap-1">
-                              {i !== piece.captionIndex && (
-                                <button type="button" onClick={() => updatePiece(piece.id, { coverIndex: i })}
-                                  className={`text-[8px] px-1.5 py-0.5 rounded ${piece.coverIndex === i ? 'bg-[#C86A43] text-white' : 'bg-[#F3EDE6] text-[#9CA3AF]'}`}>
-                                  cover
-                                </button>
-                              )}
-                              {piece.kind !== 'blog' && (
-                                <button type="button"
-                                  onClick={() => updatePiece(piece.id, {
-                                    captionIndex: i,
-                                    caption: piece.texts[i] ?? piece.caption,
-                                    coverIndex: piece.coverIndex === i ? (piece.slideIndices.find(s => s !== i) ?? i) : piece.coverIndex,
-                                  })}
-                                  className={`text-[8px] px-1.5 py-0.5 rounded ${piece.captionIndex === i ? 'bg-[#5E6B4A] text-white' : 'bg-[#F3EDE6] text-[#9CA3AF]'}`}>
-                                  caption
-                                </button>
-                              )}
-                            </div>
-                          </div>
+                          <button key={i} type="button" onClick={() => setActivePieceId(piece.id)}
+                            className={`flex flex-col items-center gap-1 rounded-lg overflow-hidden border-2 ${piece.coverIndex === i ? 'border-[#C86A43]' : piece.captionIndex === i ? 'border-[#5E6B4A]' : 'border-transparent'}`}>
+                            <img src={result.imageUrls[i]} alt="" className="w-16 h-16 object-cover bg-[#F3EDE6]" />
+                            <span className={`text-[8px] px-1 ${piece.coverIndex === i ? 'text-[#C86A43]' : piece.captionIndex === i ? 'text-[#5E6B4A]' : 'text-transparent'}`}>
+                              {piece.coverIndex === i ? 'cover' : piece.captionIndex === i ? 'text slide' : '·'}
+                            </span>
+                          </button>
                         ))}
                       </div>
-                      <p className="text-[10px] text-[#9CA3AF] -mt-1 mb-2">Tap a slide to read it full-size and type its words in.</p>
 
-                      <input type="text" value={piece.title} onChange={e => updatePiece(piece.id, { title: e.target.value })}
-                        placeholder="Title"
-                        className="w-full mb-1.5 px-2 py-1.5 text-xs border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
-                      <textarea value={piece.caption} onChange={e => updatePiece(piece.id, { caption: e.target.value })} rows={2}
-                        placeholder={piece.kind === 'blog' ? 'Blog text' : 'Caption — becomes the blog text'}
-                        className="w-full px-2 py-1.5 text-xs border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
-                      {piece.textExtractionSkipped && (
-                        <p className="text-[10px] text-amber-700 mt-1">Couldn't read text for these slides automatically — write it in yourself above.</p>
-                      )}
+                      <button type="button" onClick={() => setActivePieceId(piece.id)}
+                        className="w-full text-left px-2.5 py-2 rounded-md border border-[#E8E4DD] hover:border-[#C86A43] transition-colors">
+                        <p className="text-xs font-medium text-[#2D2A26] truncate">{piece.title || 'Untitled'}</p>
+                        <p className="text-[11px] text-[#9CA3AF] line-clamp-2">{piece.caption || 'No caption yet — click to paste it in from Canva Desktop'}</p>
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -556,39 +481,57 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
         </div>
       )}
 
-      {readingSlide && result && (() => {
-        const piece = pieces.find(p => p.id === readingSlide.pieceId)
+      {activePieceId && result && (() => {
+        const piece = pieces.find(p => p.id === activePieceId)
         if (!piece) return null
-        const imageUrl = result.imageUrls[readingSlide.slideIndex]
-        const value = readingSlide.field === 'title' ? piece.title : piece.caption
         return (
-          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setReadingSlide(null)}>
-            <div className="bg-white rounded-xl overflow-hidden max-w-3xl w-full max-h-[90vh] flex flex-col sm:flex-row" onClick={e => e.stopPropagation()}>
-              <div className="sm:w-1/2 bg-black flex items-center justify-center shrink-0">
-                <img src={imageUrl} alt="" className="max-h-[50vh] sm:max-h-[90vh] w-full object-contain" />
+          <>
+            {/* Backdrop only on small screens, where the panel becomes a full sheet instead of docking to the right. */}
+            <div className="fixed inset-0 z-40 bg-black/40 sm:hidden" onClick={() => setActivePieceId(null)} />
+            <div className="fixed inset-x-3 bottom-3 sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 z-50 sm:w-96 bg-white rounded-xl border border-[#E8E4DD] shadow-xl flex flex-col max-h-[80vh] sm:max-h-none overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#E8E4DD] shrink-0">
+                <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">{piece.kind}</span>
+                <button type="button" onClick={() => setActivePieceId(null)} className="text-[#9CA3AF] hover:text-[#2D2A26] text-lg leading-none">×</button>
               </div>
-              <div className="sm:w-1/2 p-4 flex flex-col">
-                <p className="text-xs font-semibold text-[#2D2A26] mb-1">
-                  {readingSlide.field === 'title' ? 'Title — the hook on this slide' : 'Caption — becomes the blog text'}
+              <div className="p-4 overflow-y-auto space-y-3">
+                <div>
+                  <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Slides — click one to set as cover</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {piece.slideIndices.map(i => (
+                      <button key={i} type="button" onClick={() => setCoverSlide(piece, i)}
+                        className={`flex flex-col items-center gap-0.5 rounded-lg overflow-hidden border-2 ${piece.coverIndex === i ? 'border-[#C86A43]' : 'border-transparent hover:border-[#E8E4DD]'}`}>
+                        <img src={result.imageUrls[i]} alt="" className="w-14 h-14 object-cover bg-[#F3EDE6]" />
+                        <span className={`text-[8px] ${piece.coverIndex === i ? 'text-[#C86A43]' : 'text-transparent'}`}>{piece.coverIndex === i ? 'cover' : '·'}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-[#9CA3AF] leading-relaxed">
+                  Open this design in Canva Desktop, copy the words off the slide, and paste them in below — that's what makes this piece readable to search engines and AI, not the photo alone.
                 </p>
-                <p className="text-[10px] text-[#9CA3AF] mb-2 leading-relaxed">
-                  This slide is a photo, so its words can't be highlighted or copied — read it here and type it into the box below. That typed text is what search engines and AI actually see; the photo alone isn't readable to them.
-                </p>
-                <textarea
-                  autoFocus
-                  value={value}
-                  onChange={e => updatePiece(piece.id, readingSlide.field === 'title' ? { title: e.target.value } : { caption: e.target.value })}
-                  rows={10}
-                  className="flex-1 w-full px-3 py-2 text-sm border border-[#E8E4DD] rounded-lg resize-none focus:outline-none focus:border-[#C86A43]"
-                  placeholder="Type what the slide says…"
-                />
-                <button type="button" onClick={() => setReadingSlide(null)}
-                  className="mt-3 self-end px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+
+                <div>
+                  <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Title</label>
+                  <input type="text" autoFocus value={piece.title} onChange={e => updatePiece(piece.id, { title: e.target.value })}
+                    placeholder="Paste the hook from Canva…"
+                    className="w-full px-2.5 py-2 text-sm border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">{piece.kind === 'blog' ? 'Blog text' : 'Caption — becomes the blog text'}</label>
+                  <textarea value={piece.caption} onChange={e => updatePiece(piece.id, { caption: e.target.value })} rows={10}
+                    placeholder="Paste the caption from Canva…"
+                    className="w-full px-2.5 py-2 text-sm border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                </div>
+              </div>
+              <div className="px-4 py-3 border-t border-[#E8E4DD] shrink-0">
+                <button type="button" onClick={() => setActivePieceId(null)}
+                  className="w-full px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
                   Done
                 </button>
               </div>
             </div>
-          </div>
+          </>
         )
       })()}
     </div>
