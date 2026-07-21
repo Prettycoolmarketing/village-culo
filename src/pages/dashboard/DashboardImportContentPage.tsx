@@ -194,6 +194,13 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
     return best
   }
 
+  function firstLine(text: string): string {
+    return text.split('\n').map(l => l.trim()).find(Boolean) ?? ''
+  }
+  function afterFirstLine(text: string): string {
+    return text.split('\n').map(l => l.trim()).filter(Boolean).slice(1).join('\n')
+  }
+
   function makePiece(kind: CanvaPieceKind) {
     if (!result) return
     setGroupError(null)
@@ -202,13 +209,34 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
     if (kind === 'carousel' && (indices.length < 2 || indices.length > 6)) { setGroupError('Select 2–6 slides for a Carousel — the images plus its caption slide.'); return }
     if (kind === 'blog' && indices.length !== 1) { setGroupError('Select exactly 1 slide for a Blog.'); return }
 
-    const captionIndex = kind === 'blog' ? null : likelyCaptionIndex(indices)
-    const coverIndex = kind === 'blog' ? indices[0]! : indices.find(i => i !== captionIndex) ?? indices[0]!
-    const caption = kind === 'blog'
-      ? (result.slideTexts[indices[0]!] ?? '')
-      : (captionIndex !== null ? result.slideTexts[captionIndex] ?? '' : '')
     const countOfKind = pieces.filter(p => p.kind === kind).length + 1
-    const title = `${result.title}${countOfKind > 1 || pieces.some(p => p.kind === kind) ? ` — ${kind} ${countOfKind}` : ` — ${kind}`}`
+    const fallbackTitle = `${result.title}${countOfKind > 1 || pieces.some(p => p.kind === kind) ? ` — ${kind} ${countOfKind}` : ` — ${kind}`}`
+
+    let captionIndex: number | null
+    let coverIndex: number
+    let title: string
+    let caption: string
+
+    if (kind === 'blog') {
+      // A blog slide has its own title line at the top, body below — split
+      // the one slide's text rather than needing a separate caption slide.
+      captionIndex = null
+      coverIndex = indices[0]!
+      const text = result.slideTexts[indices[0]!] ?? ''
+      const lead = firstLine(text)
+      const rest = afterFirstLine(text)
+      title = rest ? lead || fallbackTitle : fallbackTitle
+      caption = rest || lead
+    } else {
+      // Reel/Carousel: the cover slide carries the short "hook" text
+      // overlaid on the image/video itself — that becomes the Title. The
+      // caption slide's own (usually longer) text becomes the caption/blog.
+      captionIndex = likelyCaptionIndex(indices)
+      coverIndex = indices.find(i => i !== captionIndex) ?? indices[0]!
+      const hook = firstLine(result.slideTexts[coverIndex] ?? '')
+      title = hook || fallbackTitle
+      caption = result.slideTexts[captionIndex] ?? ''
+    }
 
     setPieces(prev => [...prev, {
       id: `piece-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
