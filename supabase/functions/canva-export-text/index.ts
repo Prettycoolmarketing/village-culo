@@ -1,12 +1,18 @@
 // CULO Village — canva-export-text Edge Function
 //
 // Half of what used to be canva-import-design (split to keep memory per
-// invocation down — see _shared/canvaExport.ts for why): exports a Canva
-// design as PPTX and parses the real text runs straight out of the
-// PowerPoint XML (reliable, not OCR) — Canva's Connect API has no "give me
-// the text on slide 3" endpoint. Best-effort: if the export is too large to
-// safely buffer, this reports textExtractionSkipped instead of failing —
-// the founder can still write their own caption.
+// invocation down — see _shared/canvaExport.ts for why): exports specific
+// pages of a Canva design as PPTX and parses the real text runs straight
+// out of the PowerPoint XML (reliable, not OCR) — Canva's Connect API has
+// no "give me the text on slide 3" endpoint directly, but its export
+// `pages` field lets us request only the pages we actually need.
+//
+// Deliberately scoped to the caller-supplied pageNumbers, not the whole
+// design — a 13-slide photo-heavy design's full PPTX export can be tens of
+// MB even though a founder only ever needs text from the 1-2 slides they
+// just grouped into a piece. Exporting just those pages keeps the file
+// (and this function's memory use) small regardless of how large the
+// overall design is, instead of hoping a size cap is high enough.
 //
 // Deploy: supabase functions deploy canva-export-text
 
@@ -26,11 +32,10 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// This function now runs in complete isolation from image processing
-// (canva-export-images is a separate invocation) — it never competes for
-// memory with the JPG re-upload loop, so it can afford a much higher
-// ceiling than the original combined function's 25MB ever could.
-const MAX_PPTX_BYTES = 80_000_000  // ~80MB — skip rather than crash on bigger
+// A handful of scoped pages should never come close to this even for a
+// photo-heavy design — kept as a safety net, not the primary defence
+// against large files anymore (scoping the export is).
+const MAX_PPTX_BYTES = 30_000_000
 
 function decodeXmlEntities(s: string): string {
   return s
@@ -91,8 +96,9 @@ serve(async (req) => {
   }
 
   try {
-    const { founderId, designId } = await req.json()
+    const { founderId, designId, pageNumbers } = await req.json()
     if (!founderId || !designId) throw new Error('founderId and designId are required')
+    if (!Array.isArray(pageNumbers) || pageNumbers.length === 0) throw new Error('pageNumbers (a non-empty array) is required')
 
     const asCaller = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } })
     await assertOwnsFounder(asCaller, founderId)
@@ -100,23 +106,29 @@ serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
     const accessToken = await getValidCanvaAccessToken(admin, founderId)
 
-    const pptxJobId = await createExportJob(accessToken, designId, { type: 'pptx' })
+    const pptxJobId = await createExportJob(accessToken, designId, { type: 'pptx', pages: pageNumbers })
     const pptxUrls = await waitForExportJob(accessToken, pptxJobId)
 
-    let slideTexts: string[] = []
+    let texts: string[] = []
     let textExtractionSkipped = false
     if (pptxUrls[0]) {
       const pptxBytes = await fetchWithLimit(pptxUrls[0], MAX_PPTX_BYTES)
       if (pptxBytes) {
-        slideTexts = await extractSlideTexts(pptxBytes)
+        texts = await extractSlideTexts(pptxBytes)
       } else {
         textExtractionSkipped = true
       }
     }
 
-    const combinedText = slideTexts.filter(Boolean).join('\n\n')
+    // Canva's export preserves the requested page order for a scoped
+    // export (documented behaviour of the `pages` field) — zip the
+    // requested page numbers back onto the extracted text by position so
+    // the caller can look up a specific page's text unambiguously rather
+    // than guessing from array order.
+    const textsByPage: Record<number, string> = {}
+    pageNumbers.forEach((page: number, i: number) => { textsByPage[page] = texts[i] ?? '' })
 
-    return new Response(JSON.stringify({ slideTexts, combinedText, textExtractionSkipped }), {
+    return new Response(JSON.stringify({ textsByPage, textExtractionSkipped }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })
   } catch (err) {

@@ -32,6 +32,7 @@ import {
   startCanvaConnect,
   listCanvaDesigns,
   importCanvaDesign,
+  fetchCanvaSlideTexts,
   exportCanvaReelVideo,
   type CanvaDesignSummary,
   type CanvaImportResult,
@@ -113,6 +114,8 @@ interface CanvaPiece {
   coverIndex: number            // which slide's image is the cover
   caption: string               // editable
   title: string                 // editable
+  texts: Record<number, string> // fetched only for this group's slideIndices (0-indexed, matching slideIndices) — not the whole design
+  textExtractionSkipped: boolean
   savedId?: string               // set once "Create pieces" has saved it
 }
 
@@ -128,6 +131,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
   const [pieces, setPieces] = useState<CanvaPiece[]>([])
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set())
   const [groupError, setGroupError] = useState<string | null>(null)
+  const [groupBusy, setGroupBusy] = useState(false)
   const [created, setCreated] = useState(false)
   // Reel video export (Phase 2) runs after the piece is already saved — it's
   // much slower than the image/text import, so it's tracked separately per
@@ -181,14 +185,13 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
 
   // The slide most likely to be a caption/title rather than a photo — the
   // longest extracted text among the given slides. Best-effort: if text
-  // extraction was skipped for this design, falls back to the last-selected
+  // extraction was skipped for this group, falls back to the last-selected
   // slide, and the founder can always re-pick via the piece card afterward.
-  function likelyCaptionIndex(indices: number[]): number {
-    if (!result || result.slideTexts.length === 0) return indices[indices.length - 1]!
-    let best = indices[0]!
+  function likelyCaptionIndex(indices: number[], texts: Record<number, string>): number {
+    let best = indices[indices.length - 1]!
     let bestLen = -1
     for (const i of indices) {
-      const len = (result.slideTexts[i] ?? '').length
+      const len = (texts[i] ?? '').length
       if (len > bestLen) { bestLen = len; best = i }
     }
     return best
@@ -201,13 +204,31 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
     return text.split('\n').map(l => l.trim()).filter(Boolean).slice(1).join('\n')
   }
 
-  function makePiece(kind: CanvaPieceKind) {
+  async function makePiece(kind: CanvaPieceKind) {
     if (!result) return
     setGroupError(null)
     const indices = [...selectedIndices].sort((a, b) => a - b)
     if (kind === 'reel' && indices.length !== 2) { setGroupError('Select exactly 2 slides for a Reel — the video slide and its caption.'); return }
     if (kind === 'carousel' && (indices.length < 2 || indices.length > 6)) { setGroupError('Select 2–6 slides for a Carousel — the images plus its caption slide.'); return }
     if (kind === 'blog' && indices.length !== 1) { setGroupError('Select exactly 1 slide for a Blog.'); return }
+
+    setGroupBusy(true)
+    // Text is pulled only for these specific slides, not the whole design —
+    // keeps the underlying export tiny regardless of how large the overall
+    // Canva project is (see fetchCanvaSlideTexts).
+    let texts: Record<number, string> = {}
+    let textExtractionSkipped = false
+    try {
+      const pageNumbers = indices.map(i => i + 1) // Canva pages are 1-indexed
+      const fetched = await fetchCanvaSlideTexts(founderId, designId, pageNumbers)
+      indices.forEach(i => { texts[i] = fetched.textsByPage[i + 1] ?? '' })
+      textExtractionSkipped = fetched.textExtractionSkipped
+    } catch (err) {
+      setGroupError(err instanceof Error ? err.message : 'Could not read text for those slides — you can still write your own below.')
+      texts = {}
+      textExtractionSkipped = true
+    }
+    setGroupBusy(false)
 
     const countOfKind = pieces.filter(p => p.kind === kind).length + 1
     const fallbackTitle = `${result.title}${countOfKind > 1 || pieces.some(p => p.kind === kind) ? ` — ${kind} ${countOfKind}` : ` — ${kind}`}`
@@ -222,7 +243,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
       // the one slide's text rather than needing a separate caption slide.
       captionIndex = null
       coverIndex = indices[0]!
-      const text = result.slideTexts[indices[0]!] ?? ''
+      const text = texts[indices[0]!] ?? ''
       const lead = firstLine(text)
       const rest = afterFirstLine(text)
       title = rest ? lead || fallbackTitle : fallbackTitle
@@ -231,16 +252,16 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
       // Reel/Carousel: the cover slide carries the short "hook" text
       // overlaid on the image/video itself — that becomes the Title. The
       // caption slide's own (usually longer) text becomes the caption/blog.
-      captionIndex = likelyCaptionIndex(indices)
+      captionIndex = likelyCaptionIndex(indices, texts)
       coverIndex = indices.find(i => i !== captionIndex) ?? indices[0]!
-      const hook = firstLine(result.slideTexts[coverIndex] ?? '')
+      const hook = firstLine(texts[coverIndex] ?? '')
       title = hook || fallbackTitle
-      caption = result.slideTexts[captionIndex] ?? ''
+      caption = texts[captionIndex] ?? ''
     }
 
     setPieces(prev => [...prev, {
       id: `piece-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      kind, slideIndices: indices, captionIndex, coverIndex, caption, title,
+      kind, slideIndices: indices, captionIndex, coverIndex, caption, title, texts, textExtractionSkipped,
     }])
     setSelectedIndices(new Set())
   }
@@ -362,11 +383,10 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
 
       {step === 'review' && result && (
         <div>
-          {(result.textExtractionSkipped || (result.imagesSkipped ?? 0) > 0 || result.slidesTruncated) && (
+          {((result.imagesSkipped ?? 0) > 0 || result.slidesTruncated) && (
             <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-xs text-amber-700 leading-relaxed">
                 This design was large, so {[
-                  result.textExtractionSkipped && 'the slide text couldn’t be pulled in automatically — write your own below',
                   (result.imagesSkipped ?? 0) > 0 && `${result.imagesSkipped} image${result.imagesSkipped === 1 ? '' : 's'} couldn't be imported`,
                   result.slidesTruncated && 'only the first 30 slides were brought in',
                 ].filter(Boolean).join('; ')}.
@@ -396,16 +416,17 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                     })}
                   </div>
                   {groupError && <p className="text-xs text-red-600 mb-2">{groupError}</p>}
+                  {groupBusy && <p className="text-xs text-[#9CA3AF] mb-2">Reading text from those slides…</p>}
                   <div className="flex flex-wrap gap-2 mb-4">
-                    <button type="button" onClick={() => makePiece('reel')} disabled={selectedIndices.size === 0}
+                    <button type="button" onClick={() => void makePiece('reel')} disabled={selectedIndices.size === 0 || groupBusy}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
                       Make into Reel + Caption (2 slides)
                     </button>
-                    <button type="button" onClick={() => makePiece('carousel')} disabled={selectedIndices.size === 0}
+                    <button type="button" onClick={() => void makePiece('carousel')} disabled={selectedIndices.size === 0 || groupBusy}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
                       Make into Carousel + Caption (2–6 slides)
                     </button>
-                    <button type="button" onClick={() => makePiece('blog')} disabled={selectedIndices.size === 0}
+                    <button type="button" onClick={() => void makePiece('blog')} disabled={selectedIndices.size === 0 || groupBusy}
                       className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors">
                       Make into Blog (1 slide)
                     </button>
@@ -445,7 +466,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                                 <button type="button"
                                   onClick={() => updatePiece(piece.id, {
                                     captionIndex: i,
-                                    caption: result.slideTexts[i] ?? piece.caption,
+                                    caption: piece.texts[i] ?? piece.caption,
                                     coverIndex: piece.coverIndex === i ? (piece.slideIndices.find(s => s !== i) ?? i) : piece.coverIndex,
                                   })}
                                   className={`text-[8px] px-1.5 py-0.5 rounded ${piece.captionIndex === i ? 'bg-[#5E6B4A] text-white' : 'bg-[#F3EDE6] text-[#9CA3AF]'}`}>
@@ -463,6 +484,9 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                       <textarea value={piece.caption} onChange={e => updatePiece(piece.id, { caption: e.target.value })} rows={2}
                         placeholder={piece.kind === 'blog' ? 'Blog text' : 'Caption — becomes the blog text'}
                         className="w-full px-2 py-1.5 text-xs border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                      {piece.textExtractionSkipped && (
+                        <p className="text-[10px] text-amber-700 mt-1">Couldn't read text for these slides automatically — write it in yourself above.</p>
+                      )}
                     </div>
                   ))}
                 </div>

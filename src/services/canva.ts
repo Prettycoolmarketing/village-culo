@@ -114,12 +114,9 @@ export async function listCanvaDesigns(founderId: string): Promise<CanvaDesignSu
 export interface CanvaImportResult {
   title: string
   imageUrls: string[]
-  slideTexts: string[]
-  combinedText: string
   // Graceful-degradation flags — a very large/photo-heavy design can exceed
   // what the import function safely holds in memory. When these are set the
-  // import still succeeds, just with less than the full design.
-  textExtractionSkipped?: boolean
+  // import still succeeds, just with fewer slides than the full design.
   imagesSkipped?: number
   slidesTruncated?: boolean
 }
@@ -132,52 +129,52 @@ interface CanvaImagesResult {
   error?: string
 }
 
+// canva-export-images (JPG export + Storage re-upload) runs alone here —
+// text is no longer pulled for the whole design up front. A photo-heavy
+// design's full PPTX (needed for text) can be huge even when a founder only
+// ever needs text from the 1-2 slides they group into a piece at a time;
+// see fetchCanvaSlideTexts, called on demand per group instead.
+export async function importCanvaDesign(founderId: string, designId: string): Promise<CanvaImportResult> {
+  if (!supabase) throw new Error('Not available in this environment.')
+  const { data, error } = await supabase.functions.invoke<CanvaImagesResult>('canva-export-images', {
+    body: { founderId, designId },
+  })
+  if (error || data?.error) throw await canvaFunctionError(data ?? null, error, 'Could not import that design.')
+  return {
+    title: data!.title,
+    imageUrls: data!.imageUrls,
+    imagesSkipped: data!.imagesSkipped,
+    slidesTruncated: data!.slidesTruncated,
+  }
+}
+
 interface CanvaTextResult {
-  slideTexts: string[]
-  combinedText: string
+  textsByPage: Record<number, string>
   textExtractionSkipped?: boolean
   error?: string
 }
 
-// Two separate Edge Function calls, not one — canva-export-images (JPG
-// export + Storage re-upload) and canva-export-text (PPTX export + JSZip
-// text extraction) used to be a single canva-import-design call, but doing
-// both inside one invocation kept exceeding the function's memory ceiling
-// on photo-heavy designs (WORKER_RESOURCE_LIMIT). Running them in parallel
-// as independent invocations halves peak memory per call and is also
-// faster than the old sequential-within-one-call version. Text extraction
-// is best-effort: if it fails outright (not just gracefully skipped), the
-// import still succeeds with images only — a founder can always write their
-// own caption, but a missing image can't be recovered the same way.
-export async function importCanvaDesign(founderId: string, designId: string): Promise<CanvaImportResult> {
+export interface CanvaSlideTexts {
+  textsByPage: Record<number, string>
+  textExtractionSkipped: boolean
+}
+
+/**
+ * Pulls text for only the given Canva page numbers (1-indexed) — called
+ * once a founder groups specific slides into a piece, not for the whole
+ * design. Keeps the underlying PPTX export tiny regardless of how large the
+ * overall design is, since Canva's export `pages` field scopes the file to
+ * just those slides.
+ */
+export async function fetchCanvaSlideTexts(founderId: string, designId: string, pageNumbers: number[]): Promise<CanvaSlideTexts> {
   if (!supabase) throw new Error('Not available in this environment.')
-
-  const [imagesOutcome, textOutcome] = await Promise.allSettled([
-    supabase.functions.invoke<CanvaImagesResult>('canva-export-images', { body: { founderId, designId } }),
-    supabase.functions.invoke<CanvaTextResult>('canva-export-text', { body: { founderId, designId } }),
-  ])
-
-  if (imagesOutcome.status === 'rejected') throw await canvaFunctionError(null, imagesOutcome.reason, 'Could not import that design.')
-  const { data: imagesData, error: imagesError } = imagesOutcome.value
-  if (imagesError || imagesData?.error) throw await canvaFunctionError(imagesData ?? null, imagesError, 'Could not import that design.')
-
-  let slideTexts: string[] = []
-  let combinedText = ''
-  let textExtractionSkipped = true
-  if (textOutcome.status === 'fulfilled' && !textOutcome.value.error && !textOutcome.value.data?.error) {
-    slideTexts = textOutcome.value.data?.slideTexts ?? []
-    combinedText = textOutcome.value.data?.combinedText ?? ''
-    textExtractionSkipped = textOutcome.value.data?.textExtractionSkipped ?? false
-  }
-
+  const { data, error } = await supabase.functions.invoke<CanvaTextResult>('canva-export-text', {
+    body: { founderId, designId, pageNumbers },
+  })
+  if (error || data?.error) throw await canvaFunctionError(data ?? null, error, 'Could not read the text on those slides.')
   return {
-    title: imagesData!.title,
-    imageUrls: imagesData!.imageUrls,
-    imagesSkipped: imagesData!.imagesSkipped,
-    slidesTruncated: imagesData!.slidesTruncated,
-    slideTexts,
-    combinedText,
-    textExtractionSkipped,
+    textsByPage: data?.textsByPage ?? {},
+    textExtractionSkipped: data?.textExtractionSkipped ?? false,
   }
 }
 
