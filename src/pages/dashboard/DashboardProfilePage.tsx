@@ -31,6 +31,8 @@ import {
 } from '../../utils/missingAssets'
 import { getFounderAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
+import { suggestTopicsFromText, suggestFaqsFromFounder, suggestSeoFields } from '../../services/founderEnrichment'
+import type { BlogQaPair } from '../../services/importedContentEnrichment'
 import type { Founder, Topic, SocialLink, SocialPlatform, Status } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
@@ -452,6 +454,7 @@ export function DashboardProfilePage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [tab, setTab]       = useState('overview')
+  const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
 
   if (!draft) {
     return (
@@ -858,10 +861,59 @@ export function DashboardProfilePage() {
                   )
                 })}
               </div>
+              {(() => {
+                const suggested = suggestTopicsFromText(draft.bio, allTopics).filter(t => !draft.topics.some(dt => dt.id === t.id))
+                return suggested.length > 0 ? (
+                  <div className="mt-3">
+                    <p className="text-[11px] text-[#9CA3AF] mb-1.5">Found in your bio — tap to add</p>
+                    <div className="flex flex-wrap gap-2">
+                      {suggested.map(topic => (
+                        <button key={topic.id} onClick={() => toggleTopic(topic)}
+                          className="px-3 py-1.5 rounded-full text-sm border border-dashed border-[#C86A43]/50 text-[#C86A43] hover:bg-[#FDF6F3] transition-colors">
+                          + {topic.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null
+              })()}
             </Field>
 
             <div className="border-t border-[#E8E4DD] pt-5">
               <Field label="Frequently Asked Questions" hint="Real questions people ask you. These help both search engines and AI systems understand what you know.">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <p className="text-[11px] text-[#9CA3AF]">Pull real questions and answers straight from your bio and published stories.</p>
+                  <button type="button"
+                    onClick={() => setFaqSuggestions(suggestFaqsFromFounder(draft, founderStories))}
+                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors">
+                    Suggest FAQs
+                  </button>
+                </div>
+                {faqSuggestions && (
+                  <div className="mb-4 flex flex-col gap-2">
+                    {faqSuggestions.length === 0 ? (
+                      <p className="text-xs text-[#9CA3AF] italic">Nothing found yet — write a bit more in your Bio, or publish a story with a Blog, then try again.</p>
+                    ) : faqSuggestions
+                      .filter(p => !(draft.faqs ?? []).some(f => f.question === p.question))
+                      .map(pair => (
+                        <div key={pair.question} className="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#F8F5F0] border border-[#E8E4DD]">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-[#2D2A26]">{pair.question}</p>
+                            <p className="text-xs text-[#6B7280] mt-0.5 leading-relaxed">{pair.answer}</p>
+                          </div>
+                          <button type="button"
+                            onClick={() => set('faqs', [...(draft.faqs ?? []), {
+                              id: `faq-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                              question: pair.question, answer: pair.answer,
+                              topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [],
+                            }])}
+                            className="shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-md bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors">
+                            Add
+                          </button>
+                        </div>
+                      ))}
+                  </div>
+                )}
                 <FAQEditor faqs={draft.faqs ?? []} onChange={v => set('faqs', v)} />
               </Field>
             </div>
@@ -915,6 +967,12 @@ export function DashboardProfilePage() {
                 {isPublic ? 'Your profile is public and discoverable.' : 'Your profile is hidden from public search and directories.'}
               </p>
             </Field>
+
+            <button type="button"
+              onClick={() => { const s = suggestSeoFields(draft); set('seoTitle', s.seoTitle); set('seoDescription', s.seoDescription) }}
+              className="self-start text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors">
+              Generate from profile
+            </button>
 
             <Field label="Search Title" hint="Shown in browser tab and search results. ~60 chars.">
               <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
