@@ -32,6 +32,7 @@ import {
   startCanvaConnect,
   listCanvaDesigns,
   importCanvaDesign,
+  exportCanvaReelVideo,
   type CanvaDesignSummary,
   type CanvaImportResult,
 } from '../../services/canva'
@@ -128,6 +129,11 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set())
   const [groupError, setGroupError] = useState<string | null>(null)
   const [created, setCreated] = useState(false)
+  // Reel video export (Phase 2) runs after the piece is already saved — it's
+  // much slower than the image/text import, so it's tracked separately per
+  // piece rather than blocking "Create pieces" from finishing.
+  const [videoStatus, setVideoStatus] = useState<Record<string, 'exporting' | 'ready' | 'error'>>({})
+  const [videoError, setVideoError] = useState<Record<string, string>>({})
 
   useEffect(() => {
     void getCanvaStatus(founderId).then(connected => {
@@ -250,9 +256,26 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
       const saveResult = await importedContentService.upsert(item)
       if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
       updatePiece(piece.id, { savedId: item.id })
+      // Kicked off after saving, not awaited here — video export is much
+      // slower (real encoding on Canva's side) than image/text import and
+      // shouldn't hold up creating the other pieces.
+      if (piece.kind === 'reel') void kickoffReelVideo(piece.id, item.id, piece.coverIndex + 1)
     }
     setCreated(true)
     onImported()
+  }
+
+  async function kickoffReelVideo(pieceId: string, importedContentId: string, canvaPageNumber: number) {
+    setVideoStatus(prev => ({ ...prev, [pieceId]: 'exporting' }))
+    try {
+      const videoUrl = await exportCanvaReelVideo(founderId, designId, canvaPageNumber, 'vertical')
+      const current = importedContentService.get(importedContentId)
+      if (current) await importedContentService.upsert({ ...current, reelVideoUrl: videoUrl })
+      setVideoStatus(prev => ({ ...prev, [pieceId]: 'ready' }))
+    } catch (err) {
+      setVideoStatus(prev => ({ ...prev, [pieceId]: 'error' }))
+      setVideoError(prev => ({ ...prev, [pieceId]: err instanceof Error ? err.message : 'Could not export this video.' }))
+    }
   }
 
   function reset() {
@@ -435,22 +458,34 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                 {pieces.length} piece{pieces.length === 1 ? '' : 's'} saved to Imported Content — private until you review and publish each one.
               </p>
               <div className="space-y-2 mb-3">
-                {pieces.map(piece => (
-                  <div key={piece.id} className="flex items-center gap-3 border border-[#E8E4DD] rounded-lg px-3 py-2">
-                    <img src={result.imageUrls[piece.coverIndex]} alt="" className="w-10 h-10 rounded object-cover bg-[#F3EDE6] shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-[#2D2A26] truncate">{piece.title}</p>
-                      <p className="text-[10px] text-[#9CA3AF] uppercase">{piece.kind}</p>
+                {pieces.map(piece => {
+                  const vStatus = videoStatus[piece.id]
+                  const isExporting = piece.kind === 'reel' && vStatus === 'exporting'
+                  return (
+                    <div key={piece.id} className="border border-[#E8E4DD] rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-3">
+                        <img src={result.imageUrls[piece.coverIndex]} alt="" className="w-10 h-10 rounded object-cover bg-[#F3EDE6] shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-[#2D2A26] truncate">{piece.title}</p>
+                          <p className="text-[10px] text-[#9CA3AF] uppercase">{piece.kind}</p>
+                        </div>
+                        {piece.savedId && (
+                          <button type="button" disabled={isExporting}
+                            onClick={() => navigate('/dashboard/publish', { state: { importedContentId: piece.savedId } })}
+                            className="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-40 transition-colors shrink-0">
+                            {isExporting ? 'Exporting video…' : 'Publish →'}
+                          </button>
+                        )}
+                      </div>
+                      {piece.kind === 'reel' && vStatus === 'error' && (
+                        <p className="text-[10px] text-amber-700 mt-1.5">{videoError[piece.id] ?? 'Could not export the video.'} You can still publish and attach a video manually in the wizard.</p>
+                      )}
+                      {piece.kind === 'reel' && vStatus === 'ready' && (
+                        <p className="text-[10px] text-[#5E6B4A] mt-1.5">Video ready.</p>
+                      )}
                     </div>
-                    {piece.savedId && (
-                      <button type="button"
-                        onClick={() => navigate('/dashboard/publish', { state: { importedContentId: piece.savedId } })}
-                        className="text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shrink-0">
-                        Publish →
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
               <button type="button" onClick={reset} className="text-xs font-semibold text-[#C86A43] hover:underline">
                 Import another design

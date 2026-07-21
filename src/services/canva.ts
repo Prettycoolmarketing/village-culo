@@ -180,3 +180,20 @@ export async function importCanvaDesign(founderId: string, designId: string): Pr
     textExtractionSkipped,
   }
 }
+
+/**
+ * Exports a single Canva page as an actual video (Phase 2 of the Reel
+ * grouping flow — see canva-export-reel-video). Slower than the image/text
+ * exports (real video encoding on Canva's side), so this is called
+ * separately, after a Reel piece is already saved, rather than blocking the
+ * initial "Create pieces" save.
+ */
+export async function exportCanvaReelVideo(founderId: string, designId: string, pageNumber: number, orientation: 'vertical' | 'horizontal' = 'vertical'): Promise<string> {
+  if (!supabase) throw new Error('Not available in this environment.')
+  const { data, error } = await supabase.functions.invoke<{ videoUrl?: string; error?: string }>('canva-export-reel-video', {
+    body: { founderId, designId, pageNumber, orientation },
+  })
+  if (error || data?.error) throw await canvaFunctionError(data ?? null, error, 'Could not export that video.')
+  if (!data?.videoUrl) throw new Error('The video export returned no result.')
+  return data.videoUrl
+}

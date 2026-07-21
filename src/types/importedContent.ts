@@ -95,6 +95,13 @@ export interface ImportedContent {
   // separate ImportedContent items (a Reel+blog, a Carousel, a standalone
   // Blog) that each need a different format than the platform-wide default.
   contentTypeHint?: ContentType[]
+
+  // The actual re-hosted video for a Canva-grounded Reel piece (see
+  // canva-export-reel-video) — set asynchronously after the piece is first
+  // saved, since video export takes real time. buildStoryFromImport prefers
+  // this over originalUrl (which for a Canva Reel piece is just the shared
+  // design link, not a playable video) when present.
+  reelVideoUrl?: string
 }
 
 export interface ImportedContentFilter {

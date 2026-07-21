@@ -232,8 +232,11 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     story.carouselImages = item.imageUrls?.filter(Boolean) ?? []
   }
   if (contentTypes.some(ct => ct === 'reel' || ct === 'youtube-video' || ct === 'social-post')) {
-    // youtube-video / reel / social-post — the video/post URL itself is the primary content
-    story.reelUrl = item.originalUrl
+    // youtube-video / reel / social-post — the video/post URL itself is the
+    // primary content. reelVideoUrl (Canva Reel groups only) wins when set
+    // — originalUrl for a Canva piece is just the shared design link, not a
+    // playable video.
+    story.reelUrl = item.reelVideoUrl || item.originalUrl
   }
 
   return story
