@@ -19,6 +19,16 @@ import { topics as allTopics, createCustomTopic } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
 import { looksLikeChannelUrl } from '../../utils/url'
 import { partnerService } from '../../services/partner'
+import {
+  isCanvaConfigured,
+  getCanvaStatus,
+  startCanvaConnect,
+  listCanvaDesigns,
+  importCanvaDesign,
+  type CanvaDesignSummary,
+  type CanvaImportResult,
+} from '../../services/canva'
+import type { ImportedContent } from '../../types/importedContent'
 import type { ContentType, Topic, Story } from '../../types'
 
 // ─── Content formats ──────────────────────────────────────────────────────────
@@ -175,6 +185,30 @@ function defaultDraft(founderId: string, businessId: string): PublishDraft {
     excludedContentIds:  [],
     extraFounderIds:     [],
     extraBusinessIds:    [],
+  }
+}
+
+// Shared between the "arrived via Turn into Story" router-state effect and
+// the in-page Canva import card (FormatStep) — both need to fold an
+// ImportedContent's fields into the current draft the same way, so there's
+// only one place that logic can drift.
+function importedContentPatch(item: ImportedContent, draft: PublishDraft): Partial<PublishDraft> {
+  const matchedTopics = allTopics.filter(t => item.topics.some(it => it.toLowerCase() === t.name.toLowerCase()))
+  const matchedLocation = locations.find(l => item.locations.some(il => il.toLowerCase() === l.name.toLowerCase()))
+  return {
+    importedContentId: item.id,
+    title: draft.title || item.title,
+    summary: draft.summary || item.autoSummary || item.description || '',
+    blog: draft.blog || item.description || item.diaryNote || item.transcriptText || '',
+    coverImage: draft.coverImage || item.thumbnailUrl || '',
+    carouselSlides: draft.carouselSlides.filter(Boolean).length > 0
+      ? draft.carouselSlides
+      : (item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : draft.carouselSlides),
+    contentTypes: draft.contentTypes.length > 0
+      ? draft.contentTypes
+      : (item.contentTypeHint && item.contentTypeHint.length > 0 ? item.contentTypeHint : draft.contentTypes),
+    topics: draft.topics.length > 0 ? draft.topics : matchedTopics,
+    locationId: draft.locationId || matchedLocation?.id || draft.locationId,
   }
 }
 
@@ -343,6 +377,13 @@ function FormatStep({ draft, onChange, onNext }: {
           )
         })}
       </div>
+
+      <CanvaImportCard
+        founderId={draft.founderId}
+        canProceed={draft.contentTypes.length > 0}
+        onImported={item => { onChange(importedContentPatch(item, draft)); onNext() }}
+      />
+
       <button
         onClick={onNext}
         disabled={draft.contentTypes.length === 0}
@@ -350,6 +391,165 @@ function FormatStep({ draft, onChange, onNext }: {
       >
         {draft.contentTypes.length === 0 ? 'Select at least one format' : 'Continue'}
       </button>
+    </div>
+  )
+}
+
+// A design's slides brought in as this piece's media — no forced grouping
+// (any number of slides, picked freely), then the wizard continues exactly
+// like it would for a hand-typed story. Saved as an ImportedContent (same
+// shape every other connector produces) so it also shows up, editable, under
+// Import → Canva.
+function CanvaImportCard({ founderId, canProceed, onImported }: {
+  founderId: string
+  canProceed: boolean
+  onImported: (item: ImportedContent) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const [connected, setConnected] = useState<boolean | null>(null)
+  const [designs, setDesigns] = useState<CanvaDesignSummary[]>([])
+  const [designId, setDesignId] = useState('')
+  const [result, setResult] = useState<CanvaImportResult | null>(null)
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (!isCanvaConfigured() || !founderId) return null
+
+  async function handleOpen() {
+    if (!canProceed) return
+    setExpanded(true)
+    setError(null)
+    if (connected === null) setConnected(await getCanvaStatus(founderId))
+  }
+
+  async function handleBrowse() {
+    setError(null)
+    try {
+      setDesigns(await listCanvaDesigns(founderId))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load your Canva designs.')
+    }
+  }
+
+  async function handlePick(id: string) {
+    setError(null)
+    setDesignId(id)
+    setBusy(true)
+    try {
+      setResult(await importCanvaDesign(founderId, id))
+      setSelected(new Set())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not import that design.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function toggleSlide(i: number) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i); else next.add(i)
+      return next
+    })
+  }
+
+  async function handleUse() {
+    if (!result || selected.size === 0) return
+    const indices = [...selected].sort((a, b) => a - b)
+    const item: ImportedContent = {
+      id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      founderId,
+      sourcePlatform: 'canva',
+      originalUrl: `https://www.canva.com/design/${designId}/view`,
+      thumbnailUrl: result.imageUrls[indices[0]!],
+      imageUrls: indices.map(i => result.imageUrls[i]!),
+      title: result.title,
+      importedAt: new Date().toISOString(),
+      status: 'draft',
+      topics: [],
+      locations: [],
+      visibility: 'private',
+    }
+    setBusy(true)
+    const saveResult = await importedContentService.upsert(item)
+    setBusy(false)
+    if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
+    onImported(item)
+  }
+
+  return (
+    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-4 mb-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-semibold text-[#2D2A26]">Import from Canva</p>
+          <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+            {canProceed ? 'Bring in slides from a Canva design to use as this piece’s media.' : 'Select a format above first.'}
+          </p>
+        </div>
+        {!expanded && (
+          <button type="button" onClick={() => void handleOpen()} disabled={!canProceed}
+            className="text-xs font-semibold px-4 py-2 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors shrink-0">
+            Browse designs
+          </button>
+        )}
+      </div>
+
+      {expanded && (
+        <div className="mt-3">
+          {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+
+          {connected === false && (
+            <button type="button" onClick={() => void startCanvaConnect(founderId)}
+              className="px-4 py-2 bg-[#00C4CC] text-white text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity">
+              Connect Canva
+            </button>
+          )}
+
+          {connected === true && !result && designs.length === 0 && (
+            <button type="button" onClick={() => void handleBrowse()}
+              className="px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors">
+              Browse my Canva designs
+            </button>
+          )}
+
+          {connected === true && !result && designs.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {designs.map(d => (
+                <button key={d.id} type="button" onClick={() => void handlePick(d.id)} disabled={busy}
+                  className="text-left rounded-lg overflow-hidden border border-[#E8E4DD] hover:border-[#C86A43]/40 transition-colors disabled:opacity-50">
+                  {d.thumbnailUrl && <img src={d.thumbnailUrl} alt="" className="w-full aspect-video object-cover bg-[#F3EDE6]" />}
+                  <p className="text-[11px] text-[#2D2A26] px-2 py-1.5 truncate">{d.title}</p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {busy && !result && <p className="text-xs text-[#9CA3AF] mt-2">Importing your slides…</p>}
+
+          {result && (
+            <div>
+              <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Click the slides you want to use — one or several</label>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-3">
+                {result.imageUrls.map((url, i) => {
+                  const isSelected = selected.has(i)
+                  return (
+                    <button key={i} type="button" onClick={() => toggleSlide(i)}
+                      className={`rounded-lg overflow-hidden border-2 transition-colors relative ${isSelected ? 'border-[#C86A43]' : 'border-transparent hover:border-[#E8E4DD]'}`}>
+                      <img src={url} alt="" className="w-full aspect-square object-cover bg-[#F3EDE6]" />
+                      {isSelected && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C86A43] text-white text-[9px] flex items-center justify-center">✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
+              <button type="button" onClick={() => void handleUse()} disabled={selected.size === 0 || busy}
+                className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
+                Use {selected.size > 0 ? selected.size : ''} slide{selected.size === 1 ? '' : 's'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -1501,37 +1701,7 @@ export function DashboardPublishPage() {
     if (!importedContentId) return
     const item = importedContentService.get(importedContentId)
     if (!item) return
-    // The import's topics/locations are free text (from paste or Village
-    // Intelligence suggestions) — only carry forward the ones that match a
-    // real Topic/Location in the taxonomy, same as everywhere else in the app.
-    const matchedTopics = allTopics.filter(t => item.topics.some(it => it.toLowerCase() === t.name.toLowerCase()))
-    const matchedLocation = locations.find(l => item.locations.some(il => il.toLowerCase() === l.name.toLowerCase()))
-    setDraft(prev => ({
-      ...prev,
-      importedContentId,
-      title: prev.title || item.title,
-      summary: prev.summary || item.autoSummary || item.description || '',
-      // description is the actual Blog field a founder edits — it must be
-      // checked first, same fix as buildStoryFromImport/syncImportEditsToStory
-      // (previously diaryNote/transcriptText could silently outrank it, and
-      // since Canva imports stopped setting diaryNote, this left Blog empty
-      // for Canva imports specifically).
-      blog: prev.blog || item.description || item.diaryNote || item.transcriptText || '',
-      coverImage: prev.coverImage || item.thumbnailUrl || '',
-      // Canva slide images — lets the Carousel format actually have images
-      // instead of showing up empty when arriving from a Canva import.
-      carouselSlides: prev.carouselSlides.filter(Boolean).length > 0
-        ? prev.carouselSlides
-        : (item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : prev.carouselSlides),
-      // Set by the Canva slide-grouping flow (a Reel+blog group, a Carousel
-      // group, a standalone Blog group) so the wizard opens with the right
-      // formats already checked instead of the founder re-selecting them.
-      contentTypes: prev.contentTypes.length > 0
-        ? prev.contentTypes
-        : (item.contentTypeHint && item.contentTypeHint.length > 0 ? item.contentTypeHint : prev.contentTypes),
-      topics: prev.topics.length > 0 ? prev.topics : matchedTopics,
-      locationId: prev.locationId || matchedLocation?.id || prev.locationId,
-    }))
+    setDraft(prev => ({ ...prev, ...importedContentPatch(item, prev) }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
