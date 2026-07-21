@@ -71,12 +71,30 @@ export function consumeCanvaPkceVerifier(state: string): { verifier: string; fou
 // level JWT rejection, a crash, a timeout), `data` never gets our own
 // { error } shape. Reading the raw body text instead of falling back to a
 // generic message is what actually surfaces the real cause in the UI.
+// Platform-level failures (the function crashing before our own try/catch —
+// e.g. a Supabase compute-resource limit) come back as raw JSON from the
+// gateway, not our own { error } shape: {"code":"WORKER_RESOURCE_LIMIT",
+// "message":"..."}. Showing that verbatim reads as a bug even when the
+// underlying cause is legitimately platform-level, so known codes get a
+// plain-English translation.
+const PLATFORM_ERROR_MESSAGES: Record<string, string> = {
+  WORKER_RESOURCE_LIMIT: 'That request needed more memory than this ran with — try again, or write this part in yourself instead.',
+}
+
 async function canvaFunctionError(data: { error?: string } | null, error: unknown, fallback: string): Promise<Error> {
   let detail = data?.error
   if (!detail && error && typeof error === 'object' && 'context' in error) {
     const ctx = (error as { context?: Response }).context
     if (ctx && typeof ctx.text === 'function') {
-      try { detail = (await ctx.text()).slice(0, 300) } catch { /* ignore */ }
+      try {
+        const raw = (await ctx.text()).slice(0, 300)
+        try {
+          const parsed = JSON.parse(raw) as { code?: string; message?: string }
+          detail = (parsed.code && PLATFORM_ERROR_MESSAGES[parsed.code]) || parsed.message || raw
+        } catch {
+          detail = raw
+        }
+      } catch { /* ignore */ }
     }
   }
   return new Error(detail || (error instanceof Error ? error.message : fallback))
