@@ -458,9 +458,11 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {piece.slideIndices.map(i => (
                           <div key={i} className="flex flex-col items-center gap-1">
-                            <div className={`rounded-lg overflow-hidden border-2 ${piece.coverIndex === i ? 'border-[#C86A43]' : piece.captionIndex === i ? 'border-[#5E6B4A]' : 'border-transparent'}`}>
+                            <button type="button"
+                              onClick={() => setReadingSlide({ pieceId: piece.id, slideIndex: i, field: (i === piece.captionIndex || piece.kind === 'blog') ? 'caption' : 'title' })}
+                              className={`rounded-lg overflow-hidden border-2 ${piece.coverIndex === i ? 'border-[#C86A43]' : piece.captionIndex === i ? 'border-[#5E6B4A]' : 'border-transparent'}`}>
                               <img src={result.imageUrls[i]} alt="" className="w-16 h-16 object-cover bg-[#F3EDE6]" />
-                            </div>
+                            </button>
                             <div className="flex gap-1">
                               {i !== piece.captionIndex && (
                                 <button type="button" onClick={() => updatePiece(piece.id, { coverIndex: i })}
@@ -480,14 +482,10 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                                 </button>
                               )}
                             </div>
-                            <button type="button"
-                              onClick={() => setReadingSlide({ pieceId: piece.id, slideIndex: i, field: (i === piece.captionIndex || piece.kind === 'blog') ? 'caption' : 'title' })}
-                              className="text-[8px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#9CA3AF] hover:text-[#C86A43]">
-                              read & type
-                            </button>
                           </div>
                         ))}
                       </div>
+                      <p className="text-[10px] text-[#9CA3AF] -mt-1 mb-2">Tap a slide to read it full-size and type its words in.</p>
 
                       <input type="text" value={piece.title} onChange={e => updatePiece(piece.id, { title: e.target.value })}
                         placeholder="Title"
@@ -574,7 +572,7 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                   {readingSlide.field === 'title' ? 'Title — the hook on this slide' : 'Caption — becomes the blog text'}
                 </p>
                 <p className="text-[10px] text-[#9CA3AF] mb-2 leading-relaxed">
-                  Read the slide, then type the words in — this is what search engines and AI actually see, the photo alone isn't readable to them.
+                  This slide is a photo, so its words can't be highlighted or copied — read it here and type it into the box below. That typed text is what search engines and AI actually see; the photo alone isn't readable to them.
                 </p>
                 <textarea
                   autoFocus
