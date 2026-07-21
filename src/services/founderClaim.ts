@@ -36,13 +36,32 @@ export const founderClaimService = {
   },
 
   async create(data: Pick<FounderClaimRequest, 'founderId' | 'requesterName' | 'requesterEmail' | 'requesterMessage' | 'evidenceUrl' | 'requesterUserId'>): Promise<FounderClaimRequest> {
+    // Routed through the submit-founder-claim Edge Function rather than a
+    // direct anon-key table insert — Supabase's API gateway has been
+    // rejecting anonymous writes project-wide (confirmed: the identical
+    // insert succeeds as a raw SQL/service-role write, but fails with a 401
+    // through the REST API using the anon key, for this table and others).
+    // The function does the actual write server-side with the service role
+    // key, sidestepping that gateway issue entirely. Falls back to the old
+    // direct-write path when Supabase isn't configured (local/dev store).
+    if (isSupabaseConfigured && supabase) {
+      const { data: fnData, error } = await supabase.functions.invoke<{ claim?: FounderClaimRequest; error?: string }>(
+        'submit-founder-claim', { body: data },
+      )
+      if (error || fnData?.error) throw new Error(fnData?.error || (error instanceof Error ? error.message : 'Failed to submit claim'))
+      const claim = fnData!.claim!
+      store.update<FounderClaimRequest>(KEY, claim)
+      const founder = getFounder(data.founderId)
+      if (founder) store.update('founders', { ...founder, profileStatus: 'claim-pending' })
+      return claim
+    }
+
     const claim: FounderClaimRequest = {
       ...data,
       id: crypto.randomUUID(),
       status: 'pending',
       requestedAt: new Date().toISOString(),
     }
-    // Claims are filed by anonymous visitors — no signed-in owner required to write this row.
     const result = await writeEntityUnowned<FounderClaimRequest>({ cacheKey: KEY, item: claim, table: TABLE, toRow })
     if (!result.success) throw new Error(result.error ?? 'Failed to submit claim')
     const founder = getFounder(data.founderId)
