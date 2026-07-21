@@ -26,7 +26,11 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const MAX_PPTX_BYTES = 25_000_000  // ~25MB — skip rather than crash on bigger
+// This function now runs in complete isolation from image processing
+// (canva-export-images is a separate invocation) — it never competes for
+// memory with the JPG re-upload loop, so it can afford a much higher
+// ceiling than the original combined function's 25MB ever could.
+const MAX_PPTX_BYTES = 80_000_000  // ~80MB — skip rather than crash on bigger
 
 function decodeXmlEntities(s: string): string {
   return s
