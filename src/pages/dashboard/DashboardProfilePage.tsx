@@ -513,7 +513,7 @@ export function DashboardProfilePage() {
 
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
-    { key: 'life-work',     label: "My Life's Work" },
+    { key: 'life-work',     label: "Published" },
     { key: 'expertise',     label: 'Expertise'     },
     { key: 'discovery',     label: 'Profile Visibility' },
     { key: 'settings',      label: 'Settings'      },

@@ -42,8 +42,10 @@ export function ClaimProfilePage() {
     )
   }
 
-  // Already claimed / verified — don't show form
-  if (founder.profileStatus === 'claimed' || founder.profileStatus === 'verified') {
+  // Already claimed / verified — don't show form. founder.userId is checked
+  // too since it's the real ownership signal and can be set (self-link) even
+  // when profileStatus is a stale 'village-curated'.
+  if (founder.userId || founder.profileStatus === 'claimed' || founder.profileStatus === 'verified') {
     return (
       <main className="min-h-screen bg-background pt-20">
         <InnerContainer>

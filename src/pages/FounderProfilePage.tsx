@@ -301,7 +301,13 @@ export function FounderProfilePage() {
       </nav>
 
       {/* ── Profile ownership banner ──────────────────────────────────────── */}
-      {founder.profileStatus === 'village-curated' && (
+      {/* founder.userId is the real DB ownership signal (set the moment someone
+          creates or self-links this profile to their own account) — profileStatus
+          is a separate, sometimes-stale label that can still read 'village-curated'
+          even after a real account is attached (e.g. a pre-curated profile a
+          founder later linked to themselves outside the claim-request flow). A
+          profile with a real owner must never show "claim this profile". */}
+      {founder.profileStatus === 'village-curated' && !founder.userId && (
         <div className="bg-blue-50 border-b border-blue-100" role="note" aria-label="Curated profile notice">
           <InnerContainer>
             <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -327,7 +333,7 @@ export function FounderProfilePage() {
         </div>
       )}
 
-      {founder.profileStatus === 'claim-pending' && (
+      {founder.profileStatus === 'claim-pending' && !founder.userId && (
         <div className="bg-amber-50 border-b border-amber-100" role="note">
           <InnerContainer>
             <div className="py-3 flex items-center gap-2.5">
@@ -342,7 +348,7 @@ export function FounderProfilePage() {
         </div>
       )}
 
-      {(founder.profileStatus === 'claimed' || founder.profileStatus === 'verified') && (
+      {(Boolean(founder.userId) || founder.profileStatus === 'claimed' || founder.profileStatus === 'verified') && (
         <div className="bg-[#5E6B4A]/10 border-b border-[#5E6B4A]/20" role="note">
           <InnerContainer>
             <div className="py-3 flex items-center gap-2.5">
@@ -368,7 +374,7 @@ export function FounderProfilePage() {
           <div className="h-32 bg-gradient-to-br from-primary/20 to-secondary/10" aria-hidden="true" />
         )}
 
-        <div className="bg-surface border-b border-border pb-10">
+        <div className="bg-surface border-b border-border pb-12">
           <InnerContainer>
             <div className="flex flex-col sm:flex-row sm:items-end gap-6 -mt-12 sm:-mt-16">
               <Avatar src={founder.avatar} alt={founder.name} size="xl"
@@ -465,12 +471,12 @@ export function FounderProfilePage() {
               )}
             </div>
 
-            <div className="mt-6 max-w-2xl">
+            <div className="mt-7 max-w-2xl">
               <p className="font-body text-base text-charcoal/80 leading-relaxed">{founder.bio}</p>
             </div>
 
             {founder.topics.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2" aria-label="Topics">
+              <div className="mt-6 flex flex-wrap gap-2" aria-label="Topics">
                 {founder.topics.map(topic => (
                   <Badge key={topic.id} label={topic.name} variant="secondary" />
                 ))}
@@ -478,9 +484,9 @@ export function FounderProfilePage() {
             )}
 
             {business && (
-              <div className="mt-5">
+              <div className="mt-6">
                 <Link to={`/businesses/${business.slug}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
+                  className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
                   aria-label={`View ${business.name} business profile`}>
                   <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
                     <img src={business.logo} alt="" className="w-full h-full object-contain" />
@@ -492,11 +498,11 @@ export function FounderProfilePage() {
             )}
 
             {/* Create with CULO CTA */}
-            <div className="mt-6">
+            <div className="mt-7">
               <CreateWithCuloCTA variant="inline" label="Continue your story with CULO" />
             </div>
 
-            <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-6" />
+            <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-7" />
           </InnerContainer>
         </div>
       </section>

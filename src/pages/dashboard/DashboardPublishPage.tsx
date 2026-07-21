@@ -413,6 +413,7 @@ function CanvaImportCard({ founderId, canProceed, contentTypes, onImported, onRe
   const [expanded, setExpanded] = useState(false)
   const [connected, setConnected] = useState<boolean | null>(null)
   const [designs, setDesigns] = useState<CanvaDesignSummary[]>([])
+  const [designsLoaded, setDesignsLoaded] = useState(false)
   const [designId, setDesignId] = useState('')
   const [result, setResult] = useState<CanvaImportResult | null>(null)
   const [selected, setSelected] = useState<Set<number>>(new Set())
@@ -421,19 +422,27 @@ function CanvaImportCard({ founderId, canProceed, contentTypes, onImported, onRe
 
   if (!isCanvaConfigured() || !founderId) return null
 
-  async function handleOpen() {
+  // One click does everything: opens the card, checks the connection, and —
+  // if already connected — loads designs immediately, instead of making the
+  // founder click "Browse designs" and then a second "Browse my Canva
+  // designs" button right after it.
+  async function handleBrowseClick() {
     if (!canProceed) return
     setExpanded(true)
     setError(null)
-    if (connected === null) setConnected(await getCanvaStatus(founderId))
-  }
-
-  async function handleBrowse() {
-    setError(null)
-    try {
-      setDesigns(await listCanvaDesigns(founderId))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load your Canva designs.')
+    let isConnected = connected
+    if (isConnected === null) {
+      isConnected = await getCanvaStatus(founderId)
+      setConnected(isConnected)
+    }
+    if (isConnected) {
+      try {
+        setDesigns(await listCanvaDesigns(founderId))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not load your Canva designs.')
+      } finally {
+        setDesignsLoaded(true)
+      }
     }
   }
 
@@ -508,8 +517,8 @@ function CanvaImportCard({ founderId, canProceed, contentTypes, onImported, onRe
           </p>
         </div>
         {!expanded && (
-          <button type="button" onClick={() => void handleOpen()} disabled={!canProceed}
-            className="text-xs font-semibold px-4 py-2 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] disabled:opacity-40 transition-colors shrink-0">
+          <button type="button" onClick={() => void handleBrowseClick()} disabled={!canProceed}
+            className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors shrink-0">
             Browse designs
           </button>
         )}
@@ -527,10 +536,9 @@ function CanvaImportCard({ founderId, canProceed, contentTypes, onImported, onRe
           )}
 
           {connected === true && !result && designs.length === 0 && (
-            <button type="button" onClick={() => void handleBrowse()}
-              className="px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors">
-              Browse my Canva designs
-            </button>
+            <p className="text-xs text-[#9CA3AF]">
+              {designsLoaded ? 'No Canva designs found.' : 'Loading your designs…'}
+            </p>
           )}
 
           {connected === true && !result && designs.length > 0 && (

@@ -230,7 +230,7 @@ function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founder
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-4">
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5 mb-6">
       <p className="text-sm font-semibold text-[#2D2A26] mb-1">Connect your podcast channel</p>
       <p className="text-xs text-[#9CA3AF] mb-3">
         Paste your Spotify, Apple Podcasts, website or RSS URL — or just the podcast name — and Village will find the show and its episode catalogue.
@@ -519,7 +519,7 @@ function YouTubeConnectForm({ founderId, isHighVolume, onConnected }: { founderI
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-4">
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5 mb-6">
       <p className="text-sm font-semibold text-[#2D2A26] mb-3">Connect your YouTube channel</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -587,7 +587,7 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5">
       <p className="text-sm font-semibold text-[#2D2A26] mb-1">Connect your website</p>
       <p className="text-xs text-[#9CA3AF] mb-3">Paste your blog or website URL — Village finds the feed automatically.</p>
       <div className="flex flex-col sm:flex-row gap-2">
