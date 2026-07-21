@@ -133,6 +133,12 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
   const [groupError, setGroupError] = useState<string | null>(null)
   const [groupBusy, setGroupBusy] = useState(false)
   const [created, setCreated] = useState(false)
+  // Canva's own text extraction is unreliable for large/photo-heavy designs
+  // (see the WORKER_RESOURCE_LIMIT saga) — this is the actual fallback that
+  // always works: show the slide big enough to read, type the words in
+  // right next to it. The image alone means nothing to a crawler; this is
+  // what gets the real text into the field that becomes indexable copy.
+  const [readingSlide, setReadingSlide] = useState<{ pieceId: string; slideIndex: number; field: 'caption' | 'title' } | null>(null)
   // Reel video export (Phase 2) runs after the piece is already saved — it's
   // much slower than the image/text import, so it's tracked separately per
   // piece rather than blocking "Create pieces" from finishing.
@@ -474,6 +480,11 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
                                 </button>
                               )}
                             </div>
+                            <button type="button"
+                              onClick={() => setReadingSlide({ pieceId: piece.id, slideIndex: i, field: (i === piece.captionIndex || piece.kind === 'blog') ? 'caption' : 'title' })}
+                              className="text-[8px] px-1.5 py-0.5 rounded bg-[#F3EDE6] text-[#9CA3AF] hover:text-[#C86A43]">
+                              read & type
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -546,6 +557,42 @@ function CanvaImportPanel({ founderId, onImported }: { founderId: string; onImpo
           )}
         </div>
       )}
+
+      {readingSlide && result && (() => {
+        const piece = pieces.find(p => p.id === readingSlide.pieceId)
+        if (!piece) return null
+        const imageUrl = result.imageUrls[readingSlide.slideIndex]
+        const value = readingSlide.field === 'title' ? piece.title : piece.caption
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setReadingSlide(null)}>
+            <div className="bg-white rounded-xl overflow-hidden max-w-3xl w-full max-h-[90vh] flex flex-col sm:flex-row" onClick={e => e.stopPropagation()}>
+              <div className="sm:w-1/2 bg-black flex items-center justify-center shrink-0">
+                <img src={imageUrl} alt="" className="max-h-[50vh] sm:max-h-[90vh] w-full object-contain" />
+              </div>
+              <div className="sm:w-1/2 p-4 flex flex-col">
+                <p className="text-xs font-semibold text-[#2D2A26] mb-1">
+                  {readingSlide.field === 'title' ? 'Title — the hook on this slide' : 'Caption — becomes the blog text'}
+                </p>
+                <p className="text-[10px] text-[#9CA3AF] mb-2 leading-relaxed">
+                  Read the slide, then type the words in — this is what search engines and AI actually see, the photo alone isn't readable to them.
+                </p>
+                <textarea
+                  autoFocus
+                  value={value}
+                  onChange={e => updatePiece(piece.id, readingSlide.field === 'title' ? { title: e.target.value } : { caption: e.target.value })}
+                  rows={10}
+                  className="flex-1 w-full px-3 py-2 text-sm border border-[#E8E4DD] rounded-lg resize-none focus:outline-none focus:border-[#C86A43]"
+                  placeholder="Type what the slide says…"
+                />
+                <button type="button" onClick={() => setReadingSlide(null)}
+                  className="mt-3 self-end px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
