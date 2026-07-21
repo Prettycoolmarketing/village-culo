@@ -472,6 +472,9 @@ export interface Story {
   id: string
   slug: string
   title: string
+  // A short line shown under the title on the story page — separate from
+  // `summary` (the longer blurb used for cards/SEO description).
+  subtitle?: string
   summary: string
   coverImage: string
   founderId: string

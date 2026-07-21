@@ -25,6 +25,7 @@ import {
   startCanvaConnect,
   listCanvaDesigns,
   importCanvaDesign,
+  exportCanvaReelVideo,
   type CanvaDesignSummary,
   type CanvaImportResult,
 } from '../../services/canva'
@@ -198,6 +199,7 @@ function importedContentPatch(item: ImportedContent, draft: PublishDraft): Parti
   return {
     importedContentId: item.id,
     title: draft.title || item.title,
+    subtitle: draft.subtitle || item.subtitle || '',
     summary: draft.summary || item.autoSummary || item.description || '',
     blog: draft.blog || item.description || item.diaryNote || item.transcriptText || '',
     coverImage: draft.coverImage || item.thumbnailUrl || '',
@@ -337,13 +339,12 @@ function FormatStep({ draft, onChange, onNext }: {
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div>
-            <p className="font-heading text-2xl font-semibold text-white leading-snug">CULO Creatives: exclusively on Canva</p>
-            <p className="font-body text-base text-white/60 mt-1.5">
-              Structure your messy thoughts and raw footage into different formats of reels, carousels, blogs and voice overs. Only available in Canva.
+            <p className="font-heading text-2xl font-semibold text-white leading-snug">
+              CULO Creatives is exclusively in Canva — publish directly to The Village to be discovered.
             </p>
           </div>
           <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
-            Open CULO
+            Create with CULO in Canva
           </span>
         </div>
       </a>
@@ -381,7 +382,9 @@ function FormatStep({ draft, onChange, onNext }: {
       <CanvaImportCard
         founderId={draft.founderId}
         canProceed={draft.contentTypes.length > 0}
+        contentTypes={draft.contentTypes}
         onImported={item => { onChange(importedContentPatch(item, draft)); onNext() }}
+        onReelVideoReady={videoUrl => onChange({ reelUrl: videoUrl })}
       />
 
       <button
@@ -400,10 +403,12 @@ function FormatStep({ draft, onChange, onNext }: {
 // like it would for a hand-typed story. Saved as an ImportedContent (same
 // shape every other connector produces) so it also shows up, editable, under
 // Import → Canva.
-function CanvaImportCard({ founderId, canProceed, onImported }: {
+function CanvaImportCard({ founderId, canProceed, contentTypes, onImported, onReelVideoReady }: {
   founderId: string
   canProceed: boolean
+  contentTypes: ContentType[]
   onImported: (item: ImportedContent) => void
+  onReelVideoReady: (videoUrl: string) => void
 }) {
   const [expanded, setExpanded] = useState(false)
   const [connected, setConnected] = useState<boolean | null>(null)
@@ -465,6 +470,7 @@ function CanvaImportCard({ founderId, canProceed, onImported }: {
       thumbnailUrl: result.imageUrls[indices[0]!],
       imageUrls: indices.map(i => result.imageUrls[i]!),
       title: result.title,
+      contentTypeHint: contentTypes,
       importedAt: new Date().toISOString(),
       status: 'draft',
       topics: [],
@@ -476,6 +482,20 @@ function CanvaImportCard({ founderId, canProceed, onImported }: {
     setBusy(false)
     if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
     onImported(item)
+    // Reel needs an actual video, not just the slide image — export it
+    // straight from the same Canva design so it's attached automatically
+    // rather than making the founder go find and upload it separately.
+    // Fire-and-forget: encoding takes real time, shouldn't block the wizard.
+    if (contentTypes.includes('reel')) void kickoffReelVideo(item.id, indices[0]! + 1)
+  }
+
+  async function kickoffReelVideo(importedContentId: string, canvaPageNumber: number) {
+    try {
+      const videoUrl = await exportCanvaReelVideo(founderId, designId, canvaPageNumber, 'vertical')
+      const current = importedContentService.get(importedContentId)
+      if (current) await importedContentService.upsert({ ...current, reelVideoUrl: videoUrl })
+      onReelVideoReady(videoUrl)
+    } catch { /* founder can still attach a video manually in the wizard */ }
   }
 
   return (
@@ -1779,6 +1799,7 @@ export function DashboardPublishPage() {
       id,
       slug:           titleSlug,
       title:          draft.title   || 'Untitled',
+      subtitle:       draft.subtitle || undefined,
       summary:        draft.summary || '',
       coverImage:     draft.coverImage || (draft.carouselSlides.filter(Boolean)[0] ?? '/placeholders/village-story.svg'),
       founderId:      draft.founderId,

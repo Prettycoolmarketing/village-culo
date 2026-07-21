@@ -124,8 +124,8 @@ export function ClaimProfilePage() {
         requesterUserId:  user?.email === email.trim() ? user.id : undefined,
       })
       setSubmitted(true)
-    } catch {
-      setError('Something went wrong submitting your claim. Please try again.')
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Something went wrong submitting your claim. Please try again.')
     } finally {
       setSubmitting(false)
     }

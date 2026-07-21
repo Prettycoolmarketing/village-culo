@@ -1169,6 +1169,14 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           className={INPUT} placeholder="Title for this imported piece" />
       </div>
 
+      {/* Subtitle */}
+      <div className="mb-4">
+        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Subtitle</label>
+        <input type="text" value={draft.subtitle ?? ''}
+          onChange={e => field('subtitle', e.target.value || undefined)}
+          className={INPUT} placeholder="A short line under the title — optional" />
+      </div>
+
       {/* Blog */}
       <div className="mb-4">
         <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Blog</label>

@@ -187,6 +187,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     id,
     slug,
     title: item.title || `Imported from ${PLATFORM_LABELS[item.sourcePlatform]}`,
+    subtitle: item.subtitle,
     summary: item.autoSummary || item.description || '',
     coverImage: item.thumbnailUrl || '/placeholders/village-story.svg',
     founderId: founder.id,
@@ -263,6 +264,7 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
   await updateStory({
     ...story,
     title: item.title || story.title,
+    subtitle: item.subtitle || story.subtitle,
     summary: item.autoSummary || item.description || story.summary,
     coverImage: item.thumbnailUrl || story.coverImage,
     blog: fullDescription || story.blog,

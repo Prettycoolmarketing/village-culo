@@ -11,7 +11,6 @@ import { getFeaturedIn, getConnectedTo } from '../services/relationships'
 import { importedContentService, PLATFORM_LABELS, detectPlatform, generateEmbedUrl } from '../services/importedContent'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
-import { IdeaGrid }         from '../widgets/IdeaGrid'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
 import { StoryCard }        from '../components/cards/StoryCard'
@@ -87,6 +86,12 @@ interface ContentTabsProps {
   onChange: (tab: ContentType) => void
 }
 
+// "YouTube Video" reads as a platform credit, not a content format, in a tab
+// bar sitting right next to "Blog" — "Video" matches how founders think about it.
+function tabLabel(type: ContentType): string {
+  return type === 'youtube-video' ? 'Video' : contentTypeLabel(type)
+}
+
 function ContentTabs({ available, active, onChange }: ContentTabsProps) {
   return (
     <div
@@ -112,7 +117,7 @@ function ContentTabs({ available, active, onChange }: ContentTabsProps) {
             }
           `}
         >
-          {contentTypeLabel(type)}
+          {tabLabel(type)}
         </button>
       ))}
     </div>
@@ -425,6 +430,13 @@ export function StoryDetailPage() {
     return []
   })()
 
+  // Other published stories by the same founder — a reader who liked this one
+  // is more likely to want more from this founder than an "Ideas" module that
+  // usually has nothing in it yet.
+  const otherStoriesByFounder = getStories({ founderId: story.founderId, publicOnly: true })
+    .filter(s => s.id !== story.id)
+    .slice(0, 4)
+
   // Related imported content from intel
   const relatedImports = intel
     ? intel.relatedContentIds
@@ -503,14 +515,20 @@ export function StoryDetailPage() {
         {/* Hero content */}
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
-            <div className="max-w-3xl pt-8">
-              {/* H1 */}
+            <div className="pt-12 sm:pt-16">
+              {/* H1 — full-width across the page, not boxed to the reading column below */}
               <h1
                 id="story-title"
-                className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-charcoal leading-tight mb-4"
+                className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-charcoal leading-tight mb-3 max-w-4xl"
               >
                 {story.title}
               </h1>
+
+              {story.subtitle && (
+                <p className="font-body text-sm sm:text-base text-muted mb-4 max-w-2xl">
+                  {story.subtitle}
+                </p>
+              )}
 
               {/* Summary */}
               <p className="font-body text-lg text-muted leading-relaxed mb-6 max-w-2xl">
@@ -736,22 +754,33 @@ export function StoryDetailPage() {
                 </div>
               </section>
 
-              {/* Ideas extracted from this story */}
-              <section aria-labelledby="story-ideas-heading">
-                <h2
-                  id="story-ideas-heading"
-                  className="font-heading text-2xl font-semibold text-charcoal mb-6"
-                >
-                  Ideas inside this Story
-                </h2>
-                <IdeaGrid
-                  filter={{ storyId: story.id, publicOnly: true }}
-                  columns={2}
-                  cardVariant="default"
-                  emptyTitle="No ideas extracted yet"
-                  emptyMessage="Ideas are connected to this story through the Village. Check back as the Village grows."
-                />
-              </section>
+              {/* Other stories by this founder */}
+              {otherStoriesByFounder.length > 0 && (
+                <section aria-labelledby="other-stories-heading">
+                  <h2
+                    id="other-stories-heading"
+                    className="font-heading text-2xl font-semibold text-charcoal mb-6"
+                  >
+                    Other stories by this village member
+                  </h2>
+                  <ul
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-5"
+                    role="list"
+                    aria-label={`Other stories by ${founder?.name ?? 'this founder'}`}
+                  >
+                    {otherStoriesByFounder.map(other => (
+                      <li key={other.id}>
+                        <StoryCard
+                          story={other}
+                          founder={founder}
+                          business={business}
+                          variant="compact"
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               {/* Approved recommendations disclosed in this story */}
               {approvedRecs.length > 0 && (

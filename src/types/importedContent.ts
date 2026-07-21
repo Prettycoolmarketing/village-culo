@@ -22,6 +22,7 @@ export interface ImportedContent {
   embedUrl?: string
   thumbnailUrl?: string
   title: string
+  subtitle?: string
   description?: string
   publishedAt?: string
   importedAt: string
