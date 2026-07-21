@@ -1,4 +1,6 @@
 import { readCache, writeEntity, writeEntityUnowned, writeEntityBatch, deleteEntity, type WriteResult } from '../lib/entityStore'
+import { store } from '../lib/store'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import type {
   PartnerProgram,
   PublisherPartnerProfile,
@@ -615,6 +617,26 @@ export const trackingService = {
   },
 
   async record(data: Omit<TrackingRecord, 'id' | 'clickedAt'>): Promise<TrackingRecord> {
+    // Routed through the record-click Edge Function rather than a direct
+    // anon-key table insert — same Supabase API gateway issue as claims
+    // (see submit-founder-claim): anon writes are rejected with a 401
+    // before reaching Postgres, even though RLS itself allows anyone to
+    // insert here. The function writes server-side with the service role
+    // key instead. Falls back to the old direct-write path when Supabase
+    // isn't configured (local/dev store).
+    if (isSupabaseConfigured && supabase) {
+      const { data: fnData, error } = await supabase.functions.invoke<{ id?: string; clickedAt?: string; error?: string }>(
+        'record-click', { body: data },
+      )
+      const rec: TrackingRecord = {
+        ...data,
+        id: fnData?.id ?? crypto.randomUUID(),
+        clickedAt: fnData?.clickedAt ?? now(),
+      }
+      if (!error && !fnData?.error) store.update<TrackingRecord>(KEYS.trackingRecords, rec)
+      return rec
+    }
+
     const rec: TrackingRecord = { ...data, id: crypto.randomUUID(), clickedAt: now() }
     await writeEntityUnowned<TrackingRecord>({
       cacheKey: KEYS.trackingRecords,
