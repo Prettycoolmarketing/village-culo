@@ -54,6 +54,23 @@ export interface ConnectedSource {
   // Manual pause (status stays 'idle'/'error' otherwise) — a paused source
   // is skipped by both manual "Scan now" and any future recurring sync.
   autoSyncPaused?: boolean
+
+  // Village-generated channel/show description (see services/descriptionOptimizer.ts)
+  // — separate from podcast.description above, which is read-only feed data
+  // and gets overwritten on every scan. This is written back to the platform
+  // manually by the founder (Village has no write access to YouTube Studio
+  // or a podcast host), so it's just remembered here for next time they open
+  // the tool. optimizedDescriptionAnswers are the raw Q&A answers, kept so
+  // regenerating/editing doesn't mean starting over.
+  optimizedDescription?: string
+  optimizedDescriptionAnswers?: {
+    whatItsAbout: string
+    audience: string
+    uniqueAngle: string
+    keywords: string
+    cta: string
+    ctaUrl: string
+  }
 }
 
 export interface ConnectedSourceFilter {

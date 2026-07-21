@@ -26,6 +26,7 @@ import { fetchPodcastFeed, type PodcastFeedShow, type PodcastFeedEpisode } from 
 import { resolvePodcast, type PodcastCandidate } from '../../services/podcastResolve'
 import { resolveEpisode, type ResolvedEpisode } from '../../services/episodeResolve'
 import { resolveWebsiteFeed, type WebsiteFeedCandidate } from '../../services/websiteResolve'
+import { generateYouTubeDescription, generatePodcastDescription, type DescriptionAnswers } from '../../services/descriptionOptimizer'
 import type {
   ImportedContent,
   ImportedContentStatus,
@@ -622,6 +623,214 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
               </button>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Description optimizer ─────────────────────────────────────────────────────
+// Village has no write access to YouTube Studio or a podcast host, so this
+// can't push a description live — it generates the text (free, rule-based,
+// same pattern as the FAQ/topic suggestions on the Profile page) from a few
+// short answers, and the founder pastes it in themselves. Each answer can be
+// typed or spoken — voice-to-text uses the browser's own built-in speech
+// recognition (Chrome/Edge), never a paid transcription API.
+
+const DESCRIPTION_QUESTIONS: { key: keyof DescriptionAnswers; label: string; placeholder: string; hint?: string }[] = [
+  { key: 'whatItsAbout', label: "What's it about?", placeholder: 'I share how I built a marketing agency from scratch, one real story at a time.' },
+  { key: 'audience',     label: "Who's it for?",     placeholder: 'Founders who want to market themselves without hiring an agency.' },
+  { key: 'uniqueAngle',  label: 'What makes it different?', placeholder: 'No fluff — just what actually worked, filmed on my phone.' },
+  { key: 'keywords',     label: 'Keywords or topics you want to be found for', placeholder: 'content marketing, personal branding, founder storytelling', hint: 'Comma-separated. Prefilled from your profile topics — edit freely.' },
+  { key: 'cta',          label: 'What do you want people to do?', placeholder: 'Subscribe for a new episode every week' },
+]
+
+// Minimal typing for the Web Speech API — not in TS's default DOM lib, and
+// only Chrome/Edge implement it (behind the webkit-prefixed name).
+interface SpeechRecognitionLike extends EventTarget {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  start(): void
+  stop(): void
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
+  onerror: (() => void) | null
+  onend: (() => void) | null
+}
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike
+
+function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
+  const w = window as unknown as { SpeechRecognition?: SpeechRecognitionCtor; webkitSpeechRecognition?: SpeechRecognitionCtor }
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
+}
+
+function DescriptionOptimizerCard({ founderId }: { founderId: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const [answers, setAnswers] = useState<DescriptionAnswers>({
+    whatItsAbout: '', audience: '', uniqueAngle: '', keywords: '', cta: '', ctaUrl: '',
+  })
+  const [prefilled, setPrefilled] = useState(false)
+  const [listeningField, setListeningField] = useState<keyof DescriptionAnswers | null>(null)
+  const [generated, setGenerated] = useState<{ youtube: string; podcast: string } | null>(null)
+  const [copied, setCopied] = useState<'youtube' | 'podcast' | null>(null)
+  const [saving, setSaving] = useState(false)
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+  const speechSupported = getSpeechRecognitionCtor() !== null
+
+  function open() {
+    setExpanded(true)
+    if (!prefilled) {
+      const founder = getFounder(founderId)
+      const existing = connectedSourcesService.getAll({ founderId }).find(s => s.optimizedDescriptionAnswers)
+      if (existing?.optimizedDescriptionAnswers) {
+        setAnswers(existing.optimizedDescriptionAnswers)
+      } else if (founder && founder.topics.length > 0) {
+        setAnswers(prev => ({ ...prev, keywords: founder.topics.map(t => t.name).join(', ') }))
+      }
+      setPrefilled(true)
+    }
+  }
+
+  function field(key: keyof DescriptionAnswers, value: string) {
+    setAnswers(prev => ({ ...prev, [key]: value }))
+  }
+
+  function toggleListening(key: keyof DescriptionAnswers) {
+    if (listeningField === key) {
+      recognitionRef.current?.stop()
+      return
+    }
+    recognitionRef.current?.stop()
+    const Ctor = getSpeechRecognitionCtor()
+    if (!Ctor) return
+    const recognition = new Ctor()
+    recognition.lang = 'en-AU'
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.onresult = event => {
+      let transcript = ''
+      for (let i = 0; i < event.results.length; i++) transcript += event.results[i]![0]!.transcript
+      setAnswers(prev => ({ ...prev, [key]: (prev[key] ? prev[key] + ' ' : '') + transcript.trim() }))
+    }
+    recognition.onerror = () => setListeningField(null)
+    recognition.onend = () => setListeningField(null)
+    recognitionRef.current = recognition
+    setListeningField(key)
+    recognition.start()
+  }
+
+  async function handleGenerate() {
+    const founder = getFounder(founderId)
+    const name = founder?.name ?? 'we'
+    const youtube = generateYouTubeDescription(answers, name)
+    const podcast = generatePodcastDescription(answers, name)
+    setGenerated({ youtube, podcast })
+
+    // Best-effort — save these answers onto whichever YouTube/podcast sources
+    // are already connected, so reopening this tool later doesn't mean
+    // starting from a blank page again. Not required for the tool to work.
+    const sources = connectedSourcesService.getAll({ founderId })
+      .filter(s => s.sourceType === 'youtube' || s.sourceType === 'podcast-rss')
+    if (sources.length > 0) {
+      setSaving(true)
+      await Promise.all(sources.map(s => connectedSourcesService.upsert({
+        ...s,
+        optimizedDescriptionAnswers: answers,
+        optimizedDescription: s.sourceType === 'youtube' ? youtube : podcast,
+      })))
+      setSaving(false)
+    }
+  }
+
+  function copy(which: 'youtube' | 'podcast') {
+    if (!generated) return
+    void navigator.clipboard.writeText(generated[which])
+    setCopied(which)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  const canGenerate = answers.whatItsAbout.trim().length > 0
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5 mt-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-semibold text-[#2D2A26]">Complete your descriptions with optimised questions</p>
+          <p className="text-[11px] text-[#9CA3AF] mt-0.5">Answer a few questions once — get a ready-to-paste YouTube channel description and podcast show description.</p>
+        </div>
+        {!expanded && (
+          <button type="button" onClick={open}
+            className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors shrink-0">
+            Answer questions
+          </button>
+        )}
+      </div>
+
+      {expanded && (
+        <div className="mt-4 flex flex-col gap-4">
+          {!speechSupported && (
+            <p className="text-[11px] text-[#9CA3AF]">Voice input isn't supported in this browser — Chrome or Edge works best. You can still type every answer.</p>
+          )}
+          {DESCRIPTION_QUESTIONS.map(q => (
+            <div key={q.key}>
+              <label className="block text-xs font-semibold text-[#2D2A26] mb-1">{q.label}</label>
+              {q.hint && <p className="text-[10px] text-[#9CA3AF] mb-1">{q.hint}</p>}
+              <div className="flex gap-2 items-start">
+                <textarea
+                  value={answers[q.key]}
+                  onChange={e => field(q.key, e.target.value)}
+                  rows={2}
+                  placeholder={q.placeholder}
+                  className="flex-1 px-3 py-2 text-sm border border-[#E8E4DD] rounded-lg resize-none focus:outline-none focus:border-[#C86A43]"
+                />
+                {speechSupported && (
+                  <button type="button" onClick={() => toggleListening(q.key)}
+                    title={listeningField === q.key ? 'Stop recording' : 'Answer by speaking'}
+                    className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                      listeningField === q.key
+                        ? 'bg-red-500 text-white animate-pulse'
+                        : 'bg-[#F3EDE6] text-[#6B7280] hover:bg-[#EFE6DA] hover:text-[#C86A43]'
+                    }`}>
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="M10 12a3 3 0 003-3V5a3 3 0 10-6 0v4a3 3 0 003 3z" />
+                      <path d="M5.5 9a.5.5 0 011 0 3.5 3.5 0 007 0 .5.5 0 011 0 4.5 4.5 0 01-4 4.472V15h1.5a.5.5 0 010 1h-4a.5.5 0 010-1H9v-1.528A4.5 4.5 0 015.5 9z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          <div>
+            <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Link for that call to action</label>
+            <input type="text" value={answers.ctaUrl} onChange={e => field('ctaUrl', e.target.value)}
+              placeholder="www.yoursite.com"
+              className="w-full px-3 py-2 text-sm border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]" />
+          </div>
+
+          <button type="button" onClick={() => void handleGenerate()} disabled={!canGenerate}
+            className="self-start px-4 py-2 bg-[#2D2A26] text-white text-xs font-semibold rounded-lg hover:bg-[#1a1815] disabled:opacity-40 transition-colors">
+            Generate descriptions
+          </button>
+
+          {generated && (
+            <div className="flex flex-col gap-3 mt-2">
+              {(['youtube', 'podcast'] as const).map(which => (
+                <div key={which} className="border border-[#E8E4DD] rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold text-[#2D2A26] capitalize">{which === 'youtube' ? 'YouTube channel description' : 'Podcast show description'}</p>
+                    <button type="button" onClick={() => copy(which)}
+                      className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-[#F3EDE6] text-[#6B7280] hover:text-[#C86A43] transition-colors">
+                      {copied === which ? 'Copied ✓' : 'Copy'}
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#4B4845] whitespace-pre-line leading-relaxed">{generated[which]}</p>
+                </div>
+              ))}
+              <p className="text-[10px] text-[#9CA3AF]">
+                {saving ? 'Saving…' : 'Paste these into YouTube Studio → Customization → Basic info, and your podcast host’s show settings.'}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1674,6 +1883,8 @@ export function DashboardImportContentPage() {
           <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
           <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
+
+          <DescriptionOptimizerCard founderId={founderId} />
 
           {sources.length > 0 && (
             <div className="flex flex-col gap-2 mt-3">
