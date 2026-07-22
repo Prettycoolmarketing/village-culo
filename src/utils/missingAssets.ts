@@ -32,10 +32,6 @@ export function getFounderMissingItems(founder: Founder): MissingItem[] {
     m.push({ field: 'topics',          label: 'Add topics to help people discover you',             action: 'Add Topics',      severity: 'critical'      })
   if (!founder.faqs || founder.faqs.length === 0)
     m.push({ field: 'faqs',            label: 'Answer a few FAQs to boost your search presence',    action: 'Add FAQs',        severity: 'nice-to-have'  })
-  if (!founder.seoTitle)
-    m.push({ field: 'seoTitle',        label: 'Give your page a custom search title',               action: 'Add Page Title',  severity: 'nice-to-have'  })
-  if (!founder.seoDescription)
-    m.push({ field: 'seoDescription',  label: 'Write a short search description',                   action: 'Add Description', severity: 'nice-to-have'  })
   return m
 }
 

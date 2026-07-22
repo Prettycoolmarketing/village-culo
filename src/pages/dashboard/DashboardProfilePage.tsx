@@ -31,7 +31,7 @@ import {
 } from '../../utils/missingAssets'
 import { getFounderAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
-import { suggestTopicsFromText, suggestFaqsFromFounder, suggestSeoFields } from '../../services/founderEnrichment'
+import { suggestTopicsFromText, suggestFaqsFromFounder } from '../../services/founderEnrichment'
 import type { BlogQaPair } from '../../services/importedContentEnrichment'
 import type { Founder, Topic, SocialLink, SocialPlatform } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
@@ -42,7 +42,6 @@ const FIELD_TO_TAB: Record<string, string> = {
   avatar: 'overview', coverImage: 'overview', bio: 'overview', socials: 'overview',
   topics: 'expertise', faqs: 'expertise',
   website: 'overview',
-  seoTitle: 'overview', seoDescription: 'overview',
 }
 
 // ─── Shared form helpers ───────────────────────────────────────────────────────
@@ -531,7 +530,11 @@ export function DashboardProfilePage() {
   // Relationships — everything this founder is connected to across the Village.
   const founderBusinesses = getBusinesses().filter(b => b.founderId === draft.id)
   const founderStories    = getStories({ founderId: draft.id })
+  // Only ideas still backed by a live, published story — an idea whose
+  // source story was deleted or unpublished shouldn't keep showing here.
+  const publishedStoryIds = new Set(getStories({ founderId: draft.id, publicOnly: true }).map(s => s.id))
   const founderIdeas      = getIdeas({ founderId: draft.id })
+    .filter(i => i.relatedStoryIds.some(sid => publishedStoryIds.has(sid)))
   const founderLibrary    = getLibraryItems({ founderId: draft.id })
   const founderMedia      = getMedia({ founderId: draft.id })
 
@@ -592,10 +595,35 @@ export function DashboardProfilePage() {
         <Field label="Display Name">
           <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
         </Field>
-        <Field label="Bio" hint="Write in your own voice — aim for 200+ characters.">
+        <Field label="Bio" hint="Write in your own voice — aim for 200+ characters. This is what search engines and the Village show publicly — no separate SEO text to fill in.">
           <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
           <p className="text-xs text-right text-[#9CA3AF] mt-1">{draft.bio.length} chars</p>
         </Field>
+
+        <div>
+          <p className="text-sm font-medium text-[#2D2A26] mb-1.5">Search Preview</p>
+          <div className="border border-[#E8E4DD] rounded-xl px-4 py-3 bg-white">
+            <p className="text-xs text-[#5E6B4A] truncate">culovillage.com/founders/{draft.slug}</p>
+            <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">{draft.name}</p>
+            <p className="text-xs text-[#4d5156] mt-0.5 line-clamp-2">{draft.bio}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 border-t border-[#E8E4DD] pt-5">
+          <div>
+            <p className="text-sm font-semibold text-[#2D2A26]">Public</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">
+              {isPublic ? 'Your profile is public — indexed by search and visible across the Village.' : 'Your profile is hidden from search and the Village directories.'}
+            </p>
+          </div>
+          <button
+            onClick={() => set('status', isPublic ? 'draft' : 'published')}
+            className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isPublic ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
+            aria-label="Toggle public visibility"
+          >
+            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Profile Photo" hint="Square, min 400×400px.">
@@ -751,49 +779,6 @@ export function DashboardProfilePage() {
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
               <p className="text-sm font-semibold text-[#2D2A26]">Identity</p>
               {renderIdentityFields(draft)}
-            </div>
-
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-[#2D2A26]">Public</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">
-                    {isPublic ? 'Your profile is public — indexed by search and visible across the Village.' : 'Your profile is hidden from search and the Village directories.'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => set('status', isPublic ? 'draft' : 'published')}
-                  className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isPublic ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
-                  aria-label="Toggle public visibility"
-                >
-                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </div>
-
-              <button type="button"
-                onClick={() => { const s = suggestSeoFields(draft); set('seoTitle', s.seoTitle); set('seoDescription', s.seoDescription) }}
-                className="self-start text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors">
-                Generate from profile
-              </button>
-
-              <Field label="Search Title" hint="Shown in browser tab and search results. ~60 chars.">
-                <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
-                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
-              </Field>
-              <Field label="Search Description" hint="Shown in search results. 140 to 160 characters is ideal.">
-                <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} placeholder="15+ years turning founder stories into content systems that build visibility, trust and sales." />
-                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
-              </Field>
-
-              {/* Search preview — real data, no new field, just a rendering of it */}
-              <div>
-                <p className="text-sm font-medium text-[#2D2A26] mb-1.5">Search Preview</p>
-                <div className="border border-[#E8E4DD] rounded-xl px-4 py-3 bg-white">
-                  <p className="text-xs text-[#5E6B4A] truncate">culovillage.com/founders/{draft.slug}</p>
-                  <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">{draft.seoTitle || draft.name}</p>
-                  <p className="text-xs text-[#4d5156] mt-0.5 line-clamp-2">{draft.seoDescription || draft.bio}</p>
-                </div>
-              </div>
             </div>
 
             {/* Today's Recommendations */}
@@ -1021,7 +1006,7 @@ export function DashboardProfilePage() {
               <RelationshipsPanel
                 groups={[
                   {
-                    title: 'Ideas',
+                    title: 'Featured pages due to expertise',
                     items: founderIdeas.map(i => ({
                       id: i.id, label: i.title, sublabel: i.topics.map(t => t.name).join(', '),
                       path: `/ideas/${i.slug}`,

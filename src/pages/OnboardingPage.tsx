@@ -920,7 +920,7 @@ export function OnboardingPage() {
       topics: selectedTopics,
       socialLinks,
       status: 'published',
-      featured: false,
+      featured: true,
       createdAt: now,
       // The founder created this profile themselves — they own it immediately,
       // no claim flow needed. See getCurrentFounder()'s resolution order.
