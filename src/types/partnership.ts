@@ -261,7 +261,9 @@ export interface PublisherPartnerProfile {
   // What they genuinely use and recommend (powers Sprint 5 detection baseline)
   genuineRecommendations?: string[]
 
-  // Who they want to connect with
+  // Who they want to connect with — clickable industries first (idealIndustries),
+  // idealCollaborator is an optional free-text add-on for anything more specific.
+  idealIndustries?: string[]
   idealCollaborator?: string
 
   // Contact & visibility

@@ -8,7 +8,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { FAQEditor } from '../../components/dashboard/FAQEditor'
-import { publisherPartnerProfileService } from '../../services/partnership'
+import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
@@ -33,7 +33,7 @@ import { getFounderAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
 import { suggestTopicsFromText, suggestFaqsFromFounder, suggestSeoFields } from '../../services/founderEnrichment'
 import type { BlogQaPair } from '../../services/importedContentEnrichment'
-import type { Founder, Topic, SocialLink, SocialPlatform, Status } from '../../types'
+import type { Founder, Topic, SocialLink, SocialPlatform } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
 // Every existing field keeps its home; this map only changed which tab a
@@ -42,7 +42,7 @@ const FIELD_TO_TAB: Record<string, string> = {
   avatar: 'overview', coverImage: 'overview', bio: 'overview', socials: 'overview',
   topics: 'expertise', faqs: 'expertise',
   website: 'overview',
-  seoTitle: 'discovery', seoDescription: 'discovery',
+  seoTitle: 'overview', seoDescription: 'overview',
 }
 
 // ─── Shared form helpers ───────────────────────────────────────────────────────
@@ -158,6 +158,10 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
   )
   const [saved, setSaved] = useState(false)
 
+  const affiliateBusinessNames = affiliateLinkService.getAll({ founderId })
+    .map(l => getBusinesses().find(b => b.id === l.businessId)?.name)
+    .filter((n): n is string => Boolean(n))
+
   function setP<K extends keyof PublisherPartnerProfile>(key: K, value: PublisherPartnerProfile[K]) {
     setProfile(prev => ({ ...prev, [key]: value }))
     setSaved(false)
@@ -165,6 +169,27 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
 
   function toggleP(key: keyof PublisherPartnerProfile) {
     setProfile(prev => ({ ...prev, [key]: !(prev[key] as boolean) }))
+    setSaved(false)
+  }
+
+  function turnAllOpportunitiesOn() {
+    const allKeys = [...SPEAKING_OPPS, ...CONTENT_OPPS, ...BUSINESS_OPPS, ...COMMUNITY_OPPS].map(o => o.key)
+    setProfile(prev => {
+      const next = { ...prev } as unknown as Record<string, unknown>
+      for (const key of allKeys) next[key] = true
+      return next as unknown as PublisherPartnerProfile
+    })
+    setSaved(false)
+  }
+
+  function toggleIdealIndustry(name: string) {
+    setProfile(prev => {
+      const has = (prev.idealIndustries ?? []).includes(name)
+      const idealIndustries = has
+        ? (prev.idealIndustries ?? []).filter(i => i !== name)
+        : [...(prev.idealIndustries ?? []), name]
+      return { ...prev, idealIndustries: idealIndustries.length > 0 ? idealIndustries : undefined }
+    })
     setSaved(false)
   }
 
@@ -298,11 +323,17 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
       {/* What I Genuinely Use & Recommend */}
       <DiscoverySection
         title="What I Genuinely Use & Recommend"
-        description="List the tools, products, services and businesses you actually use and would genuinely recommend to others. One per line. CULO uses this to detect future recommendations in your stories."
+        description="Any business already on the Village is detected in your stories automatically — you don't need to list those. This is only for outside tools and software CULO wouldn't otherwise know about."
       >
+        {affiliateBusinessNames.length > 0 && (
+          <div className="px-3 py-2.5 rounded-lg bg-[#5E6B4A]/10 border border-[#5E6B4A]/20">
+            <p className="text-xs font-medium text-[#5E6B4A]">Already tracked automatically from your affiliate links</p>
+            <p className="text-xs text-[#5E6B4A]/80 mt-0.5">{affiliateBusinessNames.join(', ')}</p>
+          </div>
+        )}
         <div>
-          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Tools &amp; products I use</label>
-          <p className="text-xs text-[#9CA3AF] mb-2">One per line, be specific. "Notion" not "productivity tools."</p>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Outside tools &amp; software I use</label>
+          <p className="text-xs text-[#9CA3AF] mb-2">One per line, be specific. "Content 360" not "marketing tools."</p>
           <textarea
             value={(profile.genuineRecommendations ?? []).join('\n')}
             onChange={e => {
@@ -311,9 +342,8 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
             }}
             rows={6}
             className={discoveryInputClass + ' resize-y'}
-            placeholder={'Notion\nCanva\nStripe\nMailchimp\nClaude\nXero\nSquarespace'}
+            placeholder={'Content 360\nCanva\nStripe\nMailchimp\nClaude\nXero\nSquarespace'}
           />
-          <p className="text-xs text-[#9CA3AF] mt-1.5">These are the businesses CULO will look for in your stories first.</p>
         </div>
       </DiscoverySection>
 
@@ -322,6 +352,10 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
         title="Opportunities I'm Open To"
         description="Be selective. Only turn on what you'd genuinely say yes to. Businesses see this when deciding whether to reach out."
       >
+        <button type="button" onClick={turnAllOpportunitiesOn}
+          className="self-start text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors">
+          Turn all on
+        </button>
         <OpportunityGroup title="Speaking &amp; Events" description="Keynotes, podcasts, workshops, live appearances" items={SPEAKING_OPPS} profile={profile} onToggle={toggleP} />
         <OpportunityGroup title="Content &amp; Campaigns" description="Guest posts, brand collaborations, sponsored content" items={CONTENT_OPPS} profile={profile} onToggle={toggleP} />
         <OpportunityGroup title="Business &amp; Advisory" description="Consulting, advisory, freelance and strategy work" items={BUSINESS_OPPS} profile={profile} onToggle={toggleP} />
@@ -329,14 +363,36 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
       </DiscoverySection>
 
       {/* Who I Want to Connect With */}
-      <DiscoverySection title="Who I Want to Connect With" description="Describe the types of businesses, founders or collaborators you'd most like CULO to match you with">
-        <textarea
-          value={profile.idealCollaborator ?? ''}
-          onChange={e => setP('idealCollaborator', e.target.value || undefined)}
-          rows={3}
-          className={discoveryInputClass + ' resize-none'}
-          placeholder="Bootstrapped software businesses that genuinely care about their customers. Not VC-funded, not growth-at-all-costs. Ideally founder-led with a small team."
-        />
+      <DiscoverySection title="Who I Want to Connect With" description="Click the niches you'd most like CULO to match you with — businesses in these industries see you as a fit.">
+        <div className="flex flex-wrap gap-2">
+          {industries.map(ind => {
+            const active = (profile.idealIndustries ?? []).includes(ind.name)
+            return (
+              <button
+                key={ind.id}
+                type="button"
+                onClick={() => toggleIdealIndustry(ind.name)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  active
+                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
+                    : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                }`}
+              >
+                {ind.name}
+              </button>
+            )
+          })}
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-[#6B7280] mb-1.5 mt-1">Anything more specific? (optional)</label>
+          <textarea
+            value={profile.idealCollaborator ?? ''}
+            onChange={e => setP('idealCollaborator', e.target.value || undefined)}
+            rows={2}
+            className={discoveryInputClass + ' resize-none'}
+            placeholder="Bootstrapped, founder-led, not VC-funded."
+          />
+        </div>
       </DiscoverySection>
 
       {/* Locations & Markets */}
@@ -518,7 +574,7 @@ export function DashboardProfilePage() {
     { key: 'overview',      label: 'Profile'       },
     { key: 'life-work',     label: "Published" },
     { key: 'expertise',     label: 'Expertise'     },
-    { key: 'discovery',     label: 'Profile Visibility' },
+    { key: 'discovery',     label: 'Partners' },
     { key: 'settings',      label: 'Settings'      },
   ]
 
@@ -695,6 +751,49 @@ export function DashboardProfilePage() {
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
               <p className="text-sm font-semibold text-[#2D2A26]">Identity</p>
               {renderIdentityFields(draft)}
+            </div>
+
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-[#2D2A26]">Public</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">
+                    {isPublic ? 'Your profile is public — indexed by search and visible across the Village.' : 'Your profile is hidden from search and the Village directories.'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => set('status', isPublic ? 'draft' : 'published')}
+                  className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${isPublic ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
+                  aria-label="Toggle public visibility"
+                >
+                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${isPublic ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+
+              <button type="button"
+                onClick={() => { const s = suggestSeoFields(draft); set('seoTitle', s.seoTitle); set('seoDescription', s.seoDescription) }}
+                className="self-start text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors">
+                Generate from profile
+              </button>
+
+              <Field label="Search Title" hint="Shown in browser tab and search results. ~60 chars.">
+                <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
+                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
+              </Field>
+              <Field label="Search Description" hint="Shown in search results. 140 to 160 characters is ideal.">
+                <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} placeholder="15+ years turning founder stories into content systems that build visibility, trust and sales." />
+                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
+              </Field>
+
+              {/* Search preview — real data, no new field, just a rendering of it */}
+              <div>
+                <p className="text-sm font-medium text-[#2D2A26] mb-1.5">Search Preview</p>
+                <div className="border border-[#E8E4DD] rounded-xl px-4 py-3 bg-white">
+                  <p className="text-xs text-[#5E6B4A] truncate">culovillage.com/founders/{draft.slug}</p>
+                  <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">{draft.seoTitle || draft.name}</p>
+                  <p className="text-xs text-[#4d5156] mt-0.5 line-clamp-2">{draft.seoDescription || draft.bio}</p>
+                </div>
+              </div>
             </div>
 
             {/* Today's Recommendations */}
@@ -943,68 +1042,15 @@ export function DashboardProfilePage() {
         {tab === 'discovery' && (
           <div className="max-w-2xl flex flex-col gap-5">
             <TabIntro>
-              This controls how your profile appears in search results and whether it's public at all.
-              Getting this right is what makes the difference between being found and being invisible.
+              This is how CULO matches you to businesses, speaking invites and collaborations, based on
+              what you're genuinely open to.
             </TabIntro>
 
-            <Field label="Public Visibility" hint="Only published profiles are indexed by search and appear across the Village.">
-              <div className="flex gap-2 flex-wrap">
-                {(['draft', 'submitted', 'published', 'archived'] as Status[]).map(s => (
-                  <button
-                    key={s}
-                    onClick={() => set('status', s)}
-                    className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${
-                      draft.status === s
-                        ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                        : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-              <p className={`text-xs mt-2 ${isPublic ? 'text-green-600' : 'text-[#9CA3AF]'}`}>
-                {isPublic ? 'Your profile is public and discoverable.' : 'Your profile is hidden from public search and directories.'}
-              </p>
-            </Field>
-
-            <button type="button"
-              onClick={() => { const s = suggestSeoFields(draft); set('seoTitle', s.seoTitle); set('seoDescription', s.seoDescription) }}
-              className="self-start text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors">
-              Generate from profile
-            </button>
-
-            <Field label="Search Title" hint="Shown in browser tab and search results. ~60 chars.">
-              <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="Shakas — Founder Storytelling &amp; Content Systems" />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
-            </Field>
-            <Field label="Search Description" hint="Shown in search results. 140 to 160 characters is ideal.">
-              <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} placeholder="15+ years turning founder stories into content systems that build visibility, trust and sales." />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
-            </Field>
-
-            {/* Search preview — real data, no new field, just a rendering of it */}
-            <div>
-              <p className="text-sm font-medium text-[#2D2A26] mb-1.5">Search Preview</p>
-              <div className="border border-[#E8E4DD] rounded-xl px-4 py-3 bg-white">
-                <p className="text-xs text-[#5E6B4A] truncate">culovillage.com/founders/{draft.slug}</p>
-                <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">{draft.seoTitle || draft.name}</p>
-                <p className="text-xs text-[#4d5156] mt-0.5 line-clamp-2">{draft.seoDescription || draft.bio}</p>
-              </div>
-            </div>
-
-            <div className="border-t border-[#E8E4DD] pt-5">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-3">Opportunity Matching</p>
-              <p className="text-xs text-[#9CA3AF] mb-4">
-                Beyond search engines, this is how CULO matches you to businesses, speaking invites and
-                collaborations based on what you're genuinely open to.
-              </p>
-              <PublisherDiscoveryProfile
-                founderId={draft.id}
-                founderTopics={draft.topics ?? []}
-                onEditTopics={() => setTab('expertise')}
-              />
-            </div>
+            <PublisherDiscoveryProfile
+              founderId={draft.id}
+              founderTopics={draft.topics ?? []}
+              onEditTopics={() => setTab('expertise')}
+            />
           </div>
         )}
 
