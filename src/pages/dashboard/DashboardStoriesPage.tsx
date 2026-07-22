@@ -10,7 +10,6 @@ import { getCurrentFounder } from '../../services/currentFounder'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
-import { Tabs } from '../../components/dashboard/Tabs'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
 import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
@@ -27,13 +26,6 @@ import { normalizeUrl } from '../../utils/url'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
-
-const STORY_FIELD_TO_TAB: Record<string, string> = {
-  summary: 'content', blog: 'content', reelUrl: 'content', carouselImages: 'content', cta: 'content',
-  coverImage: 'media',
-  ideas: 'relationships',
-  seoTitle: 'seo', seoDescription: 'seo',
-}
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
@@ -65,7 +57,6 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
   const [saving, setSaving] = useState(false)
   const [saved,  setSaved]  = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [tab, setTab]       = useState('overview')
 
   const missing    = getStoryMissingItems(draft)
   const counts     = getMissingCounts(missing)
@@ -79,17 +70,6 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
   const relatedStories = getStories().filter(s => draft.relatedStoryIds.includes(s.id))
   const intelRecord    = villageContentIntelligenceService.getByContent('story', draft.id)
   const readability     = computeReadability(draft.blog ?? '')
-
-  const TABS = [
-    { key: 'overview',      label: 'Overview'     },
-    { key: 'content',       label: 'Content'      },
-    { key: 'media',         label: 'Media'        },
-    { key: 'relationships', label: 'Relationships', badge: connectedIdeas.length + relatedStories.length },
-    { key: 'intelligence',  label: 'Intelligence',  badge: connectedIdeas.length },
-    { key: 'appears-on',   label: 'Appears On',   badge: appearsOn.length },
-    { key: 'seo',           label: 'SEO & GEO'    },
-    { key: 'publishing',    label: 'Publishing'   },
-  ]
 
   function set<K extends keyof Story>(key: K, value: Story[K]) {
     setDraft(prev => ({ ...prev, [key]: value }))
@@ -179,34 +159,30 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
         </div>
       </div>
 
-      <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-6" />
+      <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-8">
 
-      <div className="flex-1 overflow-y-auto px-6 py-5">
-
-        {/* Overview */}
-        {tab === 'overview' && (
-          <div className="flex flex-col gap-5">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{draft.contentTypes.length}</p>
-                <p className="text-xs text-[#9CA3AF]">Content types</p>
-              </div>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{connectedIdeas.length}</p>
-                <p className="text-xs text-[#9CA3AF]">Related ideas</p>
-              </div>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{counts.total > 0 ? counts.total : '✓'}</p>
-                <p className="text-xs text-[#9CA3AF]">To Improve</p>
-              </div>
+        {/* At a glance */}
+        <div className="flex flex-col gap-5">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
+              <p className="text-xl font-bold text-[#2D2A26]">{draft.contentTypes.length}</p>
+              <p className="text-xs text-[#9CA3AF]">Content types</p>
             </div>
-            <MissingAssetsPanel items={missing} onAction={item => { setTab(STORY_FIELD_TO_TAB[item.field] ?? 'content'); focusField(item.field) }} />
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
+              <p className="text-xl font-bold text-[#2D2A26]">{connectedIdeas.length}</p>
+              <p className="text-xs text-[#9CA3AF]">Related ideas</p>
+            </div>
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
+              <p className="text-xl font-bold text-[#2D2A26]">{counts.total > 0 ? counts.total : '✓'}</p>
+              <p className="text-xs text-[#9CA3AF]">To Improve</p>
+            </div>
           </div>
-        )}
+          <MissingAssetsPanel items={missing} onAction={item => focusField(item.field)} />
+        </div>
 
         {/* Content */}
-        {tab === 'content' && (
-          <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 border-t border-[#E8E4DD] pt-6">
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Content</p>
             <Field label="Title">
               <input type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
             </Field>
@@ -332,12 +308,11 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 <input id="cta" type="url" value={draft.ctaUrl} onChange={e => set('ctaUrl', e.target.value)} className={inputClass} placeholder="https://" />
               </Field>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* Media */}
-        {tab === 'media' && (
-          <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 border-t border-[#E8E4DD] pt-6">
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Media</p>
             <Field label="Cover Image" hint="Used on story card, story page header, and social share.">
               <MediaUpload
                 value={draft.coverImage}
@@ -348,11 +323,11 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
               />
               {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-red-600">⚠ Using placeholder — add a real cover image.</p>}
             </Field>
-          </div>
-        )}
+        </div>
 
         {/* Relationships */}
-        {tab === 'relationships' && (
+        <div className="flex flex-col gap-4 border-t border-[#E8E4DD] pt-6">
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Relationships</p>
           <RelationshipsPanel
             groups={[
               {
@@ -373,11 +348,11 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
               },
             ]}
           />
-        )}
+        </div>
 
         {/* Intelligence — realized numbers, not projected. Sprint 3.5. */}
-        {tab === 'intelligence' && (
-          <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 border-t border-[#E8E4DD] pt-6">
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Intelligence</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
                 <p className="text-2xl font-bold text-[#2D2A26]">{storyFounder?.authorityScore ?? 0}</p>
@@ -427,20 +402,18 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 </div>
               </div>
             )}
-          </div>
-        )}
+        </div>
 
         {/* Appears On */}
-        {tab === 'appears-on' && (
-          <div>
+        <div className="border-t border-[#E8E4DD] pt-6">
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Appears On</p>
             <p className="text-sm text-[#6B7280] mb-4">Every location where this story is surfaced in the Village.</p>
             <AppearsOnPanel locations={appearsOn} />
-          </div>
-        )}
+        </div>
 
         {/* SEO & GEO */}
-        {tab === 'seo' && (
-          <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 border-t border-[#E8E4DD] pt-6">
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">SEO &amp; GEO</p>
             <Field label="SEO Title" hint="~60 chars">
               <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
@@ -453,12 +426,11 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
               <p className="text-xs font-semibold text-[#6B7280] mb-1.5">Location</p>
               <p className="text-sm text-[#2D2A26]">{draft.location.name}, {draft.location.state} · {draft.location.country}</p>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* Publishing */}
-        {tab === 'publishing' && (
-          <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 border-t border-[#E8E4DD] pt-6">
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Publishing</p>
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-3">Status</p>
               <div className="flex gap-2 flex-wrap">
@@ -506,8 +478,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 <p className="text-[#6B7280]">{draft.updatedAt}</p>
               </div>
             </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )
