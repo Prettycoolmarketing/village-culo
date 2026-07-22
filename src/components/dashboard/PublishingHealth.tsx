@@ -32,7 +32,7 @@ export function HealthBadge({ missing, size = 'sm' }: HealthBadgeProps) {
   return (
     <span className={`flex items-center gap-1 ${textSize} text-amber-600 font-medium`}>
       <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block shrink-0" />
-      {niceToImprove} nice to improve
+Optimise for visibility{niceToImprove > 1 ? ` (${niceToImprove})` : ''}
     </span>
   )
 }

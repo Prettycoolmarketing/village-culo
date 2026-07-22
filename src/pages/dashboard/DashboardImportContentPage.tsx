@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
+import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
@@ -1530,6 +1532,14 @@ export function DashboardImportContentPage() {
   const [bulkPublishing, setBulkPublishing] = useState(false)
   const [bulkResult, setBulkResult] = useState<{ published: { title: string; slug: string }[]; failed: { title: string; error: string }[] } | null>(null)
   const [activeTab, setActiveTab] = useState<ImportedContentPlatform>('youtube')
+  const [canvaExpanded, setCanvaExpanded] = useState(false)
+  const canvaCardRef = useRef<HTMLDivElement>(null)
+
+  function openCanvaCard() {
+    setActiveTab('canva')
+    setCanvaExpanded(true)
+    requestAnimationFrame(() => canvaCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
 
   function switchTab(tab: ImportedContentPlatform) {
     setActiveTab(tab)
@@ -1668,6 +1678,15 @@ export function DashboardImportContentPage() {
           <p className="text-sm text-[#6B7280] mb-4">
             Connect a channel or feed so Village can pull in your own already-public content automatically.
           </p>
+
+          <div ref={canvaCardRef}>
+            <CanvaImportCard
+              founderId={founderId}
+              expanded={canvaExpanded}
+              onExpandedChange={setCanvaExpanded}
+              onImported={() => { setActiveTab('canva'); loadItems() }}
+            />
+          </div>
 
           <YouTubeConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
@@ -1830,8 +1849,19 @@ export function DashboardImportContentPage() {
           <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-10 text-center">
             <p className="text-sm font-semibold text-[#2D2A26] mb-2">No {PLATFORM_LABELS[activeTab]} imports yet</p>
             <p className="text-xs text-[#9CA3AF] leading-relaxed max-w-sm mx-auto">
-              Bring your old content into the Village so it can become searchable, connected and discoverable again.
+              {activeTab === 'canva'
+                ? 'Design in Canva, then bring your slides in here — or import from an existing design.'
+                : 'Bring your old content into the Village so it can become searchable, connected and discoverable again.'}
             </p>
+            {activeTab === 'canva' && (
+              <div className="flex items-center justify-center gap-3 mt-4">
+                <CreateWithCuloCTA variant="button" label="Create with CULO in Canva" />
+                <button type="button" onClick={openCanvaCard}
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors">
+                  Publish designs
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
