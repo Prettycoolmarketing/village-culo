@@ -525,15 +525,10 @@ export function StoryDetailPage() {
               </h1>
 
               {story.subtitle && (
-                <p className="font-body text-sm sm:text-base text-muted mb-4 max-w-2xl">
+                <p className="font-body text-lg sm:text-xl text-muted leading-relaxed mt-3 mb-8 max-w-2xl">
                   {story.subtitle}
                 </p>
               )}
-
-              {/* Summary */}
-              <p className="font-body text-lg text-muted leading-relaxed mb-6 max-w-2xl">
-                {story.summary}
-              </p>
 
               {/* Meta row */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-body text-muted mb-6">

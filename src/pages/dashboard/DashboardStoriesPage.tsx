@@ -148,6 +148,7 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
         <div className="flex items-start gap-3 min-w-0">
           <img src={draft.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
           <div className="min-w-0">
+            <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-0.5">Editing story</p>
             <p className="text-sm font-bold text-[#2D2A26] leading-tight">{draft.title}</p>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               {draft.contentTypes.map(ct => (
