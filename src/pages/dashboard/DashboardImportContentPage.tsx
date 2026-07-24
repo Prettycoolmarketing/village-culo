@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
+import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
@@ -74,7 +75,7 @@ const TRANSCRIPT_STATUS_OPTIONS = [
   { value: 'unavailable', label: 'Not available for this content/platform' },
 ]
 
-const PLATFORM_TAB_ORDER: ImportedContentPlatform[] = ['youtube', 'podcast', 'website', 'canva']
+const PLATFORM_TAB_ORDER: ImportedContentPlatform[] = ['youtube', 'podcast', 'website', 'canva', 'instagram']
 
 const SOURCE_TYPE_LABELS: Record<ConnectedSourceType, string> = {
   'youtube':      'YouTube',
@@ -1448,30 +1449,40 @@ function SavedRow({
           aria-label={ready ? `Select "${item.title}" to publish` : 'Not ready to publish yet'}
         />
       )}
-      <a
-        href={normalizeUrl(item.originalUrl)}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Open original"
-        className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center hover:opacity-80 transition-opacity"
-      >
-        {item.thumbnailUrl ? (
-          <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
-        ) : (
-          <span className="text-[#C4BDB4]">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 6h16M4 6a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2H4z" />
-            </svg>
-          </span>
-        )}
-      </a>
+      {item.originalUrl ? (
+        <a
+          href={normalizeUrl(item.originalUrl)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open original"
+          className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center hover:opacity-80 transition-opacity"
+        >
+          {item.thumbnailUrl ? (
+            <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <span className="text-[#C4BDB4]">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 6h16M4 6a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2H4z" />
+              </svg>
+            </span>
+          )}
+        </a>
+      ) : (
+        <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center">
+          {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />}
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <PlatformBadge platform={item.sourcePlatform} />
-          <a href={normalizeUrl(item.originalUrl)} target="_blank" rel="noopener noreferrer"
-            className="text-sm font-semibold text-[#2D2A26] truncate hover:text-[#C86A43] transition-colors">
-            {item.title}
-          </a>
+          {item.originalUrl ? (
+            <a href={normalizeUrl(item.originalUrl)} target="_blank" rel="noopener noreferrer"
+              className="text-sm font-semibold text-[#2D2A26] truncate hover:text-[#C86A43] transition-colors">
+              {item.title}
+            </a>
+          ) : (
+            <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
+          )}
           {!item.relatedStoryId && !ready && (
             <span className="text-[10px] text-amber-600 shrink-0">needs a title before it can publish</span>
           )}
@@ -1539,6 +1550,15 @@ export function DashboardImportContentPage() {
     setActiveTab('canva')
     setCanvaExpanded(true)
     requestAnimationFrame(() => canvaCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
+
+  const [instagramExpanded, setInstagramExpanded] = useState(false)
+  const instagramCardRef = useRef<HTMLDivElement>(null)
+
+  function openInstagramCard() {
+    setActiveTab('instagram')
+    setInstagramExpanded(true)
+    requestAnimationFrame(() => instagramCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
   function switchTab(tab: ImportedContentPlatform) {
@@ -1722,6 +1742,15 @@ export function DashboardImportContentPage() {
 
           <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
 
+          <div ref={instagramCardRef}>
+            <InstagramArchiveImportCard
+              founderId={founderId}
+              expanded={instagramExpanded}
+              onExpandedChange={setInstagramExpanded}
+              onImported={() => { setActiveTab('instagram'); loadItems() }}
+            />
+          </div>
+
           {sources.length > 0 && (
             <div className="flex flex-col gap-2 mt-3">
               {sources.map(source => (
@@ -1881,6 +1910,8 @@ export function DashboardImportContentPage() {
             <p className="text-xs text-[#9CA3AF] leading-relaxed max-w-sm mx-auto">
               {activeTab === 'canva'
                 ? 'Design in Canva, then bring your slides in here — or import from an existing design.'
+                : activeTab === 'instagram'
+                ? 'Export your Instagram archive and bring years of posts, reels and stories into your permanent knowledge library.'
                 : 'Bring your old content into the Village so it can become searchable, connected and discoverable again.'}
             </p>
             {activeTab === 'canva' && (
@@ -1892,7 +1923,54 @@ export function DashboardImportContentPage() {
                 </button>
               </div>
             )}
+            {activeTab === 'instagram' && (
+              <div className="flex items-center justify-center mt-4">
+                <button type="button" onClick={openInstagramCard}
+                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors">
+                  Import archive
+                </button>
+              </div>
+            )}
           </div>
+        ) : activeTab === 'instagram' ? (
+          // Instagram Archive items group by the day they were originally
+          // posted, not the day they were imported — matches how the
+          // archive itself reads as a timeline.
+          (() => {
+            const groups = new Map<string, ImportedContent[]>()
+            for (const item of visibleItems) {
+              const day = (item.publishedAt ?? item.importedAt).slice(0, 10)
+              if (!groups.has(day)) groups.set(day, [])
+              groups.get(day)!.push(item)
+            }
+            const days = [...groups.keys()].sort((a, b) => b.localeCompare(a))
+            return (
+              <div className="flex flex-col gap-4">
+                {days.map(day => (
+                  <div key={day} className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
+                    <div className="px-5 py-2.5 bg-[#F8F5F0] border-b border-[#E8E4DD]">
+                      <p className="text-xs font-semibold text-[#6B7280]">
+                        {new Date(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div className="divide-y divide-[#F3EDE6]">
+                      {groups.get(day)!.map(item => (
+                        <SavedRow
+                          key={item.id}
+                          item={item}
+                          checked={checked.has(item.id)}
+                          onToggleCheck={() => toggleChecked(item.id)}
+                          onAdvancedEdit={() => handleAdvancedEdit(item)}
+                          onDelete={() => handleDelete(item.id)}
+                          onStatusChange={status => void handleStatusChange(item.id, status)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()
         ) : (
           <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
             {visibleItems.map(item => (

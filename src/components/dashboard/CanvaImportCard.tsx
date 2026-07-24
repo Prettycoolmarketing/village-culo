@@ -55,6 +55,7 @@ export function CanvaImportCard({
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [stage, setStage] = useState<string | null>(null)
 
   if (!isCanvaConfigured() || !founderId) return null
 
@@ -107,6 +108,30 @@ export function CanvaImportCard({
   async function handleUse() {
     if (!result || selected.size === 0) return
     const indices = [...selected].sort((a, b) => a - b)
+
+    // Reel needs the actual exported video, not the slide image — and it
+    // has to happen BEFORE saving, not after. Firing it off in the
+    // background after save used to mean: if the founder moved on before
+    // the ~1-3 minute export finished (or closed the tab), reelVideoUrl
+    // never got set, and the story fell back to linking the Canva design
+    // page itself instead of playing a video — exactly the wrong thing to
+    // publish. Blocking here guarantees a founder either gets the real
+    // video or a clear error, never a silent Canva-link fallback.
+    let reelVideoUrl: string | undefined
+    if (contentTypeHint?.includes('reel')) {
+      setBusy(true)
+      setStage('Exporting your Reel video — this can take a few minutes…')
+      try {
+        reelVideoUrl = await exportCanvaReelVideo(founderId, designId, result.pageNumbers[indices[0]!] ?? indices[0]! + 1, 'vertical')
+      } catch (err) {
+        setBusy(false)
+        setStage(null)
+        setError(err instanceof Error ? err.message : 'Could not export the video for this Reel. Try again, or pick different slides.')
+        return
+      }
+      setStage(null)
+    }
+
     const item: ImportedContent = {
       id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       founderId,
@@ -114,6 +139,7 @@ export function CanvaImportCard({
       originalUrl: `https://www.canva.com/design/${designId}/view`,
       thumbnailUrl: result.imageUrls[indices[0]!],
       imageUrls: indices.map(i => result.imageUrls[i]!),
+      reelVideoUrl,
       title: result.title,
       contentTypeHint,
       importedAt: new Date().toISOString(),
@@ -126,21 +152,8 @@ export function CanvaImportCard({
     const saveResult = await importedContentService.upsert(item)
     setBusy(false)
     if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
+    if (reelVideoUrl) onReelVideoReady?.(reelVideoUrl)
     onImported(item)
-    // Reel needs an actual video, not just the slide image — export it
-    // straight from the same Canva design so it's attached automatically
-    // rather than making the founder go find and upload it separately.
-    // Fire-and-forget: encoding takes real time, shouldn't block the caller.
-    if (contentTypeHint?.includes('reel') && onReelVideoReady) void kickoffReelVideo(item.id, result.pageNumbers[indices[0]!] ?? indices[0]! + 1)
-  }
-
-  async function kickoffReelVideo(importedContentId: string, canvaPageNumber: number) {
-    try {
-      const videoUrl = await exportCanvaReelVideo(founderId, designId, canvaPageNumber, 'vertical')
-      const current = importedContentService.get(importedContentId)
-      if (current) await importedContentService.upsert({ ...current, reelVideoUrl: videoUrl })
-      onReelVideoReady?.(videoUrl)
-    } catch { /* founder can still attach a video manually later */ }
   }
 
   return (
@@ -210,6 +223,7 @@ export function CanvaImportCard({
                 className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
                 Use {selected.size > 0 ? selected.size : ''} slide{selected.size === 1 ? '' : 's'}
               </button>
+              {stage && <p className="text-xs text-[#9CA3AF] mt-2">{stage}</p>}
             </div>
           )}
         </div>

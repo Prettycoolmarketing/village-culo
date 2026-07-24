@@ -234,10 +234,15 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
   }
   if (contentTypes.some(ct => ct === 'reel' || ct === 'youtube-video' || ct === 'social-post')) {
     // youtube-video / reel / social-post — the video/post URL itself is the
-    // primary content. reelVideoUrl (Canva Reel groups only) wins when set
-    // — originalUrl for a Canva piece is just the shared design link, not a
-    // playable video.
-    story.reelUrl = item.reelVideoUrl || item.originalUrl
+    // primary content. reelVideoUrl wins when set. For a Canva or Instagram
+    // Archive piece, originalUrl is never a playable video (a Canva design
+    // share link, or empty for an archived post) — falling back to it there
+    // used to mean the published story silently linked out to Canva instead
+    // of playing nothing/an honest empty state, so that fallback only
+    // applies to platforms whose originalUrl really is the video itself
+    // (YouTube, TikTok, Instagram's live originalUrl, etc.).
+    const originalUrlIsPlayable = item.sourcePlatform !== 'canva'
+    story.reelUrl = item.reelVideoUrl || (originalUrlIsPlayable ? item.originalUrl : undefined)
   }
 
   return story

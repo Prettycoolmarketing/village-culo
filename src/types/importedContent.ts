@@ -48,9 +48,9 @@ export interface ImportedContent {
   transcriptImportedAt?: string
   transcriptStatus?: 'none' | 'available' | 'unavailable' | 'manual' | 'generated'
 
-  // Every exported slide image, in Canva's page order — only set for
-  // sourcePlatform 'canva'. thumbnailUrl holds whichever one the founder
-  // picked as the cover; this holds the full set for a carousel.
+  // Every image for this piece — Canva slides in page order, or an
+  // Instagram carousel's photos in original order. thumbnailUrl holds
+  // whichever one is the cover.
   imageUrls?: string[]
 
   // Auto enrichment
@@ -97,11 +97,11 @@ export interface ImportedContent {
   // Blog) that each need a different format than the platform-wide default.
   contentTypeHint?: ContentType[]
 
-  // The actual re-hosted video for a Canva-grounded Reel piece (see
-  // canva-export-reel-video) — set asynchronously after the piece is first
-  // saved, since video export takes real time. buildStoryFromImport prefers
-  // this over originalUrl (which for a Canva Reel piece is just the shared
-  // design link, not a playable video) when present.
+  // The actual re-hosted video for a piece whose original source isn't a
+  // stable public URL — a Canva-grounded Reel (set asynchronously after
+  // export, see canva-export-reel-video) or a video pulled straight out of
+  // an Instagram archive ZIP. buildStoryFromImport prefers this over
+  // originalUrl when present.
   reelVideoUrl?: string
 }
 
