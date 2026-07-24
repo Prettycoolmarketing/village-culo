@@ -15,16 +15,13 @@ function AutoDetectedBadge() {
 }
 
 export function VillageIntelligenceBlock({ intel, variant = 'full' }: Props) {
-  const allQuestions = [...new Set([...intel.searchQuestions, ...intel.geoQuestions])]
-  const displayQuestions = variant === 'sidebar' ? allQuestions.slice(0, 3) : allQuestions.slice(0, 6)
   const displayLessons   = variant === 'sidebar' ? intel.lessons.slice(0, 2) : intel.lessons.slice(0, 4)
   const allLocations     = [...new Set([...intel.cities, ...intel.regions, ...intel.countries])]
 
   const hasMeta    = intel.primaryTopics.length > 0 || allLocations.length > 0
   const hasSignals = displayLessons.length > 0 || intel.problems.length > 0 || intel.solutions.length > 0
-  const hasQuestions = displayQuestions.length > 0
 
-  if (!hasMeta && !hasSignals && !hasQuestions) return null
+  if (!hasMeta && !hasSignals) return null
 
   return (
     <section
@@ -132,23 +129,6 @@ export function VillageIntelligenceBlock({ intel, variant = 'full' }: Props) {
               </span>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Questions this answers */}
-      {hasQuestions && (
-        <div className="border-t border-border pt-4">
-          <div className="flex items-center gap-2 mb-3">
-            <p className="font-body text-xs font-semibold text-charcoal">Questions this answers</p>
-            <AutoDetectedBadge />
-          </div>
-          <ul className="space-y-2" role="list">
-            {displayQuestions.map((q, i) => (
-              <li key={i} className="font-body text-xs text-muted leading-relaxed italic">
-                {q}
-              </li>
-            ))}
-          </ul>
         </div>
       )}
 

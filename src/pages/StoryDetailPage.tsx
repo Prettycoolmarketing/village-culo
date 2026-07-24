@@ -189,7 +189,7 @@ function BlogContent({ content }: { content: string }) {
 
 // ─── Reel tab ───────────────────────────────────────────────────────────────────
 
-function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: string; summary: string }) {
+function ReelContent({ reelUrl, title, summary, landscape = false }: { reelUrl?: string; title: string; summary: string; landscape?: boolean }) {
   const isChannelLink = looksLikeChannelUrl(reelUrl)
   const isUploadedFile = isDirectVideoUrl(reelUrl)
   const platform = reelUrl ? detectPlatform(reelUrl) : undefined
@@ -198,10 +198,12 @@ function ReelContent({ reelUrl, title, summary }: { reelUrl?: string; title: str
 
   return (
     <div className="flex flex-col sm:flex-row gap-6 items-start" aria-label="Video content">
-      {/* Vertical phone frame */}
+      {/* Only an actual Reel gets the vertical phone frame — a landscape
+          video (YouTube, talking head) stretched into 9:16 is what was
+          reading as blurry/cropped. */}
       <div
-        className="flex-shrink-0 w-full sm:w-56 bg-charcoal rounded-2xl overflow-hidden relative"
-        style={{ aspectRatio: '9/16' }}
+        className={`flex-shrink-0 w-full bg-charcoal rounded-2xl overflow-hidden relative ${landscape ? 'sm:w-[28rem]' : 'sm:w-56'}`}
+        style={{ aspectRatio: landscape ? '16/9' : '9/16' }}
         aria-label="Video preview"
       >
         {isUploadedFile ? (
@@ -729,7 +731,7 @@ export function StoryDetailPage() {
                             ? <CarouselContent images={story.carouselImages} title={story.title} />
                             : <p className="font-body text-muted text-sm italic">Photo gallery will appear here once published.</p>
                         ) : (type === 'talking-head' || type === 'youtube-video') ? (
-                          <ReelContent reelUrl={effectiveReelUrl} title={story.title} summary={story.summary} />
+                          <ReelContent reelUrl={effectiveReelUrl} title={story.title} summary={story.summary} landscape />
                         ) : (type === 'podcast' || type === 'voice-over') && isDirectAudioUrl(url) ? (
                           <audio src={url} controls className="w-full" />
                         ) : url ? (
@@ -826,35 +828,28 @@ export function StoryDetailPage() {
                 </section>
               )}
 
-              {/* Questions this answers — from Village Intelligence */}
-              {intel && (intel.searchQuestions.length > 0 || intel.geoQuestions.length > 0) && (
-                <section aria-labelledby="story-questions-heading">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h2
-                      id="story-questions-heading"
-                      className="font-heading text-2xl font-semibold text-charcoal"
-                    >
-                      Questions this answers
+              {/* Frequently Asked Questions — the founder's own real, answered
+                  FAQs, never an auto-generated question with no real answer
+                  behind it. */}
+              {(() => {
+                const answeredFaqs = (founder?.faqs ?? []).filter(f => f.answer.trim().length > 0)
+                if (answeredFaqs.length === 0) return null
+                return (
+                  <section aria-labelledby="story-faq-heading">
+                    <h2 id="story-faq-heading" className="font-heading text-2xl font-semibold text-charcoal mb-6">
+                      Frequently Asked Questions
                     </h2>
-                    <span className="font-body text-[9px] font-semibold text-muted bg-border/60 px-2 py-0.5 rounded-full">
-                      Auto-detected
-                    </span>
-                  </div>
-                  <p className="font-body text-sm text-muted mb-6">
-                    Common questions this story helps you think through.
-                  </p>
-                  <ul className="flex flex-col gap-3" role="list">
-                    {[...new Set([...intel.searchQuestions, ...intel.geoQuestions])].slice(0, 6).map((q, i) => (
-                      <li
-                        key={i}
-                        className="font-body text-sm text-charcoal/80 leading-relaxed px-4 py-3 bg-surface rounded-xl border border-border italic"
-                      >
-                        {q}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
+                    <ul className="flex flex-col gap-3" role="list">
+                      {answeredFaqs.slice(0, 8).map(faq => (
+                        <li key={faq.id} className="px-4 py-3 bg-surface rounded-xl border border-border">
+                          <p className="font-body text-sm font-semibold text-charcoal">{faq.question}</p>
+                          <p className="font-body text-sm text-muted leading-relaxed mt-1">{faq.answer}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )
+              })()}
 
               {/* Related Village Content — imported content from intel */}
               {relatedImports.length > 0 && (

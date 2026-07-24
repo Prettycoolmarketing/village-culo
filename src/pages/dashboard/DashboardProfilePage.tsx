@@ -159,10 +159,45 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
     () => publisherPartnerProfileService.getOrCreate(founderId)
   )
   const [saved, setSaved] = useState(false)
+  const [affiliateLinks, setAffiliateLinks] = useState(() => affiliateLinkService.getAll({ founderId }))
+  const [newAffiliateBusinessId, setNewAffiliateBusinessId] = useState('')
+  const [newAffiliateUrl, setNewAffiliateUrl] = useState('')
 
-  const affiliateBusinessNames = affiliateLinkService.getAll({ founderId })
-    .map(l => getBusinesses().find(b => b.id === l.businessId)?.name)
-    .filter((n): n is string => Boolean(n))
+  const allBusinesses = getBusinesses({ founderId })
+  const linkedBusinessIds = new Set(affiliateLinks.map(l => l.businessId))
+  const unlinkedBusinesses = allBusinesses.filter(b => !linkedBusinessIds.has(b.id))
+
+  async function handleAddAffiliateLink() {
+    if (!newAffiliateBusinessId || !newAffiliateUrl.trim()) return
+    const biz = allBusinesses.find(b => b.id === newAffiliateBusinessId)
+    const link = {
+      id: crypto.randomUUID(),
+      founderId,
+      businessId: newAffiliateBusinessId,
+      businessWebsite: biz?.website,
+      affiliateUrl: newAffiliateUrl.trim(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    const result = await affiliateLinkService.upsert(link)
+    if (result.success) {
+      setAffiliateLinks(affiliateLinkService.getAll({ founderId }))
+      setNewAffiliateBusinessId('')
+      setNewAffiliateUrl('')
+    }
+  }
+
+  async function handleUpdateAffiliateUrl(id: string, url: string) {
+    const link = affiliateLinks.find(l => l.id === id)
+    if (!link) return
+    setAffiliateLinks(prev => prev.map(l => l.id === id ? { ...l, affiliateUrl: url } : l))
+    await affiliateLinkService.upsert({ ...link, affiliateUrl: url })
+  }
+
+  async function handleDeleteAffiliateLink(id: string) {
+    const result = await affiliateLinkService.delete(id)
+    if (result.success) setAffiliateLinks(affiliateLinkService.getAll({ founderId }))
+  }
 
   function setP<K extends keyof PublisherPartnerProfile>(key: K, value: PublisherPartnerProfile[K]) {
     setProfile(prev => ({ ...prev, [key]: value }))
@@ -322,27 +357,61 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
         )}
       </DiscoverySection>
 
-      {/* What I Genuinely Use & Recommend */}
+      {/* What I Genuinely Use & Recommend — now primarily an affiliate link
+          manager: a real affiliate link IS a genuine recommendation, and
+          CULO already auto-detects the business in your stories once one
+          exists. The free-text box below is only for outside tools that
+          will never have a Village business/affiliate link at all. */}
       <DiscoverySection
         title="What I Genuinely Use & Recommend"
-        description="Any business already on the Village is detected in your stories automatically — you don't need to list those. This is only for outside tools and software CULO wouldn't otherwise know about."
+        description="Your affiliate links — CULO detects these businesses in your stories automatically once a link exists here."
       >
-        {affiliateBusinessNames.length > 0 && (
-          <div className="px-3 py-2.5 rounded-lg bg-[#5E6B4A]/10 border border-[#5E6B4A]/20">
-            <p className="text-xs font-medium text-[#5E6B4A]">Already tracked automatically from your affiliate links</p>
-            <p className="text-xs text-[#5E6B4A]/80 mt-0.5">{affiliateBusinessNames.join(', ')}</p>
+        {affiliateLinks.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {affiliateLinks.map(link => {
+              const biz = allBusinesses.find(b => b.id === link.businessId)
+              return (
+                <div key={link.id} className="flex items-center gap-2 border border-[#E8E4DD] rounded-lg px-3 py-2">
+                  <p className="text-xs font-medium text-[#2D2A26] w-32 shrink-0 truncate">{biz?.name ?? 'Unknown business'}</p>
+                  <input type="url" value={link.affiliateUrl}
+                    onChange={e => void handleUpdateAffiliateUrl(link.id, e.target.value)}
+                    className="flex-1 px-2 py-1 text-xs border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]"
+                    placeholder="https://…" />
+                  <button onClick={() => void handleDeleteAffiliateLink(link.id)}
+                    className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0 px-1">✕</button>
+                </div>
+              )
+            })}
           </div>
         )}
-        <div>
+
+        {unlinkedBusinesses.length > 0 && (
+          <div className="flex items-center gap-2">
+            <select value={newAffiliateBusinessId} onChange={e => setNewAffiliateBusinessId(e.target.value)}
+              className="text-xs border border-[#E8E4DD] rounded-lg px-2 py-2 bg-white shrink-0">
+              <option value="">Add a business…</option>
+              {unlinkedBusinesses.map(b => <option key={b.id} value={b.id}>{b.name || 'Untitled business'}</option>)}
+            </select>
+            <input type="url" value={newAffiliateUrl} onChange={e => setNewAffiliateUrl(e.target.value)}
+              placeholder="Their affiliate link"
+              className="flex-1 px-2 py-2 text-xs border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]" />
+            <button onClick={() => void handleAddAffiliateLink()} disabled={!newAffiliateBusinessId || !newAffiliateUrl.trim()}
+              className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors shrink-0">
+              Add
+            </button>
+          </div>
+        )}
+
+        <div className="border-t border-[#E8E4DD] pt-4">
           <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Outside tools &amp; software I use</label>
-          <p className="text-xs text-[#9CA3AF] mb-2">One per line, be specific. "Content 360" not "marketing tools."</p>
+          <p className="text-xs text-[#9CA3AF] mb-2">For things that will never have a Village business or affiliate link. One per line — "Content 360" not "marketing tools."</p>
           <textarea
             value={(profile.genuineRecommendations ?? []).join('\n')}
             onChange={e => {
               const vals = e.target.value.split('\n').map(v => v.trim()).filter(Boolean)
               setP('genuineRecommendations', vals.length > 0 ? vals : undefined)
             }}
-            rows={6}
+            rows={4}
             className={discoveryInputClass + ' resize-y'}
             placeholder={'Content 360\nCanva\nStripe\nMailchimp\nClaude\nXero\nSquarespace'}
           />
@@ -367,7 +436,7 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
       {/* Who I Want to Connect With */}
       <DiscoverySection title="Who I Want to Connect With" description="Click the niches you'd most like CULO to match you with — businesses in these industries see you as a fit.">
         <div className="flex flex-wrap gap-2">
-          {industries.map(ind => {
+          {[...industries.map(i => ({ id: i.id, name: i.name })), { id: 'investors', name: 'Investors' }].map(ind => {
             const active = (profile.idealIndustries ?? []).includes(ind.name)
             return (
               <button
@@ -549,14 +618,20 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
       </TabIntro>
 
       <div className="flex flex-wrap gap-2">
-        {businesses.map(b => (
-          <button key={b.id} onClick={() => selectBusiness(b.id)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-              activeId === b.id ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-            }`}>
-            {b.name || 'Untitled business'}
-          </button>
-        ))}
+        {businesses.map(b => {
+          // Read the live draft's name for whichever business is active —
+          // the businesses array itself only refreshes after Save, so the
+          // pill used to keep showing "Untitled business" while typing.
+          const liveName = activeId === b.id ? draft?.name : b.name
+          return (
+            <button key={b.id} onClick={() => selectBusiness(b.id)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                activeId === b.id ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+              }`}>
+              {liveName || 'Untitled business'}
+            </button>
+          )
+        })}
         <button onClick={() => void handleAddBusiness()}
           className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#C86A43] border border-dashed border-[#C86A43]/50 hover:bg-[#FDF6F3] transition-colors">
           + Add business
@@ -629,6 +704,10 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
             </Field>
           </div>
 
+          <Field label="Additional links" hint="Add more accounts, including more than one of the same kind.">
+            <SocialLinksEditor links={draft.socialLinks ?? []} onChange={v => set('socialLinks', v)} />
+          </Field>
+
           <div className="flex items-center justify-between pt-2 border-t border-[#E8E4DD]">
             <div className="flex items-center gap-3">
               <button onClick={() => void handleSave()} disabled={saving}
@@ -650,6 +729,58 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
           </div>
         </div>
       )}
+
+      {/* Content — same idea as Profile's Content tab, scoped to this
+          business. No connector forms here: bring content in from Import,
+          this is just where it shows up once it's tagged to this business. */}
+      {draft && (() => {
+        const businessStories = getStories({ businessId: draft.id })
+        const businessImports = importedContentService.getAll({ businessId: draft.id })
+        return (
+          <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-4">
+            <div>
+              <p className="text-sm font-semibold text-[#2D2A26]">Content</p>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">Imported and published content tagged to this business.</p>
+            </div>
+            {businessImports.length === 0 && businessStories.length === 0 ? (
+              <p className="text-xs text-[#9CA3AF]">Nothing tagged to this business yet.</p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {businessImports.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5">Imported</p>
+                    <div className="border border-[#E8E4DD] rounded-lg divide-y divide-[#F3EDE6]">
+                      {businessImports.map(item => (
+                        <Link key={item.id} to={`/dashboard/import-content?edit=${item.id}`}
+                          className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#FBF8F4] transition-colors">
+                          {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-8 h-8 rounded object-cover shrink-0 bg-[#F3EDE6]" />}
+                          <p className="text-xs font-medium text-[#2D2A26] truncate flex-1">{item.title}</p>
+                          <span className="text-[10px] text-[#9CA3AF] shrink-0">{IMPORT_PLATFORM_LABELS[item.sourcePlatform]}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {businessStories.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5">Published</p>
+                    <div className="border border-[#E8E4DD] rounded-lg divide-y divide-[#F3EDE6]">
+                      {businessStories.map(story => (
+                        <Link key={story.id} to={`/dashboard/stories?edit=${story.id}`}
+                          className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#FBF8F4] transition-colors">
+                          <img src={story.coverImage} alt="" className="w-8 h-8 rounded object-cover shrink-0 bg-[#F3EDE6]" />
+                          <p className="text-xs font-medium text-[#2D2A26] truncate flex-1">{story.title}</p>
+                          <span className="text-[10px] text-[#9CA3AF] shrink-0">{story.status}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }

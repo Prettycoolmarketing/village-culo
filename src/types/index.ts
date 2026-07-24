@@ -442,6 +442,9 @@ export interface Business {
   website?: string
   instagram?: string
   linkedin?: string
+  // Additional accounts beyond website/Instagram/LinkedIn above — same
+  // multi-entry pattern as Founder.socialLinks.
+  socialLinks?: SocialLink[]
   offers: Offer[]
   status: Status
   featured: boolean

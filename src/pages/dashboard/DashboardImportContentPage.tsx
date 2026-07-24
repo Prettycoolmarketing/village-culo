@@ -1502,7 +1502,7 @@ function SavedRow({
       <div className="flex items-center gap-2 shrink-0 pt-0.5">
         {item.relatedStoryId && (
           publishedStory ? (
-            <Link to={`/stories/${publishedStory.slug}`} className="text-xs text-[#5E6B4A] font-medium hover:underline">
+            <Link to={`/stories/${publishedStory.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#5E6B4A] font-medium hover:underline">
               ✓ View published story →
             </Link>
           ) : (
