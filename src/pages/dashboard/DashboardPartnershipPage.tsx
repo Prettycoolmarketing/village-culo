@@ -798,6 +798,14 @@ function OppCard({ opp, onAction }: {
                 I'm interested
               </button>
             )}
+            {opp.status === 'interested' && opp.businessId && (
+              <button
+                onClick={() => window.open(`/dashboard/publish?aboutBusinessId=${encodeURIComponent(opp.businessId!)}`, '_blank', 'noopener,noreferrer')}
+                className="px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+              >
+                Write a blog about them
+              </button>
+            )}
             <button
               onClick={() => onAction(opp.id, 'declined')}
               className="px-3 py-1.5 text-[#9CA3AF] text-xs hover:text-[#6B7280] transition-colors"
@@ -1128,7 +1136,7 @@ function TrustSection({ founderId }: { founderId: string }) {
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-[#2D2A26]">Reputation</h2>
+          <h2 className="text-xl font-bold text-[#2D2A26]">Visibility</h2>
           <p className="text-sm text-[#6B7280] mt-1">
             Earned through publishing, genuine recommendations, transparency and opportunity engagement — not followers.
           </p>
@@ -1138,7 +1146,7 @@ function TrustSection({ founderId }: { founderId: string }) {
           disabled={updating}
           className="shrink-0 px-4 py-2.5 bg-[#2D2A26] text-white text-xs font-semibold rounded-xl hover:bg-[#1a1816] disabled:opacity-60 transition-colors"
         >
-          {updating ? 'Updating…' : 'Update reputation'}
+          {updating ? 'Updating…' : 'Update visibility'}
         </button>
       </div>
 
@@ -1171,7 +1179,7 @@ function TrustSection({ founderId }: { founderId: string }) {
               <p className="text-xl font-bold" style={{ color: levelColor }}>{levelLabel}</p>
             </div>
             <p className="text-xs text-[#6B7280] leading-relaxed mb-3">
-              Your reputation grows as you publish stories, approve genuine recommendations with disclosure, complete your Discovery Profile, and engage with opportunities.
+              Your visibility grows as you publish stories, approve genuine recommendations with disclosure, complete your Discovery Profile, and engage with opportunities.
             </p>
             {/* Score tier guide */}
             <div className="flex gap-1 flex-wrap">
@@ -1211,7 +1219,7 @@ function TrustSection({ founderId }: { founderId: string }) {
       {/* Next actions */}
       {calc.nextActions.length > 0 && (
         <div className="bg-[#C86A43]/5 border border-[#C86A43]/15 rounded-xl px-5 py-4 mb-5">
-          <p className="text-xs font-semibold text-[#C86A43] uppercase tracking-wide mb-2">To improve your reputation</p>
+          <p className="text-xs font-semibold text-[#C86A43] uppercase tracking-wide mb-2">To improve your visibility</p>
           <ol className="space-y-1.5">
             {calc.nextActions.slice(0, 4).map((action, i) => (
               <li key={i} className="flex items-start gap-2.5">
@@ -1321,7 +1329,7 @@ const tabs: Array<{ id: Tab; label: string; icon: string }> = [
   { id: 'recommendations', label: 'My Links',         icon: icons.recommendations },
   { id: 'opportunities',   label: 'Opportunities',    icon: icons.opportunities },
   { id: 'partnerships',    label: 'Partnerships Program', icon: icons.partnerships },
-  { id: 'trust',           label: 'Reputation',       icon: icons.trust },
+  { id: 'trust',           label: 'Visibility',       icon: icons.trust },
 ]
 
 export function DashboardPartnershipPage() {

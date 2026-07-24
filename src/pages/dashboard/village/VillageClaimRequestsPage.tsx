@@ -7,6 +7,7 @@ import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { FounderClaimRequest, FounderClaimStatus } from '../../../types/founderClaim'
 import type { Founder } from '../../../types'
 import { normalizeUrl } from '../../../utils/url'
+import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
@@ -179,6 +180,7 @@ export function VillageClaimRequestsPage() {
 
   return (
     <div className="p-8 max-w-4xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <CapoBackLink />
 
       {/* Header */}
       <div className="mb-6">

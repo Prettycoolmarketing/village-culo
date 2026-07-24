@@ -7,6 +7,7 @@ import { relationshipService, villageSourceService } from '../../../services/rel
 import { normalizeUrl } from '../../../utils/url'
 import { slugify } from '../../../utils/slugify'
 import type { GraphEntityType, VillageSourceKind } from '../../../types'
+import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 
 // CAPO tooling for the Village Graph's editorial recognition layer — see
 // supabase/migrations/008_village_graph.sql. A Source is a canonical, un-owned
@@ -135,6 +136,7 @@ export function CapoSourcesPage() {
 
   return (
     <div className="p-8 max-w-4xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <CapoBackLink />
 
       <div className="mb-8">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>

@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
-import { getCapoStaff, findUserByEmail, setTeamMemberRole, removeTeamAccess, type TeamMember } from '../../../services/capoTeam'
+import {
+  getCapoStaff, findUserByEmail, setTeamMemberRole, removeTeamAccess,
+  inviteStaffByEmail, cancelStaffInvite, getPendingStaffInvites,
+  type TeamMember, type StaffInvite,
+} from '../../../services/capoTeam'
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ASSIGNABLE_ROLES } from '../../../utils/permissions'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { UserRole } from '../../../contexts/AuthContext'
+import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 
 const ROLE_COLORS: Record<UserRole, string> = {
   founder: 'bg-[#F3EDE6] text-[#9CA3AF]',
@@ -93,92 +98,115 @@ function TeamRow({ member, currentUserId, onChanged }: { member: TeamMember; cur
 export function CapoTeamPage() {
   const { user } = useAuth()
   const [staff, setStaff] = useState<TeamMember[]>([])
+  const [invites, setInvites] = useState<StaffInvite[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchEmail, setSearchEmail] = useState('')
-  const [searchResult, setSearchResult] = useState<TeamMember | null | undefined>(undefined)
-  const [searching, setSearching] = useState(false)
-  const [grantRole, setGrantRole] = useState<UserRole>('moderator')
-  const [grantError, setGrantError] = useState<string | null>(null)
+  const [addEmail, setAddEmail] = useState('')
+  const [addRole, setAddRole] = useState<UserRole>('moderator')
+  const [adding, setAdding] = useState(false)
+  const [addError, setAddError] = useState<string | null>(null)
+  const [addMessage, setAddMessage] = useState<string | null>(null)
 
   async function refresh() {
     setLoading(true)
-    setStaff(await getCapoStaff())
+    const [staffList, inviteList] = await Promise.all([getCapoStaff(), getPendingStaffInvites()])
+    setStaff(staffList)
+    setInvites(inviteList)
     setLoading(false)
   }
 
   useEffect(() => { void refresh() }, [])
 
-  async function handleSearch() {
-    if (!searchEmail.trim()) return
-    setSearching(true)
-    setSearchResult(undefined)
-    const result = await findUserByEmail(searchEmail)
-    setSearching(false)
-    setSearchResult(result)
-  }
+  async function handleAdd() {
+    if (!addEmail.trim()) return
+    setAdding(true)
+    setAddError(null)
+    setAddMessage(null)
 
-  async function handleGrant() {
-    if (!searchResult) return
-    setGrantError(null)
-    const result = await setTeamMemberRole(searchResult.id, grantRole, false)
+    const existing = await findUserByEmail(addEmail)
+    if (existing) {
+      const result = await setTeamMemberRole(existing.id, addRole, false)
+      setAdding(false)
+      if (result.success) {
+        setAddMessage(`${existing.email} already had a Village account — granted ${ROLE_LABELS[addRole]} access now.`)
+        setAddEmail('')
+        void refresh()
+      } else {
+        setAddError(result.error ?? 'Could not grant access.')
+      }
+      return
+    }
+
+    const result = await inviteStaffByEmail(addEmail, addRole)
+    setAdding(false)
     if (result.success) {
-      setSearchEmail('')
-      setSearchResult(undefined)
+      setAddMessage(`Invited ${addEmail.trim()} — they'll get ${ROLE_LABELS[addRole]} access automatically the moment they sign up.`)
+      setAddEmail('')
       void refresh()
     } else {
-      setGrantError(result.error ?? 'Could not grant access.')
+      setAddError(result.error ?? 'Could not send the invite.')
     }
+  }
+
+  async function handleCancelInvite(email: string) {
+    const result = await cancelStaffInvite(email)
+    if (result.success) void refresh()
   }
 
   return (
     <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <CapoBackLink />
       <div className="mb-8">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Team</h1>
-        <p className="text-sm text-[#6B7280] mt-0.5">Assign roles to people who already have a Village account. Real email invites aren't wired up yet — the person needs to have signed up first.</p>
+        <p className="text-sm text-[#6B7280] mt-0.5">Add someone by email — if they already have a Village account, they get access immediately; if not, it's held as an invite and applied the moment they sign up.</p>
       </div>
 
-      {/* Grant access to an existing account */}
+      {/* Add someone by email */}
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Add someone to the team</p>
         <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
           <div className="flex items-center gap-2">
             <input
               type="email"
-              value={searchEmail}
-              onChange={e => { setSearchEmail(e.target.value); setSearchResult(undefined) }}
-              onKeyDown={e => e.key === 'Enter' && void handleSearch()}
+              value={addEmail}
+              onChange={e => { setAddEmail(e.target.value); setAddError(null); setAddMessage(null) }}
+              onKeyDown={e => e.key === 'Enter' && void handleAdd()}
               placeholder="their-email@example.com"
               className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
             />
-            <button onClick={() => void handleSearch()} disabled={searching || !searchEmail.trim()}
-              className="px-4 py-2.5 bg-[#F3EDE6] text-[#2D2A26] text-sm font-semibold rounded-lg hover:bg-[#E8E4DD] disabled:opacity-50 transition-colors">
-              {searching ? 'Searching…' : 'Find'}
+            <select value={addRole} onChange={e => setAddRole(e.target.value as UserRole)}
+              className="px-2.5 py-2.5 rounded-lg border border-[#E8E4DD] text-xs bg-white shrink-0">
+              {ASSIGNABLE_ROLES.filter(r => r !== 'founder').map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+            </select>
+            <button onClick={() => void handleAdd()} disabled={adding || !addEmail.trim()}
+              className="px-4 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
+              {adding ? 'Adding…' : 'Add'}
             </button>
           </div>
-
-          {searchResult === null && (
-            <p className="text-xs text-[#9CA3AF] mt-3">No account found with that email. They need to sign up at Village first — this can't create an account for them.</p>
-          )}
-
-          {searchResult && (
-            <div className="mt-4 flex items-center gap-3 bg-[#F8F5F0] rounded-lg px-4 py-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#2D2A26] truncate">{searchResult.email}</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Currently: {ROLE_LABELS[searchResult.role]}</p>
-              </div>
-              <select value={grantRole} onChange={e => setGrantRole(e.target.value as UserRole)}
-                className="px-2.5 py-1.5 rounded-lg border border-[#E8E4DD] text-xs bg-white">
-                {ASSIGNABLE_ROLES.filter(r => r !== 'founder').map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-              </select>
-              <button onClick={() => void handleGrant()} className="px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors shrink-0">
-                Grant access
-              </button>
-            </div>
-          )}
-          {grantError && <p className="text-xs text-red-600 mt-2">{grantError}</p>}
+          {addMessage && <p className="text-xs text-[#5E6B4A] mt-3">{addMessage}</p>}
+          {addError && <p className="text-xs text-red-600 mt-3">{addError}</p>}
         </div>
       </section>
+
+      {/* Pending invites */}
+      {invites.length > 0 && (
+        <section className="mb-8">
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Pending invites ({invites.length})</p>
+          <div className="bg-white rounded-xl border border-[#E8E4DD]">
+            {invites.map(invite => (
+              <div key={invite.email} className="flex items-center gap-3 px-5 py-4 border-b border-[#F3EDE6] last:border-0">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#2D2A26] truncate">{invite.email}</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">Will become {ROLE_LABELS[invite.role]} on signup</p>
+                </div>
+                <button onClick={() => void handleCancelInvite(invite.email)} className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0">
+                  Cancel invite
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Current staff */}
       <section className="mb-8">

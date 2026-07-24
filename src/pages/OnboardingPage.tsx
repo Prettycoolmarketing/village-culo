@@ -12,6 +12,7 @@ import { locations } from '../data/locations'
 import { industries } from '../data/industries'
 import { topics } from '../data/topics'
 import type { Founder, Business, Service, Topic, Location, Industry, SocialLink, SocialPlatform } from '../types'
+import { JOIN_SOURCE_LABELS } from '../constants/joinSource'
 
 // ─── Step definitions ─────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ interface Draft {
   socialLinks: DraftSocialLink[]
   businesses: DraftBusiness[]
   services: DraftService[]
+  joinSource: string
 }
 
 // Defaults a new business to the founder's own industry/location — most
@@ -87,6 +89,7 @@ const empty: Draft = {
   socialLinks: [],
   businesses: [newBusiness()],
   services: [],
+  joinSource: '',
 }
 
 // ─── Shared UI primitives ─────────────────────────────────────────────────────
@@ -414,6 +417,18 @@ function ProfileStep({ draft, set }: { draft: Draft; set: (k: keyof Draft, v: un
       </div>
       <Field label="Topics" hint="What would you like people to discover you for? Village connects your stories, ideas and businesses to the topics you choose here.">
         <TopicPicker selected={draft.topicIds} onChange={v => set('topicIds', v)} />
+      </Field>
+      <Field label="How did you hear about CULO Village?" hint="Optional — helps us understand what's bringing founders in.">
+        <select
+          value={draft.joinSource}
+          onChange={e => set('joinSource', e.target.value)}
+          className="w-full border border-border rounded-lg px-3 py-2.5 text-sm text-charcoal bg-white focus:outline-none focus:ring-1 focus:ring-primary/30"
+        >
+          <option value="">Prefer not to say</option>
+          {Object.entries(JOIN_SOURCE_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
       </Field>
     </div>
   )
@@ -925,6 +940,7 @@ export function OnboardingPage() {
       // The founder created this profile themselves — they own it immediately,
       // no claim flow needed. See getCurrentFounder()'s resolution order.
       userId: user.id,
+      joinSource: draft.joinSource || undefined,
     }
 
     const founderResult = await updateFounder(founder)

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getFounders } from '../../../services/founders'
 import { getBusinesses } from '../../../services/businesses'
 import { founderClaimService } from '../../../services/founderClaim'
+import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 
 // ─── CSV helpers ──────────────────────────────────────────────────────────────
 
@@ -220,6 +221,7 @@ export function VillageEmailExportPage() {
 
   return (
     <div className="p-8 max-w-4xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <CapoBackLink />
 
       <div className="mb-8">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>

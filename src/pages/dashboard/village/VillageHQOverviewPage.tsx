@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getFounders } from '../../../services/founders'
 import { getBusinesses } from '../../../services/businesses'
@@ -5,6 +6,7 @@ import { getStories } from '../../../services/stories'
 import { importedContentService } from '../../../services/importedContent'
 import { founderClaimService } from '../../../services/founderClaim'
 import { importBatchService } from '../../../services/importBatch'
+import { Tabs, type DashTab } from '../../../components/dashboard/Tabs'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
@@ -75,16 +77,27 @@ export function VillageHQOverviewPage() {
 
   const totalImported = batches.reduce((sum, b) => sum + b.created, 0)
 
+  const [tab, setTab] = useState('stats')
+  const TABS: DashTab[] = [
+    { key: 'stats', label: 'Stats' },
+    { key: 'actions', label: 'Quick Actions' },
+    { key: 'activity', label: 'Recent Activity' },
+  ]
+
   return (
     <div className="p-8 max-w-5xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Overview</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">The operating system for CULO Village.</p>
       </div>
 
+      <Tabs tabs={TABS} active={tab} onChange={setTab} className="mb-8" />
+
+      {tab === 'stats' && (
+      <>
       {/* Primary stats */}
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Founders</p>
@@ -99,9 +112,9 @@ export function VillageHQOverviewPage() {
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Content</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Businesses"        value={businesses.length}       color="text-[#2D2A26]" to="/dashboard/village/featured" />
-          <StatCard label="Published Stories" value={publishedStories.length} color="text-[#2D2A26]" to="/dashboard/village/featured" />
-          <StatCard label="Public Imports"    value={publicContent.length}    color="text-[#2D2A26]" to="/dashboard/village/featured" />
+          <StatCard label="Businesses"        value={businesses.length}       color="text-[#2D2A26]" to="/dashboard/village/spotlight" />
+          <StatCard label="Published Stories" value={publishedStories.length} color="text-[#2D2A26]" to="/dashboard/village/spotlight" />
+          <StatCard label="Public Imports"    value={publicContent.length}    color="text-[#2D2A26]" to="/dashboard/village/spotlight" />
           <StatCard label="Total Imports"     value={allContent.length}       color="text-[#2D2A26]" />
         </div>
       </section>
@@ -126,7 +139,10 @@ export function VillageHQOverviewPage() {
         </div>
       </section>
 
-      {/* Quick actions */}
+      </>
+      )}
+
+      {tab === 'actions' && (
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Quick Actions</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -134,12 +150,13 @@ export function VillageHQOverviewPage() {
           <QuickAction label="Bulk Import"         to="/dashboard/village/imports"        sub="Import founders from JSON" />
           <QuickAction label="Review Claims"       to="/dashboard/village/claims"         sub={`${pendingClaims.length} pending`} />
           <QuickAction label="Export Emails"       to="/dashboard/village/emails"         sub={`${emails.length} emails available`} />
-          <QuickAction label="Feature Content"     to="/dashboard/village/featured"       sub="Pin founders, stories, businesses" />
+          <QuickAction label="Feature Content"     to="/dashboard/village/spotlight"       sub="Pin founders, stories, businesses" />
           <QuickAction label="Village Analytics"   to="/dashboard/village/analytics"      sub="Stats and growth metrics" />
         </div>
       </section>
+      )}
 
-      {/* Recent activity */}
+      {tab === 'activity' && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Recent founders */}
@@ -216,6 +233,7 @@ export function VillageHQOverviewPage() {
           </div>
         </section>
       </div>
+      )}
     </div>
   )
 }

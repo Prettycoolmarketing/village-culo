@@ -33,6 +33,13 @@ export function StoryCard({
   const founderUrl = founder ? `/founders/${founder.slug}` : undefined
   const businessUrl = business ? `/businesses/${business.slug}` : undefined
 
+  // A YouTube thumbnail is natively landscape (16:9) — forcing it into the
+  // 9:16 "reel" frame everywhere meant it got cropped/stretched hard and
+  // read as blurry. An actual Reel/vertical upload keeps the tall frame.
+  // Both shapes are fine; the point is each matches its real source instead
+  // of one crop being forced on everything.
+  const isLandscapeCover = story.contentTypes.includes('youtube-video') && !story.contentTypes.includes('reel')
+
   if (variant === 'vertical') {
     return (
       <article
@@ -40,8 +47,9 @@ export function StoryCard({
         style={{ borderTopLeftRadius: '50% 48px', borderTopRightRadius: '50% 48px' }}
         aria-label={`Story: ${story.title}`}
       >
-        {/* Cover image — narrow, video-proportioned (9:16). The arch lives on
-            this outer article (which already clips everything via
+        {/* Cover image — 9:16 for an actual Reel, 16:9 for a YouTube video,
+            matching whichever the source really is. The arch lives on this
+            outer article (which already clips everything via
             overflow-hidden), not on this inner link — putting it on a nested
             element left a gap where the article's own square corner showed
             through behind the curve. One clip boundary, no seam. */}
@@ -49,7 +57,7 @@ export function StoryCard({
           to={storyUrl}
           className="block relative"
           aria-label={`Read ${story.title}`}
-          style={{ aspectRatio: '9/16' }}
+          style={{ aspectRatio: isLandscapeCover ? '16/9' : '9/16' }}
           tabIndex={0}
         >
           <img
@@ -161,7 +169,7 @@ export function StoryCard({
       >
         <Link
           to={storyUrl}
-          className="flex-shrink-0 rounded-lg overflow-hidden w-20 h-20"
+          className={`flex-shrink-0 rounded-lg overflow-hidden ${isLandscapeCover ? 'w-28 h-16' : 'w-20 h-20'}`}
           tabIndex={-1}
           aria-hidden="true"
         >
@@ -201,8 +209,8 @@ export function StoryCard({
     >
       <Link
         to={storyUrl}
-        className="flex-shrink-0 w-40 sm:w-56 relative overflow-hidden"
-        style={{ aspectRatio: '3/4' }}
+        className={`flex-shrink-0 relative overflow-hidden ${isLandscapeCover ? 'w-56 sm:w-72' : 'w-40 sm:w-56'}`}
+        style={{ aspectRatio: isLandscapeCover ? '16/9' : '3/4' }}
         tabIndex={-1}
         aria-hidden="true"
       >

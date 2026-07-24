@@ -157,16 +157,10 @@ export function DashboardLayout() {
                     <NavItem to="/dashboard/village/claims" label="Claims" icon={<Icon path={icons.claims} />} />
                   )}
                   {canAccessCapoSection(user?.role, 'featured') && (
-                    <NavItem to="/dashboard/village/featured" label="Featured" icon={<Icon path={icons.featured} />} />
-                  )}
-                  {canAccessCapoSection(user?.role, 'featured') && (
-                    <NavItem to="/dashboard/village/media-curator" label="Media Curator" icon={<Icon path={icons.media} />} />
+                    <NavItem to="/dashboard/village/spotlight" label="Spotlight" icon={<Icon path={icons.featured} />} />
                   )}
                   {canAccessCapoSection(user?.role, 'featured') && (
                     <NavItem to="/dashboard/village/sources" label="Sources" icon={<Icon path={icons.curated} />} />
-                  )}
-                  {canAccessCapoSection(user?.role, 'editorial') && (
-                    <NavItem to="/dashboard/village/editorial" label="Editorial" icon={<Icon path={icons.featured} />} />
                   )}
                   {canAccessCapoSection(user?.role, 'partners') && (
                     <NavItem to="/dashboard/village/partners" label="Partners" icon={<Icon path={icons.partnership} />} />
@@ -201,9 +195,6 @@ export function DashboardLayout() {
               )}
             </>
           )}
-
-          <SectionLabel label="Tools" />
-          <NavItem to="/dashboard/import-sources" label="Import Sources"  icon={<Icon path={icons.import}   />} />
         </nav>
 
         {/* Bottom: settings + user */}

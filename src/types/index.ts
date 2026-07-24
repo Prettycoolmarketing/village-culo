@@ -404,6 +404,10 @@ export interface Founder {
   profileStatus?: FounderProfileStatus
   curatedBy?: string
   curatedAt?: string
+  // How a self-joined founder heard about Village (see JOIN_SOURCE_LABELS in
+  // OnboardingPage.tsx). Never set for curated founders — their acquisition
+  // is "curated", tracked via profileStatus instead.
+  joinSource?: string
   claimedAt?: string
   claimedByUserId?: string // TODO: wire to Supabase auth transfer in future sprint
   claimEmail?: string

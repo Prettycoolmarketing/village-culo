@@ -280,7 +280,7 @@ export function calculateTrust(founderId: string): TrustCalculation {
   })
   if (overall >= 65) badges.push({
     id: 'trusted-publisher', name: 'Trusted Publisher',
-    description: 'Reached Trusted reputation level',
+    description: 'Reached Trusted visibility level',
     icon: '★', category: 'trust', earnedAt: ts,
   })
 

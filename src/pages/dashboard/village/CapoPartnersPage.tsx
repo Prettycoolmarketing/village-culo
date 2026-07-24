@@ -7,6 +7,7 @@ import { getFounder, getFounders } from '../../../services/founders'
 import { supabase } from '../../../lib/supabase'
 import { pullVisibleRows } from '../../../lib/entityStore'
 import type { Partner, PartnerConversion } from '../../../types/partner'
+import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 
 function formatCents(cents: number, currency = 'aud'): string {
   return (cents / 100).toLocaleString('en-AU', { style: 'currency', currency: currency.toUpperCase() })
@@ -557,6 +558,7 @@ export function CapoPartnersPage() {
 
   return (
     <div className="p-8 max-w-4xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <CapoBackLink />
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#2D2A26]">Partners</h1>

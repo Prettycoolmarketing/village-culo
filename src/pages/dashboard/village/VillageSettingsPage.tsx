@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { villageSettingsService } from '../../../services/villageSettings'
+import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 
 const INPUT_CLS = 'w-full px-3 py-2.5 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] focus:outline-none focus:border-[#C86A43] bg-white placeholder:text-[#9CA3AF]'
 
@@ -50,6 +51,7 @@ export function VillageSettingsPage() {
 
   return (
     <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <CapoBackLink />
 
       <div className="mb-8">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>

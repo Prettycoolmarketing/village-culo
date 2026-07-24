@@ -6,6 +6,7 @@ import { importedContentService } from '../../../services/importedContent'
 import { founderClaimService } from '../../../services/founderClaim'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { Founder } from '../../../types'
+import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
@@ -221,6 +222,7 @@ export function VillageCuratedFoundersPage() {
 
   return (
     <div className="p-8 max-w-5xl pb-24" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <CapoBackLink />
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">

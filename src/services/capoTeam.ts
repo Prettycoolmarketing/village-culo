@@ -13,6 +13,12 @@ export interface TeamActionResult {
   error?: string
 }
 
+export interface StaffInvite {
+  email: string
+  role: UserRole
+  createdAt: string
+}
+
 /**
  * Every profile with a non-founder role — the current CAPO staff roster.
  * Requires the profiles_owner_read_all RLS policy (migration 007); returns
@@ -57,4 +63,33 @@ export async function setTeamMemberRole(userId: string, role: UserRole, suspende
 
 export function removeTeamAccess(userId: string): Promise<TeamActionResult> {
   return setTeamMemberRole(userId, 'founder', false)
+}
+
+/**
+ * Invites someone by email who hasn't signed up yet — the role is held in
+ * `staff_invites` and applied automatically by the handle_new_user trigger
+ * the moment they create an account with that email (migration 016).
+ */
+export async function inviteStaffByEmail(email: string, role: UserRole): Promise<TeamActionResult> {
+  if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Supabase not configured.' }
+  const { error } = await supabase.rpc('admin_invite_staff', { target_email: email.trim(), new_role: role })
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+export async function cancelStaffInvite(email: string): Promise<TeamActionResult> {
+  if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Supabase not configured.' }
+  const { error } = await supabase.rpc('admin_cancel_staff_invite', { target_email: email })
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+export async function getPendingStaffInvites(): Promise<StaffInvite[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+  const { data, error } = await supabase
+    .from('staff_invites')
+    .select('email, role, created_at')
+    .order('created_at', { ascending: false })
+  if (error || !data) return []
+  return data.map(row => ({ email: row.email, role: row.role as UserRole, createdAt: row.created_at }))
 }

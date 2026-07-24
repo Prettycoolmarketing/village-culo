@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounders } from '../../services/founders'
-import { getBusinesses } from '../../services/businesses'
+import { getBusinesses, getBusiness } from '../../services/businesses'
 import { getStories } from '../../services/stories'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
@@ -1501,11 +1501,12 @@ export function DashboardPublishPage() {
   // a fresh tab has no access to. "Turn into Story" still uses router state
   // since it navigates in the same tab.
   const partnerIdFromQuery = searchParams.get('partnerId') ?? undefined
+  const aboutBusinessIdFromQuery = searchParams.get('aboutBusinessId') ?? undefined
   const [step,          setStep]          = useState<PublishStep>('format')
   const [draft,         setDraft]         = useState<PublishDraft>(() => {
     // Don't resurrect a stale wizard draft over a fresh "Turn into Story"/"Write about this partner" prefill.
     const navState = location.state as { importedContentId?: string; partnerId?: string } | null
-    if (navState?.importedContentId || navState?.partnerId || partnerIdFromQuery) {
+    if (navState?.importedContentId || navState?.partnerId || partnerIdFromQuery || aboutBusinessIdFromQuery) {
       return defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
     }
     return loadAutoSavedDraft() ?? defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
@@ -1556,6 +1557,25 @@ export function DashboardPublishPage() {
       title: prev.title || `Why I recommend ${partner.name}`,
       ctaLabel: prev.ctaLabel || `Visit ${partner.name}`,
       ctaUrl: prev.ctaUrl || partner.affiliateUrl || partner.website || '',
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Arrived via "Write a blog about them" on an Opportunity the founder
+  // marked as interested — same idea as the partner flow above, but the
+  // business behind an Opportunity isn't necessarily an enrolled Partner
+  // (no affiliate link to reuse), so this just points the CTA at their
+  // public website instead.
+  useEffect(() => {
+    if (!aboutBusinessIdFromQuery) return
+    const business = getBusiness(aboutBusinessIdFromQuery)
+    if (!business) return
+    setDraft(prev => ({
+      ...prev,
+      contentTypes: prev.contentTypes.length > 0 ? prev.contentTypes : ['blog'],
+      title: prev.title || `Why I recommend ${business.name}`,
+      ctaLabel: prev.ctaLabel || `Visit ${business.name}`,
+      ctaUrl: prev.ctaUrl || business.website || '',
     }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

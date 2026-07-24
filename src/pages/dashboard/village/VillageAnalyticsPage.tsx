@@ -4,6 +4,8 @@ import { getStories } from '../../../services/stories'
 import { importedContentService } from '../../../services/importedContent'
 import { founderClaimService } from '../../../services/founderClaim'
 import { importBatchService } from '../../../services/importBatch'
+import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
+import { JOIN_SOURCE_LABELS } from '../../../constants/joinSource'
 
 function StatCard({ label, value, sub, color = 'text-[#2D2A26]' }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
@@ -51,6 +53,10 @@ export function VillageAnalyticsPage() {
   const published  = founders.filter(f => f.status === 'published' || f.status === 'featured')
   const curated    = founders.filter(f => f.profileStatus === 'village-curated')
   const claimed    = founders.filter(f => f.profileStatus === 'claimed' || f.profileStatus === 'verified')
+  const selfJoined = founders.filter(f => !!f.userId && f.profileStatus !== 'village-curated')
+  const joinSourceCounts = topN(selfJoined.filter(f => f.joinSource), f => JOIN_SOURCE_LABELS[f.joinSource!] ?? f.joinSource!, 8)
+  const maxJoinSource = joinSourceCounts[0]?.count ?? 1
+  const noSourceGiven = selfJoined.filter(f => !f.joinSource).length
   const withBiz    = founders.filter(f => businesses.some(b => b.founderId === f.id))
   const withYT     = founders.filter(f => !!f.youtube)
   const withPodcast = founders.filter(f => !!f.podcast)
@@ -93,6 +99,7 @@ export function VillageAnalyticsPage() {
 
   return (
     <div className="p-8 max-w-5xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <CapoBackLink />
 
       <div className="mb-8">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
@@ -125,6 +132,23 @@ export function VillageAnalyticsPage() {
           <StatCard label="With YouTube"        value={withYT.length}           />
           <StatCard label="With Podcast"        value={withPodcast.length}      />
           <StatCard label="Imported Content"    value={allContent.length}       />
+        </div>
+      </section>
+
+      {/* Acquisition source */}
+      <section className="mb-8">
+        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">How Founders Joined</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+          <StatCard label="Curated by Staff"  value={curated.length}   color="text-blue-700"   sub="Village found and added them" />
+          <StatCard label="Joined Themselves" value={selfJoined.length} color="text-[#5E6B4A]" sub="Signed up via Onboarding" />
+          <StatCard label="No Source Given"   value={noSourceGiven}    color="text-[#9CA3AF]"  sub="Self-joined, skipped the question" />
+        </div>
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 space-y-3">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">Where self-joined founders heard about us</p>
+          {joinSourceCounts.length === 0
+            ? <p className="text-xs text-[#9CA3AF]">No data yet — founders haven't answered this on signup, or none have self-joined.</p>
+            : joinSourceCounts.map(d => <BarRow key={d.label} label={d.label} count={d.count} max={maxJoinSource} />)
+          }
         </div>
       </section>
 
