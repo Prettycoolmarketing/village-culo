@@ -105,7 +105,7 @@ export function DashboardLayout() {
               `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
                 isActive
                   ? 'bg-[#C86A43] text-white'
-                  : 'bg-[#C86A43]/10 text-[#C86A43] hover:bg-[#C86A43]/20'
+                  : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
               }`
             }
           >
@@ -119,7 +119,7 @@ export function DashboardLayout() {
               `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
                 isActive
                   ? 'bg-[#C86A43] text-white'
-                  : 'bg-[#C86A43]/10 text-[#C86A43] hover:bg-[#C86A43]/20'
+                  : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
               }`
             }
           >

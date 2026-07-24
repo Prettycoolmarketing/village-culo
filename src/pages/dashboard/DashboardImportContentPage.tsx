@@ -1612,8 +1612,24 @@ export function DashboardImportContentPage() {
     loadItems()
   }
 
-  function handleStatusChange(id: string, status: ImportedContentStatus) {
+  // Switching the dropdown to Published/Featured used to only relabel the
+  // row — it looked like a real publish action but never actually created
+  // or updated the live Story. Now it does the same thing the bulk-publish
+  // button does for a single item, reusing the exact same pipeline.
+  async function handleStatusChange(id: string, status: ImportedContentStatus) {
     importedContentService.updateStatus(id, status)
+    if (status === 'published' || status === 'featured') {
+      const item = importedContentService.get(id)
+      const founder = getFounder(founderId)
+      if (item && founder && !item.relatedStoryId && isReadyToPublish(item)) {
+        const story = buildStoryFromImport(item, founder)
+        story.status = status
+        const result = await publishStoryCore(story)
+        if (!result.success) setSaveError(result.error ?? 'Could not publish. Please try again.')
+      } else if (item && !isReadyToPublish(item)) {
+        setSaveError('Give this a real title before publishing it.')
+      }
+    }
     loadItems()
   }
 
@@ -1803,7 +1819,7 @@ export function DashboardImportContentPage() {
       {/* Saved imports list */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-[#2D2A26]">Imported Content</p>
+          <p className="text-sm font-semibold text-[#2D2A26]">Publish your body of work</p>
           {visibleItems.length > 0 && (
             <ConfirmButton
               label={`Delete all ${visibleItems.length}`}
@@ -1835,6 +1851,8 @@ export function DashboardImportContentPage() {
             )
           })}
         </div>
+
+        {saveError && <p className="text-xs text-red-600 font-medium mb-3">{saveError}</p>}
 
         {readyItems.length > 0 && (
           <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg">
@@ -1885,7 +1903,7 @@ export function DashboardImportContentPage() {
                 onToggleCheck={() => toggleChecked(item.id)}
                 onAdvancedEdit={() => handleAdvancedEdit(item)}
                 onDelete={() => handleDelete(item.id)}
-                onStatusChange={status => handleStatusChange(item.id, status)}
+                onStatusChange={status => void handleStatusChange(item.id, status)}
               />
             ))}
           </div>

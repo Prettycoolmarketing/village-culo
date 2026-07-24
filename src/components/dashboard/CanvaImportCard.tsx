@@ -131,7 +131,7 @@ export function CanvaImportCard({
     // straight from the same Canva design so it's attached automatically
     // rather than making the founder go find and upload it separately.
     // Fire-and-forget: encoding takes real time, shouldn't block the caller.
-    if (contentTypeHint?.includes('reel') && onReelVideoReady) void kickoffReelVideo(item.id, indices[0]! + 1)
+    if (contentTypeHint?.includes('reel') && onReelVideoReady) void kickoffReelVideo(item.id, result.pageNumbers[indices[0]!] ?? indices[0]! + 1)
   }
 
   async function kickoffReelVideo(importedContentId: string, canvaPageNumber: number) {
@@ -166,7 +166,7 @@ export function CanvaImportCard({
 
           {connected === false && (
             <button type="button" onClick={() => void startCanvaConnect(founderId)}
-              className="px-4 py-2 bg-[#00C4CC] text-white text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity">
+              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#B15C38] transition-colors">
               Connect Canva
             </button>
           )}

@@ -56,7 +56,7 @@ const STEPS: PublishStep[] = ['format', 'media', 'story', 'builder', 'preview', 
 const STEP_LABELS: Record<PublishStep, string> = {
   format:  'Choose Formats',
   media:   'Attach Media',
-  story:   'Transcript',
+  story:   'Blog',
   builder: 'Village Intelligence',
   preview: 'Preview',
   done:    'Publish',
@@ -303,10 +303,11 @@ function ProgressBar({ step, steps, labels, onStepClick }: {
 
 // ─── Step 1: Format ───────────────────────────────────────────────────────────
 
-function FormatStep({ draft, onChange, onNext }: {
+function FormatStep({ draft, onChange, onNext, onNextSkippingMedia }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
   onNext: () => void
+  onNextSkippingMedia: () => void
 }) {
   function toggle(type: ContentType) {
     const has = draft.contentTypes.includes(type)
@@ -340,6 +341,15 @@ function FormatStep({ draft, onChange, onNext }: {
         </div>
       </a>
 
+      <CanvaImportCard
+        founderId={draft.founderId}
+        contentTypeHint={draft.contentTypes}
+        onImported={item => { onChange(importedContentPatch(item, draft)); onNextSkippingMedia() }}
+        onReelVideoReady={videoUrl => onChange({ reelUrl: videoUrl })}
+      />
+
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Or choose a format and write it yourself</p>
+      <p className="text-xs text-[#9CA3AF] mb-3">Pick a format below any time — before or after bringing in Canva slides.</p>
       <div className="grid grid-cols-2 gap-3 mb-8">
         {FORMATS.map(f => {
           const active = draft.contentTypes.includes(f.type)
@@ -369,14 +379,6 @@ function FormatStep({ draft, onChange, onNext }: {
           )
         })}
       </div>
-
-      <CanvaImportCard
-        founderId={draft.founderId}
-        canProceed={draft.contentTypes.length > 0}
-        contentTypeHint={draft.contentTypes}
-        onImported={item => { onChange(importedContentPatch(item, draft)); onNext() }}
-        onReelVideoReady={videoUrl => onChange({ reelUrl: videoUrl })}
-      />
 
       <button
         onClick={onNext}
@@ -632,7 +634,7 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
   return (
     <div className="max-w-xl mx-auto">
       <StepHeader
-        title="Transcript"
+        title="Blog"
         subtitle="Paste a transcript to unlock richer diary generation. On YouTube, click ··· below any video, then Show transcript, to copy and paste here. Or just write your story below."
         onBack={onBack}
       />
@@ -645,7 +647,7 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
           <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
             placeholder="The honest story of…" className={inp + ' resize-y'} />
         </Field>
-        <Field label="Transcript" hint="Optional. Paste it above, or just write freely. Village will find the structure.">
+        <Field label="Blog" hint="Optional. Paste a transcript above, or just write freely. Village will find the structure.">
           <textarea
             value={draft.blog}
             onChange={e => onChange({ blog: e.target.value })}
@@ -1583,6 +1585,16 @@ export function DashboardPublishPage() {
     if (idx < stepList.length - 1) setStep(stepList[idx + 1])
   }
 
+  // Used right after a Canva import brings its own slides/video straight
+  // in — Attach Media would just be asking the founder to look at what
+  // they already just picked, so skip past it.
+  function nextSkippingMedia() {
+    const idx = stepList.indexOf(step)
+    let target = idx + 1
+    while (target < stepList.length && stepList[target] === 'media') target++
+    if (target < stepList.length) setStep(stepList[target])
+  }
+
   function back() {
     const idx = stepList.indexOf(step)
     if (idx > 0) setStep(stepList[idx - 1])
@@ -1688,7 +1700,7 @@ export function DashboardPublishPage() {
         </div>
       )}
 
-      {step === 'format'  && <FormatStep       draft={draft} onChange={patch} onNext={next} />}
+      {step === 'format'  && <FormatStep       draft={draft} onChange={patch} onNext={next} onNextSkippingMedia={nextSkippingMedia} />}
       {step === 'media'   && <MediaStep        draft={draft} onChange={patch} onNext={next} onBack={back} />}
       {step === 'story'   && <TellYourStoryStep draft={draft} onChange={patch} onNext={next} onBack={back} />}
       {step === 'builder' && <StoryBuilderStep  draft={draft} onChange={patch} onBack={back} onNext={next} />}

@@ -132,6 +132,11 @@ export async function listCanvaDesigns(founderId: string): Promise<CanvaDesignSu
 export interface CanvaImportResult {
   title: string
   imageUrls: string[]
+  // pageNumbers[i] is the real Canva page (1-indexed) behind imageUrls[i] —
+  // NOT always i+1, since a skipped slide shifts every later index. Anything
+  // that needs to re-export a specific slide (e.g. Reel video) must look up
+  // this array rather than assuming the position.
+  pageNumbers: number[]
   // Graceful-degradation flags — a very large/photo-heavy design can exceed
   // what the import function safely holds in memory. When these are set the
   // import still succeeds, just with fewer slides than the full design.
@@ -142,6 +147,7 @@ export interface CanvaImportResult {
 interface CanvaImagesResult {
   title: string
   imageUrls: string[]
+  pageNumbers?: number[]
   imagesSkipped?: number
   slidesTruncated?: boolean
   error?: string
@@ -161,6 +167,7 @@ export async function importCanvaDesign(founderId: string, designId: string): Pr
   return {
     title: data!.title,
     imageUrls: data!.imageUrls,
+    pageNumbers: data!.pageNumbers ?? data!.imageUrls.map((_, i) => i + 1),
     imagesSkipped: data!.imagesSkipped,
     slidesTruncated: data!.slidesTruncated,
   }

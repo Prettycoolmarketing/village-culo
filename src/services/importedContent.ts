@@ -72,7 +72,7 @@ export const PLATFORM_LABELS: Record<ImportedContentPlatform, string> = {
   linkedin:  'LinkedIn',
   tiktok:    'TikTok',
   podcast:   'Podcast',
-  website:   'Website',
+  website:   'Blogs',
   canva:     'Canva',
 }
 

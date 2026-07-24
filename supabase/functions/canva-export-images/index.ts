@@ -55,9 +55,18 @@ serve(async (req) => {
     const imageUrls = allImageUrls.slice(0, MAX_SLIDES)
     const slidesTruncated = allImageUrls.length > imageUrls.length
 
+    // pageNumbers[i] is the Canva page (1-indexed) that produced
+    // uploadedImageUrls[i] — must be tracked explicitly, not assumed from
+    // array position, since a skipped slide (too large, upload failure)
+    // would otherwise silently shift every later image's index off by one
+    // relative to its real page number. That misalignment broke Reel video
+    // export: it was exporting the wrong page whenever an earlier slide in
+    // the same design had been skipped.
     const uploadedImageUrls: string[] = []
+    const pageNumbers: number[] = []
     let imagesSkipped = 0
-    for (const url of imageUrls) {
+    for (let i = 0; i < imageUrls.length; i++) {
+      const url = imageUrls[i]!
       const bytes = await fetchWithLimit(url, MAX_IMAGE_BYTES)
       if (!bytes) { imagesSkipped++; continue }
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
@@ -68,10 +77,11 @@ serve(async (req) => {
       if (uploadError) { imagesSkipped++; continue }
       const { data: publicUrlData } = admin.storage.from('media').getPublicUrl(path)
       uploadedImageUrls.push(publicUrlData.publicUrl)
+      pageNumbers.push(i + 1)
     }
 
     return new Response(JSON.stringify({
-      title, imageUrls: uploadedImageUrls, imagesSkipped, slidesTruncated,
+      title, imageUrls: uploadedImageUrls, pageNumbers, imagesSkipped, slidesTruncated,
     }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })

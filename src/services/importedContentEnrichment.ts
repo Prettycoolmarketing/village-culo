@@ -233,6 +233,7 @@ function buildDiaryNote(
   const rawLead =
     mode === 'transcript' && transcriptOpening ? transcriptOpening :
     item.description ? item.description :
+    item.sourcePlatform === 'canva' ? item.title :
     `${item.title} — a ${contentType} from ${biz ? biz.name : platform}.`
 
   // Platform descriptions are often cut off mid-sentence ("...") — trim any
@@ -240,7 +241,9 @@ function buildDiaryNote(
   // a clean continuation instead of following a broken-off fragment.
   const lead = rawLead.trim().replace(/[.\s]*\.{3,}[.\s]*$/, '').trim()
 
-  const context = `Shared on ${platform}${dateSuffix}${coveringStr}${bizPart}.`
+  const context = item.sourcePlatform === 'canva'
+    ? `Exported from Canva in collaboration with CULO Creatives and published in The Village${dateSuffix}.`
+    : `Shared on ${platform}${dateSuffix}${coveringStr}${bizPart}.`
 
   // Structured facts pulled straight from the founder's real Village
   // profile/business — name, location, bio, tagline, industry — never
