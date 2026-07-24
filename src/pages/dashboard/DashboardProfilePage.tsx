@@ -10,6 +10,8 @@ import { MediaUpload } from '../../components/ui/MediaUpload'
 import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
+import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
+import type { ImportedContentPlatform } from '../../types/importedContent'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
 import { getMedia } from '../../services/media'
@@ -510,6 +512,8 @@ export function DashboardProfilePage() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [tab, setTab]       = useState('overview')
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
+  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published'>('imported')
+  const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>('all')
 
   if (!draft) {
     return (
@@ -571,11 +575,10 @@ export function DashboardProfilePage() {
     })
   }
   const topRecommendations = recommendations.slice(0, 6)
-  const recentStories = founderStories.slice(0, 5)
 
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
-    { key: 'life-work',     label: "Published" },
+    { key: 'content',       label: "Content" },
     { key: 'expertise',     label: 'Expertise'     },
     { key: 'discovery',     label: 'Partners' },
     { key: 'settings',      label: 'Settings'      },
@@ -844,55 +847,115 @@ export function DashboardProfilePage() {
         )}
 
         {/* ── My Life's Work ───────────────────────────────────────────── */}
-        {tab === 'life-work' && (
-          <div className="max-w-2xl flex flex-col gap-6">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Your Recent Stories</p>
-                <Link to="/dashboard/stories" className="text-xs text-[#C86A43] hover:underline">View all</Link>
-              </div>
-              {recentStories.length === 0 ? (
-                <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
-                  <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
-                  <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
-                    Publish Story
-                  </Link>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                  {recentStories.map(story => {
-                    const storyMissing = getStoryMissingItems(story)
-                    return (
-                      <div key={story.id} className="flex items-center gap-4 px-5 py-3.5">
-                        <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#2D2A26] truncate">{story.title}</p>
-                          <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
-                        </div>
-                        {storyMissing.length === 0 ? (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
-                            Ready to publish
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
-                            {storyMissing.length} recommended
-                          </span>
-                        )}
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                          story.status === 'published' || story.status === 'featured'
-                            ? 'bg-green-100 text-green-700'
-                            : story.status === 'draft'
-                            ? 'bg-[#F3EDE6] text-[#9CA3AF]'
-                            : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {story.status}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+        {tab === 'content' && (
+          <div className="max-w-2xl flex flex-col gap-5">
+            <TabIntro>
+              Everything you've brought into the Village, and everything you've published from it — in one place.
+            </TabIntro>
+
+            <div className="flex gap-2">
+              {(['imported', 'published'] as const).map(t => (
+                <button key={t} onClick={() => setContentSubTab(t)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    contentSubTab === t ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                  }`}>
+                  {t === 'imported' ? 'Imported content' : 'Published Content'}
+                </button>
+              ))}
             </div>
+
+            {contentSubTab === 'imported' && (() => {
+              const allImported = importedContentService.getAll({ founderId: draft.id })
+              const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
+              const shown = importedPlatformFilter === 'all' ? allImported : allImported.filter(i => i.sourcePlatform === importedPlatformFilter)
+              return (
+                <div>
+                  {platforms.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      <button onClick={() => setImportedPlatformFilter('all')}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                        All {allImported.length}
+                      </button>
+                      {platforms.map(p => (
+                        <button key={p} onClick={() => setImportedPlatformFilter(p)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                          {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p).length}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {shown.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                      <p className="text-sm font-semibold text-[#2D2A26]">Nothing imported yet.</p>
+                      <Link to="/dashboard/import-content" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+                        Import content
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                      {shown.map(item => (
+                        <Link key={item.id} to={`/dashboard/import-content?edit=${item.id}`}
+                          className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
+                          {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#2D2A26] truncate">{item.title}</p>
+                            <p className="text-xs text-[#9CA3AF] mt-0.5">{IMPORT_PLATFORM_LABELS[item.sourcePlatform]} · {item.importedAt.slice(0, 10)}</p>
+                          </div>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280] shrink-0">{item.status}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
+            {contentSubTab === 'published' && (
+              <div>
+                {founderStories.length === 0 ? (
+                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                    <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
+                    <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+                      Publish Story
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                    {founderStories.map(story => {
+                      const storyMissing = getStoryMissingItems(story)
+                      return (
+                        <Link key={story.id} to={`/dashboard/stories?edit=${story.id}`}
+                          className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
+                          <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#2D2A26] truncate">{story.title}</p>
+                            <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
+                          </div>
+                          {storyMissing.length === 0 ? (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
+                              Ready to publish
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
+                              {storyMissing.length} recommended
+                            </span>
+                          )}
+                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                            story.status === 'published' || story.status === 'featured'
+                              ? 'bg-green-100 text-green-700'
+                              : story.status === 'draft'
+                              ? 'bg-[#F3EDE6] text-[#9CA3AF]'
+                              : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {story.status}
+                          </span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

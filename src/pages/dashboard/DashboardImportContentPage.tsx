@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { useAuth } from '../../contexts/AuthContext'
@@ -1558,6 +1558,18 @@ export function DashboardImportContentPage() {
   }
 
   useEffect(() => { loadItems(); loadSources() }, [founderId])
+
+  // Deep link from Profile → Content ("?edit=<id>") — opens straight into
+  // advance edit instead of making the founder find the item themselves.
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (!editId) return
+    const item = importedContentService.get(editId)
+    if (!item) return
+    setActiveTab(item.sourcePlatform)
+    setDraft(item)
+  }, [searchParams])
 
   async function handleSave() {
     if (!draft) return

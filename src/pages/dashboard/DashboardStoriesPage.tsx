@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { getStories, updateStory, deleteStory, duplicateStory } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
@@ -497,6 +498,14 @@ export function DashboardStoriesPage() {
 
   const filtered = search ? storyList.filter(s => s.title.toLowerCase().includes(search.toLowerCase())) : storyList
   const selected = storyList.find(s => s.id === selectedId) ?? null
+
+  // Deep link from Profile → Content ("?edit=<id>") — selects that story
+  // straight away instead of making the founder find it in the list.
+  const [searchParams] = useSearchParams()
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (editId && storyList.some(s => s.id === editId)) setSelectedId(editId)
+  }, [searchParams, storyList])
 
   function toggleChecked(id: string) {
     setChecked(prev => {
