@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder } from '../../services/founders'
-import { getBusinesses } from '../../services/businesses'
+import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
@@ -18,6 +18,7 @@ import { getMedia } from '../../services/media'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
+import { slugify } from '../../utils/slugify'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
@@ -35,7 +36,7 @@ import { getFounderAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
 import { suggestTopicsFromText, suggestFaqsFromFounder } from '../../services/founderEnrichment'
 import type { BlogQaPair } from '../../services/importedContentEnrichment'
-import type { Founder, Topic, SocialLink, SocialPlatform } from '../../types'
+import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
 // Every existing field keeps its home; this map only changed which tab a
@@ -451,6 +452,208 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
   )
 }
 
+// ─── Businesses tab ─────────────────────────────────────────────────────────
+// Deliberately simple — the same shape of fields as the Profile tab's Identity
+// card (name, tagline/bio-equivalent, photos, location, industry, topics,
+// links). Anything deeper (Discovery Profile, Partner Programs, Services,
+// Offers) stays on the full Businesses workspace — linked out, not duplicated
+// here. Multiple businesses switch via pills, same pattern as the platform
+// filters on Import Content.
+
+function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
+  founderId: string
+  founderLocation: Location
+  founderIndustry: Industry
+}) {
+  const [businesses, setBusinesses] = useState<Business[]>(() => getBusinesses({ founderId }))
+  const [activeId, setActiveId] = useState<string | null>(() => businesses[0]?.id ?? null)
+  const [draft, setDraft] = useState<Business | null>(() => businesses[0] ?? null)
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  function selectBusiness(id: string) {
+    setActiveId(id)
+    setDraft(businesses.find(b => b.id === id) ?? null)
+    setSaved(false)
+  }
+
+  async function handleAddBusiness() {
+    const now = new Date().toISOString()
+    const newBiz: Business = {
+      id: crypto.randomUUID(),
+      slug: '',
+      name: '',
+      tagline: '',
+      description: '',
+      logo: '',
+      coverImage: '',
+      founderId,
+      location: founderLocation,
+      industry: founderIndustry,
+      topics: [],
+      offers: [],
+      status: 'draft',
+      featured: false,
+      createdAt: now,
+    }
+    const result = await updateBusiness(newBiz)
+    if (result.success) {
+      const refreshed = getBusinesses({ founderId })
+      setBusinesses(refreshed)
+      setActiveId(newBiz.id)
+      setDraft(newBiz)
+    }
+  }
+
+  async function handleDelete() {
+    if (!draft) return
+    const result = await deleteBusiness(draft.id)
+    if (result.success) {
+      const refreshed = getBusinesses({ founderId })
+      setBusinesses(refreshed)
+      setActiveId(refreshed[0]?.id ?? null)
+      setDraft(refreshed[0] ?? null)
+    }
+  }
+
+  function set<K extends keyof Business>(key: K, value: Business[K]) {
+    setDraft(prev => prev ? { ...prev, [key]: value } : prev)
+    setSaved(false)
+  }
+
+  async function handleSave() {
+    if (!draft) return
+    setSaving(true)
+    const withSlug = { ...draft, slug: draft.slug || slugify(draft.name) }
+    const result = await updateBusiness(withSlug)
+    setSaving(false)
+    if (result.success) {
+      setDraft(withSlug)
+      setBusinesses(getBusinesses({ founderId }))
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    }
+  }
+
+  function toggleTopic(topic: Topic) {
+    if (!draft) return
+    const has = draft.topics.some(t => t.id === topic.id)
+    set('topics', has ? draft.topics.filter(t => t.id !== topic.id) : [...draft.topics, topic])
+  }
+
+  return (
+    <div className="max-w-2xl flex flex-col gap-5">
+      <TabIntro>
+        Every business you run. Keep it simple here — logo, description, where you work, what you're
+        about. Discovery Profile, Partner Programs and Services live in the full Businesses workspace.
+      </TabIntro>
+
+      <div className="flex flex-wrap gap-2">
+        {businesses.map(b => (
+          <button key={b.id} onClick={() => selectBusiness(b.id)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+              activeId === b.id ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+            }`}>
+            {b.name || 'Untitled business'}
+          </button>
+        ))}
+        <button onClick={() => void handleAddBusiness()}
+          className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#C86A43] border border-dashed border-[#C86A43]/50 hover:bg-[#FDF6F3] transition-colors">
+          + Add business
+        </button>
+      </div>
+
+      {!draft ? (
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+          <p className="text-sm font-semibold text-[#2D2A26]">No businesses yet.</p>
+          <p className="text-xs text-[#9CA3AF] mt-1">Add one above to get started.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
+          <Field label="Business Name">
+            <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
+          </Field>
+          <Field label="Tagline">
+            <input type="text" value={draft.tagline} onChange={e => set('tagline', e.target.value)} className={inputClass} placeholder="One line — what you do, in plain words" />
+          </Field>
+          <Field label="Description">
+            <textarea value={draft.description} onChange={e => set('description', e.target.value)} rows={4} className={inputClass + ' resize-y'} />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Logo">
+              <MediaUpload value={draft.logo} onChange={v => set('logo', v)} label="Upload logo" aspect="square"
+                uploadOptions={{ founderId, businessId: draft.id, usageType: 'business-logo' }} />
+            </Field>
+            <Field label="Cover Image">
+              <MediaUpload value={draft.coverImage} onChange={v => set('coverImage', v)} label="Upload cover" aspect="wide"
+                uploadOptions={{ founderId, businessId: draft.id, usageType: 'business-cover' }} />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Location">
+              <select value={draft.location.id} onChange={e => { const l = locations.find(x => x.id === e.target.value); if (l) set('location', l) }} className={inputClass}>
+                {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Industry">
+              <select value={draft.industry.id} onChange={e => { const i = industries.find(x => x.id === e.target.value); if (i) set('industry', i) }} className={inputClass}>
+                {industries.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+              </select>
+            </Field>
+          </div>
+
+          <Field label="Topics">
+            <div className="flex flex-wrap gap-2 mt-1">
+              {allTopics.map(topic => {
+                const active = draft.topics.some(t => t.id === topic.id)
+                return (
+                  <button key={topic.id} onClick={() => toggleTopic(topic)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      active ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                    }`}>
+                    {topic.name}
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Website">
+              <input type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
+            </Field>
+            <Field label="Instagram">
+              <input type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
+            </Field>
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-[#E8E4DD]">
+            <div className="flex items-center gap-3">
+              <button onClick={() => void handleSave()} disabled={saving}
+                className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+              {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
+              <Link to={`/dashboard/businesses`} className="text-xs text-[#C86A43] hover:underline font-medium">
+                Advanced settings →
+              </Link>
+            </div>
+            <ConfirmButton
+              label="Delete"
+              confirmLabel="Yes, delete"
+              message={`Delete ${draft.name || 'this business'}? This can't be undone.`}
+              onConfirm={() => void handleDelete()}
+              className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Social links (multi-entry) ────────────────────────────────────────────────
 
 const PLATFORM_LABELS: Record<SocialPlatform, string> = {
@@ -579,6 +782,7 @@ export function DashboardProfilePage() {
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
     { key: 'content',       label: "Content" },
+    { key: 'businesses',    label: 'Businesses'    },
     { key: 'expertise',     label: 'Expertise'     },
     { key: 'discovery',     label: 'Partners' },
     { key: 'settings',      label: 'Settings'      },
@@ -957,6 +1161,11 @@ export function DashboardProfilePage() {
               </div>
             )}
           </div>
+        )}
+
+        {/* ── Businesses ────────────────────────────────────────────────── */}
+        {tab === 'businesses' && (
+          <BusinessesTab founderId={draft.id} founderLocation={draft.location} founderIndustry={draft.industry} />
         )}
 
         {/* ── Expertise: topics, industry, location, FAQs ─────────────────── */}
