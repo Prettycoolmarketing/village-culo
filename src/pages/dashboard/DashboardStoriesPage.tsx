@@ -265,8 +265,16 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                     id="carouselImages"
                     onClick={() => set('carouselImages', [...(draft.carouselImages ?? []), ''])}
                     className="text-xs text-[#C86A43] hover:underline text-left mt-1">
-                    + Add slide
+                    + Add slide (by URL)
                   </button>
+                  <MediaUpload
+                    onChange={v => set('carouselImages', [...(draft.carouselImages ?? []).filter(Boolean), v])}
+                    accept="image"
+                    label="Upload an image to add as a slide"
+                    aspect="auto"
+                    uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
+                  />
+                  <p className="text-[10px] text-[#9CA3AF]">One slide is fine to publish with — add as many more as you like.</p>
                 </div>
               </div>
             )}
