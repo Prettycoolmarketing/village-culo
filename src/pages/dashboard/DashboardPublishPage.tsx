@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounders } from '../../services/founders'
 import { getBusinesses, getBusiness } from '../../services/businesses'
-import { getStories } from '../../services/stories'
+import { getStories, getStory } from '../../services/stories'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { publishStoryCore } from '../../services/publishStory'
@@ -121,6 +121,12 @@ interface PublishDraft {
   // Set when this draft started from "Write about this partner" in
   // Opportunities' Partnerships Program tab — see the matching effect below.
   partnerId?: string
+  // Set the moment this draft is first successfully published — every
+  // subsequent handlePublish call (re-clicking Publish, resuming this same
+  // draft after a refresh) reuses this id instead of minting a new one, so
+  // republishing updates the existing Story in place rather than colliding
+  // on the slug's unique constraint with a second, orphaned row.
+  publishedStoryId?: string
 }
 
 type CtaPreset = 'website' | 'business' | 'book' | 'speaking' | 'newsletter' | 'custom'
@@ -1634,8 +1640,13 @@ export function DashboardPublishPage() {
     const founder     = getFounders().find(f => f.id === draft.founderId)
     const loc         = locations.find(l => l.id === draft.locationId) ?? founder?.location ?? locations[0]!
     const industry    = founder?.industry ?? industries[0]!
-    const titleSlug   = slugify(draft.title) || `pub-${Date.now()}`
-    const id          = `pub-${Date.now()}`
+    // Reuse the same Story id every time this draft is published again (a
+    // re-click, or resuming an autosaved draft after a refresh) — otherwise
+    // each attempt mints a fresh id and tries to insert a second row with
+    // the same slug, which the database correctly rejects.
+    const existingStory = draft.publishedStoryId ? getStory(draft.publishedStoryId) : undefined
+    const titleSlug   = existingStory?.slug || slugify(draft.title) || `pub-${Date.now()}`
+    const id          = draft.publishedStoryId || `pub-${Date.now()}`
     const status      = action === 'publish' ? 'published' as const
                       : action === 'archive' ? 'archived'  as const
                       : 'draft'              as const
@@ -1673,7 +1684,7 @@ export function DashboardPublishPage() {
                       : (draft.reelUrl || draft.audioUrl || draft.documentUrl || draft.contentUrl || draft.carouselSlides.some(Boolean))
                           ? 'website-import'
                           : 'manual-dashboard',
-      createdAt:      nowIso,
+      createdAt:      existingStory?.createdAt ?? nowIso,
       updatedAt:      nowIso,
     }
 
@@ -1689,11 +1700,31 @@ export function DashboardPublishPage() {
 
     if (!result.success) {
       setPublishing(false)
+      const raw = result.error ?? ''
+      // A slug collision here almost always means this exact title was
+      // already published (most often a double-click on "Publish to
+      // Village") — that's not a failure the founder needs to troubleshoot,
+      // it's confirmation the story already exists. Send them straight to
+      // it instead of showing the raw database error.
+      if (raw.toLowerCase().includes('slug') && raw.toLowerCase().includes('duplicate')) {
+        const already = getStories().find(s => s.slug === titleSlug)
+        if (already) {
+          setDraft(prev => ({ ...prev, publishedStoryId: already.id }))
+          localStorage.removeItem(DRAFT_AUTOSAVE_KEY)
+          setPublishError('')
+          setPublishedSlug(already.slug)
+          setStep('done')
+          return
+        }
+        setPublishError("Looks like this was already published under the same title. Try changing the title slightly, or refresh and check your Content list.")
+        return
+      }
       // Surfaced via the Preview step's publishError prop below.
-      setPublishError(result.error ?? 'Could not publish. Please try again.')
+      setPublishError(raw || 'Could not publish. Please try again.')
       return
     }
 
+    setDraft(prev => ({ ...prev, publishedStoryId: result.story?.id ?? prev.publishedStoryId }))
     setSummary(result.summary ?? null)
     localStorage.removeItem(DRAFT_AUTOSAVE_KEY)
     setPublishError('')
