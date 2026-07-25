@@ -57,7 +57,7 @@ const HIGH_VOLUME_DAILY_LIMIT = 2000
 // RSS-connector-discovered episode, which never has one.
 const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok', 'podcast'])
 
-const STATUS_OPTIONS: { value: ImportedContentStatus; label: string }[] = [
+export const STATUS_OPTIONS: { value: ImportedContentStatus; label: string }[] = [
   { value: 'draft',     label: 'Draft'     },
   { value: 'published', label: 'Published' },
   { value: 'archived',  label: 'Archived'  },
@@ -733,7 +733,7 @@ function ConnectedSourceRow({ source, isHighVolume, onChanged }: { source: Conne
 
 // ─── Small display components ─────────────────────────────────────────────────
 
-function PlatformBadge({ platform }: { platform: string }) {
+export function PlatformBadge({ platform }: { platform: string }) {
   return (
     <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${PLATFORM_COLORS[platform as keyof typeof PLATFORM_COLORS] ?? 'bg-[#F3EDE6] text-[#9CA3AF]'}`}>
       {PLATFORM_LABELS[platform as keyof typeof PLATFORM_LABELS] ?? platform}
@@ -1407,11 +1407,11 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
 // An item is ready to quick-publish once it's no longer just the auto-generated
 // placeholder — i.e. a founder (or a connector's auto-analysis) has actually
 // given it real content, not "we don't know anything about this yet."
-function isReadyToPublish(item: ImportedContent): boolean {
+export function isReadyToPublish(item: ImportedContent): boolean {
   return item.title.trim().length > 0 && item.title !== `Imported from ${PLATFORM_LABELS[item.sourcePlatform]}`
 }
 
-function SavedRow({
+export function SavedRow({
   item,
   checked,
   onToggleCheck,
@@ -1705,24 +1705,26 @@ export function DashboardImportContentPage() {
   }
 
   return (
-    <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="p-8 max-w-6xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#2D2A26]">Import Content</h1>
-        <p className="text-sm text-[#6B7280] mt-1">
+        <p className="text-sm text-[#6B7280] mt-1 max-w-2xl">
           Bring your old YouTube videos, LinkedIn articles, podcasts and more into the Village — so they can become searchable, connected and discoverable again.
         </p>
       </div>
 
       {/* Ethics notice */}
-      <div className="mb-6 px-4 py-3 rounded-lg bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 text-xs text-[#5E6B4A] leading-relaxed">
+      <div className="mb-6 px-4 py-3 rounded-lg bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 text-xs text-[#5E6B4A] leading-relaxed max-w-3xl">
         CULO Village embeds content from its original platform and always links back to the source. Your content is not downloaded or re-uploaded. Authorship and platform attribution are preserved.
       </div>
 
+      <div className="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-8 items-start">
+
       {/* Connect a channel or feed */}
       {!draft && (
-        <div className="mb-8">
+        <div className="mb-8 xl:mb-0">
           <p className="text-sm text-[#6B7280] mb-4">
             Connect a channel or feed so Village can pull in your own already-public content automatically.
           </p>
@@ -1772,44 +1774,7 @@ export function DashboardImportContentPage() {
         </div>
       )}
 
-      {/* Advanced edit — a right-side slide-over rather than an inline block, so
-          opening it from row 300 of a long list doesn't yank the founder back
-          to the top of the page to find it. */}
-      {draft && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/30 z-40"
-            onClick={handleCancel}
-            aria-hidden="true"
-          />
-          <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[520px] bg-[#F8F5F0] shadow-2xl overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
-                <button
-                  onClick={handleCancel}
-                  aria-label="Close"
-                  className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              {saveError && (
-                <p className="text-sm text-red-600 font-medium mb-2">{saveError}</p>
-              )}
-              <EditForm
-                draft={draft}
-                onChange={setDraft}
-                onSave={() => void handleSave()}
-                onCancel={handleCancel}
-              />
-            </div>
-          </div>
-        </>
-      )}
-
+      <div>
       {/* Bulk publish result */}
       {bulkResult && (
         <div className="mb-6 bg-white rounded-xl border border-[#E8E4DD] p-5">
@@ -1987,6 +1952,47 @@ export function DashboardImportContentPage() {
           </div>
         )}
       </div>
+      </div>
+
+      </div>
+
+      {/* Advanced edit — a right-side slide-over rather than an inline block, so
+          opening it from row 300 of a long list doesn't yank the founder back
+          to the top of the page to find it. */}
+      {draft && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={handleCancel}
+            aria-hidden="true"
+          />
+          <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[520px] bg-[#F8F5F0] shadow-2xl overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+                <button
+                  onClick={handleCancel}
+                  aria-label="Close"
+                  className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {saveError && (
+                <p className="text-sm text-red-600 font-medium mb-2">{saveError}</p>
+              )}
+              <EditForm
+                draft={draft}
+                onChange={setDraft}
+                onSave={() => void handleSave()}
+                onCancel={handleCancel}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
     </div>
   )

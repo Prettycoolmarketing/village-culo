@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder } from '../../services/founders'
+import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
+import { SavedRow, isReadyToPublish } from './DashboardImportContentPage'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
@@ -11,7 +13,7 @@ import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
 import { getStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
-import type { ImportedContentPlatform } from '../../types/importedContent'
+import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
 import { getMedia } from '../../services/media'
@@ -873,6 +875,9 @@ export function DashboardProfilePage() {
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
   const [contentSubTab, setContentSubTab] = useState<'imported' | 'published'>('imported')
   const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>('all')
+  const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
+  const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
+  const [importedTick, setImportedTick] = useState(0)
 
   // Autosave to localStorage as the founder types — if they navigate away or
   // the tab closes before hitting Save, their edits are still there next time.
@@ -1213,7 +1218,7 @@ export function DashboardProfilePage() {
 
         {/* ── My Life's Work ───────────────────────────────────────────── */}
         {tab === 'content' && (
-          <div className="max-w-2xl flex flex-col gap-5">
+          <div className="max-w-4xl flex flex-col gap-5">
             <TabIntro>
               Everything you've brought into the Village, and everything you've published from it — in one place.
             </TabIntro>
@@ -1230,9 +1235,60 @@ export function DashboardProfilePage() {
             </div>
 
             {contentSubTab === 'imported' && (() => {
+              void importedTick
               const allImported = importedContentService.getAll({ founderId: draft.id })
               const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
               const shown = importedPlatformFilter === 'all' ? allImported : allImported.filter(i => i.sourcePlatform === importedPlatformFilter)
+              const readyItems = shown.filter(i => !i.relatedStoryId && isReadyToPublish(i))
+
+              function refreshImported() { setImportedTick(t => t + 1) }
+
+              function toggleImportedChecked(id: string) {
+                setImportedChecked(prev => {
+                  const next = new Set(prev)
+                  if (next.has(id)) next.delete(id); else next.add(id)
+                  return next
+                })
+              }
+
+              function toggleSelectAllReady() {
+                setImportedChecked(prev => prev.size === readyItems.length ? new Set() : new Set(readyItems.map(i => i.id)))
+              }
+
+              async function handleImportedStatusChange(id: string, status: ImportedContentStatus) {
+                importedContentService.updateStatus(id, status)
+                if (status === 'published' || status === 'featured') {
+                  const item = importedContentService.get(id)
+                  if (item && draft && !item.relatedStoryId && isReadyToPublish(item)) {
+                    const story = buildStoryFromImport(item, draft)
+                    story.status = status
+                    const result = await publishStoryCore(story)
+                    if (!result.success) setSaveError(result.error ?? 'Could not publish. Please try again.')
+                  } else if (item && !isReadyToPublish(item)) {
+                    setSaveError('Give this a real title before publishing it.')
+                  }
+                }
+                refreshImported()
+              }
+
+              async function handleImportedBulkPublish() {
+                if (!draft) return
+                setImportedBulkPublishing(true)
+                const targets = readyItems.filter(i => importedChecked.has(i.id))
+                for (const item of targets) {
+                  const story = buildStoryFromImport(item, draft)
+                  await publishStoryCore(story)
+                }
+                setImportedChecked(new Set())
+                setImportedBulkPublishing(false)
+                refreshImported()
+              }
+
+              function handleImportedDelete(id: string) {
+                importedContentService.delete(id)
+                refreshImported()
+              }
+
               return (
                 <div>
                   {platforms.length > 0 && (
@@ -1249,6 +1305,30 @@ export function DashboardProfilePage() {
                       ))}
                     </div>
                   )}
+
+                  {saveError && <p className="text-xs text-red-600 font-medium mb-3">{saveError}</p>}
+
+                  {readyItems.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg">
+                      <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={importedChecked.size > 0 && importedChecked.size === readyItems.length}
+                          onChange={toggleSelectAllReady}
+                          className="w-4 h-4 accent-[#C86A43]"
+                        />
+                        Select all ready to publish ({readyItems.length})
+                      </label>
+                      <button
+                        onClick={() => void handleImportedBulkPublish()}
+                        disabled={importedChecked.size === 0 || importedBulkPublishing}
+                        className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                      >
+                        {importedBulkPublishing ? 'Publishing…' : `Publish ${importedChecked.size || ''} selected`}
+                      </button>
+                    </div>
+                  )}
+
                   {shown.length === 0 ? (
                     <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
                       <p className="text-sm font-semibold text-[#2D2A26]">Nothing imported yet.</p>
@@ -1259,15 +1339,15 @@ export function DashboardProfilePage() {
                   ) : (
                     <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
                       {shown.map(item => (
-                        <Link key={item.id} to={`/dashboard/import-content?edit=${item.id}`}
-                          className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
-                          {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#2D2A26] truncate">{item.title}</p>
-                            <p className="text-xs text-[#9CA3AF] mt-0.5">{IMPORT_PLATFORM_LABELS[item.sourcePlatform]} · {item.importedAt.slice(0, 10)}</p>
-                          </div>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280] shrink-0">{item.status}</span>
-                        </Link>
+                        <SavedRow
+                          key={item.id}
+                          item={item}
+                          checked={importedChecked.has(item.id)}
+                          onToggleCheck={() => toggleImportedChecked(item.id)}
+                          onAdvancedEdit={() => navigate(`/dashboard/import-content?edit=${item.id}`)}
+                          onDelete={() => handleImportedDelete(item.id)}
+                          onStatusChange={status => void handleImportedStatusChange(item.id, status)}
+                        />
                       ))}
                     </div>
                   )}
