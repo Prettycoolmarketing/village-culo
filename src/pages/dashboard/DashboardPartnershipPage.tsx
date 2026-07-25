@@ -955,7 +955,6 @@ function OpportunitiesSection({ founderId }: { founderId: string }) {
               <p className="text-xs font-semibold text-[#2D2A26] mb-3">What CULO uses to find your opportunities</p>
               <div className="space-y-2">
                 {[
-                  { label: 'Your topics',                    hint: 'Set in Profile → Content tab' },
                   { label: 'What you\'re open to',           hint: 'Set in Profile → Discovery Profile tab' },
                   { label: 'Your approved recommendations',  hint: 'Opportunities → My Picks' },
                   { label: 'Genuine recommendations list',   hint: 'Profile → Discovery Profile tab' },

@@ -443,6 +443,11 @@ export interface Business {
   industry: Industry
   industriesServed?: Industry[]
   topics: Topic[]
+  // Free-text description of who this business serves — separate from Topics
+  // (what it's about) and Industry (its category). Written by the founder in
+  // their own words, e.g. "busy mums in their 30s-40s" or "trades businesses
+  // under 10 staff".
+  targetAudience?: string
   website?: string
   instagram?: string
   linkedin?: string

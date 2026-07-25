@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
@@ -34,7 +34,8 @@ import {
 } from '../../utils/missingAssets'
 import { getFounderAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
-import { suggestTopicsFromText, suggestFaqsFromFounder } from '../../services/founderEnrichment'
+import { loadDraft, saveDraft, clearDraft } from '../../utils/draftAutosave'
+import { suggestFaqsFromFounder } from '../../services/founderEnrichment'
 import type { BlogQaPair } from '../../services/importedContentEnrichment'
 import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
@@ -536,13 +537,27 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
 }) {
   const [businesses, setBusinesses] = useState<Business[]>(() => getBusinesses({ founderId }))
   const [activeId, setActiveId] = useState<string | null>(() => businesses[0]?.id ?? null)
-  const [draft, setDraft] = useState<Business | null>(() => businesses[0] ?? null)
+  const [draft, setDraft] = useState<Business | null>(() => {
+    const first = businesses[0]
+    if (!first) return null
+    return loadDraft<Business>(`culo_v1_business_draft_${first.id}`) ?? first
+  })
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // Autosave to localStorage as the founder types — if they navigate away or
+  // the tab closes before hitting Save, their edits are still there next time.
+  useEffect(() => {
+    if (!draft) return
+    const key = `culo_v1_business_draft_${draft.id}`
+    const t = setTimeout(() => saveDraft(key, draft), 600)
+    return () => clearTimeout(t)
+  }, [draft])
+
   function selectBusiness(id: string) {
     setActiveId(id)
-    setDraft(businesses.find(b => b.id === id) ?? null)
+    const match = businesses.find(b => b.id === id) ?? null
+    setDraft(match ? (loadDraft<Business>(`culo_v1_business_draft_${id}`) ?? match) : null)
     setSaved(false)
   }
 
@@ -578,6 +593,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
     if (!draft) return
     const result = await deleteBusiness(draft.id)
     if (result.success) {
+      clearDraft(`culo_v1_business_draft_${draft.id}`)
       const refreshed = getBusinesses({ founderId })
       setBusinesses(refreshed)
       setActiveId(refreshed[0]?.id ?? null)
@@ -600,6 +616,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
       setDraft(withSlug)
       setBusinesses(getBusinesses({ founderId }))
       setSaved(true)
+      clearDraft(`culo_v1_business_draft_${withSlug.id}`)
       setTimeout(() => setSaved(false), 2500)
     }
   }
@@ -657,7 +674,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="Logo">
-              <MediaUpload value={draft.logo} onChange={v => set('logo', v)} label="Upload logo" aspect="square"
+              <MediaUpload value={draft.logo} onChange={v => set('logo', v)} label="Upload logo" aspect="wide"
                 uploadOptions={{ founderId, businessId: draft.id, usageType: 'business-logo' }} />
             </Field>
             <Field label="Cover Image">
@@ -693,6 +710,10 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
                 )
               })}
             </div>
+          </Field>
+
+          <Field label="Target Audience" hint="Who this business is actually for, in your own words — e.g. 'busy mums in their 30s-40s' or 'trades businesses under 10 staff'.">
+            <input type="text" value={draft.targetAudience ?? ''} onChange={e => set('targetAudience', e.target.value || undefined)} className={inputClass} placeholder="Who you serve…" />
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
@@ -840,7 +861,11 @@ export function DashboardProfilePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const currentFounder = getCurrentFounder(user)
-  const [draft, setDraft]   = useState<Founder | null>(() => currentFounder ? { ...currentFounder } : null)
+  const [draft, setDraft]   = useState<Founder | null>(() => {
+    if (!currentFounder) return null
+    const saved = loadDraft<Founder>(`culo_v1_profile_draft_${currentFounder.id}`)
+    return saved ?? { ...currentFounder }
+  })
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -848,6 +873,15 @@ export function DashboardProfilePage() {
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
   const [contentSubTab, setContentSubTab] = useState<'imported' | 'published'>('imported')
   const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>('all')
+
+  // Autosave to localStorage as the founder types — if they navigate away or
+  // the tab closes before hitting Save, their edits are still there next time.
+  useEffect(() => {
+    if (!draft) return
+    const key = `culo_v1_profile_draft_${draft.id}`
+    const t = setTimeout(() => saveDraft(key, draft), 600)
+    return () => clearTimeout(t)
+  }, [draft])
 
   if (!draft) {
     return (
@@ -914,7 +948,7 @@ export function DashboardProfilePage() {
     { key: 'overview',      label: 'Profile'       },
     { key: 'content',       label: "Content" },
     { key: 'businesses',    label: 'Businesses'    },
-    { key: 'expertise',     label: 'Expertise'     },
+    { key: 'expertise',     label: 'FAQ'           },
     { key: 'discovery',     label: 'Partners' },
     { key: 'settings',      label: 'Settings'      },
   ]
@@ -1009,14 +1043,6 @@ export function DashboardProfilePage() {
     )
   }
 
-  function toggleTopic(topic: Topic) {
-    setDraft(prev => {
-      if (!prev) return prev
-      const has = prev.topics.some(t => t.id === topic.id)
-      setSaved(false)
-      return { ...prev, topics: has ? prev.topics.filter(t => t.id !== topic.id) : [...prev.topics, topic] }
-    })
-  }
 
   async function handleDelete() {
     if (!draft) return
@@ -1031,8 +1057,12 @@ export function DashboardProfilePage() {
     setSaveError(null)
     const result = await updateFounder(draft)
     setSaving(false)
-    if (result.success) setSaved(true)
-    else setSaveError(result.error ?? 'Save failed. Please try again.')
+    if (result.success) {
+      setSaved(true)
+      clearDraft(`culo_v1_profile_draft_${draft.id}`)
+    } else {
+      setSaveError(result.error ?? 'Save failed. Please try again.')
+    }
   }
 
   const isPublic = draft.status === 'published' || draft.status === 'featured'
@@ -1299,74 +1329,15 @@ export function DashboardProfilePage() {
           <BusinessesTab founderId={draft.id} founderLocation={draft.location} founderIndustry={draft.industry} />
         )}
 
-        {/* ── Expertise: topics, industry, location, FAQs ─────────────────── */}
+        {/* ── FAQ ──────────────────────────────────────────────────────────── */}
         {tab === 'expertise' && (
           <div className="max-w-2xl flex flex-col gap-5">
             <TabIntro>
-              This is what connects you across the Village. Topics, industry and location
-              determine which stories, ideas and businesses you're linked to, and what you show up for
-              in search.
+              Real questions people ask you, with real answers. These help both search engines and
+              AI systems understand what you know.
             </TabIntro>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Location">
-                <select
-                  value={draft.location.id}
-                  onChange={e => { const l = locations.find(x => x.id === e.target.value); if (l) set('location', l) }}
-                  className={inputClass}
-                >
-                  {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
-              </Field>
-              <Field label="Primary Industry">
-                <select
-                  value={draft.industry.id}
-                  onChange={e => { const i = industries.find(x => x.id === e.target.value); if (i) set('industry', i) }}
-                  className={inputClass}
-                >
-                  {industries.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-                </select>
-              </Field>
-            </div>
-
-            <Field label="Topics" hint="What would you like people to discover you for? These power how you're connected across the Village.">
-              <div className="flex flex-wrap gap-2 mt-1">
-                {allTopics.map(topic => {
-                  const active = draft.topics.some(t => t.id === topic.id)
-                  return (
-                    <button
-                      key={topic.id}
-                      onClick={() => toggleTopic(topic)}
-                      className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                        active
-                          ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                          : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                      }`}
-                    >
-                      {topic.name}
-                    </button>
-                  )
-                })}
-              </div>
-              {(() => {
-                const suggested = suggestTopicsFromText(draft.bio, allTopics).filter(t => !draft.topics.some(dt => dt.id === t.id))
-                return suggested.length > 0 ? (
-                  <div className="mt-3">
-                    <p className="text-[11px] text-[#9CA3AF] mb-1.5">Found in your bio — tap to add</p>
-                    <div className="flex flex-wrap gap-2">
-                      {suggested.map(topic => (
-                        <button key={topic.id} onClick={() => toggleTopic(topic)}
-                          className="px-3 py-1.5 rounded-full text-sm border border-dashed border-[#C86A43]/50 text-[#C86A43] hover:bg-[#FDF6F3] transition-colors">
-                          + {topic.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null
-              })()}
-            </Field>
-
-            <div className="border-t border-[#E8E4DD] pt-5">
+            <div>
               <Field label="Frequently Asked Questions" hint="Real questions people ask you. These help both search engines and AI systems understand what you know.">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <p className="text-[11px] text-[#9CA3AF]">Pull real questions and answers straight from your bio and published stories.</p>
