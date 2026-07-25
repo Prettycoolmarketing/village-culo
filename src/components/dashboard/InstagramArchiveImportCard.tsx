@@ -1,6 +1,7 @@
 import { useState, type DragEvent } from 'react'
 import { parseInstagramArchiveFile, buildImportedContentFromArchive } from '../../services/instagramArchive'
 import { importedContentService } from '../../services/importedContent'
+import { getBusinesses } from '../../services/businesses'
 
 // Bring in a whole Instagram export ZIP at once — posts, reels and stories
 // each become their own ImportedContent (carousels keep every photo, in
@@ -16,11 +17,13 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false)
   const expanded = controlledExpanded ?? uncontrolledExpanded
   const setExpanded = onExpandedChange ?? setUncontrolledExpanded
-  const [showInstructions, setShowInstructions] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(true)
   const [dragOver, setDragOver] = useState(false)
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ imported: number; skipped: number } | null>(null)
+  const businesses = getBusinesses({ founderId })
+  const [businessId, setBusinessId] = useState<string>('')
 
   async function handleFile(file: File | undefined) {
     if (!file) return
@@ -41,7 +44,7 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
       }
 
       setStage('Extracting media and creating pieces…')
-      const built = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg))
+      const built = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), businessId || undefined)
 
       setStage('Saving to your Village…')
       let imported = 0
@@ -90,14 +93,39 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
           </button>
 
           {showInstructions && (
-            <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside mb-4 space-y-1 bg-[#F8F5F0] rounded-lg p-4">
-              <li>Open Instagram → Settings → Accounts Centre → Your information and permissions.</li>
-              <li>Download or transfer information → select your Instagram account.</li>
-              <li>Choose "Some of your information" and select Posts, Stories, Reels, Videos, Photos.</li>
-              <li>Date range: All time. Format: JSON. Media quality: High.</li>
-              <li>Create files, then wait for Instagram's email.</li>
-              <li>Download the ZIP and upload it below.</li>
-            </ol>
+            <div className="mb-4 bg-[#F8F5F0] rounded-lg p-4">
+              <p className="text-xs font-semibold text-[#2D2A26] mb-2">In the Instagram app or on instagram.com:</p>
+              <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside space-y-1.5">
+                <li>Go to <span className="font-medium text-[#2D2A26]">Settings → Accounts Centre → Your information and permissions</span>.</li>
+                <li>Tap <span className="font-medium text-[#2D2A26]">Download or transfer information</span>, then select the Instagram account you want to export.</li>
+                <li>Choose <span className="font-medium text-[#2D2A26]">"Some of your information"</span>, then on the checklist tick <span className="font-medium text-[#2D2A26]">Media</span> only — leave everything else (Messages, Comments, Ads, Security, etc.) unticked. That's all our importer reads.</li>
+                <li>Set <span className="font-medium text-[#2D2A26]">Date range: All time</span>.</li>
+                <li>Set <span className="font-medium text-[#2D2A26]">Format: JSON</span> (not HTML — we can't read HTML exports).</li>
+                <li>Set <span className="font-medium text-[#2D2A26]">Media quality: High</span>.</li>
+                <li>Tap <span className="font-medium text-[#2D2A26]">Create files</span>. Instagram builds it in the background and emails you when it's ready — this can take anywhere from a few minutes to a day.</li>
+                <li>Open that email (or go back to Accounts Centre → Your activity → Download or transfer information) and download the <span className="font-medium text-[#2D2A26]">.zip</span> file to your device.</li>
+                <li>Come back to this page and drag that .zip file into the box below, or click Browse files to select it.</li>
+              </ol>
+            </div>
+          )}
+
+          {businesses.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-[#2D2A26] mb-1.5">
+                Which business is this Instagram account for?
+              </label>
+              <select
+                value={businessId}
+                onChange={e => setBusinessId(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+              >
+                <option value="">Not tied to a specific business</option>
+                {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+              <p className="text-[10px] text-[#9CA3AF] mt-1">
+                If you run more than one Instagram account for different businesses, export and upload each one separately, choosing the matching business each time.
+              </p>
+            </div>
           )}
 
           {error && <p className="text-xs text-red-600 mb-3">{error}</p>}

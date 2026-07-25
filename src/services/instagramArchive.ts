@@ -105,6 +105,7 @@ export async function buildImportedContentFromArchive(
   posts: ParsedInstagramPost[],
   zip: JSZip,
   onProgress?: (message: string) => void,
+  businessId?: string,
 ): Promise<BuiltArchiveItem[]> {
   const results: BuiltArchiveItem[] = []
 
@@ -150,6 +151,7 @@ export async function buildImportedContentFromArchive(
     const item: ImportedContent = {
       id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       founderId,
+      businessId,
       sourcePlatform: 'instagram',
       originalUrl: '',
       thumbnailUrl: uploadedUrls[0] ?? videoUrl,
