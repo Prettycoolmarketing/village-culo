@@ -103,6 +103,11 @@ interface PublishDraft {
   ctaLabel:           string
   ctaUrl:             string
   ctaPreset:          CtaPreset
+  // Surfaced as inline "finishing touches" right before Publish (see
+  // PreviewStep) instead of only being discoverable later as a nagging
+  // recommendation on the Stories dashboard after the story is already live.
+  seoTitle:           string
+  seoDescription:     string
   // Editable overrides merged into the Village Intelligence record at publish
   // time (see handlePublish) — reuses the existing lessons/geoQuestions/
   // relatedFounderIds/relatedBusinessIds/relatedContentIds fields already on
@@ -178,6 +183,8 @@ function defaultDraft(founderId: string, businessId: string): PublishDraft {
     ctaLabel:          'Read more',
     ctaUrl:            '',
     ctaPreset:         'custom',
+    seoTitle:          '',
+    seoDescription:    '',
     excludedFounderIds:  [],
     excludedBusinessIds: [],
     excludedContentIds:  [],
@@ -1342,6 +1349,58 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
         </div>
       </div>
 
+      {/* ── Finishing touches ────────────────────────────────────────────── */}
+      {/* Same recommendations the Stories dashboard nags about after the fact
+          (Write Summary / Add CTA Link / Add Page Title / Add Description) —
+          surfaced here, editable inline, so a founder fills them in as one
+          pass while publishing instead of discovering a checklist later. */}
+      {(() => {
+        const touches: { key: string; label: string }[] = []
+        if (!draft.summary || draft.summary.length < 80) touches.push({ key: 'summary', label: 'Write a summary so readers know what this is about' })
+        if (!draft.ctaUrl) touches.push({ key: 'cta', label: 'Add a call-to-action link' })
+        if (!draft.seoTitle) touches.push({ key: 'seoTitle', label: 'Give your page a custom search title' })
+        if (!draft.seoDescription) touches.push({ key: 'seoDescription', label: 'Write a short search description' })
+        if (touches.length === 0) return null
+
+        return (
+          <div className="bg-white rounded-2xl border border-[#E8E4DD] px-6 py-5">
+            <p className="text-sm font-bold text-[#2D2A26] mb-1">A few finishing touches</p>
+            <p className="text-xs text-[#9CA3AF] mb-4">Optional, but they help readers and search engines. Fill them in now — no need to come back later.</p>
+            <div className="flex flex-col gap-4">
+              {touches.some(t => t.key === 'summary') && (
+                <Field label="Summary" hint="One or two sentences, the reader's takeaway.">
+                  <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={2} className={inp} placeholder="What's this story about, in a sentence or two?" />
+                </Field>
+              )}
+              {touches.some(t => t.key === 'cta') && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Button label">
+                    <input type="text" value={draft.ctaLabel} onChange={e => onChange({ ctaLabel: e.target.value, partnerId: undefined })} className={inp} placeholder="Read more" />
+                  </Field>
+                  <Field label="Link">
+                    <input type="url" value={draft.ctaUrl} onChange={e => onChange({ ctaUrl: e.target.value, partnerId: undefined })} className={inp} placeholder="https://" />
+                  </Field>
+                </div>
+              )}
+              {(touches.some(t => t.key === 'seoTitle') || touches.some(t => t.key === 'seoDescription')) && (
+                <div className="grid grid-cols-1 gap-3">
+                  {touches.some(t => t.key === 'seoTitle') && (
+                    <Field label="Search Title" hint="~60 chars — shown as the page title in search results.">
+                      <input type="text" value={draft.seoTitle} onChange={e => onChange({ seoTitle: e.target.value })} className={inp} placeholder={draft.title || 'Custom search title'} />
+                    </Field>
+                  )}
+                  {touches.some(t => t.key === 'seoDescription') && (
+                    <Field label="Search Description" hint="~160 chars — shown under the title in search results.">
+                      <textarea value={draft.seoDescription} onChange={e => onChange({ seoDescription: e.target.value })} rows={2} className={inp} placeholder={draft.summary || 'Custom search description'} />
+                    </Field>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* ── Publish ───────────────────────────────────────────────────────── */}
       <div className="sticky bottom-0 bg-[#F8F5F0]/95 backdrop-blur pt-3 pb-1 -mx-8 px-8 flex flex-col gap-3 border-t border-[#E8E4DD] mt-2">
         {publishError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{publishError}</p>}
@@ -1678,6 +1737,12 @@ export function DashboardPublishPage() {
       partnerId:      draft.partnerId,
       ctaLabel:       draft.ctaLabel,
       ctaUrl,
+      // Fall back to whatever the existing published Story already has —
+      // republishing from this wizard (which doesn't expose every field the
+      // Stories dashboard's advanced edit does) should never silently wipe
+      // an SEO title/description someone set there.
+      seoTitle:       draft.seoTitle || existingStory?.seoTitle,
+      seoDescription: draft.seoDescription || existingStory?.seoDescription,
       status,
       featured:       false,
       publishingSource: draft.importedContentId ? 'website-import'
