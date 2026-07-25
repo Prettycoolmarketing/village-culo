@@ -16,6 +16,7 @@ import {
 import { syncImportEditsToStory } from '../../services/publishStory'
 import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
+import { deriveSeoTitle, deriveSeoDescription } from '../../utils/seo'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import {
   villageContentIntelligenceService,
@@ -1197,20 +1198,12 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         )}
       </div>
 
-      {/* Search Title + Description */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Search Title <span className="font-normal text-[#9CA3AF]">~60 chars</span></label>
-          <input type="text" value={draft.seoTitle ?? ''}
-            onChange={e => field('seoTitle', e.target.value || undefined)}
-            className={INPUT} placeholder={draft.title || 'Custom search title'} />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Search Description <span className="font-normal text-[#9CA3AF]">~160 chars</span></label>
-          <input type="text" value={draft.seoDescription ?? ''}
-            onChange={e => field('seoDescription', e.target.value || undefined)}
-            className={INPUT} placeholder={draft.summary || 'Custom search description'} />
-        </div>
+      {/* Search & AI preview — always derived from Title + Blog/Summary, no
+          separate field to fill in and keep in sync by hand. */}
+      <div className="mb-4 bg-[#F8F5F0] rounded-lg px-4 py-3">
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1.5">What search engines and AI will show</p>
+        <p className="text-sm text-[#C86A43] font-medium truncate">{deriveSeoTitle(draft.title)}</p>
+        <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.summary, draft.description)}</p>
       </div>
 
       {/* Thumbnail */}

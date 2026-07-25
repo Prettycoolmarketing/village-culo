@@ -24,6 +24,7 @@ import { focusField } from '../../utils/focusField'
 import { computeReadability } from '../../utils/readability'
 import type { Story, ContentType, Topic } from '../../types'
 import { normalizeUrl } from '../../utils/url'
+import { deriveSeoTitle, deriveSeoDescription } from '../../utils/seo'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
@@ -39,10 +40,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 const CONTENT_TYPES: ContentType[] = ['blog', 'reel', 'carousel']
-const PUBLISHING_SOURCES = [
-  'manual-dashboard', 'piazza-form', 'canva-api',
-  'website-import', 'youtube-import', 'one-drive-import', 'system-generated',
-] as const
 
 // ─── Detail pane ──────────────────────────────────────────────────────────────
 
@@ -412,17 +409,16 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
             <AppearsOnPanel locations={appearsOn} />
         </div>
 
-        {/* SEO & AI discovery */}
+        {/* SEO & AI discovery — always derived from Title + Blog/Summary, no
+            separate field to keep in sync by hand. See utils/seo.ts. */}
         <div className="flex flex-col gap-4 border-t border-[#E8E4DD] pt-6">
           <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Search &amp; AI Discovery</p>
-            <Field label="SEO Title" hint="~60 chars">
-              <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
-            </Field>
-            <Field label="SEO Description" hint="140–160 chars">
-              <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
-              <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
-            </Field>
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+              <p className="text-xs font-semibold text-[#6B7280] mb-1.5">What search engines and AI will show</p>
+              <p className="text-sm text-[#C86A43] font-medium truncate">{deriveSeoTitle(draft.title)}</p>
+              <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.summary, draft.blog)}</p>
+              <p className="text-[10px] text-[#9CA3AF] mt-2">Pulled automatically from your Title and Blog/Summary — edit those above to change this.</p>
+            </div>
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
               <p className="text-xs font-semibold text-[#6B7280] mb-1.5">Location</p>
               <p className="text-sm text-[#2D2A26]">{draft.location.name}, {draft.location.state} · {draft.location.country}</p>
@@ -454,18 +450,6 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                   className={`w-11 h-6 rounded-full transition-colors ${draft.featured ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}>
                   <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform mx-1 ${draft.featured ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-3">Publishing Source</p>
-              <div className="flex flex-wrap gap-2">
-                {PUBLISHING_SOURCES.map(src => (
-                  <button key={src} onClick={() => set('publishingSource', src)}
-                    className={`px-2.5 py-1 rounded-lg text-xs border transition-colors ${draft.publishingSource === src ? 'bg-[#5E6B4A] text-white border-[#5E6B4A]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#5E6B4A]/50'}`}>
-                    {src.replace(/-/g, ' ')}
-                  </button>
-                ))}
               </div>
             </div>
 

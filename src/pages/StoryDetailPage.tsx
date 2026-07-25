@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useParams, Link }  from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
+import { deriveSeoTitle, deriveSeoDescription } from '../utils/seo'
 import { getStories, getStoryBySlug, getStory } from '../services/stories'
 import { getFounder, getFounders } from '../services/founders'
 import { getBusiness } from '../services/businesses'
@@ -354,8 +355,8 @@ export function StoryDetailPage() {
   )
 
   usePageMeta({
-    title:       story?.seoTitle || story?.title,
-    description: story?.seoDescription || story?.summary?.slice(0, 160),
+    title:       story ? deriveSeoTitle(story.title) : undefined,
+    description: story ? deriveSeoDescription(story.summary, story.blog) : undefined,
     keywords:    intel?.seoKeywords.slice(0, 15),
     ogType:      'article',
     ogImage:     story?.coverImage,

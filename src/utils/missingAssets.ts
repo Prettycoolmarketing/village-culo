@@ -78,10 +78,6 @@ export function getStoryMissingItems(story: Story): MissingItem[] {
     m.push({ field: 'cta',             label: 'Add a call-to-action link',                          action: 'Add CTA Link',    severity: 'important'     })
   if (!story.ideaIds || story.ideaIds.length === 0)
     m.push({ field: 'ideas',           label: 'Connect an idea to strengthen your story',           action: 'Connect Idea',    severity: 'important'     })
-  if (!story.seoTitle)
-    m.push({ field: 'seoTitle',        label: 'Give your page a custom search title',               action: 'Add Page Title',  severity: 'nice-to-have'  })
-  if (!story.seoDescription)
-    m.push({ field: 'seoDescription',  label: 'Write a short search description',                   action: 'Add Description', severity: 'nice-to-have'  })
   return m
 }
 

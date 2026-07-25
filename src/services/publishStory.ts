@@ -202,8 +202,6 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     partnerId: item.partnerId,
     ctaLabel: item.ctaLabel || 'View original',
     ctaUrl: item.ctaUrl || item.originalUrl,
-    seoTitle: item.seoTitle,
-    seoDescription: item.seoDescription,
     status: 'published',
     featured: false,
     publishingSource: item.sourcePlatform === 'canva' ? 'canva-api' : 'website-import',
@@ -278,8 +276,6 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
     partnerId: item.partnerId ?? story.partnerId,
     ctaLabel: item.ctaLabel || story.ctaLabel,
     ctaUrl: item.ctaUrl || story.ctaUrl,
-    seoTitle: item.seoTitle || story.seoTitle,
-    seoDescription: item.seoDescription || story.seoDescription,
     updatedAt: new Date().toISOString().split('T')[0]!,
   })
 }

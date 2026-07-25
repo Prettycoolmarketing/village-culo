@@ -17,6 +17,7 @@ import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics, createCustomTopic } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
+import { deriveSeoTitle, deriveSeoDescription } from '../../utils/seo'
 import { looksLikeChannelUrl } from '../../utils/url'
 import { partnerService } from '../../services/partner'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
@@ -103,11 +104,6 @@ interface PublishDraft {
   ctaLabel:           string
   ctaUrl:             string
   ctaPreset:          CtaPreset
-  // Surfaced as inline "finishing touches" right before Publish (see
-  // PreviewStep) instead of only being discoverable later as a nagging
-  // recommendation on the Stories dashboard after the story is already live.
-  seoTitle:           string
-  seoDescription:     string
   // Editable overrides merged into the Village Intelligence record at publish
   // time (see handlePublish) — reuses the existing lessons/geoQuestions/
   // relatedFounderIds/relatedBusinessIds/relatedContentIds fields already on
@@ -183,8 +179,6 @@ function defaultDraft(founderId: string, businessId: string): PublishDraft {
     ctaLabel:          'Read more',
     ctaUrl:            '',
     ctaPreset:         'custom',
-    seoTitle:          '',
-    seoDescription:    '',
     excludedFounderIds:  [],
     excludedBusinessIds: [],
     excludedContentIds:  [],
@@ -212,8 +206,6 @@ function importedContentPatch(item: ImportedContent, draft: PublishDraft): Parti
     // the draft is still untouched from its default.
     ctaLabel: (draft.ctaUrl || draft.ctaLabel !== 'Read more') ? draft.ctaLabel : (item.ctaLabel || draft.ctaLabel),
     ctaUrl: draft.ctaUrl || item.ctaUrl || '',
-    seoTitle: draft.seoTitle || item.seoTitle || '',
-    seoDescription: draft.seoDescription || item.seoDescription || '',
     carouselSlides: draft.carouselSlides.filter(Boolean).length > 0
       ? draft.carouselSlides
       : (item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : draft.carouselSlides),
@@ -1365,14 +1357,12 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
         const touches: { key: string; label: string }[] = []
         if (!draft.summary || draft.summary.length < 80) touches.push({ key: 'summary', label: 'Write a summary so readers know what this is about' })
         if (!draft.ctaUrl) touches.push({ key: 'cta', label: 'Add a call-to-action link' })
-        if (!draft.seoTitle) touches.push({ key: 'seoTitle', label: 'Give your page a custom search title' })
-        if (!draft.seoDescription) touches.push({ key: 'seoDescription', label: 'Write a short search description' })
         if (touches.length === 0) return null
 
         return (
           <div className="bg-white rounded-2xl border border-[#E8E4DD] px-6 py-5">
             <p className="text-sm font-bold text-[#2D2A26] mb-1">A few finishing touches</p>
-            <p className="text-xs text-[#9CA3AF] mb-4">Optional, but they help readers and search engines. Fill them in now — no need to come back later.</p>
+            <p className="text-xs text-[#9CA3AF] mb-4">Optional, but they help readers. Fill them in now — no need to come back later.</p>
             <div className="flex flex-col gap-4">
               {touches.some(t => t.key === 'summary') && (
                 <Field label="Summary" hint="One or two sentences, the reader's takeaway.">
@@ -1389,24 +1379,18 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
                   </Field>
                 </div>
               )}
-              {(touches.some(t => t.key === 'seoTitle') || touches.some(t => t.key === 'seoDescription')) && (
-                <div className="grid grid-cols-1 gap-3">
-                  {touches.some(t => t.key === 'seoTitle') && (
-                    <Field label="Search Title" hint="~60 chars — shown as the page title in search results.">
-                      <input type="text" value={draft.seoTitle} onChange={e => onChange({ seoTitle: e.target.value })} className={inp} placeholder={draft.title || 'Custom search title'} />
-                    </Field>
-                  )}
-                  {touches.some(t => t.key === 'seoDescription') && (
-                    <Field label="Search Description" hint="~160 chars — shown under the title in search results.">
-                      <textarea value={draft.seoDescription} onChange={e => onChange({ seoDescription: e.target.value })} rows={2} className={inp} placeholder={draft.summary || 'Custom search description'} />
-                    </Field>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         )
       })()}
+
+      {/* ── Search & AI preview — always derived from Title + Blog/Summary,
+           never a separate field to fill in and keep in sync by hand. ──── */}
+      <div className="bg-white rounded-2xl border border-[#E8E4DD] px-6 py-5">
+        <p className="text-sm font-bold text-[#2D2A26] mb-1">What search engines and AI will show</p>
+        <p className="text-xs text-[#C86A43] font-medium truncate mt-2">{deriveSeoTitle(draft.title)}</p>
+        <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.summary, draft.blog)}</p>
+      </div>
 
       {/* ── Publish ───────────────────────────────────────────────────────── */}
       <div className="sticky bottom-0 bg-[#F8F5F0]/95 backdrop-blur pt-3 pb-1 -mx-8 px-8 flex flex-col gap-3 border-t border-[#E8E4DD] mt-2">
@@ -1744,12 +1728,6 @@ export function DashboardPublishPage() {
       partnerId:      draft.partnerId,
       ctaLabel:       draft.ctaLabel,
       ctaUrl,
-      // Fall back to whatever the existing published Story already has —
-      // republishing from this wizard (which doesn't expose every field the
-      // Stories dashboard's advanced edit does) should never silently wipe
-      // an SEO title/description someone set there.
-      seoTitle:       draft.seoTitle || existingStory?.seoTitle,
-      seoDescription: draft.seoDescription || existingStory?.seoDescription,
       status,
       featured:       false,
       publishingSource: draft.importedContentId ? 'website-import'
