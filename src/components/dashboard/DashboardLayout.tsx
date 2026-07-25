@@ -40,10 +40,11 @@ const icons = {
 
 // ─── NavItem ────────────────────────────────────────────────────────────────────
 
-function NavItem({ to, label, icon }: { to: string; label: string; icon: ReactNode }) {
+function NavItem({ to, label, icon, hint }: { to: string; label: string; icon: ReactNode; hint?: string }) {
   return (
     <NavLink
       to={to}
+      title={hint}
       className={({ isActive }) =>
         `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
           isActive
@@ -130,12 +131,12 @@ export function DashboardLayout() {
           <NavItem to="/dashboard/profile"        label="Profile"         icon={<Icon path={icons.profile}  />} />
 
           <SectionLabel label="Opportunities" />
-          <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} />
-          <NavItem to="/dashboard/revenue"        label="Revenue"         icon={<Icon path={icons.revenue}     />} />
+          <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} hint="Partnership and collaboration matches for you" />
+          <NavItem to="/dashboard/revenue"        label="Revenue"         icon={<Icon path={icons.revenue}     />} hint="What you've earned from clicks and conversions" />
 
           {showCapoNav && (
             <>
-              <SectionLabel label="CAPO" />
+              <SectionLabel label="CAPO · Village Staff" />
               <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
 
               {(canAccessCapoSection(user?.role, 'founders') || canAccessCapoSection(user?.role, 'team')) && (
@@ -154,13 +155,13 @@ export function DashboardLayout() {
                 <>
                   <SectionLabel label="Content" />
                   {canAccessCapoSection(user?.role, 'claims') && (
-                    <NavItem to="/dashboard/village/claims" label="Claims" icon={<Icon path={icons.claims} />} />
+                    <NavItem to="/dashboard/village/claims" label="Claims" icon={<Icon path={icons.claims} />} hint="Founders requesting ownership of a curated profile" />
                   )}
                   {canAccessCapoSection(user?.role, 'featured') && (
-                    <NavItem to="/dashboard/village/spotlight" label="Spotlight" icon={<Icon path={icons.featured} />} />
+                    <NavItem to="/dashboard/village/spotlight" label="Spotlight" icon={<Icon path={icons.featured} />} hint="Pin content to the homepage, and write curated features" />
                   )}
                   {canAccessCapoSection(user?.role, 'featured') && (
-                    <NavItem to="/dashboard/village/sources" label="Sources" icon={<Icon path={icons.curated} />} />
+                    <NavItem to="/dashboard/village/sources" label="Sources" icon={<Icon path={icons.curated} />} hint="Reference entities — publications, platforms, partners" />
                   )}
                   {canAccessCapoSection(user?.role, 'partners') && (
                     <NavItem to="/dashboard/village/partners" label="Partners" icon={<Icon path={icons.partnership} />} />

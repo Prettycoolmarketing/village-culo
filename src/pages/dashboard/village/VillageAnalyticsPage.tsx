@@ -102,7 +102,7 @@ export function VillageAnalyticsPage() {
       <CapoBackLink />
 
       <div className="mb-8">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Village Analytics</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">Internal metrics. No external analytics required.</p>
       </div>
@@ -233,8 +233,8 @@ export function VillageAnalyticsPage() {
 
       {/* Placeholders for future growth charts */}
       <div className="mt-8 bg-[#F8F5F0] rounded-xl px-5 py-4">
-        <p className="text-xs font-semibold text-[#9CA3AF] mb-1">Growth Charts — Coming in Sprint 21</p>
-        <p className="text-[10px] text-[#C8C3BC]">Founder growth over time, claim rate trend, content velocity. Planned for Discovery Engine sprint.</p>
+        <p className="text-xs font-semibold text-[#9CA3AF] mb-1">Growth Charts — Coming Soon</p>
+        <p className="text-[10px] text-[#C8C3BC]">Founder growth over time, claim rate trend, and content velocity, plotted month over month.</p>
       </div>
     </div>
   )

@@ -394,10 +394,10 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
 
             {intelRecord && (
               <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
-                <p className="text-sm font-semibold text-[#2D2A26] mb-2">SEO &amp; GEO signals persisted</p>
+                <p className="text-sm font-semibold text-[#2D2A26] mb-2">Search &amp; AI discovery signals saved</p>
                 <div className="grid grid-cols-2 gap-2 text-xs text-[#6B7280]">
                   <p>{intelRecord.seoKeywords.length} SEO keywords</p>
-                  <p>{intelRecord.geoQuestions.length} GEO questions</p>
+                  <p>{intelRecord.geoQuestions.length} AI answer questions</p>
                   <p>{intelRecord.relatedFounderIds.length} founder links</p>
                   <p>{intelRecord.relatedBusinessIds.length} business links</p>
                 </div>
@@ -412,9 +412,9 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
             <AppearsOnPanel locations={appearsOn} />
         </div>
 
-        {/* SEO & GEO */}
+        {/* SEO & AI discovery */}
         <div className="flex flex-col gap-4 border-t border-[#E8E4DD] pt-6">
-          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">SEO &amp; GEO</p>
+          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">Search &amp; AI Discovery</p>
             <Field label="SEO Title" hint="~60 chars">
               <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
               <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>

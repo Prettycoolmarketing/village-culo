@@ -93,10 +93,10 @@ export function VillageBulkImportPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
-          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
           <h1 className="text-2xl font-bold text-[#2D2A26]">Bulk Import</h1>
           <p className="text-sm text-[#6B7280] mt-0.5">
-            Import history and batch management. Use Village Import Format (VIF) JSON.
+            Import history and batch management. Use Village Import Format JSON.
           </p>
         </div>
         <Link
@@ -144,7 +144,7 @@ export function VillageBulkImportPage() {
           <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-12 text-center">
             <p className="text-sm font-semibold text-[#2D2A26] mb-2">No import history yet</p>
             <p className="text-xs text-[#9CA3AF] mb-4">
-              Import batches will appear here after you run a Village Import Format (VIF) import.
+              Import batches will appear here after you run a Village Import Format import.
             </p>
             <Link
               to="/dashboard/bulk-import"
@@ -180,7 +180,7 @@ export function VillageBulkImportPage() {
       {/* VIF note */}
       <div className="mt-4 bg-[#F8F5F0] rounded-xl px-5 py-3">
         <p className="text-xs text-[#6B7280] leading-relaxed">
-          Village Import Format (VIF) v1 · JSON only · Supports founders, businesses, content links, books, courses, events, communities.
+          Village Import Format · JSON only · Supports founders, businesses, content links, books, courses, events, communities.
           Use the master Claude prompt to generate VIF JSON for any list of founders. Import batches from all sources are tracked here.
         </p>
       </div>

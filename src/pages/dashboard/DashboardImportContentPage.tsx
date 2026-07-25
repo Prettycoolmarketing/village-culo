@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
-import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
@@ -14,11 +13,10 @@ import {
   PLATFORM_LABELS,
   PLATFORM_COLORS,
 } from '../../services/importedContent'
-import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
+import { syncImportEditsToStory } from '../../services/publishStory'
 import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { MediaUpload } from '../../components/ui/MediaUpload'
-import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import {
   villageContentIntelligenceService,
   importedContentToInput,
@@ -33,7 +31,6 @@ import type {
   ImportedContent,
   ImportedContentStatus,
   ImportedContentVisibility,
-  ImportedContentPlatform,
 } from '../../types/importedContent'
 import type { ConnectedSource, ConnectedSourceType, PodcastSourceMeta } from '../../types/connectedSource'
 import type { NormalizedImportItem } from '../../services/connectors/types'
@@ -74,8 +71,6 @@ const TRANSCRIPT_STATUS_OPTIONS = [
   { value: 'manual',      label: 'Pasted manually'                       },
   { value: 'unavailable', label: 'Not available for this content/platform' },
 ]
-
-const PLATFORM_TAB_ORDER: ImportedContentPlatform[] = ['youtube', 'podcast', 'website', 'canva', 'instagram']
 
 const SOURCE_TYPE_LABELS: Record<ConnectedSourceType, string> = {
   'youtube':      'YouTube',
@@ -1048,7 +1043,7 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
           )}
 
           <p className="text-[9px] text-[#C4BDB4] pt-1">
-            Analysed {new Date(intel.generatedAt).toLocaleDateString('en-AU')} · Engine v{intel.engineVersion}
+            Analysed {new Date(intel.generatedAt).toLocaleDateString('en-AU')}
           </p>
         </div>
       )}
@@ -1477,11 +1472,11 @@ export function SavedRow({
           <PlatformBadge platform={item.sourcePlatform} />
           {item.originalUrl ? (
             <a href={normalizeUrl(item.originalUrl)} target="_blank" rel="noopener noreferrer"
-              className="text-sm font-semibold text-[#2D2A26] truncate hover:text-[#C86A43] transition-colors">
+              className="text-base font-semibold text-[#2D2A26] truncate hover:text-[#C86A43] transition-colors">
               {item.title}
             </a>
           ) : (
-            <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
+            <p className="text-base font-semibold text-[#2D2A26] truncate">{item.title}</p>
           )}
           {!item.relatedStoryId && !ready && (
             <span className="text-[10px] text-amber-600 shrink-0">needs a title before it can publish</span>
@@ -1536,48 +1531,26 @@ export function DashboardImportContentPage() {
   const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
-  const [allItems, setAllItems] = useState<ImportedContent[]>([])
   const [sources, setSources]   = useState<ConnectedSource[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [checked, setChecked] = useState<Set<string>>(new Set())
-  const [bulkPublishing, setBulkPublishing] = useState(false)
-  const [bulkResult, setBulkResult] = useState<{ published: { title: string; slug: string }[]; failed: { title: string; error: string }[] } | null>(null)
-  const [activeTab, setActiveTab] = useState<ImportedContentPlatform>('youtube')
+  // Set the moment any connector below reports a successful import — swaps
+  // in a "go review it" prompt instead of also duplicating the full list of
+  // everything ever imported here (that list lives in Profile → Content now).
+  const [justImportedCount, setJustImportedCount] = useState<number | null>(null)
   const [canvaExpanded, setCanvaExpanded] = useState(false)
   const canvaCardRef = useRef<HTMLDivElement>(null)
-
-  function openCanvaCard() {
-    setActiveTab('canva')
-    setCanvaExpanded(true)
-    requestAnimationFrame(() => canvaCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-  }
-
   const [instagramExpanded, setInstagramExpanded] = useState(false)
   const instagramCardRef = useRef<HTMLDivElement>(null)
 
-  function openInstagramCard() {
-    setActiveTab('instagram')
-    setInstagramExpanded(true)
-    requestAnimationFrame(() => instagramCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
-  }
-
-  function switchTab(tab: ImportedContentPlatform) {
-    setActiveTab(tab)
-    setChecked(new Set())
-  }
-
-  function loadItems() {
-    setAllItems(
-      importedContentService.getByFounderId(founderId)
-        .sort((a, b) => b.importedAt.localeCompare(a.importedAt))
-    )
+  function reportImported(count: number) {
+    setJustImportedCount(count)
   }
 
   function loadSources() {
     setSources(connectedSourcesService.getAll({ founderId }))
   }
 
-  useEffect(() => { loadItems(); loadSources() }, [founderId])
+  useEffect(() => { loadSources() }, [founderId])
 
   // Deep link from Profile → Content ("?edit=<id>") — opens straight into
   // advance edit instead of making the founder find the item themselves.
@@ -1587,7 +1560,6 @@ export function DashboardImportContentPage() {
     if (!editId) return
     const item = importedContentService.get(editId)
     if (!item) return
-    setActiveTab(item.sourcePlatform)
     setDraft(item)
   }, [searchParams])
 
@@ -1609,103 +1581,12 @@ export function DashboardImportContentPage() {
     // import record and the founder's edit never actually shows up.
     if (draft.relatedStoryId) await syncImportEditsToStory(draft)
     setDraft(null)
-    loadItems()
   }
 
   function handleCancel() { setDraft(null) }
 
-  function handleAdvancedEdit(item: ImportedContent) {
-    setDraft(item)
-  }
-
-  function handleDelete(id: string) {
-    importedContentService.delete(id)
-    loadItems()
-  }
-
-  // Only clears the import record for the currently-viewed platform tab —
-  // never touches a Story that was already published from one of these
-  // (importedContentService.delete only removes the import, not the Story).
-  function handleDeleteAll() {
-    for (const item of visibleItems) importedContentService.delete(item.id)
-    setChecked(new Set())
-    loadItems()
-  }
-
-  // Switching the dropdown to Published/Featured used to only relabel the
-  // row — it looked like a real publish action but never actually created
-  // or updated the live Story. Now it does the same thing the bulk-publish
-  // button does for a single item, reusing the exact same pipeline.
-  async function handleStatusChange(id: string, status: ImportedContentStatus) {
-    importedContentService.updateStatus(id, status)
-    if (status === 'published' || status === 'featured') {
-      const item = importedContentService.get(id)
-      const founder = getFounder(founderId)
-      if (item && founder && !item.relatedStoryId && isReadyToPublish(item)) {
-        const story = buildStoryFromImport(item, founder)
-        story.status = status
-        const result = await publishStoryCore(story)
-        if (!result.success) setSaveError(result.error ?? 'Could not publish. Please try again.')
-      } else if (item && !isReadyToPublish(item)) {
-        setSaveError('Give this a real title before publishing it.')
-      }
-    }
-    loadItems()
-  }
-
-  function toggleChecked(id: string) {
-    setChecked(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
-      return next
-    })
-  }
-
-  // Base tabs always show (they're the three connector types founders can
-  // actually create today); any platform an older/legacy item still carries
-  // gets its own tab too, so nothing already imported becomes unreachable.
-  const tabs = [
-    ...PLATFORM_TAB_ORDER,
-    ...Array.from(new Set(allItems.map(i => i.sourcePlatform))).filter(p => !PLATFORM_TAB_ORDER.includes(p)),
-  ]
-  const visibleItems = allItems.filter(i => i.sourcePlatform === activeTab)
-  const readyItems = visibleItems.filter(i => !i.relatedStoryId && isReadyToPublish(i))
-
-  function toggleSelectAllReady() {
-    setChecked(prev => prev.size === readyItems.length ? new Set() : new Set(readyItems.map(i => i.id)))
-  }
-
-  // Publishes every checked, reviewed import directly — no wizard. Each item's
-  // format/fields are derived entirely from its source platform (buildStoryFromImport),
-  // since the founder already told Village what this is by importing it.
-  async function handleBulkPublish() {
-    const founder = getFounder(founderId)
-    if (!founder) return
-    setBulkPublishing(true)
-    setBulkResult(null)
-
-    const targets = readyItems.filter(i => checked.has(i.id))
-    const published: { title: string; slug: string }[] = []
-    const failed: { title: string; error: string }[] = []
-
-    for (const item of targets) {
-      const story = buildStoryFromImport(item, founder)
-      const result = await publishStoryCore(story)
-      if (result.success && result.story) {
-        published.push({ title: result.story.title, slug: result.story.slug })
-      } else {
-        failed.push({ title: item.title, error: result.error ?? 'Could not publish.' })
-      }
-    }
-
-    setBulkResult({ published, failed })
-    setChecked(new Set())
-    setBulkPublishing(false)
-    loadItems()
-  }
-
   return (
-    <div className="p-8 max-w-6xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
       <div className="mb-6">
@@ -1720,11 +1601,26 @@ export function DashboardImportContentPage() {
         CULO Village embeds content from its original platform and always links back to the source. Your content is not downloaded or re-uploaded. Authorship and platform attribution are preserved.
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[400px_1fr] gap-8 items-start">
+      {/* Just-imported prompt — the full list of everything imported lives in
+          Profile → Content now, not duplicated here. This page is purely
+          "bring things in." */}
+      {justImportedCount !== null && (
+        <div className="mb-6 flex items-center justify-between gap-4 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-xl px-5 py-4">
+          <p className="text-sm text-[#5E6B4A] font-medium">
+            {justImportedCount} {justImportedCount === 1 ? 'item' : 'items'} imported. Review and publish it from Content.
+          </p>
+          <Link
+            to="/dashboard/profile?tab=content"
+            className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+          >
+            Go to Content →
+          </Link>
+        </div>
+      )}
 
       {/* Connect a channel or feed */}
       {!draft && (
-        <div className="mb-8 xl:mb-0">
+        <div className="max-w-2xl">
           <p className="text-sm text-[#6B7280] mb-4">
             Connect a channel or feed so Village can pull in your own already-public content automatically.
           </p>
@@ -1734,22 +1630,22 @@ export function DashboardImportContentPage() {
               founderId={founderId}
               expanded={canvaExpanded}
               onExpandedChange={setCanvaExpanded}
-              onImported={() => { setActiveTab('canva'); loadItems() }}
+              onImported={() => reportImported(1)}
             />
           </div>
 
-          <YouTubeConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
+          <YouTubeConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
 
-          <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
+          <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
 
-          <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); loadItems() }} />
+          <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
 
           <div ref={instagramCardRef}>
             <InstagramArchiveImportCard
               founderId={founderId}
               expanded={instagramExpanded}
               onExpandedChange={setInstagramExpanded}
-              onImported={() => { setActiveTab('instagram'); loadItems() }}
+              onImported={count => reportImported(count)}
             />
           </div>
 
@@ -1760,7 +1656,7 @@ export function DashboardImportContentPage() {
                   key={source.id}
                   source={source}
                   isHighVolume={isHighVolume}
-                  onChanged={() => { loadSources(); loadItems() }}
+                  onChanged={() => { loadSources(); reportImported(1) }}
                 />
               ))}
             </div>
@@ -1771,190 +1667,14 @@ export function DashboardImportContentPage() {
           <p className="text-xs text-[#9CA3AF] mt-3">
             Instagram, LinkedIn, TikTok and Canva connections aren't available yet — they each require going through that platform's own app review process.
           </p>
+
+          <div className="mt-6 pt-6 border-t border-[#E8E4DD]">
+            <Link to="/dashboard/profile?tab=content" className="text-sm font-semibold text-[#C86A43] hover:underline">
+              View everything you've imported so far →
+            </Link>
+          </div>
         </div>
       )}
-
-      <div>
-      {/* Bulk publish result */}
-      {bulkResult && (
-        <div className="mb-6 bg-white rounded-xl border border-[#E8E4DD] p-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-[#2D2A26]">
-              {bulkResult.published.length} {bulkResult.published.length === 1 ? 'story' : 'stories'} published
-            </p>
-            <button onClick={() => setBulkResult(null)} className="text-xs text-[#9CA3AF] hover:text-[#2D2A26]">
-              Dismiss
-            </button>
-          </div>
-          {bulkResult.published.length > 0 && (
-            <ul className="flex flex-col gap-1.5 mb-3">
-              {bulkResult.published.map(p => (
-                <li key={p.slug}>
-                  <Link to={`/stories/${p.slug}`} className="text-xs text-[#C86A43] font-medium hover:underline">
-                    {p.title} →
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-          {bulkResult.failed.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-red-600 mb-1">{bulkResult.failed.length} couldn't publish</p>
-              <ul className="flex flex-col gap-1">
-                {bulkResult.failed.map((f, i) => (
-                  <li key={i} className="text-xs text-red-500">{f.title} — {f.error}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Saved imports list */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-[#2D2A26]">Publish your body of work</p>
-          {visibleItems.length > 0 && (
-            <ConfirmButton
-              label={`Delete all ${visibleItems.length}`}
-              confirmLabel="Yes, delete all"
-              message={`Delete all ${visibleItems.length} ${PLATFORM_LABELS[activeTab]} imports? This can't be undone.`}
-              onConfirm={handleDeleteAll}
-              className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
-            />
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {tabs.map(platform => {
-            const count = allItems.filter(i => i.sourcePlatform === platform).length
-            const active = activeTab === platform
-            return (
-              <button
-                key={platform}
-                onClick={() => switchTab(platform)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                  active
-                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                    : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                }`}
-              >
-                {PLATFORM_LABELS[platform]}
-                {count > 0 && <span className={active ? 'text-white/70' : 'text-[#9CA3AF]'}> {count}</span>}
-              </button>
-            )
-          })}
-        </div>
-
-        {saveError && <p className="text-xs text-red-600 font-medium mb-3">{saveError}</p>}
-
-        {readyItems.length > 0 && (
-          <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg">
-            <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={checked.size > 0 && checked.size === readyItems.length}
-                onChange={toggleSelectAllReady}
-                className="w-4 h-4 accent-[#C86A43]"
-              />
-              Select all ready to publish ({readyItems.length})
-            </label>
-            <button
-              onClick={() => void handleBulkPublish()}
-              disabled={checked.size === 0 || bulkPublishing}
-              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-            >
-              {bulkPublishing ? 'Publishing…' : `Publish ${checked.size || ''} selected`}
-            </button>
-          </div>
-        )}
-
-        {visibleItems.length === 0 ? (
-          <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-10 text-center">
-            <p className="text-sm font-semibold text-[#2D2A26] mb-2">No {PLATFORM_LABELS[activeTab]} imports yet</p>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed max-w-sm mx-auto">
-              {activeTab === 'canva'
-                ? 'Design in Canva, then bring your slides in here — or import from an existing design.'
-                : activeTab === 'instagram'
-                ? 'Export your Instagram archive and bring years of posts, reels and stories into your permanent knowledge library.'
-                : 'Bring your old content into the Village so it can become searchable, connected and discoverable again.'}
-            </p>
-            {activeTab === 'canva' && (
-              <div className="flex items-center justify-center gap-3 mt-4">
-                <CreateWithCuloCTA variant="button" label="Create with CULO in Canva" />
-                <button type="button" onClick={openCanvaCard}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors">
-                  Publish designs
-                </button>
-              </div>
-            )}
-            {activeTab === 'instagram' && (
-              <div className="flex items-center justify-center mt-4">
-                <button type="button" onClick={openInstagramCard}
-                  className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors">
-                  Import archive
-                </button>
-              </div>
-            )}
-          </div>
-        ) : activeTab === 'instagram' ? (
-          // Instagram Archive items group by the day they were originally
-          // posted, not the day they were imported — matches how the
-          // archive itself reads as a timeline.
-          (() => {
-            const groups = new Map<string, ImportedContent[]>()
-            for (const item of visibleItems) {
-              const day = (item.publishedAt ?? item.importedAt).slice(0, 10)
-              if (!groups.has(day)) groups.set(day, [])
-              groups.get(day)!.push(item)
-            }
-            const days = [...groups.keys()].sort((a, b) => b.localeCompare(a))
-            return (
-              <div className="flex flex-col gap-4">
-                {days.map(day => (
-                  <div key={day} className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
-                    <div className="px-5 py-2.5 bg-[#F8F5F0] border-b border-[#E8E4DD]">
-                      <p className="text-xs font-semibold text-[#6B7280]">
-                        {new Date(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <div className="divide-y divide-[#F3EDE6]">
-                      {groups.get(day)!.map(item => (
-                        <SavedRow
-                          key={item.id}
-                          item={item}
-                          checked={checked.has(item.id)}
-                          onToggleCheck={() => toggleChecked(item.id)}
-                          onAdvancedEdit={() => handleAdvancedEdit(item)}
-                          onDelete={() => handleDelete(item.id)}
-                          onStatusChange={status => void handleStatusChange(item.id, status)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          })()
-        ) : (
-          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-            {visibleItems.map(item => (
-              <SavedRow
-                key={item.id}
-                item={item}
-                checked={checked.has(item.id)}
-                onToggleCheck={() => toggleChecked(item.id)}
-                onAdvancedEdit={() => handleAdvancedEdit(item)}
-                onDelete={() => handleDelete(item.id)}
-                onStatusChange={status => void handleStatusChange(item.id, status)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-      </div>
-
-      </div>
 
       {/* Advanced edit — a right-side slide-over rather than an inline block, so
           opening it from row 300 of a long list doesn't yank the founder back

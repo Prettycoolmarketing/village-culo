@@ -121,15 +121,15 @@ export function DashboardSettingsPage() {
         </div>
       </section>
 
-      {/* Partnership Operating System */}
+      {/* Partnerships */}
       <section className="mb-8">
-        <h2 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Partnership Operating System</h2>
+        <h2 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Partnerships</h2>
         <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
 
           {/* Master toggle */}
           <div className="px-5 py-4 flex items-center justify-between border-b border-[#F3EDE6]">
             <div>
-              <p className="text-sm font-semibold text-[#2D2A26]">Join the Partnership Operating System</p>
+              <p className="text-sm font-semibold text-[#2D2A26]">Turn on Partnerships</p>
               <p className="text-xs text-[#9CA3AF] mt-0.5">Enable recommendations, opportunities and partnership features</p>
             </div>
             <button

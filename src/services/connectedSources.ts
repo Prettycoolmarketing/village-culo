@@ -34,10 +34,12 @@ const PLATFORM_BY_SOURCE_TYPE: Record<ConnectedSourceType, ImportedContent['sour
 function now() { return new Date().toISOString() }
 function today() { return new Date().toISOString().slice(0, 10) }
 
-// New items only ever arrive 20 at a time per calendar day, per source —
-// keeps every scan small and predictable instead of pulling a channel's
-// whole history in one go.
-const DAILY_IMPORT_LIMIT = 20
+// No meaningful daily ceiling — a scan brings in everything unseen it can
+// find in one pass (bounded only by MAX_VIDEOS_PER_SCAN in the YouTube
+// connector). High enough that "dailyLimitReached" effectively never fires
+// for a normal channel/feed size, while still existing as a seam in case a
+// real throughput limit is ever needed again.
+const DAILY_IMPORT_LIMIT = 5000
 
 export interface ScanResult {
   imported: number

@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder } from '../../services/founders'
@@ -871,7 +871,8 @@ export function DashboardProfilePage() {
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [tab, setTab]       = useState('overview')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab]       = useState(() => searchParams.get('tab') ?? 'overview')
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
   const [contentSubTab, setContentSubTab] = useState<'imported' | 'published'>('imported')
   const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>('all')
@@ -1373,7 +1374,7 @@ export function DashboardProfilePage() {
                           className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
                           <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#2D2A26] truncate">{story.title}</p>
+                            <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
                             <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
                           </div>
                           {storyMissing.length === 0 ? (

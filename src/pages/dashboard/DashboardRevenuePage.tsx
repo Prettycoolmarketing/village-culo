@@ -447,20 +447,19 @@ function RevenueDashboard({ founderId }: { founderId: string }) {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="text-lg font-bold text-[#2D2A26]">Revenue Dashboard</h2>
-          <p className="text-xs text-[#9CA3AF] mt-0.5">Earnings and conversion data will populate once payout integration is active.</p>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">Click tracking is live now. Earnings and payouts turn on once Stripe is connected below.</p>
         </div>
-        <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] uppercase tracking-wide">
-          Foundation
-        </span>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <StatCard label="Estimated Earnings" value="$0.00" sub="No payout integration yet" placeholder />
-        <StatCard label="Pending"            value="$0.00" placeholder />
-        <StatCard label="Paid"               value="$0.00" placeholder />
-        <StatCard label="Total Clicks"       value={allClicks.length} sub={`${programClicks.length} program · ${affiliateClicks.length} affiliate`} />
-        <StatCard label="Conversions"        value="0" placeholder />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <StatCard label="Total Clicks" value={allClicks.length} sub={`${programClicks.length} program · ${affiliateClicks.length} affiliate`} />
+        <div className="bg-[#F8F5F0] rounded-xl border border-dashed border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-[#2D2A26]">Earnings, payouts &amp; conversions</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">Coming soon — set up payouts to start tracking these</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

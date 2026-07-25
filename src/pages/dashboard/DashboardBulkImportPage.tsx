@@ -238,14 +238,9 @@ export function DashboardBulkImportPage() {
             <h1 className="text-2xl font-bold text-[#2D2A26]">Bulk Import</h1>
           </div>
           <p className="text-sm text-[#6B7280]">
-            Paste a Village Import Format (VIF) JSON file to import multiple founders at once.
+            Paste a Village Import Format JSON file to import multiple founders at once.
           </p>
         </div>
-        {step < 3 && (
-          <span className="flex-shrink-0 text-xs text-[#9CA3AF] mt-1">
-            Village Import Format v1
-          </span>
-        )}
       </div>
 
       {/* Step indicator */}

@@ -133,7 +133,7 @@ function OverviewSection({ founderId, onNavigate }: { founderId: string; onNavig
           <div className="flex-1">
             <p className="text-sm font-semibold text-[#2D2A26]">Opportunities is not enabled</p>
             <p className="text-xs text-[#6B7280] mt-0.5 leading-relaxed">
-              Enable the Partnership Operating System in Settings to start receiving recommendations and opportunities.
+              Turn on Partnerships in Settings to start receiving recommendations and opportunities.
             </p>
           </div>
           <Link

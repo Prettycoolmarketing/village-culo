@@ -332,7 +332,7 @@ function FormatStep({ draft, onChange, onNext, onNextSkippingMedia }: {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div>
             <p className="font-heading text-2xl font-semibold text-white leading-snug">
-              CULO Creatives is exclusively in Canva — publish directly to The Village to be discovered.
+              CULO Creatives is exclusively in Canva.
             </p>
           </div>
           <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
@@ -824,7 +824,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
     { label: 'Topics added',        count: draft.topics.length },
     { label: 'Questions answered',  count: questions.length },
     { label: 'SEO keywords',        count: intel.seoKeywords.length },
-    { label: 'GEO signals',         count: intel.geoKeywords.length },
+    { label: 'AI answer signals',   count: intel.geoKeywords.length },
   ]
 
   return (
@@ -906,7 +906,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
       </BuilderCard>
 
       {/* ── 4. Questions this story answers ──────────────────────────────── */}
-      <BuilderCard title="Questions this story answers" subtitle="Powers SEO and GEO: how AI systems and search understand this story." defaultOpen={false}
+      <BuilderCard title="Questions this story answers" subtitle="Helps search engines and AI assistants (like ChatGPT) understand and describe this story." defaultOpen={false}
         badge={<span className="text-[10px] text-[#9CA3AF]">{questions.length}</span>}>
         <EditableList items={questions} onChange={v => onChange({ questionsOverride: v })} placeholder="a question" />
       </BuilderCard>
@@ -1196,8 +1196,8 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
         </div>
       </BuilderCard>
 
-      {/* ── 13. GEO Preview ──────────────────────────────────────────────── */}
-      <BuilderCard title="GEO Preview" subtitle="How AI systems will understand this story. Read-only." defaultOpen={false}>
+      {/* ── 13. AI Discovery Preview ─────────────────────────────────────── */}
+      <BuilderCard title="AI Discovery Preview" subtitle="How AI systems (like ChatGPT) will understand this story. Read-only." defaultOpen={false}>
         <div className="space-y-3 text-xs">
           <div>
             <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1">Questions answered</p>
@@ -1306,7 +1306,7 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
           {draft.topics.length > 0 && <CheckItem label={`Tag ${draft.topics.length} ${draft.topics.length === 1 ? 'topic' : 'topics'} (${draft.topics[0].name}${draft.topics.length > 1 ? ' + more' : ''})`} />}
           {lessons.length > 0 && <CheckItem label={`Create or strengthen ${lessons.length} ${lessons.length === 1 ? 'idea' : 'ideas'} in the Village`} />}
           <CheckItem label={`Generate SEO metadata (${intel.seoKeywords.length} keywords)`} done={intel.seoKeywords.length > 0} />
-          <CheckItem label={`Generate GEO metadata (${questions.length} questions answered)`} done={questions.length > 0} />
+          <CheckItem label={`Generate AI answer metadata (${questions.length} questions answered)`} done={questions.length > 0} />
           <CheckItem label="Improve Village Intelligence" />
         </div>
       </div>
@@ -1431,7 +1431,7 @@ function DoneStep({ draft, publishedSlug, action, summary, onContinuePublishing 
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-4 pt-4 border-t border-white/10">
             <span className="text-xs text-white/70 flex items-center gap-1.5">{summary.seoComplete ? '✓' : '—'} SEO {summary.seoComplete ? 'Complete' : 'Skipped'}</span>
-            <span className="text-xs text-white/70 flex items-center gap-1.5">{summary.geoComplete ? '✓' : '—'} GEO {summary.geoComplete ? 'Complete' : 'Skipped'}</span>
+            <span className="text-xs text-white/70 flex items-center gap-1.5">{summary.geoComplete ? '✓' : '—'} AI Discovery {summary.geoComplete ? 'Complete' : 'Skipped'}</span>
             <span className="text-xs text-white/70 flex items-center gap-1.5">✓ Village Updated</span>
           </div>
         </div>

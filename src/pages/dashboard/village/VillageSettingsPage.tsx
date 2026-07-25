@@ -54,7 +54,7 @@ export function VillageSettingsPage() {
       <CapoBackLink />
 
       <div className="mb-8">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO</p>
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Village Settings</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">Configure global defaults for CULO Village.</p>
       </div>

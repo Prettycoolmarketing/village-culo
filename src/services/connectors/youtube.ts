@@ -49,11 +49,12 @@ export async function resolveChannelId(input: string): Promise<string> {
 
 // 50 is YouTube Data API's hard per-request cap on search.list, so pulling
 // more means paging through nextPageToken. Each page still costs 100 quota
-// units (search.list is expensive relative to the default 10,000/day quota),
-// so this stops at a safety cap rather than paging until the channel is
-// exhausted — 200 videos is 4 requests, plenty for "the last while" without
-// a single scan being able to blow the daily quota on its own.
-const MAX_VIDEOS_PER_SCAN = 200
+// units (search.list is expensive relative to the default 10,000/day quota).
+// Raised well past "the last while" so a founder's — or a curated profile's
+// — entire back-catalogue can come in during one scan instead of trickling
+// in a couple hundred at a time; 1000 videos is 20 requests (2,000 quota
+// units), still comfortably inside the default 10,000/day quota.
+const MAX_VIDEOS_PER_SCAN = 1000
 
 type YouTubeSearchItem = {
   id?: { videoId?: string }
