@@ -1159,20 +1159,28 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         <EmbedPreview content={draft} />
       </div>
 
-      {/* Title */}
-      <div className="mb-4">
-        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Title</label>
-        <input type="text" value={draft.title}
-          onChange={e => field('title', e.target.value)}
-          className={INPUT} placeholder="Title for this imported piece" />
+      {/* Title + Subtitle */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Title</label>
+          <input type="text" value={draft.title}
+            onChange={e => field('title', e.target.value)}
+            className={INPUT} placeholder="Title for this imported piece" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Subtitle</label>
+          <input type="text" value={draft.subtitle ?? ''}
+            onChange={e => field('subtitle', e.target.value || undefined)}
+            className={INPUT} placeholder="A short line under the title — optional" />
+        </div>
       </div>
 
-      {/* Subtitle */}
+      {/* Summary */}
       <div className="mb-4">
-        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Subtitle</label>
-        <input type="text" value={draft.subtitle ?? ''}
-          onChange={e => field('subtitle', e.target.value || undefined)}
-          className={INPUT} placeholder="A short line under the title — optional" />
+        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Summary</label>
+        <textarea value={draft.summary ?? ''}
+          onChange={e => field('summary', e.target.value || undefined)}
+          rows={2} className={TEXTAREA} placeholder="One or two sentences, the reader's takeaway." />
       </div>
 
       {/* Blog */}
@@ -1187,6 +1195,22 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
             Shape these as Q&A to boost your online presence
           </button>
         )}
+      </div>
+
+      {/* Search Title + Description */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div>
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Search Title <span className="font-normal text-[#9CA3AF]">~60 chars</span></label>
+          <input type="text" value={draft.seoTitle ?? ''}
+            onChange={e => field('seoTitle', e.target.value || undefined)}
+            className={INPUT} placeholder={draft.title || 'Custom search title'} />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Search Description <span className="font-normal text-[#9CA3AF]">~160 chars</span></label>
+          <input type="text" value={draft.seoDescription ?? ''}
+            onChange={e => field('seoDescription', e.target.value || undefined)}
+            className={INPUT} placeholder={draft.summary || 'Custom search description'} />
+        </div>
       </div>
 
       {/* Thumbnail */}
@@ -1586,7 +1610,7 @@ export function DashboardImportContentPage() {
   function handleCancel() { setDraft(null) }
 
   return (
-    <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-3xl'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
       <div className="mb-6">
@@ -1676,42 +1700,33 @@ export function DashboardImportContentPage() {
         </div>
       )}
 
-      {/* Advanced edit — a right-side slide-over rather than an inline block, so
-          opening it from row 300 of a long list doesn't yank the founder back
-          to the top of the page to find it. */}
+      {/* Advanced edit — inline, using the same width the page's connector
+          cards would otherwise take up, instead of a narrow drawer floating
+          over a dimmed, mostly-empty desktop. */}
       {draft && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/30 z-40"
-            onClick={handleCancel}
-            aria-hidden="true"
-          />
-          <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-[520px] bg-[#F8F5F0] shadow-2xl overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
-                <button
-                  onClick={handleCancel}
-                  aria-label="Close"
-                  className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              {saveError && (
-                <p className="text-sm text-red-600 font-medium mb-2">{saveError}</p>
-              )}
-              <EditForm
-                draft={draft}
-                onChange={setDraft}
-                onSave={() => void handleSave()}
-                onCancel={handleCancel}
-              />
-            </div>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+            <button
+              onClick={handleCancel}
+              aria-label="Close"
+              className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-        </>
+          {saveError && (
+            <p className="text-sm text-red-600 font-medium mb-2">{saveError}</p>
+          )}
+          <EditForm
+            draft={draft}
+            onChange={setDraft}
+            onSave={() => void handleSave()}
+            onCancel={handleCancel}
+          />
+        </div>
       )}
 
     </div>
