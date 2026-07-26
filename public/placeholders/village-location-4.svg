@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="c4-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9AB8CC"/>
+      <stop offset="55%" stop-color="#E6D8BC"/>
+      <stop offset="100%" stop-color="#E8A868"/>
+    </linearGradient>
+    <linearGradient id="c4-ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#CBB088"/>
+      <stop offset="100%" stop-color="#9A7A55"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#c4-sky)"/>
+  <ellipse cx="400" cy="90" rx="160" ry="70" fill="#FFE4A0" opacity="0.3"/>
+
+  <!-- Piazza ground -->
+  <rect x="0" y="330" width="800" height="120" fill="url(#c4-ground)"/>
+  <!-- Piazza paving -->
+  <g stroke="#8B6840" stroke-width="1" opacity="0.3">
+    <line x1="0" y1="360" x2="800" y2="360"/>
+    <line x1="0" y1="395" x2="800" y2="395"/>
+    <line x1="0" y1="425" x2="800" y2="425"/>
+  </g>
+
+  <!-- Surrounding buildings, arched facades -->
+  <rect x="60" y="180" width="130" height="150" fill="#D9A05A" opacity="0.88"/>
+  <rect x="60" y="330" width="130" height="6" fill="#8B6840" opacity="0.4"/>
+  <g fill="#F9E4C0" opacity="0.55">
+    <path d="M78,330 L78,290 Q90,270 102,290 L102,330 Z"/>
+    <path d="M112,330 L112,290 Q124,270 136,290 L136,330 Z"/>
+    <path d="M146,330 L146,290 Q158,270 170,290 L170,330 Z"/>
+  </g>
+  <polygon points="60,180 125,150 190,180" fill="#9A4F2B" opacity="0.85"/>
+
+  <rect x="580" y="190" width="150" height="140" fill="#C86A43" opacity="0.85"/>
+  <rect x="580" y="330" width="150" height="6" fill="#8B3F22" opacity="0.4"/>
+  <g fill="#F9E4C0" opacity="0.5">
+    <path d="M600,330 L600,296 Q613,278 626,296 L626,330 Z"/>
+    <path d="M640,330 L640,296 Q653,278 666,296 L666,330 Z"/>
+    <path d="M680,330 L680,296 Q693,278 706,296 L706,330 Z"/>
+  </g>
+  <polygon points="580,190 655,160 730,190" fill="#8B3F22" opacity="0.85"/>
+
+  <!-- Bell tower, center back -->
+  <rect x="370" y="120" width="26" height="130" fill="#E8D4B0" opacity="0.85"/>
+  <polygon points="370,120 383,100 396,120" fill="#C4A882" opacity="0.88"/>
+  <circle cx="383" cy="150" r="7" fill="#8B6840" opacity="0.5"/>
+
+  <!-- Central fountain -->
+  <ellipse cx="400" cy="355" rx="46" ry="16" fill="#5E93A8" opacity="0.55"/>
+  <ellipse cx="400" cy="350" rx="46" ry="16" fill="#7FB0C4" opacity="0.6"/>
+  <rect x="392" y="322" width="16" height="30" fill="#C4A882" opacity="0.7"/>
+  <ellipse cx="400" cy="322" rx="12" ry="5" fill="#7FB0C4" opacity="0.7"/>
+
+  <!-- Caption -->
+  <rect x="0" y="390" width="800" height="60" fill="#2D2A26" opacity="0.72"/>
+  <text x="400" y="418" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#F9E4C0" letter-spacing="2.5" opacity="0.95">every place tells a story</text>
+  <text x="400" y="440" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#D6A94D" letter-spacing="5.5" opacity="0.82">CULO VILLAGE</text>
+</svg>

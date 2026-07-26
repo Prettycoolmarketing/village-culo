@@ -26,6 +26,10 @@ interface StoryGridProps {
   // Empty state override
   emptyTitle?: string
   emptyMessage?: string
+  // A story that opted out of this particular location (see AppearsOnPanel's
+  // "Turn off" control) is excluded here even though it still matches
+  // `filter` otherwise — stays published everywhere else, just not this grid.
+  hideKey?: string
 }
 
 const columnClasses = {
@@ -49,8 +53,10 @@ export function StoryGrid({
   className = '',
   emptyTitle,
   emptyMessage,
+  hideKey,
 }: StoryGridProps) {
-  const stories = explicitStories ?? getStories(filter)
+  const fetched = explicitStories ?? getStories(filter)
+  const stories = hideKey ? fetched.filter(s => !s.hiddenLocations?.includes(hideKey)) : fetched
 
   return (
     <section aria-label={heading ?? 'Stories'} className={className}>

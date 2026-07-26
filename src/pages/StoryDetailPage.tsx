@@ -22,7 +22,7 @@ import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { InnerContainer }   from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
-import type { ContentType } from '../types'
+import type { ContentType, Story } from '../types'
 import { normalizeUrl, looksLikeChannelUrl, isDirectVideoUrl, isDirectAudioUrl } from '../utils/url'
 
 const DISCLOSURE_TYPE_LABELS: Record<string, string> = {
@@ -412,22 +412,23 @@ export function StoryDetailPage() {
     .filter(r => r.disclosureVisible)
 
   // Related stories: prefer relatedStoryIds, then intel relatedContentIds, fall back to same primary topic
+  const notHiddenFromRelated = (s: Story) => !s.hiddenLocations?.includes('related')
   const related = (() => {
     if (story.relatedStoryIds.length > 0) {
       return getStories({ publicOnly: true })
-        .filter(s => story.relatedStoryIds.includes(s.id) && s.id !== story.id)
+        .filter(s => story.relatedStoryIds.includes(s.id) && s.id !== story.id && notHiddenFromRelated(s))
         .slice(0, 3)
     }
     if (intel && intel.relatedContentIds.length > 0) {
       const fromIntel = intel.relatedContentIds
         .map(id => getStory(id))
-        .filter((s): s is NonNullable<typeof s> => !!s && s.id !== story.id && (s.status === 'published' || s.status === 'featured'))
+        .filter((s): s is NonNullable<typeof s> => !!s && s.id !== story.id && (s.status === 'published' || s.status === 'featured') && notHiddenFromRelated(s))
         .slice(0, 3)
       if (fromIntel.length > 0) return fromIntel
     }
     if (story.topics.length > 0) {
       return getStories({ topicId: story.topics[0].id, publicOnly: true, limit: 4 })
-        .filter(s => s.id !== story.id)
+        .filter(s => s.id !== story.id && notHiddenFromRelated(s))
         .slice(0, 3)
     }
     return []
@@ -437,7 +438,7 @@ export function StoryDetailPage() {
   // is more likely to want more from this founder than an "Ideas" module that
   // usually has nothing in it yet.
   const otherStoriesByFounder = getStories({ founderId: story.founderId, publicOnly: true })
-    .filter(s => s.id !== story.id)
+    .filter(s => s.id !== story.id && notHiddenFromRelated(s))
     .slice(0, 4)
 
   // Related imported content from intel

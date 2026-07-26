@@ -523,6 +523,11 @@ export interface Story {
   updatedAt: string
   seoTitle?: string
   seoDescription?: string
+  // Locations this story is otherwise eligible to appear in (per
+  // getStoryAppearsOn) that the founder has explicitly turned off — e.g.
+  // "published, but don't show me on the homepage." Keys match
+  // AppearsOnLocation['key']. Never affects the story's own detail page.
+  hiddenLocations?: string[]
 }
 
 // ─── Idea ──────────────────────────────────────────────────────────────────────

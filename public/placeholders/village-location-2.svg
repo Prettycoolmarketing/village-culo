@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="c2-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8CB8D0"/>
+      <stop offset="55%" stop-color="#D9EAF0"/>
+      <stop offset="100%" stop-color="#F0C888"/>
+    </linearGradient>
+    <linearGradient id="c2-sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5E93A8"/>
+      <stop offset="100%" stop-color="#3E6E82"/>
+    </linearGradient>
+    <linearGradient id="c2-cliff" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C4A882"/>
+      <stop offset="100%" stop-color="#8B6840"/>
+    </linearGradient>
+    <radialGradient id="c2-sun" cx="20%" cy="20%" r="14%">
+      <stop offset="0%" stop-color="#FFE4A0" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#EDB97A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="450" fill="url(#c2-sky)"/>
+  <ellipse cx="140" cy="95" rx="150" ry="95" fill="url(#c2-sun)"/>
+  <circle cx="140" cy="70" r="20" fill="#FFE4A0" opacity="0.65"/>
+
+  <!-- Sea -->
+  <rect x="0" y="230" width="800" height="220" fill="url(#c2-sea)"/>
+  <path d="M0,235 Q200,225 400,236 Q600,247 800,232 L800,255 Q600,262 400,251 Q200,240 0,250 Z" fill="#EDEFE9" opacity="0.25"/>
+  <!-- Sailboat -->
+  <line x1="560" y1="260" x2="560" y2="215" stroke="#F9E4C0" stroke-width="2" opacity="0.8"/>
+  <polygon points="560,216 560,242 590,236" fill="#F9E4C0" opacity="0.75"/>
+  <polygon points="530,260 590,260 580,270 540,270" fill="#3E6E82" opacity="0.85"/>
+
+  <!-- Cliffside -->
+  <path d="M0,215 Q120,190 260,205 Q400,220 550,195 Q680,175 800,200 L800,300 L0,300 Z" fill="url(#c2-cliff)"/>
+
+  <!-- Cliffside houses, stacked terraces -->
+  <rect x="120" y="165" width="26" height="34" fill="#C86A43" opacity="0.88"/>
+  <polygon points="120,165 133,150 146,165" fill="#9A4F2B" opacity="0.88"/>
+  <rect x="150" y="175" width="22" height="26" fill="#D9A05A" opacity="0.85"/>
+  <polygon points="150,175 161,163 172,175" fill="#A0522D" opacity="0.85"/>
+  <rect x="176" y="160" width="24" height="40" fill="#E0B27A" opacity="0.85"/>
+  <polygon points="176,160 188,146 200,160" fill="#9A4F2B" opacity="0.85"/>
+  <rect x="480" y="150" width="24" height="46" fill="#C86A43" opacity="0.88"/>
+  <polygon points="480,150 492,134 504,150" fill="#8B3F22" opacity="0.88"/>
+  <rect x="507" y="162" width="20" height="34" fill="#D9A05A" opacity="0.85"/>
+  <polygon points="507,162 517,150 527,162" fill="#A0522D" opacity="0.85"/>
+  <!-- Bell tower -->
+  <rect x="540" y="130" width="14" height="66" fill="#EDE0C4" opacity="0.85"/>
+  <polygon points="540,130 547,116 554,130" fill="#C4A882" opacity="0.88"/>
+
+  <!-- Cypress trees -->
+  <ellipse cx="230" cy="185" rx="6" ry="24" fill="#3E4A2E" opacity="0.8"/>
+  <ellipse cx="440" cy="178" rx="6" ry="26" fill="#3E4A2E" opacity="0.8"/>
+
+  <!-- Foreground path -->
+  <rect x="0" y="300" width="800" height="150" fill="#B79470" opacity="0.5"/>
+
+  <!-- Caption -->
+  <rect x="0" y="390" width="800" height="60" fill="#2D2A26" opacity="0.72"/>
+  <text x="400" y="418" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#F9E4C0" letter-spacing="2.5" opacity="0.95">every place tells a story</text>
+  <text x="400" y="440" text-anchor="middle" font-family="Georgia, serif" font-size="10" fill="#D6A94D" letter-spacing="5.5" opacity="0.82">CULO VILLAGE</text>
+</svg>

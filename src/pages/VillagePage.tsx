@@ -87,6 +87,7 @@ export function VillagePage() {
           subheading="Real founder experiences transformed into blogs, reels and carousels."
           action={{ label: 'View All Stories', href: '/stories' }}
           filter={{ publicOnly: true, limit: 6 }}
+          hideKey="homepage"
           columns={3}
           cardVariant="vertical"
           showSummary

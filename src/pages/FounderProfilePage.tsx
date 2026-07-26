@@ -675,6 +675,7 @@ export function FounderProfilePage() {
                 heading={`Stories by ${founder.name}`}
                 subheading={`Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
                 filter={{ founderId: founder.id, publicOnly: true }}
+                hideKey="founder-profile"
                 columns={2}
                 cardVariant="vertical"
                 showSummary

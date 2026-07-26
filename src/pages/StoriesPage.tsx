@@ -160,6 +160,7 @@ export function StoriesPage() {
         <InnerContainer>
           <StoryGrid
             filter={filter}
+            hideKey="directory"
             columns={3}
             cardVariant="vertical"
             showSummary

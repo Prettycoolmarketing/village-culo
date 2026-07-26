@@ -771,6 +771,7 @@ export function BusinessProfilePage() {
                 <p className="font-body text-sm text-muted mb-6">Published founder stories connected to this business.</p>
                 <StoryGrid
                   filter={{ businessId: business.id, publicOnly: true }}
+                  hideKey="business-profile"
                   columns={2}
                   cardVariant="compact"
                   showSummary

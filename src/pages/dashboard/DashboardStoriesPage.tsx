@@ -58,7 +58,12 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
 
   const missing    = getStoryMissingItems(draft)
   const counts     = getMissingCounts(missing)
-  const appearsOn = getStoryAppearsOn(draft.id)
+  const appearsOn = getStoryAppearsOn(draft)
+
+  function toggleAppearsOn(key: string, hide: boolean) {
+    const current = draft.hiddenLocations ?? []
+    set('hiddenLocations', hide ? [...current, key] : current.filter(k => k !== key))
+  }
 
   const storyFounder   = getFounders().find(f => f.id === draft.founderId)
   const storyBusiness  = getBusinesses().find(b => b.id === draft.businessId)
@@ -413,8 +418,8 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
         {/* Appears On */}
         <div className="border-t border-[#E8E4DD] pt-6">
           <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Appears On</p>
-            <p className="text-sm text-[#6B7280] mb-4">Every location where this story is surfaced in the Village.</p>
-            <AppearsOnPanel locations={appearsOn} />
+            <p className="text-sm text-[#6B7280] mb-4">Every location where this story is surfaced in the Village. Turn any of these off if you don't want it shown there.</p>
+            <AppearsOnPanel locations={appearsOn} onToggle={toggleAppearsOn} />
         </div>
 
         {/* SEO & AI discovery — always derived from Title + Blog/Summary, no
