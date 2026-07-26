@@ -3,7 +3,7 @@ import { usePageMeta } from '../utils/usePageMeta'
 import { normalizeUrl } from '../utils/url'
 import { getFounders } from '../services/founders'
 import { getBusiness, getBusinesses } from '../services/businesses'
-import { trustProfileService, recommendationService, publisherPartnerProfileService } from '../services/partnership'
+import { recommendationService, publisherPartnerProfileService } from '../services/partnership'
 import { importedContentService } from '../services/importedContent'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
@@ -11,7 +11,6 @@ import { ImportedContentCard } from '../components/cards/ImportedContentCard'
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
-import { LEVEL_LABELS, LEVEL_COLORS } from '../services/trustEngine'
 import { getFAQsForFounder } from '../data/faqs'
 import { getResourcesForFounder } from '../data/resources'
 import { getTalksForFounder } from '../data/talks'
@@ -252,7 +251,6 @@ export function FounderProfilePage() {
     founder.id, founder.industry.id, founder.location.id, founder.topics.map(t => t.id)
   )
 
-  const trustProfile    = trustProfileService.get(founder.id)
   const approvedRecs    = recommendationService.getAll({ founderId: founder.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
   const publicImports   = importedContentService.getAll({ founderId: founder.id, publicOnly: true })
@@ -376,9 +374,9 @@ export function FounderProfilePage() {
 
         <div className="bg-surface border-b border-border pb-12">
           <InnerContainer>
-            <div className="flex flex-col sm:flex-row sm:items-end gap-6 -mt-12 sm:-mt-16">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-6 pt-6 -mt-8 sm:-mt-10">
               <Avatar src={founder.avatar} alt={founder.name} size="xl"
-                className="ring-4 ring-surface shadow-lg flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 text-2xl" />
+                className="ring-4 ring-surface shadow-lg flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 text-3xl" />
               <div className="flex-1 min-w-0 pt-2">
                 <h1 id="founder-name" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight flex items-center gap-2.5">
                   {founder.name}
@@ -483,14 +481,16 @@ export function FounderProfilePage() {
               </div>
             )}
 
-            {business && (
+            {business && business.name && business.slug && (
               <div className="mt-6">
                 <Link to={`/businesses/${business.slug}`}
                   className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
                   aria-label={`View ${business.name} business profile`}>
-                  <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
-                    <img src={business.logo} alt="" className="w-full h-full object-contain" />
-                  </div>
+                  {business.logo && (
+                    <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
+                      <img src={business.logo} alt="" className="w-full h-full object-contain" />
+                    </div>
+                  )}
                   {business.name}
                   <span className="text-muted text-xs">→</span>
                 </Link>
@@ -499,7 +499,7 @@ export function FounderProfilePage() {
 
             {/* Create with CULO CTA */}
             <div className="mt-7">
-              <CreateWithCuloCTA variant="inline" label="Continue your story with CULO" />
+              <CreateWithCuloCTA variant="inline" label="Continue your story with CULO Creatives exclusively in Canva" />
             </div>
 
             <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-7" />
@@ -551,17 +551,6 @@ export function FounderProfilePage() {
                 <span className="font-body text-xs text-white/50 uppercase tracking-wide">Topics</span>
               </div>
             )}
-            {trustProfile && trustProfile.overallScore > 0 && (
-              <div className="flex flex-col">
-                <span
-                  className="font-heading text-sm font-bold px-2 py-0.5 rounded-full w-fit"
-                  style={{ color: LEVEL_COLORS[trustProfile.trustLevel], backgroundColor: `${LEVEL_COLORS[trustProfile.trustLevel]}22` }}
-                >
-                  {LEVEL_LABELS[trustProfile.trustLevel]}
-                </span>
-                <span className="font-body text-xs text-white/50 uppercase tracking-wide mt-1">CULO Trust</span>
-              </div>
-            )}
           </div>
         </InnerContainer>
       </section>
@@ -599,74 +588,6 @@ export function FounderProfilePage() {
                       </Link>
                     ))}
                   </div>
-                </section>
-              )}
-
-              {/* FAQ */}
-              {faqs.length > 0 && (
-                <section aria-labelledby="founder-faq-heading">
-                  <h2 id="founder-faq-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Questions &amp; Answers
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-6">
-                    Questions {founder.name} answers about their work and expertise.
-                  </p>
-                  <div className="flex flex-col gap-4">
-                    {faqs.map(faq => (
-                      <details
-                        key={faq.id}
-                        className="group bg-surface rounded-2xl border border-border"
-                      >
-                        <summary className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none">
-                          <h3 className="font-heading text-base font-semibold text-charcoal leading-snug">
-                            {faq.question}
-                          </h3>
-                          <svg
-                            className="w-5 h-5 text-muted flex-shrink-0 transition-transform group-open:rotate-180"
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </summary>
-                        <div className="px-6 pb-5">
-                          <p className="font-body text-sm text-charcoal/80 leading-relaxed">{faq.answer}</p>
-                          {faq.topicIds.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {faq.topicIds.map(tid => (
-                                <span key={tid} className="font-body text-xs bg-secondary/10 text-secondary px-2 py-0.5 rounded-full">
-                                  {tid.replace(/-/g, ' ')}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </details>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Also asked about — search-style questions surfaced from founder's content */}
-              {aggregatedIntel && aggregatedIntel.questions.length > 0 && (
-                <section aria-labelledby="founder-also-asked-heading">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h2 id="founder-also-asked-heading" className="font-heading text-2xl font-semibold text-charcoal">
-                      Also Asked About
-                    </h2>
-                    <span className="font-body text-[9px] font-semibold text-muted bg-border/60 px-2 py-0.5 rounded-full">
-                      Auto-detected
-                    </span>
-                  </div>
-                  <p className="font-body text-sm text-muted mb-6">
-                    Common questions people search for related to {founder.name}'s work.
-                  </p>
-                  <ul className="space-y-2">
-                    {aggregatedIntel.questions.slice(0, 4).map((q, i) => (
-                      <li key={i} className="font-body text-sm text-charcoal/80 leading-relaxed italic pl-3 border-l-2 border-border">
-                        {q}
-                      </li>
-                    ))}
-                  </ul>
                 </section>
               )}
 
@@ -846,6 +767,74 @@ export function FounderProfilePage() {
                 emptyTitle="Nothing on the board yet"
                 emptyMessage={`${founder.name} hasn't posted any events or opportunities yet.`}
               />
+
+              {/* FAQ */}
+              {faqs.length > 0 && (
+                <section aria-labelledby="founder-faq-heading">
+                  <h2 id="founder-faq-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Questions &amp; Answers
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Questions {founder.name} answers about their work and expertise.
+                  </p>
+                  <div className="flex flex-col gap-4">
+                    {faqs.map(faq => (
+                      <details
+                        key={faq.id}
+                        className="group bg-surface rounded-2xl border border-border"
+                      >
+                        <summary className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none">
+                          <h3 className="font-heading text-base font-semibold text-charcoal leading-snug">
+                            {faq.question}
+                          </h3>
+                          <svg
+                            className="w-5 h-5 text-muted flex-shrink-0 transition-transform group-open:rotate-180"
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </summary>
+                        <div className="px-6 pb-5">
+                          <p className="font-body text-sm text-charcoal/80 leading-relaxed">{faq.answer}</p>
+                          {faq.topicIds.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {faq.topicIds.map(tid => (
+                                <span key={tid} className="font-body text-xs bg-secondary/10 text-secondary px-2 py-0.5 rounded-full">
+                                  {tid.replace(/-/g, ' ')}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Also asked about — search-style questions surfaced from founder's content */}
+              {aggregatedIntel && aggregatedIntel.questions.length > 0 && (
+                <section aria-labelledby="founder-also-asked-heading">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h2 id="founder-also-asked-heading" className="font-heading text-2xl font-semibold text-charcoal">
+                      Also Asked About
+                    </h2>
+                    <span className="font-body text-[9px] font-semibold text-muted bg-border/60 px-2 py-0.5 rounded-full">
+                      Auto-detected
+                    </span>
+                  </div>
+                  <p className="font-body text-sm text-muted mb-6">
+                    Common questions people search for related to {founder.name}'s work.
+                  </p>
+                  <ul className="space-y-2">
+                    {aggregatedIntel.questions.slice(0, 4).map((q, i) => (
+                      <li key={i} className="font-body text-sm text-charcoal/80 leading-relaxed italic pl-3 border-l-2 border-border">
+                        {q}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
             </div>
 

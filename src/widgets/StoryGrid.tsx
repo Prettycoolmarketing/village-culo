@@ -80,7 +80,7 @@ export function StoryGrid({
             const founder = getFounder(story.founderId)
             const business = getBusiness(story.businessId)
             return (
-              <div key={story.id} role="listitem">
+              <div key={story.id} role="listitem" className="h-full">
                 <StoryCard
                   story={story}
                   founder={founder}
@@ -90,6 +90,7 @@ export function StoryGrid({
                   showFounder={showFounder}
                   showTopics={showTopics}
                   showCTA={showCTA}
+                  className="h-full"
                 />
               </div>
             )
