@@ -499,6 +499,10 @@ export interface Story {
   contentTypes: ContentType[]
   blog?: string
   reelUrl?: string
+  // Extra reel videos beyond the primary reelUrl (which stays the one used
+  // for embeds/thumbnails on cards and other listings) — same "just add more"
+  // pattern as carouselImages, for a story built from several reels.
+  additionalReelUrls?: string[]
   audioUrl?: string
   carouselImages?: string[]
   // Relationships

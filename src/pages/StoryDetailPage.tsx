@@ -690,6 +690,18 @@ export function StoryDetailPage() {
                       title={story.title}
                       summary={story.summary}
                     />
+                    {story.additionalReelUrls && story.additionalReelUrls.length > 0 && (
+                      <div className="mt-6">
+                        <p className="font-heading text-sm font-semibold text-charcoal mb-3">More reels from this story</p>
+                        <div className="flex gap-4 overflow-x-auto pb-1">
+                          {story.additionalReelUrls.map((url, i) => (
+                            <div key={i} className="shrink-0 w-40">
+                              <ReelContent reelUrl={url} title={story.title} summary="" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Carousel */}
@@ -733,7 +745,21 @@ export function StoryDetailPage() {
                             ? <CarouselContent images={story.carouselImages} title={story.title} />
                             : <p className="font-body text-muted text-sm italic">Photo gallery will appear here once published.</p>
                         ) : (type === 'talking-head' || type === 'youtube-video') ? (
-                          <ReelContent reelUrl={effectiveReelUrl} title={story.title} summary={story.summary} landscape />
+                          <>
+                            <ReelContent reelUrl={effectiveReelUrl} title={story.title} summary={story.summary} landscape />
+                            {story.additionalReelUrls && story.additionalReelUrls.length > 0 && (
+                              <div className="mt-6">
+                                <p className="font-heading text-sm font-semibold text-charcoal mb-3">More reels from this story</p>
+                                <div className="flex gap-4 overflow-x-auto pb-1">
+                                  {story.additionalReelUrls.map((url2, i) => (
+                                    <div key={i} className="shrink-0 w-40">
+                                      <ReelContent reelUrl={url2} title={story.title} summary="" />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
                         ) : (type === 'podcast' || type === 'voice-over') && isDirectAudioUrl(url) ? (
                           <audio src={url} controls className="w-full" />
                         ) : url ? (

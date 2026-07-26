@@ -89,6 +89,9 @@ interface PublishDraft {
   summary:            string
   coverImage:         string
   reelUrl:            string
+  // Extra reel videos beyond the primary reelUrl — same "just add more"
+  // pattern as carouselSlides.
+  additionalReelUrls: string[]
   audioUrl:           string
   carouselSlides:     string[]
   documentUrl:        string
@@ -167,6 +170,7 @@ function defaultDraft(founderId: string, businessId: string): PublishDraft {
     summary:           '',
     coverImage:        '',
     reelUrl:           '',
+    additionalReelUrls: [],
     audioUrl:          '',
     carouselSlides:    [''],
     documentUrl:       '',
@@ -463,6 +467,44 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                 aspect="auto"
                 uploadOptions={{ ...uploadOpts, usageType: 'reel-preview' }}
               />
+
+              {draft.additionalReelUrls.length > 0 && (
+                <p className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-widest mt-2">More reels</p>
+              )}
+              {draft.additionalReelUrls.map((url, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span className="text-xs text-[#9CA3AF] w-5 shrink-0 text-right">{i + 2}</span>
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={e => {
+                      const next = [...draft.additionalReelUrls]
+                      next[i] = e.target.value
+                      onChange({ additionalReelUrls: next })
+                    }}
+                    placeholder="https://…"
+                    className={inp}
+                  />
+                  <button
+                    onClick={() => onChange({ additionalReelUrls: draft.additionalReelUrls.filter((_, j) => j !== i) })}
+                    className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0 px-1"
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={() => onChange({ additionalReelUrls: [...draft.additionalReelUrls, ''] })}
+                className="text-xs text-[#C86A43] hover:underline text-left ml-7"
+              >
+                + Add another reel
+              </button>
+              <MediaUpload
+                onChange={v => onChange({ additionalReelUrls: [...draft.additionalReelUrls.filter(Boolean), v] })}
+                accept="video"
+                label="Upload a video to add as another reel"
+                aspect="auto"
+                uploadOptions={{ ...uploadOpts, usageType: 'reel-preview' }}
+              />
+              <p className="text-[11px] text-[#9CA3AF]">One reel is fine to publish with — add as many more as you like.</p>
             </div>
           </div>
         )}
@@ -1718,6 +1760,9 @@ export function DashboardPublishPage() {
       contentTypes:   draft.contentTypes.length > 0 ? draft.contentTypes : ['blog'],
       blog:           draft.blog     || undefined,
       reelUrl:        draft.reelUrl  || undefined,
+      additionalReelUrls: draft.additionalReelUrls.filter(Boolean).length > 0
+                        ? draft.additionalReelUrls.filter(Boolean)
+                        : existingStory?.additionalReelUrls,
       audioUrl:       draft.audioUrl || undefined,
       carouselImages: draft.carouselSlides.filter(Boolean).length > 0
                         ? draft.carouselSlides.filter(Boolean)

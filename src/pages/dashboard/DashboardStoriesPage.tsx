@@ -229,13 +229,56 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                 <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
                   <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-widest">Reel</p>
                 </div>
-                <div className="px-4 py-3">
+                <div className="px-4 py-3 flex flex-col gap-3">
                   <Field label="Reel URL">
                     <input id="reelUrl" type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
                   </Field>
                   {draft.reelUrl && (
-                    <a href={normalizeUrl(draft.reelUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C86A43] hover:underline mt-1 inline-block">Preview ↗</a>
+                    <a href={normalizeUrl(draft.reelUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C86A43] hover:underline -mt-1 inline-block w-fit">Preview ↗</a>
                   )}
+                  <MediaUpload
+                    value={draft.reelUrl}
+                    onChange={v => set('reelUrl', v || undefined)}
+                    accept="video"
+                    label="Upload a video for the reel"
+                    aspect="auto"
+                    uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+                  />
+
+                  {(draft.additionalReelUrls ?? []).length > 0 && (
+                    <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mt-1">More reels</p>
+                  )}
+                  {(draft.additionalReelUrls ?? []).map((url, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <input
+                        type="url"
+                        value={url}
+                        onChange={e => {
+                          const next = [...(draft.additionalReelUrls ?? [])]
+                          next[i] = e.target.value
+                          set('additionalReelUrls', next)
+                        }}
+                        className={inputClass}
+                        placeholder={`Reel ${i + 2} URL`}
+                      />
+                      <button
+                        onClick={() => set('additionalReelUrls', (draft.additionalReelUrls ?? []).filter((_, j) => j !== i))}
+                        className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => set('additionalReelUrls', [...(draft.additionalReelUrls ?? []), ''])}
+                    className="text-xs text-[#C86A43] hover:underline text-left w-fit">
+                    + Add another reel (by URL)
+                  </button>
+                  <MediaUpload
+                    onChange={v => set('additionalReelUrls', [...(draft.additionalReelUrls ?? []).filter(Boolean), v])}
+                    accept="video"
+                    label="Upload a video to add as another reel"
+                    aspect="auto"
+                    uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+                  />
+                  <p className="text-[10px] text-[#9CA3AF]">One reel is fine to publish with — add as many more as you like.</p>
                 </div>
               </div>
             )}
