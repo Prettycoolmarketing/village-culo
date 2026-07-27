@@ -80,7 +80,7 @@ export function DashboardLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F8F5F0] overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="flex h-screen bg-[#F3F7FA] overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Left sidebar ────────────────────────────────────────────────────── */}
       <aside className="w-56 shrink-0 border-r border-[#E8E4DD] bg-white flex flex-col overflow-y-auto">
