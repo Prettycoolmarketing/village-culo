@@ -27,6 +27,7 @@ import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPane
 import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
+import { BusinessDiscoveryProfile, BusinessProgramsTab, BusinessServicesEditor } from '../../components/dashboard/BusinessWorkspace'
 import {
   getFounderMissingItems,
   getBusinessMissingItems,
@@ -34,7 +35,7 @@ import {
   getMissingCounts,
   type MissingItem,
 } from '../../utils/missingAssets'
-import { getFounderAppearsOn } from '../../utils/appearsOn'
+import { getFounderAppearsOn, getBusinessAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
 import { loadDraft, saveDraft, clearDraft } from '../../utils/draftAutosave'
 import { suggestFaqsFromFounder } from '../../services/founderEnrichment'
@@ -550,6 +551,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
   })
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   // Autosave to localStorage as the founder types — if they navigate away or
   // the tab closes before hitting Save, their edits are still there next time.
@@ -734,6 +736,19 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
             <SocialLinksEditor links={draft.socialLinks ?? []} onChange={v => set('socialLinks', v)} />
           </Field>
 
+          <Field label="Status" hint="Draft businesses aren't visible on the public site.">
+            <div className="flex gap-2 flex-wrap">
+              {(['draft', 'submitted', 'published', 'featured', 'archived'] as const).map(s => (
+                <button key={s} onClick={() => set('status', s)}
+                  className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${
+                    draft.status === s ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                  }`}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </Field>
+
           <div className="flex items-center justify-between pt-2 border-t border-[#E8E4DD]">
             <div className="flex items-center gap-3">
               <button onClick={() => void handleSave()} disabled={saving}
@@ -741,9 +756,6 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
                 {saving ? 'Saving…' : 'Save'}
               </button>
               {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
-              <Link to={`/dashboard/businesses`} className="text-xs text-[#C86A43] hover:underline font-medium">
-                Discovery Profile, Partnerships &amp; Services →
-              </Link>
             </div>
             <ConfirmButton
               label="Delete"
@@ -753,6 +765,62 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
               className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
             />
           </div>
+        </div>
+      )}
+
+      {/* Services — what this business offers people, beyond content. */}
+      {draft && (
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
+          <div>
+            <p className="text-sm font-semibold text-[#2D2A26]">Services</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">What people can book or buy from this business.</p>
+          </div>
+          <BusinessServicesEditor
+            business={draft}
+            onOffersChange={offers => set('offers', offers)}
+          />
+        </div>
+      )}
+
+      {/* Appears On — read-only, where this business is already surfaced. */}
+      {draft && (() => {
+        const appearsOn = getBusinessAppearsOn(draft.id)
+        return appearsOn.length > 0 ? (
+          <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
+            <p className="text-sm font-semibold text-[#2D2A26]">Appears On</p>
+            <AppearsOnPanel locations={appearsOn} />
+          </div>
+        ) : null
+      })()}
+
+      {/* Discovery & Partnerships — optional, only relevant to businesses
+          wanting publisher matching or affiliate/partner programs. Collapsed
+          by default so it doesn't clutter the common case. */}
+      {draft && (
+        <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
+          <button
+            onClick={() => setShowAdvanced(v => !v)}
+            className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-[#FBF8F4] transition-colors"
+          >
+            <div>
+              <p className="text-sm font-semibold text-[#2D2A26]">Discovery &amp; Partnerships</p>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">Optional — let publishers find and partner with this business.</p>
+            </div>
+            <span className="text-[#9CA3AF] text-sm shrink-0">{showAdvanced ? 'Hide ▲' : 'Show ▼'}</span>
+          </button>
+          {showAdvanced && (
+            <div className="px-5 pb-5 flex flex-col gap-5 border-t border-[#F3EDE6] pt-5">
+              <BusinessDiscoveryProfile
+                businessId={draft.id}
+                business={draft}
+                onBusinessUpdate={updated => { setDraft(updated); setBusinesses(getBusinesses({ founderId })) }}
+              />
+              <BusinessProgramsTab
+                businessId={draft.id}
+                partnerEnabled={!!draft.partnerEnabled}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -1195,7 +1263,7 @@ export function DashboardProfilePage() {
             </div>
 
             <div className="grid grid-cols-5 gap-3">
-              <Link to="/dashboard/businesses" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
+              <Link to="/dashboard/profile?tab=businesses" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderBusinesses.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Businesses</p>
               </Link>

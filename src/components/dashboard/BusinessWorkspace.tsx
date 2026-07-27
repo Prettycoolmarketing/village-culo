@@ -1,41 +1,23 @@
 import { useState, type ReactNode } from 'react'
-import { getBusinesses, updateBusiness, deleteBusiness, duplicateBusiness } from '../../services/businesses'
+import { updateBusiness } from '../../services/businesses'
 import { businessPartnerProfileService, programService, enrollmentService } from '../../services/partnership'
 import { partnerService, newPartnerRequest } from '../../services/partner'
 import type { Partner } from '../../types/partner'
 import type { BusinessPartnerProfile, PartnerProgram, PartnerProgramType, DisclosureType } from '../../types/partnership'
-import { getStories } from '../../services/stories'
 import { getServices, updateService, deleteService, duplicateService } from '../../services/serviceOfferings'
 import { updateLibraryItem } from '../../services/library'
-import { getFounders } from '../../services/founders'
-import { useAuth } from '../../contexts/AuthContext'
-import { getCurrentFounder } from '../../services/currentFounder'
-import { locations } from '../../data/locations'
-import { industries } from '../../data/industries'
+import { getServiceMissingItems } from '../../utils/missingAssets'
 import { topics as allTopics } from '../../data/topics'
-import { Tabs } from '../../components/dashboard/Tabs'
-import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
-import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
-import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
-import { HealthBadge } from '../../components/dashboard/PublishingHealth'
-import { OverflowMenu } from '../../components/ui/OverflowMenu'
-import { ConfirmButton } from '../../components/ui/ConfirmButton'
-import { MediaUpload } from '../../components/ui/MediaUpload'
-import { FAQEditor } from '../../components/dashboard/FAQEditor'
-import { getBusinessMissingItems, getMissingCounts, getServiceMissingItems } from '../../utils/missingAssets'
-import { getBusinessAppearsOn } from '../../utils/appearsOn'
-import { focusField } from '../../utils/focusField'
-import type { Business, Topic, Offer, Service } from '../../types'
+import { industries } from '../../data/industries'
+import { HealthBadge } from './PublishingHealth'
+import { OverflowMenu } from '../ui/OverflowMenu'
+import { FAQEditor } from './FAQEditor'
+import type { Business, Offer, Service } from '../../types'
 
-const BUSINESS_FIELD_TO_TAB: Record<string, string> = {
-  logo: 'brand', coverImage: 'brand',
-  description: 'brand', faqs: 'brand',
-  website: 'brand', socials: 'brand',
-  offers: 'services',
-  seoTitle: 'brand', seoDescription: 'brand',
-}
-
-// ─── Shared helpers ────────────────────────────────────────────────────────────
+// Advanced business-workspace pieces — Services, Discovery Profile, Partner
+// Programs — folded into the Profile > Businesses tab rather than living on
+// their own separate page. Every founder-facing business edit now lives in
+// one place.
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
@@ -49,8 +31,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     </div>
   )
 }
-
-// ─── Business Discovery Profile ──────────────────────────────────────────────
 
 function SectionCard({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -248,7 +228,7 @@ function BecomePartnerCard({ businessId, business }: { businessId: string; busin
   )
 }
 
-function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdate }: {
+export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdate }: {
   businessId: string
   business: Business
   onBusinessUpdate: (b: Business) => void
@@ -306,7 +286,7 @@ function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdate }: {
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-8">
+    <div className="flex flex-col gap-5">
 
       {/* Status */}
       <SectionCard
@@ -665,8 +645,6 @@ function createBlankProgram(businessId: string): PartnerProgram {
   }
 }
 
-// ── ProgramForm ───────────────────────────────────────────────────────────────
-
 function ProgramForm({ initial, onSave, onCancel }: {
   initial: PartnerProgram
   onSave: (p: PartnerProgram) => void
@@ -966,9 +944,7 @@ function ProgramForm({ initial, onSave, onCancel }: {
   )
 }
 
-// ── BusinessProgramsTab ───────────────────────────────────────────────────────
-
-function BusinessProgramsTab({ businessId, partnerEnabled }: {
+export function BusinessProgramsTab({ businessId, partnerEnabled }: {
   businessId: string
   partnerEnabled: boolean
 }) {
@@ -986,7 +962,7 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
     setPrograms(programService.getAll({ businessId }))
   }
 
-  function handleSave(_saved: PartnerProgram) {
+  function handleSave() {
     refresh()
     setView('list')
   }
@@ -1006,19 +982,11 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
   // Discovery disabled prompt
   if (!partnerEnabled) {
     return (
-      <div className="max-w-xl">
-        <div className="bg-white rounded-xl border border-[#E8E4DD] px-6 py-8 text-center">
-          <p className="text-sm font-semibold text-[#2D2A26] mb-1">Discovery Profile is off</p>
-          <p className="text-xs text-[#9CA3AF] mb-4 max-w-xs mx-auto leading-relaxed">
-            Turn on your Business Discovery Profile before creating programs. Publishers can only see your programs when Discovery is active.
-          </p>
-          <button
-            onClick={() => setView('list')}
-            className="text-xs text-[#C86A43] underline-offset-2 hover:underline"
-          >
-            Go to Discovery Profile tab to enable →
-          </button>
-        </div>
+      <div className="bg-white rounded-xl border border-[#E8E4DD] px-6 py-8 text-center">
+        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Discovery Profile is off</p>
+        <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto leading-relaxed">
+          Turn on your Business Discovery Profile above before creating programs. Publishers can only see your programs when Discovery is active.
+        </p>
       </div>
     )
   }
@@ -1026,20 +994,18 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
   // New program form
   if (view === 'new') {
     return (
-      <div className="max-w-2xl">
-        <ProgramForm
-          initial={createBlankProgram(businessId)}
-          onSave={handleSave}
-          onCancel={() => setView('list')}
-        />
-      </div>
+      <ProgramForm
+        initial={createBlankProgram(businessId)}
+        onSave={handleSave}
+        onCancel={() => setView('list')}
+      />
     )
   }
 
   // Edit existing
   if (editing) {
     return (
-      <div className="max-w-2xl flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <ProgramForm
           initial={editing}
           onSave={handleSave}
@@ -1060,7 +1026,7 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
 
   // List view
   return (
-    <div className="max-w-2xl flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
 
       <div className="flex items-center justify-between">
         <div>
@@ -1133,53 +1099,33 @@ function BusinessProgramsTab({ businessId, partnerEnabled }: {
         </div>
       )}
 
-      <p className="text-xs text-[#9CA3AF] px-1">
+      <p className="text-xs text-[#9CA3AF]">
         Programs are matched to publishers via the Opportunity Engine and shown publicly on your business page. Founders can join programs through the Revenue section.
       </p>
     </div>
   )
 }
 
-// ─── Business detail pane ──────────────────────────────────────────────────────
+// ─── Services ───────────────────────────────────────────────────────────────
 
-interface BusinessDetailPaneProps {
-  biz: Business
-  onSave: (b: Business) => void
-  onDuplicate: (b: Business) => void
-  onDelete: (b: Business) => void
-}
-
-function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDetailPaneProps) {
-  const [draft, setDraft]   = useState<Business>({ ...biz })
-  const [saving, setSaving] = useState(false)
-  const [saved,  setSaved]  = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [tab, setTab]       = useState('overview')
-  const [serviceTick, setServiceTick] = useState(0)
+export function BusinessServicesEditor({ business, onOffersChange }: {
+  business: Business
+  onOffersChange: (offers: Offer[]) => void
+}) {
+  const [services, setServices] = useState<Service[]>(() => getServices(undefined, business.id))
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
   const [addedToLibraryIds, setAddedToLibraryIds] = useState<Set<string>>(new Set())
-  const refreshServices = () => setServiceTick(t => t + 1)
-  void serviceTick
-
-  const appearsOn = getBusinessAppearsOn(draft.id)
-
-  // Relationships
-  const bizStories  = getStories({ businessId: draft.id })
-  const bizServices = getServices(undefined, draft.id)
-  const owner       = getFounders().find(f => f.id === draft.founderId)
-
-  const missing    = getBusinessMissingItems(draft, bizServices)
-  const counts     = getMissingCounts(missing)
+  const refresh = () => setServices(getServices(undefined, business.id))
 
   async function handleAddService() {
     const id = `service-${Date.now()}`
     const newService: Service = {
       id, slug: id, name: 'New service', description: '',
-      businessId: draft.id, founderId: owner?.id ?? draft.founderId,
+      businessId: business.id, founderId: business.founderId,
       topicIds: [], expertiseIds: [], ctaLabel: 'Learn more', ctaUrl: '', status: 'draft',
     }
     const result = await updateService(newService)
-    if (result.success) { setEditingServiceId(id); refreshServices() }
+    if (result.success) { setEditingServiceId(id); refresh() }
   }
 
   // Offers and Services present as one workspace now, but the underlying
@@ -1187,16 +1133,19 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
   // founder a one-click way to move a legacy offer onto the fuller Service
   // model (price, FAQs, digital product flag) without losing anything.
   async function convertOfferToService(index: number) {
-    const offer = draft.offers[index]
+    const offer = business.offers[index]
     const id = `service-${Date.now()}`
     const newService: Service = {
       id, slug: id, name: offer.title, description: offer.description,
-      businessId: draft.id, founderId: owner?.id ?? draft.founderId,
+      businessId: business.id, founderId: business.founderId,
       topicIds: [], expertiseIds: [],
       ctaLabel: offer.ctaLabel || 'Learn more', ctaUrl: offer.ctaUrl, status: 'published',
     }
     const result = await updateService(newService)
-    if (result.success) { removeOffer(index); refreshServices() }
+    if (result.success) {
+      onOffersChange(business.offers.filter((_, i) => i !== index))
+      refresh()
+    }
   }
 
   async function addServiceToLibrary(service: Service) {
@@ -1218,689 +1167,141 @@ function BusinessDetailPane({ biz, onSave, onDuplicate, onDelete }: BusinessDeta
     if (result.success) setAddedToLibraryIds(prev => new Set([...prev, service.id]))
   }
 
-  const TABS = [
-    { key: 'overview',      label: 'Overview'      },
-    { key: 'brand',         label: 'Brand'         },
-    { key: 'services',      label: 'Services',      badge: bizServices.length + draft.offers.length },
-    { key: 'relationships', label: 'Relationships', badge: bizStories.length + bizServices.length },
-    { key: 'appears-on',    label: 'Appears On',    badge: appearsOn.length },
-    { key: 'publishing',    label: 'Publishing'    },
-    { key: 'discovery',     label: 'Partnerships'  },
-    { key: 'programs',      label: 'Programs', badge: programService.getAll({ businessId: draft.id }).length },
-  ]
-
-  function set<K extends keyof Business>(key: K, value: Business[K]) {
-    setDraft(prev => ({ ...prev, [key]: value }))
-    setSaved(false)
-  }
-
-  function toggleTopic(topic: Topic) {
-    setDraft(prev => {
-      const has = prev.topics.some(t => t.id === topic.id)
-      setSaved(false)
-      return { ...prev, topics: has ? prev.topics.filter(t => t.id !== topic.id) : [...prev.topics, topic] }
-    })
-  }
-
   function setOffer<K extends keyof Omit<Offer, 'id'>>(index: number, key: K, value: string) {
-    setDraft(prev => {
-      const next = [...prev.offers]
-      next[index] = { ...next[index], [key]: value }
-      setSaved(false)
-      return { ...prev, offers: next }
-    })
+    const next = [...business.offers]
+    next[index] = { ...next[index], [key]: value }
+    onOffersChange(next)
   }
 
-  // New offers are no longer created — Services is the primary path now —
-  // but existing offers stay fully editable/removable/convertible, so
-  // nothing already saved is lost or silently hidden.
   function removeOffer(index: number) {
-    setDraft(prev => {
-      const next = prev.offers.filter((_, i) => i !== index)
-      setSaved(false)
-      return { ...prev, offers: next }
-    })
-  }
-
-  async function handleSave() {
-    setSaving(true)
-    setSaveError(null)
-    const result = await updateBusiness(draft)
-    setSaving(false)
-    if (result.success) {
-      setSaved(true)
-      onSave(draft)
-    } else {
-      setSaveError(result.error ?? 'Save failed. Please try again.')
-    }
+    onOffersChange(business.offers.filter((_, i) => i !== index))
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Detail header */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#F3EDE6] shrink-0 flex items-center justify-center overflow-hidden p-1">
-            <img src={draft.logo} alt="" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <p className="text-base font-bold text-[#2D2A26] truncate max-w-[200px]">{draft.name}</p>
-            <HealthBadge missing={missing} />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {saved && <span className="text-xs text-green-600 font-medium">Saved ✓</span>}
-          {saveError && <span className="text-xs text-red-600 font-medium">{saveError}</span>}
-          <a href={`/businesses/${draft.slug}`} target="_blank" rel="noopener noreferrer"
-            className="px-2.5 py-1.5 text-xs text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:text-[#C86A43] hover:border-[#C86A43]/40 transition-colors">
-            View ↗
-          </a>
-          <button onClick={() => void handleSave()} disabled={saving}
-            className="px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
-            {saving ? 'Saving…' : 'Save'}
-          </button>
-          <OverflowMenu
-            onDuplicate={() => onDuplicate(draft)}
-            onDelete={() => onDelete(draft)}
-          />
-        </div>
-      </div>
+    <div className="flex flex-col gap-3">
+      {services.length === 0 && business.offers.length === 0 && (
+        <p className="text-xs text-[#9CA3AF] text-center py-4">No services yet. Add one people can book or buy below.</p>
+      )}
 
-      <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-6" />
-
-      <div className="flex-1 overflow-y-auto px-6 py-5">
-
-        {/* Overview */}
-        {tab === 'overview' && (
-          <div className="flex flex-col gap-5">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{bizStories.length}</p>
-                <p className="text-xs text-[#9CA3AF]">Stories</p>
-              </div>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{bizServices.length + draft.offers.length}</p>
-                <p className="text-xs text-[#9CA3AF]">Services</p>
-              </div>
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-3 text-center">
-                <p className="text-xl font-bold text-[#2D2A26]">{appearsOn.length}</p>
-                <p className="text-xs text-[#9CA3AF]">Appears On</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-[#2D2A26]">{draft.name}</p>
-                <p className="text-xs text-[#9CA3AF]">See exactly what visitors see on the public business page.</p>
-              </div>
-              <a href={`/businesses/${draft.slug}`} target="_blank" rel="noopener noreferrer"
-                className="shrink-0 px-3 py-1.5 text-xs font-semibold text-[#C86A43] border border-[#C86A43]/30 rounded-lg hover:bg-[#C86A43]/5 transition-colors">
-                View public page ↗
-              </a>
-            </div>
-
-            {counts.total > 0 ? (
-              <div>
-                <p className="text-sm font-semibold text-[#2D2A26] mb-2">Next steps to be more discoverable</p>
-                <MissingAssetsPanel
-                  items={missing}
-                  onAction={(item) => { setTab(BUSINESS_FIELD_TO_TAB[item.field] ?? 'brand'); focusField(item.field) }}
-                />
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 px-4 py-4 rounded-xl bg-green-50 border border-green-100">
-                <span className="text-green-500 text-lg">✓</span>
-                <div>
-                  <p className="text-sm font-medium text-green-700">This business is fully set up</p>
-                  <p className="text-xs text-green-600 mt-0.5">Brand, services and discovery details are all in place.</p>
+      {services.map(service => {
+        const svcMissing = getServiceMissingItems(service)
+        const isEditing = editingServiceId === service.id
+        return (
+          <div key={service.id} className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3">
+              <button onClick={() => setEditingServiceId(isEditing ? null : service.id)} className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-semibold text-[#2D2A26] truncate">{service.name}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {service.price && <span className="text-xs text-[#C86A43] font-medium">{service.price}{service.priceType ? ` / ${service.priceType}` : ''}</span>}
+                  {service.isDigitalProduct && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">Digital resource</span>}
+                  <HealthBadge missing={svcMissing} size="sm" />
                 </div>
-              </div>
-            )}
-
-            {(bizStories.length > 0 || bizServices.length > 0 || draft.offers.length > 0 || appearsOn.length > 0) ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {bizStories.length > 0 && (
-                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
-                    <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Connected Stories</p>
-                    <ul className="flex flex-col gap-1">
-                      {bizStories.slice(0, 3).map(s => (
-                        <li key={s.id} className="text-sm text-[#2D2A26] truncate">{s.title}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {(bizServices.length > 0 || draft.offers.length > 0) && (
-                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
-                    <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Connected Services</p>
-                    <ul className="flex flex-col gap-1">
-                      {bizServices.slice(0, 3).map(s => (
-                        <li key={s.id} className="text-sm text-[#2D2A26] truncate">{s.name}</li>
-                      ))}
-                      {draft.offers.slice(0, 3 - bizServices.length).map(o => (
-                        <li key={o.id} className="text-sm text-[#2D2A26] truncate">{o.title}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {appearsOn.length > 0 && (
-                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
-                    <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Appears On</p>
-                    <ul className="flex flex-col gap-1">
-                      {appearsOn.slice(0, 3).map((loc, i) => (
-                        <li key={i} className="text-sm text-[#2D2A26] truncate">{loc.label}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="px-4 py-6 rounded-xl bg-[#F8F5F0] border border-[#E8E4DD] text-center">
-                <p className="text-sm text-[#6B7280]">Once this business has services, stories and relationships, a summary will appear here.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Brand */}
-        {tab === 'brand' && (
-          <div className="flex flex-col gap-5">
-            <Field label="Business Name">
-              <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Tagline">
-              <input type="text" value={draft.tagline} onChange={e => set('tagline', e.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Description">
-              <textarea id="description" value={draft.description} onChange={e => set('description', e.target.value)} rows={5} className={inputClass + ' resize-y'} />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Location">
-                <select value={draft.location.id} onChange={e => { const l = locations.find(x => x.id === e.target.value); if (l) set('location', l) }} className={inputClass}>
-                  {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
-              </Field>
-              <Field label="Industry">
-                <select value={draft.industry.id} onChange={e => { const i = industries.find(x => x.id === e.target.value); if (i) set('industry', i) }} className={inputClass}>
-                  {industries.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-                </select>
-              </Field>
-            </div>
-            <Field label="Topics">
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {allTopics.map(topic => {
-                  const active = draft.topics.some(t => t.id === topic.id)
-                  return (
-                    <button key={topic.id} onClick={() => toggleTopic(topic)}
-                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                      {topic.name}
-                    </button>
-                  )
-                })}
-              </div>
-            </Field>
-            <div className="flex flex-col gap-3 pt-3 border-t border-[#E8E4DD]">
-              <Field label="Website">
-                <input id="website" type="url" value={draft.website ?? ''} onChange={e => set('website', e.target.value || undefined)} className={inputClass} placeholder="https://" />
-              </Field>
-              <Field label="Instagram">
-                <input id="socials" type="url" value={draft.instagram ?? ''} onChange={e => set('instagram', e.target.value || undefined)} className={inputClass} placeholder="https://instagram.com/" />
-              </Field>
-              <Field label="LinkedIn">
-                <input type="url" value={draft.linkedin ?? ''} onChange={e => set('linkedin', e.target.value || undefined)} className={inputClass} placeholder="https://linkedin.com/" />
-              </Field>
-            </div>
-
-            <div className="pt-3 border-t border-[#E8E4DD] flex flex-col gap-5">
-              <Field label="Primary Logo" hint="Square, min 400×400px. Shown small and centred wherever this business appears.">
-                <MediaUpload
-                  value={draft.logo}
-                  onChange={v => set('logo', v)}
-                  label="Upload logo"
-                  aspect="logo"
-                  uploadOptions={{ founderId: draft.founderId, businessId: draft.id, usageType: 'business-logo' }}
-                />
-                {draft.logo.includes('/placeholders/') && <p className="text-xs text-red-600 mt-1.5 text-center">⚠ Using placeholder — add your real logo.</p>}
-              </Field>
-
-              <Field label="Cover Image" hint="Shown at the top of your business profile page (16:9 or wider).">
-                <MediaUpload
-                  value={draft.coverImage}
-                  onChange={v => set('coverImage', v)}
-                  label="Upload cover"
-                  aspect="wide"
-                  uploadOptions={{ founderId: draft.founderId, businessId: draft.id, usageType: 'business-cover' }}
-                />
-                {draft.coverImage.includes('/placeholders/') && <p className="text-xs text-amber-600">⚠ Using placeholder — add a real cover image.</p>}
-              </Field>
-            </div>
-
-            <div className="pt-3 border-t border-[#E8E4DD] flex flex-col gap-4">
-              <p className="text-sm font-semibold text-[#2D2A26]">How you appear in search</p>
-              <Field label="Search Title" hint="~60 characters. Shown as the clickable headline in search results.">
-                <input id="seoTitle" type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} />
-                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoTitle ?? '').length}/60</p>
-              </Field>
-              <Field label="Search Description" hint="140–160 characters. Shown under the title in search results.">
-                <textarea id="seoDescription" value={draft.seoDescription ?? ''} onChange={e => set('seoDescription', e.target.value || undefined)} rows={3} className={inputClass + ' resize-none'} />
-                <p className="text-xs text-right text-[#9CA3AF] mt-1">{(draft.seoDescription ?? '').length}/160</p>
-              </Field>
-            </div>
-          </div>
-        )}
-
-        {/* Relationships */}
-        {tab === 'relationships' && (
-          <RelationshipsPanel
-            groups={[
-              {
-                title: 'Founder',
-                items: owner ? [{ id: owner.id, label: owner.name, sublabel: owner.industry.name, path: `/founders/${owner.slug}`, image: owner.avatar }] : [],
-              },
-              {
-                title: 'Stories',
-                items: bizStories.map(s => ({ id: s.id, label: s.title, sublabel: s.status, path: `/stories/${s.slug}`, image: s.coverImage })),
-              },
-            ]}
-          />
-        )}
-
-        {/* Appears On */}
-        {tab === 'appears-on' && (
-          <div>
-            <p className="text-sm text-[#6B7280] mb-4">Every location where this business is surfaced in the Village.</p>
-            <AppearsOnPanel locations={appearsOn} />
-          </div>
-        )}
-
-        {/* Services — combines real Services and legacy Offers into one workspace. */}
-        {tab === 'services' && (
-          <div className="flex flex-col gap-3">
-            {bizServices.length === 0 && draft.offers.length === 0 && (
-              <p className="text-xs text-[#9CA3AF] text-center py-4">No services yet. Add one people can book or buy below.</p>
-            )}
-
-            {bizServices.map(service => {
-              const svcMissing = getServiceMissingItems(service)
-              const isEditing = editingServiceId === service.id
-              return (
-                <div key={service.id} className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <button onClick={() => setEditingServiceId(isEditing ? null : service.id)} className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-semibold text-[#2D2A26] truncate">{service.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {service.price && <span className="text-xs text-[#C86A43] font-medium">{service.price}{service.priceType ? ` / ${service.priceType}` : ''}</span>}
-                        {service.isDigitalProduct && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">Digital resource</span>}
-                        <HealthBadge missing={svcMissing} size="sm" />
-                      </div>
-                    </button>
-                    <OverflowMenu
-                      archived={service.status === 'archived'}
-                      onEdit={() => setEditingServiceId(service.id)}
-                      onDuplicate={() => { void duplicateService(service.id).then(refreshServices) }}
-                      onArchive={() => { void updateService({ ...service, status: 'archived' }).then(refreshServices) }}
-                      onRestore={() => { void updateService({ ...service, status: 'published' }).then(refreshServices) }}
-                      onDelete={() => { void deleteService(service.id).then(() => { if (editingServiceId === service.id) setEditingServiceId(null); refreshServices() }) }}
-                    />
-                  </div>
-                  {isEditing && (
-                    <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[#F3EDE6] pt-3">
-                      <Field label="Name">
-                        <input type="text" value={service.name} onChange={e => { void updateService({ ...service, name: e.target.value }).then(refreshServices) }} className={inputClass} />
-                      </Field>
-                      <Field label="Description">
-                        <textarea value={service.description} onChange={e => { void updateService({ ...service, description: e.target.value }).then(refreshServices) }} rows={2} className={inputClass + ' resize-none'} />
-                      </Field>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Field label="Price">
-                          <input type="text" value={service.price ?? ''} onChange={e => { void updateService({ ...service, price: e.target.value || undefined }).then(refreshServices) }} className={inputClass} placeholder="$500" />
-                        </Field>
-                        <Field label="CTA Label">
-                          <input type="text" value={service.ctaLabel} onChange={e => { void updateService({ ...service, ctaLabel: e.target.value }).then(refreshServices) }} className={inputClass} placeholder="Book now" />
-                        </Field>
-                      </div>
-                      <Field label="Booking Link">
-                        <input type="url" value={service.ctaUrl} onChange={e => { void updateService({ ...service, ctaUrl: e.target.value }).then(refreshServices) }} className={inputClass} placeholder="https://" />
-                      </Field>
-
-                      <label className="flex items-center gap-2 text-xs text-[#4B4845]">
-                        <input
-                          type="checkbox"
-                          checked={service.isDigitalProduct ?? false}
-                          onChange={e => { void updateService({ ...service, isDigitalProduct: e.target.checked }).then(refreshServices) }}
-                        />
-                        This is a digital product or downloadable resource
-                      </label>
-
-                      {service.isDigitalProduct && (
-                        <button
-                          onClick={() => void addServiceToLibrary(service)}
-                          disabled={addedToLibraryIds.has(service.id)}
-                          className="text-xs font-semibold text-[#C86A43] hover:underline text-left disabled:text-[#9CA3AF] disabled:no-underline w-fit"
-                        >
-                          {addedToLibraryIds.has(service.id) ? 'Added to Library ✓' : 'Feature this in Library →'}
-                        </button>
-                      )}
-
-                      <div className="border-t border-[#F3EDE6] pt-3">
-                        <p className="text-xs font-semibold text-[#2D2A26] mb-2">FAQs for this service</p>
-                        <p className="text-xs text-[#9CA3AF] mb-2">Real questions customers ask. Helps people understand this service and helps search engines and AI find it.</p>
-                        <FAQEditor
-                          faqs={service.faqs ?? []}
-                          onChange={faqs => { void updateService({ ...service, faqs }).then(refreshServices) }}
-                        />
-                      </div>
-
-                      <button onClick={() => setEditingServiceId(null)} className="text-xs text-[#9CA3AF] hover:text-[#2D2A26] self-start">Done</button>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-
-            {draft.offers.map((offer, i) => (
-              <div key={offer.id} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-widest">{offer.title || 'Offer'}</p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => void convertOfferToService(i)}
-                      className="text-xs font-semibold text-[#C86A43] hover:underline"
-                    >
-                      Upgrade to Service →
-                    </button>
-                    <button
-                      onClick={() => removeOffer(i)}
-                      className="px-1.5 py-0.5 text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
-                      title="Remove offer"
-                    >✕</button>
-                  </div>
-                </div>
-                <Field label="Title">
-                  <input type="text" value={offer.title} onChange={e => setOffer(i, 'title', e.target.value)} className={inputClass} placeholder="e.g. Brand Strategy Session" />
-                </Field>
-                <Field label="Description">
-                  <textarea value={offer.description} onChange={e => setOffer(i, 'description', e.target.value)} rows={2} className={inputClass + ' resize-none'} placeholder="What does this offer include?" />
-                </Field>
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label="CTA Label">
-                    <input type="text" value={offer.ctaLabel} onChange={e => setOffer(i, 'ctaLabel', e.target.value)} className={inputClass} placeholder="Book now" />
-                  </Field>
-                  <Field label="CTA URL">
-                    <input type="url" value={offer.ctaUrl} onChange={e => setOffer(i, 'ctaUrl', e.target.value)} className={inputClass} placeholder="https://" />
-                  </Field>
-                </div>
-              </div>
-            ))}
-
-            <button
-              onClick={() => void handleAddService()}
-              className="w-full py-2.5 rounded-xl border border-dashed border-[#C86A43]/40 text-xs font-semibold text-[#C86A43] hover:bg-[#C86A43]/5 transition-colors"
-            >
-              + Add Service
-            </button>
-          </div>
-        )}
-
-        {/* Discovery — how this business is found, by search engines, AI, and publishers */}
-        {tab === 'discovery' && (
-          <div className="flex flex-col gap-5">
-            <div className="bg-[#F8F5F0] rounded-xl px-4 py-3">
-              <p className="text-xs text-[#6B7280] leading-relaxed">
-                Tell publishers what {draft.name || 'this business'} does and who it's a good fit for. This helps
-                other founders decide whether to recommend or collaborate with you — none of it is required to publish.
-              </p>
-            </div>
-
-            <BusinessDiscoveryProfile
-              businessId={draft.id}
-              business={draft}
-              onBusinessUpdate={updated => {
-                setDraft(updated)
-                onSave(updated)
-              }}
-            />
-          </div>
-        )}
-
-        {tab === 'programs' && (
-          <BusinessProgramsTab
-            businessId={draft.id}
-            partnerEnabled={!!draft.partnerEnabled}
-          />
-        )}
-
-        {tab === 'publishing' && (
-          <div className="flex flex-col gap-4">
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-3">Status</p>
-              <div className="flex gap-2 flex-wrap">
-                {(['draft', 'submitted', 'published', 'featured', 'archived'] as const).map(s => (
-                  <button key={s} onClick={() => set('status', s)}
-                    className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${draft.status === s ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-[#2D2A26]">Featured</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">Show in Village homepage</p>
-                </div>
-                <button onClick={() => set('featured', !draft.featured)}
-                  className={`w-11 h-6 rounded-full transition-colors ${draft.featured ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}>
-                  <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform mx-1 ${draft.featured ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 text-sm">
-              <p className="font-semibold text-[#2D2A26] mb-1">Created</p>
-              <p className="text-[#6B7280]">{draft.createdAt}</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── DashboardBusinessesPage ───────────────────────────────────────────────────
-
-export function DashboardBusinessesPage() {
-  const { user } = useAuth()
-  const currentFounder = getCurrentFounder(user)
-  const founderId = currentFounder?.id
-
-  const [bizList,    setBizList]    = useState<Business[]>(() => getBusinesses({ founderId }))
-  const [selectedId, setSelectedId] = useState<string | null>(() => getBusinesses({ founderId })[0]?.id ?? null)
-  const [checked,    setChecked]    = useState<Set<string>>(new Set())
-
-  const selected = bizList.find(b => b.id === selectedId) ?? null
-
-  async function handleAddBusiness() {
-    const ts = new Date().toISOString()
-    const defaultLocation = currentFounder?.location ?? locations[0]
-    const defaultIndustry = currentFounder?.industry ?? industries[0]
-    const draft: Business = {
-      id: crypto.randomUUID(),
-      slug: '',
-      name: '',
-      tagline: '',
-      description: '',
-      logo: '',
-      coverImage: '',
-      founderId: founderId ?? '',
-      location: defaultLocation,
-      industry: defaultIndustry,
-      topics: [],
-      offers: [],
-      status: 'draft',
-      featured: false,
-      createdAt: ts,
-    }
-    const result = await updateBusiness(draft)
-    if (result.success) {
-      setBizList(getBusinesses({ founderId }))
-      setSelectedId(draft.id)
-    }
-  }
-
-  function toggleChecked(id: string) {
-    setChecked(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
-      return next
-    })
-  }
-
-  async function handleBulkArchive() {
-    const targets = bizList.filter(b => checked.has(b.id))
-    await Promise.all(targets.map(b => updateBusiness({ ...b, status: 'archived' })))
-    setBizList(getBusinesses({ founderId }))
-    setChecked(new Set())
-  }
-
-  async function handleBulkDelete() {
-    const ids = [...checked]
-    await Promise.all(ids.map(id => deleteBusiness(id)))
-    setBizList(prev => prev.filter(b => !checked.has(b.id)))
-    if (selectedId && checked.has(selectedId)) setSelectedId(null)
-    setChecked(new Set())
-  }
-
-  function handleSave(updated: Business) {
-    setBizList(prev => prev.map(b => b.id === updated.id ? updated : b))
-  }
-
-  async function handleArchiveToggle(biz: Business) {
-    const next = { ...biz, status: (biz.status === 'archived' ? 'draft' : 'archived') as Business['status'] }
-    const result = await updateBusiness(next)
-    if (result.success) handleSave(next)
-  }
-
-  async function handleDuplicate(biz: Business) {
-    const result = await duplicateBusiness(biz.id)
-    if (result.success) {
-      const fresh = getBusinesses({ founderId })
-      setBizList(fresh)
-      const copy = fresh.find(b => b.name === `${biz.name} (Copy)`)
-      if (copy) setSelectedId(copy.id)
-    }
-  }
-
-  async function handleDelete(biz: Business) {
-    const result = await deleteBusiness(biz.id)
-    if (result.success) {
-      setBizList(prev => prev.filter(b => b.id !== biz.id))
-      if (selectedId === biz.id) setSelectedId(null)
-    }
-  }
-
-  return (
-    <div className="flex h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-
-      {/* ── List ──────────────────────────────────────────────────────── */}
-      <div className="w-64 shrink-0 border-r border-[#E8E4DD] bg-white flex flex-col overflow-hidden">
-        <div className="px-4 pt-5 pb-3 shrink-0 flex items-start justify-between gap-2">
-          <div>
-            <h1 className="text-base font-bold text-[#2D2A26]">Businesses</h1>
-            <p className="text-xs text-[#9CA3AF] mt-0.5">{bizList.length} total</p>
-          </div>
-          <button
-            onClick={() => void handleAddBusiness()}
-            className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0 pt-0.5"
-          >
-            + Add
-          </button>
-        </div>
-        {checked.size > 0 && (
-          <div className="px-4 py-2 bg-[#FBF1EB] border-y border-[#F0DDD2] flex items-center justify-between gap-2 shrink-0">
-            <p className="text-xs font-medium text-[#C86A43]">{checked.size} selected</p>
-            <div className="flex items-center gap-3">
-              <button onClick={() => void handleBulkArchive()} className="text-xs font-semibold text-[#C86A43] hover:underline">Archive</button>
-              <ConfirmButton
-                label="Delete"
-                confirmLabel="Confirm"
-                onConfirm={() => void handleBulkDelete()}
-                className="text-xs font-semibold text-red-600 hover:underline"
+              </button>
+              <OverflowMenu
+                archived={service.status === 'archived'}
+                onEdit={() => setEditingServiceId(service.id)}
+                onDuplicate={() => { void duplicateService(service.id).then(refresh) }}
+                onArchive={() => { void updateService({ ...service, status: 'archived' }).then(refresh) }}
+                onRestore={() => { void updateService({ ...service, status: 'published' }).then(refresh) }}
+                onDelete={() => { void deleteService(service.id).then(() => { if (editingServiceId === service.id) setEditingServiceId(null); refresh() }) }}
               />
             </div>
-          </div>
-        )}
-        <div className="flex-1 overflow-y-auto">
-          {bizList.length === 0 && (
-            <div className="px-4 py-8 text-center">
-              <p className="text-sm font-medium text-[#2D2A26] mb-1">You haven't added a business yet</p>
-              <p className="text-xs text-[#9CA3AF] mb-4 leading-relaxed">
-                Add the business you publish through, so services, offers and partnerships have somewhere to live.
-              </p>
-              <button
-                onClick={() => void handleAddBusiness()}
-                className="text-xs font-semibold text-white bg-[#C86A43] px-4 py-2 rounded-lg hover:bg-[#b05a35] transition-colors"
-              >
-                + Add a business
-              </button>
-            </div>
-          )}
-          {bizList.map(biz => {
-            const missing = getBusinessMissingItems(biz, getServices(undefined, biz.id))
-            const recommended = missing.filter(m => m.severity === 'critical').length
-            return (
-              <div
-                key={biz.id}
-                onClick={() => setSelectedId(biz.id)}
-                className={`w-full text-left flex items-center gap-2 px-4 py-3 border-b border-[#F3EDE6] transition-colors cursor-pointer ${
-                  selectedId === biz.id ? 'bg-[#C86A43]/5 border-l-2 border-l-[#C86A43]' : 'hover:bg-[#F8F5F0]'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={checked.has(biz.id)}
-                  onClick={e => e.stopPropagation()}
-                  onChange={() => toggleChecked(biz.id)}
-                  className="shrink-0 w-3.5 h-3.5 accent-[#C86A43]"
-                />
-                <div className="w-8 h-8 rounded-lg shrink-0 bg-[#F3EDE6] flex items-center justify-center overflow-hidden p-1">
-                  <img src={biz.logo} alt="" className="w-full h-full object-contain" />
+            {isEditing && (
+              <div className="px-4 pb-4 flex flex-col gap-3 border-t border-[#F3EDE6] pt-3">
+                <Field label="Name">
+                  <input type="text" value={service.name} onChange={e => { void updateService({ ...service, name: e.target.value }).then(refresh) }} className={inputClass} />
+                </Field>
+                <Field label="Description">
+                  <textarea value={service.description} onChange={e => { void updateService({ ...service, description: e.target.value }).then(refresh) }} rows={2} className={inputClass + ' resize-none'} />
+                </Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Price">
+                    <input type="text" value={service.price ?? ''} onChange={e => { void updateService({ ...service, price: e.target.value || undefined }).then(refresh) }} className={inputClass} placeholder="$500" />
+                  </Field>
+                  <Field label="CTA Label">
+                    <input type="text" value={service.ctaLabel} onChange={e => { void updateService({ ...service, ctaLabel: e.target.value }).then(refresh) }} className={inputClass} placeholder="Book now" />
+                  </Field>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#2D2A26] truncate">{biz.name}</p>
-                  <HealthBadge missing={missing} />
-                </div>
-                {recommended > 0 && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">{recommended}</span>
-                )}
-                <OverflowMenu
-                  archived={biz.status === 'archived'}
-                  onEdit={() => setSelectedId(biz.id)}
-                  onDuplicate={() => void handleDuplicate(biz)}
-                  onArchive={() => void handleArchiveToggle(biz)}
-                  onRestore={() => void handleArchiveToggle(biz)}
-                  onDelete={() => void handleDelete(biz)}
-                />
-              </div>
-            )
-          })}
-        </div>
-      </div>
+                <Field label="Booking Link">
+                  <input type="url" value={service.ctaUrl} onChange={e => { void updateService({ ...service, ctaUrl: e.target.value }).then(refresh) }} className={inputClass} placeholder="https://" />
+                </Field>
 
-      {/* ── Detail ────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-hidden bg-[#F8F5F0]">
-        {selected ? (
-          <BusinessDetailPane
-            key={selected.id}
-            biz={selected}
-            onSave={handleSave}
-            onDuplicate={handleDuplicate}
-            onDelete={handleDelete}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-[#9CA3AF]">Select a business to edit</p>
+                <label className="flex items-center gap-2 text-xs text-[#4B4845]">
+                  <input
+                    type="checkbox"
+                    checked={service.isDigitalProduct ?? false}
+                    onChange={e => { void updateService({ ...service, isDigitalProduct: e.target.checked }).then(refresh) }}
+                  />
+                  This is a digital product or downloadable resource
+                </label>
+
+                {service.isDigitalProduct && (
+                  <button
+                    onClick={() => void addServiceToLibrary(service)}
+                    disabled={addedToLibraryIds.has(service.id)}
+                    className="text-xs font-semibold text-[#C86A43] hover:underline text-left disabled:text-[#9CA3AF] disabled:no-underline w-fit"
+                  >
+                    {addedToLibraryIds.has(service.id) ? 'Added to Library ✓' : 'Feature this in Library →'}
+                  </button>
+                )}
+
+                <div className="border-t border-[#F3EDE6] pt-3">
+                  <p className="text-xs font-semibold text-[#2D2A26] mb-2">FAQs for this service</p>
+                  <p className="text-xs text-[#9CA3AF] mb-2">Real questions customers ask. Helps people understand this service and helps search engines and AI find it.</p>
+                  <FAQEditor
+                    faqs={service.faqs ?? []}
+                    onChange={faqs => { void updateService({ ...service, faqs }).then(refresh) }}
+                  />
+                </div>
+
+                <button onClick={() => setEditingServiceId(null)} className="text-xs text-[#9CA3AF] hover:text-[#2D2A26] self-start">Done</button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        )
+      })}
+
+      {business.offers.map((offer, i) => (
+        <div key={offer.id} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-widest">{offer.title || 'Offer'}</p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => void convertOfferToService(i)}
+                className="text-xs font-semibold text-[#C86A43] hover:underline"
+              >
+                Upgrade to Service →
+              </button>
+              <button
+                onClick={() => removeOffer(i)}
+                className="px-1.5 py-0.5 text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
+                title="Remove offer"
+              >✕</button>
+            </div>
+          </div>
+          <Field label="Title">
+            <input type="text" value={offer.title} onChange={e => setOffer(i, 'title', e.target.value)} className={inputClass} placeholder="e.g. Brand Strategy Session" />
+          </Field>
+          <Field label="Description">
+            <textarea value={offer.description} onChange={e => setOffer(i, 'description', e.target.value)} rows={2} className={inputClass + ' resize-none'} placeholder="What does this offer include?" />
+          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="CTA Label">
+              <input type="text" value={offer.ctaLabel} onChange={e => setOffer(i, 'ctaLabel', e.target.value)} className={inputClass} placeholder="Book now" />
+            </Field>
+            <Field label="CTA URL">
+              <input type="url" value={offer.ctaUrl} onChange={e => setOffer(i, 'ctaUrl', e.target.value)} className={inputClass} placeholder="https://" />
+            </Field>
+          </div>
+        </div>
+      ))}
+
+      <button
+        onClick={() => void handleAddService()}
+        className="w-full py-2.5 rounded-xl border border-dashed border-[#C86A43]/40 text-xs font-semibold text-[#C86A43] hover:bg-[#C86A43]/5 transition-colors"
+      >
+        + Add Service
+      </button>
     </div>
   )
 }
