@@ -348,7 +348,7 @@ function FormatStep({ draft, onChange, onNext, onNextSkippingMedia }: {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div>
             <p className="font-heading text-2xl font-semibold text-white leading-snug">
-              CULO Creatives is exclusively in Canva.
+              CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
             </p>
           </div>
           <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
