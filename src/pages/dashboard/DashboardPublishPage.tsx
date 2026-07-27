@@ -202,7 +202,7 @@ function importedContentPatch(item: ImportedContent, draft: PublishDraft): Parti
     importedContentId: item.id,
     title: draft.title || item.title,
     subtitle: draft.subtitle || item.subtitle || '',
-    summary: draft.summary || item.summary || item.autoSummary || item.description || '',
+    summary: draft.summary || item.subtitle || item.autoSummary || item.description || '',
     blog: draft.blog || item.description || item.diaryNote || item.transcriptText || '',
     coverImage: draft.coverImage || item.thumbnailUrl || '',
     // ctaLabel's default is 'Read more' (never falsy), so a plain `||` would

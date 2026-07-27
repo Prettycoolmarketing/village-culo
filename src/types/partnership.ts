@@ -613,8 +613,12 @@ export interface FounderProgramEnrollment {
 export interface FounderAffiliateLink {
   id: string
   founderId: string
-  businessId: string
-  businessWebsite?: string      // stored for display; sourced from Business record
+  // Either a real Village business (businessId set, name/website come from
+  // that record) or a typed-in name for anything else the founder
+  // recommends — a tool, an external business, anything not in the Village.
+  businessId?: string
+  businessName?: string
+  businessWebsite?: string      // stored for display; sourced from Business record when businessId is set
   affiliateUrl: string
   createdAt: string
   updatedAt: string

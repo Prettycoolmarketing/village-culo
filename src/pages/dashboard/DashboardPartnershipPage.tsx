@@ -302,12 +302,12 @@ function AffiliateLinksOverview({ founderId }: { founderId: string }) {
       ) : (
         <div className="divide-y divide-[#F3EDE6]">
           {links.map(link => {
-            const biz = getBusiness(link.businessId)
-            const clicks = trackingService.getAll({ founderId, businessId: link.businessId, linkType: 'affiliate' }).length
+            const biz = link.businessId ? getBusiness(link.businessId) : undefined
+            const clicks = link.businessId ? trackingService.getAll({ founderId, businessId: link.businessId, linkType: 'affiliate' }).length : 0
             return (
               <div key={link.id} className="flex items-center gap-3 py-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#2D2A26]">{biz?.name ?? 'Unknown brand'}</p>
+                  <p className="text-sm font-semibold text-[#2D2A26]">{link.businessName || biz?.name || 'Unknown brand'}</p>
                   <p className="text-xs text-[#9CA3AF] font-mono truncate">{link.affiliateUrl}</p>
                 </div>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] shrink-0">

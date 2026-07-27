@@ -11,7 +11,7 @@ import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
-import { getStories } from '../../services/stories'
+import { getStories, getStory, updateStory } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
 import { getIdeas } from '../../services/ideas'
@@ -163,21 +163,23 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
   )
   const [saved, setSaved] = useState(false)
   const [affiliateLinks, setAffiliateLinks] = useState(() => affiliateLinkService.getAll({ founderId }))
-  const [newAffiliateBusinessId, setNewAffiliateBusinessId] = useState('')
+  const [newAffiliateBusinessName, setNewAffiliateBusinessName] = useState('')
   const [newAffiliateUrl, setNewAffiliateUrl] = useState('')
 
   const allBusinesses = getBusinesses({ founderId })
-  const linkedBusinessIds = new Set(affiliateLinks.map(l => l.businessId))
-  const unlinkedBusinesses = allBusinesses.filter(b => !linkedBusinessIds.has(b.id))
 
   async function handleAddAffiliateLink() {
-    if (!newAffiliateBusinessId || !newAffiliateUrl.trim()) return
-    const biz = allBusinesses.find(b => b.id === newAffiliateBusinessId)
+    if (!newAffiliateBusinessName.trim() || !newAffiliateUrl.trim()) return
+    // If the typed name matches one of the founder's own Village businesses,
+    // link it properly (so CULO's auto-detection in stories still works) —
+    // otherwise it's just a name, no businessId, and that's fine.
+    const matched = allBusinesses.find(b => b.name.trim().toLowerCase() === newAffiliateBusinessName.trim().toLowerCase())
     const link = {
       id: crypto.randomUUID(),
       founderId,
-      businessId: newAffiliateBusinessId,
-      businessWebsite: biz?.website,
+      businessId: matched?.id,
+      businessName: newAffiliateBusinessName.trim(),
+      businessWebsite: matched?.website,
       affiliateUrl: newAffiliateUrl.trim(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -185,7 +187,7 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
     const result = await affiliateLinkService.upsert(link)
     if (result.success) {
       setAffiliateLinks(affiliateLinkService.getAll({ founderId }))
-      setNewAffiliateBusinessId('')
+      setNewAffiliateBusinessName('')
       setNewAffiliateUrl('')
     }
   }
@@ -375,7 +377,7 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
               const biz = allBusinesses.find(b => b.id === link.businessId)
               return (
                 <div key={link.id} className="flex items-center gap-2 border border-[#E8E4DD] rounded-lg px-3 py-2">
-                  <p className="text-xs font-medium text-[#2D2A26] w-32 shrink-0 truncate">{biz?.name ?? 'Unknown business'}</p>
+                  <p className="text-xs font-medium text-[#2D2A26] w-32 shrink-0 truncate">{link.businessName || biz?.name || 'Unknown business'}</p>
                   <input type="url" value={link.affiliateUrl}
                     onChange={e => void handleUpdateAffiliateUrl(link.id, e.target.value)}
                     className="flex-1 px-2 py-1 text-xs border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]"
@@ -388,26 +390,22 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
           </div>
         )}
 
-        {unlinkedBusinesses.length > 0 && (
-          <div className="flex items-center gap-2">
-            <select value={newAffiliateBusinessId} onChange={e => setNewAffiliateBusinessId(e.target.value)}
-              className="text-xs border border-[#E8E4DD] rounded-lg px-2 py-2 bg-white shrink-0">
-              <option value="">Add a business…</option>
-              {unlinkedBusinesses.map(b => <option key={b.id} value={b.id}>{b.name || 'Untitled business'}</option>)}
-            </select>
-            <input type="url" value={newAffiliateUrl} onChange={e => setNewAffiliateUrl(e.target.value)}
-              placeholder="Their affiliate link"
-              className="flex-1 px-2 py-2 text-xs border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]" />
-            <button onClick={() => void handleAddAffiliateLink()} disabled={!newAffiliateBusinessId || !newAffiliateUrl.trim()}
-              className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors shrink-0">
-              Add
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <input type="text" value={newAffiliateBusinessName} onChange={e => setNewAffiliateBusinessName(e.target.value)}
+            placeholder="Business name"
+            className="w-36 shrink-0 px-2 py-2 text-xs border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]" />
+          <input type="url" value={newAffiliateUrl} onChange={e => setNewAffiliateUrl(e.target.value)}
+            placeholder="Their affiliate link"
+            className="flex-1 px-2 py-2 text-xs border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]" />
+          <button onClick={() => void handleAddAffiliateLink()} disabled={!newAffiliateBusinessName.trim() || !newAffiliateUrl.trim()}
+            className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors shrink-0">
+            Add
+          </button>
+        </div>
 
         <div className="border-t border-[#E8E4DD] pt-4">
-          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Outside tools &amp; software I use</label>
-          <p className="text-xs text-[#9CA3AF] mb-2">For things that will never have a Village business or affiliate link. One per line — "Content 360" not "marketing tools."</p>
+          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Recommended tools I use</label>
+          <p className="text-xs text-[#9CA3AF] mb-2">One per line — "Content 360" not "marketing tools."</p>
           <textarea
             value={(profile.genuineRecommendations ?? []).join('\n')}
             onChange={e => {
@@ -538,9 +536,15 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
   founderIndustry: Industry
 }) {
   const [businesses, setBusinesses] = useState<Business[]>(() => getBusinesses({ founderId }))
-  const [activeId, setActiveId] = useState<string | null>(() => businesses[0]?.id ?? null)
+  const [searchParams] = useSearchParams()
+  const [activeId, setActiveId] = useState<string | null>(() => {
+    const requested = searchParams.get('businessId')
+    if (requested && businesses.some(b => b.id === requested)) return requested
+    return businesses[0]?.id ?? null
+  })
   const [draft, setDraft] = useState<Business | null>(() => {
-    const first = businesses[0]
+    const requested = searchParams.get('businessId')
+    const first = (requested && businesses.find(b => b.id === requested)) || businesses[0]
     if (!first) return null
     return loadDraft<Business>(`culo_v1_business_draft_${first.id}`) ?? first
   })
@@ -632,8 +636,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
   return (
     <div className="max-w-2xl flex flex-col gap-5">
       <TabIntro>
-        Every business you run. Keep it simple here — logo, description, where you work, what you're
-        about. Discovery Profile, Partner Programs and Services live in the full Businesses workspace.
+        Every business you run — logo, description, where you work, what you're about.
       </TabIntro>
 
       <div className="flex flex-wrap gap-2">
@@ -739,7 +742,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
               </button>
               {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
               <Link to={`/dashboard/businesses`} className="text-xs text-[#C86A43] hover:underline font-medium">
-                Advanced settings →
+                Discovery Profile, Partnerships &amp; Services →
               </Link>
             </div>
             <ConfirmButton
@@ -927,7 +930,7 @@ export function DashboardProfilePage() {
   if (founderTop) recommendations.push({ key: `founder-${draft.id}`, title: 'Your founder profile', action: founderTop, path: '/dashboard/profile' })
   for (const b of founderBusinesses) {
     const [top] = getBusinessMissingItems(b)
-    if (top) recommendations.push({ key: `biz-${b.id}`, title: b.name, action: top, path: '/dashboard/businesses' })
+    if (top) recommendations.push({ key: `biz-${b.id}`, title: b.name, action: top, path: `/dashboard/profile?tab=businesses&businessId=${b.id}` })
   }
   for (const s of founderStories) {
     const [top] = getStoryMissingItems(s)
@@ -1266,16 +1269,28 @@ export function DashboardProfilePage() {
 
               async function handleImportedStatusChange(id: string, status: ImportedContentStatus) {
                 importedContentService.updateStatus(id, status)
+                const item = importedContentService.get(id)
                 if (status === 'published' || status === 'featured') {
-                  const item = importedContentService.get(id)
                   if (item && draft && !item.relatedStoryId && isReadyToPublish(item)) {
                     const story = buildStoryFromImport(item, draft)
                     story.status = status
                     const result = await publishStoryCore(story)
                     if (!result.success) setSaveError(result.error ?? 'Could not publish. Please try again.')
+                  } else if (item && item.relatedStoryId) {
+                    // Already published once before — flipping back to
+                    // Published/Featured here should re-show the existing
+                    // story, not silently do nothing.
+                    const existing = getStory(item.relatedStoryId)
+                    if (existing) await updateStory({ ...existing, status })
                   } else if (item && !isReadyToPublish(item)) {
                     setSaveError('Give this a real title before publishing it.')
                   }
+                } else if (item?.relatedStoryId) {
+                  // Switched back to Draft/Archived after having been
+                  // published — the live story must stop being publicly
+                  // visible too, not just this import record.
+                  const existing = getStory(item.relatedStoryId)
+                  if (existing) await updateStory({ ...existing, status })
                 }
                 refreshImported()
               }

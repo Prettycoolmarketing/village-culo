@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { useAuth } from '../../contexts/AuthContext'
@@ -16,6 +16,7 @@ import {
 import { syncImportEditsToStory } from '../../services/publishStory'
 import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
+import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { deriveSeoTitle, deriveSeoDescription } from '../../utils/seo'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import {
@@ -31,7 +32,6 @@ import { resolveWebsiteFeed, type WebsiteFeedCandidate } from '../../services/we
 import type {
   ImportedContent,
   ImportedContentStatus,
-  ImportedContentVisibility,
 } from '../../types/importedContent'
 import type { ConnectedSource, ConnectedSourceType, PodcastSourceMeta } from '../../types/connectedSource'
 import type { NormalizedImportItem } from '../../services/connectors/types'
@@ -59,12 +59,6 @@ export const STATUS_OPTIONS: { value: ImportedContentStatus; label: string }[] =
   { value: 'draft',     label: 'Draft'     },
   { value: 'published', label: 'Published' },
   { value: 'archived',  label: 'Archived'  },
-]
-
-const VISIBILITY_OPTIONS: { value: ImportedContentVisibility; label: string; note: string }[] = [
-  { value: 'private',      label: 'Private',      note: 'Only you can see this'             },
-  { value: 'discoverable', label: 'Discoverable', note: 'Appears in search and topic pages' },
-  { value: 'public',       label: 'Public',       note: 'Shown on your profile'             },
 ]
 
 const TRANSCRIPT_STATUS_OPTIONS = [
@@ -1186,14 +1180,6 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="mb-4">
-        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Summary</label>
-        <textarea value={draft.summary ?? ''}
-          onChange={e => field('summary', e.target.value || undefined)}
-          rows={2} className={TEXTAREA} placeholder="One or two sentences, the reader's takeaway." />
-      </div>
-
       {/* Blog */}
       <div className="mb-4">
         <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Blog</label>
@@ -1208,12 +1194,12 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         )}
       </div>
 
-      {/* Search & AI preview — always derived from Title + Blog/Summary, no
+      {/* Search & AI preview — always derived from Title + Subtitle/Blog, no
           separate field to fill in and keep in sync by hand. */}
       <div className="mb-4 bg-[#F8F5F0] rounded-lg px-4 py-3">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1.5">What search engines and AI will show</p>
         <p className="text-sm text-[#C86A43] font-medium truncate">{deriveSeoTitle(draft.title)}</p>
-        <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.summary, draft.description)}</p>
+        <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.subtitle, draft.description)}</p>
       </div>
 
       {/* Thumbnail */}
@@ -1386,7 +1372,8 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           </div>
         </div>
 
-        {/* Status + Visibility */}
+        {/* Status — Publish is what actually controls visibility, so there's
+            no separate Visibility field here to fall out of sync with it. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div>
             <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Status</label>
@@ -1396,16 +1383,11 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
               {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Visibility</label>
-            <select value={draft.visibility}
-              onChange={e => field('visibility', e.target.value as ImportedContentVisibility)}
-              className={SELECT}>
-              {VISIBILITY_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label} — {o.note}</option>
-              ))}
-            </select>
-          </div>
+          {draft.sourcePlatform !== 'canva' && (
+            <div className="flex flex-col justify-end">
+              <CreateWithCuloCTA variant="button" label="Create with CULO Creatives exclusively in Canva" />
+            </div>
+          )}
         </div>
 
         {/* Save / Cancel */}
@@ -1554,6 +1536,7 @@ export function SavedRow({
 
 export function DashboardImportContentPage() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const founderId = getCurrentFounderId(user) ?? 'dev-user'
   const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
 
@@ -1608,6 +1591,10 @@ export function DashboardImportContentPage() {
     // import record and the founder's edit never actually shows up.
     if (draft.relatedStoryId) await syncImportEditsToStory(draft)
     setDraft(null)
+    // Saving an edit is a mid-task action, not an end state — send them back
+    // to where they'd actually continue publishing this piece, instead of
+    // leaving them stranded on the now-empty Import page.
+    navigate('/dashboard/profile?tab=content')
   }
 
   function handleCancel() { setDraft(null) }

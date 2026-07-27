@@ -22,12 +22,11 @@ export interface ImportedContent {
   embedUrl?: string
   thumbnailUrl?: string
   title: string
+  // Subtitle doubles as the short reader-facing summary — no separate
+  // Summary field, since the two were redundant. Falls back to
+  // autoSummary/description when publishing if never set.
   subtitle?: string
   description?: string
-  // A short reader-facing summary, distinct from the full Blog text in
-  // `description` — same distinction as Story.summary vs Story.blog. Falls
-  // back to autoSummary/description when publishing if never set.
-  summary?: string
   publishedAt?: string
   importedAt: string
   status: ImportedContentStatus

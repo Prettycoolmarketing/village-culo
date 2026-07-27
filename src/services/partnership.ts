@@ -590,7 +590,7 @@ export const affiliateLinkService = {
       cacheKey: KEYS.affiliateLinks,
       item: link,
       table: TABLES.affiliateLinks,
-      toRow: l => ({ id: l.id, founder_id: l.founderId, business_id: l.businessId, data: l }),
+      toRow: l => ({ id: l.id, founder_id: l.founderId, business_id: l.businessId ?? null, data: l }),
     })
   },
 
