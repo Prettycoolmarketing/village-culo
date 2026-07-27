@@ -1361,6 +1361,15 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
         <p className="text-sm font-bold text-[#2D2A26] mb-4">Publishing this story will also:</p>
         <div className="flex flex-col gap-2.5">
           {founder && <CheckItem label={`Strengthen your Founder Profile (${founder.name})`} />}
+
+          <div>
+            <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1.5">Mentioned in this story</p>
+            <p className="text-[11px] text-[#9CA3AF] mb-2">
+              {allBusinesses.length > 0 || allFounders.length > 0
+                ? 'Found by name in your writing. Link them to this story, or remove any that shouldn\'t be here.'
+                : 'Nothing found by name yet — type below to link a founder or business anyway.'}
+            </p>
+          </div>
           {allBusinesses.map(b => (
             <div key={b.id} className="flex items-center gap-2.5 text-sm">
               <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-[#5E6B4A]">
@@ -1388,9 +1397,6 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
             </div>
           ))}
 
-          {/* Manually connect a business or founder that wasn't mentioned by
-              name in the text (so nothing auto-detected it) — type instead
-              of only being able to remove what was already found. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             <div className="relative">
               <input
