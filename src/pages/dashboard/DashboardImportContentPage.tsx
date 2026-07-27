@@ -1653,10 +1653,13 @@ export function DashboardImportContentPage() {
           </div>
 
           <YouTubeConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
-
-          <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
-
-          <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
+          {sources.filter(s => s.sourceType === 'youtube').length > 0 && (
+            <div className="flex flex-col gap-2 -mt-3 mb-6">
+              {sources.filter(s => s.sourceType === 'youtube').map(source => (
+                <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={() => { loadSources(); reportImported(1) }} />
+              ))}
+            </div>
+          )}
 
           <div ref={instagramCardRef}>
             <InstagramArchiveImportCard
@@ -1667,15 +1670,20 @@ export function DashboardImportContentPage() {
             />
           </div>
 
-          {sources.length > 0 && (
-            <div className="flex flex-col gap-2 mt-3">
-              {sources.map(source => (
-                <ConnectedSourceRow
-                  key={source.id}
-                  source={source}
-                  isHighVolume={isHighVolume}
-                  onChanged={() => { loadSources(); reportImported(1) }}
-                />
+          <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
+          {sources.filter(s => s.sourceType === 'website-rss').length > 0 && (
+            <div className="flex flex-col gap-2 -mt-3 mb-6">
+              {sources.filter(s => s.sourceType === 'website-rss').map(source => (
+                <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={() => { loadSources(); reportImported(1) }} />
+              ))}
+            </div>
+          )}
+
+          <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
+          {sources.filter(s => s.sourceType === 'podcast-rss').length > 0 && (
+            <div className="flex flex-col gap-2 -mt-3 mb-6">
+              {sources.filter(s => s.sourceType === 'podcast-rss').map(source => (
+                <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={() => { loadSources(); reportImported(1) }} />
               ))}
             </div>
           )}
