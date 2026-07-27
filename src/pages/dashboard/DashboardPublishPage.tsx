@@ -547,37 +547,50 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
               <p className="text-xs text-[#9CA3AF]">
                 Don't want to start from scratch? Use CULO Creatives in Canva to design your slides.
               </p>
-              {draft.carouselSlides.map((slide, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-xs text-[#9CA3AF] w-5 shrink-0 text-right">{i + 1}</span>
-                  <input
-                    type="url"
-                    value={slide}
-                    onChange={e => {
-                      const next = [...draft.carouselSlides]
-                      next[i] = e.target.value
-                      onChange({ carouselSlides: next })
-                    }}
-                    placeholder="Image URL or /assets/filename.jpg"
-                    className={inp}
-                  />
-                  <button
-                    onClick={() => onChange({ carouselSlides: draft.carouselSlides.filter((_, j) => j !== i) })}
-                    className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0 px-1"
-                  >✕</button>
+              {draft.carouselSlides.filter(Boolean).length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {draft.carouselSlides.map((slide, i) => slide ? (
+                    <div key={i} className="flex items-center gap-2 bg-white rounded-lg border border-[#E8E4DD] p-2">
+                      <span className="text-xs text-[#9CA3AF] w-5 shrink-0 text-right">{i + 1}</span>
+                      <img src={slide} alt="" className="w-10 h-10 rounded object-cover shrink-0 bg-[#F3EDE6]" />
+                      <div className="flex-1" />
+                      <button
+                        onClick={() => {
+                          if (i === 0) return
+                          const next = [...draft.carouselSlides]
+                          ;[next[i - 1], next[i]] = [next[i]!, next[i - 1]!]
+                          onChange({ carouselSlides: next })
+                        }}
+                        disabled={i === 0}
+                        className="text-xs text-[#9CA3AF] hover:text-[#C86A43] disabled:opacity-30 disabled:hover:text-[#9CA3AF] shrink-0 px-1"
+                        aria-label="Move earlier"
+                      >↑</button>
+                      <button
+                        onClick={() => {
+                          if (i === draft.carouselSlides.length - 1) return
+                          const next = [...draft.carouselSlides]
+                          ;[next[i], next[i + 1]] = [next[i + 1]!, next[i]!]
+                          onChange({ carouselSlides: next })
+                        }}
+                        disabled={i === draft.carouselSlides.length - 1}
+                        className="text-xs text-[#9CA3AF] hover:text-[#C86A43] disabled:opacity-30 disabled:hover:text-[#9CA3AF] shrink-0 px-1"
+                        aria-label="Move later"
+                      >↓</button>
+                      <button
+                        onClick={() => onChange({ carouselSlides: draft.carouselSlides.filter((_, j) => j !== i) })}
+                        className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0 px-1"
+                      >✕</button>
+                    </div>
+                  ) : null)}
+                  <p className="text-[11px] text-[#9CA3AF]">First image is used as cover automatically. Use ↑↓ to reorder.</p>
                 </div>
-              ))}
-              <button
-                onClick={() => onChange({ carouselSlides: [...draft.carouselSlides, ''] })}
-                className="text-xs text-[#C86A43] hover:underline text-left ml-7"
-              >
-                + Add slide
-              </button>
-              <p className="text-[11px] text-[#9CA3AF] ml-7 mb-1">First image is used as cover automatically.</p>
+              )}
               <MediaUpload
                 onChange={v => onChange({ carouselSlides: [...draft.carouselSlides.filter(Boolean), v] })}
+                onChangeMultiple={urls => onChange({ carouselSlides: [...draft.carouselSlides.filter(Boolean), ...urls] })}
+                multiple
                 accept="image"
-                label="Upload an image to add as a slide"
+                label="Upload images to add as slides — select as many as you need"
                 aspect="auto"
                 uploadOptions={{ ...uploadOpts, usageType: 'carousel-slide' }}
               />
@@ -835,6 +848,10 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
   const singleBusiness = businesses.length === 1 ? businesses[0] : null
   const founder = getFounders().find(f => f.id === draft.founderId)
   const [customTopicInput, setCustomTopicInput] = useState('')
+  // Protects the current topic selection from accidental clicks — useful
+  // once the auto-picked topics look right and you don't want to risk
+  // bumping one off while scrolling/tapping through the list.
+  const [topicsLocked, setTopicsLocked] = useState(false)
 
   // Live, non-persisted analysis — same engine as handlePublish, just previewed.
   const intel = useMemo(() => {
@@ -966,7 +983,19 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
       </BuilderCard>
 
       {/* ── 5. Topics ────────────────────────────────────────────────────── */}
-      <BuilderCard title="Topics" subtitle="First topic is primary. Click a topic to make it primary. Don't see yours? Write your own below: it gets its own page in the Village.">
+      <BuilderCard title="Topics" subtitle="Automatically picked up from your story. First topic is primary — click a topic to make it primary. Don't see yours? Write your own below: it gets its own page in the Village.">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[11px] text-[#9CA3AF]">{topicsLocked ? 'Locked — clicking won\'t change your selection.' : 'Click to add/remove, or lock to protect your current picks.'}</p>
+          <button
+            type="button"
+            onClick={() => setTopicsLocked(v => !v)}
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors shrink-0 ${
+              topicsLocked ? 'bg-[#5E6B4A]/10 text-[#5E6B4A] border-[#5E6B4A]/30' : 'bg-white text-[#9CA3AF] border-[#E8E4DD] hover:border-[#C86A43]/40'
+            }`}
+          >
+            {topicsLocked ? '🔒 Locked' : '🔓 Lock selection'}
+          </button>
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {allTopics.map(topic => {
             const idx = draft.topics.findIndex(t => t.id === topic.id)
@@ -974,14 +1003,14 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
             return (
               <button
                 key={topic.id}
-                onClick={() => active ? makePrimaryTopic(topic) : toggleTopic(topic)}
-                onDoubleClick={() => toggleTopic(topic)}
-                title={active ? (idx === 0 ? 'Primary topic' : 'Click to make primary, double-click to remove') : 'Click to add'}
+                onClick={() => { if (topicsLocked) return; if (active) makePrimaryTopic(topic); else toggleTopic(topic) }}
+                onDoubleClick={() => { if (!topicsLocked) toggleTopic(topic) }}
+                title={topicsLocked ? 'Locked — unlock to edit' : active ? (idx === 0 ? 'Primary topic' : 'Click to make primary, double-click to remove') : 'Click to add'}
                 className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
                   idx === 0 ? 'bg-[#C86A43] text-white border-[#C86A43] font-semibold'
                   : active ? 'bg-[#F3EDE6] text-[#C86A43] border-[#C86A43]/40'
                   : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                }`}
+                } ${topicsLocked ? 'opacity-70 cursor-default' : ''}`}
               >
                 {idx === 0 && '★ '}{topic.name}
               </button>
@@ -1005,31 +1034,33 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
           })}
         </div>
 
-        <div className="flex gap-2 mt-3">
-          <input
-            type="text"
-            value={customTopicInput}
-            onChange={e => setCustomTopicInput(e.target.value)}
-            onKeyDown={e => {
-              if (e.key !== 'Enter' || !customTopicInput.trim()) return
-              toggleTopic(createCustomTopic(customTopicInput, [...allTopics, ...draft.topics]))
-              setCustomTopicInput('')
-            }}
-            placeholder="Write your own topic…"
-            className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-[#E8E4DD] focus:outline-none focus:border-[#C86A43]"
-          />
-          <button
-            onClick={() => {
-              if (!customTopicInput.trim()) return
-              toggleTopic(createCustomTopic(customTopicInput, [...allTopics, ...draft.topics]))
-              setCustomTopicInput('')
-            }}
-            disabled={!customTopicInput.trim()}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#2D2A26] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1a1815] transition-colors shrink-0"
-          >
-            Add
-          </button>
-        </div>
+        {!topicsLocked && (
+          <div className="flex gap-2 mt-3">
+            <input
+              type="text"
+              value={customTopicInput}
+              onChange={e => setCustomTopicInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key !== 'Enter' || !customTopicInput.trim()) return
+                toggleTopic(createCustomTopic(customTopicInput, [...allTopics, ...draft.topics]))
+                setCustomTopicInput('')
+              }}
+              placeholder="Write your own topic…"
+              className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-[#E8E4DD] focus:outline-none focus:border-[#C86A43]"
+            />
+            <button
+              onClick={() => {
+                if (!customTopicInput.trim()) return
+                toggleTopic(createCustomTopic(customTopicInput, [...allTopics, ...draft.topics]))
+                setCustomTopicInput('')
+              }}
+              disabled={!customTopicInput.trim()}
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#2D2A26] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1a1815] transition-colors shrink-0"
+            >
+              Add
+            </button>
+          </div>
+        )}
 
         {draft.topics.length > 0 && (
           <button onClick={() => toggleTopic(draft.topics[0])} className="text-xs text-[#9CA3AF] hover:text-red-500 mt-2">
@@ -1297,6 +1328,8 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
 }) {
   const founder = getFounders().find(f => f.id === draft.founderId)
   const business = getBusinesses().find(b => b.id === draft.businessId)
+  const [founderSearch, setFounderSearch] = useState('')
+  const [businessSearch, setBusinessSearch] = useState('')
 
   const intel = useMemo(() => {
     const previewStory = buildPreviewStory(draft, founder)
@@ -1354,6 +1387,69 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
                 className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
             </div>
           ))}
+
+          {/* Manually connect a business or founder that wasn't mentioned by
+              name in the text (so nothing auto-detected it) — type instead
+              of only being able to remove what was already found. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <div className="relative">
+              <input
+                type="text"
+                value={businessSearch}
+                onChange={e => setBusinessSearch(e.target.value)}
+                placeholder="Type a business name to connect…"
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[#E8E4DD] focus:outline-none focus:border-[#C86A43]"
+              />
+              {businessSearch.trim().length > 0 && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-[#E8E4DD] rounded-lg shadow-md max-h-40 overflow-y-auto">
+                  {getBusinesses()
+                    .filter(b => b.name.toLowerCase().includes(businessSearch.trim().toLowerCase()) && !allBusinesses.some(x => x.id === b.id))
+                    .slice(0, 6)
+                    .map(b => (
+                      <button
+                        key={b.id}
+                        onClick={() => { onChange({ extraBusinessIds: [...draft.extraBusinessIds, b.id] }); setBusinessSearch('') }}
+                        className="block w-full text-left px-3 py-2 text-xs text-[#2D2A26] hover:bg-[#F8F5F0]"
+                      >
+                        {b.name}
+                      </button>
+                    ))}
+                  {getBusinesses().filter(b => b.name.toLowerCase().includes(businessSearch.trim().toLowerCase()) && !allBusinesses.some(x => x.id === b.id)).length === 0 && (
+                    <p className="px-3 py-2 text-xs text-[#9CA3AF]">No matching business found.</p>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                value={founderSearch}
+                onChange={e => setFounderSearch(e.target.value)}
+                placeholder="Type a founder name to connect…"
+                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[#E8E4DD] focus:outline-none focus:border-[#C86A43]"
+              />
+              {founderSearch.trim().length > 0 && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-[#E8E4DD] rounded-lg shadow-md max-h-40 overflow-y-auto">
+                  {getFounders()
+                    .filter(f => f.name.toLowerCase().includes(founderSearch.trim().toLowerCase()) && !allFounders.some(x => x.id === f.id))
+                    .slice(0, 6)
+                    .map(f => (
+                      <button
+                        key={f.id}
+                        onClick={() => { onChange({ extraFounderIds: [...draft.extraFounderIds, f.id] }); setFounderSearch('') }}
+                        className="block w-full text-left px-3 py-2 text-xs text-[#2D2A26] hover:bg-[#F8F5F0]"
+                      >
+                        {f.name}
+                      </button>
+                    ))}
+                  {getFounders().filter(f => f.name.toLowerCase().includes(founderSearch.trim().toLowerCase()) && !allFounders.some(x => x.id === f.id)).length === 0 && (
+                    <p className="px-3 py-2 text-xs text-[#9CA3AF]">No matching founder found.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           {relatedContentItems.length > 0 && (
             <CheckItem label={`Link to ${relatedContentItems.length} related ${relatedContentItems.length === 1 ? 'story' : 'stories'}`} />
           )}

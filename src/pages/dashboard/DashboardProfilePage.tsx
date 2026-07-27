@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react'
-import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder } from '../../services/founders'
@@ -862,6 +862,8 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 export function DashboardProfilePage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const welcomeBack = Boolean((location.state as { welcomeBack?: boolean } | null)?.welcomeBack)
   const currentFounder = getCurrentFounder(user)
   const [draft, setDraft]   = useState<Founder | null>(() => {
     if (!currentFounder) return null
@@ -1075,6 +1077,12 @@ export function DashboardProfilePage() {
 
   return (
     <div className="flex flex-col h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      {welcomeBack && (
+        <div className="mx-8 mt-6 px-4 py-3 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 text-[#5E6B4A] text-sm rounded-lg">
+          Welcome back — this is your existing Village profile. Everything below is already yours to edit.
+        </div>
+      )}
 
       {/* Page header */}
       <div className="flex items-center justify-between px-8 pt-8 pb-5 shrink-0">

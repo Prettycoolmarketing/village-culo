@@ -290,39 +290,55 @@ function StoryDetailPane({ story, onSave, onDuplicate, onDelete }: StoryDetailPa
                   <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-widest">Carousel</p>
                 </div>
                 <div className="px-4 py-3 flex flex-col gap-3">
-                  {(draft.carouselImages ?? []).map((img, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <img src={img} alt="" className="w-10 h-10 rounded object-cover shrink-0 bg-[#F3EDE6]" />
-                      <input
-                        type="url"
-                        value={img}
-                        onChange={e => {
-                          const next = [...(draft.carouselImages ?? [])]
-                          next[i] = e.target.value
-                          set('carouselImages', next)
-                        }}
-                        className={inputClass}
-                        placeholder={`Slide ${i + 1} URL`}
-                      />
-                      <button
-                        onClick={() => set('carouselImages', (draft.carouselImages ?? []).filter((_, j) => j !== i))}
-                        className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+                  {(draft.carouselImages ?? []).length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {(draft.carouselImages ?? []).map((img, i) => {
+                        const images = draft.carouselImages ?? []
+                        return (
+                          <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
+                            <span className="text-xs text-[#9CA3AF] w-5 shrink-0 text-right">{i + 1}</span>
+                            <img src={img} alt="" className="w-10 h-10 rounded object-cover shrink-0 bg-[#F3EDE6]" />
+                            <div className="flex-1" />
+                            <button
+                              onClick={() => {
+                                if (i === 0) return
+                                const next = [...images]
+                                ;[next[i - 1], next[i]] = [next[i]!, next[i - 1]!]
+                                set('carouselImages', next)
+                              }}
+                              disabled={i === 0}
+                              className="text-xs text-[#9CA3AF] hover:text-[#C86A43] disabled:opacity-30 disabled:hover:text-[#9CA3AF] shrink-0 px-1"
+                              aria-label="Move earlier"
+                            >↑</button>
+                            <button
+                              onClick={() => {
+                                if (i === images.length - 1) return
+                                const next = [...images]
+                                ;[next[i], next[i + 1]] = [next[i + 1]!, next[i]!]
+                                set('carouselImages', next)
+                              }}
+                              disabled={i === images.length - 1}
+                              className="text-xs text-[#9CA3AF] hover:text-[#C86A43] disabled:opacity-30 disabled:hover:text-[#9CA3AF] shrink-0 px-1"
+                              aria-label="Move later"
+                            >↓</button>
+                            <button
+                              onClick={() => set('carouselImages', images.filter((_, j) => j !== i))}
+                              className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+                          </div>
+                        )
+                      })}
                     </div>
-                  ))}
-                  <button
-                    id="carouselImages"
-                    onClick={() => set('carouselImages', [...(draft.carouselImages ?? []), ''])}
-                    className="text-xs text-[#C86A43] hover:underline text-left mt-1">
-                    + Add slide (by URL)
-                  </button>
+                  )}
                   <MediaUpload
-                    onChange={v => set('carouselImages', [...(draft.carouselImages ?? []).filter(Boolean), v])}
+                    onChange={v => set('carouselImages', [...(draft.carouselImages ?? []), v])}
+                    onChangeMultiple={urls => set('carouselImages', [...(draft.carouselImages ?? []), ...urls])}
+                    multiple
                     accept="image"
-                    label="Upload an image to add as a slide"
+                    label="Upload images to add as slides — select as many as you need"
                     aspect="auto"
                     uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
                   />
-                  <p className="text-[10px] text-[#9CA3AF]">One slide is fine to publish with — add as many more as you like.</p>
+                  <p className="text-[10px] text-[#9CA3AF]">One slide is fine to publish with — add as many more as you like. Use ↑↓ to reorder.</p>
                 </div>
               </div>
             )}

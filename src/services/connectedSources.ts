@@ -34,12 +34,12 @@ const PLATFORM_BY_SOURCE_TYPE: Record<ConnectedSourceType, ImportedContent['sour
 function now() { return new Date().toISOString() }
 function today() { return new Date().toISOString().slice(0, 10) }
 
-// No meaningful daily ceiling — a scan brings in everything unseen it can
-// find in one pass (bounded only by MAX_VIDEOS_PER_SCAN in the YouTube
-// connector). High enough that "dailyLimitReached" effectively never fires
-// for a normal channel/feed size, while still existing as a seam in case a
-// real throughput limit is ever needed again.
-const DAILY_IMPORT_LIMIT = 5000
+// Regular founders bring in 20 previous posts a day — a deliberate pace, not
+// an API/storage constraint, so a founder writes a real story per post
+// instead of dumping years of content in one unreviewed batch. CAPO staff
+// (and curated-profile imports done on someone's behalf) get the much
+// higher HIGH_VOLUME_DAILY_LIMIT override below via isHighVolume.
+const DAILY_IMPORT_LIMIT = 20
 
 export interface ScanResult {
   imported: number

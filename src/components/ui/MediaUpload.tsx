@@ -31,6 +31,12 @@ function inferKindFromUrl(url: string): 'image' | 'video' | 'audio' | 'document'
 interface MediaUploadProps {
   value?: string
   onChange: (url: string, media?: TrackedMedia) => void
+  // When set, the picker/drop zone accepts several files at once (e.g.
+  // selecting 10 photos for a carousel in one go) — each uploads in turn and
+  // the full list of resulting URLs is reported here instead of one at a
+  // time through onChange. Ignored unless `multiple` is true.
+  onChangeMultiple?: (urls: string[]) => void
+  multiple?: boolean
   accept?: MediaAccept
   label?: string
   // 'logo' is a small, centred, padded square with object-contain — for brand
@@ -44,6 +50,8 @@ interface MediaUploadProps {
 export function MediaUpload({
   value,
   onChange,
+  onChangeMultiple,
+  multiple = false,
   accept = 'image',
   label,
   aspect = 'square',
@@ -60,6 +68,7 @@ export function MediaUpload({
     accept === 'audio'    ? 'Upload audio (MP3, M4A, WAV)' :
     accept === 'document' ? 'Upload document (PDF, DOCX)' :
     accept === 'any'      ? 'Upload a file' :
+    multiple             ? 'Upload images' :
     'Upload image'
 
   async function handleFile(file: File | undefined) {
@@ -76,10 +85,33 @@ export function MediaUpload({
     else if (result.media) onChange(result.media.publicUrl, result.media)
   }
 
+  async function handleFiles(fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return
+    if (fileList.length === 1 || !onChangeMultiple) {
+      await handleFile(fileList[0])
+      return
+    }
+    setError('')
+    if (!isSupabaseConfigured) {
+      setError('Connect Supabase to enable uploads.')
+      return
+    }
+    setUploading(true)
+    const urls: string[] = []
+    for (const file of Array.from(fileList)) {
+      const result = await mediaUploadsService.uploadAndTrack(file, uploadOptions)
+      if (result.media) urls.push(result.media.publicUrl)
+      else if (result.error) setError(result.error)
+    }
+    setUploading(false)
+    if (urls.length > 0) onChangeMultiple(urls)
+  }
+
   function onDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault()
     setDragOver(false)
-    void handleFile(e.dataTransfer.files?.[0])
+    if (multiple) void handleFiles(e.dataTransfer.files)
+    else void handleFile(e.dataTransfer.files?.[0])
   }
 
   const kind = value ? inferKindFromUrl(value) : accept === 'any' ? 'image' : accept
@@ -93,7 +125,8 @@ export function MediaUpload({
         ref={inputRef}
         type="file"
         accept={ACCEPT_MIME[accept]}
-        onChange={e => void handleFile(e.target.files?.[0])}
+        multiple={multiple}
+        onChange={e => { if (multiple) void handleFiles(e.target.files); else void handleFile(e.target.files?.[0]) }}
         className="hidden"
       />
       <div

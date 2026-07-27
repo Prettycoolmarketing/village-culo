@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
 import { slugify } from '../utils/slugify'
 import { useAuth } from '../contexts/AuthContext'
-import { linkOwnFounder } from '../services/currentFounder'
+import { linkOwnFounder, getCurrentFounder } from '../services/currentFounder'
 import { updateFounder } from '../services/founders'
 import { updateBusiness } from '../services/businesses'
 import { updateService } from '../services/serviceOfferings'
@@ -810,6 +810,7 @@ export function OnboardingPage() {
   usePageTitle('Get started')
 
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [step, setStep] = useState<Step>('welcome')
   const [draft, setDraft] = useState<Draft>(empty)
   const [publishing, setPublishing] = useState(false)
@@ -817,9 +818,21 @@ export function OnboardingPage() {
   const [founderSlug, setFounderSlug] = useState('')
 
   // If the visitor is already signed in (e.g. they came from /dashboard/login's
-  // post-signup redirect), skip the account-creation step entirely.
+  // post-signup redirect), skip the account-creation step entirely. But if
+  // signing in/up actually resolves to an EXISTING founder — most often
+  // someone whose curated profile claim was just approved, signing up with
+  // the matching claimEmail for the first time — send them straight to that
+  // profile instead of walking them through onboarding again, which would
+  // otherwise create a second, duplicate founder record for the same person.
   useEffect(() => {
-    if (step === 'account' && user) next()
+    if (step !== 'account' || !user) return
+    const existing = getCurrentFounder(user)
+    if (existing) {
+      void linkOwnFounder(existing.id)
+      navigate('/dashboard/profile', { state: { welcomeBack: true } })
+      return
+    }
+    next()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, user])
 

@@ -241,9 +241,9 @@ function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founder
         <div className="flex flex-col sm:flex-row gap-2">
           <input type="text" value={input} onChange={e => setInput(e.target.value)}
             placeholder="Podcast URL or name"
-            className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
+            className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
           <button onClick={() => void handleFind()} disabled={!input.trim()}
-            className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
+            className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
             Find my podcast
           </button>
         </div>
@@ -287,9 +287,9 @@ function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founder
           <div className="flex flex-col sm:flex-row gap-2">
             <input type="url" value={manualFeedUrl} onChange={e => setManualFeedUrl(e.target.value)}
               placeholder="https://yourpodcast.com/feed.xml"
-              className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
+              className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
             <button onClick={() => void handleManualConnect()} disabled={!manualFeedUrl.trim()}
-              className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
+              className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
               Connect
             </button>
           </div>
@@ -312,7 +312,7 @@ function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founder
           <div className="flex flex-col sm:flex-row gap-2 mb-3">
             <input type="text" value={episodeSearch} onChange={e => setEpisodeSearch(e.target.value)}
               placeholder="Search episodes…"
-              className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]" />
+              className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]" />
             <select value={sortOrder} onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
               className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white">
               <option value="newest">Newest first</option>
@@ -447,9 +447,9 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
         <div className="flex flex-col sm:flex-row gap-2">
           <input type="url" value={url} onChange={e => setUrl(e.target.value)}
             placeholder="https://open.spotify.com/episode/... or https://podcasts.apple.com/.../id...?i=..."
-            className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
+            className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
           <button onClick={() => void handleResolve()} disabled={!url.trim()}
-            className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
+            className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
             Add episode
           </button>
         </div>
@@ -519,24 +519,34 @@ function YouTubeConnectForm({ founderId, isHighVolume, onConnected }: { founderI
 
   return (
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5 mb-6">
-      <p className="text-sm font-semibold text-[#2D2A26] mb-3">Import your YouTube content</p>
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Import your YouTube content</p>
+      <p className="text-xs text-[#9CA3AF] mb-3">
+        {isHighVolume
+          ? `Connect your channel to bring in your whole back-catalogue (up to ${HIGH_VOLUME_DAILY_LIMIT.toLocaleString()} videos/day).`
+          : 'Connect your channel to bring in up to 20 previous videos a day — enough to write a real story about each one, not just dump years of content at once.'}
+      </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
           value={value}
           onChange={e => setValue(e.target.value)}
           placeholder={SOURCE_TYPE_HINTS.youtube}
-          className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <button
           onClick={() => void handleConnect()}
           disabled={busy || !value.trim()}
-          className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+          className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           {busy ? 'Connecting…' : 'Connect'}
         </button>
       </div>
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+      {!isHighVolume && (
+        <p className="text-[11px] text-[#9CA3AF] mt-2">
+          Once these are in, tell the real story behind each one — what happened, what you learned — for visibility that actually means something.
+        </p>
+      )}
     </div>
   )
 }
@@ -595,12 +605,12 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
           value={value}
           onChange={e => setValue(e.target.value)}
           placeholder="Paste your website URL"
-          className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <button
           onClick={() => void handleConnect()}
           disabled={busy || !value.trim()}
-          className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+          className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           {busy ? 'Connecting…' : 'Connect'}
         </button>
@@ -1609,13 +1619,8 @@ export function DashboardImportContentPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#2D2A26]">Import Content</h1>
         <p className="text-sm text-[#6B7280] mt-1 max-w-2xl">
-          Bring your old YouTube videos, LinkedIn articles, podcasts and more into the Village — so they can become searchable, connected and discoverable again.
+          Bring in your old YouTube, podcast or blog content — embedded from the original source, never re-uploaded.
         </p>
-      </div>
-
-      {/* Ethics notice */}
-      <div className="mb-6 px-4 py-3 rounded-lg bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 text-xs text-[#5E6B4A] leading-relaxed max-w-3xl">
-        CULO Village embeds content from its original platform and always links back to the source. Your content is not downloaded or re-uploaded. Authorship and platform attribution are preserved.
       </div>
 
       {/* Just-imported prompt — the full list of everything imported lives in
@@ -1638,10 +1643,6 @@ export function DashboardImportContentPage() {
       {/* Connect a channel or feed */}
       {!draft && (
         <div className="max-w-2xl">
-          <p className="text-sm text-[#6B7280] mb-4">
-            Connect a channel or feed so Village can pull in your own already-public content automatically.
-          </p>
-
           <div ref={canvaCardRef}>
             <CanvaImportCard
               founderId={founderId}
