@@ -45,7 +45,6 @@ import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
 import { DashboardForgotPasswordPage } from './pages/dashboard/DashboardForgotPasswordPage'
 import { DashboardResetPasswordPage }  from './pages/dashboard/DashboardResetPasswordPage'
 import { DashboardProfilePage }      from './pages/dashboard/DashboardProfilePage'
-import { DashboardStoriesPage }      from './pages/dashboard/DashboardStoriesPage'
 import { DashboardIdeasPage }        from './pages/dashboard/DashboardIdeasPage'
 import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPage'
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
@@ -171,7 +170,8 @@ export default function App() {
             {/* Advanced business editing (Services, Discovery, Partnerships) moved into Profile's Businesses tab */}
             <Route path="businesses"     element={<Navigate to="/dashboard/profile?tab=businesses" replace />}   />
             <Route path="publish"         element={<DashboardPublishPage />}      />
-            <Route path="stories"        element={<DashboardStoriesPage />}      />
+            {/* Story editing moved into Profile's Content tab */}
+            <Route path="stories"        element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=published" replace />}      />
             <Route path="ideas"          element={<DashboardIdeasPage />}        />
             <Route path="library"        element={<DashboardLibraryPage />}      />
             <Route path="media"          element={<DashboardMediaPage />}        />

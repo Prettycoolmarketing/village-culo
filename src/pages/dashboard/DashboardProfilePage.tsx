@@ -28,6 +28,7 @@ import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { BusinessDiscoveryProfile, BusinessProgramsTab, BusinessServicesEditor } from '../../components/dashboard/BusinessWorkspace'
+import { StoryEditor } from '../../components/dashboard/StoryEditor'
 import {
   getFounderMissingItems,
   getBusinessMissingItems,
@@ -863,7 +864,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
                     <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5">Published</p>
                     <div className="border border-[#E8E4DD] rounded-lg divide-y divide-[#F3EDE6]">
                       {businessStories.map(story => (
-                        <Link key={story.id} to={`/dashboard/stories?edit=${story.id}`}
+                        <Link key={story.id} to={`/dashboard/profile?tab=content&contentSubTab=published&storyId=${story.id}`}
                           className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#FBF8F4] transition-colors">
                           <img src={story.coverImage} alt="" className="w-8 h-8 rounded object-cover shrink-0 bg-[#F3EDE6]" />
                           <p className="text-xs font-medium text-[#2D2A26] truncate flex-1">{story.title}</p>
@@ -950,13 +951,33 @@ export function DashboardProfilePage() {
   const [searchParams] = useSearchParams()
   const [tab, setTab]       = useState(() => searchParams.get('tab') ?? 'overview')
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
-  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published'>('imported')
+  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published'>(() =>
+    searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId') ? 'published' : 'imported'
+  )
+  const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
   const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>('all')
   const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedTick, setImportedTick] = useState(0)
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
   const [, forceBusinessRefresh] = useState(0)
+
+  // A recommendation link can point back at this same page with new query
+  // params (e.g. "?tab=content&storyId=X") — since it's the same route,
+  // React Router doesn't remount us, so the `useState(() => searchParams...)`
+  // initializers above only ever fire once. Without this, clicking such a
+  // link while already on Profile silently does nothing.
+  useEffect(() => {
+    const requestedTab = searchParams.get('tab')
+    if (requestedTab) setTab(requestedTab)
+    const storyId = searchParams.get('storyId')
+    if (storyId) {
+      setContentSubTab('published')
+      setEditingStoryId(storyId)
+    } else if (searchParams.get('contentSubTab') === 'published') {
+      setContentSubTab('published')
+    }
+  }, [searchParams])
 
   // Autosave to localStorage as the founder types — if they navigate away or
   // the tab closes before hitting Save, their edits are still there next time.
@@ -1007,7 +1028,7 @@ export function DashboardProfilePage() {
   }
   for (const s of founderStories) {
     const [top] = getStoryMissingItems(s)
-    if (top) recommendations.push({ key: `story-${s.id}`, title: s.title, action: top, path: '/dashboard/stories' })
+    if (top) recommendations.push({ key: `story-${s.id}`, title: s.title, action: top, path: `/dashboard/profile?tab=content&contentSubTab=published&storyId=${s.id}` })
   }
   if (founderStories.length === 0) {
     recommendations.push({
@@ -1272,7 +1293,7 @@ export function DashboardProfilePage() {
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderBusinesses.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Businesses</p>
               </Link>
-              <Link to="/dashboard/stories" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
+              <Link to="/dashboard/profile?tab=content&contentSubTab=published" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderStories.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Stories</p>
               </Link>
@@ -1452,52 +1473,66 @@ export function DashboardProfilePage() {
               )
             })()}
 
-            {contentSubTab === 'published' && (
-              <div>
-                {founderStories.length === 0 ? (
-                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
-                    <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
-                    <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
-                      Publish Story
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                    {founderStories.map(story => {
-                      const storyMissing = getStoryMissingItems(story)
-                      return (
-                        <Link key={story.id} to={`/dashboard/stories?edit=${story.id}`}
-                          className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
-                          <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
-                            <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
-                          </div>
-                          {storyMissing.length === 0 ? (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
-                              Ready to publish
+            {contentSubTab === 'published' && (() => {
+              const editingStory = editingStoryId ? founderStories.find(s => s.id === editingStoryId) : undefined
+              if (editingStory) {
+                return (
+                  <StoryEditor
+                    key={editingStory.id}
+                    story={editingStory}
+                    onSave={() => setImportedTick(t => t + 1)}
+                    onDelete={() => { setEditingStoryId(null); setImportedTick(t => t + 1) }}
+                    onClose={() => setEditingStoryId(null)}
+                  />
+                )
+              }
+              return (
+                <div>
+                  {founderStories.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                      <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
+                      <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+                        Publish Story
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                      {founderStories.map(story => {
+                        const storyMissing = getStoryMissingItems(story)
+                        return (
+                          <button key={story.id} onClick={() => setEditingStoryId(story.id)}
+                            className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors text-left">
+                            <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
+                              <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
+                            </div>
+                            {storyMissing.length === 0 ? (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
+                                Ready to publish
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
+                                {storyMissing.length} recommended
+                              </span>
+                            )}
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                              story.status === 'published' || story.status === 'featured'
+                                ? 'bg-green-100 text-green-700'
+                                : story.status === 'draft'
+                                ? 'bg-[#F3EDE6] text-[#9CA3AF]'
+                                : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {story.status}
                             </span>
-                          ) : (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
-                              {storyMissing.length} recommended
-                            </span>
-                          )}
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                            story.status === 'published' || story.status === 'featured'
-                              ? 'bg-green-100 text-green-700'
-                              : story.status === 'draft'
-                              ? 'bg-[#F3EDE6] text-[#9CA3AF]'
-                              : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {story.status}
-                          </span>
-                        </Link>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </div>
         )}
 
