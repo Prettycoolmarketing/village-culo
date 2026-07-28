@@ -590,7 +590,10 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
       industry: founderIndustry,
       topics: [],
       offers: [],
-      status: 'draft',
+      // Visible from the start — every business is either curated by CULO
+      // or added by a real joined member, so there's no reason to make
+      // someone flip a switch before it shows up.
+      status: 'published',
       featured: false,
       createdAt: now,
     }
@@ -812,7 +815,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
             <div>
               <p className="text-sm font-semibold text-[#2D2A26]">Appears On</p>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
-                Every public page this business currently shows up on — its own page, the Mercato
+                Every public page this business currently shows up on — its own page, the Businesses
                 directory (the full list of every Village business), the owning founder's profile,
                 any topic pages its stories are tagged with, and the homepage if featured. These are
                 different pages, not duplicates.

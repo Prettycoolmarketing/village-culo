@@ -16,7 +16,7 @@ const primaryLinks = [
 
 const discoverLinks = [
   { to: '/ideas',       label: 'Ideas'       },
-  { to: '/mercato',     label: 'Mercato'     },
+  { to: '/mercato',     label: 'Businesses'  },
   { to: '/map',         label: 'Map'         },
   { to: '/noticeboard', label: 'Noticeboard' },
   { to: '/library',     label: 'Library'     },

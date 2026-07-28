@@ -35,7 +35,7 @@ const topicOptions = [
 // ─── Mercato Page ──────────────────────────────────────────────────────────────
 
 export function MercatoPage() {
-  usePageTitle('Mercato')
+  usePageTitle('Businesses')
   const [activeLocation, setActiveLocation] = useState('all')
   const [activeIndustry, setActiveIndustry] = useState('all')
   const [activeTopic,    setActiveTopic]    = useState('all')
@@ -74,10 +74,10 @@ export function MercatoPage() {
               id="mercato-heading"
               className="font-heading text-4xl sm:text-5xl font-bold text-charcoal mb-4 leading-tight"
             >
-              Mercato
+              Businesses
             </h1>
             <p className="font-body text-lg text-muted leading-relaxed">
-              Mercato is the Village business directory — but businesses here are not just listings.
+              The Village business directory — but businesses here are not just listings.
               Every business is connected to the founder behind it, the stories they've shared, and
               the ideas they've contributed to the Village. Discover businesses
               through their knowledge, not just their category.
@@ -130,7 +130,7 @@ export function MercatoPage() {
             <p className="font-body text-sm text-muted" aria-live="polite" aria-atomic="true">
               {hasActiveFilter
                 ? `${matchCount} ${matchCount === 1 ? 'business' : 'businesses'} match your filters`
-                : `${matchCount} ${matchCount === 1 ? 'business' : 'businesses'} in Mercato`}
+                : `${matchCount} ${matchCount === 1 ? 'business' : 'businesses'} in the Village`}
             </p>
           </div>
         </InnerContainer>
@@ -146,7 +146,7 @@ export function MercatoPage() {
             filter={filter}
             columns={3}
             cardVariant="featured"
-            emptyTitle={hasActiveFilter ? 'No businesses match these filters' : 'The Mercato is setting up.'}
+            emptyTitle={hasActiveFilter ? 'No businesses match these filters' : 'Businesses are setting up.'}
             emptyMessage={hasActiveFilter
               ? 'Try clearing one or more filters to see more businesses.'
               : 'The first businesses will be listed here once their founders arrive and begin publishing to the Village.'

@@ -51,7 +51,7 @@ function BusinessNotFound({ slug }: { slug: string }) {
         <p className="font-body text-sm text-muted mb-8">It may not have been published yet, or the URL may have changed.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link to="/mercato" className="px-5 py-2.5 bg-accent text-charcoal text-sm font-semibold rounded-xl hover:bg-[#c4963e] transition-colors">
-            Browse Mercato
+            Browse Businesses
           </Link>
           <Link to="/" className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-accent hover:text-accent transition-colors">
             Back to Village
@@ -265,7 +265,7 @@ export function BusinessProfilePage() {
           <ol className="flex items-center gap-2 text-sm font-body text-muted flex-wrap" role="list">
             <li><Link to="/" className="hover:text-primary transition-colors">Village</Link></li>
             <li aria-hidden="true" className="text-border">›</li>
-            <li><Link to="/mercato" className="hover:text-primary transition-colors">Mercato</Link></li>
+            <li><Link to="/mercato" className="hover:text-primary transition-colors">Businesses</Link></li>
             <li aria-hidden="true" className="text-border">›</li>
             <li className="text-charcoal font-medium line-clamp-1" aria-current="page">{business.name}</li>
           </ol>

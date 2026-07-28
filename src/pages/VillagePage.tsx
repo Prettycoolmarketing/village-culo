@@ -138,13 +138,13 @@ export function VillagePage() {
           />
 
           <BusinessGrid
-            heading="Mercato"
+            heading="Businesses"
             subheading="Discover businesses through the stories and ideas behind them."
-            action={{ label: 'Browse Mercato', href: '/mercato' }}
+            action={{ label: 'Browse Businesses', href: '/mercato' }}
             filter={{ publicOnly: true, featured: true, limit: 3 }}
             columns={2}
             cardVariant="default"
-            emptyTitle="The Mercato is almost open."
+            emptyTitle="Businesses are almost open."
             emptyMessage="Featured businesses will appear here once their founders begin publishing."
           />
 

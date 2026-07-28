@@ -570,7 +570,7 @@ export function ArchivePage() {
                 { to: '/stories',   label: 'Stories',    count: results.stories.length,    color: 'text-primary',   bg: 'bg-primary/8'   },
                 { to: '/founders',  label: 'Founders',   count: results.founders.length,   color: 'text-secondary', bg: 'bg-secondary/8' },
                 { to: '/ideas',     label: 'Ideas',      count: results.ideas.length,      color: 'text-secondary', bg: 'bg-secondary/8' },
-                { to: '/mercato',   label: 'Mercato',    count: results.businesses.length, color: 'text-accent',    bg: 'bg-accent/8'    },
+                { to: '/mercato',   label: 'Businesses', count: results.businesses.length, color: 'text-accent',    bg: 'bg-accent/8'    },
                 { to: '/noticeboard', label: 'Noticeboard', count: results.events.length,  color: 'text-primary',   bg: 'bg-primary/8'   },
               ].map(({ to, label, count, color, bg }) => (
                 <Link

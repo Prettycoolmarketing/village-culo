@@ -17,7 +17,7 @@ const sections = [
     heading: 'People',
     links: [
       { to: '/founders',    label: 'Founders'    },
-      { to: '/mercato',     label: 'Mercato'     },
+      { to: '/mercato',     label: 'Businesses'  },
       { to: '/noticeboard', label: 'Noticeboard' },
     ],
   },

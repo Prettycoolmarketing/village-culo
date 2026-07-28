@@ -48,7 +48,7 @@ export function getBusinessAppearsOn(businessId: string): AppearsOnLocation[] {
   const biz = businesses.find(b => b.id === businessId)
   const founders = getFounders()
 
-  locs.push({ label: 'Mercato Directory', path: '/mercato', type: 'listing' })
+  locs.push({ label: 'Businesses Directory', path: '/mercato', type: 'listing' })
   if (biz) {
     locs.push({ label: 'Business Profile', path: `/businesses/${biz.slug}`, type: 'profile' })
     if (biz.featured) locs.push({ label: 'Village Homepage (featured)', path: '/', type: 'page' })
