@@ -31,8 +31,10 @@ export function getFounderAppearsOn(founderId: string): AppearsOnLocation[] {
       if (exp) locs.push({ label: `Expertise: ${exp.name}`, path: `/expertise/${exp.slug}`, type: 'page' })
     })
   }
-  stories.filter(s => s.founderId === founderId)
-    .forEach(s => locs.push({ label: `Story: ${s.title}`, path: `/stories/${s.slug}`, type: 'detail' }))
+  const founderStories = stories.filter(s => s.founderId === founderId)
+  founderStories.forEach(s => locs.push({ label: `Story: ${s.title}`, path: `/stories/${s.slug}`, type: 'detail' }))
+  const seenTopics = new Map(founderStories.flatMap(s => s.topics.map(t => [t.slug, t.name] as const)))
+  seenTopics.forEach((name, slug) => locs.push({ label: `Topic: ${name}`, path: `/topics/${slug}`, type: 'page' }))
   getIdeas({ founderId }).slice(0, 5)
     .forEach(i => locs.push({ label: `Idea: ${i.title}`, path: `/ideas/${i.slug}`, type: 'detail' }))
   getLibraryItems().filter(l => l.authorFounderId === founderId)
@@ -51,10 +53,16 @@ export function getBusinessAppearsOn(businessId: string): AppearsOnLocation[] {
     locs.push({ label: 'Business Profile', path: `/businesses/${biz.slug}`, type: 'profile' })
     if (biz.featured) locs.push({ label: 'Village Homepage (featured)', path: '/', type: 'page' })
   }
-  const owner = founders.find(f => f.businessId === businessId)
+  // Ownership lives on Business.founderId (a founder can run several
+  // businesses) — this used to look for it the other way around, on a
+  // single Founder.businessId, which meant the owning founder's profile
+  // never actually showed up here.
+  const owner = biz ? founders.find(f => f.id === biz.founderId) : undefined
   if (owner) locs.push({ label: `Founder: ${owner.name}`, path: `/founders/${owner.slug}`, type: 'profile' })
-  getStories({ businessId })
-    .forEach(s => locs.push({ label: `Story: ${s.title}`, path: `/stories/${s.slug}`, type: 'detail' }))
+  const bizStories = getStories({ businessId })
+  bizStories.forEach(s => locs.push({ label: `Story: ${s.title}`, path: `/stories/${s.slug}`, type: 'detail' }))
+  const seenTopics = new Map(bizStories.flatMap(s => s.topics.map(t => [t.slug, t.name] as const)))
+  seenTopics.forEach((name, slug) => locs.push({ label: `Topic: ${name}`, path: `/topics/${slug}`, type: 'page' }))
   expertiseList.filter(e => e.businessIds.includes(businessId))
     .forEach(e => locs.push({ label: `Expertise: ${e.name}`, path: `/expertise/${e.slug}`, type: 'page' }))
   return locs

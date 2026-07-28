@@ -776,6 +776,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
             <p className="text-xs text-[#9CA3AF] mt-0.5">What people can book or buy from this business.</p>
           </div>
           <BusinessServicesEditor
+            key={draft.id}
             business={draft}
             onOffersChange={offers => set('offers', offers)}
           />
@@ -787,7 +788,15 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
         const appearsOn = getBusinessAppearsOn(draft.id)
         return appearsOn.length > 0 ? (
           <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
-            <p className="text-sm font-semibold text-[#2D2A26]">Appears On</p>
+            <div>
+              <p className="text-sm font-semibold text-[#2D2A26]">Appears On</p>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">
+                Every public page this business currently shows up on — its own page, the Mercato
+                directory (the full list of every Village business), the owning founder's profile,
+                any topic pages its stories are tagged with, and the homepage if featured. These are
+                different pages, not duplicates.
+              </p>
+            </div>
             <AppearsOnPanel locations={appearsOn} />
           </div>
         ) : null
@@ -811,11 +820,13 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
           {showAdvanced && (
             <div className="px-5 pb-5 flex flex-col gap-5 border-t border-[#F3EDE6] pt-5">
               <BusinessDiscoveryProfile
+                key={draft.id}
                 businessId={draft.id}
                 business={draft}
                 onBusinessUpdate={updated => { setDraft(updated); setBusinesses(getBusinesses({ founderId })) }}
               />
               <BusinessProgramsTab
+                key={draft.id}
                 businessId={draft.id}
                 partnerEnabled={!!draft.partnerEnabled}
               />

@@ -131,8 +131,6 @@ const CONNECT_PROGRAMS: ProgramItem[] = [
   { key: 'speakerOpportunitiesEnabled', label: 'Speaker Opportunities — offer speaking slots at your events' },
 ]
 
-const CONTENT_TYPE_OPTIONS = ['Blog Post', 'Short-form Reel', 'Carousel', 'Podcast Episode', 'Case Study', 'Tutorial', 'Review', 'Interview']
-
 // ─── Become a Partner ─────────────────────────────────────────────────────────
 
 function BecomePartnerCard({ businessId, business }: { businessId: string; business: Business }) {
@@ -272,9 +270,16 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
     setP('idealIndustries', current.includes(industryId) ? current.filter(id => id !== industryId) : [...current, industryId])
   }
 
-  function toggleContentType(ct: string) {
-    const current = profile.idealContentTypes ?? []
-    setP('idealContentTypes', current.includes(ct) ? current.filter(c => c !== ct) : [...current, ct])
+  const ALL_PROGRAM_KEYS = [...RECOMMEND_PROGRAMS, ...COLLABORATE_PROGRAMS, ...CONNECT_PROGRAMS].map(p => p.key)
+  const allProgramsOn = ALL_PROGRAM_KEYS.every(key => profile[key] as boolean)
+
+  function toggleAllPrograms() {
+    const next = !allProgramsOn
+    setProfile(prev => {
+      const patch = Object.fromEntries(ALL_PROGRAM_KEYS.map(key => [key, next]))
+      return { ...prev, ...patch }
+    })
+    setSaved(false)
   }
 
   async function handleSave() {
@@ -307,8 +312,8 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
           onChange={v => setBizBool('partnerEnabled', v)}
         />
         <DiscoveryToggle
-          label="Village Pro"
-          description="Unlock advanced features — campaigns, analytics, and priority matching"
+          label="CULO Creatives (Canva)"
+          description="Unlock CULO Creatives — turn this business's raw footage and notes into content, exclusively in Canva"
           enabled={localBiz.villageProActive ?? false}
           onChange={v => setBizBool('villageProActive', v)}
           disabled={!(localBiz.partnerEnabled ?? false)}
@@ -332,37 +337,6 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
             rows={4}
             className={inputClass + ' resize-y'}
             placeholder="We help small business owners manage their finances without needing an accountant. Our software is built for founders who find accounting overwhelming — straightforward pricing, honest support, no lock-in contracts."
-          />
-        </Field>
-      </SectionCard>
-
-      {/* Who You Want to Reach */}
-      <SectionCard
-        title="Who You Want to Reach"
-        description="Help CULO match you with the right publishers and audiences"
-      >
-        <Field
-          label="Ideal Publisher"
-          hint="Describe the type of publisher, creator or founder you'd most like to work with — their audience, their topics, their style"
-        >
-          <textarea
-            value={profile.idealPublisher ?? ''}
-            onChange={e => setP('idealPublisher', e.target.value || undefined)}
-            rows={3}
-            className={inputClass + ' resize-none'}
-            placeholder="Founders who write about business tools and productivity, with a loyal audience of solo operators and small teams. They use the tools they recommend."
-          />
-        </Field>
-        <Field
-          label="Ideal Audience"
-          hint="Who is the end audience you want publishers to reach on your behalf?"
-        >
-          <input
-            type="text"
-            value={profile.idealAudience ?? ''}
-            onChange={e => setP('idealAudience', e.target.value || undefined)}
-            className={inputClass}
-            placeholder="Small business owners, solo operators, service-based founders, freelancers"
           />
         </Field>
       </SectionCard>
@@ -430,6 +404,12 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
         title="What You're Open To"
         description="Tell publishers what kinds of partnerships and collaborations you're looking for. Be selective — publishers take quality signals seriously."
       >
+        <button
+          onClick={toggleAllPrograms}
+          className="self-start text-xs font-semibold text-[#C86A43] hover:underline -mt-2"
+        >
+          {allProgramsOn ? 'Turn all off' : 'Turn all on'}
+        </button>
         <ProgramGroup
           title="Recommendations & Referrals"
           description="Publishers earn when they send customers your way"
@@ -451,46 +431,6 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
           profile={profile}
           onToggle={toggleP}
         />
-      </SectionCard>
-
-      {/* Recommendation Preferences */}
-      <SectionCard
-        title="Recommendation Preferences"
-        description="Tell publishers what you'd most like them to recommend, and what kind of content works best for your business"
-      >
-        <Field
-          label="What to recommend"
-          hint="One item per line — your product, a specific feature, a free trial, the problem you solve"
-        >
-          <textarea
-            value={(profile.recommendationPriorities ?? []).join('\n')}
-            onChange={e => {
-              const vals = e.target.value.split('\n').map(v => v.trim()).filter(Boolean)
-              setP('recommendationPriorities', vals.length > 0 ? vals : undefined)
-            }}
-            rows={3}
-            className={inputClass + ' resize-none'}
-            placeholder={'Our invoicing feature\nOur free trial\nThe problem we solve for founders'}
-          />
-        </Field>
-        <Field label="Preferred content formats">
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {CONTENT_TYPE_OPTIONS.map(ct => {
-              const active = (profile.idealContentTypes ?? []).includes(ct)
-              return (
-                <button
-                  key={ct}
-                  onClick={() => toggleContentType(ct)}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                    active ? 'bg-[#D6A94D] text-white border-[#D6A94D]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#D6A94D]/50'
-                  }`}
-                >
-                  {ct}
-                </button>
-              )
-            })}
-          </div>
-        </Field>
       </SectionCard>
 
       {/* Contact & Visibility */}
@@ -1122,9 +1062,11 @@ export function BusinessServicesEditor({ business, onOffersChange }: {
   const [services, setServices] = useState<Service[]>(() => getServices(undefined, business.id))
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
   const [addedToLibraryIds, setAddedToLibraryIds] = useState<Set<string>>(new Set())
+  const [error, setError] = useState<string | null>(null)
   const refresh = () => setServices(getServices(undefined, business.id))
 
   async function handleAddService() {
+    setError(null)
     const id = `service-${Date.now()}`
     const newService: Service = {
       id, slug: id, name: 'New service', description: '',
@@ -1133,6 +1075,7 @@ export function BusinessServicesEditor({ business, onOffersChange }: {
     }
     const result = await updateService(newService)
     if (result.success) { setEditingServiceId(id); refresh() }
+    else setError(result.error ?? 'Could not add a service. Please try again.')
   }
 
   // Offers and Services present as one workspace now, but the underlying
@@ -1309,6 +1252,7 @@ export function BusinessServicesEditor({ business, onOffersChange }: {
       >
         + Add Service
       </button>
+      {error && <p className="text-xs text-red-600 font-medium text-center">{error}</p>}
     </div>
   )
 }
