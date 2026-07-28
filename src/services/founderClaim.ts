@@ -55,6 +55,7 @@ export const founderClaimService = {
       const founder = getFounder(data.founderId)
       if (founder) store.update('founders', { ...founder, profileStatus: 'claim-pending' })
       sendTransactionalEmail({ type: 'claim-received', to: claim.requesterEmail, founderName: founder?.name ?? 'this profile' })
+      sendTransactionalEmail({ type: 'claim-submitted-staff', founderName: founder?.name ?? 'Unknown founder', founderSlug: founder?.slug ?? '', requesterName: claim.requesterName, requesterEmail: claim.requesterEmail })
       return claim
     }
 

@@ -87,7 +87,7 @@ const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
 
 type PodcastPanelStep = 'input' | 'resolving' | 'candidates' | 'manual' | 'connecting' | 'episodes' | 'importing'
 
-function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
+function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
   const [step, setStep] = useState<PodcastPanelStep>('input')
   const [input, setInput] = useState('')
   const [candidates, setCandidates] = useState<PodcastCandidate[]>([])
@@ -362,6 +362,8 @@ function PodcastConnectPanel({ founderId, isHighVolume, onConnected }: { founder
         </div>
       )}
 
+      <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />
+
       <div className="border-t border-[#E8E4DD] mt-5 pt-4">
         <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
       </div>
@@ -485,9 +487,23 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
   )
 }
 
+/** Connected sources for one connector, nested inside that connector's own
+ * card — title, input and status all read as one unit instead of a floating
+ * box underneath. */
+function ConnectedSourcesSection({ sources, isHighVolume, onChanged }: { sources: ConnectedSource[]; isHighVolume: boolean; onChanged: () => void }) {
+  if (sources.length === 0) return null
+  return (
+    <div className="border-t border-[#E8E4DD] mt-4 pt-1 divide-y divide-[#F3EDE6]">
+      {sources.map(source => (
+        <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={onChanged} />
+      ))}
+    </div>
+  )
+}
+
 // ─── Connect your YouTube channel ────────────────────────────────────────────
 
-function YouTubeConnectForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
+function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
   const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -541,13 +557,14 @@ function YouTubeConnectForm({ founderId, isHighVolume, onConnected }: { founderI
           Once these are in, tell the real story behind each one — what happened, what you learned — for visibility that actually means something.
         </p>
       )}
+      <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />
     </div>
   )
 }
 
 // ─── Connect your website ────────────────────────────────────────────────────
 
-function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
+function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
   const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -627,6 +644,7 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
           ))}
         </div>
       )}
+      <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />
     </div>
   )
 }
@@ -682,7 +700,7 @@ function ConnectedSourceRow({ source, isHighVolume, onChanged }: { source: Conne
     : undefined
 
   return (
-    <div className="flex items-center gap-3 bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
+    <div className="flex items-center gap-3 py-3">
       {source.podcast?.artworkUrl && (
         <img src={source.podcast.artworkUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
       )}
@@ -1639,14 +1657,14 @@ export function DashboardImportContentPage() {
             />
           </div>
 
-          <YouTubeConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
-          {sources.filter(s => s.sourceType === 'youtube').length > 0 && (
-            <div className="flex flex-col gap-2 -mt-3 mb-6">
-              {sources.filter(s => s.sourceType === 'youtube').map(source => (
-                <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={() => { loadSources(); reportImported(1) }} />
-              ))}
-            </div>
-          )}
+          <div className="mb-6">
+            <YouTubeConnectForm
+              founderId={founderId}
+              isHighVolume={isHighVolume}
+              sources={sources.filter(s => s.sourceType === 'youtube')}
+              onConnected={() => { loadSources(); reportImported(1) }}
+            />
+          </div>
 
           <div ref={instagramCardRef}>
             <InstagramArchiveImportCard
@@ -1657,23 +1675,23 @@ export function DashboardImportContentPage() {
             />
           </div>
 
-          <WebsiteConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
-          {sources.filter(s => s.sourceType === 'website-rss').length > 0 && (
-            <div className="flex flex-col gap-2 -mt-3 mb-6">
-              {sources.filter(s => s.sourceType === 'website-rss').map(source => (
-                <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={() => { loadSources(); reportImported(1) }} />
-              ))}
-            </div>
-          )}
+          <div className="mb-6">
+            <WebsiteConnectForm
+              founderId={founderId}
+              isHighVolume={isHighVolume}
+              sources={sources.filter(s => s.sourceType === 'website-rss')}
+              onConnected={() => { loadSources(); reportImported(1) }}
+            />
+          </div>
 
-          <PodcastConnectPanel founderId={founderId} isHighVolume={isHighVolume} onConnected={() => { loadSources(); reportImported(1) }} />
-          {sources.filter(s => s.sourceType === 'podcast-rss').length > 0 && (
-            <div className="flex flex-col gap-2 -mt-3 mb-6">
-              {sources.filter(s => s.sourceType === 'podcast-rss').map(source => (
-                <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={() => { loadSources(); reportImported(1) }} />
-              ))}
-            </div>
-          )}
+          <div className="mb-6">
+            <PodcastConnectPanel
+              founderId={founderId}
+              isHighVolume={isHighVolume}
+              sources={sources.filter(s => s.sourceType === 'podcast-rss')}
+              onConnected={() => { loadSources(); reportImported(1) }}
+            />
+          </div>
 
           {saveError && <p className="text-xs text-red-600 font-medium mt-3">{saveError}</p>}
 

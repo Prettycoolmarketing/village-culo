@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { updateBusiness } from '../../services/businesses'
+import { sendTransactionalEmail } from '../../services/transactionalEmail'
 import { businessPartnerProfileService, programService, enrollmentService } from '../../services/partnership'
 import { partnerService, newPartnerRequest } from '../../services/partner'
 import type { Partner } from '../../types/partner'
@@ -161,6 +162,12 @@ function BecomePartnerCard({ businessId, business }: { businessId: string; busin
     if (!result.success) { setError(result.error ?? 'Could not submit. Please try again.'); return }
     setPartner(request)
     setApplying(false)
+    sendTransactionalEmail({
+      type: 'partner-application-staff',
+      businessName: business.name,
+      applicationUrl: applicationUrl.trim(),
+      pitch: pitch.trim(),
+    })
   }
 
   return (

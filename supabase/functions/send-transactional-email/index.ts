@@ -20,12 +20,23 @@ const CORS_HEADERS = {
 }
 
 const SITE_URL = Deno.env.get('SITE_URL') || 'https://culovillage.com'
+const STAFF_NOTIFICATION_EMAIL = Deno.env.get('STAFF_NOTIFICATION_EMAIL')
 
 type EmailBody =
   | { type: 'claim-received'; to: string; founderName: string }
   | { type: 'claim-approved'; to: string; founderName: string; founderSlug: string }
   | { type: 'claim-rejected'; to: string; founderName: string; reason?: string }
   | { type: 'staff-invite'; to: string; role: string; invitedBy?: string }
+  | { type: 'claim-submitted-staff'; founderName: string; founderSlug: string; requesterName: string; requesterEmail: string }
+  | { type: 'partner-application-staff'; businessName: string; applicationUrl: string; pitch: string }
+
+// Staff-facing notifications (new claim / new partner application) always go
+// to the fixed CAPO inbox, never a caller-supplied address — the caller is
+// often an anonymous claimant and shouldn't get to choose who gets alerted.
+function recipientFor(body: EmailBody): string | undefined {
+  if (body.type === 'claim-submitted-staff' || body.type === 'partner-application-staff') return STAFF_NOTIFICATION_EMAIL
+  return body.to
+}
 
 function render(body: EmailBody): { subject: string; html: string } {
   switch (body.type) {
@@ -71,6 +82,26 @@ function render(body: EmailBody): { subject: string; html: string } {
            ${emailButton('Create your account', `${SITE_URL}/dashboard/login`)}`,
         ),
       }
+    case 'claim-submitted-staff':
+      return {
+        subject: `New claim: ${body.founderName}`,
+        html: emailLayout(
+          `New profile claim waiting for review`,
+          `<p><strong>${body.requesterName}</strong> (${body.requesterEmail}) has claimed the profile for <strong>${body.founderName}</strong>.</p>
+           ${emailButton('Review claims', `${SITE_URL}/dashboard/village/claims`)}`,
+        ),
+      }
+    case 'partner-application-staff':
+      return {
+        subject: `New partner application: ${body.businessName}`,
+        html: emailLayout(
+          `New partner application waiting for review`,
+          `<p><strong>${body.businessName}</strong> has applied to become a CULO partner.</p>
+           <p style="margin-top:16px;"><strong>Signup link:</strong> ${body.applicationUrl}</p>
+           <p style="margin-top:8px;"><strong>Pitch:</strong> ${body.pitch}</p>
+           ${emailButton('Review partners', `${SITE_URL}/dashboard/village/partners`)}`,
+        ),
+      }
   }
 }
 
@@ -79,10 +110,17 @@ serve(async (req) => {
 
   try {
     const body = await req.json() as EmailBody
-    if (!body?.to || !body?.type) throw new Error('to and type are required')
+    if (!body?.type) throw new Error('type is required')
+
+    const to = recipientFor(body)
+    if (!to) {
+      return new Response(JSON.stringify({ ok: false, error: 'No recipient configured' }), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      })
+    }
 
     const { subject, html } = render(body)
-    const result = await sendEmail(body.to, subject, html)
+    const result = await sendEmail(to, subject, html)
 
     return new Response(JSON.stringify(result), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
