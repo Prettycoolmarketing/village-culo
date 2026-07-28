@@ -2,6 +2,7 @@ import { readCache, writeEntityUnowned, type WriteResult } from '../lib/entitySt
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { store } from '../lib/store'
 import { getFounder, updateFounder } from './founders'
+import { sendTransactionalEmail } from './transactionalEmail'
 import type { FounderClaimRequest } from '../types/founderClaim'
 
 const KEY = 'founder_claims'
@@ -53,6 +54,7 @@ export const founderClaimService = {
       store.update<FounderClaimRequest>(KEY, claim)
       const founder = getFounder(data.founderId)
       if (founder) store.update('founders', { ...founder, profileStatus: 'claim-pending' })
+      sendTransactionalEmail({ type: 'claim-received', to: claim.requesterEmail, founderName: founder?.name ?? 'this profile' })
       return claim
     }
 
@@ -66,6 +68,7 @@ export const founderClaimService = {
     if (!result.success) throw new Error(result.error ?? 'Failed to submit claim')
     const founder = getFounder(data.founderId)
     if (founder) void updateFounder({ ...founder, profileStatus: 'claim-pending' })
+    sendTransactionalEmail({ type: 'claim-received', to: claim.requesterEmail, founderName: founder?.name ?? 'this profile' })
     return claim
   },
 
@@ -101,6 +104,12 @@ export const founderClaimService = {
         claimedByUserId: claim.requesterUserId ?? founder.claimedByUserId,
       })
     }
+    sendTransactionalEmail({
+      type: 'claim-approved',
+      to: claim.requesterEmail,
+      founderName: founder?.name ?? 'your profile',
+      founderSlug: founder?.slug ?? '',
+    })
     return result
   },
 
@@ -123,6 +132,12 @@ export const founderClaimService = {
     if (founder && founder.profileStatus === 'claim-pending') {
       void updateFounder({ ...founder, profileStatus: 'village-curated', isClaimable: true })
     }
+    sendTransactionalEmail({
+      type: 'claim-rejected',
+      to: claim.requesterEmail,
+      founderName: founder?.name ?? 'this profile',
+      reason: adminNotes,
+    })
     return result
   },
 

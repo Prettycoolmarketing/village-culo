@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { sendTransactionalEmail } from './transactionalEmail'
 import type { UserRole } from '../contexts/AuthContext'
 
 export interface TeamMember {
@@ -74,6 +75,7 @@ export async function inviteStaffByEmail(email: string, role: UserRole): Promise
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Supabase not configured.' }
   const { error } = await supabase.rpc('admin_invite_staff', { target_email: email.trim(), new_role: role })
   if (error) return { success: false, error: error.message }
+  sendTransactionalEmail({ type: 'staff-invite', to: email.trim(), role })
   return { success: true }
 }
 
