@@ -955,7 +955,9 @@ export function DashboardProfilePage() {
     searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId') ? 'published' : 'imported'
   )
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
-  const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>('all')
+  const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>(
+    () => (searchParams.get('platform') as ImportedContentPlatform | null) ?? 'all'
+  )
   const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedTick, setImportedTick] = useState(0)
@@ -976,7 +978,11 @@ export function DashboardProfilePage() {
       setEditingStoryId(storyId)
     } else if (searchParams.get('contentSubTab') === 'published') {
       setContentSubTab('published')
+    } else if (searchParams.get('contentSubTab') === 'imported') {
+      setContentSubTab('imported')
     }
+    const platform = searchParams.get('platform')
+    if (platform) setImportedPlatformFilter(platform as ImportedContentPlatform)
   }, [searchParams])
 
   // Autosave to localStorage as the founder types — if they navigate away or

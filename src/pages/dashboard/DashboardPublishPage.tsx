@@ -1537,7 +1537,7 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
       </div>
 
       {/* ── Publish ───────────────────────────────────────────────────────── */}
-      <div className="sticky bottom-0 bg-[#F8F5F0]/95 backdrop-blur pt-3 pb-1 -mx-8 px-8 flex flex-col gap-3 border-t border-[#E8E4DD] mt-2">
+      <div className="sticky bottom-0 bg-[#F3F7FA]/95 backdrop-blur pt-3 pb-1 -mx-8 px-8 flex flex-col gap-3 border-t border-[#E8E4DD] mt-2">
         {publishError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{publishError}</p>}
         <div className="flex items-center gap-3">
           <button
