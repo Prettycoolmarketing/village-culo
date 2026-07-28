@@ -965,6 +965,7 @@ export function DashboardProfilePage() {
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedTick, setImportedTick] = useState(0)
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
+  const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
   const [, forceBusinessRefresh] = useState(0)
 
   // A recommendation link can point back at this same page with new query
@@ -1503,6 +1504,9 @@ export function DashboardProfilePage() {
                   />
                 )
               }
+              const sortedStories = [...founderStories].sort((a, b) =>
+                publishedSort === 'newest' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
+              )
               return (
                 <div>
                   {founderStories.length === 0 ? (
@@ -1513,8 +1517,19 @@ export function DashboardProfilePage() {
                       </Link>
                     </div>
                   ) : (
-                    <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                      {founderStories.map(story => {
+                    <>
+                      <div className="flex justify-end mb-2">
+                        <select
+                          value={publishedSort}
+                          onChange={e => setPublishedSort(e.target.value as 'newest' | 'oldest')}
+                          className="text-xs px-2 py-1.5 rounded-lg border border-[#E8E4DD] bg-white text-[#6B7280] focus:outline-none focus:border-[#C86A43]"
+                        >
+                          <option value="newest">Newest first</option>
+                          <option value="oldest">Oldest first</option>
+                        </select>
+                      </div>
+                      <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                      {sortedStories.map(story => {
                         const storyMissing = getStoryMissingItems(story)
                         return (
                           <button key={story.id} onClick={() => setEditingStoryId(story.id)}
@@ -1545,7 +1560,8 @@ export function DashboardProfilePage() {
                           </button>
                         )
                       })}
-                    </div>
+                      </div>
+                    </>
                   )}
                 </div>
               )
