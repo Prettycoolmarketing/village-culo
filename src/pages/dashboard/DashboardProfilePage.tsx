@@ -551,7 +551,6 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
   })
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [showAdvanced, setShowAdvanced] = useState(false)
 
   // Autosave to localStorage as the founder types — if they navigate away or
   // the tab closes before hitting Save, their edits are still there next time.
@@ -736,18 +735,22 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
             <SocialLinksEditor links={draft.socialLinks ?? []} onChange={v => set('socialLinks', v)} />
           </Field>
 
-          <Field label="Status" hint="Draft businesses aren't visible on the public site.">
-            <div className="flex gap-2 flex-wrap">
-              {(['draft', 'submitted', 'published', 'featured', 'archived'] as const).map(s => (
-                <button key={s} onClick={() => set('status', s)}
-                  className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${
-                    draft.status === s ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                  }`}>
-                  {s}
-                </button>
-              ))}
+          <div className="flex items-center justify-between pt-2 border-t border-[#E8E4DD]">
+            <div>
+              <p className="text-sm font-medium text-[#2D2A26]">Visible on the public site</p>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">Off keeps this business as a private draft. Featuring it is done by CULO staff.</p>
             </div>
-          </Field>
+            <button
+              onClick={() => set('status', draft.status === 'published' || draft.status === 'featured' ? 'draft' : 'published')}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${
+                draft.status === 'published' || draft.status === 'featured' ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'
+              }`}
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                draft.status === 'published' || draft.status === 'featured' ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-[#E8E4DD]">
             <div className="flex items-center gap-3">
@@ -802,37 +805,15 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
         ) : null
       })()}
 
-      {/* Discovery & Partnerships — optional, only relevant to businesses
-          wanting publisher matching or affiliate/partner programs. Collapsed
-          by default so it doesn't clutter the common case. */}
+      {/* Discovery & Partnerships now live under the Partners tab, alongside
+          the founder's own discovery settings, instead of being buried here. */}
       {draft && (
-        <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
-          <button
-            onClick={() => setShowAdvanced(v => !v)}
-            className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-[#FBF8F4] transition-colors"
-          >
-            <div>
-              <p className="text-sm font-semibold text-[#2D2A26]">Discovery &amp; Partnerships</p>
-              <p className="text-xs text-[#9CA3AF] mt-0.5">Optional — let publishers find and partner with this business.</p>
-            </div>
-            <span className="text-[#9CA3AF] text-sm shrink-0">{showAdvanced ? 'Hide ▲' : 'Show ▼'}</span>
-          </button>
-          {showAdvanced && (
-            <div className="px-5 pb-5 flex flex-col gap-5 border-t border-[#F3EDE6] pt-5">
-              <BusinessDiscoveryProfile
-                key={draft.id}
-                businessId={draft.id}
-                business={draft}
-                onBusinessUpdate={updated => { setDraft(updated); setBusinesses(getBusinesses({ founderId })) }}
-              />
-              <BusinessProgramsTab
-                key={draft.id}
-                businessId={draft.id}
-                partnerEnabled={!!draft.partnerEnabled}
-              />
-            </div>
-          )}
-        </div>
+        <Link
+          to="/dashboard/profile?tab=discovery"
+          className="text-sm font-semibold text-[#C86A43] hover:underline"
+        >
+          Manage Discovery &amp; Partnerships for this business →
+        </Link>
       )}
 
       {/* Content — same idea as Profile's Content tab, scoped to this
@@ -963,6 +944,8 @@ export function DashboardProfilePage() {
   const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedTick, setImportedTick] = useState(0)
+  const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
+  const [, forceBusinessRefresh] = useState(0)
 
   // Autosave to localStorage as the founder types — if they navigate away or
   // the tab closes before hitting Save, their edits are still there next time.
@@ -1593,6 +1576,46 @@ export function DashboardProfilePage() {
               founderTopics={draft.topics ?? []}
               onEditTopics={() => setTab('expertise')}
             />
+
+            {founderBusinesses.length > 0 && (() => {
+              const activeBizId = discoveryBizId && founderBusinesses.some(b => b.id === discoveryBizId)
+                ? discoveryBizId
+                : founderBusinesses[0]!.id
+              const activeBiz = founderBusinesses.find(b => b.id === activeBizId)!
+              return (
+                <div className="border-t border-[#E8E4DD] pt-5 flex flex-col gap-4">
+                  <TabIntro>
+                    Everything above is about you as a publisher. Below is the same idea, but for
+                    a business you run — how CULO matches publishers to it, separately from you.
+                  </TabIntro>
+
+                  {founderBusinesses.length > 1 && (
+                    <div className="flex flex-wrap gap-2">
+                      {founderBusinesses.map(b => (
+                        <button key={b.id} onClick={() => setDiscoveryBizId(b.id)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                            activeBizId === b.id ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                          }`}>
+                          {b.name || 'Untitled business'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <BusinessDiscoveryProfile
+                    key={activeBiz.id}
+                    businessId={activeBiz.id}
+                    business={activeBiz}
+                    onBusinessUpdate={() => forceBusinessRefresh(n => n + 1)}
+                  />
+                  <BusinessProgramsTab
+                    key={activeBiz.id}
+                    businessId={activeBiz.id}
+                    partnerEnabled={!!activeBiz.partnerEnabled}
+                  />
+                </div>
+              )
+            })()}
           </div>
         )}
 
