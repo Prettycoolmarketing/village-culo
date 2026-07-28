@@ -72,7 +72,7 @@ export function StoryGrid({
         />
       ) : (
         <div
-          className={`grid gap-5 md:gap-6 ${columnClasses[columns]}`}
+          className={`grid items-start gap-5 md:gap-6 ${columnClasses[columns]}`}
           role="list"
           aria-label={`${stories.length} ${stories.length === 1 ? 'story' : 'stories'}`}
         >
@@ -80,7 +80,7 @@ export function StoryGrid({
             const founder = getFounder(story.founderId)
             const business = getBusiness(story.businessId)
             return (
-              <div key={story.id} role="listitem" className="h-full">
+              <div key={story.id} role="listitem">
                 <StoryCard
                   story={story}
                   founder={founder}
@@ -90,7 +90,6 @@ export function StoryGrid({
                   showFounder={showFounder}
                   showTopics={showTopics}
                   showCTA={showCTA}
-                  className="h-full"
                 />
               </div>
             )

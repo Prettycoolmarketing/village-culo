@@ -16,6 +16,10 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
   const platformLabel = PLATFORM_LABELS[content.sourcePlatform]
   const platformColor = PLATFORM_COLORS[content.sourcePlatform]
   const canEmbed      = EMBEDDABLE.has(content.sourcePlatform) && !!content.embedUrl
+  // Podcast cover art is square — cropping it into a 16:9 box like a video
+  // thumbnail chops off the top/bottom of the artwork (often where the show
+  // name sits). Give it a square box instead so the whole cover shows.
+  const thumbAspect   = content.sourcePlatform === 'podcast' ? '100%' : '56.25%'
 
   return (
     <article className="bg-surface rounded-2xl border border-border overflow-hidden">
@@ -33,7 +37,7 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
           />
         </div>
       ) : content.thumbnailUrl ? (
-        <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+        <div className="relative w-full" style={{ paddingTop: thumbAspect }}>
           <img
             src={content.thumbnailUrl}
             alt=""

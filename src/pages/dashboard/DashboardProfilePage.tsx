@@ -568,7 +568,11 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
     setSaved(false)
   }
 
-  async function handleAddBusiness() {
+  function handleAddBusiness() {
+    // Don't write this to the database until the founder actually hits Save —
+    // clicking "+ Add business" used to insert a blank row immediately, which
+    // left permanent "Untitled business" placeholders behind for anyone who
+    // opened the form and navigated away without filling it in.
     const now = new Date().toISOString()
     const newBiz: Business = {
       id: crypto.randomUUID(),
@@ -587,17 +591,24 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
       featured: false,
       createdAt: now,
     }
-    const result = await updateBusiness(newBiz)
-    if (result.success) {
-      const refreshed = getBusinesses({ founderId })
-      setBusinesses(refreshed)
-      setActiveId(newBiz.id)
-      setDraft(newBiz)
-    }
+    setBusinesses(prev => [...prev, newBiz])
+    setActiveId(newBiz.id)
+    setDraft(newBiz)
   }
 
   async function handleDelete() {
     if (!draft) return
+    // Never actually saved (still just a local "+ Add business" draft) —
+    // nothing in the database to delete, just drop it locally.
+    const persisted = getBusinesses({ founderId }).some(b => b.id === draft.id)
+    if (!persisted) {
+      clearDraft(`culo_v1_business_draft_${draft.id}`)
+      const remaining = businesses.filter(b => b.id !== draft.id)
+      setBusinesses(remaining)
+      setActiveId(remaining[0]?.id ?? null)
+      setDraft(remaining[0] ?? null)
+      return
+    }
     const result = await deleteBusiness(draft.id)
     if (result.success) {
       clearDraft(`culo_v1_business_draft_${draft.id}`)
@@ -655,7 +666,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
             </button>
           )
         })}
-        <button onClick={() => void handleAddBusiness()}
+        <button onClick={handleAddBusiness}
           className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#C86A43] border border-dashed border-[#C86A43]/50 hover:bg-[#FDF6F3] transition-colors">
           + Add business
         </button>

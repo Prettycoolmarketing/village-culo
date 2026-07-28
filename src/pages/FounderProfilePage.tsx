@@ -499,7 +499,7 @@ export function FounderProfilePage() {
 
             {/* Create with CULO CTA */}
             <div className="mt-7">
-              <CreateWithCuloCTA variant="inline" label="Continue your story with CULO Creatives exclusively in Canva" />
+              <CreateWithCuloCTA variant="button" label="Continue your story with CULO Creatives exclusively in Canva" />
             </div>
 
             <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-7" />

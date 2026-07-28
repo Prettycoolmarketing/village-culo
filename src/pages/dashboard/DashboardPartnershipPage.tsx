@@ -122,7 +122,7 @@ function OverviewSection({ founderId, onNavigate }: { founderId: string; onNavig
     <div className="p-8 max-w-4xl">
       <div className="mb-8">
         <h2 className="text-xl font-bold text-[#2D2A26]">Opportunities</h2>
-        <p className="text-sm text-[#6B7280] mt-1">Your affiliate links, automatically connected wherever you mention that brand, plus partnership and speaking opportunities.</p>
+        <p className="text-sm text-[#6B7280] mt-1">Affiliate links, brand matches and speaking invites — in one place.</p>
       </div>
 
       {!settings.partnershipEnabled && (
@@ -172,10 +172,10 @@ function OverviewSection({ founderId, onNavigate }: { founderId: string; onNavig
         <h3 className="text-sm font-semibold text-[#2D2A26] mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: 'Complete your partnership profile', icon: icons.overview, description: 'Tell us what you recommend and what opportunities you want', tab: 'overview' as Tab },
-            { label: 'Manage your affiliate links', icon: icons.recommendations, description: 'CULO has found brands and products in your stories', tab: 'recommendations' as Tab },
-            { label: 'Explore opportunities', icon: icons.opportunities, description: 'Speaking, podcasts, campaigns and collaborations', tab: 'opportunities' as Tab },
-            { label: 'Browse partners', icon: icons.partnerships, description: 'Write about a CULO partner and earn a revenue share', tab: 'partnerships' as Tab },
+            { label: 'Complete your profile', icon: icons.overview, description: 'What you recommend and what you\'re open to', tab: 'overview' as Tab },
+            { label: 'Manage affiliate links', icon: icons.recommendations, description: 'Brands and products found in your stories', tab: 'recommendations' as Tab },
+            { label: 'Explore opportunities', icon: icons.opportunities, description: 'Speaking, podcasts and collaborations', tab: 'opportunities' as Tab },
+            { label: 'Browse partners', icon: icons.partnerships, description: 'Write about a partner, earn a revenue share', tab: 'partnerships' as Tab },
           ].map(a => (
             <button
               key={a.label}
@@ -202,10 +202,12 @@ function OverviewSection({ founderId, onNavigate }: { founderId: string; onNavig
 function AffiliateLinksOverview({ founderId }: { founderId: string }) {
   const [links, setLinks] = useState<FounderAffiliateLink[]>(() => affiliateLinkService.getAll({ founderId }))
   const [adding, setAdding] = useState(false)
-  const [businessId, setBusinessId] = useState('')
+  const [businessName, setBusinessName] = useState('')
   const [url, setUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const businesses = getBusinesses()
+  // Only this founder's own businesses — a global list of every business on
+  // the platform doesn't belong in a brand picker for one person's links.
+  const ownBusinesses = getBusinesses({ founderId })
 
   function refresh() {
     setLinks(affiliateLinkService.getAll({ founderId }))
@@ -213,20 +215,24 @@ function AffiliateLinksOverview({ founderId }: { founderId: string }) {
 
   async function handleAdd() {
     setError(null)
-    if (!businessId || !url.trim()) { setError('Pick a brand and paste your affiliate link.'); return }
-    const biz = getBusiness(businessId)
+    if (!businessName.trim() || !url.trim()) { setError('Add a brand name and your affiliate link.'); return }
+    // If it matches one of the founder's own Village businesses, link it
+    // properly so auto-detection in stories still works — otherwise it's
+    // just a name, no businessId, and that's fine.
+    const matched = ownBusinesses.find(b => b.name.trim().toLowerCase() === businessName.trim().toLowerCase())
     const link: FounderAffiliateLink = {
       id: crypto.randomUUID(),
       founderId,
-      businessId,
-      businessWebsite: biz?.website,
+      businessId: matched?.id,
+      businessName: businessName.trim(),
+      businessWebsite: matched?.website,
       affiliateUrl: url.trim(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
     const result = await affiliateLinkService.upsert(link)
     if (!result.success) { setError(result.error ?? 'Could not save. Please try again.'); return }
-    setBusinessId('')
+    setBusinessName('')
     setUrl('')
     setAdding(false)
     refresh()
@@ -251,7 +257,7 @@ function AffiliateLinksOverview({ founderId }: { founderId: string }) {
         )}
       </div>
       <p className="text-xs text-[#9CA3AF] mb-4 leading-relaxed">
-        Add a brand and your affiliate link for them. Village automatically shows it whenever you mention that brand in a published story, and tracks every click here.
+        Shows automatically wherever you mention that brand in a published story. Clicks tracked here.
       </p>
 
       {adding && (
@@ -259,14 +265,13 @@ function AffiliateLinksOverview({ founderId }: { founderId: string }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
               <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Brand</label>
-              <select
-                value={businessId}
-                onChange={e => setBusinessId(e.target.value)}
+              <input
+                type="text"
+                value={businessName}
+                onChange={e => setBusinessName(e.target.value)}
+                placeholder="Business name"
                 className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-xs text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
-              >
-                <option value="">Select a brand…</option>
-                {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+              />
             </div>
             <div>
               <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Affiliate URL</label>
@@ -1341,7 +1346,7 @@ export function DashboardPartnershipPage() {
     <div className="flex h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Sub-navigation sidebar ─────────────────────────────────────────── */}
-      <aside className="w-48 shrink-0 border-r border-[#E8E4DD] bg-[#FDFBF9] flex flex-col py-4 overflow-y-auto">
+      <aside className="w-48 shrink-0 border-r border-[#E8E4DD] bg-[#F3F7FA] flex flex-col py-4 overflow-y-auto">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest px-3 pb-2">
           Opportunities
         </p>
@@ -1364,7 +1369,7 @@ export function DashboardPartnershipPage() {
       </aside>
 
       {/* ── Content area ───────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto bg-[#F8F5F0]">
+      <main className="flex-1 overflow-y-auto bg-[#F3F7FA]">
         {activeTab === 'overview'        && <OverviewSection founderId={founderId} onNavigate={setActiveTab} />}
         {activeTab === 'recommendations' && <MyPicksSection founderId={founderId} onNavigate={setActiveTab} />}
         {activeTab === 'opportunities'   && <OpportunitiesSection founderId={founderId} />}
