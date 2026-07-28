@@ -232,6 +232,15 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
   if (contentTypes.includes('carousel')) {
     story.carouselImages = item.imageUrls?.filter(Boolean) ?? []
   }
+  // Extra photos/video clips added during Advanced Edit carry over
+  // regardless of the primary content type — a video story can still have a
+  // few extra photos attached, not just a dedicated carousel item.
+  const extraImages = item.imageUrls?.filter(Boolean) ?? []
+  if (!contentTypes.includes('carousel') && extraImages.length > 0) {
+    story.carouselImages = extraImages
+  }
+  const extraVideos = item.additionalVideoUrls?.filter(Boolean) ?? []
+  if (extraVideos.length > 0) story.additionalReelUrls = extraVideos
   if (contentTypes.some(ct => ct === 'reel' || ct === 'youtube-video' || ct === 'social-post')) {
     // youtube-video / reel / social-post — the video/post URL itself is the
     // primary content. reelVideoUrl wins when set. For a Canva or Instagram
@@ -266,6 +275,9 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
   const fullDescription = item.description || item.diaryNote || item.transcriptText
     || (contentType === 'blog' ? item.autoSummary : undefined) || ''
 
+  const extraImages = item.imageUrls?.filter(Boolean) ?? []
+  const extraVideos = item.additionalVideoUrls?.filter(Boolean) ?? []
+
   await updateStory({
     ...story,
     title: item.title || story.title,
@@ -276,6 +288,8 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
     partnerId: item.partnerId ?? story.partnerId,
     ctaLabel: item.ctaLabel || story.ctaLabel,
     ctaUrl: item.ctaUrl || story.ctaUrl,
+    carouselImages: extraImages.length > 0 ? extraImages : story.carouselImages,
+    additionalReelUrls: extraVideos.length > 0 ? extraVideos : story.additionalReelUrls,
     updatedAt: new Date().toISOString().split('T')[0]!,
   })
 }

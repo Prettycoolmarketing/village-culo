@@ -56,6 +56,11 @@ export interface ImportedContent {
   // whichever one is the cover.
   imageUrls?: string[]
 
+  // Extra reel/video clips beyond the primary one (reelVideoUrl/originalUrl)
+  // — same "just add more" pattern as Story.additionalReelUrls, added during
+  // Advanced Edit rather than only at first import.
+  additionalVideoUrls?: string[]
+
   // Auto enrichment
   autoSummary?: string
   keyMoments?: string[]

@@ -860,7 +860,12 @@ export function StoryDetailPage() {
                   FAQs, never an auto-generated question with no real answer
                   behind it. */}
               {(() => {
-                const answeredFaqs = (founder?.faqs ?? []).filter(f => f.answer.trim().length > 0)
+                // Founder.faqs is every FAQ across everything they've ever
+                // published — without this filter, one founder's FAQs from a
+                // totally different story all showed up here too.
+                const answeredFaqs = (founder?.faqs ?? []).filter(
+                  f => f.answer.trim().length > 0 && f.relatedStoryIds.includes(story.id)
+                )
                 if (answeredFaqs.length === 0) return null
                 return (
                   <section aria-labelledby="story-faq-heading">

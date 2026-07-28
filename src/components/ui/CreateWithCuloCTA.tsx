@@ -35,7 +35,7 @@ export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
             {label ?? 'Turn your experience into content'}
           </p>
           <p className="font-body text-sm text-white/60 mt-0.5">
-            CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
+            CULO Creatives helps founders edit content into different formats, exclusively in Canva.
           </p>
         </div>
         <Link

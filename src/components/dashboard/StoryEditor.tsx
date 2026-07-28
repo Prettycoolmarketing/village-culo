@@ -102,7 +102,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
     if (result.success) onDelete(draft)
   }
 
-  const hasCarousel = draft.contentTypes.includes('carousel')
   const hasReel = draft.contentTypes.includes('reel')
   const hasBlog = draft.contentTypes.includes('blog')
   const isVisible = draft.status === 'published' || draft.status === 'featured'
@@ -182,32 +181,69 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
           </Field>
         )}
 
-        {hasCarousel && (
-          <Field label="Carousel images">
-            {(draft.carouselImages ?? []).length > 0 && (
-              <div className="flex flex-col gap-2 mb-2">
-                {(draft.carouselImages ?? []).map((img, i) => (
-                  <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
-                    <img src={img} alt="" className="w-10 h-10 rounded object-cover shrink-0 bg-[#F3EDE6]" />
-                    <div className="flex-1" />
-                    <button
-                      onClick={() => set('carouselImages', (draft.carouselImages ?? []).filter((_, j) => j !== i))}
-                      className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
-                  </div>
-                ))}
-              </div>
-            )}
+        <Field label="Extra photos / carousel" hint="Add extra photos or a carousel — works alongside any other content type.">
+          {(draft.carouselImages ?? []).length > 0 && (
+            <div className="flex flex-col gap-2 mb-2">
+              {(draft.carouselImages ?? []).map((img, i) => (
+                <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
+                  <img src={img} alt="" className="w-10 h-10 rounded object-cover shrink-0 bg-[#F3EDE6]" />
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => set('carouselImages', (draft.carouselImages ?? []).filter((_, j) => j !== i))}
+                    className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <MediaUpload
+            onChange={v => set('carouselImages', [...(draft.carouselImages ?? []), v])}
+            onChangeMultiple={urls => set('carouselImages', [...(draft.carouselImages ?? []), ...urls])}
+            multiple
+            accept="image"
+            label="Upload photos"
+            aspect="auto"
+            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
+          />
+        </Field>
+
+        <Field label="Extra reel / video" hint="Add another reel or video clip — beyond the primary one above.">
+          {(draft.additionalReelUrls ?? []).length > 0 && (
+            <div className="flex flex-col gap-2 mb-2">
+              {(draft.additionalReelUrls ?? []).map((url, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={e => {
+                      const next = [...(draft.additionalReelUrls ?? [])]
+                      next[i] = e.target.value
+                      set('additionalReelUrls', next)
+                    }}
+                    className={inputClass}
+                    placeholder={`Video ${i + 1} URL`}
+                  />
+                  <button
+                    onClick={() => set('additionalReelUrls', (draft.additionalReelUrls ?? []).filter((_, j) => j !== i))}
+                    className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => set('additionalReelUrls', [...(draft.additionalReelUrls ?? []), ''])}
+              className="text-xs text-[#C86A43] hover:underline text-left w-fit">
+              + Add another reel/video (by URL)
+            </button>
             <MediaUpload
-              onChange={v => set('carouselImages', [...(draft.carouselImages ?? []), v])}
-              onChangeMultiple={urls => set('carouselImages', [...(draft.carouselImages ?? []), ...urls])}
-              multiple
-              accept="image"
-              label="Upload images to add as slides"
+              onChange={v => set('additionalReelUrls', [...(draft.additionalReelUrls ?? []).filter(Boolean), v])}
+              accept="video"
+              label="Or upload a video file"
               aspect="auto"
-              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
+              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
             />
-          </Field>
-        )}
+          </div>
+        </Field>
 
         <Field label="Cover Image">
           <MediaUpload

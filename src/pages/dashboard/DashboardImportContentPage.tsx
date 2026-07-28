@@ -1102,6 +1102,14 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   const activePartners = partnerService.getAll({ status: 'active' })
   const [transcriptFlash, setTranscriptFlash] = useState(false)
   const [shapeTrigger, setShapeTrigger] = useState(0)
+  // Raw text, not derived from draft.topics.join(', ') on every keystroke —
+  // typing a trailing comma (about to start the next item) was getting
+  // immediately stripped back out because parseList().filter(Boolean) drops
+  // the empty segment after it, and the input's value snapped straight back
+  // to the rejoined array. Only the array is kept in sync as the founder
+  // types; the raw text stays exactly what they typed.
+  const [topicsText, setTopicsText] = useState(() => draft.topics.join(', '))
+  const [locationsText, setLocationsText] = useState(() => draft.locations.join(', '))
 
   function field<K extends keyof ImportedContent>(key: K, value: ImportedContent[K]) {
     onChange({ ...draft, [key]: value })
@@ -1170,7 +1178,14 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   function addFAQ(question: string, answer: string) {
     const founder = getFounder(draft.founderId)
     if (!founder) return
-    const faq: FAQ = { id: crypto.randomUUID(), question, answer, topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [] }
+    // Tagged to the story this piece publishes as (once it exists) so it only
+    // shows on that story's page, not every story this founder has ever
+    // published — FAQs shaped from one post's content aren't about the rest.
+    const faq: FAQ = {
+      id: crypto.randomUUID(), question, answer, topicIds: [], expertiseIds: [],
+      relatedStoryIds: draft.relatedStoryId ? [draft.relatedStoryId] : [],
+      relatedIdeaIds: [],
+    }
     void updateFounder({ ...founder, faqs: [...(founder.faqs ?? []), faq] })
   }
 
@@ -1244,6 +1259,73 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         <input type="url" value={draft.thumbnailUrl ?? ''}
           onChange={e => field('thumbnailUrl', e.target.value || undefined)}
           className={INPUT} placeholder="https://..." />
+      </div>
+
+      {/* Extra media — add more beyond what came in with the original
+          import, same "just add more" pattern as publishing directly. */}
+      <div className="mb-4 border-t border-[#E8E4DD] pt-4">
+        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Extra Media</p>
+        <p className="text-xs text-[#9CA3AF] mb-3">Add extra photos, a carousel, or another reel/video to go with this piece.</p>
+
+        {(draft.imageUrls ?? []).length > 0 && (
+          <div className="flex flex-col gap-1.5 mb-2">
+            {(draft.imageUrls ?? []).map((url, i) => (
+              <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
+                <img src={url} alt="" className="w-9 h-9 rounded object-cover shrink-0 bg-[#F3EDE6]" />
+                <span className="text-xs text-[#9CA3AF] truncate flex-1">{url}</span>
+                <button
+                  onClick={() => field('imageUrls', (draft.imageUrls ?? []).filter((_, j) => j !== i))}
+                  className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-1">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <MediaUpload
+          onChange={v => field('imageUrls', [...(draft.imageUrls ?? []), v])}
+          onChangeMultiple={urls => field('imageUrls', [...(draft.imageUrls ?? []), ...urls])}
+          multiple
+          accept="image"
+          label="Add photos or a carousel"
+          aspect="auto"
+          uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
+        />
+
+        {(draft.additionalVideoUrls ?? []).length > 0 && (
+          <div className="flex flex-col gap-1.5 mt-3 mb-2">
+            {(draft.additionalVideoUrls ?? []).map((url, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="url"
+                  value={url}
+                  onChange={e => {
+                    const next = [...(draft.additionalVideoUrls ?? [])]
+                    next[i] = e.target.value
+                    field('additionalVideoUrls', next)
+                  }}
+                  className={INPUT}
+                  placeholder={`Video ${i + 1} URL`}
+                />
+                <button
+                  onClick={() => field('additionalVideoUrls', (draft.additionalVideoUrls ?? []).filter((_, j) => j !== i))}
+                  className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="mt-3 flex flex-col gap-2">
+          <button
+            onClick={() => field('additionalVideoUrls', [...(draft.additionalVideoUrls ?? []), ''])}
+            className="text-xs text-[#C86A43] hover:underline text-left w-fit">
+            + Add another reel/video (by URL)
+          </button>
+          <MediaUpload
+            onChange={v => field('additionalVideoUrls', [...(draft.additionalVideoUrls ?? []).filter(Boolean), v])}
+            accept="video"
+            label="Or upload a video file"
+            aspect="auto"
+            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+          />
+        </div>
       </div>
 
       {/* Business + Published At */}
@@ -1386,16 +1468,16 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
             <label className="block text-xs font-semibold text-[#2D2A26] mb-1">
               Topics <span className="font-normal text-[#9CA3AF]">comma-separated</span>
             </label>
-            <input type="text" value={draft.topics.join(', ')}
-              onChange={e => field('topics', parseList(e.target.value))}
+            <input type="text" value={topicsText}
+              onChange={e => { setTopicsText(e.target.value); field('topics', parseList(e.target.value)) }}
               className={INPUT} placeholder="e.g. marketing, content, strategy" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-[#2D2A26] mb-1">
               Locations <span className="font-normal text-[#9CA3AF]">comma-separated</span>
             </label>
-            <input type="text" value={draft.locations.join(', ')}
-              onChange={e => field('locations', parseList(e.target.value))}
+            <input type="text" value={locationsText}
+              onChange={e => { setLocationsText(e.target.value); field('locations', parseList(e.target.value)) }}
               className={INPUT} placeholder="e.g. Sydney, Melbourne" />
           </div>
         </div>

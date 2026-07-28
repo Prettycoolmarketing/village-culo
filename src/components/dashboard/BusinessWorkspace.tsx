@@ -242,6 +242,7 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
     () => businessPartnerProfileService.getOrCreate(businessId)
   )
   const [localBiz, setLocalBiz] = useState<Business>(business)
+  const [locationsServedText, setLocationsServedText] = useState(() => (profile.locationsServed ?? []).join(', '))
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
@@ -388,8 +389,9 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
         >
           <input
             type="text"
-            value={(profile.locationsServed ?? []).join(', ')}
+            value={locationsServedText}
             onChange={e => {
+              setLocationsServedText(e.target.value)
               const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean)
               setP('locationsServed', vals.length > 0 ? vals : undefined)
             }}

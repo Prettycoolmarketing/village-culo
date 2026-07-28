@@ -165,6 +165,7 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
   )
   const [saved, setSaved] = useState(false)
   const [affiliateLinks, setAffiliateLinks] = useState(() => affiliateLinkService.getAll({ founderId }))
+  const [countriesText, setCountriesText] = useState(() => (profile.countries ?? []).join(', '))
   const [newAffiliateBusinessName, setNewAffiliateBusinessName] = useState('')
   const [newAffiliateUrl, setNewAffiliateUrl] = useState('')
 
@@ -476,8 +477,9 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
           <p className="text-xs text-[#9CA3AF] mb-2">Countries or regions, comma separated</p>
           <input
             type="text"
-            value={(profile.countries ?? []).join(', ')}
+            value={countriesText}
             onChange={e => {
+              setCountriesText(e.target.value)
               const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean)
               setP('countries', vals.length > 0 ? vals : undefined)
             }}
@@ -654,10 +656,14 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
 
       <div className="flex flex-wrap gap-2">
         {businesses.map(b => {
-          // Read the live draft's name for whichever business is active —
-          // the businesses array itself only refreshes after Save, so the
-          // pill used to keep showing "Untitled business" while typing.
-          const liveName = activeId === b.id ? draft?.name : b.name
+          // Read the live draft's name — for the active tab, straight from
+          // state; for any other tab, from its autosaved draft (same one
+          // selectBusiness reloads) — the businesses array itself only
+          // refreshes after Save, so switching tabs without saving used to
+          // make an in-progress name flash back to "Untitled business".
+          const liveName = activeId === b.id
+            ? draft?.name
+            : (loadDraft<Business>(`culo_v1_business_draft_${b.id}`) ?? b).name
           return (
             <button key={b.id} onClick={() => selectBusiness(b.id)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
