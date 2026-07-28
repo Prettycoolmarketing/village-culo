@@ -812,30 +812,6 @@ export function FounderProfilePage() {
                 </section>
               )}
 
-              {/* Also asked about — search-style questions surfaced from founder's content */}
-              {aggregatedIntel && aggregatedIntel.questions.length > 0 && (
-                <section aria-labelledby="founder-also-asked-heading">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h2 id="founder-also-asked-heading" className="font-heading text-2xl font-semibold text-charcoal">
-                      Also Asked About
-                    </h2>
-                    <span className="font-body text-[9px] font-semibold text-muted bg-border/60 px-2 py-0.5 rounded-full">
-                      Auto-detected
-                    </span>
-                  </div>
-                  <p className="font-body text-sm text-muted mb-6">
-                    Common questions people search for related to {founder.name}'s work.
-                  </p>
-                  <ul className="space-y-2">
-                    {aggregatedIntel.questions.slice(0, 4).map((q, i) => (
-                      <li key={i} className="font-body text-sm text-charcoal/80 leading-relaxed italic pl-3 border-l-2 border-border">
-                        {q}
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
-
             </div>
 
             {/* ── Right sidebar ─────────────────────────────────────────────── */}

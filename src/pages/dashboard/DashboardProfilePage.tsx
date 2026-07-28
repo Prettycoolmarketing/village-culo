@@ -756,7 +756,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
           <div className="flex items-center justify-between pt-2 border-t border-[#E8E4DD]">
             <div>
               <p className="text-sm font-medium text-[#2D2A26]">Visible on the public site</p>
-              <p className="text-xs text-[#9CA3AF] mt-0.5">Off keeps this business as a private draft. Featuring it is done by CULO staff.</p>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">Takes effect when you hit Save.</p>
             </div>
             <button
               onClick={() => set('status', draft.status === 'published' || draft.status === 'featured' ? 'draft' : 'published')}
@@ -840,16 +840,14 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
       {draft && (() => {
         const businessStories = getStories({ businessId: draft.id })
         const businessImports = importedContentService.getAll({ businessId: draft.id })
+        if (businessImports.length === 0 && businessStories.length === 0) return null
         return (
           <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-4">
             <div>
               <p className="text-sm font-semibold text-[#2D2A26]">Content</p>
               <p className="text-xs text-[#9CA3AF] mt-0.5">Imported and published content tagged to this business.</p>
             </div>
-            {businessImports.length === 0 && businessStories.length === 0 ? (
-              <p className="text-xs text-[#9CA3AF]">Nothing tagged to this business yet.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3">
                 {businessImports.length > 0 && (
                   <div>
                     <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1.5">Imported</p>
@@ -880,8 +878,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+            </div>
           </div>
         )
       })()}
@@ -1218,15 +1215,23 @@ export function DashboardProfilePage() {
           >
             View on site ↗
           </a>
-          {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
-          {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
-          >
-            {saving ? 'Saving…' : 'Save Changes'}
-          </button>
+          {/* Content, Businesses and Partners each save themselves inline —
+              this button only ever touches founder-profile fields (Profile,
+              FAQ, Settings), so it only shows there. Showing it everywhere
+              made it look like it should save whatever tab you were on. */}
+          {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
+            <>
+              {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
+              {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+              >
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1734,14 +1739,16 @@ export function DashboardProfilePage() {
 
       </div>
 
-      {/* Bottom save bar */}
-      <div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-[#E8E4DD] bg-white shrink-0">
-        {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
-        {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
-        <button onClick={handleSave} disabled={saving} className="px-5 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
-          {saving ? 'Saving…' : 'Save Changes'}
-        </button>
-      </div>
+      {/* Bottom save bar — same founder-fields-only scope as the top one. */}
+      {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
+        <div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-[#E8E4DD] bg-white shrink-0">
+          {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
+          {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
+          <button onClick={handleSave} disabled={saving} className="px-5 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }
