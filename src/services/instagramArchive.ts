@@ -66,6 +66,31 @@ function normalizeEntries(raw: unknown, kind: InstagramEntryKind): ParsedInstagr
   return out
 }
 
+// Some export variants list every photo/video as its own top-level JSON
+// entry instead of grouping a multi-media post under one entry's `media`
+// array — which is exactly the case that produced one ImportedContent per
+// clip instead of one per post. Same day + same kind = the same original
+// post (or close enough that a founder would rather write one blog about
+// the whole day than five near-identical ones), so entries get merged here
+// before anything is built.
+function groupByDay(posts: ParsedInstagramPost[]): ParsedInstagramPost[] {
+  const groups = new Map<string, ParsedInstagramPost>()
+  for (const post of posts) {
+    const dayKey = `${post.kind}:${new Date(post.timestamp * 1000).toISOString().slice(0, 10)}`
+    const existing = groups.get(dayKey)
+    if (!existing) {
+      groups.set(dayKey, { ...post, mediaPaths: [...post.mediaPaths] })
+      continue
+    }
+    existing.mediaPaths.push(...post.mediaPaths)
+    existing.timestamp = Math.min(existing.timestamp, post.timestamp)
+    if (post.caption && !existing.caption.includes(post.caption)) {
+      existing.caption = existing.caption ? `${existing.caption}\n\n${post.caption}` : post.caption
+    }
+  }
+  return Array.from(groups.values())
+}
+
 export async function parseInstagramArchiveFile(file: File): Promise<{ posts: ParsedInstagramPost[]; zip: JSZip }> {
   const zip = await JSZip.loadAsync(file)
   const posts: ParsedInstagramPost[] = []
@@ -76,7 +101,7 @@ export async function parseInstagramArchiveFile(file: File): Promise<{ posts: Pa
     const kind: InstagramEntryKind | null =
       lower.includes('reel') ? 'reel' :
       lower.includes('stor')  ? 'story' :
-      lower.includes('post')  ? 'post' :
+      lower.includes('post') || lower.includes('video') || lower.includes('photo') ? 'post' :
       null
     if (!kind) continue
 
@@ -92,7 +117,7 @@ export async function parseInstagramArchiveFile(file: File): Promise<{ posts: Pa
     }
   }
 
-  return { posts, zip }
+  return { posts: groupByDay(posts), zip }
 }
 
 export interface BuiltArchiveItem {
@@ -114,7 +139,7 @@ export async function buildImportedContentFromArchive(
     onProgress?.(`Uploading media ${i + 1} of ${posts.length}…`)
 
     const uploadedUrls: string[] = []
-    let videoUrl: string | undefined
+    const videoUrls: string[] = []
 
     for (const media of post.mediaPaths) {
       const zipEntry = zip.file(media.path)
@@ -127,10 +152,16 @@ export async function buildImportedContentFromArchive(
         usageType: media.isVideo ? 'reel-preview' : 'carousel-slide',
       })
       if (result.media) {
-        if (media.isVideo) videoUrl = result.media.publicUrl
+        if (media.isVideo) videoUrls.push(result.media.publicUrl)
         else uploadedUrls.push(result.media.publicUrl)
       }
     }
+
+    // Grouping same-day entries can bring several clips together under one
+    // piece — the first is the primary video, any more ride along as extra
+    // reels rather than silently overwriting each other.
+    const videoUrl = videoUrls[0]
+    const extraVideoUrls = videoUrls.slice(1)
 
     if (uploadedUrls.length === 0 && !videoUrl) continue
 
@@ -157,6 +188,7 @@ export async function buildImportedContentFromArchive(
       thumbnailUrl: uploadedUrls[0] ?? videoUrl,
       imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
       reelVideoUrl: videoUrl,
+      additionalVideoUrls: extraVideoUrls.length > 0 ? extraVideoUrls : undefined,
       title,
       subtitle,
       description: post.caption || undefined,
