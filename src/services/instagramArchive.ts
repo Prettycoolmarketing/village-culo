@@ -131,8 +131,9 @@ export async function buildImportedContentFromArchive(
   zip: JSZip,
   onProgress?: (message: string) => void,
   businessId?: string,
-): Promise<BuiltArchiveItem[]> {
+): Promise<{ built: BuiltArchiveItem[]; uploadErrors: string[] }> {
   const results: BuiltArchiveItem[] = []
+  const uploadErrors: string[] = []
 
   for (let i = 0; i < posts.length; i++) {
     const post = posts[i]!
@@ -154,6 +155,12 @@ export async function buildImportedContentFromArchive(
       if (result.media) {
         if (media.isVideo) videoUrls.push(result.media.publicUrl)
         else uploadedUrls.push(result.media.publicUrl)
+      } else if (result.error) {
+        // A video failing to upload used to just vanish — the post it
+        // belonged to silently never got created if it had no other media.
+        // Most common cause: the file is bigger than the Storage bucket's
+        // configured max upload size (Instagram exports can be large).
+        uploadErrors.push(`${filename}: ${result.error}`)
       }
     }
 
@@ -204,5 +211,5 @@ export async function buildImportedContentFromArchive(
     results.push({ item, dayKey: publishedAtIso.slice(0, 10) })
   }
 
-  return results
+  return { built: results, uploadErrors }
 }

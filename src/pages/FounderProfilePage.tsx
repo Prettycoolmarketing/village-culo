@@ -481,19 +481,21 @@ export function FounderProfilePage() {
               </div>
             )}
 
-            {business && business.name && business.slug && (
-              <div className="mt-6">
-                <Link to={`/businesses/${business.slug}`}
-                  className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
-                  aria-label={`View ${business.name} business profile`}>
-                  {business.logo && (
-                    <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
-                      <img src={business.logo} alt="" className="w-full h-full object-contain" />
-                    </div>
-                  )}
-                  {business.name}
-                  <span className="text-muted text-xs">→</span>
-                </Link>
+            {founderOwnedBusinesses.filter(b => b.name && b.slug).length > 0 && (
+              <div className="mt-6 flex flex-wrap gap-2.5">
+                {founderOwnedBusinesses.filter(b => b.name && b.slug).map(biz => (
+                  <Link key={biz.id} to={`/businesses/${biz.slug}`}
+                    className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
+                    aria-label={`View ${biz.name} business profile`}>
+                    {biz.logo && (
+                      <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
+                        <img src={biz.logo} alt="" className="w-full h-full object-contain" />
+                      </div>
+                    )}
+                    {biz.name}
+                    <span className="text-muted text-xs">→</span>
+                  </Link>
+                ))}
               </div>
             )}
 
@@ -817,11 +819,17 @@ export function FounderProfilePage() {
             {/* ── Right sidebar ─────────────────────────────────────────────── */}
             <aside className="lg:col-span-1 flex flex-col gap-8" aria-label="Founder details">
 
-              {/* Business card */}
-              {business && (
+              {/* Business card(s) — every business this founder runs, not just the primary one */}
+              {founderOwnedBusinesses.length > 0 && (
                 <section aria-labelledby="founder-business-heading">
-                  <h2 id="founder-business-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">Business</h2>
-                  <BusinessCard business={business} founder={founder} variant="default" />
+                  <h2 id="founder-business-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
+                    {founderOwnedBusinesses.length === 1 ? 'Business' : 'Businesses'}
+                  </h2>
+                  <div className="flex flex-col gap-4">
+                    {founderOwnedBusinesses.map(biz => (
+                      <BusinessCard key={biz.id} business={biz} founder={founder} variant="default" />
+                    ))}
+                  </div>
                 </section>
               )}
 

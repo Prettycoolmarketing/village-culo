@@ -44,7 +44,7 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
       }
 
       setStage('Extracting media and creating pieces…')
-      const built = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), businessId || undefined)
+      const { built, uploadErrors } = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), businessId || undefined)
 
       setStage('Saving to your Village…')
       let imported = 0
@@ -55,6 +55,12 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
 
       setStage(null)
       setResult({ imported, skipped: posts.length - imported })
+      if (uploadErrors.length > 0) {
+        setError(
+          `${uploadErrors.length} file${uploadErrors.length === 1 ? '' : 's'} couldn't upload (likely too large for the current storage limit) — ` +
+          `everything else imported fine: ${uploadErrors.slice(0, 3).join('; ')}${uploadErrors.length > 3 ? '…' : ''}`
+        )
+      }
       onImported(imported)
     } catch (err) {
       setStage(null)
