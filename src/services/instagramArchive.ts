@@ -91,6 +91,36 @@ function groupByDay(posts: ParsedInstagramPost[]): ParsedInstagramPost[] {
   return Array.from(groups.values())
 }
 
+// Looks like an entry Instagram's exports actually produce — either a
+// direct media item (`uri` on itself) or a post wrapper (`media: [...]`
+// with `uri` inside). Anything else isn't worth treating as a post no
+// matter what array it came from.
+function looksLikeMediaEntry(v: unknown): boolean {
+  if (!v || typeof v !== 'object') return false
+  const e = v as Record<string, unknown>
+  if (typeof e.uri === 'string') return true
+  if (Array.isArray(e.media)) return e.media.some(m => m && typeof m === 'object' && typeof (m as Record<string, unknown>).uri === 'string')
+  return false
+}
+
+// Instagram's export JSON shape isn't fixed — this walks the object tree
+// (not just the top level) looking for the first array that's actually full
+// of media entries, so a nested wrapper like `{ data: { stories: [...] } }`
+// or an unfamiliar top-level key still gets found.
+function findMediaArray(json: unknown, depth = 0): unknown[] | null {
+  if (depth > 4 || !json) return null
+  if (Array.isArray(json)) {
+    return json.some(looksLikeMediaEntry) ? json : null
+  }
+  if (typeof json === 'object') {
+    for (const value of Object.values(json as Record<string, unknown>)) {
+      const found = findMediaArray(value, depth + 1)
+      if (found) return found
+    }
+  }
+  return null
+}
+
 export async function parseInstagramArchiveFile(file: File): Promise<{ posts: ParsedInstagramPost[]; zip: JSZip }> {
   const zip = await JSZip.loadAsync(file)
   const posts: ParsedInstagramPost[] = []
@@ -98,19 +128,20 @@ export async function parseInstagramArchiveFile(file: File): Promise<{ posts: Pa
   for (const path of Object.keys(zip.files)) {
     const lower = path.toLowerCase()
     if (!lower.endsWith('.json')) continue
-    const kind: InstagramEntryKind | null =
+
+    // Filename hints the kind when it can; otherwise every export we've
+    // seen calls it a "post" (the plain feed/camera-roll case), so that's
+    // the fallback — never a reason to skip a file outright.
+    const kind: InstagramEntryKind =
       lower.includes('reel') ? 'reel' :
       lower.includes('stor')  ? 'story' :
-      lower.includes('post') || lower.includes('video') || lower.includes('photo') ? 'post' :
-      null
-    if (!kind) continue
+      'post'
 
     try {
       const text = await zip.files[path]!.async('string')
       const json = JSON.parse(text) as unknown
-      const raw = Array.isArray(json)
-        ? json
-        : (Object.values(json as Record<string, unknown>).find(v => Array.isArray(v)) ?? [])
+      const raw = findMediaArray(json)
+      if (!raw) continue
       posts.push(...normalizeEntries(raw, kind))
     } catch {
       continue
