@@ -1245,6 +1245,27 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.subtitle, draft.description)}</p>
       </div>
 
+      {/* Video — its own section, not the Thumbnail field. A video was
+          previously only visible because it got stuffed into thumbnailUrl
+          (with no real cover image), which just looked like a video sitting
+          in the wrong place instead of a proper Video field. */}
+      {draft.reelVideoUrl && (
+        <div className="mb-4">
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Video</label>
+          <video src={draft.reelVideoUrl} controls className="w-full max-h-96 rounded-lg bg-black" />
+          <div className="mt-2">
+            <MediaUpload
+              value={draft.reelVideoUrl}
+              onChange={v => field('reelVideoUrl', v || undefined)}
+              accept="video"
+              label="Replace video"
+              aspect="auto"
+              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Thumbnail */}
       <div className="mb-4">
         <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Thumbnail</label>

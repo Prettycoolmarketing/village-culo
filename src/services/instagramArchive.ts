@@ -197,6 +197,44 @@ export async function parseInstagramArchiveFile(
   return { posts: groupByDay(posts), zip }
 }
 
+// A raw video file was being used directly as its own "thumbnail" — an
+// <img src="video.mp4"> doesn't render, so the piece looked like it had no
+// real video behind it at all. Actually grabs a real frame: load the clip
+// into an offscreen <video>, seek a little in (frame 0 is often black/blank
+// on real footage), and capture that to a JPEG via canvas.
+function captureVideoFrame(blob: Blob): Promise<Blob | null> {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(blob)
+    const video = document.createElement('video')
+    video.src = url
+    video.muted = true
+    video.playsInline = true
+    const cleanup = () => URL.revokeObjectURL(url)
+    const fail = () => { cleanup(); resolve(null) }
+    video.onloadeddata = () => {
+      try {
+        video.currentTime = Math.min(0.3, (video.duration || 1) / 2)
+      } catch {
+        fail()
+      }
+    }
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        canvas.width = video.videoWidth || 640
+        canvas.height = video.videoHeight || 360
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { fail(); return }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        canvas.toBlob(result => { cleanup(); resolve(result) }, 'image/jpeg', 0.85)
+      } catch {
+        fail()
+      }
+    }
+    video.onerror = fail
+  })
+}
+
 export interface BuiltArchiveItem {
   item: ImportedContent
   dayKey: string // YYYY-MM-DD of the original post date — for grouping in the UI
@@ -224,6 +262,7 @@ export async function buildImportedContentFromArchive(
 
     const uploadedUrls: string[] = []
     const videoUrls: string[] = []
+    let snapshotUrl: string | undefined
 
     for (const media of post.mediaPaths) {
       const zipEntry = zip.file(media.path)
@@ -236,8 +275,21 @@ export async function buildImportedContentFromArchive(
         usageType: media.isVideo ? 'reel-preview' : 'carousel-slide',
       })
       if (result.media) {
-        if (media.isVideo) videoUrls.push(result.media.publicUrl)
-        else uploadedUrls.push(result.media.publicUrl)
+        if (media.isVideo) {
+          videoUrls.push(result.media.publicUrl)
+          if (!snapshotUrl) {
+            const frame = await captureVideoFrame(blob)
+            if (frame) {
+              const frameResult = await mediaUploadsService.uploadAndTrack(
+                new File([frame], `${filename}-cover.jpg`, { type: 'image/jpeg' }),
+                { founderId, usageType: 'carousel-slide' },
+              )
+              if (frameResult.media) snapshotUrl = frameResult.media.publicUrl
+            }
+          }
+        } else {
+          uploadedUrls.push(result.media.publicUrl)
+        }
       } else if (result.error) {
         // A video failing to upload used to just vanish — the post it
         // belonged to silently never got created if it had no other media.
@@ -285,7 +337,7 @@ export async function buildImportedContentFromArchive(
       businessId,
       sourcePlatform: 'instagram',
       originalUrl: '',
-      thumbnailUrl: uploadedUrls[0] ?? videoUrl,
+      thumbnailUrl: uploadedUrls[0] ?? snapshotUrl,
       imageUrls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
       reelVideoUrl: videoUrl,
       additionalVideoUrls: extraVideoUrls.length > 0 ? extraVideoUrls : undefined,
