@@ -253,8 +253,17 @@ export async function buildImportedContentFromArchive(
     const subtitle = lines[1]
     const hashtags = extractHashtags(post.caption)
 
+    // Driven by what actually got uploaded, not post.kind — the raw-file
+    // fallback always reports kind 'post' regardless of whether the file was
+    // a video or a photo. Without checking videoUrl here, an MP4 imported
+    // that way got hinted as plain 'blog', which meant buildStoryFromImport
+    // (gated on contentTypes including 'reel'/'youtube-video'/'social-post')
+    // never set story.reelUrl on publish — the video silently never made it
+    // into the published story at all. A video is a video regardless of
+    // where it came from; only stays 'carousel' when there's no video and
+    // more than one photo.
     const contentTypeHint: ContentType[] =
-      post.kind === 'reel' ? ['reel', 'blog'] :
+      videoUrl ? ['reel', 'blog'] :
       uploadedUrls.length > 1 ? ['carousel'] :
       ['blog']
 
