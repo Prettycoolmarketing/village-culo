@@ -121,6 +121,27 @@ function findMediaArray(json: unknown, depth = 0): unknown[] | null {
   return null
 }
 
+// Last resort when no JSON file anywhere in the archive yields a real media
+// array — Instagram's export JSON has shifted shape too many times to
+// promise this skill will always parse it. Every real media file is still
+// sitting right there in the ZIP regardless of what the JSON looks like, so
+// grab every photo/video directly by extension and use the ZIP entry's own
+// stored date (Instagram's export preserves the original capture/post date
+// on each file) as the timestamp. No caption available this way — the
+// founder writes it, same as pasting in a bare YouTube link.
+const MEDIA_FILE_RE = /\.(mp4|mov|m4v|jpe?g|png|webp|heic)$/i
+
+function rawMediaFallback(zip: JSZip): ParsedInstagramPost[] {
+  const posts: ParsedInstagramPost[] = []
+  zip.forEach((path, entry) => {
+    if (entry.dir || !MEDIA_FILE_RE.test(path)) return
+    const isVideo = /\.(mp4|mov|m4v)$/i.test(path)
+    const timestamp = Math.floor((entry.date?.getTime() ?? Date.now()) / 1000)
+    posts.push({ kind: 'post', caption: '', timestamp, mediaPaths: [{ path, isVideo }] })
+  })
+  return posts
+}
+
 export async function parseInstagramArchiveFile(file: File): Promise<{ posts: ParsedInstagramPost[]; zip: JSZip }> {
   const zip = await JSZip.loadAsync(file)
   const posts: ParsedInstagramPost[] = []
@@ -147,6 +168,8 @@ export async function parseInstagramArchiveFile(file: File): Promise<{ posts: Pa
       continue
     }
   }
+
+  if (posts.length === 0) posts.push(...rawMediaFallback(zip))
 
   return { posts: groupByDay(posts), zip }
 }
