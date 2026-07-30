@@ -1,16 +1,24 @@
 import { useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { parseInstagramArchiveFile, buildImportedContentFromArchive, repairInstagramImports } from '../../services/instagramArchive'
+import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
 import { importedContentService } from '../../services/importedContent'
 import { getBusinesses } from '../../services/businesses'
+import { getFounder } from '../../services/founders'
 
 // Bring in a whole Instagram export ZIP at once — posts, reels and stories
 // each become their own ImportedContent (carousels keep every photo, in
 // order), grouped by day in the list below once imported. Nothing is
 // published: everything lands as a private draft, same as any other import.
+//
+// Gated on the founder having a Voice & Brand Brief (Profile > Settings) —
+// without one, every AI-generated blog reads the same regardless of which
+// video it's attached to, which is bad for SEO (near-duplicate pages) and
+// GEO (nothing distinct for an AI system to cite).
 
-export function InstagramArchiveImportCard({ founderId, onImported, expanded: controlledExpanded, onExpandedChange }: {
+export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, expanded: controlledExpanded, onExpandedChange }: {
   founderId: string
+  voiceBrief?: string
   onImported: (count: number) => void
   expanded?: boolean
   onExpandedChange?: (expanded: boolean) => void
@@ -65,6 +73,32 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
 
       setStage('Extracting media and creating pieces…')
       const { built, uploadErrors } = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), businessId || undefined)
+
+      // A real, distinct blog per piece — using the founder's own voice, not
+      // a generic template — so publishing several of these doesn't read as
+      // duplicate content. Runs one at a time (each is a real AI call) with
+      // real progress, and a failure on one item never blocks the rest —
+      // it just keeps that item's original caption as its description.
+      if (voiceBrief?.trim()) {
+        const founderName = getFounder(founderId)?.name ?? ''
+        for (let i = 0; i < built.length; i++) {
+          setStage(`Writing blog ${i + 1} of ${built.length}…`)
+          const { item } = built[i]!
+          const { blog } = await generateBlogFromVoiceBrief({
+            voiceBrief,
+            founderName,
+            caption: item.description,
+            platform: 'Instagram',
+            kind: item.contentTypeHint?.includes('reel') ? 'reel' : item.contentTypeHint?.includes('carousel') ? 'carousel photo post' : 'post',
+          })
+          if (blog) {
+            item.title = blog.title
+            item.description = blog.blog
+            item.subtitle = blog.subtitle
+            item.topics = Array.from(new Set([...item.topics, ...blog.topics]))
+          }
+        }
+      }
 
       setStage('Saving to your Village…')
       let imported = 0
@@ -127,7 +161,24 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
         )}
       </div>
 
-      {expanded && (
+      {expanded && !voiceBrief?.trim() && (
+        <div className="mt-3 bg-[#FBF1EB] border border-[#F0DDD2] rounded-xl px-4 py-4">
+          <p className="text-sm font-semibold text-[#2D2A26] mb-1">Add your Voice & Brand Brief first</p>
+          <p className="text-xs text-[#6B7280] mb-3 leading-relaxed">
+            Instagram Archive import writes a real, distinct blog for every piece using your own voice —
+            that needs a brief to work from, or every blog would read the same regardless of which video
+            it's attached to.
+          </p>
+          <Link
+            to="/dashboard/profile?tab=settings"
+            className="inline-block text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors"
+          >
+            Add my Voice & Brand Brief →
+          </Link>
+        </div>
+      )}
+
+      {expanded && voiceBrief?.trim() && (
         <div className="mt-3">
           <button type="button" onClick={() => setShowInstructions(v => !v)}
             className="text-xs font-semibold text-[#C86A43] hover:underline mb-3">

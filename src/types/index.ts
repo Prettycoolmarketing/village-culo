@@ -413,6 +413,14 @@ export interface Founder {
   claimEmail?: string
   claimNotes?: string
   isClaimable?: boolean
+  // Voice & Brand Brief — free text describing who this founder is, their
+  // real businesses/chapters, how they write, and what not to say. Feeds
+  // AI-generated blogs for imported content (see services/blogWriter.ts) —
+  // required before Instagram Archive import will write blogs, since a
+  // generic prompt with no real voice behind it produces generic, near-
+  // duplicate text across every imported piece (bad for SEO/GEO).
+  voiceBrief?: string
+  voiceBriefUpdatedAt?: string
   // Sprint 3.5 — Village Intelligence pipeline: a real, persisted, recomputed-
   // on-publish score (see computeAuthorityScore in services/ideaSync.ts).
   // Heuristic, not ML — deterministic from ideas created/strengthened, stories

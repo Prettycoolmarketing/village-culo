@@ -29,6 +29,7 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { BusinessDiscoveryProfile, BusinessProgramsTab, BusinessServicesEditor } from '../../components/dashboard/BusinessWorkspace'
 import { StoryEditor } from '../../components/dashboard/StoryEditor'
+import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
 import {
   getFounderMissingItems,
   getBusinessMissingItems,
@@ -1725,6 +1726,12 @@ export function DashboardProfilePage() {
                 </button>
               </div>
             </div>
+
+            <VoiceBriefEditor
+              value={draft.voiceBrief}
+              updatedAt={draft.voiceBriefUpdatedAt}
+              onChange={v => { set('voiceBrief', v); set('voiceBriefUpdatedAt', v ? new Date().toISOString() : undefined) }}
+            />
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Founder ID</p>

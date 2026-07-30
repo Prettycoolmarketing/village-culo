@@ -1674,6 +1674,7 @@ export function DashboardImportContentPage() {
   const navigate = useNavigate()
   const founderId = getCurrentFounderId(user) ?? 'dev-user'
   const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
+  const founder = getFounder(founderId)
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [sources, setSources]   = useState<ConnectedSource[]>([])
@@ -1786,6 +1787,7 @@ export function DashboardImportContentPage() {
           <div ref={instagramCardRef}>
             <InstagramArchiveImportCard
               founderId={founderId}
+              voiceBrief={founder?.voiceBrief}
               expanded={instagramExpanded}
               onExpandedChange={setInstagramExpanded}
               onImported={count => reportImported(count)}
