@@ -9,18 +9,6 @@ import { getBusinesses } from '../../services/businesses'
 // order), grouped by day in the list below once imported. Nothing is
 // published: everything lands as a private draft, same as any other import.
 
-// Reading a large export ZIP (JSZip.loadAsync + scanning every JSON file
-// inside it) can take a while with no progress callback to hook into —
-// without this, the UI just sat on "Reading archive…" long enough that a
-// founder reasonably assumed it had frozen. Rotating reassurance instead of
-// a single static line that never changes.
-const READING_MESSAGES = [
-  'Reading archive…',
-  'Unpacking your photos and videos…',
-  'Larger exports can take a minute or two…',
-  'Still working — thanks for your patience…',
-]
-
 export function InstagramArchiveImportCard({ founderId, onImported, expanded: controlledExpanded, onExpandedChange }: {
   founderId: string
   onImported: (count: number) => void
@@ -47,16 +35,10 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
       return
     }
 
-    let readingIndex = 0
-    setStage(READING_MESSAGES[0]!)
-    const readingInterval = setInterval(() => {
-      readingIndex = (readingIndex + 1) % READING_MESSAGES.length
-      setStage(READING_MESSAGES[readingIndex]!)
-    }, 3500)
+    setStage('Reading archive…')
 
     try {
-      const { posts, zip } = await parseInstagramArchiveFile(file)
-      clearInterval(readingInterval)
+      const { posts, zip } = await parseInstagramArchiveFile(file, msg => setStage(msg))
       if (posts.length === 0) {
         setError('Couldn’t find any posts, reels or stories in that archive. Instagram’s export format varies — let support know and we’ll take a look.')
         setStage(null)
@@ -83,7 +65,6 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
       }
       onImported(imported)
     } catch (err) {
-      clearInterval(readingInterval)
       setStage(null)
       setError(err instanceof Error ? err.message : 'Could not process that archive.')
     }
@@ -158,7 +139,14 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
           {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
 
           {stage ? (
-            <p className="text-xs text-[#9CA3AF] px-4 py-6 text-center">{stage}</p>
+            <div className="flex items-center justify-center gap-2.5 px-4 py-6">
+              {/* CSS-driven, not JS-timer-driven — keeps visibly spinning even
+                  during the moments the main thread is busy decompressing/
+                  parsing a large file, which is exactly when a JS-only
+                  indicator would otherwise look frozen. */}
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-[#E8E4DD] border-t-[#C86A43] animate-spin shrink-0" aria-hidden="true" />
+              <p className="text-xs text-[#9CA3AF] text-center">{stage}</p>
+            </div>
           ) : result ? (
             <div className="px-4 py-3 bg-[#5E6B4A]/10 rounded-lg flex items-center justify-between gap-3 flex-wrap">
               <p className="text-xs text-[#5E6B4A] font-medium">

@@ -146,13 +146,19 @@ function rawMediaFallback(zip: JSZip): ParsedInstagramPost[] {
   return posts
 }
 
-export async function parseInstagramArchiveFile(file: File): Promise<{ posts: ParsedInstagramPost[]; zip: JSZip }> {
+export async function parseInstagramArchiveFile(
+  file: File,
+  onProgress?: (message: string) => void,
+): Promise<{ posts: ParsedInstagramPost[]; zip: JSZip }> {
+  onProgress?.('Unzipping archive…')
   const zip = await JSZip.loadAsync(file)
   const posts: ParsedInstagramPost[] = []
+  const jsonPaths = Object.keys(zip.files).filter(p => p.toLowerCase().endsWith('.json'))
 
-  for (const path of Object.keys(zip.files)) {
+  for (let i = 0; i < jsonPaths.length; i++) {
+    const path = jsonPaths[i]!
+    onProgress?.(`Scanning file ${i + 1} of ${jsonPaths.length}…`)
     const lower = path.toLowerCase()
-    if (!lower.endsWith('.json')) continue
 
     // Filename hints the kind when it can; otherwise every export we've
     // seen calls it a "post" (the plain feed/camera-roll case), so that's
@@ -166,11 +172,17 @@ export async function parseInstagramArchiveFile(file: File): Promise<{ posts: Pa
       const text = await zip.files[path]!.async('string')
       const json = JSON.parse(text) as unknown
       const raw = findMediaArray(json)
-      if (!raw) continue
-      posts.push(...normalizeEntries(raw, kind))
+      if (raw) posts.push(...normalizeEntries(raw, kind))
     } catch {
-      continue
+      // fall through — an unparseable file just doesn't contribute posts
     }
+
+    // Decompressing + JSON.parse-ing a large file is real, synchronous CPU
+    // work — without yielding back to the browser periodically, it can hog
+    // the main thread long enough that neither this progress message nor
+    // the UI's own rotating status text ever actually repaints, and the
+    // whole thing looks frozen even though it's working.
+    if (i % 2 === 0) await new Promise(resolve => setTimeout(resolve, 0))
   }
 
   // Grouping by day only makes sense when the day actually came from
