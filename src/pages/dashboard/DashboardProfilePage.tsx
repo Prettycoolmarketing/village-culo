@@ -571,11 +571,13 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
     setSaved(false)
   }
 
-  function handleAddBusiness() {
-    // Don't write this to the database until the founder actually hits Save —
-    // clicking "+ Add business" used to insert a blank row immediately, which
-    // left permanent "Untitled business" placeholders behind for anyone who
-    // opened the form and navigated away without filling it in.
+  async function handleAddBusiness() {
+    // Persisted immediately (not just held in local state) — this tab
+    // unmounts whenever the founder switches to a different top-level tab
+    // (Content, Partners, etc.), which was silently discarding any business
+    // added but not yet saved. A blank business is harmless: it has no name
+    // or slug yet, so getBusinesses({ publicOnly: true }) won't surface it
+    // even though it's technically "published" by default.
     const now = new Date().toISOString()
     const newBiz: Business = {
       id: crypto.randomUUID(),
@@ -590,16 +592,16 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
       industry: founderIndustry,
       topics: [],
       offers: [],
-      // Visible from the start — every business is either curated by CULO
-      // or added by a real joined member, so there's no reason to make
-      // someone flip a switch before it shows up.
       status: 'published',
       featured: false,
       createdAt: now,
     }
-    setBusinesses(prev => [...prev, newBiz])
-    setActiveId(newBiz.id)
-    setDraft(newBiz)
+    const result = await updateBusiness(newBiz)
+    if (result.success) {
+      setBusinesses(getBusinesses({ founderId }))
+      setActiveId(newBiz.id)
+      setDraft(newBiz)
+    }
   }
 
   async function handleDelete() {
@@ -676,7 +678,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
             </button>
           )
         })}
-        <button onClick={handleAddBusiness}
+        <button onClick={() => void handleAddBusiness()}
           className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#C86A43] border border-dashed border-[#C86A43]/50 hover:bg-[#FDF6F3] transition-colors">
           + Add business
         </button>
