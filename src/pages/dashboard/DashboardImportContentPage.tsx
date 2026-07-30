@@ -1196,10 +1196,19 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] p-5">
 
-      {/* Platform + URL */}
+      {/* Platform + URL + View — the real published story once one exists,
+          otherwise a live preview so it's viewable before ever publishing. */}
       <div className="flex items-center gap-2 mb-5">
         <PlatformBadge platform={draft.sourcePlatform} />
-        <span className="text-xs text-[#9CA3AF] truncate">{draft.originalUrl}</span>
+        {draft.originalUrl && <span className="text-xs text-[#9CA3AF] truncate">{draft.originalUrl}</span>}
+        <a
+          href={draft.relatedStoryId ? `/stories/${getStory(draft.relatedStoryId)?.slug ?? ''}` : `/dashboard/preview/${draft.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto shrink-0 text-xs font-semibold text-[#C86A43] hover:underline"
+        >
+          {draft.relatedStoryId ? 'View published story →' : 'Preview →'}
+        </a>
       </div>
 
       {/* Embed preview */}
