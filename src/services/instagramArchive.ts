@@ -13,6 +13,8 @@
 
 import JSZip from 'jszip'
 import { mediaUploadsService } from './mediaUploads'
+import { getFounder } from './founders'
+import { getBusiness } from './businesses'
 import type { ImportedContent } from '../types/importedContent'
 import type { ContentType } from '../types'
 
@@ -189,6 +191,12 @@ export async function buildImportedContentFromArchive(
   const results: BuiltArchiveItem[] = []
   const uploadErrors: string[] = []
 
+  // Used only as a fallback title when Instagram's export had no caption to
+  // pull from (the raw-media-file path) — real captions always win.
+  const founderName = getFounder(founderId)?.name
+  const businessName = businessId ? getBusiness(businessId)?.name : undefined
+  const fallbackWho = [founderName, businessName].filter(Boolean).join(' — ')
+
   for (let i = 0; i < posts.length; i++) {
     const post = posts[i]!
     onProgress?.(`Uploading media ${i + 1} of ${posts.length}…`)
@@ -231,7 +239,8 @@ export async function buildImportedContentFromArchive(
     // caption still goes into description/blog untouched.
     const lines = firstLines(post.caption, 2)
     const publishedAtIso = new Date(post.timestamp * 1000).toISOString()
-    const title = lines[0] || `Instagram ${post.kind} — ${new Date(post.timestamp * 1000).toLocaleDateString('en-AU')}`
+    const dateLabel = new Date(post.timestamp * 1000).toLocaleDateString('en-AU')
+    const title = lines[0] || `Instagram post${fallbackWho ? ` by ${fallbackWho}` : ''} — ${dateLabel}`
     const subtitle = lines[1]
     const hashtags = extractHashtags(post.caption)
 
