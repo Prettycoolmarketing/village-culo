@@ -1,6 +1,6 @@
 import { useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { parseInstagramArchiveFile, buildImportedContentFromArchive } from '../../services/instagramArchive'
+import { parseInstagramArchiveFile, buildImportedContentFromArchive, repairInstagramImports } from '../../services/instagramArchive'
 import { importedContentService } from '../../services/importedContent'
 import { getBusinesses } from '../../services/businesses'
 
@@ -25,6 +25,24 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
   const [result, setResult] = useState<{ imported: number; skipped: number } | null>(null)
   const businesses = getBusinesses({ founderId })
   const [businessId, setBusinessId] = useState<string>('')
+  const [repairing, setRepairing] = useState(false)
+  const [repairStage, setRepairStage] = useState<string | null>(null)
+  const [repairResult, setRepairResult] = useState<{ fixed: number; failed: number } | null>(null)
+
+  async function handleRepair() {
+    setRepairing(true)
+    setRepairResult(null)
+    setError(null)
+    try {
+      const outcome = await repairInstagramImports(founderId, msg => setRepairStage(msg))
+      setRepairResult(outcome)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not repair previous imports.')
+    } finally {
+      setRepairing(false)
+      setRepairStage(null)
+    }
+  }
 
   async function handleFile(file: File | undefined) {
     if (!file) return
@@ -90,6 +108,22 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
             className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors shrink-0">
             Import archive
           </button>
+        )}
+      </div>
+
+      {/* Fixes videos already imported before the reel/thumbnail fixes —
+          no re-upload needed, the videos are already in Storage. */}
+      <div className="mt-3">
+        <button type="button" onClick={() => void handleRepair()} disabled={repairing}
+          className="text-xs font-semibold text-[#C86A43] hover:underline disabled:opacity-50 disabled:no-underline">
+          {repairing ? (repairStage ?? 'Checking…') : 'Fix previously imported Instagram videos'}
+        </button>
+        {repairResult && !repairing && (
+          <p className="text-xs text-[#5E6B4A] mt-1.5">
+            {repairResult.fixed === 0
+              ? 'Everything already looked right — nothing needed fixing.'
+              : `Fixed ${repairResult.fixed} item${repairResult.fixed === 1 ? '' : 's'}${repairResult.failed > 0 ? ` — ${repairResult.failed} couldn't be updated` : ''}.`}
+          </p>
         )}
       </div>
 

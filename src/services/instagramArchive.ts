@@ -15,6 +15,7 @@ import JSZip from 'jszip'
 import { mediaUploadsService } from './mediaUploads'
 import { getFounder } from './founders'
 import { getBusiness } from './businesses'
+import { importedContentService } from './importedContent'
 import type { ImportedContent } from '../types/importedContent'
 import type { ContentType } from '../types'
 
@@ -357,4 +358,64 @@ export async function buildImportedContentFromArchive(
   }
 
   return { built: results, uploadErrors }
+}
+
+const VIDEO_EXT_RE = /\.(mp4|mov|m4v)(\?|$)/i
+
+/**
+ * One-time repair for Instagram items imported before two fixes landed:
+ * (1) a video's raw file URL was reused directly as thumbnailUrl instead of
+ * a real cover image, and (2) videos got hinted as contentType 'blog'
+ * instead of 'reel', which meant buildStoryFromImport never carried the
+ * video into the published Story at all. Both are fixable after the fact —
+ * the video is already sitting in Storage, so it's just fetched back down,
+ * a frame captured the same way a fresh import does it, and the record
+ * updated in place. No re-upload from the founder required.
+ */
+export async function repairInstagramImports(
+  founderId: string,
+  onProgress?: (message: string) => void,
+): Promise<{ fixed: number; failed: number }> {
+  const items = importedContentService.getAll({ founderId }).filter(i => i.sourcePlatform === 'instagram')
+  let fixed = 0
+  let failed = 0
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]!
+    const needsTypeFix = !!item.reelVideoUrl && !(item.contentTypeHint ?? []).includes('reel')
+    const needsThumbnailFix = !!item.reelVideoUrl && (!item.thumbnailUrl || item.thumbnailUrl === item.reelVideoUrl || VIDEO_EXT_RE.test(item.thumbnailUrl))
+    if (!needsTypeFix && !needsThumbnailFix) continue
+
+    onProgress?.(`Checking ${i + 1} of ${items.length}…`)
+    const patch: Partial<ImportedContent> = {}
+
+    if (needsTypeFix) {
+      patch.contentTypeHint = ['reel', 'blog']
+    }
+
+    if (needsThumbnailFix) {
+      try {
+        const response = await fetch(item.reelVideoUrl!)
+        const blob = await response.blob()
+        const frame = await captureVideoFrame(blob)
+        if (frame) {
+          const frameResult = await mediaUploadsService.uploadAndTrack(
+            new File([frame], `${item.id}-cover.jpg`, { type: 'image/jpeg' }),
+            { founderId, businessId: item.businessId, usageType: 'carousel-slide' },
+          )
+          if (frameResult.media) patch.thumbnailUrl = frameResult.media.publicUrl
+        }
+      } catch {
+        // Fetching the existing video back down failed (network, CORS,
+        // deleted file) — leave the thumbnail as-is rather than blocking
+        // the content-type fix this item might still need.
+      }
+    }
+
+    const result = await importedContentService.upsert({ ...item, ...patch })
+    if (result.success) fixed++
+    else failed++
+  }
+
+  return { fixed, failed }
 }
