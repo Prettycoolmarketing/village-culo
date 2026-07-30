@@ -1563,49 +1563,53 @@ export function SavedRow({
           aria-label={ready ? `Select "${item.title}" to publish` : 'Not ready to publish yet'}
         />
       )}
-      {item.originalUrl ? (
-        <a
-          href={normalizeUrl(item.originalUrl)}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Open original"
-          className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center hover:opacity-80 transition-opacity"
-        >
-          {item.thumbnailUrl ? (
-            <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
-          ) : (
-            <span className="text-[#C4BDB4]">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 6h16M4 6a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2H4z" />
-              </svg>
-            </span>
-          )}
-        </a>
-      ) : (
-        <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center">
-          {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />}
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <PlatformBadge platform={item.sourcePlatform} />
-          {item.originalUrl ? (
-            <a href={normalizeUrl(item.originalUrl)} target="_blank" rel="noopener noreferrer"
-              className="text-base font-semibold text-[#2D2A26] truncate hover:text-[#C86A43] transition-colors">
-              {item.title}
+      {/* Real external source wins when there is one. Once a real Story
+          exists (relatedStoryId), that's the accurate thing to show —
+          otherwise, an in-memory preview (no external link to point to at
+          all, e.g. a raw Instagram archive file with no post URL). */}
+      {(() => {
+        const viewHref = item.originalUrl
+          ? normalizeUrl(item.originalUrl)
+          : publishedStory ? `/stories/${publishedStory.slug}` : `/dashboard/preview/${item.id}`
+        const isExternal = !!item.originalUrl
+        const linkProps = isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+        return (
+          <>
+            <a
+              href={viewHref}
+              {...linkProps}
+              title={isExternal ? 'Open original' : 'Preview'}
+              className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center hover:opacity-80 transition-opacity"
+            >
+              {item.thumbnailUrl ? (
+                <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+              ) : (
+                <span className="text-[#C4BDB4]">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 6h16M4 6a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2H4z" />
+                  </svg>
+                </span>
+              )}
             </a>
-          ) : (
-            <p className="text-base font-semibold text-[#2D2A26] truncate">{item.title}</p>
-          )}
-          {!item.relatedStoryId && !ready && (
-            <span className="text-[10px] text-amber-600 shrink-0">needs a title before it can publish</span>
-          )}
-        </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <PlatformBadge platform={item.sourcePlatform} />
+                <a href={viewHref} {...linkProps}
+                  className="text-base font-semibold text-[#2D2A26] truncate hover:text-[#C86A43] transition-colors">
+                  {item.title}
+                </a>
+                {!item.relatedStoryId && !ready && (
+                  <span className="text-[10px] text-amber-600 shrink-0">needs a title before it can publish</span>
+                )}
+              </div>
 
-        <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-2 max-w-xl">
-          {item.description || <span className="text-[#C4BDB4] italic">No description yet.</span>}
-        </p>
-      </div>
+              <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-2 max-w-xl">
+                {item.description || <span className="text-[#C4BDB4] italic">No description yet.</span>}
+              </p>
+            </div>
+          </>
+        )
+      })()}
       <select
         value={item.status}
         onChange={e => onStatusChange(e.target.value as ImportedContentStatus)}

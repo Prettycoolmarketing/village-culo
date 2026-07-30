@@ -127,10 +127,12 @@ function findMediaArray(json: unknown, depth = 0): unknown[] | null {
 // array — Instagram's export JSON has shifted shape too many times to
 // promise this skill will always parse it. Every real media file is still
 // sitting right there in the ZIP regardless of what the JSON looks like, so
-// grab every photo/video directly by extension and use the ZIP entry's own
-// stored date (Instagram's export preserves the original capture/post date
-// on each file) as the timestamp. No caption available this way — the
-// founder writes it, same as pasting in a bare YouTube link.
+// grab every photo/video directly by extension. The ZIP entry's stored date
+// is the best timestamp available here, but it isn't necessarily the real
+// post date (it can just reflect when the export was assembled) — good
+// enough to sort/display by, not reliable enough to group posts on. No
+// caption available this way either — the founder writes it, same as
+// pasting in a bare YouTube link.
 const MEDIA_FILE_RE = /\.(mp4|mov|m4v|jpe?g|png|webp|heic)$/i
 
 function rawMediaFallback(zip: JSZip): ParsedInstagramPost[] {
@@ -171,7 +173,14 @@ export async function parseInstagramArchiveFile(file: File): Promise<{ posts: Pa
     }
   }
 
-  if (posts.length === 0) posts.push(...rawMediaFallback(zip))
+  // Grouping by day only makes sense when the day actually came from
+  // Instagram's own per-post timestamp (the JSON path above). The raw file
+  // fallback below has no real post date to go on — a ZIP entry's stored
+  // date is often just whenever the export was put together, so every clip
+  // can end up stamped with the same day regardless of when it was really
+  // posted. Grouping those by that unreliable date was merging an entire
+  // export into one giant post — each raw file stays its own piece instead.
+  if (posts.length === 0) return { posts: rawMediaFallback(zip), zip }
 
   return { posts: groupByDay(posts), zip }
 }
