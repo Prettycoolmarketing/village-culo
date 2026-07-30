@@ -1,4 +1,5 @@
 import { useState, type DragEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { parseInstagramArchiveFile, buildImportedContentFromArchive } from '../../services/instagramArchive'
 import { importedContentService } from '../../services/importedContent'
 import { getBusinesses } from '../../services/businesses'
@@ -7,6 +8,18 @@ import { getBusinesses } from '../../services/businesses'
 // each become their own ImportedContent (carousels keep every photo, in
 // order), grouped by day in the list below once imported. Nothing is
 // published: everything lands as a private draft, same as any other import.
+
+// Reading a large export ZIP (JSZip.loadAsync + scanning every JSON file
+// inside it) can take a while with no progress callback to hook into —
+// without this, the UI just sat on "Reading archive…" long enough that a
+// founder reasonably assumed it had frozen. Rotating reassurance instead of
+// a single static line that never changes.
+const READING_MESSAGES = [
+  'Reading archive…',
+  'Unpacking your photos and videos…',
+  'Larger exports can take a minute or two…',
+  'Still working — thanks for your patience…',
+]
 
 export function InstagramArchiveImportCard({ founderId, onImported, expanded: controlledExpanded, onExpandedChange }: {
   founderId: string
@@ -34,9 +47,16 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
       return
     }
 
+    let readingIndex = 0
+    setStage(READING_MESSAGES[0]!)
+    const readingInterval = setInterval(() => {
+      readingIndex = (readingIndex + 1) % READING_MESSAGES.length
+      setStage(READING_MESSAGES[readingIndex]!)
+    }, 3500)
+
     try {
-      setStage('Reading archive…')
       const { posts, zip } = await parseInstagramArchiveFile(file)
+      clearInterval(readingInterval)
       if (posts.length === 0) {
         setError('Couldn’t find any posts, reels or stories in that archive. Instagram’s export format varies — let support know and we’ll take a look.')
         setStage(null)
@@ -63,6 +83,7 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
       }
       onImported(imported)
     } catch (err) {
+      clearInterval(readingInterval)
       setStage(null)
       setError(err instanceof Error ? err.message : 'Could not process that archive.')
     }
@@ -139,10 +160,18 @@ export function InstagramArchiveImportCard({ founderId, onImported, expanded: co
           {stage ? (
             <p className="text-xs text-[#9CA3AF] px-4 py-6 text-center">{stage}</p>
           ) : result ? (
-            <p className="text-xs text-[#5E6B4A] font-medium px-4 py-3 bg-[#5E6B4A]/10 rounded-lg">
-              Imported {result.imported} piece{result.imported === 1 ? '' : 's'}
-              {result.skipped > 0 ? ` — ${result.skipped} skipped (no usable media)` : ''}. Nothing is published yet — review it below.
-            </p>
+            <div className="px-4 py-3 bg-[#5E6B4A]/10 rounded-lg flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-xs text-[#5E6B4A] font-medium">
+                Imported {result.imported} piece{result.imported === 1 ? '' : 's'}
+                {result.skipped > 0 ? ` — ${result.skipped} skipped (no usable media)` : ''}. Nothing is published yet.
+              </p>
+              <Link
+                to="/dashboard/profile?tab=content&contentSubTab=imported&platform=instagram"
+                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A] text-white hover:bg-[#4a5539] transition-colors"
+              >
+                Review Instagram imports →
+              </Link>
+            </div>
           ) : (
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true) }}
