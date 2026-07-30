@@ -1426,6 +1426,16 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
+              async function handleMergeSelected() {
+                const ids = Array.from(importedChecked)
+                if (ids.length < 2) return
+                if (!window.confirm(`Merge these ${ids.length} items into one? The others will be deleted — this can't be undone.`)) return
+                const result = await importedContentService.merge(ids)
+                if (!result.success) setSaveError(result.error ?? 'Could not merge those items.')
+                setImportedChecked(new Set())
+                refreshImported()
+              }
+
               function handleImportedDelete(id: string) {
                 importedContentService.delete(id)
                 refreshImported()
@@ -1450,24 +1460,36 @@ export function DashboardProfilePage() {
 
                   {saveError && <p className="text-xs text-red-600 font-medium mb-3">{saveError}</p>}
 
-                  {readyItems.length > 0 && (
-                    <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg">
+                  {(readyItems.length > 0 || importedChecked.size > 0) && (
+                    <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg flex-wrap">
                       <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer">
                         <input
                           type="checkbox"
                           checked={importedChecked.size > 0 && importedChecked.size === readyItems.length}
                           onChange={toggleSelectAllReady}
+                          disabled={readyItems.length === 0}
                           className="w-4 h-4 accent-[#C86A43]"
                         />
                         Select all ready to publish ({readyItems.length})
                       </label>
-                      <button
-                        onClick={() => void handleImportedBulkPublish()}
-                        disabled={importedChecked.size === 0 || importedBulkPublishing}
-                        className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-                      >
-                        {importedBulkPublishing ? 'Publishing…' : `Publish ${importedChecked.size || ''} selected`}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {importedChecked.size >= 2 && (
+                          <button
+                            onClick={() => void handleMergeSelected()}
+                            title="Combine the selected items into one — for clips posted the same day that didn't group automatically"
+                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0"
+                          >
+                            Merge {importedChecked.size} selected
+                          </button>
+                        )}
+                        <button
+                          onClick={() => void handleImportedBulkPublish()}
+                          disabled={importedChecked.size === 0 || importedBulkPublishing}
+                          className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                        >
+                          {importedBulkPublishing ? 'Publishing…' : `Publish ${importedChecked.size || ''} selected`}
+                        </button>
+                      </div>
                     </div>
                   )}
 

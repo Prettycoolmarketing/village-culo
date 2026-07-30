@@ -155,4 +155,51 @@ export const importedContentService = {
     if (!item) return { success: false, error: 'Not found' }
     return this.upsert({ ...item, status })
   },
+
+  /**
+   * Combines several separately-imported pieces into one — for when
+   * same-day grouping (Instagram archive, or any other connector) didn't
+   * catch clips that were genuinely posted together. The earliest item
+   * becomes the survivor: keeps its title/subtitle/thumbnail, absorbs every
+   * other item's photos and videos, merges captions and topics, and the
+   * rest get deleted rather than left behind as empty duplicates.
+   */
+  async merge(ids: string[]): Promise<WriteResult> {
+    if (ids.length < 2) return { success: false, error: 'Select at least two items to merge.' }
+    const items = ids.map(id => this.get(id)).filter((i): i is ImportedContent => !!i)
+    if (items.length < 2) return { success: false, error: 'Could not find those items.' }
+
+    const sorted = [...items].sort((a, b) => (a.publishedAt ?? a.importedAt).localeCompare(b.publishedAt ?? b.importedAt))
+    const primary = sorted[0]!
+    const rest = sorted.slice(1)
+
+    const allImages = Array.from(new Set(items.flatMap(i => i.imageUrls ?? [])))
+    const allVideos = Array.from(new Set(items.flatMap(i => [i.reelVideoUrl, ...(i.additionalVideoUrls ?? [])]).filter((u): u is string => !!u)))
+    const [primaryVideo, ...extraVideos] = allVideos
+    const captions = Array.from(new Set(items.map(i => i.description?.trim()).filter((d): d is string => !!d)))
+    const topics = Array.from(new Set(items.flatMap(i => i.topics)))
+    const locations = Array.from(new Set(items.flatMap(i => i.locations)))
+
+    const contentTypeHint = primaryVideo
+      ? ['reel', 'blog'] as const
+      : allImages.length > 1 ? ['carousel'] as const : ['blog'] as const
+
+    const merged: ImportedContent = {
+      ...primary,
+      thumbnailUrl: primary.thumbnailUrl ?? sorted.find(i => i.thumbnailUrl)?.thumbnailUrl,
+      imageUrls: allImages.length > 0 ? allImages : undefined,
+      reelVideoUrl: primaryVideo,
+      additionalVideoUrls: extraVideos.length > 0 ? extraVideos : undefined,
+      description: captions.length > 0 ? captions.join('\n\n') : primary.description,
+      topics,
+      locations,
+      contentTypeHint: [...contentTypeHint],
+    }
+
+    const result = await this.upsert(merged)
+    if (!result.success) return result
+
+    for (const item of rest) await this.delete(item.id)
+    return { success: true }
+  },
 }

@@ -1579,9 +1579,8 @@ export function SavedRow({
           type="checkbox"
           checked={checked}
           onChange={onToggleCheck}
-          disabled={!ready}
-          className="shrink-0 w-4 h-4 mt-1.5 accent-[#C86A43] disabled:opacity-30"
-          aria-label={ready ? `Select "${item.title}" to publish` : 'Not ready to publish yet'}
+          className="shrink-0 w-4 h-4 mt-1.5 accent-[#C86A43]"
+          aria-label={`Select "${item.title}"`}
         />
       )}
       {/* Real external source wins when there is one. Once a real Story
