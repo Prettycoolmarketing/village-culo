@@ -12,7 +12,6 @@ import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBl
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
-import { getFAQsForBusiness }              from '../data/faqs'
 import { getServices }                     from '../services/serviceOfferings'
 import { getTestimonialsForBusiness } from '../data/testimonials'
 import { getCaseStudiesForBusiness }  from '../data/caseStudies'
@@ -129,10 +128,6 @@ export function BusinessProfilePage() {
         .map(r => getStories().find(s => s.id === r.fromId))
         .filter((s): s is NonNullable<typeof s> => !!s && (s.status === 'published' || s.status === 'featured'))
     : []
-  // Merges static seed FAQs with real founder-added ones (business.faqs and
-  // every service's own faqs) — see data/faqs.ts.
-  const faqs = business ? getFAQsForBusiness(business.id) : []
-
   usePageMeta({
     title:       business?.seoTitle || business?.name,
     description: business?.seoDescription || business?.description?.slice(0, 160),
@@ -176,8 +171,8 @@ export function BusinessProfilePage() {
           url: `${window.location.origin}/stories/${s.slug}`,
         })),
       } : {}),
-      ...(faqs.length > 0 ? {
-        mainEntity: faqs.map(f => ({
+      ...((business.faqs ?? []).some(f => f.answer.trim()) ? {
+        mainEntity: (business.faqs ?? []).filter(f => f.answer.trim()).map(f => ({
           '@type': 'Question',
           name: f.question,
           acceptedAnswer: { '@type': 'Answer', text: f.answer },
@@ -188,6 +183,11 @@ export function BusinessProfilePage() {
 
   if (!business || (business.status !== 'published' && business.status !== 'featured')) return <BusinessNotFound slug={slug ?? ''} />
   const services       = getServices(undefined, business.id)
+  // Real FAQs only — this used to also merge in a parallel fake FAQ system
+  // keyed by business id, which meant a real business happening to share an
+  // id with a demo seed entry (e.g. this session's own "pretty-cool-
+  // marketing") showed fabricated answers alongside its real ones.
+  const realFaqs = [...(business.faqs ?? []), ...services.flatMap(s => s.faqs ?? [])].filter(f => f.answer.trim().length > 0)
   const testimonials   = getTestimonialsForBusiness(business.id)
   const caseStudies    = getCaseStudiesForBusiness(business.id)
   const resources      = getResourcesForBusiness(business.id)
@@ -300,7 +300,7 @@ export function BusinessProfilePage() {
               {business.name}
             </h1>
             <p className="font-heading text-lg text-muted italic mb-4">{business.tagline}</p>
-            <p className="font-body text-base text-muted leading-relaxed mb-6 max-w-2xl">{business.description}</p>
+            <p className="font-body text-base text-muted leading-relaxed mb-6 max-w-2xl whitespace-pre-wrap">{business.description}</p>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-body text-muted mb-5">
               <span className="flex items-center gap-1.5">
@@ -395,9 +395,9 @@ export function BusinessProfilePage() {
                 <span className="font-body text-xs text-white/50 uppercase tracking-wide">Services</span>
               </div>
             )}
-            {faqs.length > 0 && (
+            {realFaqs.length > 0 && (
               <div className="flex flex-col">
-                <span className="font-heading text-2xl font-bold text-white">{faqs.length}</span>
+                <span className="font-heading text-2xl font-bold text-white">{realFaqs.length}</span>
                 <span className="font-body text-xs text-white/50 uppercase tracking-wide">FAQs answered</span>
               </div>
             )}
@@ -605,7 +605,7 @@ export function BusinessProfilePage() {
               )}
 
               {/* FAQ */}
-              {faqs.length > 0 && (
+              {realFaqs.length > 0 && (
                 <section aria-labelledby="business-faq-heading">
                   <h2 id="business-faq-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
                     Frequently Asked Questions
@@ -614,7 +614,7 @@ export function BusinessProfilePage() {
                     Common questions about {business.name} and how they work.
                   </p>
                   <div className="flex flex-col gap-4">
-                    {faqs.map(faq => (
+                    {realFaqs.map(faq => (
                       <details key={faq.id} className="group bg-surface rounded-2xl border border-border">
                         <summary className="flex items-center justify-between gap-4 px-6 py-5 cursor-pointer list-none">
                           <h3 className="font-heading text-base font-semibold text-charcoal leading-snug">{faq.question}</h3>

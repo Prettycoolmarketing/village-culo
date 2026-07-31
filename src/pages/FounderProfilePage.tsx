@@ -11,7 +11,6 @@ import { ImportedContentCard } from '../components/cards/ImportedContentCard'
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
-import { getFAQsForFounder } from '../data/faqs'
 import { getResourcesForFounder } from '../data/resources'
 import { getTalksForFounder } from '../data/talks'
 import { getTestimonialsForFounder } from '../data/testimonials'
@@ -242,7 +241,11 @@ export function FounderProfilePage() {
   })
 
   if (!founder || (founder.status !== 'published' && founder.status !== 'featured')) return <FounderNotFound slug={slug ?? ''} />
-  const faqs             = getFAQsForFounder(founder.id)
+  // Real FAQs the founder actually wrote (Profile > FAQ tab) — this used to
+  // read from a parallel fake FAQ system that had no connection to what
+  // founders could edit, so answering FAQs in the dashboard never showed up
+  // here at all.
+  const faqs              = (founder.faqs ?? []).filter(f => f.answer.trim().length > 0)
   const resources        = getResourcesForFounder(founder.id)
   const talks            = getTalksForFounder(founder.id)
   const testimonials     = getTestimonialsForFounder(founder.id)
@@ -364,7 +367,7 @@ export function FounderProfilePage() {
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section aria-labelledby="founder-name">
         {founder.coverImage ? (
-          <div className="relative h-56 sm:h-72 md:h-80 overflow-hidden bg-charcoal">
+          <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
             <img src={founder.coverImage} alt={`${founder.name}'s cover photo`} className="w-full h-full object-cover opacity-70" loading="eager" />
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
           </div>
@@ -374,30 +377,32 @@ export function FounderProfilePage() {
 
         <div className="bg-surface border-b border-border pb-12">
           <InnerContainer>
-            <div className="flex flex-col sm:flex-row sm:items-end gap-6 pt-6 -mt-8 sm:-mt-10">
-              <Avatar src={founder.avatar} alt={founder.name} size="xl"
-                className="ring-4 ring-surface shadow-lg flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 text-3xl" />
-              <div className="flex-1 min-w-0 pt-2">
-                <h1 id="founder-name" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight flex items-center gap-2.5">
-                  {founder.name}
-                  {isVillagePartner && (
-                    <img src="/village-partnership-logo.png" alt="Village Partnership Program member"
-                      title="Village Partnership Program member"
-                      className="w-8 h-8 sm:w-9 sm:h-9 rounded-full shrink-0" />
-                  )}
-                </h1>
-                <p className="font-body text-base text-primary font-medium mt-1" aria-label="Industry">
-                  {founder.industry.name}
-                </p>
-                <p className="font-body text-sm text-muted mt-0.5 flex items-center gap-1.5" aria-label="Location">
-                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                  </svg>
-                  {founder.location.name}, {founder.location.state}, Australia
-                </p>
+            <div className="flex flex-col gap-6 pt-6 -mt-8 sm:-mt-10">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-6">
+                <Avatar src={founder.avatar} alt={founder.name} size="xl"
+                  className="ring-4 ring-surface shadow-lg flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 text-3xl" />
+                <div className="flex-1 min-w-0 pt-2">
+                  <h1 id="founder-name" className="font-heading text-2xl sm:text-4xl font-bold text-charcoal leading-tight flex flex-wrap items-center gap-2.5">
+                    {founder.name}
+                    {isVillagePartner && (
+                      <img src="/village-partnership-logo.png" alt="Village Partnership Program member"
+                        title="Village Partnership Program member"
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full shrink-0" />
+                    )}
+                  </h1>
+                  <p className="font-body text-base text-primary font-medium mt-1" aria-label="Industry">
+                    {founder.industry.name}
+                  </p>
+                  <p className="font-body text-sm text-muted mt-0.5 flex items-center gap-1.5" aria-label="Location">
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                    {founder.location.name}, {founder.location.state}, Australia
+                  </p>
+                </div>
               </div>
               {(bookingUrl || founder.website || founder.instagram || founder.linkedin || founder.youtube || founder.tiktok || founder.podcast || founder.newsletter || (founder.socialLinks && founder.socialLinks.length > 0)) && (
-                <div className="flex items-center gap-2 flex-shrink-0 pb-1 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                   {bookingUrl && (
                     <a href={normalizeUrl(bookingUrl)} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-[#b05a35] transition-colors"
@@ -470,7 +475,11 @@ export function FounderProfilePage() {
             </div>
 
             <div className="mt-7 max-w-2xl">
-              <p className="font-body text-base text-charcoal/80 leading-relaxed">{founder.bio}</p>
+              {/* whitespace-pre-wrap keeps real paragraph breaks a founder
+                  typed instead of collapsing them into one run-on block —
+                  purely a CSS rendering choice, the actual text search
+                  engines and AI systems read is identical either way. */}
+              <p className="font-body text-base text-charcoal/80 leading-relaxed whitespace-pre-wrap">{founder.bio}</p>
             </div>
 
             {founder.topics.length > 0 && (
