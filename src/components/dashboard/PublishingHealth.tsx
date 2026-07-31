@@ -17,7 +17,7 @@ export function HealthBadge({ missing, size = 'sm' }: HealthBadgeProps) {
     return (
       <span className={`flex items-center gap-1 ${textSize} text-green-600 font-medium`}>
         <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block shrink-0" />
-        Ready to publish
+        Visible
       </span>
     )
   }

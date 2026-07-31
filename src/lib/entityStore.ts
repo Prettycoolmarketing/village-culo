@@ -6,6 +6,18 @@ export interface WriteResult {
   error?: string
 }
 
+// Postgres's exact wording when an INSERT/UPDATE's row-level security check
+// fails — almost always a stale/expired browser session (the access token
+// went bad since page load) rather than a real ownership bug, since every
+// write path already sets user_id from the live session. A raw Postgres
+// error here is not actionable for a founder; tell them what to actually do.
+function friendlyWriteError(message: string): string {
+  if (/row-level security policy/i.test(message)) {
+    return 'Your session may have expired. Please refresh the page and try again — if it keeps happening, sign out and back in.'
+  }
+  return message
+}
+
 export async function currentUserId(): Promise<string | null> {
   if (!supabase) return null
   // getSession() reads the local cached token — no network round-trip.
@@ -35,7 +47,7 @@ export async function writeEntity<T extends { id: string }>(opts: {
     const uid = await currentUserId()
     if (!uid) return { success: false, error: 'You must be signed in to save changes.' }
     const { error } = await supabase.from(table).upsert(toRow(item, uid), { onConflict: 'id' })
-    if (error) return { success: false, error: error.message }
+    if (error) return { success: false, error: friendlyWriteError(error.message) }
   }
 
   store.update<T>(cacheKey, item)
@@ -53,7 +65,7 @@ export async function writeEntityUnowned<T extends { id: string }>(opts: {
 
   if (isSupabaseConfigured && supabase && table && toRow) {
     const { error } = await supabase.from(table).upsert(toRow(item), { onConflict: 'id' })
-    if (error) return { success: false, error: error.message }
+    if (error) return { success: false, error: friendlyWriteError(error.message) }
   }
 
   store.update<T>(cacheKey, item)
@@ -80,7 +92,7 @@ export async function writeEntityBatch<T extends { id: string }>(opts: {
     const uid = await currentUserId()
     if (!uid) return { success: false, error: 'You must be signed in to save changes.' }
     const { error } = await supabase.from(table).upsert(items.map(item => toRow(item, uid)), { onConflict: 'id' })
-    if (error) return { success: false, error: error.message }
+    if (error) return { success: false, error: friendlyWriteError(error.message) }
   }
 
   store.updateMany<T>(cacheKey, items)
@@ -97,7 +109,7 @@ export async function deleteEntityBatch(opts: {
 
   if (isSupabaseConfigured && supabase && table) {
     const { error } = await supabase.from(table).delete().in('id', ids)
-    if (error) return { success: false, error: error.message }
+    if (error) return { success: false, error: friendlyWriteError(error.message) }
   }
 
   const idSet = new Set(ids)
@@ -115,7 +127,7 @@ export async function deleteEntity(opts: {
 
   if (isSupabaseConfigured && supabase && table) {
     const { error } = await supabase.from(table).delete().eq('id', id)
-    if (error) return { success: false, error: error.message }
+    if (error) return { success: false, error: friendlyWriteError(error.message) }
   }
 
   const items = (store.get<{ id: string }>(cacheKey) ?? []).filter(i => i.id !== id)
