@@ -1536,7 +1536,11 @@ export function DashboardProfilePage() {
                         <button
                           onClick={() => void handleImportedBulkPublish()}
                           disabled={importedChecked.size === 0 || importedBulkPublishing}
-                          className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors shrink-0 ${
+                            importedChecked.size === 0
+                              ? 'bg-[#E8E4DD] text-[#9CA3AF] cursor-not-allowed'
+                              : 'bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed'
+                          }`}
                         >
                           {importedBulkPublishing ? 'Publishing…' : `Publish ${importedChecked.size || ''} selected`}
                         </button>
