@@ -14,6 +14,7 @@ interface EventGridProps {
   className?: string
   emptyTitle?: string
   emptyMessage?: string
+  hideEmpty?: boolean
 }
 
 const columnClasses = {
@@ -31,8 +32,11 @@ export function EventGrid({
   className = '',
   emptyTitle,
   emptyMessage,
+  hideEmpty = false,
 }: EventGridProps) {
   const events = filterEvents(filter)
+
+  if (hideEmpty && events.length === 0) return null
 
   return (
     <section aria-label={heading ?? 'Events and notices'} className={className}>

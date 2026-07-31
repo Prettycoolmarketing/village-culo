@@ -30,6 +30,10 @@ interface StoryGridProps {
   // "Turn off" control) is excluded here even though it still matches
   // `filter` otherwise — stays published everywhere else, just not this grid.
   hideKey?: string
+  // Render nothing at all when there's no content, instead of an empty
+  // state with a CTA — for profile pages, where an unpublished section
+  // reads as "this founder isn't active" rather than an invitation.
+  hideEmpty?: boolean
 }
 
 const columnClasses = {
@@ -54,9 +58,12 @@ export function StoryGrid({
   emptyTitle,
   emptyMessage,
   hideKey,
+  hideEmpty = false,
 }: StoryGridProps) {
   const fetched = explicitStories ?? getStories(filter)
   const stories = hideKey ? fetched.filter(s => !s.hiddenLocations?.includes(hideKey)) : fetched
+
+  if (hideEmpty && stories.length === 0) return null
 
   return (
     <section aria-label={heading ?? 'Stories'} className={className}>

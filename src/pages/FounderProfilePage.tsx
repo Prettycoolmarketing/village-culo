@@ -5,16 +5,15 @@ import { getFounders } from '../services/founders'
 import { getBusiness, getBusinesses } from '../services/businesses'
 import { recommendationService, publisherPartnerProfileService } from '../services/partnership'
 import { importedContentService } from '../services/importedContent'
+import { getStories } from '../services/stories'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
 import { ImportedContentCard } from '../components/cards/ImportedContentCard'
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
-import { getResourcesForFounder } from '../data/resources'
-import { getTalksForFounder } from '../data/talks'
-import { getTestimonialsForFounder } from '../data/testimonials'
-import { getExpertiseForFounder } from '../data/expertise'
+import { ReelContent } from '../components/ui/ReelContent'
+import { BizLogo } from '../components/ui/BizLogo'
 import { StoryGrid } from '../widgets/StoryGrid'
 import { IdeaGrid } from '../widgets/IdeaGrid'
 import { LibraryGrid } from '../widgets/LibraryGrid'
@@ -136,13 +135,6 @@ const SOCIAL_LABEL: Record<string, string> = {
   x: 'X', threads: 'Threads', podcast: 'Podcast', newsletter: 'Newsletter', custom: 'Link',
 }
 
-// ─── Resource type label ────────────────────────────────────────────────────────
-
-const resourceTypeLabel: Record<string, string> = {
-  guide: 'Guide', template: 'Template', tool: 'Tool',
-  framework: 'Framework', video: 'Video', article: 'Article',
-}
-
 // ─── Not Found ──────────────────────────────────────────────────────────────────
 
 function FounderNotFound({ slug }: { slug: string }) {
@@ -246,10 +238,6 @@ export function FounderProfilePage() {
   // founders could edit, so answering FAQs in the dashboard never showed up
   // here at all.
   const faqs              = (founder.faqs ?? []).filter(f => f.answer.trim().length > 0)
-  const resources        = getResourcesForFounder(founder.id)
-  const talks            = getTalksForFounder(founder.id)
-  const testimonials     = getTestimonialsForFounder(founder.id)
-  const expertiseAreas   = getExpertiseForFounder(founder.id)
   const relatedFounders  = getRelatedFounders(
     founder.id, founder.industry.id, founder.location.id, founder.topics.map(t => t.id)
   )
@@ -257,6 +245,14 @@ export function FounderProfilePage() {
   const approvedRecs    = recommendationService.getAll({ founderId: founder.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
   const publicImports   = importedContentService.getAll({ founderId: founder.id, publicOnly: true })
+
+  // Featured videos — stories the founder has chosen to spotlight, always
+  // shown together with the story they belong to (see Profile > Content).
+  // Only ever pulled from real published stories with a real video attached,
+  // never a separate upload — one source of truth, no parallel content type.
+  const featuredVideoStories = (founder.featuredVideoStoryIds ?? [])
+    .map(id => getStories({ publicOnly: true }).find(s => s.id === id))
+    .filter((s): s is NonNullable<typeof s> => !!s && !!s.reelUrl)
 
   // ── Village Intelligence — aggregate across all content ───────────────────
   const aggregatedIntel = founderIntelRecords.length > 0 ? {
@@ -281,9 +277,6 @@ export function FounderProfilePage() {
         .map(id => getBusinesses({ publicOnly: true }).find(b => b.id === id))
         .filter((b): b is NonNullable<typeof b> => !!b)
     : []
-
-  // ── Evidence metrics (computed) ──────────────────────────────────────────────
-  const yearsPublishing = new Date().getFullYear() - new Date(founder.createdAt).getFullYear() || 1
 
   return (
     <main className="min-h-screen bg-background" id="founder-profile">
@@ -377,7 +370,7 @@ export function FounderProfilePage() {
 
         <div className="bg-surface border-b border-border pb-12">
           <InnerContainer>
-            <div className="flex flex-col gap-6 pt-6 -mt-8 sm:-mt-10">
+            <div className="flex flex-col gap-6 pt-10 sm:pt-12 -mt-4 sm:-mt-6">
               <div className="flex flex-col sm:flex-row sm:items-end gap-6">
                 <Avatar src={founder.avatar} alt={founder.name} size="xl"
                   className="ring-4 ring-surface shadow-lg flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 text-3xl" />
@@ -474,12 +467,12 @@ export function FounderProfilePage() {
               )}
             </div>
 
-            <div className="mt-7 max-w-2xl">
+            <div className="mt-8 max-w-3xl">
               {/* whitespace-pre-wrap keeps real paragraph breaks a founder
                   typed instead of collapsing them into one run-on block —
                   purely a CSS rendering choice, the actual text search
                   engines and AI systems read is identical either way. */}
-              <p className="font-body text-base text-charcoal/80 leading-relaxed whitespace-pre-wrap">{founder.bio}</p>
+              <p className="font-body text-base text-charcoal/80 leading-loose whitespace-pre-wrap">{founder.bio}</p>
             </div>
 
             {founder.topics.length > 0 && (
@@ -496,11 +489,9 @@ export function FounderProfilePage() {
                   <Link key={biz.id} to={`/businesses/${biz.slug}`}
                     className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
                     aria-label={`View ${biz.name} business profile`}>
-                    {biz.logo && (
-                      <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
-                        <img src={biz.logo} alt="" className="w-full h-full object-contain" />
-                      </div>
-                    )}
+                    <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
+                      <BizLogo logo={biz.logo} name={biz.name} className="text-[10px]" />
+                    </div>
                     {biz.name}
                     <span className="text-muted text-xs">→</span>
                   </Link>
@@ -522,39 +513,15 @@ export function FounderProfilePage() {
       <section className="bg-charcoal py-5" aria-label="Authority metrics">
         <InnerContainer>
           <div className="flex flex-wrap gap-6 sm:gap-10">
-            {expertiseAreas.length > 0 && (
-              <div className="flex flex-col">
-                <span className="font-heading text-2xl font-bold text-white">{expertiseAreas.length}</span>
-                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Expertise areas</span>
-              </div>
-            )}
-            {resources.length > 0 && (
-              <div className="flex flex-col">
-                <span className="font-heading text-2xl font-bold text-white">{resources.length}</span>
-                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Resources</span>
-              </div>
-            )}
             {faqs.length > 0 && (
               <div className="flex flex-col">
                 <span className="font-heading text-2xl font-bold text-white">{faqs.length}</span>
                 <span className="font-body text-xs text-white/50 uppercase tracking-wide">FAQs answered</span>
               </div>
             )}
-            {talks.length > 0 && (
-              <div className="flex flex-col">
-                <span className="font-heading text-2xl font-bold text-white">{talks.length}</span>
-                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Talks</span>
-              </div>
-            )}
-            {testimonials.length > 0 && (
-              <div className="flex flex-col">
-                <span className="font-heading text-2xl font-bold text-white">{testimonials.length}</span>
-                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Testimonials</span>
-              </div>
-            )}
             <div className="flex flex-col">
-              <span className="font-heading text-2xl font-bold text-white">{yearsPublishing}+</span>
-              <span className="font-body text-xs text-white/50 uppercase tracking-wide">Years publishing</span>
+              <span className="font-heading text-2xl font-bold text-white">{new Date(founder.createdAt).getFullYear()}</span>
+              <span className="font-body text-xs text-white/50 uppercase tracking-wide">Publishing on Village since</span>
             </div>
             {founder.topics.length > 0 && (
               <div className="flex flex-col">
@@ -574,34 +541,6 @@ export function FounderProfilePage() {
             {/* ── Left: Primary content ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
 
-              {/* Expertise areas */}
-              {expertiseAreas.length > 0 && (
-                <section aria-labelledby="founder-expertise-heading">
-                  <h2 id="founder-expertise-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Expertise
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-5">
-                    The domains {founder.name} is known for in CULO Village.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {expertiseAreas.map(area => (
-                      <Link
-                        key={area.id}
-                        to={`/expertise/${area.slug}`}
-                        className="group flex flex-col bg-surface rounded-2xl border border-border p-5 hover:border-primary hover:shadow-sm transition-all"
-                        aria-label={`Explore ${area.name} expertise`}
-                      >
-                        <h3 className="font-heading text-base font-semibold text-charcoal group-hover:text-primary transition-colors mb-1">
-                          {area.name}
-                        </h3>
-                        <p className="font-body text-xs text-primary font-medium mb-2">{area.tagline}</p>
-                        <p className="font-body text-xs text-muted leading-relaxed line-clamp-2">{area.description}</p>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              )}
-
               {/* Stories */}
               <StoryGrid
                 heading={`Stories by ${founder.name}`}
@@ -614,8 +553,7 @@ export function FounderProfilePage() {
                 showFounder={false}
                 showTopics
                 showCTA
-                emptyTitle={`No stories yet from ${founder.name}`}
-                emptyMessage="This founder hasn't published their first story yet. Check back soon."
+                hideEmpty
               />
 
               {/* Ideas */}
@@ -625,76 +563,8 @@ export function FounderProfilePage() {
                 filter={{ founderId: founder.id, publicOnly: true }}
                 columns={2}
                 cardVariant="default"
-                emptyTitle="No ideas linked yet"
-                emptyMessage={`Ideas are extracted from published stories. Check back once ${founder.name} publishes more.`}
+                hideEmpty
               />
-
-              {/* Talks */}
-              {talks.length > 0 && (
-                <section aria-labelledby="founder-talks-heading">
-                  <h2 id="founder-talks-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Talks &amp; Presentations
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-6">
-                    Speaking appearances and presentations by {founder.name}.
-                  </p>
-                  <div className="flex flex-col gap-4">
-                    {talks.map(talk => (
-                      <article key={talk.id} className="bg-surface rounded-xl border border-border p-5">
-                        <h3 className="font-heading text-base font-semibold text-charcoal mb-1 leading-snug">
-                          {talk.title}
-                        </h3>
-                        <p className="font-body text-xs text-primary font-medium mb-2">
-                          {talk.event}
-                          {talk.location ? ` · ${talk.location}` : ''}
-                          {talk.date ? ` · ${new Date(talk.date).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}` : ''}
-                        </p>
-                        <p className="font-body text-sm text-muted leading-relaxed">{talk.description}</p>
-                        {talk.videoUrl && (
-                          <a href={normalizeUrl(talk.videoUrl)} target="_blank" rel="noopener noreferrer"
-                            className="mt-3 inline-block text-sm font-medium text-primary hover:text-[#b05a35] transition-colors">
-                            Watch recording →
-                          </a>
-                        )}
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Testimonials */}
-              {testimonials.length > 0 && (
-                <section aria-labelledby="founder-testimonials-heading">
-                  <h2 id="founder-testimonials-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Testimonials
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-6">
-                    What clients and collaborators say about working with {founder.name}.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {testimonials.map(t => (
-                      <blockquote key={t.id} className="bg-surface rounded-2xl border border-border p-6 flex flex-col gap-4">
-                        <p className="font-body text-sm text-charcoal/80 leading-relaxed italic">
-                          "{t.quote}"
-                        </p>
-                        <footer className="flex items-center gap-2.5 mt-auto">
-                          {t.authorAvatar && (
-                            <img src={t.authorAvatar} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" loading="lazy" />
-                          )}
-                          <div>
-                            <p className="font-body text-sm font-semibold text-charcoal">{t.authorName}</p>
-                            {(t.authorRole || t.authorCompany) && (
-                              <p className="font-body text-xs text-muted">
-                                {[t.authorRole, t.authorCompany].filter(Boolean).join(', ')}
-                              </p>
-                            )}
-                          </div>
-                        </footer>
-                      </blockquote>
-                    ))}
-                  </div>
-                </section>
-              )}
 
               {/* Approved recommendations */}
               {approvedRecs.length > 0 && (
@@ -764,8 +634,7 @@ export function FounderProfilePage() {
                 subheading={`Everything ${founder.name} has intentionally published — free and paid.`}
                 filter={{ founderId: founder.id }}
                 columns={2}
-                emptyTitle="Nothing published yet"
-                emptyMessage={`${founder.name} hasn't added any Library items yet.`}
+                hideEmpty
               />
 
               {/* Events */}
@@ -775,8 +644,7 @@ export function FounderProfilePage() {
                 filter={{ founderId: founder.id }}
                 columns={2}
                 cardVariant="default"
-                emptyTitle="Nothing on the board yet"
-                emptyMessage={`${founder.name} hasn't posted any events or opportunities yet.`}
+                hideEmpty
               />
 
               {/* FAQ */}
@@ -823,6 +691,31 @@ export function FounderProfilePage() {
                 </section>
               )}
 
+              {/* Featured Video — the founder's own pick, always shown last */}
+              {featuredVideoStories.length > 0 && (
+                <section aria-labelledby="founder-featured-video-heading">
+                  <h2 id="founder-featured-video-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    {featuredVideoStories.length === 1 ? 'Featured Video' : 'Featured Videos'}
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    {founder.name}'s pick — the story they most want you to see.
+                  </p>
+                  <div className="flex flex-col gap-8">
+                    {featuredVideoStories.map(story => (
+                      <div key={story.id}>
+                        <ReelContent reelUrl={story.reelUrl} title={story.title} summary={story.summary} landscape />
+                        <Link
+                          to={`/stories/${story.slug}`}
+                          className="mt-3 inline-block text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"
+                        >
+                          Read the full story →
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
             </div>
 
             {/* ── Right sidebar ─────────────────────────────────────────────── */}
@@ -837,38 +730,6 @@ export function FounderProfilePage() {
                   <div className="flex flex-col gap-4">
                     {founderOwnedBusinesses.map(biz => (
                       <BusinessCard key={biz.id} business={biz} founder={founder} variant="default" />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Resources */}
-              {resources.length > 0 && (
-                <section aria-labelledby="founder-resources-heading">
-                  <h2 id="founder-resources-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">Resources</h2>
-                  <div className="flex flex-col gap-3">
-                    {resources.map(resource => (
-                      <a
-                        key={resource.id}
-                        href={resource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex flex-col bg-surface rounded-xl border border-border p-4 hover:border-primary hover:shadow-sm transition-all"
-                        aria-label={resource.title}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-body text-xs font-semibold text-muted uppercase tracking-wide">
-                            {resourceTypeLabel[resource.type] ?? resource.type}
-                          </span>
-                          {resource.free && (
-                            <span className="font-body text-xs font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">Free</span>
-                          )}
-                        </div>
-                        <h3 className="font-heading text-sm font-semibold text-charcoal group-hover:text-primary transition-colors mb-1 leading-snug">
-                          {resource.title}
-                        </h3>
-                        <p className="font-body text-xs text-muted leading-relaxed line-clamp-2">{resource.description}</p>
-                      </a>
                     ))}
                   </div>
                 </section>
@@ -942,10 +803,7 @@ export function FounderProfilePage() {
                           aria-label={`View ${b.name}`}
                         >
                           <div className="flex-shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-background ring-2 ring-border flex items-center justify-center p-1">
-                            {b.logo
-                              ? <img src={b.logo} alt="" className="w-full h-full object-contain" loading="lazy" />
-                              : <span className="flex items-center justify-center h-full text-muted font-heading text-sm font-semibold">{b.name[0]}</span>
-                            }
+                            <BizLogo logo={b.logo} name={b.name} className="text-sm" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="font-body text-sm font-semibold text-charcoal group-hover:text-primary transition-colors truncate">{b.name}</p>

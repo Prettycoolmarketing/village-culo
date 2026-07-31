@@ -1098,8 +1098,11 @@ export function DashboardProfilePage() {
   function renderIdentityFields(draft: Founder) {
     return (
       <>
-        <Field label="Display Name">
+        <Field label="Display Name" hint="Your name as it appears everywhere on the Village — headings, cards, breadcrumbs. Keep it short and real (e.g. your actual name), not a full descriptor.">
           <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
+        </Field>
+        <Field label="SEO Title" hint="Optional — a longer, keyword-rich title used only in Google search results and browser tabs. Falls back to Display Name if left blank. Keeps your Display Name short everywhere else, without repeating the same long phrase on every page (which can hurt SEO).">
+          <input type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder={draft.name} />
         </Field>
         <Field label="Bio" hint="Write in your own voice — aim for 200+ characters. This is what search engines and the Village show publicly — no separate SEO text to fill in.">
           <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
@@ -1110,8 +1113,8 @@ export function DashboardProfilePage() {
           <p className="text-sm font-medium text-[#2D2A26] mb-1.5">Search Preview</p>
           <div className="border border-[#E8E4DD] rounded-xl px-4 py-3 bg-white">
             <p className="text-xs text-[#5E6B4A] truncate">culovillage.com/founders/{draft.slug}</p>
-            <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">{draft.name}</p>
-            <p className="text-xs text-[#4d5156] mt-0.5 line-clamp-2">{draft.bio}</p>
+            <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">{draft.seoTitle || draft.name}</p>
+            <p className="text-xs text-[#4d5156] mt-0.5 line-clamp-2">{draft.seoDescription || draft.bio}</p>
           </div>
         </div>
 
@@ -1295,6 +1298,39 @@ export function DashboardProfilePage() {
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
               <p className="text-sm font-semibold text-[#2D2A26]">Identity</p>
               {renderIdentityFields(draft)}
+            </div>
+
+            {/* Featured Video — pick a published story with a video to spotlight at the bottom of the public profile */}
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[#2D2A26]">Featured Video</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Pick your best story with a video — it'll feature at the bottom of your public profile.</p>
+              </div>
+              {(() => {
+                const eligible = founderStories.filter(s => (s.status === 'published' || s.status === 'featured') && s.reelUrl)
+                if (eligible.length === 0) {
+                  return <p className="text-xs text-[#9CA3AF]">Publish a story with a video attached to feature it here.</p>
+                }
+                return (
+                  <div className="flex flex-col gap-2">
+                    {eligible.map(story => {
+                      const checked = (draft.featuredVideoStoryIds ?? []).includes(story.id)
+                      return (
+                        <label key={story.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[#E8E4DD] cursor-pointer hover:border-[#C86A43]/40 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => set('featuredVideoStoryIds', checked
+                              ? (draft.featuredVideoStoryIds ?? []).filter(id => id !== story.id)
+                              : [...(draft.featuredVideoStoryIds ?? []), story.id])}
+                          />
+                          <span className="text-sm text-[#2D2A26] truncate">{story.title}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
             </div>
 
             {/* Today's Recommendations */}
@@ -1628,7 +1664,7 @@ export function DashboardProfilePage() {
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <p className="text-[11px] text-[#9CA3AF]">Pull real questions and answers straight from your bio and published stories.</p>
                   <button type="button"
-                    onClick={() => setFaqSuggestions(suggestFaqsFromFounder(draft, founderStories))}
+                    onClick={() => setFaqSuggestions(suggestFaqsFromFounder(draft, founderStories, founderBusinesses))}
                     className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors">
                     Suggest FAQs
                   </button>

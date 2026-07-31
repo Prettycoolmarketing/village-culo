@@ -9,7 +9,7 @@
 // founder always confirms/edits before it's saved.
 
 import { extractQaFromBlog, type BlogQaPair } from './importedContentEnrichment'
-import type { Founder, Story, Topic } from '../types'
+import type { Business, Founder, Story, Topic } from '../types'
 
 /** Topics whose name (or a significant word from it) appears in the given text — cheap keyword match against the real taxonomy, not the generic import-content bucket list. */
 export function suggestTopicsFromText(text: string, candidates: Topic[]): Topic[] {
@@ -20,12 +20,47 @@ export function suggestTopicsFromText(text: string, candidates: Topic[]): Topic[
   })
 }
 
-/** Real Q&A pairs pulled from the founder's Bio plus their own published stories' Blog text — same extraction as the import pipeline's "Shape these as Q&A." */
-export function suggestFaqsFromFounder(founder: Founder, stories: Story[]): BlogQaPair[] {
+function firstSentence(text: string): string | undefined {
+  return text.split(/(?<=[.!?])\s+/).find(s => s.trim().length > 10)
+}
+
+/**
+ * Real Q&A pairs pulled from real profile data — never a fabricated answer.
+ * Leads with entity-grounded questions built straight from the founder's own
+ * businesses and bio (a real person asking "who is X" or "what businesses has
+ * X founded" gets a real, specific, answerable question — not a generic
+ * template like "What challenge did they face?" with no context), then adds
+ * whatever real Q&A the founder's own written text (Bio + published Blogs)
+ * actually supports.
+ */
+export function suggestFaqsFromFounder(founder: Founder, stories: Story[], businesses: Business[] = []): BlogQaPair[] {
+  const pairs: BlogQaPair[] = []
+
+  const bioLead = firstSentence(founder.bio) ?? founder.bio
+  if (bioLead) pairs.push({ question: `Who is ${founder.name}?`, answer: bioLead })
+
+  if (businesses.length > 0) {
+    pairs.push({
+      question: `How many businesses has ${founder.name} founded?`,
+      answer: businesses.length === 1
+        ? `${founder.name} founded ${businesses[0]!.name}.`
+        : `${founder.name} has founded ${businesses.length} businesses: ${businesses.map(b => b.name).join(', ')}.`,
+    })
+    for (const biz of businesses) {
+      const bizAnswer = biz.tagline || firstSentence(biz.description) || biz.description
+      if (bizAnswer) pairs.push({ question: `What is ${biz.name}?`, answer: bizAnswer })
+    }
+  }
+
   const storyText = stories.map(s => s.blog).filter(Boolean).join(' ')
   const combined = [founder.bio, storyText].filter(Boolean).join(' ')
-  if (!combined.trim()) return []
-  return extractQaFromBlog(founder.name, combined)
+  if (combined.trim()) {
+    const blogPairs = extractQaFromBlog(founder.name, combined)
+      .filter(p => !pairs.some(existing => existing.question === p.question))
+    pairs.push(...blogPairs)
+  }
+
+  return pairs
 }
 
 function truncateAtWord(text: string, max: number): string {

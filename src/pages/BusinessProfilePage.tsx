@@ -13,15 +13,12 @@ import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { getServices }                     from '../services/serviceOfferings'
-import { getTestimonialsForBusiness } from '../data/testimonials'
-import { getCaseStudiesForBusiness }  from '../data/caseStudies'
-import { getResourcesForBusiness }    from '../data/resources'
-import { getExpertiseForBusiness }    from '../data/expertise'
 import { StoryGrid }                  from '../widgets/StoryGrid'
 import { IdeaGrid }                   from '../widgets/IdeaGrid'
 import { LibraryGrid }               from '../widgets/LibraryGrid'
 import { FounderCard }                from '../components/cards/FounderCard'
 import { BusinessCard }               from '../components/cards/BusinessCard'
+import { BizLogo }                    from '../components/ui/BizLogo'
 import { Badge }                      from '../components/ui/Badge'
 import { InnerContainer }             from '../components/layout/PageContainer'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
@@ -99,11 +96,6 @@ function SocialLink({ href, label, icon }: { href: string; label: string; icon: 
       <span className="font-body text-sm">{label}</span>
     </a>
   )
-}
-
-const resourceTypeLabel: Record<string, string> = {
-  guide: 'Guide', template: 'Template', tool: 'Tool',
-  framework: 'Framework', video: 'Video', article: 'Article',
 }
 
 // ─── Business Profile Page ────────────────────────────────────────────────────────
@@ -188,10 +180,6 @@ export function BusinessProfilePage() {
   // id with a demo seed entry (e.g. this session's own "pretty-cool-
   // marketing") showed fabricated answers alongside its real ones.
   const realFaqs = [...(business.faqs ?? []), ...services.flatMap(s => s.faqs ?? [])].filter(f => f.answer.trim().length > 0)
-  const testimonials   = getTestimonialsForBusiness(business.id)
-  const caseStudies    = getCaseStudiesForBusiness(business.id)
-  const resources      = getResourcesForBusiness(business.id)
-  const expertiseAreas = getExpertiseForBusiness(business.id)
 
   const businessTopicIds = new Set(business.topics.map(t => t.id))
   const related = getBusinesses({ publicOnly: true })
@@ -287,7 +275,7 @@ export function BusinessProfilePage() {
           <InnerContainer>
             <div className="flex items-end gap-5 -mt-10 relative z-10 mb-6">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-surface shadow-lg bg-background flex-shrink-0 flex items-center justify-center p-2.5">
-                <img src={business.logo} alt={`${business.name} logo`} className="w-full h-full object-contain" loading="eager" />
+                <BizLogo logo={business.logo} name={business.name} className="text-2xl" />
               </div>
               <div className="pb-1">
                 <span className="font-body text-xs font-semibold text-accent uppercase tracking-widest">
@@ -383,12 +371,6 @@ export function BusinessProfilePage() {
       <section className="bg-charcoal py-5" aria-label="Business credibility metrics">
         <InnerContainer>
           <div className="flex flex-wrap gap-6 sm:gap-10">
-            {expertiseAreas.length > 0 && (
-              <div className="flex flex-col">
-                <span className="font-heading text-2xl font-bold text-white">{expertiseAreas.length}</span>
-                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Expertise areas</span>
-              </div>
-            )}
             {services.length > 0 && (
               <div className="flex flex-col">
                 <span className="font-heading text-2xl font-bold text-white">{services.length}</span>
@@ -399,18 +381,6 @@ export function BusinessProfilePage() {
               <div className="flex flex-col">
                 <span className="font-heading text-2xl font-bold text-white">{realFaqs.length}</span>
                 <span className="font-body text-xs text-white/50 uppercase tracking-wide">FAQs answered</span>
-              </div>
-            )}
-            {testimonials.length > 0 && (
-              <div className="flex flex-col">
-                <span className="font-heading text-2xl font-bold text-white">{testimonials.length}</span>
-                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Testimonials</span>
-              </div>
-            )}
-            {caseStudies.length > 0 && (
-              <div className="flex flex-col">
-                <span className="font-heading text-2xl font-bold text-white">{caseStudies.length}</span>
-                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Case studies</span>
               </div>
             )}
             {business.topics.length > 0 && (
@@ -442,34 +412,6 @@ export function BusinessProfilePage() {
 
             {/* ── Left: content ─────────────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
-
-              {/* Expertise areas */}
-              {expertiseAreas.length > 0 && (
-                <section aria-labelledby="business-expertise-heading">
-                  <h2 id="business-expertise-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Expertise
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-5">
-                    The domains {business.name} operates in.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {expertiseAreas.map(area => (
-                      <Link
-                        key={area.id}
-                        to={`/expertise/${area.slug}`}
-                        className="group flex flex-col bg-surface rounded-2xl border border-border p-5 hover:border-accent hover:shadow-sm transition-all"
-                        aria-label={`Explore ${area.name} expertise`}
-                      >
-                        <h3 className="font-heading text-base font-semibold text-charcoal group-hover:text-accent transition-colors mb-1">
-                          {area.name}
-                        </h3>
-                        <p className="font-body text-xs text-accent font-medium mb-2">{area.tagline}</p>
-                        <p className="font-body text-xs text-muted leading-relaxed line-clamp-2">{area.description}</p>
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              )}
 
               {/* Services */}
               {services.length > 0 && (
@@ -538,69 +480,6 @@ export function BusinessProfilePage() {
                       <li key={offer.id}><OfferCard offer={offer} businessName={business.name} /></li>
                     ))}
                   </ul>
-                </section>
-              )}
-
-              {/* Case Studies */}
-              {caseStudies.length > 0 && (
-                <section aria-labelledby="business-case-studies-heading">
-                  <h2 id="business-case-studies-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Case Studies
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-6">Documented results from working with {business.name}.</p>
-                  <div className="flex flex-col gap-6">
-                    {caseStudies.map(cs => (
-                      <article key={cs.id} className="bg-surface rounded-2xl border border-border p-6" aria-label={cs.title}>
-                        <h3 className="font-heading text-lg font-semibold text-charcoal mb-3 leading-snug">{cs.title}</h3>
-                        <p className="font-body text-sm text-muted leading-relaxed mb-4">{cs.summary}</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <p className="font-body text-xs font-semibold text-muted uppercase tracking-wide mb-1">Challenge</p>
-                            <p className="font-body text-sm text-charcoal/80 leading-relaxed">{cs.challenge}</p>
-                          </div>
-                          <div>
-                            <p className="font-body text-xs font-semibold text-muted uppercase tracking-wide mb-1">Outcome</p>
-                            <p className="font-body text-sm text-charcoal/80 leading-relaxed">{cs.outcome}</p>
-                          </div>
-                        </div>
-                        {cs.result && (
-                          <div className="bg-accent/5 border border-accent/20 rounded-xl px-4 py-3">
-                            <p className="font-body text-sm font-semibold text-accent">Result: {cs.result}</p>
-                          </div>
-                        )}
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Testimonials */}
-              {testimonials.length > 0 && (
-                <section aria-labelledby="business-testimonials-heading">
-                  <h2 id="business-testimonials-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Testimonials
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-6">What clients say about working with {business.name}.</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {testimonials.map(t => (
-                      <blockquote key={t.id} className="bg-surface rounded-2xl border border-border p-6 flex flex-col gap-4">
-                        <p className="font-body text-sm text-charcoal/80 leading-relaxed italic">"{t.quote}"</p>
-                        <footer className="flex items-center gap-2.5 mt-auto">
-                          {t.authorAvatar && (
-                            <img src={t.authorAvatar} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" loading="lazy" />
-                          )}
-                          <div>
-                            <p className="font-body text-sm font-semibold text-charcoal">{t.authorName}</p>
-                            {(t.authorRole || t.authorCompany) && (
-                              <p className="font-body text-xs text-muted">
-                                {[t.authorRole, t.authorCompany].filter(Boolean).join(', ')}
-                              </p>
-                            )}
-                          </div>
-                        </footer>
-                      </blockquote>
-                    ))}
-                  </div>
                 </section>
               )}
 
@@ -874,40 +753,6 @@ export function BusinessProfilePage() {
                   </div>
                 )}
 
-                {/* Resources */}
-                {resources.length > 0 && (
-                  <section aria-labelledby="business-resources-heading">
-                    <h2 id="business-resources-heading" className="font-heading text-base font-semibold text-charcoal mb-3">
-                      Resources
-                    </h2>
-                    <div className="flex flex-col gap-2">
-                      {resources.map(resource => (
-                        <a
-                          key={resource.id}
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group flex flex-col bg-surface rounded-xl border border-border p-4 hover:border-accent hover:shadow-sm transition-all"
-                          aria-label={resource.title}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-body text-xs font-semibold text-muted uppercase tracking-wide">
-                              {resourceTypeLabel[resource.type] ?? resource.type}
-                            </span>
-                            {resource.free && (
-                              <span className="font-body text-xs font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded-full">Free</span>
-                            )}
-                          </div>
-                          <h3 className="font-heading text-sm font-semibold text-charcoal group-hover:text-accent transition-colors mb-1 leading-snug">
-                            {resource.title}
-                          </h3>
-                          <p className="font-body text-xs text-muted leading-relaxed line-clamp-2">{resource.description}</p>
-                        </a>
-                      ))}
-                    </div>
-                  </section>
-                )}
-
                 {/* Village Intelligence panel */}
                 {aggregatedBusinessIntel && (aggregatedBusinessIntel.topics.length > 0 || aggregatedBusinessIntel.questions.length > 0) && (
                   <section className="bg-surface rounded-2xl p-5 border border-border" aria-labelledby="business-intel-heading">
@@ -985,22 +830,6 @@ export function BusinessProfilePage() {
                       <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Industry</dt>
                       <dd className="text-charcoal">{business.industry.name}</dd>
                     </div>
-                    {expertiseAreas.length > 0 && (
-                      <div>
-                        <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Expertise</dt>
-                        <dd className="flex flex-wrap gap-1.5">
-                          {expertiseAreas.map(area => (
-                            <Link
-                              key={area.id}
-                              to={`/expertise/${area.slug}`}
-                              className="font-body text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full hover:bg-accent/20 transition-colors"
-                            >
-                              {area.name}
-                            </Link>
-                          ))}
-                        </dd>
-                      </div>
-                    )}
                     {business.topics.length > 0 && (
                       <div>
                         <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Topics</dt>

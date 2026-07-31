@@ -421,6 +421,10 @@ export interface Founder {
   // duplicate text across every imported piece (bad for SEO/GEO).
   voiceBrief?: string
   voiceBriefUpdatedAt?: string
+  // Featured Video — published stories (with a real video attached) the
+  // founder has chosen to spotlight at the bottom of their profile. Always
+  // a pointer into real Stories, never a separate upload.
+  featuredVideoStoryIds?: string[]
   // Sprint 3.5 — Village Intelligence pipeline: a real, persisted, recomputed-
   // on-publish score (see computeAuthorityScore in services/ideaSync.ts).
   // Heuristic, not ML — deterministic from ideas created/strengthened, stories

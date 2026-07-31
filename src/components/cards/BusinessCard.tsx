@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { Business, Founder } from '../../types'
 import { Badge } from '../ui/Badge'
+import { BizLogo } from '../ui/BizLogo'
 import { normalizeUrl } from '../../utils/url'
 
 interface BusinessCardProps {
@@ -42,12 +43,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
           <div className="flex items-start gap-3 -mt-8 mb-3">
             <Link to={businessUrl} aria-label={`View ${business.name}`}>
               <div className="w-14 h-14 rounded-xl overflow-hidden ring-4 ring-surface shadow-sm bg-background flex-shrink-0 flex items-center justify-center p-2.5">
-                <img
-                  src={business.logo}
-                  alt={`${business.name} logo`}
-                  className="w-full h-full object-contain"
-                  loading="lazy"
-                />
+                <BizLogo logo={business.logo} name={business.name} />
               </div>
             </Link>
             <div className="pt-8 min-w-0">
@@ -116,7 +112,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
       >
         <Link to={businessUrl} tabIndex={-1} aria-hidden="true">
           <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-background flex items-center justify-center p-2">
-            <img src={business.logo} alt="" className="w-full h-full object-contain" loading="lazy" />
+            <BizLogo logo={business.logo} name={business.name} />
           </div>
         </Link>
         <div className="min-w-0 flex-1">
@@ -143,12 +139,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
         <div className="flex items-start gap-3 mb-4">
           <Link to={businessUrl} aria-label={`View ${business.name}`}>
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border flex items-center justify-center p-2">
-              <img
-                src={business.logo}
-                alt={`${business.name} logo`}
-                className="w-full h-full object-contain"
-                loading="lazy"
-              />
+              <BizLogo logo={business.logo} name={business.name} />
             </div>
           </Link>
           <div className="min-w-0 flex-1 pt-0.5">

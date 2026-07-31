@@ -18,6 +18,7 @@ interface IdeaGridProps {
   className?: string
   emptyTitle?: string
   emptyMessage?: string
+  hideEmpty?: boolean
 }
 
 const columnClasses = {
@@ -36,8 +37,11 @@ export function IdeaGrid({
   className = '',
   emptyTitle,
   emptyMessage,
+  hideEmpty = false,
 }: IdeaGridProps) {
   const ideas = getIdeas(filter)
+
+  if (hideEmpty && ideas.length === 0) return null
 
   return (
     <section aria-label={heading ?? 'Ideas'} className={className}>

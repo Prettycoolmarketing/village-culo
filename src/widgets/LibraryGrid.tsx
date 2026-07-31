@@ -10,6 +10,7 @@ interface LibraryGridProps {
   variant?: 'default' | 'compact'
   emptyTitle?: string
   emptyMessage?: string
+  hideEmpty?: boolean
 }
 
 
@@ -27,8 +28,11 @@ export function LibraryGrid({
   variant = 'default',
   emptyTitle = 'Nothing here yet',
   emptyMessage = 'Library items will appear here as founders publish them.',
+  hideEmpty = false,
 }: LibraryGridProps) {
   const items = getLibraryItems(filter)
+
+  if (hideEmpty && items.length === 0) return null
 
   return (
     <section aria-label={heading ?? 'Library items'}>

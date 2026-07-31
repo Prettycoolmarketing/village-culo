@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useParams, Link }  from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { deriveSeoTitle, deriveSeoDescription } from '../utils/seo'
@@ -9,9 +9,10 @@ import { recommendationService, publisherPartnerProfileService, trackingService 
 import { partnerService } from '../services/partner'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
-import { importedContentService, PLATFORM_LABELS, detectPlatform, generateEmbedUrl } from '../services/importedContent'
+import { importedContentService, PLATFORM_LABELS, detectPlatform } from '../services/importedContent'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
+import { ReelContent } from '../components/ui/ReelContent'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
 import { StoryCard }        from '../components/cards/StoryCard'
@@ -23,7 +24,7 @@ import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendatio
 import { InnerContainer }   from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType, Story } from '../types'
-import { normalizeUrl, looksLikeChannelUrl, isDirectVideoUrl, isDirectAudioUrl } from '../utils/url'
+import { normalizeUrl, isDirectAudioUrl } from '../utils/url'
 
 const DISCLOSURE_TYPE_LABELS: Record<string, string> = {
   affiliate:          'Affiliate Relationship',
@@ -76,52 +77,6 @@ function StoryNotFound({ slug }: { slug: string }) {
         </div>
       </div>
     </main>
-  )
-}
-
-// ─── Content format tab bar ─────────────────────────────────────────────────────
-
-interface ContentTabsProps {
-  available: ContentType[]
-  active: ContentType
-  onChange: (tab: ContentType) => void
-}
-
-// "YouTube Video" reads as a platform credit, not a content format, in a tab
-// bar sitting right next to "Blog" — "Video" matches how founders think about it.
-function tabLabel(type: ContentType): string {
-  return type === 'youtube-video' ? 'Video' : contentTypeLabel(type)
-}
-
-function ContentTabs({ available, active, onChange }: ContentTabsProps) {
-  return (
-    <div
-      className="flex gap-1 bg-background rounded-xl p-1 w-fit"
-      role="tablist"
-      aria-label="Story content formats"
-    >
-      {available.map(type => (
-        <button
-          key={type}
-          role="tab"
-          aria-selected={active === type}
-          aria-controls={`tab-panel-${type}`}
-          id={`tab-${type}`}
-          onClick={() => onChange(type)}
-          className={`
-            px-4 py-2 rounded-lg text-sm font-medium font-body
-            transition-all duration-150
-            focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
-            ${active === type
-              ? 'bg-surface text-charcoal shadow-sm border border-border'
-              : 'text-muted hover:text-charcoal'
-            }
-          `}
-        >
-          {tabLabel(type)}
-        </button>
-      ))}
-    </div>
   )
 }
 
@@ -185,91 +140,6 @@ function BlogContent({ content }: { content: string }) {
     >
       {elements}
     </article>
-  )
-}
-
-// ─── Reel tab ───────────────────────────────────────────────────────────────────
-
-function ReelContent({ reelUrl, title, summary, landscape = false }: { reelUrl?: string; title: string; summary: string; landscape?: boolean }) {
-  const isChannelLink = looksLikeChannelUrl(reelUrl)
-  const isUploadedFile = isDirectVideoUrl(reelUrl)
-  const platform = reelUrl ? detectPlatform(reelUrl) : undefined
-  const embedUrl = reelUrl && platform && !isChannelLink && !isUploadedFile ? generateEmbedUrl(reelUrl, platform) : undefined
-  const platformLabel = platform ? PLATFORM_LABELS[platform] : 'the original platform'
-
-  return (
-    <div className="flex flex-col sm:flex-row gap-6 items-start" aria-label="Video content">
-      {/* Only an actual Reel gets the vertical phone frame — a landscape
-          video (YouTube, talking head) stretched into 9:16 is what was
-          reading as blurry/cropped. */}
-      <div
-        className={`flex-shrink-0 w-full bg-charcoal rounded-2xl overflow-hidden relative ${landscape ? 'sm:w-[28rem]' : 'sm:w-56'}`}
-        style={{ aspectRatio: landscape ? '16/9' : '9/16' }}
-        aria-label="Video preview"
-      >
-        {isUploadedFile ? (
-          <video
-            src={reelUrl}
-            controls
-            preload="metadata"
-            className="absolute inset-0 w-full h-full object-contain bg-black"
-          />
-        ) : embedUrl ? (
-          <iframe
-            src={embedUrl}
-            title={title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 w-full h-full"
-          />
-        ) : (
-          <>
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
-              <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center">
-                {isChannelLink ? (
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                )}
-              </div>
-              <p className="font-body text-xs text-white/60 leading-relaxed">
-                {isChannelLink ? `Visit their ${platformLabel} channel` : `Watch on ${platformLabel}`}
-              </p>
-            </div>
-            {reelUrl && (
-              <a
-                href={normalizeUrl(reelUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute inset-0"
-                aria-label={isChannelLink ? `Visit "${title}" on ${platformLabel}` : `Watch "${title}" on ${platformLabel}`}
-              />
-            )}
-          </>
-        )}
-      </div>
-
-      {/* Video context */}
-      <div className="flex-1 min-w-0">
-        <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Video</p>
-        <h3 className="font-heading text-xl font-semibold text-charcoal leading-snug mb-3">{title}</h3>
-        <p className="font-body text-base text-muted leading-relaxed mb-5">{summary}</p>
-        {reelUrl && !isUploadedFile && (
-          <a
-            href={normalizeUrl(reelUrl)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
-          >
-            {isChannelLink ? `Visit ${platformLabel} channel` : `Watch on ${platformLabel}`} ↗
-          </a>
-        )}
-      </div>
-    </div>
   )
 }
 
@@ -350,9 +220,6 @@ export function StoryDetailPage() {
     ...(story.carouselImages && story.carouselImages.length > 0 ? ['carousel' as const] : []),
     ...story.contentTypes,
   ])] : []
-  const [activeTab, setActiveTab] = useState<ContentType>(
-    story?.blog ? 'blog' : (story?.contentTypes[0] ?? 'blog')
-  )
 
   usePageMeta({
     title:       story ? deriveSeoTitle(story.title) : undefined,
@@ -646,53 +513,30 @@ export function StoryDetailPage() {
             {/* ── Left: content + ideas + related ──────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-12">
 
-              {/* Content format tabs + panel */}
-              <section aria-label="Story content">
-                <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">
-                  {availableTypes.length > 1 ? 'Read or Watch' : contentTypeLabel(availableTypes[0] ?? story.contentTypes[0])}
-                </h2>
-
-                {availableTypes.length > 1 && (
-                  <ContentTabs
-                    available={availableTypes}
-                    active={activeTab}
-                    onChange={setActiveTab}
-                  />
+              {/* Story content — always shown together (blog with its video
+                  underneath), never behind a tab switcher. A founder who
+                  wrote a blog AND has a video wants a visitor to see both,
+                  not pick one and miss the other. */}
+              <section aria-label="Story content" className="flex flex-col gap-10">
+                {story.blog && (
+                  <div>
+                    <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Blog</h2>
+                    <BlogContent content={story.blog} />
+                  </div>
                 )}
 
-                {/* Tab panels */}
-                <div className="mt-6">
-                  {/* Blog */}
-                  <div
-                    id="tab-panel-blog"
-                    role="tabpanel"
-                    aria-labelledby="tab-blog"
-                    hidden={activeTab !== 'blog'}
-                  >
-                    {story.blog ? (
-                      <BlogContent content={story.blog} />
-                    ) : (
-                      <p className="font-body text-muted text-sm italic">
-                        Blog content will appear here once published.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Reel */}
-                  <div
-                    id="tab-panel-reel"
-                    role="tabpanel"
-                    aria-labelledby="tab-reel"
-                    hidden={activeTab !== 'reel'}
-                  >
+                {effectiveReelUrl && (
+                  <div>
+                    <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Video</h2>
                     <ReelContent
                       reelUrl={effectiveReelUrl}
                       title={story.title}
-                      summary={story.summary}
+                      summary={story.blog ? '' : story.summary}
+                      landscape={story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head')}
                     />
                     {story.additionalReelUrls && story.additionalReelUrls.length > 0 && (
                       <div className="mt-6">
-                        <p className="font-heading text-sm font-semibold text-charcoal mb-3">More reels from this story</p>
+                        <p className="font-heading text-sm font-semibold text-charcoal mb-3">More videos from this story</p>
                         <div className="flex gap-4 overflow-x-auto pb-1">
                           {story.additionalReelUrls.map((url, i) => (
                             <div key={i} className="shrink-0 w-40">
@@ -703,80 +547,47 @@ export function StoryDetailPage() {
                       </div>
                     )}
                   </div>
+                )}
 
-                  {/* Carousel */}
-                  <div
-                    id="tab-panel-carousel"
-                    role="tabpanel"
-                    aria-labelledby="tab-carousel"
-                    hidden={activeTab !== 'carousel'}
-                  >
-                    {story.carouselImages && story.carouselImages.length > 0 ? (
-                      <CarouselContent images={story.carouselImages} title={story.title} />
-                    ) : (
-                      <p className="font-body text-muted text-sm italic">
-                        Carousel slides will appear here once published.
-                      </p>
-                    )}
+                {story.carouselImages && story.carouselImages.length > 0 && (
+                  <div>
+                    <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Carousel</h2>
+                    <CarouselContent images={story.carouselImages} title={story.title} />
                   </div>
+                )}
 
-                  {/* Panels for extended content types */}
-                  {([
-                    ['podcast',          story.audioUrl],
-                    ['talking-head',     story.reelUrl],
-                    ['voice-over',       story.audioUrl],
-                    ['photo-story',      undefined],
-                    ['document',         story.ctaUrl],
-                    ['external-article', story.ctaUrl],
-                    ['youtube-video',    story.reelUrl],
-                    ['social-post',      story.ctaUrl],
-                  ] as [ContentType, string | undefined][])
-                    .filter(([t]) => story.contentTypes.includes(t))
-                    .map(([type, url]) => (
-                      <div
-                        key={type}
-                        id={`tab-panel-${type}`}
-                        role="tabpanel"
-                        aria-labelledby={`tab-${type}`}
-                        hidden={activeTab !== type}
-                      >
-                        {type === 'photo-story' ? (
-                          story.carouselImages && story.carouselImages.length > 0
-                            ? <CarouselContent images={story.carouselImages} title={story.title} />
-                            : <p className="font-body text-muted text-sm italic">Photo gallery will appear here once published.</p>
-                        ) : (type === 'talking-head' || type === 'youtube-video') ? (
-                          <>
-                            <ReelContent reelUrl={effectiveReelUrl} title={story.title} summary={story.summary} landscape />
-                            {story.additionalReelUrls && story.additionalReelUrls.length > 0 && (
-                              <div className="mt-6">
-                                <p className="font-heading text-sm font-semibold text-charcoal mb-3">More reels from this story</p>
-                                <div className="flex gap-4 overflow-x-auto pb-1">
-                                  {story.additionalReelUrls.map((url2, i) => (
-                                    <div key={i} className="shrink-0 w-40">
-                                      <ReelContent reelUrl={url2} title={story.title} summary="" />
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        ) : (type === 'podcast' || type === 'voice-over') && isDirectAudioUrl(url) ? (
-                          <audio src={url} controls className="w-full" />
-                        ) : url ? (
-                          <div className="py-2">
-                            <a href={url} target="_blank" rel="noopener noreferrer"
-                               className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-[#b05a35] transition-colors text-sm">
-                              View {contentTypeLabel(type)} ↗
-                            </a>
-                          </div>
-                        ) : (
-                          <p className="font-body text-muted text-sm italic">
-                            {contentTypeLabel(type)} content will appear here once published.
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                </div>
+                {/* Remaining content types with no dedicated section above (podcast, document, etc.) */}
+                {([
+                  ['podcast',          story.audioUrl],
+                  ['voice-over',       story.audioUrl],
+                  ['document',         story.ctaUrl],
+                  ['external-article', story.ctaUrl],
+                  ['social-post',      story.ctaUrl],
+                ] as [ContentType, string | undefined][])
+                  .filter(([t]) => story.contentTypes.includes(t))
+                  .map(([type, url]) => (
+                    <div key={type}>
+                      <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">{contentTypeLabel(type)}</h2>
+                      {(type === 'podcast' || type === 'voice-over') && isDirectAudioUrl(url) ? (
+                        <audio src={url} controls className="w-full" />
+                      ) : url ? (
+                        <div className="py-2">
+                          <a href={url} target="_blank" rel="noopener noreferrer"
+                             className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-[#b05a35] transition-colors text-sm">
+                            View {contentTypeLabel(type)} ↗
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="font-body text-muted text-sm italic">
+                          {contentTypeLabel(type)} content will appear here once published.
+                        </p>
+                      )}
+                    </div>
+                  ))}
+
+                {!story.blog && !effectiveReelUrl && (!story.carouselImages || story.carouselImages.length === 0) && availableTypes.length === 0 && (
+                  <p className="font-body text-muted text-sm italic">Content will appear here once published.</p>
+                )}
               </section>
 
               {/* Other stories by this founder */}

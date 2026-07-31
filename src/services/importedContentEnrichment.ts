@@ -129,23 +129,32 @@ export interface BlogQaPair {
   answer: string
 }
 
+// {name} is substituted with a real subject — the founder's name, or "they"
+// when the title looks like a post title rather than a person (too long/
+// punctuated to read naturally as "What did Mitch and Shakas — Stagger Inn
+// Adventures Darwin Tour Company learn?").
 const QA_CATEGORIES: { question: string; signals: string[] }[] = [
-  { question: 'What did they learn?',            signals: ['learned', 'realised', 'realized', 'discovered', 'lesson'] },
-  { question: 'What challenge did they face?',   signals: ['challenge', 'struggle', 'difficult', 'hard', 'problem', 'obstacle'] },
-  { question: 'How did they solve it?',          signals: ['solved', 'solution', 'overcame', 'fixed', 'figured out', 'worked out'] },
-  { question: 'What made them start?',           signals: ['decided', 'started', 'began', 'launched', 'quit our jobs', 'quit my job'] },
-  { question: 'What happened next?',             signals: ['then', 'eventually', 'after that', 'turning point', 'from there'] },
-  { question: 'Why did they do it?',             signals: ['because', 'reason', 'so that', 'in order to'] },
+  { question: 'What did {name} learn?',            signals: ['learned', 'realised', 'realized', 'discovered', 'lesson'] },
+  { question: 'What challenge did {name} face?',   signals: ['challenge', 'struggle', 'difficult', 'hard', 'problem', 'obstacle'] },
+  { question: 'How did {name} solve it?',          signals: ['solved', 'solution', 'overcame', 'fixed', 'figured out', 'worked out'] },
+  { question: 'How did {name} get started?',       signals: ['decided', 'started', 'began', 'launched', 'quit our jobs', 'quit my job'] },
+  { question: 'What happened next for {name}?',    signals: ['then', 'eventually', 'after that', 'turning point', 'from there'] },
+  { question: 'Why did {name} do it?',             signals: ['because', 'reason', 'so that', 'in order to'] },
 ]
+
+function looksLikePersonName(title: string): boolean {
+  return title.length <= 30 && !/[-–—|:]/.test(title)
+}
 
 /** Extracts real Q&A pairs directly from the founder's own written text — never a topic-templated question, never a fabricated answer. */
 export function extractQaFromBlog(title: string, text: string): BlogQaPair[] {
   const sentences = splitSentences(text)
   const pairs: BlogQaPair[] = []
   const used = new Set<number>()
+  const subject = looksLikePersonName(title) ? title : 'they'
 
   if (sentences.length > 0) {
-    pairs.push({ question: `What is "${title}" about?`, answer: sentences[0]! })
+    pairs.push({ question: `What is ${title} about?`, answer: sentences[0]! })
     used.add(0)
   }
 
@@ -158,7 +167,7 @@ export function extractQaFromBlog(title: string, text: string): BlogQaPair[] {
       if (score > bestScore) { bestScore = score; bestIdx = i }
     })
     if (bestIdx !== -1) {
-      pairs.push({ question: category.question, answer: sentences[bestIdx]! })
+      pairs.push({ question: category.question.replace('{name}', subject), answer: sentences[bestIdx]! })
       used.add(bestIdx)
     }
   }
