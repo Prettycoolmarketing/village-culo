@@ -888,6 +888,19 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
           </div>
         )
       })()}
+
+      {/* Bottom Save — the page got long enough (Services, Appears On,
+          Discovery & Partnerships) that Save being only at the top meant
+          scrolling all the way back up after editing anything further down. */}
+      {draft && (
+        <div className="flex items-center gap-3 pt-2">
+          <button onClick={() => void handleSave()} disabled={saving}
+            className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+          {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
+        </div>
+      )}
     </div>
   )
 }
