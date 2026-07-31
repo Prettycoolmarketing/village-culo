@@ -121,7 +121,9 @@ export function BusinessProfilePage() {
         .filter((s): s is NonNullable<typeof s> => !!s && (s.status === 'published' || s.status === 'featured'))
     : []
   usePageMeta({
-    title:       business?.seoTitle || business?.name,
+    title:       business && business.seoTitle && business.seoTitle !== business.name
+                   ? `${business.seoTitle} — ${business.name}`
+                   : business?.name,
     description: business?.seoDescription || business?.description?.slice(0, 160),
     keywords:    [
       ...(business?.topics.map(t => t.name) ?? []),

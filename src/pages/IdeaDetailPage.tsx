@@ -1,6 +1,8 @@
-import { useParams, Link }      from 'react-router-dom'
+import { useState } from 'react'
+import { useParams, Link, useNavigate }      from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
-import { getIdeas, getIdeaBySlug } from '../services/ideas'
+import { useAuth } from '../contexts/AuthContext'
+import { getIdeas, getIdeaBySlug, deleteIdea } from '../services/ideas'
 import { getFounder }              from '../services/founders'
 import { getStories }              from '../services/stories'
 import { getBusinesses }           from '../services/businesses'
@@ -71,11 +73,25 @@ function StatPill({ count, label }: { count: number; label: string }) {
 export function IdeaDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const idea = getIdeaBySlug(slug ?? '')
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [deleting, setDeleting] = useState(false)
   usePageTitle(idea ? [idea.title, 'Ideas'] : 'Ideas')
 
   if (!idea || idea.status === 'archived') return <IdeaNotFound slug={slug ?? ''} />
 
   const quoteFounder = idea.quoteFounderId ? getFounder(idea.quoteFounderId) : undefined
+  // Owner-only control — an idea is extracted onto one of the founders it's
+  // linked to, so "do you own this" means "is one of those founders yours".
+  const isOwner = !!user && idea.relatedFounderIds.some(id => getFounder(id)?.userId === user.id)
+
+  async function handleDelete() {
+    if (!idea || !window.confirm(`Delete "${idea.title}"? This can't be undone.`)) return
+    setDeleting(true)
+    const result = await deleteIdea(idea.id)
+    setDeleting(false)
+    if (result.success) navigate('/ideas')
+  }
 
   // Related ideas: share at least one topic, public only, exclude current
   const topicIds = new Set(idea.topics.map(t => t.id))
@@ -380,6 +396,28 @@ export function IdeaDetailPage() {
                     </div>
                   </dl>
                 </section>
+
+                {/* Owner-only controls */}
+                {isOwner && (
+                  <div className="bg-surface rounded-2xl p-5 border border-border">
+                    <p className="font-body text-xs font-semibold text-muted uppercase tracking-wide mb-3">Manage this idea</p>
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        to="/dashboard/ideas"
+                        className="block text-center px-4 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                      >
+                        Edit in Dashboard
+                      </Link>
+                      <button
+                        onClick={() => void handleDelete()}
+                        disabled={deleting}
+                        className="block text-center px-4 py-2.5 border border-red-200 text-red-600 text-sm font-medium rounded-xl hover:border-red-400 hover:bg-red-50 transition-colors disabled:opacity-60"
+                      >
+                        {deleting ? 'Deleting…' : 'Delete this idea'}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* CTA panel */}
                 <div className="bg-secondary/5 rounded-2xl p-5 border border-secondary/20">

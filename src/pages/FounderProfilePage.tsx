@@ -201,7 +201,9 @@ export function FounderProfilePage() {
   const isVillagePartner   = founder ? (publisherPartnerProfileService.get(founder.id)?.enabled ?? false) : false
 
   usePageMeta({
-    title:       founder?.seoTitle || founder?.name,
+    title:       founder && founder.seoTitle && founder.seoTitle !== founder.name
+                   ? `${founder.seoTitle} — ${founder.name}`
+                   : founder?.name,
     description: founder?.seoDescription || founder?.bio?.slice(0, 160),
     keywords:    [
       ...(founder?.topics.map(t => t.name) ?? []),

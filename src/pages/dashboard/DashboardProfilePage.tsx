@@ -1101,8 +1101,8 @@ export function DashboardProfilePage() {
         <Field label="Display Name" hint="Your name as it appears everywhere on the Village — headings, cards, breadcrumbs. Keep it short and real (e.g. your actual name), not a full descriptor.">
           <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
         </Field>
-        <Field label="SEO Title" hint="Optional — a longer, keyword-rich title used only in Google search results and browser tabs. Falls back to Display Name if left blank. Keeps your Display Name short everywhere else, without repeating the same long phrase on every page (which can hurt SEO).">
-          <input type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder={draft.name} />
+        <Field label="SEO Title" hint="Optional — extra keywords added alongside your Display Name in Google search results and browser tabs (shown as 'SEO Title — Display Name'). Leave blank to just show your Display Name. Keeps your Display Name short everywhere else on the Village, without repeating a long phrase on every page.">
+          <input type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="e.g. Australian Tech Founder & Content Creator" />
         </Field>
         <Field label="Bio" hint="Write in your own voice — aim for 200+ characters. This is what search engines and the Village show publicly — no separate SEO text to fill in.">
           <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
@@ -1113,7 +1113,9 @@ export function DashboardProfilePage() {
           <p className="text-sm font-medium text-[#2D2A26] mb-1.5">Search Preview</p>
           <div className="border border-[#E8E4DD] rounded-xl px-4 py-3 bg-white">
             <p className="text-xs text-[#5E6B4A] truncate">culovillage.com/founders/{draft.slug}</p>
-            <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">{draft.seoTitle || draft.name}</p>
+            <p className="text-[#1a0dab] text-base leading-snug mt-0.5 truncate">
+              {draft.seoTitle && draft.seoTitle !== draft.name ? `${draft.seoTitle} — ${draft.name}` : draft.name}
+            </p>
             <p className="text-xs text-[#4d5156] mt-0.5 line-clamp-2">{draft.seoDescription || draft.bio}</p>
           </div>
         </div>
