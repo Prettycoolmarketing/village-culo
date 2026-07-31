@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom'
-import { getFeaturedStories } from '../data/stories'
-import { getFeaturedFounders } from '../data/founders'
-import { getFeaturedBusinesses } from '../data/businesses'
-import { getFeaturedIdeas } from '../data/ideas'
-import { getFeaturedEvents } from '../data/events'
-import { getFounder } from '../data/founders'
-import { getBusiness } from '../data/businesses'
+import { getStories } from '../services/stories'
+import { getFounders, getFounder } from '../services/founders'
+import { getBusinesses, getBusiness } from '../services/businesses'
+import { getIdeas } from '../services/ideas'
+import { getEvents } from '../services/events'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { SectionHeading } from '../components/layout/PageContainer'
@@ -23,11 +21,11 @@ export function FeaturedWidget({
   subheading = 'The best of the Village, updated as new stories are published.',
   className = '',
 }: FeaturedWidgetProps) {
-  const featuredStory = getFeaturedStories()[0]
-  const featuredFounder = getFeaturedFounders()[0]
-  const featuredBusiness = getFeaturedBusinesses()[0]
-  const featuredIdea = getFeaturedIdeas()[0]
-  const featuredEvent = getFeaturedEvents()[0]
+  const featuredStory = getStories({ publicOnly: true, featured: true, limit: 1 })[0]
+  const featuredFounder = getFounders({ publicOnly: true, featured: true, limit: 1 })[0]
+  const featuredBusiness = getBusinesses({ publicOnly: true, featured: true, limit: 1 })[0]
+  const featuredIdea = getIdeas({ publicOnly: true, featured: true, limit: 1 })[0]
+  const featuredEvent = getEvents({ featured: true, limit: 1 })[0]
 
   const storyFounder = featuredStory ? getFounder(featuredStory.founderId) : undefined
   const storyBusiness = featuredStory ? getBusiness(featuredStory.businessId) : undefined

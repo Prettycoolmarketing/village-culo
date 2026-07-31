@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { usePageTitle } from '../utils/usePageTitle'
 import { Link } from 'react-router-dom'
-import { libraryItems, productTypeLabel, statusLabel } from '../data/library'
+import { productTypeLabel, statusLabel } from '../data/library'
+import { getLibraryItems } from '../services/library'
 import { LibraryCard } from '../components/cards/LibraryCard'
 import { InnerContainer } from '../components/layout/PageContainer'
 import type { ProductType, LibraryStatus } from '../types'
@@ -41,6 +42,8 @@ export function LibraryPage() {
   const [query,       setQuery]       = useState('')
   const [productType, setProductType] = useState<ProductType | ''>('')
   const [status,      setStatus]      = useState<LibraryStatus | ''>('')
+
+  const libraryItems = getLibraryItems()
 
   const filtered = libraryItems.filter(item => {
     if (item.status === 'archived') return false

@@ -41,7 +41,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
           {/* Logo + name */}
           <div className="flex items-start gap-3 -mt-8 mb-3">
             <Link to={businessUrl} aria-label={`View ${business.name}`}>
-              <div className="w-14 h-14 rounded-xl overflow-hidden ring-4 ring-surface shadow-sm bg-background flex-shrink-0 flex items-center justify-center p-1.5">
+              <div className="w-14 h-14 rounded-xl overflow-hidden ring-4 ring-surface shadow-sm bg-background flex-shrink-0 flex items-center justify-center p-2.5">
                 <img
                   src={business.logo}
                   alt={`${business.name} logo`}
@@ -93,7 +93,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
               href={normalizeUrl(business.offers[0].ctaUrl)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent text-charcoal text-sm font-medium rounded-xl hover:bg-[#c4963e] transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
               aria-label={`${business.offers[0].ctaLabel} — ${business.name}`}
             >
               {business.offers[0].ctaLabel}
@@ -115,7 +115,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
         aria-label={`Business: ${business.name}`}
       >
         <Link to={businessUrl} tabIndex={-1} aria-hidden="true">
-          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-background flex items-center justify-center p-1">
+          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-background flex items-center justify-center p-2">
             <img src={business.logo} alt="" className="w-full h-full object-contain" loading="lazy" />
           </div>
         </Link>
@@ -142,7 +142,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
         {/* Logo + header */}
         <div className="flex items-start gap-3 mb-4">
           <Link to={businessUrl} aria-label={`View ${business.name}`}>
-            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border flex items-center justify-center p-1">
+            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border flex items-center justify-center p-2">
               <img
                 src={business.logo}
                 alt={`${business.name} logo`}

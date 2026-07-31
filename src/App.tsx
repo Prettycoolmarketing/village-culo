@@ -14,9 +14,9 @@ import { Footer }          from './components/layout/Footer'
 import { usePageTitle }    from './utils/usePageTitle'
 import { CheCuloToast }         from './components/ui/CheCuloToast'
 import { formatCheCuloActivity } from './utils/checulo'
-import { stories }              from './data/stories'
-import { getFounder }           from './data/founders'
-import { getBusiness }          from './data/businesses'
+import { getStories }           from './services/stories'
+import { getFounder }           from './services/founders'
+import { getBusiness }          from './services/businesses'
 
 // ─── Public pages ───────────────────────────────────────────────────────────────
 import { VillagePage }        from './pages/VillagePage'
@@ -73,13 +73,18 @@ import { CapoPartnersPage }                   from './pages/dashboard/village/Ca
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 import { CAPO_PERMISSIONS } from './utils/permissions'
 
-// ─── Activity banner data ───────────────────────────────────────────────────────
-const recentStory   = stories[0]
-const recentFounder = recentStory ? getFounder(recentStory.founderId)               : undefined
-const recentBiz     = recentStory?.businessId ? getBusiness(recentStory.businessId) : undefined
-const activityMsg   = recentStory
-  ? formatCheCuloActivity(recentStory, recentFounder, recentBiz, recentStory.location)
-  : ''
+// ─── Activity banner data — the most recently published real story, not a
+// baked-in demo one. Computed lazily (not at module load) so it reflects
+// whatever's actually been published by the time someone loads the site. ──
+function getActivityMessage(): string {
+  const recentStory = getStories({ publicOnly: true })
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+  if (!recentStory) return ''
+  const recentFounder = getFounder(recentStory.founderId)
+  const recentBiz = recentStory.businessId ? getBusiness(recentStory.businessId) : undefined
+  return formatCheCuloActivity(recentStory, recentFounder, recentBiz, recentStory.location)
+}
 
 // ─── 404 ────────────────────────────────────────────────────────────────────────
 
@@ -125,6 +130,7 @@ function NotFound() {
 // ─── Public layout (wraps all public-facing routes) ─────────────────────────────
 
 function PublicLayout() {
+  const [activityMsg] = useState(getActivityMessage)
   const [bannerVisible, setBannerVisible] = useState(!!activityMsg)
   return (
     <div className="flex flex-col min-h-screen bg-background">

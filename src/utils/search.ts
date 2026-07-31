@@ -1,9 +1,9 @@
-import { getStories }    from '../services/stories'
-import { getFounders }   from '../services/founders'
-import { getBusinesses } from '../services/businesses'
-import { events }        from '../data/events'
-import { libraryItems }  from '../data/library'
-import { getIdeas }      from '../services/ideas'
+import { getStories }       from '../services/stories'
+import { getFounders }      from '../services/founders'
+import { getBusinesses }    from '../services/businesses'
+import { getEvents }        from '../services/events'
+import { getLibraryItems }  from '../services/library'
+import { getIdeas }         from '../services/ideas'
 import type { Story, Founder, Idea, Business, Event, LibraryItem } from '../types'
 
 export interface SearchResults {
@@ -25,6 +25,8 @@ export function searchVillage(query: string): SearchResults {
   const allFounders   = getFounders()
   const allBusinesses = getBusinesses()
   const publicIdeas   = getIdeas({ publicOnly: true })
+  const allEvents     = getEvents()
+  const libraryItems  = getLibraryItems()
 
   // Empty query — return everything so Archive doubles as a full browser
   if (!query.trim()) {
@@ -33,7 +35,7 @@ export function searchVillage(query: string): SearchResults {
       founders:   allFounders.filter(f => f.status !== 'archived'),
       ideas:      publicIdeas,
       businesses: allBusinesses.filter(b => b.status !== 'archived'),
-      events:     [...events],
+      events:     [...allEvents],
       library:    libraryItems.filter(l => l.status !== 'archived'),
     }
   }
@@ -93,7 +95,7 @@ export function searchVillage(query: string): SearchResults {
       ]).includes(q)
     }),
 
-    events: events.filter(e =>
+    events: allEvents.filter(e =>
       searchable([
         e.title, e.description,
         e.location?.name, e.location?.state,

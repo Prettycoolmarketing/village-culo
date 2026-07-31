@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { locations } from '../data/locations'
-import { getStoriesByLocation } from '../data/stories'
+import { getStories } from '../services/stories'
 import { SectionHeading } from '../components/layout/PageContainer'
 
 interface MapPreviewWidgetProps {
@@ -30,7 +30,7 @@ export function MapPreviewWidget({
         aria-label="Locations"
       >
         {displayLocations.map(location => {
-          const storyCount = getStoriesByLocation(location.id).length
+          const storyCount = getStories({ locationId: location.id, publicOnly: true }).length
           return (
             <article
               key={location.id}
