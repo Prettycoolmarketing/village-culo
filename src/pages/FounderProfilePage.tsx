@@ -190,7 +190,13 @@ export function FounderProfilePage() {
   // pointer, and can be stale for a founder's second/third business — so the
   // real owned set comes first, with the pointer used only to pick which one
   // is primary when it's still valid.
-  const founderOwnedBusinesses = founder ? getBusinesses({ founderId: founder.id }) : []
+  // A business with no name yet (still "Untitled business" mid-setup in the
+  // dashboard) must never render publicly — filtered here, at the source,
+  // rather than in each place this list gets rendered, so nothing downstream
+  // can accidentally re-introduce a blank card.
+  const founderOwnedBusinesses = founder
+    ? getBusinesses({ founderId: founder.id }).filter(b => b.name.trim().length > 0)
+    : []
   const business           = founder
     ? founderOwnedBusinesses.find(b => b.id === founder.businessId) ?? founderOwnedBusinesses[0]
     : undefined
