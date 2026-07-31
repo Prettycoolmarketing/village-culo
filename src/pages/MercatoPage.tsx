@@ -67,7 +67,7 @@ export function MercatoPage() {
       >
         <InnerContainer>
           <div className="max-w-2xl">
-            <p className="font-body text-xs font-semibold text-accent uppercase tracking-widest mb-3">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
               CULO Village
             </p>
             <h1

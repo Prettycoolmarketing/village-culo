@@ -33,8 +33,8 @@ function BusinessNotFound({ slug }: { slug: string }) {
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="text-center max-w-md">
-        <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6" aria-hidden="true">
-          <svg className="w-8 h-8 text-accent/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6" aria-hidden="true">
+          <svg className="w-8 h-8 text-primary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
@@ -46,10 +46,10 @@ function BusinessNotFound({ slug }: { slug: string }) {
         </p>
         <p className="font-body text-sm text-muted mb-8">It may not have been published yet, or the URL may have changed.</p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Link to="/mercato" className="px-5 py-2.5 bg-accent text-charcoal text-sm font-semibold rounded-xl hover:bg-[#c4963e] transition-colors">
+          <Link to="/mercato" className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
             Browse Businesses
           </Link>
-          <Link to="/" className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-accent hover:text-accent transition-colors">
+          <Link to="/" className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors">
             Back to Village
           </Link>
         </div>
@@ -69,7 +69,7 @@ function OfferCard({ offer, businessName }: { offer: Business['offers'][number];
         href={normalizeUrl(offer.ctaUrl)}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-accent text-charcoal text-sm font-semibold rounded-xl hover:bg-[#c4963e] transition-colors self-start"
+        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors self-start"
         aria-label={`${offer.ctaLabel} — ${businessName}`}
       >
         {offer.ctaLabel}
@@ -89,7 +89,7 @@ function SocialLink({ href, label, icon }: { href: string; label: string; icon: 
       href={normalizeUrl(href)}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm text-muted hover:border-accent hover:text-charcoal transition-colors"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border text-sm text-muted hover:border-primary hover:text-charcoal transition-colors"
       aria-label={label}
     >
       {icon}
@@ -269,7 +269,7 @@ export function BusinessProfilePage() {
             className="w-full h-full object-cover opacity-70" loading="eager" />
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
           {business.featured && (
-            <span className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium bg-accent text-charcoal">Featured</span>
+            <span className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium bg-primary text-white">Featured</span>
           )}
         </div>
 
@@ -280,7 +280,7 @@ export function BusinessProfilePage() {
                 <BizLogo logo={business.logo} name={business.name} className="text-2xl" />
               </div>
               <div className="pb-1">
-                <span className="font-body text-xs font-semibold text-accent uppercase tracking-widest">
+                <span className="font-body text-xs font-semibold text-primary uppercase tracking-widest">
                   {business.industry.name}
                 </span>
               </div>
@@ -437,13 +437,13 @@ export function BusinessProfilePage() {
                         )}
                         <div className="flex items-center justify-between mt-auto">
                           {service.price && (
-                            <span className="font-heading text-base font-semibold text-accent">{service.price}</span>
+                            <span className="font-heading text-base font-semibold text-primary">{service.price}</span>
                           )}
                           <a
                             href={normalizeUrl(service.ctaUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-4 py-2 bg-accent text-charcoal text-sm font-semibold rounded-xl hover:bg-[#c4963e] transition-colors"
+                            className="inline-flex items-center gap-1 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                             aria-label={`${service.ctaLabel} — ${service.name}`}
                           >
                             {service.ctaLabel}
@@ -509,7 +509,7 @@ export function BusinessProfilePage() {
                           {faq.topicIds.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-1.5">
                               {faq.topicIds.map(tid => (
-                                <span key={tid} className="font-body text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+                                <span key={tid} className="font-body text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                                   {tid.replace(/-/g, ' ')}
                                 </span>
                               ))}
@@ -537,7 +537,7 @@ export function BusinessProfilePage() {
                         <article className="bg-surface rounded-2xl border border-border p-5 flex flex-col gap-3 h-full">
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="font-heading text-base font-semibold text-charcoal leading-snug">{prog.name}</h3>
-                            <span className="flex-shrink-0 font-body text-xs font-semibold px-2.5 py-1 rounded-full bg-accent/10 text-accent">
+                            <span className="flex-shrink-0 font-body text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary">
                               {PROG_TYPE_LABELS[prog.programType] ?? prog.programType}
                             </span>
                           </div>
@@ -555,7 +555,7 @@ export function BusinessProfilePage() {
                                 href={prog.applicationUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-accent text-charcoal text-xs font-semibold rounded-lg hover:bg-[#c4963e] transition-colors"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
                               >
                                 Apply ↗
                               </a>
@@ -737,8 +737,8 @@ export function BusinessProfilePage() {
 
                 {/* Primary offer CTA */}
                 {business.offers[0] && (
-                  <div className="bg-accent/10 rounded-2xl p-5 border border-accent/30">
-                    <p className="font-body text-xs font-semibold text-accent uppercase tracking-wide mb-2">Top Offer</p>
+                  <div className="bg-primary/10 rounded-2xl p-5 border border-primary/30">
+                    <p className="font-body text-xs font-semibold text-primary uppercase tracking-wide mb-2">Top Offer</p>
                     <p className="font-heading text-base font-semibold text-charcoal mb-1 leading-snug">
                       {business.offers[0].title}
                     </p>
@@ -747,7 +747,7 @@ export function BusinessProfilePage() {
                       href={normalizeUrl(business.offers[0].ctaUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block text-center px-4 py-2.5 bg-accent text-charcoal text-sm font-semibold rounded-xl hover:bg-[#c4963e] transition-colors"
+                      className="block text-center px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                       aria-label={`${business.offers[0].ctaLabel} — ${business.name}`}
                     >
                       {business.offers[0].ctaLabel}

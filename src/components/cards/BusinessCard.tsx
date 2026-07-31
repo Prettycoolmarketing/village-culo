@@ -22,12 +22,14 @@ export function BusinessCard({ business, founder, variant = 'default', className
         className={`group relative bg-surface rounded-2xl overflow-hidden shadow-card hover:shadow-lg transition-all duration-300 ${className}`}
         aria-label={`Business: ${business.name}`}
       >
-        {/* Cover */}
-        <div className="relative h-40 overflow-hidden">
+        {/* Cover — a fixed aspect ratio (not a fixed pixel height) so the
+            crop stays proportional to the card's actual width instead of
+            zooming in harder on narrower cards and looser on wider ones. */}
+        <div className="relative aspect-[16/9] overflow-hidden bg-charcoal">
           <img
             src={business.coverImage}
             alt={`${business.name} cover image`}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal/50 to-transparent" aria-hidden="true" />
@@ -39,14 +41,16 @@ export function BusinessCard({ business, founder, variant = 'default', className
         </div>
 
         <div className="p-5">
-          {/* Logo + name */}
+          {/* Logo + name — a fixed-size white plate behind every logo keeps
+              them reading as the same visual size regardless of how much
+              transparent padding the source file has baked in. */}
           <div className="flex items-start gap-3 -mt-8 mb-3">
             <Link to={businessUrl} aria-label={`View ${business.name}`}>
-              <div className="w-14 h-14 rounded-xl overflow-hidden ring-4 ring-surface shadow-sm bg-background flex-shrink-0 flex items-center justify-center p-2.5">
+              <div className="w-16 h-16 rounded-xl overflow-hidden ring-4 ring-surface shadow-md bg-white flex-shrink-0 flex items-center justify-center p-3">
                 <BizLogo logo={business.logo} name={business.name} />
               </div>
             </Link>
-            <div className="pt-8 min-w-0">
+            <div className="pt-9 min-w-0">
               <h3 className="font-heading text-base font-semibold text-charcoal leading-tight line-clamp-1">
                 <Link to={businessUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">
                   {business.name}
@@ -111,7 +115,7 @@ export function BusinessCard({ business, founder, variant = 'default', className
         aria-label={`Business: ${business.name}`}
       >
         <Link to={businessUrl} tabIndex={-1} aria-hidden="true">
-          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-background flex items-center justify-center p-2">
+          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white ring-1 ring-border flex items-center justify-center p-2">
             <BizLogo logo={business.logo} name={business.name} />
           </div>
         </Link>
@@ -138,11 +142,11 @@ export function BusinessCard({ business, founder, variant = 'default', className
         {/* Logo + header */}
         <div className="flex items-start gap-3 mb-4">
           <Link to={businessUrl} aria-label={`View ${business.name}`}>
-            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border flex items-center justify-center p-2">
+            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-border flex items-center justify-center p-2.5">
               <BizLogo logo={business.logo} name={business.name} />
             </div>
           </Link>
-          <div className="min-w-0 flex-1 pt-0.5">
+          <div className="min-w-0 flex-1 pt-1">
             <h3 className="font-heading text-base font-semibold text-charcoal leading-tight">
               <Link to={businessUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">
                 {business.name}

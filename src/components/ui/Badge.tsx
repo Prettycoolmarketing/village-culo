@@ -13,7 +13,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   accent:      'bg-accent/10 text-accent',
   stories:     'bg-primary/10 text-primary',
   ideas:       'bg-secondary/10 text-secondary',
-  mercato:     'bg-accent/10 text-[#8a6a1e]',
+  mercato:     'bg-primary/10 text-primary',
   map:         'bg-[#7A9B76]/10 text-[#4e6b4a]',
   noticeboard: 'bg-[#B85C3A]/10 text-[#B85C3A]',
   founders:    'bg-[#A8532E]/10 text-[#A8532E]',

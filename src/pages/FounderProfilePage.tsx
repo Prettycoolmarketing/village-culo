@@ -491,7 +491,7 @@ export function FounderProfilePage() {
                   <Link key={biz.id} to={`/businesses/${biz.slug}`}
                     className="inline-flex items-center gap-2.5 px-4 py-2.5 bg-background rounded-xl border border-border text-sm font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
                     aria-label={`View ${biz.name} business profile`}>
-                    <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-border flex items-center justify-center p-0.5">
+                    <div className="w-6 h-6 rounded overflow-hidden flex-shrink-0 bg-white ring-1 ring-border flex items-center justify-center p-0.5">
                       <BizLogo logo={biz.logo} name={biz.name} className="text-[10px]" />
                     </div>
                     {biz.name}
@@ -804,7 +804,7 @@ export function FounderProfilePage() {
                           className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-sm transition-all group"
                           aria-label={`View ${b.name}`}
                         >
-                          <div className="flex-shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-background ring-2 ring-border flex items-center justify-center p-1">
+                          <div className="flex-shrink-0 w-9 h-9 rounded-lg overflow-hidden bg-white ring-2 ring-border flex items-center justify-center p-1">
                             <BizLogo logo={b.logo} name={b.name} className="text-sm" />
                           </div>
                           <div className="min-w-0 flex-1">
