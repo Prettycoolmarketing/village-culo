@@ -22,6 +22,15 @@
 // video instead — a video over the cap reports a clear error rather than
 // crashing.
 //
+// MAX_VIDEO_BYTES was originally 60MB, which crashed the worker with
+// WORKER_RESOURCE_LIMIT in practice rather than hitting the graceful
+// "too large" error below — fetchWithLimit's final step copies every
+// streamed chunk into one more same-size buffer (peak ~2x the file size),
+// and the subsequent storage upload likely copies it again, so a 60MB file
+// meant ~150-180MB of real peak usage before V8/runtime overhead on top of
+// that — comfortably past what an Edge Function worker actually gets.
+// Lowered to a size the graceful-error path can actually be reached at.
+//
 // Deploy: supabase functions deploy canva-export-reel-video
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
@@ -29,7 +38,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getValidCanvaAccessToken, assertOwnsFounder } from '../_shared/canva.ts'
 import { createExportJob, fetchWithLimit } from '../_shared/canvaExport.ts'
 
-const MAX_VIDEO_BYTES = 60_000_000  // ~60MB — generous for a short vertical reel at 1080p
+const MAX_VIDEO_BYTES = 20_000_000  // ~20MB — see note above on why 60MB crashed instead of erroring cleanly
 
 const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
