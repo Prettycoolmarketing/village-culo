@@ -70,7 +70,11 @@ export function StoryPreviewPage() {
               </div>
             )}
 
-            {story.summary && <p className="text-sm text-[#4B4845] leading-relaxed">{story.summary}</p>}
+            {/* story.subtitle, not summary — summary is SEO/meta text that
+                falls back to the same caption as blog when no subtitle was
+                ever set, which printed the same paragraph twice here. The
+                real published story page only ever shows subtitle + blog. */}
+            {story.subtitle && <p className="text-sm text-[#4B4845] leading-relaxed">{story.subtitle}</p>}
 
             {story.blog && (
               <div className="text-sm text-[#2D2A26] leading-relaxed whitespace-pre-wrap border-t border-[#F3EDE6] pt-4">
