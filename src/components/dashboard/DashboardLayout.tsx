@@ -74,9 +74,9 @@ function ProfileTabNavItem({ tabValue, label, icon, hint }: { tabValue: string; 
     <Link
       to={to}
       title={hint}
-      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
+      className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
         isActive
-          ? 'bg-[#C86A43]/10 text-[#C86A43] font-medium'
+          ? 'bg-[#C86A43] text-white'
           : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
       }`}
     >

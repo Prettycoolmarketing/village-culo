@@ -1284,11 +1284,14 @@ export function DashboardProfilePage() {
         </div>
       )}
 
-      {/* Tabs */}
-      <Tabs tabs={TABS} active={tab} onChange={setTab} className={`px-8 ${tab === 'content' ? 'pt-8' : ''}`} />
+      {/* Tabs — Content is reached from its own sidebar link now and shows
+          only the content section, not the rest of the profile's tabs. */}
+      {tab !== 'content' && (
+        <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-8" />
+      )}
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
+      <div className={`flex-1 overflow-y-auto px-8 py-6 ${tab === 'content' ? 'pt-8' : ''}`}>
 
         {/* ── Overview (Profile) ───────────────────────────────────────── */}
         {tab === 'overview' && (
