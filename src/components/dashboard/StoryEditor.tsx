@@ -4,7 +4,7 @@ import { villageContentIntelligenceService, storyToInput } from '../../services/
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { getIdeas } from '../../services/ideas'
 import { getBusinesses } from '../../services/businesses'
-import { MediaUpload } from '../ui/MediaUpload'
+import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { AppearsOnPanel } from './AppearsOnPanel'
 import { MissingAssetsPanel } from './MissingAssetsPanel'
@@ -193,7 +193,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
           </Field>
         )}
 
-        <Field label="Extra photos / carousel" hint="Add extra photos or a carousel — works alongside any other content type.">
+        <Field label="Extra photos / video" hint="Add extra photos, a carousel, or another reel/video clip — works alongside the primary content above.">
           {(draft.carouselImages ?? []).length > 0 && (
             <div className="flex flex-col gap-2 mb-2">
               {(draft.carouselImages ?? []).map((img, i) => (
@@ -207,18 +207,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
               ))}
             </div>
           )}
-          <MediaUpload
-            onChange={v => set('carouselImages', [...(draft.carouselImages ?? []), v])}
-            onChangeMultiple={urls => set('carouselImages', [...(draft.carouselImages ?? []), ...urls])}
-            multiple
-            accept="image"
-            label="Upload photos"
-            aspect="auto"
-            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
-          />
-        </Field>
-
-        <Field label="Extra reel / video" hint="Add another reel or video clip — beyond the primary one above.">
           {(draft.additionalReelUrls ?? []).length > 0 && (
             <div className="flex flex-col gap-2 mb-2">
               {(draft.additionalReelUrls ?? []).map((url, i) => (
@@ -247,12 +235,26 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
               className="text-xs text-[#C86A43] hover:underline text-left w-fit">
               + Add another reel/video (by URL)
             </button>
+            {/* One dropzone for both — each file routes itself to the right
+                field by its own type instead of needing two uploaders. */}
             <MediaUpload
-              onChange={v => set('additionalReelUrls', [...(draft.additionalReelUrls ?? []).filter(Boolean), v])}
-              accept="video"
-              label="Or upload a video file"
+              onChange={v => set(
+                inferKindFromUrl(v) === 'video' ? 'additionalReelUrls' : 'carouselImages',
+                inferKindFromUrl(v) === 'video'
+                  ? [...(draft.additionalReelUrls ?? []).filter(Boolean), v]
+                  : [...(draft.carouselImages ?? []), v],
+              )}
+              onChangeMultiple={urls => {
+                const videos = urls.filter(u => inferKindFromUrl(u) === 'video')
+                const images = urls.filter(u => inferKindFromUrl(u) !== 'video')
+                if (videos.length > 0) set('additionalReelUrls', [...(draft.additionalReelUrls ?? []).filter(Boolean), ...videos])
+                if (images.length > 0) set('carouselImages', [...(draft.carouselImages ?? []), ...images])
+              }}
+              multiple
+              accept="media"
+              label="Add photos or a video"
               aspect="auto"
-              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
             />
           </div>
         </Field>
