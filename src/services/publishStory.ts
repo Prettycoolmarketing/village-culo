@@ -200,8 +200,11 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     relatedStoryIds: [],
     importedContentId: item.id,
     partnerId: item.partnerId,
-    ctaLabel: item.ctaLabel || 'View original',
-    ctaUrl: item.ctaUrl || item.originalUrl,
+    // A Canva design's own URL is an editor/share link, never a meaningful
+    // "read more" destination for a public visitor — must never become the
+    // fallback CTA just because no custom link was set.
+    ctaLabel: item.ctaLabel || (item.sourcePlatform === 'canva' ? '' : 'View original'),
+    ctaUrl: item.ctaUrl || (item.sourcePlatform === 'canva' ? '' : item.originalUrl),
     additionalLinks: item.additionalLinks,
     status: 'published',
     featured: false,
@@ -288,8 +291,8 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
     coverImage: item.thumbnailUrl || story.coverImage,
     blog: fullDescription || story.blog,
     partnerId: item.partnerId ?? story.partnerId,
-    ctaLabel: item.ctaLabel || story.ctaLabel,
-    ctaUrl: item.ctaUrl || story.ctaUrl,
+    ctaLabel: item.ctaLabel || (item.sourcePlatform === 'canva' ? '' : story.ctaLabel),
+    ctaUrl: item.ctaUrl || (item.sourcePlatform === 'canva' ? '' : story.ctaUrl),
     additionalLinks: item.additionalLinks ?? story.additionalLinks,
     carouselImages: extraImages.length > 0 ? extraImages : story.carouselImages,
     additionalReelUrls: extraVideos.length > 0 ? extraVideos : story.additionalReelUrls,

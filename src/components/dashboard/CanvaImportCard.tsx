@@ -125,25 +125,31 @@ export function CanvaImportCard({
     // video or a clear error, never a silent Canva-link fallback.
     const exportVideo = contentTypeHint?.includes('reel') || (wantsVideo && indices.length === 1)
     let reelVideoUrl: string | undefined
+    let videoExportError: string | null = null
     if (exportVideo) {
       setBusy(true)
       setStage('Exporting your Reel video — this can take a few minutes…')
       try {
         reelVideoUrl = await exportCanvaReelVideo(founderId, designId, result.pageNumbers[indices[0]!] ?? indices[0]! + 1, 'vertical')
       } catch (err) {
-        setBusy(false)
-        setStage(null)
-        setError(err instanceof Error ? err.message : 'Could not export the video for this Reel. Try again, or pick different slides.')
-        return
+        // Don't discard the slides just because the video failed — the
+        // images already exported successfully. Falling back to save them
+        // (with no video) beats losing the whole import, and definitely
+        // beats the old behaviour of silently linking out to the Canva
+        // design page instead of showing anything real.
+        videoExportError = err instanceof Error ? err.message : 'Could not export the video for this Reel.'
       }
       setStage(null)
     }
 
+    // No real destination to send anyone to once re-hosted here — the Canva
+    // design page itself isn't meant for public viewers, so it must never
+    // become the fallback "view original" link a founder didn't ask for.
     const item: ImportedContent = {
       id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       founderId,
       sourcePlatform: 'canva',
-      originalUrl: `https://www.canva.com/design/${designId}/view`,
+      originalUrl: '',
       thumbnailUrl: result.imageUrls[indices[0]!],
       imageUrls: indices.map(i => result.imageUrls[i]!),
       reelVideoUrl,
@@ -159,6 +165,7 @@ export function CanvaImportCard({
     const saveResult = await importedContentService.upsert(item)
     setBusy(false)
     if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
+    if (videoExportError) setError(`Saved your slide${indices.length === 1 ? '' : 's'} as images — the video didn't export (${videoExportError}). You can try again or attach it manually in Advanced Edit.`)
     if (reelVideoUrl) onReelVideoReady?.(reelVideoUrl)
     onImported(item)
   }

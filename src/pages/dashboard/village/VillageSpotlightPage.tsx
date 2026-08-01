@@ -230,7 +230,9 @@ function FeatureTogglePanel() {
                     void handleToggle(importedContentService.upsert({ ...c, status: next, visibility: 'public' }))
                   }}
                 />
-                <a href={normalizeUrl(c.originalUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">Source ↗</a>
+                {c.originalUrl && (
+                  <a href={normalizeUrl(c.originalUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">Source ↗</a>
+                )}
                 <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => void handleToggle(importedContentService.delete(c.id))} className="text-xs text-red-500 hover:underline" />
               </div>
             </div>
