@@ -18,7 +18,7 @@ import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../..
 import { normalizeUrl } from '../../utils/url'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { deriveSeoTitle, deriveSeoDescription } from '../../utils/seo'
-import { MediaUpload } from '../../components/ui/MediaUpload'
+import { MediaUpload, inferKindFromUrl } from '../../components/ui/MediaUpload'
 import {
   villageContentIntelligenceService,
   importedContentToInput,
@@ -62,9 +62,8 @@ export const STATUS_OPTIONS: { value: ImportedContentStatus; label: string }[] =
 ]
 
 const TRANSCRIPT_STATUS_OPTIONS = [
-  { value: 'none',        label: 'No transcript'                         },
-  { value: 'manual',      label: 'Pasted manually'                       },
-  { value: 'unavailable', label: 'Not available for this content/platform' },
+  { value: 'none',   label: 'No transcript'     },
+  { value: 'manual', label: 'Pasted manually'   },
 ]
 
 const SOURCE_TYPE_LABELS: Record<ConnectedSourceType, string> = {
@@ -1310,16 +1309,6 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
             ))}
           </div>
         )}
-        <MediaUpload
-          onChange={v => field('imageUrls', [...(draft.imageUrls ?? []), v])}
-          onChangeMultiple={urls => field('imageUrls', [...(draft.imageUrls ?? []), ...urls])}
-          multiple
-          accept="image"
-          label="Add photos or a carousel"
-          aspect="auto"
-          uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
-        />
-
         {(draft.additionalVideoUrls ?? []).length > 0 && (
           <div className="flex flex-col gap-1.5 mt-3 mb-2">
             {(draft.additionalVideoUrls ?? []).map((url, i) => (
@@ -1348,12 +1337,27 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
             className="text-xs text-[#C86A43] hover:underline text-left w-fit">
             + Add another reel/video (by URL)
           </button>
+          {/* One dropzone for both — a mixed batch (a carousel plus a video
+              clip) used to need two separate uploaders; each file now routes
+              itself to the right field by its own type. */}
           <MediaUpload
-            onChange={v => field('additionalVideoUrls', [...(draft.additionalVideoUrls ?? []).filter(Boolean), v])}
-            accept="video"
-            label="Or upload a video file"
+            onChange={v => field(
+              inferKindFromUrl(v) === 'video' ? 'additionalVideoUrls' : 'imageUrls',
+              inferKindFromUrl(v) === 'video'
+                ? [...(draft.additionalVideoUrls ?? []).filter(Boolean), v]
+                : [...(draft.imageUrls ?? []), v],
+            )}
+            onChangeMultiple={urls => {
+              const videos = urls.filter(u => inferKindFromUrl(u) === 'video')
+              const images = urls.filter(u => inferKindFromUrl(u) !== 'video')
+              if (videos.length > 0) field('additionalVideoUrls', [...(draft.additionalVideoUrls ?? []).filter(Boolean), ...videos])
+              if (images.length > 0) field('imageUrls', [...(draft.imageUrls ?? []), ...images])
+            }}
+            multiple
+            accept="media"
+            label="Add photos or a video"
             aspect="auto"
-            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
           />
         </div>
       </div>
@@ -1419,6 +1423,40 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
               className={INPUT} placeholder="https://..." />
           </div>
         </div>
+
+        {/* Additional links — beyond the one primary CTA above, for a piece
+            that genuinely mentions more than one partner/product. */}
+        {(draft.additionalLinks ?? []).length > 0 && (
+          <div className="flex flex-col gap-2 mt-3">
+            {(draft.additionalLinks ?? []).map((link, i) => (
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-center bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
+                <input type="text" value={link.label}
+                  onChange={e => {
+                    const next = [...(draft.additionalLinks ?? [])]
+                    next[i] = { ...next[i]!, label: e.target.value }
+                    field('additionalLinks', next)
+                  }}
+                  className={INPUT} placeholder="Link label" />
+                <input type="url" value={link.url}
+                  onChange={e => {
+                    const next = [...(draft.additionalLinks ?? [])]
+                    next[i] = { ...next[i]!, url: e.target.value }
+                    field('additionalLinks', next)
+                  }}
+                  className={INPUT} placeholder="https://..." />
+                <button
+                  onClick={() => field('additionalLinks', (draft.additionalLinks ?? []).filter((_, j) => j !== i))}
+                  className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => field('additionalLinks', [...(draft.additionalLinks ?? []), { label: '', url: '' }])}
+          className="text-xs text-[#C86A43] hover:underline text-left w-fit mt-3">
+          + Add another affiliate link
+        </button>
       </div>
 
       {/* ── Transcript section ─────────────────────────────────────────────── */}
@@ -1528,6 +1566,29 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
               <CreateWithCuloCTA variant="button" label="Create with CULO Creatives exclusively in Canva" />
             </div>
           )}
+        </div>
+
+        {/* Video orientation — a YouTube Short is still vertical despite
+            being a "youtube-video", which otherwise defaults to landscape;
+            no reliable way to detect that from the URL alone. */}
+        <div className="mb-4 border-t border-[#E8E4DD] pt-4">
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1.5">Video shape on the page</label>
+          <div className="flex gap-2">
+            {(['vertical', 'landscape'] as const).map(o => (
+              <button
+                key={o}
+                type="button"
+                onClick={() => field('videoOrientation', o)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${
+                  (draft.videoOrientation ?? 'vertical') === o
+                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
+                    : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                }`}
+              >
+                {o}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Save / Cancel */}

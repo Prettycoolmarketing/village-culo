@@ -202,6 +202,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     partnerId: item.partnerId,
     ctaLabel: item.ctaLabel || 'View original',
     ctaUrl: item.ctaUrl || item.originalUrl,
+    additionalLinks: item.additionalLinks,
     status: 'published',
     featured: false,
     publishingSource: item.sourcePlatform === 'canva' ? 'canva-api' : 'website-import',
@@ -252,6 +253,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     // (YouTube, TikTok, Instagram's live originalUrl, etc.).
     const originalUrlIsPlayable = item.sourcePlatform !== 'canva'
     story.reelUrl = item.reelVideoUrl || (originalUrlIsPlayable ? item.originalUrl : undefined)
+    story.videoOrientation = item.videoOrientation
   }
 
   return story
@@ -288,8 +290,10 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
     partnerId: item.partnerId ?? story.partnerId,
     ctaLabel: item.ctaLabel || story.ctaLabel,
     ctaUrl: item.ctaUrl || story.ctaUrl,
+    additionalLinks: item.additionalLinks ?? story.additionalLinks,
     carouselImages: extraImages.length > 0 ? extraImages : story.carouselImages,
     additionalReelUrls: extraVideos.length > 0 ? extraVideos : story.additionalReelUrls,
+    videoOrientation: item.videoOrientation ?? story.videoOrientation,
     updatedAt: new Date().toISOString().split('T')[0]!,
   })
 }

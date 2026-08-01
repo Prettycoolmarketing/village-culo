@@ -517,6 +517,11 @@ export interface Story {
   contentTypes: ContentType[]
   blog?: string
   reelUrl?: string
+  // How the video is framed on the page — vertical (phone-frame 9:16) or
+  // landscape (16:9). Not reliably inferable from contentTypes alone: a
+  // YouTube Short is still vertical despite being contentType
+  // 'youtube-video', which otherwise defaults to landscape.
+  videoOrientation?: 'vertical' | 'landscape'
   // Extra reel videos beyond the primary reelUrl (which stays the one used
   // for embeds/thumbnails on cards and other listings) — same "just add more"
   // pattern as carouselImages, for a story built from several reels.
@@ -537,6 +542,9 @@ export interface Story {
   // CTA
   ctaLabel: string
   ctaUrl: string
+  // Beyond the one primary CTA above — a piece can genuinely mention more
+  // than one partner/product worth linking (e.g. a roundup-style post).
+  additionalLinks?: { partnerId?: string; label: string; url: string }[]
   // Metadata
   status: Status
   featured: boolean

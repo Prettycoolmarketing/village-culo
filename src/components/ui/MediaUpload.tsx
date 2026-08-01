@@ -10,7 +10,7 @@ import type { TrackedMedia } from '../../types'
 // alongside the value this component reports back — the same record shape a
 // future connector (Canva, YouTube, Drive) will create.
 
-export type MediaAccept = 'image' | 'video' | 'audio' | 'document' | 'any'
+export type MediaAccept = 'image' | 'video' | 'audio' | 'document' | 'any' | 'media'
 
 const ACCEPT_MIME: Record<MediaAccept, string> = {
   image: 'image/*',
@@ -18,9 +18,12 @@ const ACCEPT_MIME: Record<MediaAccept, string> = {
   audio: 'audio/*,.mp3,.m4a,.wav',
   document: '.pdf,.doc,.docx,.txt,.md',
   any: 'image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.md',
+  // Photos and reels together — one dropzone for a mixed batch (e.g. a
+  // carousel plus a video clip) instead of forcing two separate uploaders.
+  media: 'image/*,video/*,.mp4,.mov,.webm',
 }
 
-function inferKindFromUrl(url: string): 'image' | 'video' | 'audio' | 'document' {
+export function inferKindFromUrl(url: string): 'image' | 'video' | 'audio' | 'document' {
   const ext = url.split('.').pop()?.toLowerCase().split('?')[0] ?? ''
   if (['mp4', 'mov', 'webm', 'm4v'].includes(ext)) return 'video'
   if (['mp3', 'm4a', 'wav', 'ogg'].includes(ext)) return 'audio'
@@ -68,6 +71,7 @@ export function MediaUpload({
     accept === 'audio'    ? 'Upload audio (MP3, M4A, WAV)' :
     accept === 'document' ? 'Upload document (PDF, DOCX)' :
     accept === 'any'      ? 'Upload a file' :
+    accept === 'media'    ? 'Upload photos or a video' :
     multiple             ? 'Upload images' :
     'Upload image'
 
@@ -114,7 +118,7 @@ export function MediaUpload({
     else void handleFile(e.dataTransfer.files?.[0])
   }
 
-  const kind = value ? inferKindFromUrl(value) : accept === 'any' ? 'image' : accept
+  const kind = value ? inferKindFromUrl(value) : (accept === 'any' || accept === 'media') ? 'image' : accept
   const isLogo = aspect === 'logo'
   const heightClass = aspect === 'square' ? 'h-32' : aspect === 'wide' ? 'h-40' : isLogo ? 'h-28' : 'h-auto min-h-[8rem]'
   const widthClass = isLogo ? 'w-28 mx-auto' : 'w-full'

@@ -82,6 +82,9 @@ export interface ImportedContent {
   partnerId?: string
   ctaLabel?: string
   ctaUrl?: string
+  // Beyond the one primary link above — a piece can genuinely mention more
+  // than one partner/product worth linking (e.g. a roundup-style post).
+  additionalLinks?: { partnerId?: string; label: string; url: string }[]
 
   // Podcast episode fields — only set for sourcePlatform 'podcast' items
   // discovered via the RSS connector (services/connectors/podcastRss.ts).
@@ -111,6 +114,13 @@ export interface ImportedContent {
   // an Instagram archive ZIP. buildStoryFromImport prefers this over
   // originalUrl when present.
   reelVideoUrl?: string
+
+  // How the video should be framed on the published page. Defaults to
+  // 'vertical' (a phone-frame 9:16 box) — but a YouTube Short pasted in as
+  // originalUrl/reelVideoUrl is still vertical, while a regular landscape
+  // YouTube video needs the wide 16:9 frame instead, and there's no reliable
+  // way to detect that automatically from the URL alone.
+  videoOrientation?: 'vertical' | 'landscape'
 }
 
 export interface ImportedContentFilter {

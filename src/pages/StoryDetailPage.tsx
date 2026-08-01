@@ -484,21 +484,37 @@ export function StoryDetailPage() {
                 </p>
               )}
 
-              {/* CTA */}
-              {story.ctaLabel && story.ctaUrl && (
-                <a
-                  href={normalizeUrl(story.ctaUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handleCtaClick}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl hover:bg-[#b05a35] transition-colors shadow-sm"
-                  aria-label={`${story.ctaLabel} — related to ${story.title}`}
-                >
-                  {story.ctaLabel}
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
+              {/* CTA + any additional links */}
+              {((story.ctaLabel && story.ctaUrl) || (story.additionalLinks && story.additionalLinks.length > 0)) && (
+                <div className="flex flex-wrap gap-3">
+                  {story.ctaLabel && story.ctaUrl && (
+                    <a
+                      href={normalizeUrl(story.ctaUrl)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleCtaClick}
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-xl hover:bg-[#b05a35] transition-colors shadow-sm"
+                      aria-label={`${story.ctaLabel} — related to ${story.title}`}
+                    >
+                      {story.ctaLabel}
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  )}
+                  {story.additionalLinks?.filter(l => l.label && l.url).map((link, i) => (
+                    <a
+                      key={i}
+                      href={normalizeUrl(link.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-3 border border-border text-charcoal font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                      aria-label={`${link.label} — related to ${story.title}`}
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
           </InnerContainer>
@@ -532,7 +548,9 @@ export function StoryDetailPage() {
                       reelUrl={effectiveReelUrl}
                       title={story.title}
                       summary={story.blog ? '' : story.summary}
-                      landscape={story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head')}
+                      landscape={story.videoOrientation
+                        ? story.videoOrientation === 'landscape'
+                        : story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head')}
                     />
                     {story.additionalReelUrls && story.additionalReelUrls.length > 0 && (
                       <div className="mt-6">
