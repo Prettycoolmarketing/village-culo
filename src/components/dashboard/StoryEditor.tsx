@@ -3,6 +3,7 @@ import { updateStory, deleteStory } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { getIdeas } from '../../services/ideas'
+import { getBusinesses } from '../../services/businesses'
 import { MediaUpload } from '../ui/MediaUpload'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { AppearsOnPanel } from './AppearsOnPanel'
@@ -47,6 +48,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const founderIdeas = getIdeas({ founderId: draft.founderId })
+  const founderBusinesses = getBusinesses({ founderId: draft.founderId }).filter(b => b.name.trim().length > 0)
   const appearsOn = getStoryAppearsOn(draft)
 
   function set<K extends keyof Story>(key: K, value: Story[K]) {
@@ -68,6 +70,12 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
       setSaved(false)
       return { ...prev, topics: has ? prev.topics.filter(t => t.id !== topic.id) : [...prev.topics, topic] }
     })
+  }
+
+  function toggleRelatedBusiness(businessId: string) {
+    if (businessId === draft.businessId) return
+    const current = draft.relatedBusinessIds ?? []
+    set('relatedBusinessIds', current.includes(businessId) ? current.filter(id => id !== businessId) : [...current, businessId])
   }
 
   function toggleIdea(ideaId: string) {
@@ -258,6 +266,35 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
             uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
           />
         </Field>
+
+        {founderBusinesses.length > 0 && (
+          <Field label="Business" hint="Which business this story is primarily about — drives uploads and the main 'Founded by' credit.">
+            <select value={draft.businessId} onChange={e => {
+              const nextId = e.target.value
+              setDraft(prev => ({ ...prev, businessId: nextId, relatedBusinessIds: (prev.relatedBusinessIds ?? []).filter(id => id !== nextId) }))
+              setSaved(false)
+            }} className={inputClass}>
+              {!founderBusinesses.some(b => b.id === draft.businessId) && <option value={draft.businessId}>—</option>}
+              {founderBusinesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+          </Field>
+        )}
+
+        {founderBusinesses.length > 1 && (
+          <Field label="Also relates to" hint="Other businesses this story connects to, beyond the primary one above — e.g. a story about a joint venture.">
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {founderBusinesses.filter(b => b.id !== draft.businessId).map(b => {
+                const active = (draft.relatedBusinessIds ?? []).includes(b.id)
+                return (
+                  <button key={b.id} onClick={() => toggleRelatedBusiness(b.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                    {b.name}
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+        )}
 
         <Field label="Topics">
           <div className="flex flex-wrap gap-1.5 mt-1">

@@ -503,6 +503,12 @@ export interface Story {
   coverImage: string
   founderId: string
   businessId: string
+  // Other businesses this story also relates to, beyond the primary
+  // businessId — e.g. a story about a joint venture between two of a
+  // founder's businesses. The primary businessId still drives uploads and
+  // the main "Founded by" credit; this just adds extra "Stories from
+  // {business}" / "The Founder" connections without replacing it.
+  relatedBusinessIds?: string[]
   location: Location
   industry: Industry
   topics: Topic[]

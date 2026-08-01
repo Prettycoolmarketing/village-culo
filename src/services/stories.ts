@@ -13,7 +13,7 @@ export function getStories(filter?: StoryFilter): Story[] {
   if (!filter) return result
   if (filter.ids)        result = result.filter(s => filter.ids!.includes(s.id))
   if (filter.founderId)  result = result.filter(s => s.founderId === filter.founderId)
-  if (filter.businessId) result = result.filter(s => s.businessId === filter.businessId)
+  if (filter.businessId) result = result.filter(s => s.businessId === filter.businessId || s.relatedBusinessIds?.includes(filter.businessId!))
   if (filter.locationId) result = result.filter(s => s.location.id === filter.locationId)
   if (filter.topicId)    result = result.filter(s => s.topics.some(t => t.id === filter.topicId))
   if (filter.industryId) result = result.filter(s => s.industry.id === filter.industryId)

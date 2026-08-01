@@ -970,8 +970,22 @@ export function DashboardProfilePage() {
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [searchParams] = useSearchParams()
-  const [tab, setTab]       = useState(() => searchParams.get('tab') ?? 'overview')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [tab, setTabState]  = useState(() => searchParams.get('tab') ?? 'overview')
+  // Keeps the URL's ?tab= in sync with whichever tab is actually showing —
+  // the sidebar's "Content" vs "Profile" links tell which one is active by
+  // reading this param, so without this they'd both go stale (or both read
+  // as active) the moment a founder clicks a tab inside the page itself
+  // rather than arriving via a link that already set it.
+  function setTab(next: string) {
+    setTabState(next)
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev)
+      if (next === 'overview') p.delete('tab')
+      else p.set('tab', next)
+      return p
+    }, { replace: true })
+  }
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
   const [contentSubTab, setContentSubTab] = useState<'imported' | 'published'>(() =>
     searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId') ? 'published' : 'imported'
@@ -994,7 +1008,7 @@ export function DashboardProfilePage() {
   // link while already on Profile silently does nothing.
   useEffect(() => {
     const requestedTab = searchParams.get('tab')
-    if (requestedTab) setTab(requestedTab)
+    if (requestedTab) setTabState(requestedTab)
     const storyId = searchParams.get('storyId')
     if (storyId) {
       setContentSubTab('published')
@@ -1053,7 +1067,7 @@ export function DashboardProfilePage() {
   if (founderTop) recommendations.push({ key: `founder-${draft.id}`, title: 'Your founder profile', action: founderTop, path: '/dashboard/profile' })
   for (const b of founderBusinesses) {
     const [top] = getBusinessMissingItems(b)
-    if (top) recommendations.push({ key: `biz-${b.id}`, title: b.name, action: top, path: `/dashboard/profile?tab=businesses&businessId=${b.id}` })
+    if (top) recommendations.push({ key: `biz-${b.id}`, title: b.name || 'Coming soon', action: top, path: `/dashboard/profile?tab=businesses&businessId=${b.id}` })
   }
   for (const s of founderStories) {
     const [top] = getStoryMissingItems(s)
@@ -1215,50 +1229,53 @@ export function DashboardProfilePage() {
         </div>
       )}
 
-      {/* Page header */}
-      <div className="flex items-center justify-between px-8 pt-8 pb-5 shrink-0">
-        <div className="flex items-center gap-4">
-          <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover bg-[#F3EDE6]" />
-          <div>
-            <h1 className="text-xl font-bold text-[#2D2A26]">{draft.name}</h1>
-            <div className="flex items-center gap-3 mt-0.5">
-              <HealthBadge missing={missing} />
-              {counts.total > 0 && (
-                <span className="text-xs text-[#9CA3AF]">
-                  {counts.total} {counts.total === 1 ? 'recommendation' : 'recommendations'} to grow your profile
-                </span>
-              )}
+      {/* Page header — hidden on Content, which is a focused view of just
+          your imported/published items, not the rest of the profile. */}
+      {tab !== 'content' && (
+        <div className="flex items-center justify-between px-8 pt-8 pb-5 shrink-0">
+          <div className="flex items-center gap-4">
+            <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover bg-[#F3EDE6]" />
+            <div>
+              <h1 className="text-xl font-bold text-[#2D2A26]">{draft.name}</h1>
+              <div className="flex items-center gap-3 mt-0.5">
+                <HealthBadge missing={missing} />
+                {counts.total > 0 && (
+                  <span className="text-xs text-[#9CA3AF]">
+                    {counts.total} {counts.total === 1 ? 'recommendation' : 'recommendations'} to grow your profile
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+          <div className="flex items-center gap-3">
+            <a
+              href={`/founders/${draft.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 text-sm text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
+            >
+              View on site ↗
+            </a>
+            {/* Content, Businesses and Partners each save themselves inline —
+                this button only ever touches founder-profile fields (Profile,
+                FAQ, Settings), so it only shows there. Showing it everywhere
+                made it look like it should save whatever tab you were on. */}
+            {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
+              <>
+                {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
+                {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+                >
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <a
-            href={`/founders/${draft.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-2 text-sm text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
-          >
-            View on site ↗
-          </a>
-          {/* Content, Businesses and Partners each save themselves inline —
-              this button only ever touches founder-profile fields (Profile,
-              FAQ, Settings), so it only shows there. Showing it everywhere
-              made it look like it should save whatever tab you were on. */}
-          {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
-            <>
-              {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
-              {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
-              >
-                {saving ? 'Saving…' : 'Save Changes'}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Dev notice */}
       {!isSupabaseConfigured && (
@@ -1268,7 +1285,7 @@ export function DashboardProfilePage() {
       )}
 
       {/* Tabs */}
-      <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-8" />
+      <Tabs tabs={TABS} active={tab} onChange={setTab} className={`px-8 ${tab === 'content' ? 'pt-8' : ''}`} />
 
       {/* Tab content */}
       <div className="flex-1 overflow-y-auto px-8 py-6">

@@ -1,4 +1,4 @@
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { canAccessCapoSection, hasAnyCapoAccess } from '../../utils/permissions'
 import type { ReactNode } from 'react'
@@ -57,6 +57,32 @@ function NavItem({ to, label, icon, hint }: { to: string; label: string; icon: R
       {icon}
       {label}
     </NavLink>
+  )
+}
+
+// The Profile page has several tabs living behind the one "/dashboard/profile"
+// pathname, distinguished only by a ?tab= query param — NavLink's own
+// isActive only matches pathname, so "Content" and "Profile" would both
+// light up together no matter which tab was actually showing. This checks
+// the real query param instead, and only ever highlights on an exact match.
+function ProfileTabNavItem({ tabValue, label, icon, hint }: { tabValue: string; label: string; icon: ReactNode; hint?: string }) {
+  const location = useLocation()
+  const currentTab = new URLSearchParams(location.search).get('tab') ?? 'overview'
+  const isActive = location.pathname === '/dashboard/profile' && currentTab === tabValue
+  const to = tabValue === 'overview' ? '/dashboard/profile' : `/dashboard/profile?tab=${tabValue}`
+  return (
+    <Link
+      to={to}
+      title={hint}
+      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
+        isActive
+          ? 'bg-[#C86A43]/10 text-[#C86A43] font-medium'
+          : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
+      }`}
+    >
+      {icon}
+      {label}
+    </Link>
   )
 }
 
@@ -129,8 +155,8 @@ export function DashboardLayout() {
             Publish
           </NavLink>
 
-          <NavItem to="/dashboard/profile?tab=content" label="Content"    icon={<Icon path={icons.content}  />} hint="Everything you've imported and published, in one place" />
-          <NavItem to="/dashboard/profile"        label="Profile"         icon={<Icon path={icons.profile}  />} />
+          <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Everything you've imported and published, in one place" />
+          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} />
 
           <SectionLabel label="Opportunities" />
           <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} hint="Partnership and collaboration matches for you" />
