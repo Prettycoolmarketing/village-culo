@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
+import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
@@ -1835,6 +1836,16 @@ export function DashboardImportContentPage() {
       {/* Connect a channel or feed */}
       {!draft && (
         <div className="max-w-2xl">
+          {founder && (
+            <div className="mb-6">
+              <VoiceBriefEditor
+                value={founder.voiceBrief}
+                updatedAt={founder.voiceBriefUpdatedAt}
+                onChange={v => void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })}
+              />
+            </div>
+          )}
+
           <div ref={canvaCardRef}>
             <CanvaImportCard
               founderId={founderId}

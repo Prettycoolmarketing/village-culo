@@ -846,6 +846,8 @@ export function StoryDetailPage() {
             {/* ── Right: sidebar ─────────────────────────────────────────────── */}
             <aside className="lg:col-span-1 flex flex-col gap-8" aria-label="Story details">
 
+              <CreateWithCuloCTA variant="button" />
+
               {/* Founder */}
               {founder && (
                 <section aria-labelledby="story-founder-heading">

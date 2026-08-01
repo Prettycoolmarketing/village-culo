@@ -11,7 +11,7 @@ import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
-import { getStories, getStory, updateStory } from '../../services/stories'
+import { getStories, getStory, updateStory, deleteStory } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
 import { getIdeas } from '../../services/ideas'
@@ -32,7 +32,6 @@ import { StoryEditor } from '../../components/dashboard/StoryEditor'
 import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
 import {
   getFounderMissingItems,
-  getBusinessMissingItems,
   getStoryMissingItems,
   getMissingCounts,
   type MissingItem,
@@ -1062,40 +1061,6 @@ export function DashboardProfilePage() {
   const founderLibrary    = getLibraryItems({ founderId: draft.id })
   const founderMedia      = getMedia({ founderId: draft.id })
 
-  // "Today's Recommendations" + "Recent Stories" — folded in from the old
-  // standalone Overview/home page (/dashboard/home), merged here so the
-  // founder only has one landing place instead of two.
-  interface Recommendation { key: string; title: string; action: MissingItem; path: string }
-  const recommendations: Recommendation[] = []
-  const [founderTop] = missing
-  if (founderTop) recommendations.push({ key: `founder-${draft.id}`, title: 'Your founder profile', action: founderTop, path: '/dashboard/profile' })
-  for (const b of founderBusinesses) {
-    const [top] = getBusinessMissingItems(b)
-    if (top) recommendations.push({ key: `biz-${b.id}`, title: b.name || 'Coming soon', action: top, path: `/dashboard/profile?tab=businesses&businessId=${b.id}` })
-  }
-  for (const s of founderStories) {
-    const [top] = getStoryMissingItems(s)
-    if (top) recommendations.push({ key: `story-${s.id}`, title: s.title, action: top, path: `/dashboard/profile?tab=content&contentSubTab=published&storyId=${s.id}` })
-  }
-  if (founderStories.length === 0) {
-    recommendations.push({
-      key: 'first-story',
-      title: 'You haven\'t published a story yet',
-      action: { field: 'first-story', label: 'Publish your first story to start growing your presence', action: 'Publish Story', severity: 'critical' },
-      path: '/dashboard/publish',
-    })
-  }
-  const pendingMedia = founderMedia.filter(m => m.approvalStatus === 'needs-review' || m.approvalStatus === 'pending').length
-  if (pendingMedia > 0) {
-    recommendations.push({
-      key: 'media-review',
-      title: `${pendingMedia} ${pendingMedia === 1 ? 'asset' : 'assets'} uploaded`,
-      action: { field: 'media', label: 'Review your uploaded media', action: 'Review Media', severity: 'important' },
-      path: '/dashboard/media',
-    })
-  }
-  const topRecommendations = recommendations.slice(0, 6)
-
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
     { key: 'content',       label: "Content" },
@@ -1359,33 +1324,6 @@ export function DashboardProfilePage() {
               })()}
             </div>
 
-            {/* Today's Recommendations */}
-            <div>
-              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Today's Recommendations</p>
-              {topRecommendations.length === 0 ? (
-                <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
-                  <p className="text-sm font-semibold text-[#2D2A26]">You're all caught up.</p>
-                  <p className="text-xs text-[#9CA3AF] mt-1">Nothing needs your attention right now — great work.</p>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                  {topRecommendations.map(rec => (
-                    <Link
-                      key={rec.key}
-                      to={rec.path}
-                      className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors group"
-                    >
-                      <span className="w-5 h-5 rounded-md border-2 border-[#E8E4DD] shrink-0 group-hover:border-[#C86A43] transition-colors" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#2D2A26]">{rec.action.label}</p>
-                        <p className="text-xs text-[#9CA3AF] mt-0.5 truncate">{rec.title}</p>
-                      </div>
-                      <span className="text-xs font-semibold text-[#C86A43] shrink-0">{rec.action.action} →</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
 
             <div className="grid grid-cols-5 gap-3">
               <Link to="/dashboard/profile?tab=businesses" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
@@ -1516,6 +1454,15 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
+              async function handleDeleteSelected() {
+                const ids = Array.from(importedChecked)
+                if (ids.length === 0) return
+                if (!window.confirm(`Delete ${ids.length} selected item${ids.length === 1 ? '' : 's'}? This can't be undone.`)) return
+                for (const id of ids) await importedContentService.delete(id)
+                setImportedChecked(new Set())
+                refreshImported()
+              }
+
               return (
                 <div>
                   {platforms.length > 0 && (
@@ -1555,6 +1502,14 @@ export function DashboardProfilePage() {
                             className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0"
                           >
                             Merge {importedChecked.size} selected
+                          </button>
+                        )}
+                        {importedChecked.size > 0 && (
+                          <button
+                            onClick={() => void handleDeleteSelected()}
+                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-red-600 text-xs font-semibold rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            Delete {importedChecked.size} selected
                           </button>
                         )}
                         <button
@@ -1639,13 +1594,14 @@ export function DashboardProfilePage() {
                       {sortedStories.map(story => {
                         const storyMissing = getStoryMissingItems(story)
                         return (
-                          <button key={story.id} onClick={() => setEditingStoryId(story.id)}
-                            className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors text-left">
-                            <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
-                              <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
-                            </div>
+                          <div key={story.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
+                            <button onClick={() => setEditingStoryId(story.id)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
+                              <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
+                                <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
+                              </div>
+                            </button>
                             {storyMissing.length === 0 ? (
                               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
                                 Ready to publish
@@ -1664,7 +1620,13 @@ export function DashboardProfilePage() {
                             }`}>
                               {story.status}
                             </span>
-                          </button>
+                            <ConfirmButton
+                              label="Delete"
+                              confirmLabel="Confirm"
+                              onConfirm={() => { void deleteStory(story.id).then(() => setImportedTick(t => t + 1)) }}
+                              className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0"
+                            />
+                          </div>
                         )
                       })}
                       </div>
