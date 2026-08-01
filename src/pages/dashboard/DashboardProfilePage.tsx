@@ -1007,8 +1007,12 @@ export function DashboardProfilePage() {
   // initializers above only ever fire once. Without this, clicking such a
   // link while already on Profile silently does nothing.
   useEffect(() => {
-    const requestedTab = searchParams.get('tab')
-    if (requestedTab) setTabState(requestedTab)
+    // Always sync exactly to the URL, including the "no ?tab= at all" case
+    // (the bare Profile link) — only reacting when a value is present meant
+    // clicking Profile from Content (or any other tab) left the page still
+    // showing whatever tab was active before, since the param was simply
+    // absent rather than set to 'overview'.
+    setTabState(searchParams.get('tab') ?? 'overview')
     const storyId = searchParams.get('storyId')
     if (storyId) {
       setContentSubTab('published')
