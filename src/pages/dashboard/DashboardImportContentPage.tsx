@@ -1209,6 +1209,10 @@ function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         >
           {draft.relatedStoryId ? 'View published story →' : 'Preview →'}
         </a>
+        <button onClick={onSave}
+          className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+          Save Changes
+        </button>
       </div>
 
       {/* Embed preview */}
