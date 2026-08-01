@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getFounders, updateFounder } from '../../../services/founders'
-import { getBusinesses, updateBusiness } from '../../../services/businesses'
-import { getStories, updateStory } from '../../../services/stories'
+import { getFounders, updateFounder, deleteFounder } from '../../../services/founders'
+import { getBusinesses, updateBusiness, deleteBusiness } from '../../../services/businesses'
+import { getStories, updateStory, deleteStory } from '../../../services/stories'
 import { importedContentService } from '../../../services/importedContent'
 import { normalizeUrl } from '../../../utils/url'
 import { editorialService, newEditorialFeature } from '../../../services/editorial'
@@ -136,6 +136,7 @@ function FeatureTogglePanel() {
                   onToggle={() => void handleToggle(updateFounder({ ...f, featured: !f.featured, status: !f.featured ? 'featured' : 'published' }))}
                 />
                 <Link to={`/founders/${f.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
+                <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => void handleToggle(deleteFounder(f.id))} className="text-xs text-red-500 hover:underline" />
               </div>
             </div>
           ))}
@@ -164,6 +165,7 @@ function FeatureTogglePanel() {
                   onToggle={() => void handleToggle(updateBusiness({ ...b, featured: !b.featured, status: !b.featured ? 'featured' : 'published' }))}
                 />
                 <Link to={`/businesses/${b.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
+                <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => void handleToggle(deleteBusiness(b.id))} className="text-xs text-red-500 hover:underline" />
               </div>
             </div>
           ))}
@@ -196,6 +198,7 @@ function FeatureTogglePanel() {
                   onToggle={() => void handleToggle(updateStory({ ...s, featured: !s.featured, status: !s.featured ? 'featured' : 'published' }))}
                 />
                 <Link to={`/stories/${s.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
+                <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => void handleToggle(deleteStory(s.id))} className="text-xs text-red-500 hover:underline" />
               </div>
             </div>
           ))}
@@ -228,6 +231,7 @@ function FeatureTogglePanel() {
                   }}
                 />
                 <a href={normalizeUrl(c.originalUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">Source ↗</a>
+                <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => void handleToggle(importedContentService.delete(c.id))} className="text-xs text-red-500 hover:underline" />
               </div>
             </div>
           ))}
