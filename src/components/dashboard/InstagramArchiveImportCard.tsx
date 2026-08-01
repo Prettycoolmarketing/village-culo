@@ -79,12 +79,13 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
       // duplicate content. Runs one at a time (each is a real AI call) with
       // real progress, and a failure on one item never blocks the rest —
       // it just keeps that item's original caption as its description.
+      let aiBlogError: string | null = null
       if (voiceBrief?.trim()) {
         const founderName = getFounder(founderId)?.name ?? ''
         for (let i = 0; i < built.length; i++) {
           setStage(`Writing blog ${i + 1} of ${built.length}…`)
           const { item } = built[i]!
-          const { blog } = await generateBlogFromVoiceBrief({
+          const { blog, error: blogError } = await generateBlogFromVoiceBrief({
             voiceBrief,
             founderName,
             caption: item.description,
@@ -96,6 +97,14 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
             item.description = blog.blog
             item.subtitle = blog.subtitle
             item.topics = Array.from(new Set([...item.topics, ...blog.topics]))
+          } else if (blogError) {
+            // A config-level failure (e.g. the API key isn't set) will fail
+            // identically for every remaining item — no point burning through
+            // the whole archive one silent failure at a time. Keep everyone's
+            // original captions and surface it once, instead of the founder
+            // wondering later why nothing got an AI blog.
+            aiBlogError = blogError
+            break
           }
         }
       }
@@ -109,7 +118,11 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
 
       setStage(null)
       setResult({ imported, skipped: posts.length - imported })
-      if (uploadErrors.length > 0) {
+      if (aiBlogError) {
+        setError(
+          `Everything imported, but AI blog writing didn't run (${aiBlogError}) — your original captions were used instead.`
+        )
+      } else if (uploadErrors.length > 0) {
         setError(
           `${uploadErrors.length} file${uploadErrors.length === 1 ? '' : 's'} couldn't upload (likely too large for the current storage limit) — ` +
           `everything else imported fine: ${uploadErrors.slice(0, 3).join('; ')}${uploadErrors.length > 3 ? '…' : ''}`
