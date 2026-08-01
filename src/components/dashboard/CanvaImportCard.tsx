@@ -56,6 +56,11 @@ export function CanvaImportCard({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [stage, setStage] = useState<string | null>(null)
+  // On Import Content, contentTypeHint is unset (format isn't chosen yet) —
+  // without this, a design that's actually a Reel only ever got imported as
+  // a static JPEG of its first frame, with the real video never exported and
+  // the founder stuck linking back to the Canva doc instead of playing it.
+  const [wantsVideo, setWantsVideo] = useState(false)
 
   if (!isCanvaConfigured() || !founderId) return null
 
@@ -90,6 +95,7 @@ export function CanvaImportCard({
     try {
       setResult(await importCanvaDesign(founderId, id))
       setSelected(new Set())
+      setWantsVideo(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not import that design.')
     } finally {
@@ -117,8 +123,9 @@ export function CanvaImportCard({
     // page itself instead of playing a video — exactly the wrong thing to
     // publish. Blocking here guarantees a founder either gets the real
     // video or a clear error, never a silent Canva-link fallback.
+    const exportVideo = contentTypeHint?.includes('reel') || (wantsVideo && indices.length === 1)
     let reelVideoUrl: string | undefined
-    if (contentTypeHint?.includes('reel')) {
+    if (exportVideo) {
       setBusy(true)
       setStage('Exporting your Reel video — this can take a few minutes…')
       try {
@@ -141,7 +148,7 @@ export function CanvaImportCard({
       imageUrls: indices.map(i => result.imageUrls[i]!),
       reelVideoUrl,
       title: result.title,
-      contentTypeHint,
+      contentTypeHint: reelVideoUrl && !contentTypeHint?.includes('reel') ? [...(contentTypeHint ?? []), 'reel'] : contentTypeHint,
       importedAt: new Date().toISOString(),
       status: 'draft',
       topics: [],
@@ -219,6 +226,12 @@ export function CanvaImportCard({
                   )
                 })}
               </div>
+              {!contentTypeHint?.includes('reel') && selected.size === 1 && (
+                <label className="flex items-center gap-2 text-xs text-[#4B4845] mb-3 cursor-pointer">
+                  <input type="checkbox" checked={wantsVideo} onChange={e => setWantsVideo(e.target.checked)} />
+                  This slide is a video (Reel) — export the actual video, not just an image
+                </label>
+              )}
               <button type="button" onClick={() => void handleUse()} disabled={selected.size === 0 || busy}
                 className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
                 Use {selected.size > 0 ? selected.size : ''} slide{selected.size === 1 ? '' : 's'}
