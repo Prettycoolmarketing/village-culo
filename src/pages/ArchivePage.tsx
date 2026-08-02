@@ -14,6 +14,7 @@ import { BusinessCard }                from '../components/cards/BusinessCard'
 import { EventCard }                   from '../components/cards/EventCard'
 import { LibraryCard }                 from '../components/cards/LibraryCard'
 import { InnerContainer }              from '../components/layout/PageContainer'
+import { WaitlistForm }                from '../components/ui/WaitlistForm'
 
 // ─── Types ───────────────────────────────────────────────────────────────────────
 
@@ -586,6 +587,24 @@ export function ArchivePage() {
           </InnerContainer>
         </section>
       )}
+
+      {/* ── Publish exclusively in Canva — waitlist ─────────────────────────── */}
+      <section className="bg-charcoal py-14" aria-label="CULO Creatives in Canva waitlist">
+        <InnerContainer>
+          <div className="max-w-xl mx-auto text-center">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Coming soon</p>
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white leading-snug mb-3">
+              Publish in CULO Creatives, exclusively in Canva
+            </h2>
+            <p className="font-body text-sm text-white/60 mb-6 leading-relaxed">
+              Turn your raw footage and messy thoughts into finished content without leaving Canva. We're finishing up approval — join the waitlist to be first in when it opens.
+            </p>
+            <div className="max-w-sm mx-auto">
+              <WaitlistForm source="archive-page" dark />
+            </div>
+          </div>
+        </InnerContainer>
+      </section>
 
     </main>
   )
