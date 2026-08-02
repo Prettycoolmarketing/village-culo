@@ -12,7 +12,7 @@ import { MediaUpload } from '../../components/ui/MediaUpload'
 import { getLibraryMissingItems } from '../../utils/missingAssets'
 import { getLibraryItemAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
-import type { LibraryItem } from '../../types'
+import type { LibraryItem, LibraryCreatedFromEntry } from '../../types'
 import { normalizeUrl } from '../../utils/url'
 
 const inputClass =
@@ -86,10 +86,29 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
 
   const TABS = [
     { key: 'overview',      label: 'Overview'      },
+    { key: 'timeline',      label: 'Timeline',      badge: (draft.createdFrom ?? []).length },
     { key: 'relationships', label: 'Relationships', badge: itemFounders.length + itemBizs.length },
     { key: 'appears-on',   label: 'Appears On',   badge: appearsOn.length },
     { key: 'improve',       label: 'Improve',        badge: missing.length },
   ]
+
+  function updateTimelineEntry(i: number, patch: Partial<LibraryCreatedFromEntry>) {
+    const next = [...(draft.createdFrom ?? [])]
+    next[i] = { ...next[i]!, ...patch }
+    set('createdFrom', next)
+  }
+
+  function addTimelineEntry() {
+    const next: LibraryCreatedFromEntry = {
+      id: `cf-${Date.now()}`, date: new Date().toISOString().slice(0, 10),
+      title: '', description: '', type: 'milestone',
+    }
+    set('createdFrom', [...(draft.createdFrom ?? []), next])
+  }
+
+  function removeTimelineEntry(i: number) {
+    set('createdFrom', (draft.createdFrom ?? []).filter((_, j) => j !== i))
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -189,6 +208,37 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
             )}
             <a href={`/library/${draft.slug}`} target="_blank" rel="noopener noreferrer"
               className="text-xs text-[#9CA3AF] hover:text-[#C86A43] transition-colors">View on site ↗</a>
+          </div>
+        )}
+
+        {tab === 'timeline' && (
+          <div className="flex flex-col gap-4">
+            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+              The story behind this piece — real moments, decisions and milestones that led to it, shown on its public page.
+            </p>
+            {(draft.createdFrom ?? []).map((entry, i) => (
+              <div key={entry.id} className="border border-[#E8E4DD] rounded-xl p-3 flex flex-col gap-2 bg-white">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Entry {i + 1}</span>
+                  <button onClick={() => removeTimelineEntry(i)} className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="date" value={entry.date} onChange={e => updateTimelineEntry(i, { date: e.target.value })} className={inputClass} />
+                  <select value={entry.type} onChange={e => updateTimelineEntry(i, { type: e.target.value as LibraryCreatedFromEntry['type'] })} className={inputClass}>
+                    {(['experience', 'decision', 'milestone', 'idea', 'story', 'talk'] as const).map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <input type="text" value={entry.title} onChange={e => updateTimelineEntry(i, { title: e.target.value })}
+                  placeholder="What happened" className={inputClass} />
+                <textarea value={entry.description} onChange={e => updateTimelineEntry(i, { description: e.target.value })}
+                  rows={2} placeholder="Tell it in your own words" className={inputClass + ' resize-none'} />
+              </div>
+            ))}
+            <button onClick={addTimelineEntry} className="text-xs font-semibold text-[#C86A43] hover:underline text-left w-fit">
+              + Add a timeline entry
+            </button>
           </div>
         )}
 
