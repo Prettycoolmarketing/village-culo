@@ -56,11 +56,13 @@ export function CanvaImportCard({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [stage, setStage] = useState<string | null>(null)
-  // On Import Content, contentTypeHint is unset (format isn't chosen yet) —
-  // without this, a design that's actually a Reel only ever got imported as
-  // a static JPEG of its first frame, with the real video never exported and
-  // the founder stuck linking back to the Canva doc instead of playing it.
-  const [wantsVideo, setWantsVideo] = useState(false)
+  // Grouping — one Canva design's slides often become more than one piece
+  // (a Reel from slide 3, a Carousel from slides 1-2-4). usedIndices tracks
+  // what's already been saved into a piece this session so the picker can
+  // show it, and groupsCreated lets the founder see their progress before
+  // clicking Done.
+  const [usedIndices, setUsedIndices] = useState<Set<number>>(new Set())
+  const [groupsCreated, setGroupsCreated] = useState(0)
 
   if (!isCanvaConfigured() || !founderId) return null
 
@@ -95,7 +97,8 @@ export function CanvaImportCard({
     try {
       setResult(await importCanvaDesign(founderId, id))
       setSelected(new Set())
-      setWantsVideo(false)
+      setUsedIndices(new Set())
+      setGroupsCreated(0)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not import that design.')
     } finally {
@@ -104,6 +107,7 @@ export function CanvaImportCard({
   }
 
   function toggleSlide(i: number) {
+    if (usedIndices.has(i)) return
     setSelected(prev => {
       const next = new Set(prev)
       if (next.has(i)) next.delete(i); else next.add(i)
@@ -111,7 +115,7 @@ export function CanvaImportCard({
     })
   }
 
-  async function handleUse() {
+  async function handleUse(asType?: 'reel' | 'carousel') {
     if (!result || selected.size === 0) return
     const indices = [...selected].sort((a, b) => a - b)
 
@@ -120,10 +124,10 @@ export function CanvaImportCard({
     // background after save used to mean: if the founder moved on before
     // the ~1-3 minute export finished (or closed the tab), reelVideoUrl
     // never got set, and the story fell back to linking the Canva design
-    // page itself instead of playing a video — exactly the wrong thing to
+    // page instead of playing a video — exactly the wrong thing to
     // publish. Blocking here guarantees a founder either gets the real
     // video or a clear error, never a silent Canva-link fallback.
-    const exportVideo = contentTypeHint?.includes('reel') || (wantsVideo && indices.length === 1)
+    const exportVideo = contentTypeHint?.includes('reel') || (asType === 'reel' && indices.length === 1)
     let reelVideoUrl: string | undefined
     let videoExportError: string | null = null
     if (exportVideo) {
@@ -145,6 +149,8 @@ export function CanvaImportCard({
     // No real destination to send anyone to once re-hosted here — the Canva
     // design page itself isn't meant for public viewers, so it must never
     // become the fallback "view original" link a founder didn't ask for.
+    const resolvedHint = contentTypeHint
+      ?? (asType === 'reel' ? ['reel' as const] : asType === 'carousel' ? ['carousel' as const] : undefined)
     const item: ImportedContent = {
       id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       founderId,
@@ -153,8 +159,8 @@ export function CanvaImportCard({
       thumbnailUrl: result.imageUrls[indices[0]!],
       imageUrls: indices.map(i => result.imageUrls[i]!),
       reelVideoUrl,
-      title: result.title,
-      contentTypeHint: reelVideoUrl && !contentTypeHint?.includes('reel') ? [...(contentTypeHint ?? []), 'reel'] : contentTypeHint,
+      title: indices.length > 1 || groupsCreated === 0 ? result.title : `${result.title} (${groupsCreated + 1})`,
+      contentTypeHint: reelVideoUrl && !resolvedHint?.includes('reel') ? [...(resolvedHint ?? []), 'reel'] : resolvedHint,
       importedAt: new Date().toISOString(),
       status: 'draft',
       topics: [],
@@ -168,6 +174,15 @@ export function CanvaImportCard({
     if (videoExportError) setError(`Saved your slide${indices.length === 1 ? '' : 's'} as images — the video didn't export (${videoExportError}). You can try again or attach it manually in Advanced Edit.`)
     if (reelVideoUrl) onReelVideoReady?.(reelVideoUrl)
     onImported(item)
+
+    // Grouping mode (no forced contentTypeHint) — mark these slides used and
+    // let the founder keep going, picking another group from what's left,
+    // instead of closing the picker after every single save.
+    if (!contentTypeHint) {
+      setUsedIndices(prev => new Set([...prev, ...indices]))
+      setGroupsCreated(n => n + 1)
+      setSelected(new Set())
+    }
   }
 
   return (
@@ -220,29 +235,55 @@ export function CanvaImportCard({
 
           {result && (
             <div>
-              <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide block mb-1">Click the slides you want to use — one or several</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">
+                  {contentTypeHint ? 'Click the slides you want to use — one or several' : 'Group slides into a piece, then group the rest'}
+                </label>
+                {groupsCreated > 0 && (
+                  <span className="text-[10px] font-semibold text-[#5E6B4A]">{groupsCreated} piece{groupsCreated === 1 ? '' : 's'} created</span>
+                )}
+              </div>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 mb-3">
                 {result.imageUrls.map((url, i) => {
                   const isSelected = selected.has(i)
+                  const isUsed = usedIndices.has(i)
                   return (
-                    <button key={i} type="button" onClick={() => toggleSlide(i)}
-                      className={`rounded-lg overflow-hidden border-2 transition-colors relative ${isSelected ? 'border-[#C86A43]' : 'border-transparent hover:border-[#E8E4DD]'}`}>
+                    <button key={i} type="button" onClick={() => toggleSlide(i)} disabled={isUsed}
+                      className={`rounded-lg overflow-hidden border-2 transition-colors relative ${
+                        isUsed ? 'border-transparent opacity-30 cursor-not-allowed' : isSelected ? 'border-[#C86A43]' : 'border-transparent hover:border-[#E8E4DD]'
+                      }`}>
                       <img src={url} alt="" className="w-full aspect-square object-cover bg-[#F3EDE6]" />
-                      {isSelected && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C86A43] text-white text-[9px] flex items-center justify-center">✓</span>}
+                      {isSelected && !isUsed && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C86A43] text-white text-[9px] flex items-center justify-center">✓</span>}
+                      {isUsed && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-semibold text-white bg-black/40">Used</span>}
                     </button>
                   )
                 })}
               </div>
-              {!contentTypeHint?.includes('reel') && selected.size === 1 && (
-                <label className="flex items-center gap-2 text-xs text-[#4B4845] mb-3 cursor-pointer">
-                  <input type="checkbox" checked={wantsVideo} onChange={e => setWantsVideo(e.target.checked)} />
-                  This slide is a video (Reel) — export the actual video, not just an image
-                </label>
+
+              {contentTypeHint ? (
+                <button type="button" onClick={() => void handleUse()} disabled={selected.size === 0 || busy}
+                  className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
+                  Use {selected.size > 0 ? selected.size : ''} slide{selected.size === 1 ? '' : 's'}
+                </button>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => void handleUse('carousel')} disabled={selected.size === 0 || busy}
+                    className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
+                    Save {selected.size > 0 ? selected.size : ''} as Carousel
+                  </button>
+                  <button type="button" onClick={() => void handleUse('reel')} disabled={selected.size !== 1 || busy}
+                    title={selected.size !== 1 ? 'Select exactly one slide to save it as a Reel' : undefined}
+                    className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors">
+                    Save as Reel
+                  </button>
+                  {(usedIndices.size > 0 || groupsCreated > 0) && (
+                    <button type="button" onClick={() => setResult(null)}
+                      className="ml-auto text-xs font-semibold text-[#5E6B4A] hover:underline">
+                      Done — browse another design
+                    </button>
+                  )}
+                </div>
               )}
-              <button type="button" onClick={() => void handleUse()} disabled={selected.size === 0 || busy}
-                className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
-                Use {selected.size > 0 ? selected.size : ''} slide{selected.size === 1 ? '' : 's'}
-              </button>
               {stage && <p className="text-xs text-[#9CA3AF] mt-2">{stage}</p>}
             </div>
           )}
