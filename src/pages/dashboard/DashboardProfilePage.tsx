@@ -1399,24 +1399,36 @@ export function DashboardProfilePage() {
               }
 
               async function handleImportedStatusChange(id: string, status: ImportedContentStatus) {
-                importedContentService.updateStatus(id, status)
                 const item = importedContentService.get(id)
                 if (status === 'published' || status === 'featured') {
                   if (item && draft && !item.relatedStoryId && isReadyToPublish(item)) {
                     const story = buildStoryFromImport(item, draft)
                     story.status = status
                     const result = await publishStoryCore(story)
-                    if (!result.success) setSaveError(result.error ?? 'Could not publish. Please try again.')
+                    if (!result.success) {
+                      setSaveError(result.error ?? 'Could not publish. Please try again.')
+                    } else {
+                      // Only now is there a real, live Story behind this
+                      // status — flipping the badge before this succeeded
+                      // used to leave the import saying "Published" with no
+                      // story to show for it (View button had nowhere real
+                      // to point).
+                      await importedContentService.updateStatus(id, status)
+                    }
                   } else if (item && item.relatedStoryId) {
                     // Already published once before — flipping back to
                     // Published/Featured here should re-show the existing
                     // story, not silently do nothing.
                     const existing = getStory(item.relatedStoryId)
                     if (existing) await updateStory({ ...existing, status })
+                    await importedContentService.updateStatus(id, status)
                   } else if (item && !isReadyToPublish(item)) {
                     setSaveError('Give this a real title before publishing it.')
                   }
-                } else if (item?.relatedStoryId) {
+                } else {
+                  await importedContentService.updateStatus(id, status)
+                }
+                if (item?.relatedStoryId && status !== 'published' && status !== 'featured') {
                   // Switched back to Draft/Archived after having been
                   // published — the live story must stop being publicly
                   // visible too, not just this import record.

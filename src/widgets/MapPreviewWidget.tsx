@@ -3,6 +3,18 @@ import { locations } from '../data/locations'
 import { getStories } from '../services/stories'
 import { SectionHeading } from '../components/layout/PageContainer'
 
+// A different invitation per empty location instead of the same "Be first"
+// repeated across the whole grid — deterministic by index so it doesn't
+// shuffle on every render.
+const EMPTY_LOCATION_PHRASES = [
+  'Connect to your village',
+  'Find your village',
+  'Publish for your village',
+  'Be the first here',
+  'Start your village',
+  'Claim your village',
+]
+
 interface MapPreviewWidgetProps {
   heading?: string
   subheading?: string
@@ -29,7 +41,7 @@ export function MapPreviewWidget({
         role="list"
         aria-label="Locations"
       >
-        {displayLocations.map(location => {
+        {displayLocations.map((location, i) => {
           const storyCount = getStories({ locationId: location.id, publicOnly: true }).length
           return (
             <article
@@ -60,7 +72,7 @@ export function MapPreviewWidget({
                     <p className="font-body text-xs text-white/60 mt-1">
                       {storyCount > 0
                         ? `${storyCount} ${storyCount === 1 ? 'story' : 'stories'}`
-                        : 'Be first'
+                        : EMPTY_LOCATION_PHRASES[i % EMPTY_LOCATION_PHRASES.length]
                       }
                     </p>
                   </div>

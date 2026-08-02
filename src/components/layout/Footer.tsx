@@ -42,8 +42,8 @@ export function Footer() {
               <span className="block font-body text-sm text-white/50 mt-1">Village</span>
             </Link>
             <p className="mt-4 text-sm text-white/60 leading-relaxed">
-              Create in Canva.<br />
-              Publish to the Village.<br />
+              Create in CULO in Canva.<br />
+              Publish to The Village.<br />
               Be discovered for what you know.
             </p>
             <Link to="/" aria-label="CULO Village — Home" className="inline-block mt-5 -ml-3 sm:-ml-4">
@@ -76,7 +76,7 @@ export function Footer() {
             © {new Date().getFullYear()} CULO Village · Pretty Cool Marketing · Brisbane, Australia
           </p>
           <p className="text-xs text-white/30">
-            Create in Canva. Publish to the Village.
+            Create in CULO in Canva. Publish to The Village.
           </p>
         </div>
       </div>

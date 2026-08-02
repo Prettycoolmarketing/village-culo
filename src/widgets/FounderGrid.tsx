@@ -15,6 +15,10 @@ interface FounderGridProps {
   className?: string
   emptyTitle?: string
   emptyMessage?: string
+  // Falls back to real published founders when nothing's been marked
+  // Featured yet, instead of showing "nothing yet" while real, just-not-
+  // featured founders already exist and are live elsewhere.
+  fallbackToPublic?: boolean
 }
 
 const columnClasses = {
@@ -33,8 +37,12 @@ export function FounderGrid({
   className = '',
   emptyTitle,
   emptyMessage,
+  fallbackToPublic = false,
 }: FounderGridProps) {
-  const founders = getFounders(filter)
+  let founders = getFounders(filter)
+  if (fallbackToPublic && filter.featured && founders.length === 0) {
+    founders = getFounders({ ...filter, featured: undefined })
+  }
 
   return (
     <section aria-label={heading ?? 'Founders'} className={className}>

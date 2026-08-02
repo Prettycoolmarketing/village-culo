@@ -6,6 +6,7 @@ import { getIdeas } from '../services/ideas'
 import { getEvents } from '../services/events'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
+import { BizLogo } from '../components/ui/BizLogo'
 import { SectionHeading } from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import { normalizeUrl } from '../utils/url'
@@ -21,11 +22,20 @@ export function FeaturedWidget({
   subheading = 'The best of the Village, updated as new stories are published.',
   className = '',
 }: FeaturedWidgetProps) {
+  // Falls back to the most recent real published item whenever nothing's
+  // been marked Featured yet (see Village Overview > Spotlight) — otherwise
+  // this whole section silently shows nothing while real content already
+  // exists and is live elsewhere on the site.
   const featuredStory = getStories({ publicOnly: true, featured: true, limit: 1 })[0]
+    ?? getStories({ publicOnly: true, limit: 1 })[0]
   const featuredFounder = getFounders({ publicOnly: true, featured: true, limit: 1 })[0]
+    ?? getFounders({ publicOnly: true, limit: 1 })[0]
   const featuredBusiness = getBusinesses({ publicOnly: true, featured: true, limit: 1 })[0]
+    ?? getBusinesses({ publicOnly: true, limit: 1 })[0]
   const featuredIdea = getIdeas({ publicOnly: true, featured: true, limit: 1 })[0]
+    ?? getIdeas({ publicOnly: true, limit: 1 })[0]
   const featuredEvent = getEvents({ featured: true, limit: 1 })[0]
+    ?? getEvents({ limit: 1 })[0]
 
   const storyFounder = featuredStory ? getFounder(featuredStory.founderId) : undefined
   const storyBusiness = featuredStory ? getBusiness(featuredStory.businessId) : undefined
@@ -58,7 +68,7 @@ export function FeaturedWidget({
 
               <div className="absolute inset-0 flex flex-col justify-end p-6">
                 <div className="flex flex-wrap gap-1.5 mb-3">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent text-charcoal">Story of the Day</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-white">Story of the Day</span>
                   {featuredStory.contentTypes.map(t => (
                     <span key={t} className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
                       {contentTypeLabel(t)}
@@ -150,10 +160,10 @@ export function FeaturedWidget({
             className="group bg-surface rounded-2xl p-5 shadow-card hover:shadow-md transition-all duration-200"
             aria-label={`Featured business: ${featuredBusiness.name}`}
           >
-            <p className="font-body text-xs font-semibold text-[#8a6a1e] uppercase tracking-widest mb-3">Featured Business</p>
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Featured Business</p>
             <div className="flex items-start gap-3 mb-3">
-              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-background ring-2 ring-border flex items-center justify-center p-1">
-                <img src={featuredBusiness.logo} alt={`${featuredBusiness.name} logo`} className="w-full h-full object-contain" loading="lazy" />
+              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-border flex items-center justify-center p-1">
+                <BizLogo logo={featuredBusiness.logo} name={featuredBusiness.name} />
               </div>
               <div className="min-w-0">
                 <h3 className="font-heading text-base font-semibold text-charcoal leading-tight">

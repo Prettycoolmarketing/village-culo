@@ -19,6 +19,10 @@ interface IdeaGridProps {
   emptyTitle?: string
   emptyMessage?: string
   hideEmpty?: boolean
+  // Falls back to real published ideas when nothing's been marked Featured
+  // yet, instead of showing "nothing yet" while real, just-not-featured
+  // ideas already exist and are live elsewhere.
+  fallbackToPublic?: boolean
 }
 
 const columnClasses = {
@@ -38,8 +42,12 @@ export function IdeaGrid({
   emptyTitle,
   emptyMessage,
   hideEmpty = false,
+  fallbackToPublic = false,
 }: IdeaGridProps) {
-  const ideas = getIdeas(filter)
+  let ideas = getIdeas(filter)
+  if (fallbackToPublic && filter.featured && ideas.length === 0) {
+    ideas = getIdeas({ ...filter, featured: undefined })
+  }
 
   if (hideEmpty && ideas.length === 0) return null
 

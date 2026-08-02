@@ -41,16 +41,15 @@ export function BusinessCard({ business, founder, variant = 'default', className
         </div>
 
         <div className="p-5">
-          {/* Logo + name — a fixed-size white plate behind every logo keeps
-              them reading as the same visual size regardless of how much
-              transparent padding the source file has baked in. */}
-          <div className="flex items-start gap-3 -mt-8 mb-3">
+          {/* Logo + name — no plate/box behind it, just the mark itself,
+              sized up and given room to breathe below the cover photo. */}
+          <div className="flex items-start gap-3 -mt-4 mb-3 pt-2">
             <Link to={businessUrl} aria-label={`View ${business.name}`}>
-              <div className="w-16 h-16 rounded-xl overflow-hidden ring-4 ring-surface shadow-md bg-white flex-shrink-0 flex items-center justify-center p-3">
-                <BizLogo logo={business.logo} name={business.name} />
+              <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                <BizLogo logo={business.logo} name={business.name} className="text-2xl" />
               </div>
             </Link>
-            <div className="pt-9 min-w-0">
+            <div className="pt-11 min-w-0">
               <h3 className="font-heading text-base font-semibold text-charcoal leading-tight line-clamp-1">
                 <Link to={businessUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">
                   {business.name}

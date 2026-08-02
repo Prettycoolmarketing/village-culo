@@ -57,9 +57,21 @@ function StatChip({ value, label }: { value: number; label: string }) {
   )
 }
 
+// A different invitation per empty location — keyed to the location itself
+// (not list position) so it stays the same phrase for that city regardless
+// of how the list gets sorted.
+const EMPTY_LOCATION_MESSAGES = [
+  (name: string) => `Connect to your village — nothing published from ${name} yet.`,
+  (name: string) => `Find your village — be the first voice from ${name}.`,
+  (name: string) => `Publish for your village — ${name} is waiting for its first story.`,
+  (name: string) => `Start your village — no one's published from ${name} yet.`,
+]
+
 function LocationCard({ location, stats, isMostActive, featured = false }: LocationCardProps) {
   const archiveUrl = `/archive?q=${encodeURIComponent(location.name)}`
   const hasContent = stats.total > 0
+  const hash = location.slug.split('').reduce((n, c) => n + c.charCodeAt(0), 0)
+  const emptyMessage = EMPTY_LOCATION_MESSAGES[hash % EMPTY_LOCATION_MESSAGES.length]!(location.name)
 
   return (
     <article
@@ -133,7 +145,7 @@ function LocationCard({ location, stats, isMostActive, featured = false }: Locat
           </div>
         ) : (
           <p className="font-body text-xs text-muted italic mb-5">
-            No Village content here yet — be the first to publish from {location.name}.
+            {emptyMessage}
           </p>
         )}
 

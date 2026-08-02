@@ -111,6 +111,7 @@ export function VillagePage() {
           subheading="Knowledge extracted from stories across the Village."
           action={{ label: 'Explore Ideas', href: '/ideas' }}
           filter={{ publicOnly: true, featured: true, limit: 6 }}
+          fallbackToPublic
           columns={3}
           showQuotes
           emptyTitle="The first ideas are waiting to be discovered."
@@ -131,10 +132,11 @@ export function VillagePage() {
             subheading="Meet the people behind the knowledge."
             action={{ label: 'All Founders', href: '/founders' }}
             filter={{ publicOnly: true, featured: true, limit: 3 }}
+            fallbackToPublic
             columns={2}
             cardVariant="default"
             emptyTitle="The first Publisher is about to arrive."
-            emptyMessage="Featured founders will appear here once they've published to the Village."
+            emptyMessage="Founders will appear here once they've published to the Village."
           />
 
           <BusinessGrid
@@ -142,10 +144,11 @@ export function VillagePage() {
             subheading="Discover businesses through the stories and ideas behind them."
             action={{ label: 'Browse Businesses', href: '/mercato' }}
             filter={{ publicOnly: true, featured: true, limit: 3 }}
+            fallbackToPublic
             columns={2}
             cardVariant="default"
             emptyTitle="Businesses are almost open."
-            emptyMessage="Featured businesses will appear here once their founders begin publishing."
+            emptyMessage="Businesses will appear here once their founders begin publishing."
           />
 
         </div>

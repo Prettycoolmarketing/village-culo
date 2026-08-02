@@ -15,6 +15,11 @@ interface BusinessGridProps {
   className?: string
   emptyTitle?: string
   emptyMessage?: string
+  // When the featured-only filter turns up nothing (nobody's curated a
+  // Feature toggle yet — see Village Overview > Spotlight), fall back to
+  // real published businesses instead of showing "coming soon" while real,
+  // just-not-featured businesses already exist and are live elsewhere.
+  fallbackToPublic?: boolean
 }
 
 const columnClasses = {
@@ -33,8 +38,12 @@ export function BusinessGrid({
   className = '',
   emptyTitle,
   emptyMessage,
+  fallbackToPublic = false,
 }: BusinessGridProps) {
-  const businesses = getBusinesses(filter)
+  let businesses = getBusinesses(filter)
+  if (fallbackToPublic && filter.featured && businesses.length === 0) {
+    businesses = getBusinesses({ ...filter, featured: undefined })
+  }
 
   return (
     <section aria-label={heading ?? 'Businesses'} className={className}>
