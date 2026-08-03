@@ -3,12 +3,15 @@
 // Sends a draft email_campaigns row to every current email_subscribers row,
 // one Resend call per recipient, each with its own tracking pixel (recorded
 // as its own email_campaign_sends row so opens can be attributed per
-// address). Deliberately simple — no scheduling, no batching/rate-limit
-// backoff, no unsubscribe link yet — a real send-and-track loop, not a full
-// ESP. Staff-only: verifies the caller is a village admin via
-// is_village_admin() before sending anything, using their own JWT (this
-// function keeps JWT verification on, unlike the anonymous-submission
-// functions elsewhere in this codebase).
+// address) and every link rewritten through track-click (a real, deliberate
+// action — a much more trustworthy signal than the open pixel, which mail
+// clients increasingly pre-fetch automatically regardless of whether anyone
+// actually read the email). Deliberately simple — no scheduling, no
+// batching/rate-limit backoff, no unsubscribe link yet — a real
+// send-and-track loop, not a full ESP. Staff-only: verifies the caller is a
+// village admin via is_village_admin() before sending anything, using their
+// own JWT (this function keeps JWT verification on, unlike the
+// anonymous-submission functions elsewhere in this codebase).
 //
 // Deploy: supabase functions deploy send-campaign
 
@@ -24,6 +27,17 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+// Rewrites every href="..." in the campaign body to route through
+// track-click first — done per-recipient (not once) since the click must
+// carry that recipient's own sendId to attribute it correctly.
+function rewriteLinksForTracking(html: string, campaignId: string, sendId: string): string {
+  return html.replace(/href="([^"]+)"/g, (_match, rawUrl: string) => {
+    if (!/^https?:\/\//i.test(rawUrl)) return `href="${rawUrl}"`
+    const tracked = `${SUPABASE_URL}/functions/v1/track-click?c=${campaignId}&s=${sendId}&url=${encodeURIComponent(rawUrl)}`
+    return `href="${tracked}"`
+  })
 }
 
 serve(async (req) => {
@@ -62,7 +76,8 @@ serve(async (req) => {
     for (const email of subscribers) {
       const sendId = crypto.randomUUID()
       const pixel = `<img src="${SUPABASE_URL}/functions/v1/track-open?s=${sendId}" width="1" height="1" alt="" style="display:none" />`
-      const result = await sendEmail(email, campaign.subject, `${campaign.bodyHtml}${pixel}`)
+      const trackedHtml = rewriteLinksForTracking(campaign.bodyHtml, campaignId, sendId)
+      const result = await sendEmail(email, campaign.subject, `${trackedHtml}${pixel}`)
       await admin.from('email_campaign_sends').insert({
         id: sendId, campaign_id: campaignId, email,
       })

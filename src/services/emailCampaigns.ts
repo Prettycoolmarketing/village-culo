@@ -17,6 +17,7 @@ export interface EmailCampaign {
 export interface CampaignSendStats {
   sent: number
   opened: number
+  clicked: number
 }
 
 export const emailCampaignsService = {
@@ -46,11 +47,19 @@ export const emailCampaignsService = {
     return { success: true, sent: data?.sent, total: data?.total }
   },
 
-  /** Staff-only — real per-campaign counts read straight from email_campaign_sends, not the local cache (that table isn't mirrored into it). */
+  /** Staff-only — real per-campaign counts read straight from email_campaign_sends/_clicks, not the local cache (neither table is mirrored into it). */
   async getStats(campaignId: string): Promise<CampaignSendStats> {
-    if (!isSupabaseConfigured || !supabase) return { sent: 0, opened: 0 }
-    const { data } = await supabase.from('email_campaign_sends').select('opened_at').eq('campaign_id', campaignId)
-    const rows = data ?? []
-    return { sent: rows.length, opened: rows.filter(r => r.opened_at).length }
+    if (!isSupabaseConfigured || !supabase) return { sent: 0, opened: 0, clicked: 0 }
+    const [{ data: sends }, { data: clicks }] = await Promise.all([
+      supabase.from('email_campaign_sends').select('opened_at, id').eq('campaign_id', campaignId),
+      supabase.from('email_campaign_clicks').select('send_id').eq('campaign_id', campaignId),
+    ])
+    const sendRows = sends ?? []
+    const clickedSendIds = new Set((clicks ?? []).map(c => c.send_id as string))
+    return {
+      sent: sendRows.length,
+      opened: sendRows.filter(r => r.opened_at).length,
+      clicked: sendRows.filter(r => clickedSendIds.has(r.id as string)).length,
+    }
   },
 }

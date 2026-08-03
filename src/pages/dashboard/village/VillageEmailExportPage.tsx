@@ -581,7 +581,7 @@ function CampaignsPanel() {
                 <p className="text-sm font-medium text-[#2D2A26] truncate">{c.subject}</p>
                 <p className="text-xs text-[#9CA3AF]">
                   {c.status === 'sent'
-                    ? `Sent ${c.sentAt ? new Date(c.sentAt).toLocaleDateString('en-AU') : ''} to ${c.recipientCount ?? 0} · ${stats[c.id]?.opened ?? 0} opened`
+                    ? `Sent ${c.sentAt ? new Date(c.sentAt).toLocaleDateString('en-AU') : ''} to ${c.recipientCount ?? 0} · ${stats[c.id]?.opened ?? 0} opened · ${stats[c.id]?.clicked ?? 0} clicked`
                     : 'Draft'}
                 </p>
               </div>
