@@ -32,7 +32,6 @@ import { StoryEditor } from '../../components/dashboard/StoryEditor'
 import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
 import {
   getFounderMissingItems,
-  getStoryMissingItems,
   getMissingCounts,
   type MissingItem,
 } from '../../utils/missingAssets'
@@ -1063,7 +1062,6 @@ export function DashboardProfilePage() {
 
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
-    { key: 'content',       label: "Content" },
     { key: 'businesses',    label: 'Businesses'    },
     { key: 'expertise',     label: 'FAQ'           },
     { key: 'discovery',     label: 'Partners' },
@@ -1302,24 +1300,34 @@ export function DashboardProfilePage() {
                 if (eligible.length === 0) {
                   return <p className="text-xs text-[#9CA3AF]">Publish a story with a video attached to feature it here.</p>
                 }
+                const selectedIds = draft.featuredVideoStoryIds ?? []
+                const selectedCount = eligible.filter(s => selectedIds.includes(s.id)).length
                 return (
-                  <div className="flex flex-col gap-2">
-                    {eligible.map(story => {
-                      const checked = (draft.featuredVideoStoryIds ?? []).includes(story.id)
-                      return (
-                        <label key={story.id} className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[#E8E4DD] cursor-pointer hover:border-[#C86A43]/40 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => set('featuredVideoStoryIds', checked
-                              ? (draft.featuredVideoStoryIds ?? []).filter(id => id !== story.id)
-                              : [...(draft.featuredVideoStoryIds ?? []), story.id])}
-                          />
-                          <span className="text-sm text-[#2D2A26] truncate">{story.title}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
+                  <details className="group rounded-lg border border-[#E8E4DD]">
+                    <summary className="flex items-center justify-between gap-2.5 px-3 py-2.5 cursor-pointer list-none text-sm text-[#2D2A26]">
+                      <span>{selectedCount === 0 ? 'Choose a video…' : `${selectedCount} video${selectedCount === 1 ? '' : 's'} selected`}</span>
+                      <svg className="w-4 h-4 text-[#9CA3AF] transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </summary>
+                    <div className="flex flex-col gap-1 px-2 pb-2 pt-1 border-t border-[#E8E4DD]">
+                      {eligible.map(story => {
+                        const checked = selectedIds.includes(story.id)
+                        return (
+                          <label key={story.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-[#F8F5F0] transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => set('featuredVideoStoryIds', checked
+                                ? selectedIds.filter(id => id !== story.id)
+                                : [...selectedIds, story.id])}
+                            />
+                            <span className="text-sm text-[#2D2A26] truncate">{story.title}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </details>
                 )
               })()}
             </div>
@@ -1604,7 +1612,6 @@ export function DashboardProfilePage() {
                       </div>
                       <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
                       {sortedStories.map(story => {
-                        const storyMissing = getStoryMissingItems(story)
                         return (
                           <div key={story.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
                             <button onClick={() => setEditingStoryId(story.id)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
@@ -1614,15 +1621,6 @@ export function DashboardProfilePage() {
                                 <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
                               </div>
                             </button>
-                            {storyMissing.length === 0 ? (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">
-                                Ready to publish
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43] shrink-0">
-                                {storyMissing.length} recommended
-                              </span>
-                            )}
                             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
                               story.status === 'published' || story.status === 'featured'
                                 ? 'bg-green-100 text-green-700'

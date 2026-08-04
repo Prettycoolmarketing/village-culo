@@ -1817,6 +1817,7 @@ export function DashboardImportContentPage() {
         <h1 className="text-2xl font-bold text-[#2D2A26]">Import Content</h1>
         <p className="text-sm text-[#6B7280] mt-1 max-w-2xl">
           Bring in your old YouTube, podcast or blog content — embedded from the original source, never re-uploaded.
+          Add your Voice &amp; Brand Brief below so CULO knows how to actually sound like you when it writes for you.
         </p>
       </div>
 

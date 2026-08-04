@@ -17,7 +17,9 @@ export function ReelContent({ reelUrl, title, summary, landscape = false }: { re
           video (YouTube, talking head) stretched into 9:16 is what was
           reading as blurry/cropped. */}
       <div
-        className={`flex-shrink-0 w-full bg-charcoal rounded-2xl overflow-hidden relative ${landscape ? 'sm:w-[28rem]' : 'sm:w-56'}`}
+        className={`flex-shrink-0 w-full mx-auto bg-charcoal rounded-2xl overflow-hidden relative ${
+          landscape ? 'max-w-md sm:max-w-none sm:mx-0 sm:w-[28rem]' : 'max-w-[260px] sm:max-w-none sm:mx-0 sm:w-56'
+        }`}
         style={{ aspectRatio: landscape ? '16/9' : '9/16' }}
         aria-label="Video preview"
       >

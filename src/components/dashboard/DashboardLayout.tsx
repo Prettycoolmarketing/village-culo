@@ -158,12 +158,14 @@ export function DashboardLayout() {
           <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Everything you've imported and published, in one place" />
           <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} />
 
-          <SectionLabel label="Opportunities" />
-          <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} hint="Partnership and collaboration matches for you" />
-          <NavItem to="/dashboard/revenue"        label="Revenue"         icon={<Icon path={icons.revenue}     />} hint="What you've earned from clicks and conversions" />
-
           {showCapoNav && (
             <>
+              {/* Not ready for founders yet — kept visible to staff only for
+                  now so it can still be reviewed/tested. */}
+              <SectionLabel label="Opportunities" />
+              <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} hint="Partnership and collaboration matches for you" />
+              <NavItem to="/dashboard/revenue"        label="Revenue"         icon={<Icon path={icons.revenue}     />} hint="What you've earned from clicks and conversions" />
+
               <SectionLabel label="CAPO · Village Staff" />
               <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
 

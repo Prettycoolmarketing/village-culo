@@ -9,7 +9,6 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
   updatedAt: string | undefined
   onChange: (value: string | undefined) => void
 }) {
-  const [showPrompt, setShowPrompt] = useState(false)
   const [copied, setCopied] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -29,14 +28,38 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex flex-col gap-3">
+    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex flex-col gap-4">
       <div>
-        <p className="text-sm font-semibold text-[#2D2A26]">Voice & Brand Brief</p>
+        <p className="text-sm font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
         <p className="text-xs text-[#9CA3AF] mt-0.5 leading-relaxed">
-          Who you are, your real chapters, how you write, and what to never say. Required before Instagram
-          Archive import will write blogs for you — without a real brief, every generated blog reads the
-          same regardless of which video it's attached to, which hurts both search ranking and AI discovery.
+          Who you are, the real chapters of your story, how you actually talk, what you'd never say. This is
+          what turns your Instagram archive into real blogs in your own voice — without it, every piece reads
+          the same no matter which video it's attached to, and that costs you both search ranking and AI discovery.
         </p>
+        {updatedAt && (
+          <p className="text-[10px] text-[#9CA3AF] mt-1">
+            Last updated {new Date(updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
+        )}
+      </div>
+
+      {/* Hand your brain over to your AI, then bring the brief back here. */}
+      <div className="bg-[#F8F5F0] rounded-lg p-4">
+        <p className="text-xs font-semibold text-[#2D2A26] mb-1">Don't want to write it from scratch?</p>
+        <p className="text-xs text-[#6B7280] mb-2 leading-relaxed">
+          Copy this, hand it to whatever AI you already talk to — it'll interview you like it actually knows
+          you, then write the brief. Paste what it gives you below, or upload it as a file.
+        </p>
+        <pre className="text-[11px] text-[#4B4845] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto bg-white rounded-lg border border-[#E8E4DD] p-3">
+          {VOICE_BRIEF_INTERVIEW_PROMPT}
+        </pre>
+        <button
+          type="button"
+          onClick={handleCopyPrompt}
+          className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+        >
+          {copied ? 'Copied ✓' : 'Copy this prompt'}
+        </button>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
@@ -57,36 +80,7 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
           className="hidden"
           onChange={e => handleFile(e.target.files?.[0])}
         />
-        <button
-          type="button"
-          onClick={() => setShowPrompt(v => !v)}
-          className="text-xs font-semibold text-[#C86A43] hover:underline"
-        >
-          {showPrompt ? 'Hide' : "Not sure what to write? Get a prompt for your AI"}
-        </button>
-        {updatedAt && (
-          <span className="text-[10px] text-[#9CA3AF] ml-auto">Last updated {new Date(updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-        )}
       </div>
-
-      {showPrompt && (
-        <div className="bg-[#F8F5F0] rounded-lg p-4">
-          <p className="text-xs text-[#6B7280] mb-2 leading-relaxed">
-            Paste this into ChatGPT, Claude, or whatever AI you already use — it'll interview you and hand
-            back a finished brief you can paste or upload here.
-          </p>
-          <pre className="text-[11px] text-[#4B4845] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto bg-white rounded-lg border border-[#E8E4DD] p-3">
-            {VOICE_BRIEF_INTERVIEW_PROMPT}
-          </pre>
-          <button
-            type="button"
-            onClick={handleCopyPrompt}
-            className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
-          >
-            {copied ? 'Copied ✓' : 'Copy prompt'}
-          </button>
-        </div>
-      )}
 
       <textarea
         value={value ?? ''}

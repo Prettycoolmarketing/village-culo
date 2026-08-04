@@ -20,7 +20,6 @@ import { slugify } from '../../utils/slugify'
 import { deriveSeoTitle, deriveSeoDescription } from '../../utils/seo'
 import { looksLikeChannelUrl } from '../../utils/url'
 import { partnerService } from '../../services/partner'
-import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import type { ImportedContent } from '../../types/importedContent'
 import type { ContentType, Topic, Story } from '../../types'
 
@@ -319,11 +318,10 @@ function ProgressBar({ step, steps, labels, onStepClick }: {
 
 // ─── Step 1: Format ───────────────────────────────────────────────────────────
 
-function FormatStep({ draft, onChange, onNext, onNextSkippingMedia }: {
+function FormatStep({ draft, onChange, onNext }: {
   draft: PublishDraft
   onChange: (patch: Partial<PublishDraft>) => void
   onNext: () => void
-  onNextSkippingMedia: () => void
 }) {
   function toggle(type: ContentType) {
     const has = draft.contentTypes.includes(type)
@@ -357,15 +355,8 @@ function FormatStep({ draft, onChange, onNext, onNextSkippingMedia }: {
         </div>
       </a>
 
-      <CanvaImportCard
-        founderId={draft.founderId}
-        contentTypeHint={draft.contentTypes}
-        onImported={item => { onChange(importedContentPatch(item, draft)); onNextSkippingMedia() }}
-        onReelVideoReady={videoUrl => onChange({ reelUrl: videoUrl })}
-      />
-
-      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Or choose a format and write it yourself</p>
-      <p className="text-xs text-[#9CA3AF] mb-3">Pick a format below any time — before or after bringing in Canva slides.</p>
+      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Choose a format</p>
+      <p className="text-xs text-[#9CA3AF] mb-3">Bringing in Canva slides? Do that from Import Content instead — pick a format here to write it yourself.</p>
       <div className="grid grid-cols-2 gap-3 mb-8">
         {FORMATS.map(f => {
           const active = draft.contentTypes.includes(f.type)
@@ -1805,16 +1796,6 @@ export function DashboardPublishPage() {
     if (idx < stepList.length - 1) setStep(stepList[idx + 1])
   }
 
-  // Used right after a Canva import brings its own slides/video straight
-  // in — Attach Media would just be asking the founder to look at what
-  // they already just picked, so skip past it.
-  function nextSkippingMedia() {
-    const idx = stepList.indexOf(step)
-    let target = idx + 1
-    while (target < stepList.length && stepList[target] === 'media') target++
-    if (target < stepList.length) setStep(stepList[target])
-  }
-
   function back() {
     const idx = stepList.indexOf(step)
     if (idx > 0) setStep(stepList[idx - 1])
@@ -1948,7 +1929,7 @@ export function DashboardPublishPage() {
         </div>
       )}
 
-      {step === 'format'  && <FormatStep       draft={draft} onChange={patch} onNext={next} onNextSkippingMedia={nextSkippingMedia} />}
+      {step === 'format'  && <FormatStep       draft={draft} onChange={patch} onNext={next} />}
       {step === 'media'   && <MediaStep        draft={draft} onChange={patch} onNext={next} onBack={back} />}
       {step === 'story'   && <TellYourStoryStep draft={draft} onChange={patch} onNext={next} onBack={back} />}
       {step === 'builder' && <StoryBuilderStep  draft={draft} onChange={patch} onBack={back} onNext={next} />}

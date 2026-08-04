@@ -7,8 +7,6 @@ import { getBusinesses } from '../../services/businesses'
 import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { AppearsOnPanel } from './AppearsOnPanel'
-import { MissingAssetsPanel } from './MissingAssetsPanel'
-import { getStoryMissingItems } from '../../utils/missingAssets'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { topics as allTopics } from '../../data/topics'
 import { normalizeUrl } from '../../utils/url'
@@ -144,8 +142,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
       </div>
 
       <div className="px-5 py-5 flex flex-col gap-5">
-        <MissingAssetsPanel items={getStoryMissingItems(draft)} />
-
         <Field label="Title">
           <input type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
         </Field>

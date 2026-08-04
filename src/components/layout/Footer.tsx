@@ -73,7 +73,11 @@ export function Footer() {
 
         <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-white/40">
-            © {new Date().getFullYear()} CULO Village · Pretty Cool Marketing · Brisbane, Australia
+            © {new Date().getFullYear()} CULO Village ·{' '}
+            <a href="https://www.prettycoolmarketing.com" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
+              Pretty Cool Marketing
+            </a>{' '}
+            · Brisbane, Australia
           </p>
           <p className="text-xs text-white/30">
             Create in CULO in Canva. Publish to The Village.
