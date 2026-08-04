@@ -1752,10 +1752,17 @@ export function DashboardPublishPage() {
   const [draft,         setDraft]         = useState<PublishDraft>(() => {
     // Don't resurrect a stale wizard draft over a fresh "Turn into Story"/"Write about this partner" prefill.
     const navState = location.state as { importedContentId?: string; partnerId?: string } | null
+    const base = defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
     if (navState?.importedContentId || navState?.partnerId || partnerIdFromQuery || aboutBusinessIdFromQuery) {
-      return defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
+      return base
     }
-    return loadAutoSavedDraft() ?? defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
+    // Merge over the defaults, not a bare replace — an autosaved draft from
+    // before a field existed (e.g. additionalReelUrls) would otherwise come
+    // back missing it entirely, which crashed Attach Media the moment a
+    // video format (Reel/Talking Head/YouTube) tried to read
+    // draft.additionalReelUrls.length on an undefined array.
+    const saved = loadAutoSavedDraft()
+    return saved ? { ...base, ...saved } : base
   })
   const [publishing,    setPublishing]    = useState(false)
   const [publishedSlug, setPublishedSlug] = useState('')
