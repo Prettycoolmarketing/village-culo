@@ -5,6 +5,7 @@ import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
 import { importedContentService } from '../../services/importedContent'
 import { getBusinesses } from '../../services/businesses'
 import { getFounder } from '../../services/founders'
+import { SourceIcon } from '../ui/SourceIcon'
 
 // Bring in a whole Instagram export ZIP at once — posts, reels and stories
 // each become their own ImportedContent (carousels keep every photo, in
@@ -124,13 +125,16 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
   }
 
   return (
-    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-4 mb-6">
+    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-4 h-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-sm font-semibold text-[#2D2A26]">Import your Instagram Archive</p>
-          <p className="text-[11px] text-[#9CA3AF] mt-0.5">
-            Bring years of posts into your permanent knowledge library — captions, dates and media preserved.
-          </p>
+        <div className="flex items-center gap-3">
+          <SourceIcon platform="instagram" />
+          <div>
+            <p className="text-sm font-semibold text-[#2D2A26]">Import your Instagram Archive</p>
+            <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+              Bring years of posts into your permanent knowledge library — captions, dates and media preserved.
+            </p>
+          </div>
         </div>
         {!expanded && (
           <button type="button" onClick={() => setExpanded(true)}

@@ -10,6 +10,7 @@ import {
   type CanvaImportResult,
 } from '../../services/canva'
 import { importedContentService } from '../../services/importedContent'
+import { SourceIcon } from '../ui/SourceIcon'
 import type { ImportedContent } from '../../types/importedContent'
 import type { ContentType } from '../../types'
 
@@ -186,13 +187,16 @@ export function CanvaImportCard({
   }
 
   return (
-    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-4 mb-6">
+    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-4 h-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-sm font-semibold text-[#2D2A26]">Import from Canva</p>
-          <p className="text-[11px] text-[#9CA3AF] mt-0.5">
-            {canProceed ? 'Bring in slides from a Canva design.' : (gateMessage ?? 'Select a format above first.')}
-          </p>
+        <div className="flex items-center gap-3">
+          <SourceIcon platform="canva" />
+          <div>
+            <p className="text-sm font-semibold text-[#2D2A26]">Import from Canva</p>
+            <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+              {canProceed ? 'Bring in slides from a Canva design.' : (gateMessage ?? 'Select a format above first.')}
+            </p>
+          </div>
         </div>
         {!expanded && (
           <button type="button" onClick={() => void handleBrowseClick()} disabled={!canProceed}

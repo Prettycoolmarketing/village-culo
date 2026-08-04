@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
+import { SourceIcon } from '../../components/ui/SourceIcon'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
@@ -223,8 +224,11 @@ function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: 
   }
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5 mb-6">
-      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Import your podcast content</p>
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5">
+      <div className="flex items-center gap-3 mb-1">
+        <SourceIcon platform="podcast" />
+        <p className="text-sm font-semibold text-[#2D2A26]">Import your podcast content</p>
+      </div>
       <p className="text-xs text-[#9CA3AF] mb-3">
         Paste your Spotify, Apple Podcasts, website or RSS URL — or just the podcast name — and Village will find the show and its episode catalogue.
       </p>
@@ -528,8 +532,11 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5 mb-6">
-      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Import your YouTube content</p>
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5">
+      <div className="flex items-center gap-3 mb-1">
+        <SourceIcon platform="youtube" />
+        <p className="text-sm font-semibold text-[#2D2A26]">Import your YouTube content</p>
+      </div>
       <p className="text-xs text-[#9CA3AF] mb-3">
         {isHighVolume
           ? `Connect your channel to bring in your whole back-catalogue (up to ${HIGH_VOLUME_DAILY_LIMIT.toLocaleString()} videos/day).`
@@ -608,7 +615,10 @@ function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: {
 
   return (
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5">
-      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Transfer Your blogs</p>
+      <div className="flex items-center gap-3 mb-1">
+        <SourceIcon platform="website" />
+        <p className="text-sm font-semibold text-[#2D2A26]">Transfer Your blogs</p>
+      </div>
       <p className="text-xs text-[#9CA3AF] mb-3">Paste your blog or website URL — Village finds the feed automatically.</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -1810,7 +1820,7 @@ export function DashboardImportContentPage() {
   function handleCancel() { setDraft(null) }
 
   return (
-    <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-3xl'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-5xl'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
       <div className="mb-6">
@@ -1840,9 +1850,9 @@ export function DashboardImportContentPage() {
 
       {/* Connect a channel or feed */}
       {!draft && (
-        <div className="max-w-2xl">
+        <div>
           {founder && (
-            <div className="mb-6">
+            <div className="max-w-2xl mb-8">
               <VoiceBriefEditor
                 value={founder.voiceBrief}
                 updatedAt={founder.voiceBriefUpdatedAt}
@@ -1851,44 +1861,43 @@ export function DashboardImportContentPage() {
             </div>
           )}
 
-          <div ref={canvaCardRef}>
-            <CanvaImportCard
-              founderId={founderId}
-              expanded={canvaExpanded}
-              onExpandedChange={setCanvaExpanded}
-              onImported={() => reportImported(1)}
-            />
+          <p className="text-sm font-semibold text-[#2D2A26] mb-3">Bring in your content</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 items-start">
+            <div ref={canvaCardRef}>
+              <CanvaImportCard
+                founderId={founderId}
+                expanded={canvaExpanded}
+                onExpandedChange={setCanvaExpanded}
+                onImported={() => reportImported(1)}
+              />
+            </div>
+
+            <div ref={instagramCardRef}>
+              <InstagramArchiveImportCard
+                founderId={founderId}
+                voiceBrief={founder?.voiceBrief}
+                expanded={instagramExpanded}
+                onExpandedChange={setInstagramExpanded}
+                onImported={count => reportImported(count)}
+              />
+            </div>
           </div>
 
-          <div className="mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
             <YouTubeConnectForm
               founderId={founderId}
               isHighVolume={isHighVolume}
               sources={sources.filter(s => s.sourceType === 'youtube')}
               onConnected={() => { loadSources(); reportImported(1) }}
             />
-          </div>
 
-          <div ref={instagramCardRef}>
-            <InstagramArchiveImportCard
-              founderId={founderId}
-              voiceBrief={founder?.voiceBrief}
-              expanded={instagramExpanded}
-              onExpandedChange={setInstagramExpanded}
-              onImported={count => reportImported(count)}
-            />
-          </div>
-
-          <div className="mb-6">
             <WebsiteConnectForm
               founderId={founderId}
               isHighVolume={isHighVolume}
               sources={sources.filter(s => s.sourceType === 'website-rss')}
               onConnected={() => { loadSources(); reportImported(1) }}
             />
-          </div>
 
-          <div className="mb-6">
             <PodcastConnectPanel
               founderId={founderId}
               isHighVolume={isHighVolume}
@@ -1897,9 +1906,9 @@ export function DashboardImportContentPage() {
             />
           </div>
 
-          {saveError && <p className="text-xs text-red-600 font-medium mt-3">{saveError}</p>}
+          {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
 
-          <p className="text-xs text-[#9CA3AF] mt-3">
+          <p className="text-xs text-[#9CA3AF] mt-4">
             Instagram, LinkedIn, TikTok and Canva connections aren't available yet — they each require going through that platform's own app review process.
           </p>
 
