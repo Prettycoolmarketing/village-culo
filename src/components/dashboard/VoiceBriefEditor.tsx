@@ -27,6 +27,18 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  function handleDownloadPrompt() {
+    const blob = new Blob([VOICE_BRIEF_INTERVIEW_PROMPT], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'story-voice-extraction-prompt.md'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex flex-col gap-4">
       <div>
@@ -53,13 +65,22 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
         <pre className="text-[11px] text-[#4B4845] whitespace-pre-wrap leading-relaxed max-h-64 overflow-y-auto bg-white rounded-lg border border-[#E8E4DD] p-3">
           {VOICE_BRIEF_INTERVIEW_PROMPT}
         </pre>
-        <button
-          type="button"
-          onClick={handleCopyPrompt}
-          className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
-        >
-          {copied ? 'Copied ✓' : 'Copy this prompt'}
-        </button>
+        <div className="flex items-center gap-2 mt-2">
+          <button
+            type="button"
+            onClick={handleCopyPrompt}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+          >
+            {copied ? 'Copied ✓' : 'Copy this prompt'}
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadPrompt}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#2D2A26] bg-white hover:border-[#C86A43]/50 transition-colors"
+          >
+            Download as .md
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">

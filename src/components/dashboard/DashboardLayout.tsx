@@ -160,13 +160,16 @@ export function DashboardLayout() {
 
           {showCapoNav && (
             <>
-              {/* Not ready for founders yet — kept visible to staff only for
-                  now so it can still be reviewed/tested. */}
-              <SectionLabel label="Opportunities" />
+              {/* Everything from here down is staff-only — the CAPO label
+                  marks the boundary so it's obvious founders only ever see
+                  Import / Publish / Content / Profile above this line.
+                  Opportunities/Revenue aren't ready for founders yet, kept
+                  visible to staff only for now so it can still be reviewed. */}
+              <SectionLabel label="CAPO" />
               <NavItem to="/dashboard/opportunities"  label="Opportunities"   icon={<Icon path={icons.partnership} />} hint="Partnership and collaboration matches for you" />
               <NavItem to="/dashboard/revenue"        label="Revenue"         icon={<Icon path={icons.revenue}     />} hint="What you've earned from clicks and conversions" />
 
-              <SectionLabel label="CAPO · Village Staff" />
+              <SectionLabel label="Village Staff" />
               <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
 
               {(canAccessCapoSection(user?.role, 'founders') || canAccessCapoSection(user?.role, 'team')) && (
