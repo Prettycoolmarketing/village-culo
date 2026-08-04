@@ -187,20 +187,20 @@ export function CanvaImportCard({
   }
 
   return (
-    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-4 h-full">
+    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-6 h-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <SourceIcon platform="canva" />
+        <div className="flex items-center gap-4">
+          <SourceIcon platform="canva" size="lg" />
           <div>
-            <p className="text-sm font-semibold text-[#2D2A26]">Import from Canva</p>
-            <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+            <p className="text-base font-semibold text-[#2D2A26]">Import from Canva</p>
+            <p className="text-sm text-[#9CA3AF] mt-0.5">
               {canProceed ? 'Bring in slides from a Canva design.' : (gateMessage ?? 'Select a format above first.')}
             </p>
           </div>
         </div>
         {!expanded && (
           <button type="button" onClick={() => void handleBrowseClick()} disabled={!canProceed}
-            className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors shrink-0">
+            className="text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors shrink-0">
             {buttonLabel}
           </button>
         )}

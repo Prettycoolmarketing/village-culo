@@ -40,44 +40,44 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] px-6 py-5">
-      <div className="mb-4">
-        <p className="text-sm font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
-        <p className="text-xs text-[#9CA3AF] mt-0.5 leading-relaxed max-w-3xl">
+    <div className="bg-white rounded-xl border border-[#E8E4DD] px-8 py-7">
+      <div className="mb-6">
+        <p className="text-lg font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
+        <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed max-w-4xl">
           Who you are, the real chapters of your story, how you actually talk, what you'd never say. This is
           what turns your Instagram archive into real blogs in your own voice — without it, every piece reads
           the same no matter which video it's attached to, and that costs you both search ranking and AI discovery.
         </p>
         {updatedAt && (
-          <p className="text-[10px] text-[#9CA3AF] mt-1">
+          <p className="text-xs text-[#9CA3AF] mt-1.5">
             Last updated {new Date(updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Hand your brain over to your AI, then bring the brief back here. */}
-        <div className="bg-[#F8F5F0] rounded-lg p-4 flex flex-col">
-          <p className="text-xs font-semibold text-[#2D2A26] mb-1">Don't want to write it from scratch?</p>
-          <p className="text-xs text-[#6B7280] mb-2 leading-relaxed">
+        <div className="bg-[#F8F5F0] rounded-lg p-6 flex flex-col">
+          <p className="text-sm font-semibold text-[#2D2A26] mb-1.5">Don't want to write it from scratch?</p>
+          <p className="text-sm text-[#6B7280] mb-3 leading-relaxed">
             Copy this, hand it to whatever AI you already talk to — it'll interview you like it actually knows
             you, then write the brief. Paste what it gives you below, or upload it as a file.
           </p>
-          <pre className="text-[11px] text-[#4B4845] whitespace-pre-wrap leading-relaxed flex-1 min-h-64 max-h-96 overflow-y-auto bg-white rounded-lg border border-[#E8E4DD] p-3">
+          <pre className="text-xs text-[#4B4845] whitespace-pre-wrap leading-relaxed flex-1 min-h-72 max-h-[28rem] overflow-y-auto bg-white rounded-lg border border-[#E8E4DD] p-4">
             {VOICE_BRIEF_INTERVIEW_PROMPT}
           </pre>
-          <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-3 mt-4">
             <button
               type="button"
               onClick={handleCopyPrompt}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+              className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
             >
               {copied ? 'Copied ✓' : 'Copy this prompt'}
             </button>
             <button
               type="button"
               onClick={handleDownloadPrompt}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#2D2A26] bg-white hover:border-[#C86A43]/50 transition-colors"
+              className="text-sm font-semibold px-4 py-2 rounded-lg border border-[#E8E4DD] text-[#2D2A26] bg-white hover:border-[#C86A43]/50 transition-colors"
             >
               Download as .md
             </button>
@@ -85,14 +85,14 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
         </div>
 
         <div className="flex flex-col">
-          <div className="flex items-center justify-between gap-3 mb-2">
-            <p className="text-xs font-semibold text-[#2D2A26]">Bring the brief back here</p>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <p className="text-sm font-semibold text-[#2D2A26]">Bring the brief back here</p>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shadow-sm shrink-0"
+              className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shadow-sm shrink-0"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
               Upload .md or .txt file
@@ -109,7 +109,7 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
             value={value ?? ''}
             onChange={e => onChange(e.target.value || undefined)}
             placeholder="Paste your Voice & Brand Brief here, or upload a file above…"
-            className={inputClass + ' resize-none font-mono text-xs flex-1 min-h-64'}
+            className={inputClass + ' resize-none font-mono text-sm flex-1 min-h-72 p-4'}
           />
         </div>
       </div>

@@ -125,20 +125,20 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
   }
 
   return (
-    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-4 h-full">
+    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-6 h-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <SourceIcon platform="instagram" />
+        <div className="flex items-center gap-4">
+          <SourceIcon platform="instagram" size="lg" />
           <div>
-            <p className="text-sm font-semibold text-[#2D2A26]">Import your Instagram Archive</p>
-            <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+            <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram Archive</p>
+            <p className="text-sm text-[#9CA3AF] mt-0.5">
               Bring years of posts into your permanent knowledge library — captions, dates and media preserved.
             </p>
           </div>
         </div>
         {!expanded && (
           <button type="button" onClick={() => setExpanded(true)}
-            className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors shrink-0">
+            className="text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors shrink-0">
             Import archive
           </button>
         )}

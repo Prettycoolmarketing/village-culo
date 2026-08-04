@@ -224,12 +224,12 @@ function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: 
   }
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5">
-      <div className="flex items-center gap-3 mb-1">
-        <SourceIcon platform="podcast" />
-        <p className="text-sm font-semibold text-[#2D2A26]">Import your podcast content</p>
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
+      <div className="flex items-center gap-4 mb-2">
+        <SourceIcon platform="podcast" size="lg" />
+        <p className="text-base font-semibold text-[#2D2A26]">Import your podcast content</p>
       </div>
-      <p className="text-xs text-[#9CA3AF] mb-3">
+      <p className="text-sm text-[#9CA3AF] mb-4">
         Paste your Spotify, Apple Podcasts, website or RSS URL — or just the podcast name — and Village will find the show and its episode catalogue.
       </p>
 
@@ -532,12 +532,12 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5">
-      <div className="flex items-center gap-3 mb-1">
-        <SourceIcon platform="youtube" />
-        <p className="text-sm font-semibold text-[#2D2A26]">Import your YouTube content</p>
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
+      <div className="flex items-center gap-4 mb-2">
+        <SourceIcon platform="youtube" size="lg" />
+        <p className="text-base font-semibold text-[#2D2A26]">Import your YouTube content</p>
       </div>
-      <p className="text-xs text-[#9CA3AF] mb-3">
+      <p className="text-sm text-[#9CA3AF] mb-4">
         {isHighVolume
           ? `Connect your channel to bring in your whole back-catalogue (up to ${HIGH_VOLUME_DAILY_LIMIT.toLocaleString()} videos/day).`
           : 'Connect your channel to bring in up to 20 previous videos a day — enough to write a real story about each one, not just dump years of content at once.'}
@@ -614,12 +614,12 @@ function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-5">
-      <div className="flex items-center gap-3 mb-1">
-        <SourceIcon platform="website" />
-        <p className="text-sm font-semibold text-[#2D2A26]">Transfer Your blogs</p>
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
+      <div className="flex items-center gap-4 mb-2">
+        <SourceIcon platform="website" size="lg" />
+        <p className="text-base font-semibold text-[#2D2A26]">Transfer Your blogs</p>
       </div>
-      <p className="text-xs text-[#9CA3AF] mb-3">Paste your blog or website URL — Village finds the feed automatically.</p>
+      <p className="text-sm text-[#9CA3AF] mb-4">Paste your blog or website URL — Village finds the feed automatically.</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
@@ -1820,7 +1820,7 @@ export function DashboardImportContentPage() {
   function handleCancel() { setDraft(null) }
 
   return (
-    <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-5xl'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-[1600px]'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* Header */}
       <div className="mb-6">
@@ -1905,7 +1905,7 @@ export function DashboardImportContentPage() {
           )}
 
           <p className="text-sm font-semibold text-[#2D2A26] mb-3">Bring in your content</p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
             <div ref={canvaCardRef}>
               <CanvaImportCard
                 founderId={founderId}
@@ -1926,7 +1926,7 @@ export function DashboardImportContentPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <YouTubeConnectForm
               founderId={founderId}
               isHighVolume={isHighVolume}
