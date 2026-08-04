@@ -10,6 +10,7 @@ import { AppearsOnPanel } from './AppearsOnPanel'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { topics as allTopics } from '../../data/topics'
 import { normalizeUrl } from '../../utils/url'
+import { contentTypeLabel } from '../../utils/slugify'
 import type { Story, ContentType, Topic } from '../../types'
 
 // A deliberately simple story editor — title, summary, the content itself,
@@ -150,14 +151,22 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
           <textarea value={draft.summary} onChange={e => set('summary', e.target.value)} rows={3} className={inputClass + ' resize-y'} />
         </Field>
 
-        <Field label="Content Types" hint="Select all formats this story is published in">
-          <div className="flex gap-2 flex-wrap mt-1">
-            {CONTENT_TYPES.map(ct => (
-              <button key={ct} onClick={() => toggleContentType(ct)}
-                className={`px-3 py-1.5 rounded-lg text-sm border font-medium transition-colors capitalize ${draft.contentTypes.includes(ct) ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                {ct}
-              </button>
-            ))}
+        <Field label="Content Types" hint="Select all formats this story is published in — shown as badges on the story's page">
+          <div className="flex gap-1.5 flex-wrap mt-1">
+            {CONTENT_TYPES.map(ct => {
+              const active = draft.contentTypes.includes(ct)
+              return (
+                <button key={ct} onClick={() => toggleContentType(ct)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${active ? 'bg-charcoal text-white' : 'bg-[#F3EDE6] text-[#9CA3AF] hover:text-[#6B7280]'}`}>
+                  {active && (
+                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {contentTypeLabel(ct)}
+                </button>
+              )
+            })}
           </div>
         </Field>
 

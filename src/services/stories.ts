@@ -53,6 +53,15 @@ export async function updateStory(story: Story): Promise<WriteResult> {
   })
 }
 
+// Un-tags a topic from every one of a founder's/business's own stories that
+// carry it — the real fix for "remove my feature on this topic page", since
+// a topic page's story list is just every published story tagged with that
+// slug, not a separate curated placement.
+export async function removeTopicFromStories(storyIds: string[], topicSlug: string): Promise<void> {
+  const stories = storyIds.map(id => getStory(id)).filter((s): s is Story => !!s && s.topics.some(t => t.slug === topicSlug))
+  await Promise.all(stories.map(s => updateStory({ ...s, topics: s.topics.filter(t => t.slug !== topicSlug) })))
+}
+
 export function deleteStory(id: string): Promise<WriteResult> {
   return deleteEntity({ cacheKey: KEY, id, table: TABLE })
 }

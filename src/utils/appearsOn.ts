@@ -4,7 +4,18 @@ import { getFounders } from '../services/founders'
 import { getBusinesses } from '../services/businesses'
 import { getLibraryItems } from '../services/library'
 import { expertiseList } from '../data/expertise'
+import { MIN_TOPIC_STORIES } from '../pages/TopicPage'
 import type { Story } from '../types'
+
+// A topic page only actually goes live once enough published stories share
+// the slug (see MIN_TOPIC_STORIES in TopicPage) — listing every topic a
+// story is merely tagged with here would link out to pages that render
+// "Nothing here yet", which isn't really "appearing" anywhere.
+function liveTopicSlugs(): Set<string> {
+  const counts = new Map<string, number>()
+  getStories({ publicOnly: true }).forEach(s => s.topics.forEach(t => counts.set(t.slug, (counts.get(t.slug) ?? 0) + 1)))
+  return new Set([...counts.entries()].filter(([, n]) => n >= MIN_TOPIC_STORIES).map(([slug]) => slug))
+}
 
 export interface AppearsOnLocation {
   label: string
@@ -33,8 +44,12 @@ export function getFounderAppearsOn(founderId: string): AppearsOnLocation[] {
   }
   const founderStories = stories.filter(s => s.founderId === founderId)
   founderStories.forEach(s => locs.push({ label: `Story: ${s.title}`, path: `/stories/${s.slug}`, type: 'detail' }))
-  const seenTopics = new Map(founderStories.flatMap(s => s.topics.map(t => [t.slug, t.name] as const)))
-  seenTopics.forEach((name, slug) => locs.push({ label: `Topic: ${name}`, path: `/topics/${slug}`, type: 'page' }))
+  const live = liveTopicSlugs()
+  const seenTopics = new Map(
+    founderStories.filter(s => s.status === 'published' || s.status === 'featured')
+      .flatMap(s => s.topics.filter(t => live.has(t.slug)).map(t => [t.slug, t.name] as const))
+  )
+  seenTopics.forEach((name, slug) => locs.push({ label: `Topic: ${name}`, path: `/topics/${slug}`, type: 'page', key: `topic:${slug}` }))
   getIdeas({ founderId }).slice(0, 5)
     .forEach(i => locs.push({ label: `Idea: ${i.title}`, path: `/ideas/${i.slug}`, type: 'detail' }))
   getLibraryItems().filter(l => l.authorFounderId === founderId)
@@ -61,8 +76,12 @@ export function getBusinessAppearsOn(businessId: string): AppearsOnLocation[] {
   if (owner) locs.push({ label: `Founder: ${owner.name}`, path: `/founders/${owner.slug}`, type: 'profile' })
   const bizStories = getStories({ businessId })
   bizStories.forEach(s => locs.push({ label: `Story: ${s.title}`, path: `/stories/${s.slug}`, type: 'detail' }))
-  const seenTopics = new Map(bizStories.flatMap(s => s.topics.map(t => [t.slug, t.name] as const)))
-  seenTopics.forEach((name, slug) => locs.push({ label: `Topic: ${name}`, path: `/topics/${slug}`, type: 'page' }))
+  const live = liveTopicSlugs()
+  const seenTopics = new Map(
+    bizStories.filter(s => s.status === 'published' || s.status === 'featured')
+      .flatMap(s => s.topics.filter(t => live.has(t.slug)).map(t => [t.slug, t.name] as const))
+  )
+  seenTopics.forEach((name, slug) => locs.push({ label: `Topic: ${name}`, path: `/topics/${slug}`, type: 'page', key: `topic:${slug}` }))
   expertiseList.filter(e => e.businessIds.includes(businessId))
     .forEach(e => locs.push({ label: `Expertise: ${e.name}`, path: `/expertise/${e.slug}`, type: 'page' }))
   return locs

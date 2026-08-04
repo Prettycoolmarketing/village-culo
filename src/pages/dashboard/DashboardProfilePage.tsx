@@ -11,7 +11,7 @@ import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
-import { getStories, getStory, updateStory, deleteStory } from '../../services/stories'
+import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
 import { getIdeas } from '../../services/ideas'
@@ -553,6 +553,15 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
   })
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [appearsOnTick, setAppearsOnTick] = useState(0)
+
+  async function handleRemoveTopicFeature(key: string) {
+    if (!draft || !key.startsWith('topic:')) return
+    const slug = key.slice('topic:'.length)
+    const storyIds = getStories({ businessId: draft.id }).map(s => s.id)
+    await removeTopicFromStories(storyIds, slug)
+    setAppearsOnTick(t => t + 1)
+  }
 
   // Autosave to localStorage as the founder types — if they navigate away or
   // the tab closes before hitting Save, their edits are still there next time.
@@ -810,6 +819,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
 
       {/* Appears On — read-only, where this business is already surfaced. */}
       {draft && (() => {
+        void appearsOnTick
         const appearsOn = getBusinessAppearsOn(draft.id)
         return appearsOn.length > 0 ? (
           <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
@@ -818,11 +828,11 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
               <p className="text-xs text-[#9CA3AF] mt-0.5">
                 Every public page this business currently shows up on — its own page, the Businesses
                 directory (the full list of every Village business), the owning founder's profile,
-                any topic pages its stories are tagged with, and the homepage if featured. These are
-                different pages, not duplicates.
+                any topic pages its stories are actually tagged with (only shown once that topic page
+                is live), and the homepage if featured. These are different pages, not duplicates.
               </p>
             </div>
-            <AppearsOnPanel locations={appearsOn} />
+            <AppearsOnPanel locations={appearsOn} onToggle={key => void handleRemoveTopicFeature(key)} />
           </div>
         ) : null
       })()}
@@ -1052,6 +1062,13 @@ export function DashboardProfilePage() {
   // Relationships — everything this founder is connected to across the Village.
   const founderBusinesses = getBusinesses().filter(b => b.founderId === draft.id)
   const founderStories    = getStories({ founderId: draft.id })
+
+  async function handleRemoveFounderTopicFeature(key: string) {
+    if (!key.startsWith('topic:')) return
+    const slug = key.slice('topic:'.length)
+    await removeTopicFromStories(founderStories.map(s => s.id), slug)
+    setImportedTick(t => t + 1)
+  }
   // Only ideas still backed by a live, published story — an idea whose
   // source story was deleted or unpublished shouldn't keep showing here.
   const publishedStoryIds = new Set(getStories({ founderId: draft.id, publicOnly: true }).map(s => s.id))
@@ -1716,7 +1733,7 @@ export function DashboardProfilePage() {
 
             <div className="border-t border-[#E8E4DD] pt-5">
               <p className="text-sm font-semibold text-[#2D2A26] mb-2">Appears On</p>
-              <AppearsOnPanel locations={appearsOn} />
+              <AppearsOnPanel locations={appearsOn} onToggle={key => void handleRemoveFounderTopicFeature(key)} />
             </div>
           </div>
         )}
