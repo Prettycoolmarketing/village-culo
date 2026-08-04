@@ -329,7 +329,7 @@ function FormatStep({ draft, onChange, onNext }: {
   }
 
   return (
-    <div className="flex gap-8 items-start">
+    <div className="flex gap-10 items-center">
       <div className="max-w-2xl flex-1 min-w-0">
         <StepHeader
           title="What's Your Story?"

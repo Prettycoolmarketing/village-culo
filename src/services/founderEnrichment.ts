@@ -24,6 +24,13 @@ function firstSentence(text: string): string | undefined {
   return text.split(/(?<=[.!?])\s+/).find(s => s.trim().length > 10)
 }
 
+// Bio/story text often carries double spaces, tabs or line breaks typed by
+// the founder — fine in a textarea, but reads as broken once pulled into a
+// short FAQ answer, so every suggested pair is normalized before it's shown.
+function clean(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}
+
 /**
  * Real Q&A pairs pulled from real profile data — never a fabricated answer.
  * Leads with entity-grounded questions built straight from the founder's own
@@ -60,7 +67,7 @@ export function suggestFaqsFromFounder(founder: Founder, stories: Story[], busin
     pairs.push(...blogPairs)
   }
 
-  return pairs
+  return pairs.map(p => ({ question: clean(p.question), answer: clean(p.answer) }))
 }
 
 function truncateAtWord(text: string, max: number): string {

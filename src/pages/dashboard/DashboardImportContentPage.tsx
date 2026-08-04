@@ -1895,7 +1895,7 @@ export function DashboardImportContentPage() {
       {!draft && (
         <div>
           {founder && (
-            <div className="max-w-2xl mb-8">
+            <div className="mb-8">
               <VoiceBriefEditor
                 value={founder.voiceBrief}
                 updatedAt={founder.voiceBriefUpdatedAt}

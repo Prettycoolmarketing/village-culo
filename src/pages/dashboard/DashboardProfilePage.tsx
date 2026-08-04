@@ -28,7 +28,7 @@ import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPane
 import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
-import { BusinessDiscoveryProfile, BusinessProgramsTab, BusinessServicesEditor } from '../../components/dashboard/BusinessWorkspace'
+import { BusinessDiscoveryProfile, BusinessProgramsTab } from '../../components/dashboard/BusinessWorkspace'
 import { StoryEditor } from '../../components/dashboard/StoryEditor'
 import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
 import {
@@ -56,6 +56,14 @@ const FIELD_TO_TAB: Record<string, string> = {
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
+
+// Collapses stray double-spaces/line breaks a suggestion can carry from raw
+// bio/story text — used both to clean text before it's saved as a real FAQ,
+// and (lowercased) to compare an existing FAQ against a fresh suggestion so
+// re-running "Suggest FAQs" never re-offers something already added.
+function normalizeFaqText(text: string): string {
+  return text.replace(/\s+/g, ' ').trim()
+}
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
@@ -803,21 +811,6 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
         </div>
       )}
 
-      {/* Services — what this business offers people, beyond content. */}
-      {draft && (
-        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
-          <div>
-            <p className="text-sm font-semibold text-[#2D2A26]">Services</p>
-            <p className="text-xs text-[#9CA3AF] mt-0.5">What people can book or buy from this business.</p>
-          </div>
-          <BusinessServicesEditor
-            key={draft.id}
-            business={draft}
-            onOffersChange={offers => set('offers', offers)}
-          />
-        </div>
-      )}
-
       {/* Appears On — read-only, where this business is already surfaced. */}
       {draft && (() => {
         void appearsOnTick
@@ -1391,39 +1384,39 @@ export function DashboardProfilePage() {
           const allImportedForStats = importedContentService.getAll({ founderId: draft.id })
           const statsPlatforms = Array.from(new Set(allImportedForStats.map(i => i.sourcePlatform)))
           return (
-          <div className="max-w-4xl flex flex-col gap-5">
+          <div className="max-w-6xl flex flex-col gap-5">
             <TabIntro>
               Everything you've brought into the Village, and everything you've published from it — in one place.
             </TabIntro>
 
             {/* Real counts only — no invented "storage used" or "last scan"
                 stats, just what's actually in this founder's own content. */}
-            <div className="flex gap-3 overflow-x-auto pb-1">
+            <div className="flex flex-wrap gap-4">
               <button
                 onClick={() => { setContentSubTab('imported'); setImportedPlatformFilter('all') }}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl border bg-white shrink-0 transition-colors ${
+                className={`flex-1 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
                   contentSubTab === 'imported' && importedPlatformFilter === 'all' ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
                 }`}
               >
                 <div className="text-left">
-                  <p className="text-[11px] text-[#9CA3AF]">All content</p>
-                  <p className="text-xl font-bold text-[#2D2A26]">{allImportedForStats.length}</p>
+                  <p className="text-xs text-[#9CA3AF]">All content</p>
+                  <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{allImportedForStats.length}</p>
                 </div>
-                <SourceIcon platform="all" size="sm" />
+                <SourceIcon platform="all" size="lg" />
               </button>
               {statsPlatforms.map(p => (
                 <button
                   key={p}
                   onClick={() => { setContentSubTab('imported'); setImportedPlatformFilter(p) }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border bg-white shrink-0 transition-colors ${
+                  className={`flex-1 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
                     contentSubTab === 'imported' && importedPlatformFilter === p ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
                   }`}
                 >
                   <div className="text-left">
-                    <p className="text-[11px] text-[#9CA3AF]">{IMPORT_PLATFORM_LABELS[p]}</p>
-                    <p className="text-xl font-bold text-[#2D2A26]">{allImportedForStats.filter(i => i.sourcePlatform === p).length}</p>
+                    <p className="text-xs text-[#9CA3AF]">{IMPORT_PLATFORM_LABELS[p]}</p>
+                    <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{allImportedForStats.filter(i => i.sourcePlatform === p).length}</p>
                   </div>
-                  <SourceIcon platform={p} size="sm" />
+                  <SourceIcon platform={p} size="lg" />
                 </button>
               ))}
             </div>
@@ -1731,7 +1724,7 @@ export function DashboardProfilePage() {
                     {faqSuggestions.length === 0 ? (
                       <p className="text-xs text-[#9CA3AF] italic">Nothing found yet — write a bit more in your Bio, or publish a story with a Blog, then try again.</p>
                     ) : faqSuggestions
-                      .filter(p => !(draft.faqs ?? []).some(f => f.question === p.question))
+                      .filter(p => !(draft.faqs ?? []).some(f => normalizeFaqText(f.question).toLowerCase() === normalizeFaqText(p.question).toLowerCase()))
                       .map(pair => (
                         <div key={pair.question} className="flex items-start justify-between gap-3 p-3 rounded-lg bg-[#F8F5F0] border border-[#E8E4DD]">
                           <div className="min-w-0">
@@ -1741,7 +1734,7 @@ export function DashboardProfilePage() {
                           <button type="button"
                             onClick={() => set('faqs', [...(draft.faqs ?? []), {
                               id: `faq-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-                              question: pair.question, answer: pair.answer,
+                              question: normalizeFaqText(pair.question), answer: normalizeFaqText(pair.answer),
                               topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [],
                             }])}
                             className="shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-md bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors">
@@ -1895,14 +1888,16 @@ export function DashboardProfilePage() {
 
       </div>
 
-      {/* Bottom save bar — same founder-fields-only scope as the top one. */}
+      {/* Bottom save bar — same founder-fields-only scope as the top one.
+          Left-aligned to match the Save button pattern used on the
+          Businesses tab, instead of tucked away on the right. */}
       {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
-        <div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-[#E8E4DD] bg-white shrink-0">
-          {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
-          {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
+        <div className="flex items-center gap-3 px-8 py-4 border-t border-[#E8E4DD] bg-white shrink-0">
           <button onClick={handleSave} disabled={saving} className="px-5 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
+          {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
+          {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
         </div>
       )}
     </div>
