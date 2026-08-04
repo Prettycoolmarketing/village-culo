@@ -1684,7 +1684,7 @@ export function SavedRow({
               href={viewHref}
               {...linkProps}
               title={isExternal ? 'Open original' : 'Preview'}
-              className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center hover:opacity-80 transition-opacity"
+              className="shrink-0 w-24 h-16 rounded-lg overflow-hidden bg-[#F3EDE6] flex items-center justify-center hover:opacity-80 transition-opacity"
             >
               {item.thumbnailUrl ? (
                 <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -1830,6 +1830,49 @@ export function DashboardImportContentPage() {
           Add your Voice &amp; Brand Brief below so CULO knows how to actually sound like you when it writes for you.
         </p>
       </div>
+
+      {/* Real numbers only, straight from this founder's own sources/imports —
+          no invented storage quota or "of N available" ceiling. */}
+      {!draft && (() => {
+        const itemsImported = importedContentService.getAll({ founderId }).length
+        const lastScan = sources.reduce<string | undefined>((latest, s) => {
+          if (!s.lastScannedAt) return latest
+          return !latest || s.lastScannedAt > latest ? s.lastScannedAt : latest
+        }, undefined)
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="flex items-center justify-between gap-3 bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+              <div>
+                <p className="text-xs text-[#9CA3AF]">Sources connected</p>
+                <p className="text-2xl font-bold text-[#2D2A26]">{sources.length}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.9A5.5 5.5 0 0117.9 8.5 4.5 4.5 0 0117 16H7z" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 12v6m0-6l-2.5 2.5M12 12l2.5 2.5" /></svg>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+              <div>
+                <p className="text-xs text-[#9CA3AF]">Items imported</p>
+                <p className="text-2xl font-bold text-[#2D2A26]">{itemsImported}</p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+              <div>
+                <p className="text-xs text-[#9CA3AF]">Last scan</p>
+                <p className="text-2xl font-bold text-[#2D2A26]">
+                  {lastScan ? new Date(lastScan).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : 'Never'}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4.5 9a7.5 7.5 0 0113-4.5L20 7M19.5 15a7.5 7.5 0 01-13 4.5L4 17" /></svg>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Just-imported prompt — the full list of everything imported lives in
           Profile → Content now, not duplicated here. This page is purely

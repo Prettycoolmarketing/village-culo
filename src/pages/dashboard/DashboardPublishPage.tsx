@@ -429,22 +429,22 @@ const HOW_IT_WORKS_STEPS = [
 
 function HowItWorksPanel() {
   return (
-    <div className="hidden lg:block w-80 shrink-0 bg-white rounded-2xl border border-[#E8E4DD] p-6 sticky top-8">
-      <p className="text-sm font-semibold text-[#2D2A26] mb-5">How it works</p>
-      <div className="flex flex-col gap-5">
+    <div className="hidden lg:block w-[26rem] shrink-0 bg-white rounded-2xl border border-[#E8E4DD] p-8 sticky top-8">
+      <p className="text-lg font-semibold text-[#2D2A26] mb-7">How it works</p>
+      <div className="flex flex-col gap-7">
         {HOW_IT_WORKS_STEPS.map((s, i) => (
-          <div key={s.title} className="flex gap-3.5">
+          <div key={s.title} className="flex gap-4">
             <div className="flex flex-col items-center">
-              <div className="w-9 h-9 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0">
-                <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <div className="w-12 h-12 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   {s.icon}
                 </svg>
               </div>
-              {i < HOW_IT_WORKS_STEPS.length - 1 && <div className="w-px flex-1 bg-[#E8E4DD] mt-1" />}
+              {i < HOW_IT_WORKS_STEPS.length - 1 && <div className="w-px flex-1 bg-[#E8E4DD] mt-1.5" />}
             </div>
-            <div className="pb-1">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-0.5">{s.title}</p>
-              <p className="text-xs text-[#9CA3AF] leading-relaxed">{s.desc}</p>
+            <div className="pb-2">
+              <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+              <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
             </div>
           </div>
         ))}

@@ -9,6 +9,7 @@ import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/bu
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { SourceIcon } from '../../components/ui/SourceIcon'
 import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
@@ -1385,11 +1386,47 @@ export function DashboardProfilePage() {
         )}
 
         {/* ── My Life's Work ───────────────────────────────────────────── */}
-        {tab === 'content' && (
+        {tab === 'content' && (() => {
+          void importedTick
+          const allImportedForStats = importedContentService.getAll({ founderId: draft.id })
+          const statsPlatforms = Array.from(new Set(allImportedForStats.map(i => i.sourcePlatform)))
+          return (
           <div className="max-w-4xl flex flex-col gap-5">
             <TabIntro>
               Everything you've brought into the Village, and everything you've published from it — in one place.
             </TabIntro>
+
+            {/* Real counts only — no invented "storage used" or "last scan"
+                stats, just what's actually in this founder's own content. */}
+            <div className="flex gap-3 overflow-x-auto pb-1">
+              <button
+                onClick={() => { setContentSubTab('imported'); setImportedPlatformFilter('all') }}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border bg-white shrink-0 transition-colors ${
+                  contentSubTab === 'imported' && importedPlatformFilter === 'all' ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
+                }`}
+              >
+                <div className="text-left">
+                  <p className="text-[11px] text-[#9CA3AF]">All content</p>
+                  <p className="text-xl font-bold text-[#2D2A26]">{allImportedForStats.length}</p>
+                </div>
+                <SourceIcon platform="all" size="sm" />
+              </button>
+              {statsPlatforms.map(p => (
+                <button
+                  key={p}
+                  onClick={() => { setContentSubTab('imported'); setImportedPlatformFilter(p) }}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border bg-white shrink-0 transition-colors ${
+                    contentSubTab === 'imported' && importedPlatformFilter === p ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
+                  }`}
+                >
+                  <div className="text-left">
+                    <p className="text-[11px] text-[#9CA3AF]">{IMPORT_PLATFORM_LABELS[p]}</p>
+                    <p className="text-xl font-bold text-[#2D2A26]">{allImportedForStats.filter(i => i.sourcePlatform === p).length}</p>
+                  </div>
+                  <SourceIcon platform={p} size="sm" />
+                </button>
+              ))}
+            </div>
 
             <div className="flex gap-2">
               {(['imported', 'published'] as const).map(t => (
@@ -1663,7 +1700,8 @@ export function DashboardProfilePage() {
               )
             })()}
           </div>
-        )}
+          )
+        })()}
 
         {/* ── Businesses ────────────────────────────────────────────────── */}
         {tab === 'businesses' && (
