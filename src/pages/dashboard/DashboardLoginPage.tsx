@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { WebmailButtons } from '../../components/ui/WebmailButtons'
 
 type Mode = 'signin' | 'signup'
 
@@ -84,6 +85,7 @@ export function DashboardLoginPage() {
               <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">
                 We sent a confirmation link to <span className="font-medium text-[#2D2A26]">{email}</span>. Click it to activate your account, then come back and sign in.
               </p>
+              <WebmailButtons />
               <button
                 onClick={() => switchMode('signin')}
                 className="w-full py-2.5 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"

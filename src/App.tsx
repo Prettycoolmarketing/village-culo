@@ -27,6 +27,8 @@ import { SourcePlatformPage } from './pages/SourcePlatformPage'
 import { TopicPage }          from './pages/TopicPage'
 import { EditorialDetailPage } from './pages/EditorialDetailPage'
 import { StoryDetailPage }    from './pages/StoryDetailPage'
+import { SeriesDetailPage }   from './pages/SeriesDetailPage'
+import { AllSeriesPage }      from './pages/AllSeriesPage'
 import { IdeasPage }          from './pages/IdeasPage'
 import { IdeaDetailPage }     from './pages/IdeaDetailPage'
 import { MercatoPage }        from './pages/MercatoPage'
@@ -51,6 +53,7 @@ import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPag
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
+import { DashboardSeriesPage }        from './pages/dashboard/DashboardSeriesPage'
 import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
 import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
@@ -185,6 +188,7 @@ export default function App() {
             <Route path="media"          element={<DashboardMediaPage />}        />
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
             <Route path="import-content" element={<DashboardImportContentPage />}/>
+            <Route path="series"         element={<DashboardSeriesPage />}       />
             <Route path="canva/callback" element={<DashboardCanvaCallbackPage />}/>
             <Route path="opportunities"  element={<DashboardPartnershipPage />}  />
             <Route path="revenue"           element={<DashboardRevenuePage />}         />
@@ -214,10 +218,12 @@ export default function App() {
             <Route path="/founders"           element={<FoundersPage />}         />
             <Route path="/founders/:slug"     element={<FounderProfilePage />}   />
             <Route path="/stories"            element={<StoriesPage />}          />
+            <Route path="/series"             element={<AllSeriesPage />}        />
             <Route path="/from/:platform"     element={<SourcePlatformPage />}   />
             <Route path="/topics/:slug"       element={<TopicPage />}            />
             <Route path="/editorial/:slug"    element={<EditorialDetailPage />}  />
             <Route path="/stories/:slug"      element={<StoryDetailPage />}      />
+            <Route path="/series/:slug"       element={<SeriesDetailPage />}     />
             <Route path="/ideas"              element={<IdeasPage />}            />
             <Route path="/ideas/:slug"        element={<IdeaDetailPage />}       />
             <Route path="/mercato"            element={<MercatoPage />}          />

@@ -7,6 +7,7 @@ import { villageSettingsService } from '../services/villageSettings'
 // public trust profiles, public village content intelligence).
 const PUBLIC_TABLES: Array<{ table: string; cacheKey: string }> = [
   { table: 'stories',                      cacheKey: 'stories' },
+  { table: 'series',                       cacheKey: 'series' },
   { table: 'founders',                     cacheKey: 'founders' },
   { table: 'businesses',                   cacheKey: 'businesses' },
   { table: 'library_items',                cacheKey: 'library' },

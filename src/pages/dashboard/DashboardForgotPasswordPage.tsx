@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { WebmailButtons } from '../../components/ui/WebmailButtons'
 
 export function DashboardForgotPasswordPage() {
   const { resetPasswordForEmail, isConfigured } = useAuth()
@@ -49,6 +50,7 @@ export function DashboardForgotPasswordPage() {
               <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">
                 If an account exists for <span className="font-medium text-[#2D2A26]">{email}</span>, we sent a link to reset your password. Click it to choose a new one.
               </p>
+              <WebmailButtons />
               <Link
                 to="/dashboard/login"
                 className="block w-full py-2.5 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors text-center"

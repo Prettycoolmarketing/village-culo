@@ -558,6 +558,29 @@ export interface Story {
   // "published, but don't show me on the homepage." Keys match
   // AppearsOnLocation['key']. Never affects the story's own detail page.
   hiddenLocations?: string[]
+  // Optional series membership — a story with no seriesId behaves exactly as
+  // it always has (no series nav, no shelf placement). episodeNumber is the
+  // position within that series, not a publish-order timestamp, since a
+  // founder can add an earlier chapter after already publishing later ones.
+  seriesId?: string
+  episodeNumber?: number
+}
+
+// ─── Series ────────────────────────────────────────────────────────────────────
+// A Series groups a founder's own Stories into an ordered, binge-able run
+// (Van Life, Sydney Life...). Deliberately thin — the real content still
+// lives on each Story; this is just the ordering/labelling layer on top.
+
+export interface Series {
+  id: string
+  slug: string
+  founderId: string
+  title: string
+  description?: string
+  coverImage?: string
+  status: 'draft' | 'published'
+  createdAt: string
+  updatedAt: string
 }
 
 // ─── Idea ──────────────────────────────────────────────────────────────────────
@@ -621,6 +644,7 @@ export interface StoryFilter {
   featured?: boolean
   status?: Status
   publicOnly?: boolean
+  seriesId?: string
   limit?: number
 }
 
@@ -692,7 +716,7 @@ export type AssetRole =
   | 'story-cover' | 'library-cover' | 'product-gallery' | 'service-cover'
   | 'speaking-proof' | 'testimonial-proof' | 'behind-the-scenes'
   | 'social-proof' | 'website-hero' | 'press-feature'
-  | 'youtube-embed' | 'carousel-slide' | 'reel-preview'
+  | 'youtube-embed' | 'carousel-slide' | 'reel-preview' | 'series-cover'
 
 export type SourceType =
   | 'manual-upload' | 'official-website' | 'linkedin' | 'instagram'

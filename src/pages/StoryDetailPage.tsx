@@ -3,6 +3,7 @@ import { useParams, Link }  from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { deriveSeoTitle, deriveSeoDescription } from '../utils/seo'
 import { getStories, getStoryBySlug, getStory } from '../services/stories'
+import { getSeries, getSeriesEpisodes } from '../services/series'
 import { getFounder, getFounders } from '../services/founders'
 import { getBusiness } from '../services/businesses'
 import { recommendationService, publisherPartnerProfileService, trackingService } from '../services/partnership'
@@ -274,6 +275,17 @@ export function StoryDetailPage() {
   if (!story || (story.status !== 'published' && story.status !== 'featured')) return <StoryNotFound slug={slug ?? ''} />
 
   const business = getBusiness(story.businessId)
+
+  // Series context — undefined for the vast majority of stories that aren't
+  // part of one, in which case none of this renders and the page is
+  // identical to how it's always worked.
+  const series = story.seriesId ? getSeries(story.seriesId) : undefined
+  const seriesEpisodes = series
+    ? getSeriesEpisodes(series.id).filter(ep => ep.status === 'published' || ep.status === 'featured')
+    : []
+  const seriesIndex = seriesEpisodes.findIndex(ep => ep.id === story.id)
+  const prevEpisode = seriesIndex > 0 ? seriesEpisodes[seriesIndex - 1] : undefined
+  const nextEpisode = seriesIndex >= 0 && seriesIndex < seriesEpisodes.length - 1 ? seriesEpisodes[seriesIndex + 1] : undefined
   const sourceImport = story.importedContentId ? importedContentService.get(story.importedContentId) : undefined
   const approvedRecs = recommendationService.getAll({ storyId: story.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
@@ -344,9 +356,21 @@ export function StoryDetailPage() {
           <ol className="flex items-center gap-2 text-sm font-body text-muted flex-wrap" role="list">
             <li><Link to="/" className="hover:text-primary transition-colors">Village</Link></li>
             <li aria-hidden="true" className="text-border">›</li>
-            <li><Link to="/stories" className="hover:text-primary transition-colors">Stories</Link></li>
-            <li aria-hidden="true" className="text-border">›</li>
-            <li className="text-charcoal font-medium line-clamp-1" aria-current="page">{story.title}</li>
+            {series ? (
+              <>
+                <li><Link to={`/series/${series.slug}`} className="hover:text-primary transition-colors">{series.title}</Link></li>
+                <li aria-hidden="true" className="text-border">›</li>
+                <li className="text-charcoal font-medium line-clamp-1" aria-current="page">
+                  {seriesIndex >= 0 ? `Episode ${seriesIndex + 1}: ${story.title}` : story.title}
+                </li>
+              </>
+            ) : (
+              <>
+                <li><Link to="/stories" className="hover:text-primary transition-colors">Stories</Link></li>
+                <li aria-hidden="true" className="text-border">›</li>
+                <li className="text-charcoal font-medium line-clamp-1" aria-current="page">{story.title}</li>
+              </>
+            )}
           </ol>
         </InnerContainer>
       </nav>
@@ -613,6 +637,42 @@ export function StoryDetailPage() {
                   <p className="font-body text-muted text-sm italic">Content will appear here once published.</p>
                 )}
               </section>
+
+              {/* Next episode — the binge mechanic. Only renders when this
+                  story actually belongs to a published series. */}
+              {series && (
+                <section aria-label="Series navigation" className="bg-surface border border-border rounded-2xl p-6 flex items-center justify-between gap-4 flex-wrap">
+                  <div className="min-w-0">
+                    <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-1">
+                      {series.title} · Episode {seriesIndex + 1} of {seriesEpisodes.length}
+                    </p>
+                    {nextEpisode ? (
+                      <p className="font-heading text-lg font-semibold text-charcoal truncate">Up next: {nextEpisode.title}</p>
+                    ) : (
+                      <p className="font-heading text-lg font-semibold text-charcoal">That's the whole series so far.</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {prevEpisode && (
+                      <Link to={`/stories/${prevEpisode.slug}`}
+                        className="px-4 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors">
+                        ← Previous
+                      </Link>
+                    )}
+                    {nextEpisode ? (
+                      <Link to={`/stories/${nextEpisode.slug}`}
+                        className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
+                        Next Episode →
+                      </Link>
+                    ) : (
+                      <Link to={`/series/${series.slug}`}
+                        className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
+                        View Series →
+                      </Link>
+                    )}
+                  </div>
+                </section>
+              )}
 
               {/* Other stories by this founder */}
               {otherStoriesByFounder.length > 0 && (

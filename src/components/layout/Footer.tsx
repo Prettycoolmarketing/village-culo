@@ -6,6 +6,7 @@ const sections = [
     links: [
       { to: '/',            label: 'Piazza'      },
       { to: '/stories',     label: 'Stories'     },
+      { to: '/series',      label: 'Series'      },
       { to: '/ideas',       label: 'Ideas'       },
       { to: '/map',         label: 'Map'         },
       { to: '/archive',     label: 'Archive'     },

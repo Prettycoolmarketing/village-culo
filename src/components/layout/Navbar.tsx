@@ -15,6 +15,7 @@ const primaryLinks = [
 ]
 
 const discoverLinks = [
+  { to: '/series',      label: 'Series'      },
   { to: '/ideas',       label: 'Ideas'       },
   { to: '/mercato',     label: 'Businesses'  },
   { to: '/map',         label: 'Map'         },

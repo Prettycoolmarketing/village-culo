@@ -1,4 +1,5 @@
-import { useParams, Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { normalizeUrl } from '../utils/url'
 import { getFounders } from '../services/founders'
@@ -6,6 +7,7 @@ import { getBusiness, getBusinesses } from '../services/businesses'
 import { recommendationService, publisherPartnerProfileService } from '../services/partnership'
 import { importedContentService } from '../services/importedContent'
 import { getStories } from '../services/stories'
+import { getSeriesList, getSeriesEpisodes } from '../services/series'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, getConnectedTo } from '../services/relationships'
 import { ImportedContentCard } from '../components/cards/ImportedContentCard'
@@ -180,9 +182,49 @@ function getRelatedFounders(founderId: string, industryId: string, locationId: s
 
 // ─── Founder Profile ─────────────────────────────────────────────────────────────
 
+const VISITED_FOUNDERS_KEY = 'culo_v1_visited_founders'
+
+function hasVisitedFounder(founderId: string): boolean {
+  try {
+    const raw = localStorage.getItem(VISITED_FOUNDERS_KEY)
+    return raw ? (JSON.parse(raw) as string[]).includes(founderId) : false
+  } catch {
+    return false
+  }
+}
+
+function markFounderVisited(founderId: string): void {
+  try {
+    const raw = localStorage.getItem(VISITED_FOUNDERS_KEY)
+    const ids: string[] = raw ? JSON.parse(raw) : []
+    if (!ids.includes(founderId)) localStorage.setItem(VISITED_FOUNDERS_KEY, JSON.stringify([...ids, founderId]))
+  } catch {
+    // localStorage unavailable (private browsing, etc.) — binge-redirect just
+    // won't persist across visits, nothing else depends on this.
+  }
+}
+
 export function FounderProfilePage() {
   const { slug } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
   const founder = getFounders().find(f => f.slug === slug)
+
+  // Binge-on-first-click: the very first time anyone lands on this founder's
+  // profile, and they have at least one published series with episodes, send
+  // them straight into Episode 1 instead of the profile overview. Every
+  // subsequent visit (or a direct link to a specific episode/series) behaves
+  // exactly as it always has.
+  useEffect(() => {
+    if (!founder || (founder.status !== 'published' && founder.status !== 'featured')) return
+    if (hasVisitedFounder(founder.id)) return
+    markFounderVisited(founder.id)
+    const firstSeries = getSeriesList({ founderId: founder.id, publicOnly: true })[0]
+    if (!firstSeries) return
+    const firstEpisode = getSeriesEpisodes(firstSeries.id)
+      .filter(ep => ep.status === 'published' || ep.status === 'featured')[0]
+    if (firstEpisode) navigate(`/stories/${firstEpisode.slug}`, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [founder?.id])
 
   // Pre-guard lookups — hooks must be called unconditionally before any early return
   // Business.founderId is the real ownership FK (one founder can own many
@@ -261,6 +303,14 @@ export function FounderProfilePage() {
   const featuredVideoStories = (founder.featuredVideoStoryIds ?? [])
     .map(id => getStories({ publicOnly: true }).find(s => s.id === id))
     .filter((s): s is NonNullable<typeof s> => !!s && !!s.reelUrl)
+
+  // Series — one shelf per published series this founder runs, each shown
+  // with its episodes in order. A series with zero published episodes
+  // (everything in it unpublished/draft) has nothing worth showing, so it's
+  // dropped rather than rendered as an empty shelf.
+  const founderSeriesShelves = getSeriesList({ founderId: founder.id, publicOnly: true })
+    .map(series => ({ series, episodes: getSeriesEpisodes(series.id).filter(ep => ep.status === 'published' || ep.status === 'featured') }))
+    .filter(shelf => shelf.episodes.length > 0)
 
   // ── Village Intelligence — aggregate across all content ───────────────────
   const aggregatedIntel = founderIntelRecords.length > 0 ? {
@@ -696,6 +746,49 @@ export function FounderProfilePage() {
                       </details>
                     ))}
                   </div>
+                </section>
+              )}
+
+              {/* Series — one binge-able shelf per series this founder runs. */}
+              {founderSeriesShelves.length > 0 && (
+                <section aria-labelledby="founder-series-heading" className="flex flex-col gap-10">
+                  <h2 id="founder-series-heading" className="font-heading text-2xl font-semibold text-charcoal">
+                    Series
+                  </h2>
+                  {founderSeriesShelves.map(({ series, episodes }) => (
+                    <div key={series.id}>
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <div>
+                          <Link to={`/series/${series.slug}`} className="font-heading text-lg font-semibold text-charcoal hover:text-primary transition-colors">
+                            {series.title}
+                          </Link>
+                          <p className="font-body text-sm text-muted mt-0.5">{episodes.length} episode{episodes.length === 1 ? '' : 's'}</p>
+                        </div>
+                        <Link to={`/series/${series.slug}`} className="font-body text-sm font-medium text-primary hover:text-[#b05a35] transition-colors shrink-0">
+                          See All →
+                        </Link>
+                      </div>
+                      <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
+                        {episodes.map((ep, i) => (
+                          <Link
+                            key={ep.id}
+                            to={`/stories/${ep.slug}`}
+                            className="shrink-0 w-56 group"
+                          >
+                            <div className="relative w-56 h-32 rounded-xl overflow-hidden bg-charcoal">
+                              <img src={ep.coverImage} alt="" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                              <span className="absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur-sm">
+                                Episode {i + 1}
+                              </span>
+                            </div>
+                            <p className="font-body text-sm font-medium text-charcoal mt-2 line-clamp-2 group-hover:text-primary transition-colors">
+                              {ep.title}
+                            </p>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </section>
               )}
 
