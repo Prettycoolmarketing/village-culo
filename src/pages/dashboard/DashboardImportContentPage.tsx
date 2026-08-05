@@ -495,12 +495,27 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
  * card — title, input and status all read as one unit instead of a floating
  * box underneath. */
 function ConnectedSourcesSection({ sources, isHighVolume, onChanged }: { sources: ConnectedSource[]; isHighVolume: boolean; onChanged: () => void }) {
+  const [expanded, setExpanded] = useState(false)
   if (sources.length === 0) return null
   return (
-    <div className="border-t border-[#E8E4DD] mt-4 pt-1 divide-y divide-[#F3EDE6]">
-      {sources.map(source => (
-        <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={onChanged} />
-      ))}
+    <div className="border-t border-[#E8E4DD] mt-4 pt-3">
+      <button
+        type="button"
+        onClick={() => setExpanded(e => !e)}
+        className="flex items-center gap-1.5 text-xs font-semibold text-[#6B7280] hover:text-[#C86A43] transition-colors"
+      >
+        {sources.length} connected source{sources.length === 1 ? '' : 's'}
+        <svg className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {expanded && (
+        <div className="mt-2 divide-y divide-[#F3EDE6]">
+          {sources.map(source => (
+            <ConnectedSourceRow key={source.id} source={source} isHighVolume={isHighVolume} onChanged={onChanged} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

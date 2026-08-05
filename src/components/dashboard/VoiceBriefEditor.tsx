@@ -55,22 +55,24 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Hand your brain over to your AI, then bring the brief back here. */}
-        <div className="bg-[#F8F5F0] rounded-lg p-6 flex flex-col">
-          <p className="text-sm font-semibold text-[#2D2A26] mb-1.5">Don't want to write it from scratch?</p>
-          <p className="text-sm text-[#6B7280] mb-3 leading-relaxed">
-            Copy this, hand it to whatever AI you already talk to — it'll interview you like it actually knows
-            you, then write the brief. Paste what it gives you below, or upload it as a file.
-          </p>
-          <pre className="text-xs text-[#4B4845] whitespace-pre-wrap leading-relaxed flex-1 min-h-72 max-h-[28rem] overflow-y-auto bg-white rounded-lg border border-[#E8E4DD] p-4">
-            {VOICE_BRIEF_INTERVIEW_PROMPT}
-          </pre>
-          <div className="flex items-center gap-3 mt-4">
+      {/* Small side (just enough to hand someone a prompt) next to the big
+          side (where the actual brief — the thing with real content — gets
+          pasted). Deliberately not the same width or height: one holds a
+          button, the other holds a founder's whole brief. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-stretch">
+        <div className="bg-[#F8F5F0] rounded-lg p-6 flex flex-col justify-center gap-3">
+          <div>
+            <p className="text-sm font-semibold text-[#2D2A26] mb-1">Don't want to write it from scratch?</p>
+            <p className="text-sm text-[#6B7280] leading-relaxed">
+              Copy this, hand it to whatever AI you already talk to — it'll interview you like it actually
+              knows you, then write the brief. Paste what it gives you on the right, or upload it as a file.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
               onClick={handleCopyPrompt}
-              className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+              className="text-base font-semibold px-6 py-3.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shadow-sm"
             >
               {copied ? 'Copied ✓' : 'Copy this prompt'}
             </button>
@@ -109,7 +111,7 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
             value={value ?? ''}
             onChange={e => onChange(e.target.value || undefined)}
             placeholder="Paste your Voice & Brand Brief here, or upload a file above…"
-            className={inputClass + ' resize-none font-mono text-sm flex-1 min-h-72 p-4'}
+            className={inputClass + ' resize-none font-mono text-sm flex-1 min-h-48 p-4'}
           />
         </div>
       </div>
