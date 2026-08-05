@@ -131,7 +131,7 @@ export function DashboardSeriesPage() {
 
 // ─── Series detail — rename, cover, publish toggle, episode ordering ────────
 
-function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }: {
+export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }: {
   series: Series
   founderId: string
   onBack: () => void

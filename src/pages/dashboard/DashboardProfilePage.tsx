@@ -3,8 +3,12 @@ import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-do
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder } from '../../services/founders'
-import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
-import { SavedRow, isReadyToPublish } from './DashboardImportContentPage'
+import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
+import { SavedRow, isReadyToPublish, EditForm } from './DashboardImportContentPage'
+import { SeriesDetail } from './DashboardSeriesPage'
+import { getSeriesList, createSeries, saveSeries } from '../../services/series'
+import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
+import type { ImportedContent } from '../../types/importedContent'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
@@ -100,80 +104,15 @@ function DiscoverySection({ title, description, children }: { title: string; des
   )
 }
 
-function OpportunityGroup({ title, description, items, profile, onToggle }: {
-  title: string
-  description: string
-  items: Array<{ key: keyof PublisherPartnerProfile; label: string }>
-  profile: PublisherPartnerProfile
-  onToggle: (key: keyof PublisherPartnerProfile) => void
-}) {
-  const activeCount = items.filter(i => profile[i.key] as boolean).length
-  return (
-    <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
-      <div className={`px-4 py-3 flex items-center justify-between gap-3 ${activeCount > 0 ? 'bg-[#5E6B4A]/5' : 'bg-[#F8F5F0]'}`}>
-        <div>
-          <p className="text-xs font-semibold text-[#2D2A26]">{title}</p>
-          <p className="text-xs text-[#9CA3AF] mt-0.5">{description}</p>
-        </div>
-        {activeCount > 0 && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] font-semibold shrink-0 whitespace-nowrap">
-            {activeCount} active
-          </span>
-        )}
-      </div>
-      <div className="divide-y divide-[#F3EDE6]">
-        {items.map(({ key, label }) => (
-          <div key={key} className="flex items-center justify-between gap-4 px-4 py-3">
-            <p className="text-xs text-[#4B4845]">{label}</p>
-            <button
-              onClick={() => onToggle(key)}
-              className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${(profile[key] as boolean) ? 'bg-[#5E6B4A]' : 'bg-[#E8E4DD]'}`}
-              aria-label={`Toggle ${label}`}
-            >
-              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${(profile[key] as boolean) ? 'translate-x-4' : 'translate-x-0.5'}`} />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
-const SPEAKING_OPPS = [
-  { key: 'openToSpeaking'  as const, label: 'Speaking at events and conferences' },
-  { key: 'openToPodcasts'  as const, label: 'Podcast guest appearances' },
-  { key: 'openToWorkshops' as const, label: 'Running workshops or masterclasses' },
-]
-
-const CONTENT_OPPS = [
-  { key: 'openToGuestBlogs' as const, label: 'Guest blog posts and editorial' },
-  { key: 'openToCampaigns'  as const, label: 'Brand campaign collaborations' },
-]
-
-const BUSINESS_OPPS = [
-  { key: 'openToConsulting' as const, label: 'Consulting and strategy work' },
-  { key: 'openToAdvisory'   as const, label: 'Board and advisory roles' },
-  { key: 'openToFreelance'  as const, label: 'Freelance and contract projects' },
-]
-
-const COMMUNITY_OPPS = [
-  { key: 'openToCollaboration' as const, label: 'Publisher and creator collaborations' },
-  { key: 'openToMentoring'     as const, label: 'Mentoring founders and creators' },
-  { key: 'openToAffiliates'    as const, label: 'Genuine affiliate partnerships' },
-  { key: 'openToReferrals'     as const, label: 'Business referral partnerships' },
-]
-
-function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
+function PublisherDiscoveryProfile({ founderId }: {
   founderId: string
-  founderTopics: Topic[]
-  onEditTopics: () => void
 }) {
   const [profile, setProfile] = useState<PublisherPartnerProfile>(
     () => publisherPartnerProfileService.getOrCreate(founderId)
   )
   const [saved, setSaved] = useState(false)
   const [affiliateLinks, setAffiliateLinks] = useState(() => affiliateLinkService.getAll({ founderId }))
-  const [countriesText, setCountriesText] = useState(() => (profile.countries ?? []).join(', '))
   const [newAffiliateBusinessName, setNewAffiliateBusinessName] = useState('')
   const [newAffiliateUrl, setNewAffiliateUrl] = useState('')
 
@@ -220,32 +159,6 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
     setSaved(false)
   }
 
-  function toggleP(key: keyof PublisherPartnerProfile) {
-    setProfile(prev => ({ ...prev, [key]: !(prev[key] as boolean) }))
-    setSaved(false)
-  }
-
-  function turnAllOpportunitiesOn() {
-    const allKeys = [...SPEAKING_OPPS, ...CONTENT_OPPS, ...BUSINESS_OPPS, ...COMMUNITY_OPPS].map(o => o.key)
-    setProfile(prev => {
-      const next = { ...prev } as unknown as Record<string, unknown>
-      for (const key of allKeys) next[key] = true
-      return next as unknown as PublisherPartnerProfile
-    })
-    setSaved(false)
-  }
-
-  function toggleIdealIndustry(name: string) {
-    setProfile(prev => {
-      const has = (prev.idealIndustries ?? []).includes(name)
-      const idealIndustries = has
-        ? (prev.idealIndustries ?? []).filter(i => i !== name)
-        : [...(prev.idealIndustries ?? []), name]
-      return { ...prev, idealIndustries: idealIndustries.length > 0 ? idealIndustries : undefined }
-    })
-    setSaved(false)
-  }
-
   function handleSave() {
     publisherPartnerProfileService.upsert(profile)
     setSaved(true)
@@ -259,13 +172,13 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
 
       {/* Status */}
       <DiscoverySection
-        title="Discovery Status"
-        description="Control whether CULO actively matches you with opportunities and recommendations"
+        title="Village Partner"
+        description="Join to get the Partner badge on your public profile and become eligible for collaborations across the Village."
       >
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-[#2D2A26]">Enable Discovery Profile</p>
-            <p className="text-xs text-[#9CA3AF] mt-0.5">Turn on matching — CULO will start surfacing relevant opportunities</p>
+            <p className="text-sm font-medium text-[#2D2A26]">Join the Village Partner program</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">Free to join — you can leave any time</p>
           </div>
           <button
             onClick={() => setP('enabled', !profile.enabled)}
@@ -336,43 +249,6 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
         </div>
       </DiscoverySection>
 
-      {/* For the Record */}
-      <DiscoverySection
-        title="For the Record"
-        description="Write this for CULO's matching engine and for businesses reviewing your profile, not for the public. Be specific and honest."
-      >
-        <div>
-          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">What do you want to be known for?</label>
-          <p className="text-xs text-[#9CA3AF] mb-2">Your professional focus, the problem you solve, or what you'd want a business to know before working with you</p>
-          <textarea
-            value={profile.professionalBio ?? ''}
-            onChange={e => setP('professionalBio', e.target.value || undefined)}
-            rows={4}
-            className={discoveryInputClass + ' resize-y'}
-            placeholder="I help founders tell the story behind their business, not the polished version, the real one. I've published 200+ stories about building slowly, using fewer tools better, and running businesses on your own terms."
-          />
-        </div>
-
-        {founderTopics.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-[#6B7280] mb-2">Your topics (from the Expertise tab)</p>
-            <div className="flex flex-wrap gap-1.5">
-              {founderTopics.map(t => (
-                <span key={t.id} className="px-2.5 py-1 rounded-full text-xs bg-[#C86A43]/10 text-[#C86A43] border border-[#C86A43]/20">
-                  {t.name}
-                </span>
-              ))}
-            </div>
-            <p className="text-xs text-[#9CA3AF] mt-2">
-              CULO uses these for opportunity matching.{' '}
-              <button type="button" onClick={onEditTopics} className="text-[#C86A43] underline-offset-2 hover:underline">
-                Edit in Expertise →
-              </button>
-            </p>
-          </div>
-        )}
-      </DiscoverySection>
-
       {/* What I Genuinely Use & Recommend — now primarily an affiliate link
           manager: a real affiliate link IS a genuine recommendation, and
           CULO already auto-detects the business in your stories once one
@@ -430,103 +306,9 @@ function PublisherDiscoveryProfile({ founderId, founderTopics, onEditTopics }: {
         </div>
       </DiscoverySection>
 
-      {/* Opportunities I'm Open To */}
-      <DiscoverySection
-        title="Opportunities I'm Open To"
-        description="Be selective. Only turn on what you'd genuinely say yes to. Businesses see this when deciding whether to reach out."
-      >
-        <button type="button" onClick={turnAllOpportunitiesOn}
-          className="self-start text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors">
-          Turn all on
-        </button>
-        <OpportunityGroup title="Speaking &amp; Events" description="Keynotes, podcasts, workshops, live appearances" items={SPEAKING_OPPS} profile={profile} onToggle={toggleP} />
-        <OpportunityGroup title="Content &amp; Campaigns" description="Guest posts, brand collaborations, sponsored content" items={CONTENT_OPPS} profile={profile} onToggle={toggleP} />
-        <OpportunityGroup title="Business &amp; Advisory" description="Consulting, advisory, freelance and strategy work" items={BUSINESS_OPPS} profile={profile} onToggle={toggleP} />
-        <OpportunityGroup title="Collaboration &amp; Community" description="Publisher partnerships, mentoring, referral programs" items={COMMUNITY_OPPS} profile={profile} onToggle={toggleP} />
-      </DiscoverySection>
-
-      {/* Who I Want to Connect With */}
-      <DiscoverySection title="Who I Want to Connect With" description="Click the niches you'd most like CULO to match you with — businesses in these industries see you as a fit.">
-        <div className="flex flex-wrap gap-2">
-          {[...industries.map(i => ({ id: i.id, name: i.name })), { id: 'investors', name: 'Investors' }].map(ind => {
-            const active = (profile.idealIndustries ?? []).includes(ind.name)
-            return (
-              <button
-                key={ind.id}
-                type="button"
-                onClick={() => toggleIdealIndustry(ind.name)}
-                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                  active
-                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                    : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                }`}
-              >
-                {ind.name}
-              </button>
-            )
-          })}
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#6B7280] mb-1.5 mt-1">Anything more specific? (optional)</label>
-          <textarea
-            value={profile.idealCollaborator ?? ''}
-            onChange={e => setP('idealCollaborator', e.target.value || undefined)}
-            rows={2}
-            className={discoveryInputClass + ' resize-none'}
-            placeholder="Bootstrapped, founder-led, not VC-funded."
-          />
-        </div>
-      </DiscoverySection>
-
-      {/* Locations & Markets */}
-      <DiscoverySection title="Locations &amp; Markets" description="Where can you work with businesses? Your primary location is already on your profile, add any additional markets here.">
-        <div>
-          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Markets I serve</label>
-          <p className="text-xs text-[#9CA3AF] mb-2">Countries or regions, comma separated</p>
-          <input
-            type="text"
-            value={countriesText}
-            onChange={e => {
-              setCountriesText(e.target.value)
-              const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean)
-              setP('countries', vals.length > 0 ? vals : undefined)
-            }}
-            className={discoveryInputClass}
-            placeholder="Australia, New Zealand, UK, Remote — Worldwide"
-          />
-        </div>
-      </DiscoverySection>
-
-      {/* Contact Preference */}
-      <DiscoverySection title="Contact Preference" description="How should businesses and collaborators reach out to you?">
-        <div className="flex flex-col gap-2.5">
-          {([
-            { value: 'open',             label: 'Open',             desc: 'Reach out however you prefer — email, DM, form' },
-            { value: 'direct-message',   label: 'Direct message',   desc: 'Message me through the CULO platform first' },
-            { value: 'email',            label: 'Email',            desc: 'Contact me via email' },
-            { value: 'application-form', label: 'Application form', desc: 'Complete a form before I consider it' },
-          ] as const).map(opt => (
-            <label key={opt.value} className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name={`contact-${founderId}`}
-                value={opt.value}
-                checked={(profile.contactPreference ?? 'open') === opt.value}
-                onChange={() => setP('contactPreference', opt.value)}
-                className="mt-0.5 accent-[#C86A43]"
-              />
-              <div>
-                <p className="text-sm font-medium text-[#2D2A26]">{opt.label}</p>
-                <p className="text-xs text-[#9CA3AF]">{opt.desc}</p>
-              </div>
-            </label>
-          ))}
-        </div>
-      </DiscoverySection>
-
       <div className="flex items-center gap-3">
         <button onClick={handleSave} className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
-          Save Opportunity Matching
+          Save
         </button>
         {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
       </div>
@@ -993,6 +775,9 @@ export function DashboardProfilePage() {
     searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId') ? 'published' : 'imported'
   )
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
+  const [editingImportedId, setEditingImportedId] = useState<string | null>(null)
+  const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
+  const [importedSaveError, setImportedSaveError] = useState<string | null>(null)
   const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>(
     () => (searchParams.get('platform') as ImportedContentPlatform | null) ?? 'all'
   )
@@ -1001,6 +786,8 @@ export function DashboardProfilePage() {
   const [importedTick, setImportedTick] = useState(0)
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
   const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
+  const [publishedView, setPublishedView] = useState<'stories' | 'series'>('stories')
+  const [activeSeriesId, setActiveSeriesId] = useState<string | null>(null)
   const [, forceBusinessRefresh] = useState(0)
 
   // A recommendation link can point back at this same page with new query
@@ -1384,11 +1171,7 @@ export function DashboardProfilePage() {
           const allImportedForStats = importedContentService.getAll({ founderId: draft.id })
           const statsPlatforms = Array.from(new Set(allImportedForStats.map(i => i.sourcePlatform)))
           return (
-          <div className="max-w-6xl flex flex-col gap-5">
-            <TabIntro>
-              Everything you've brought into the Village, and everything you've published from it — in one place.
-            </TabIntro>
-
+          <div className="flex flex-col gap-5">
             {/* Real counts only — no invented "storage used" or "last scan"
                 stats, just what's actually in this founder's own content. */}
             <div className="flex flex-wrap gap-4">
@@ -1530,8 +1313,37 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
+              function handleOpenAdvancedEdit(id: string) {
+                const item = importedContentService.get(id)
+                if (!item) return
+                setImportedSaveError(null)
+                setImportedEditDraft(item)
+                setEditingImportedId(id)
+              }
+
+              function handleCancelAdvancedEdit() {
+                setEditingImportedId(null)
+                setImportedEditDraft(null)
+              }
+
+              async function handleSaveAdvancedEdit() {
+                if (!importedEditDraft) return
+                setImportedSaveError(null)
+                const result = await importedContentService.upsert(importedEditDraft)
+                if (!result.success) {
+                  setImportedSaveError(result.error ?? 'Save failed. Please try again.')
+                  return
+                }
+                const input = importedContentToInput(importedEditDraft)
+                const intel = villageContentIntelligenceService.analyse(input)
+                void villageContentIntelligenceService.upsert(intel)
+                if (importedEditDraft.relatedStoryId) await syncImportEditsToStory(importedEditDraft)
+                handleCancelAdvancedEdit()
+                refreshImported()
+              }
+
               return (
-                <div>
+                <div className="flex gap-6 items-start"><div className="flex-1 min-w-0">
                   {platforms.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       <button onClick={() => setImportedPlatformFilter('all')}
@@ -1609,13 +1421,37 @@ export function DashboardProfilePage() {
                           item={item}
                           checked={importedChecked.has(item.id)}
                           onToggleCheck={() => toggleImportedChecked(item.id)}
-                          onAdvancedEdit={() => navigate(`/dashboard/import-content?edit=${item.id}`)}
+                          onAdvancedEdit={() => handleOpenAdvancedEdit(item.id)}
                           onDelete={() => handleImportedDelete(item.id)}
                           onStatusChange={status => void handleImportedStatusChange(item.id, status)}
                         />
                       ))}
                     </div>
                   )}
+                </div>
+                {editingImportedId && importedEditDraft && (
+                  <div className="w-full max-w-xl shrink-0 bg-white rounded-xl border border-[#E8E4DD] p-5 sticky top-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+                      <button
+                        onClick={handleCancelAdvancedEdit}
+                        aria-label="Close"
+                        className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    {importedSaveError && <p className="text-sm text-red-600 font-medium mb-2">{importedSaveError}</p>}
+                    <EditForm
+                      draft={importedEditDraft}
+                      onChange={setImportedEditDraft}
+                      onSave={() => void handleSaveAdvancedEdit()}
+                      onCancel={handleCancelAdvancedEdit}
+                    />
+                  </div>
+                )}
                 </div>
               )
             })()}
@@ -1636,9 +1472,70 @@ export function DashboardProfilePage() {
               const sortedStories = [...founderStories].sort((a, b) =>
                 publishedSort === 'newest' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
               )
+              const founderSeries = getSeriesList({ founderId: draft.id })
+              const activeSeries = activeSeriesId ? founderSeries.find(s => s.id === activeSeriesId) : undefined
+
+              async function handleAddSeries() {
+                const title = window.prompt('Name this series — e.g. Van Life')
+                if (!title || !title.trim()) return
+                const series = createSeries(draft!.id, title.trim())
+                const result = await saveSeries(series)
+                if (result.success) { setActiveSeriesId(series.id); setImportedTick(t => t + 1) }
+              }
+
               return (
                 <div>
-                  {founderStories.length === 0 ? (
+                  <div className="flex gap-2 mb-4">
+                    <button onClick={() => setPublishedView('stories')}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                        publishedView === 'stories' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                      }`}>
+                      Stories
+                    </button>
+                    <button onClick={() => setPublishedView('series')}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                        publishedView === 'series' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                      }`}>
+                      Series
+                    </button>
+                  </div>
+
+                  {publishedView === 'series' ? (
+                    <div className="flex flex-col gap-5">
+                      <div className="flex flex-wrap gap-2">
+                        {founderSeries.map(s => (
+                          <button key={s.id} onClick={() => setActiveSeriesId(s.id)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                              activeSeriesId === s.id ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                            }`}>
+                            {s.title || 'Untitled series'}
+                          </button>
+                        ))}
+                        <button onClick={() => void handleAddSeries()}
+                          className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-dashed border-[#E8E4DD] text-[#C86A43] hover:border-[#C86A43]/50 transition-colors">
+                          + New Series
+                        </button>
+                      </div>
+
+                      {activeSeries ? (
+                        <SeriesDetail
+                          key={activeSeries.id}
+                          series={activeSeries}
+                          founderId={draft.id}
+                          onBack={() => setActiveSeriesId(null)}
+                          onChanged={() => setImportedTick(t => t + 1)}
+                          onDeleted={() => setActiveSeriesId(null)}
+                        />
+                      ) : founderSeries.length === 0 ? (
+                        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                          <p className="text-sm font-semibold text-[#2D2A26]">No series yet.</p>
+                          <p className="text-xs text-[#9CA3AF] mt-1">Start one above — name it, then add your published stories as episodes.</p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-[#9CA3AF]">Pick a series above to manage it.</p>
+                      )}
+                    </div>
+                  ) : founderStories.length === 0 ? (
                     <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
                       <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
                       <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
@@ -1773,15 +1670,11 @@ export function DashboardProfilePage() {
         {tab === 'discovery' && (
           <div className="max-w-2xl flex flex-col gap-5">
             <TabIntro>
-              This is how CULO matches you to businesses, speaking invites and collaborations, based on
-              what you're genuinely open to.
+              Join the Village Partner program, link the brands you genuinely use, and set up your own
+              affiliate program and pitch so other founders can promote you.
             </TabIntro>
 
-            <PublisherDiscoveryProfile
-              founderId={draft.id}
-              founderTopics={draft.topics ?? []}
-              onEditTopics={() => setTab('expertise')}
-            />
+            <PublisherDiscoveryProfile founderId={draft.id} />
 
             {founderBusinesses.length > 0 && (() => {
               const activeBizId = discoveryBizId && founderBusinesses.some(b => b.id === discoveryBizId)

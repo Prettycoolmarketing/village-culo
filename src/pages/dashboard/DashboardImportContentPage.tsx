@@ -1122,7 +1122,7 @@ interface EditFormProps {
   onCancel: () => void
 }
 
-function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
+export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   const businesses = getBusinesses()
   const activePartners = partnerService.getAll({ status: 'active' })
   const [transcriptFlash, setTranscriptFlash] = useState(false)
