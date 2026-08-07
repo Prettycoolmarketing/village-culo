@@ -44,23 +44,40 @@ export function CreativesPage() {
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="bg-charcoal pt-28 pb-20 relative overflow-hidden">
         <InnerContainer>
-          <div className="max-w-3xl relative">
-            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-              Coming soon · Exclusively in Canva
-            </p>
-            <h1 className="font-heading text-4xl sm:text-6xl font-bold text-white mb-6 leading-tight">
-              CULO Creatives is coming to Canva.
-            </h1>
-            <p className="font-body text-lg sm:text-xl text-white/70 leading-relaxed mb-8 max-w-2xl">
-              The Canva editing app that turns your raw footage and messy thoughts into blogs, carousels and
-              reels — without ever leaving Canva. Built for founders who aren't short on ideas, just short
-              on time.
-            </p>
-            <div className="max-w-md">
-              <WaitlistForm source="creatives-hero" dark />
-              <p className="font-body text-xs text-white/40 mt-3">
-                We hate spam. Your email stays private — we'll only email you when it's ready.
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+                Coming soon · Exclusively in Canva
               </p>
+              <h1 className="font-heading text-4xl sm:text-6xl font-bold text-white mb-6 leading-tight">
+                CULO Creatives is coming to Canva.
+              </h1>
+              <p className="font-body text-lg sm:text-xl text-white/70 leading-relaxed mb-8 max-w-2xl">
+                The Canva editing app that turns your raw footage and messy thoughts into blogs, carousels and
+                reels — without ever leaving Canva. Built for founders who aren't short on ideas, just short
+                on time.
+              </p>
+              <div className="max-w-md">
+                <WaitlistForm source="creatives-hero" dark />
+                <p className="font-body text-xs text-white/40 mt-3">
+                  We hate spam. Your email stays private — we'll only email you when it's ready.{' '}
+                  <a
+                    href="https://www.prettycoolmarketing.com/culo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/60 underline underline-offset-2 hover:text-white transition-colors"
+                  >
+                    Watch the demo →
+                  </a>
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <img
+                src="https://d1yei2z3i6k35z.cloudfront.net/9196234/69605be390dad_5SeasideTownsinItaly.webp"
+                alt="A founder telling their real story, the kind of raw footage CULO Creatives turns into publish-ready content"
+                className="w-full aspect-[4/3] object-cover rounded-3xl"
+              />
             </div>
           </div>
         </InnerContainer>
@@ -121,18 +138,28 @@ export function CreativesPage() {
       </section>
 
       {/* ── Problem / solution ────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20" aria-labelledby="freedom-heading">
         <InnerContainer>
-          <div className="bg-charcoal rounded-3xl px-8 py-14 md:px-16 md:py-16 text-center">
-            <p className="font-heading text-2xl sm:text-3xl text-white/80 leading-snug max-w-2xl mx-auto mb-3">
-              Most founders aren't short on ideas.
-            </p>
-            <h2 className="font-heading text-3xl sm:text-5xl font-bold text-white leading-tight max-w-3xl mx-auto mb-8">
-              They're short on time. Stop working yourself into the ground just to show up on social media.
-            </h2>
-            <div className="max-w-md mx-auto">
-              <WaitlistForm source="creatives-problem-solution" dark />
+          <div className="bg-charcoal rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 items-center">
+            <div className="px-8 py-14 md:px-16 md:py-16">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+                Have more freedom
+              </p>
+              <p className="font-heading text-xl sm:text-2xl text-white/80 leading-snug mb-3">
+                Most founders aren't short on ideas.
+              </p>
+              <h2 id="freedom-heading" className="font-heading text-3xl sm:text-4xl font-bold text-white leading-tight mb-8">
+                They're short on time. Stop working yourself into the ground just to show up on social media.
+              </h2>
+              <div className="max-w-md">
+                <WaitlistForm source="creatives-problem-solution" dark />
+              </div>
             </div>
+            <img
+              src="https://d1yei2z3i6k35z.cloudfront.net/9196234/69133710b9de8_6cb2e91d97660f3581a9b04a089d6263.jpg"
+              alt="A founder with more freedom, having handed their content creation over to CULO Creatives"
+              className="w-full h-full min-h-64 object-cover"
+            />
           </div>
         </InnerContainer>
       </section>
