@@ -25,18 +25,15 @@ import {
   villageContentIntelligenceService,
   importedContentToInput,
 } from '../../services/villageIntelligence'
-import { connectedSourcesService, newConnectedSource, scanSource, importSelectedPodcastEpisodes } from '../../services/connectedSources'
+import { connectedSourcesService, newConnectedSource, scanSource } from '../../services/connectedSources'
 import { resolveChannelId } from '../../services/connectors/youtube'
-import { fetchPodcastFeed, type PodcastFeedShow, type PodcastFeedEpisode } from '../../services/connectors/podcastRss'
-import { resolvePodcast, type PodcastCandidate } from '../../services/podcastResolve'
 import { resolveEpisode, type ResolvedEpisode } from '../../services/episodeResolve'
 import { resolveWebsiteFeed, type WebsiteFeedCandidate } from '../../services/websiteResolve'
 import type {
   ImportedContent,
   ImportedContentStatus,
 } from '../../types/importedContent'
-import type { ConnectedSource, ConnectedSourceType, PodcastSourceMeta } from '../../types/connectedSource'
-import type { NormalizedImportItem } from '../../services/connectors/types'
+import type { ConnectedSource, ConnectedSourceType } from '../../types/connectedSource'
 import type { FAQ } from '../../types'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
 
@@ -81,148 +78,11 @@ const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
 }
 
 // ─── Connect a podcast ────────────────────────────────────────────────────────
-// Guided resolution (URL or name → confirm → full episode catalogue → pick
-// episodes) instead of requiring the founder to find their own RSS feed.
-// Manual RSS entry is still reachable as the explicit fallback (spec: "do
-// not leave the user at a generic error screen"), never the default path.
-
-type PodcastPanelStep = 'input' | 'resolving' | 'candidates' | 'manual' | 'connecting' | 'episodes' | 'importing'
+// Single-episode only (see EpisodeEmbedPanel below) — the whole-feed
+// resolve-by-URL-or-name flow never reliably found a real feed, so it's
+// gone rather than left as a broken "Find my podcast" button.
 
 function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
-  const [step, setStep] = useState<PodcastPanelStep>('input')
-  const [input, setInput] = useState('')
-  const [candidates, setCandidates] = useState<PodcastCandidate[]>([])
-  const [manualMessage, setManualMessage] = useState<string | null>(null)
-  const [manualFeedUrl, setManualFeedUrl] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [connectedSource, setConnectedSource] = useState<ConnectedSource | null>(null)
-  const [show, setShow] = useState<PodcastFeedShow | null>(null)
-  const [episodes, setEpisodes] = useState<PodcastFeedEpisode[]>([])
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [episodeSearch, setEpisodeSearch] = useState('')
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
-  const [doneCount, setDoneCount] = useState<number | null>(null)
-
-  function reset() {
-    setStep('input'); setInput(''); setCandidates([]); setManualMessage(null); setManualFeedUrl('')
-    setError(null); setConnectedSource(null); setShow(null); setEpisodes([]); setSelected(new Set())
-    setEpisodeSearch(''); setDoneCount(null)
-  }
-
-  async function handleFind() {
-    if (!input.trim()) return
-    setStep('resolving')
-    setError(null)
-    try {
-      const result = await resolvePodcast(input)
-      if (result.status === 'candidates') {
-        setCandidates(result.candidates)
-        setStep('candidates')
-      } else if (result.status === 'manual-required') {
-        setManualMessage(result.message)
-        setStep('manual')
-      } else {
-        setError(result.message)
-        setStep('manual')
-        setManualMessage(null)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not resolve this podcast.')
-      setStep('manual')
-    }
-  }
-
-  async function connectFromFeed(feedUrl: string, meta: Partial<PodcastSourceMeta> | undefined, connectionMethod: ConnectedSource['connectionMethod']) {
-    setStep('connecting')
-    setError(null)
-    try {
-      const { show: fetchedShow, episodes: fetchedEpisodes } = await fetchPodcastFeed(feedUrl)
-      const label = meta?.title || fetchedShow.title
-      const source = newConnectedSource(founderId, 'podcast-rss', label, { feedUrl })
-      source.podcast = {
-        title: fetchedShow.title,
-        description: fetchedShow.description,
-        artworkUrl: meta?.artworkUrl ?? fetchedShow.artworkUrl,
-        author: fetchedShow.author,
-        website: fetchedShow.website,
-        language: fetchedShow.language,
-        categories: fetchedShow.categories,
-        feedLastBuildDate: fetchedShow.lastBuildDate,
-        appleId: meta?.appleId,
-        appleUrl: meta?.appleUrl,
-        spotifyUrl: meta?.spotifyUrl,
-      }
-      source.connectionMethod = connectionMethod
-      if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
-      await connectedSourcesService.upsert(source)
-      setConnectedSource(source)
-      setShow(fetchedShow)
-      setEpisodes(fetchedEpisodes)
-      setStep('episodes')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not connect this podcast.')
-      setStep('manual')
-    }
-  }
-
-  async function handleConfirm(candidate: PodcastCandidate) {
-    await connectFromFeed(candidate.feedUrl, {
-      title: candidate.title,
-      artworkUrl: candidate.artworkUrl,
-      appleId: candidate.appleId,
-      appleUrl: candidate.appleUrl,
-      spotifyUrl: candidate.spotifyUrl,
-    }, candidate.connectionMethod)
-  }
-
-  async function handleManualConnect() {
-    if (!manualFeedUrl.trim()) return
-    await connectFromFeed(manualFeedUrl.trim(), undefined, 'manual')
-  }
-
-  function toggleEpisode(key: string) {
-    setSelected(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key); else next.add(key)
-      return next
-    })
-  }
-
-  const filteredEpisodes = episodes
-    .filter(ep => !episodeSearch.trim() || ep.title.toLowerCase().includes(episodeSearch.trim().toLowerCase()))
-    .sort((a, b) => {
-      const da = a.publishedAt ? new Date(a.publishedAt).getTime() : 0
-      const db = b.publishedAt ? new Date(b.publishedAt).getTime() : 0
-      return sortOrder === 'newest' ? db - da : da - db
-    })
-
-  async function handleImportSelected() {
-    if (!connectedSource || selected.size === 0) return
-    setStep('importing')
-    const chosen = episodes.filter(ep => selected.has(ep.episodeGuid || ep.originalUrl))
-    const items: NormalizedImportItem[] = chosen.map(ep => ({
-      originalUrl: ep.originalUrl,
-      title: ep.title,
-      description: ep.description,
-      thumbnailUrl: ep.thumbnailUrl ?? show?.artworkUrl,
-      publishedAt: ep.publishedAt,
-      episodeGuid: ep.episodeGuid,
-      enclosureUrl: ep.enclosureUrl,
-      enclosureType: ep.enclosureType,
-      durationSeconds: ep.durationSeconds,
-      episodeNumber: ep.episodeNumber,
-      seasonNumber: ep.seasonNumber,
-      episodeKind: ep.episodeKind,
-      explicit: ep.explicit,
-      showNotes: ep.showNotes,
-      chapters: ep.chapters,
-      podcastTitle: show?.title,
-    }))
-    const result = await importSelectedPodcastEpisodes(connectedSource, items)
-    setDoneCount(result.imported)
-    onConnected()
-  }
-
   return (
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
       <div className="flex items-center gap-4 mb-2">
@@ -230,158 +90,22 @@ function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: 
         <p className="text-base font-semibold text-[#2D2A26]">Import your podcast content</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Paste your Spotify, Apple Podcasts, website or RSS URL — or just the podcast name — and Village will find the show and its episode catalogue.
+        Paste a link to one Spotify or Apple Podcasts episode — no feed, no whole-catalogue connection, just
+        one episode at a time. Village embeds the player and you write the blog.
       </p>
 
-      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
-
-      {step === 'input' && (
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input type="text" value={input} onChange={e => setInput(e.target.value)}
-            placeholder="Podcast URL or name"
-            className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
-          <button onClick={() => void handleFind()} disabled={!input.trim()}
-            className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
-            Find my podcast
-          </button>
-        </div>
-      )}
-
-      {step === 'resolving' && <p className="text-xs text-[#9CA3AF]">Looking for your podcast…</p>}
-      {step === 'connecting' && <p className="text-xs text-[#9CA3AF]">Connecting and reading the episode catalogue…</p>}
-      {step === 'importing' && <p className="text-xs text-[#9CA3AF]">Importing selected episodes…</p>}
-
-      {step === 'candidates' && (
-        <div>
-          <div className="space-y-2 mb-3">
-            {candidates.map((c, i) => (
-              <div key={i} className="flex items-start gap-3 border border-[#E8E4DD] rounded-lg p-3">
-                {c.artworkUrl && <img src={c.artworkUrl} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />}
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#2D2A26] truncate">{c.title}</p>
-                  {c.author && <p className="text-xs text-[#9CA3AF]">{c.author}</p>}
-                  {c.description && <p className="text-xs text-[#6B7280] mt-1 line-clamp-2">{c.description}</p>}
-                  <p className="text-[10px] text-[#9CA3AF] mt-1">
-                    {c.episodeCount !== undefined ? `${c.episodeCount} episodes` : ''}
-                    {c.latestEpisodeDate ? ` · latest ${new Date(c.latestEpisodeDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}
-                  </p>
-                </div>
-                <button onClick={() => void handleConfirm(c)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shrink-0">
-                  Confirm and connect
-                </button>
-              </div>
-            ))}
-          </div>
-          <button onClick={() => { setStep('manual'); setManualMessage(null) }} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
-            None of these — enter RSS feed manually
-          </button>
-        </div>
-      )}
-
-      {step === 'manual' && (
-        <div>
-          {manualMessage && <p className="text-xs text-amber-700 mb-3">{manualMessage}</p>}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <input type="url" value={manualFeedUrl} onChange={e => setManualFeedUrl(e.target.value)}
-              placeholder="https://yourpodcast.com/feed.xml"
-              className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
-            <button onClick={() => void handleManualConnect()} disabled={!manualFeedUrl.trim()}
-              className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
-              Connect
-            </button>
-          </div>
-          <button onClick={reset} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors mt-2">
-            Start over
-          </button>
-        </div>
-      )}
-
-      {step === 'episodes' && (
-        <div>
-          <div className="flex items-center gap-3 mb-3">
-            {show?.artworkUrl && <img src={show.artworkUrl} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />}
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#2D2A26] truncate">{show?.title}</p>
-              <p className="text-xs text-[#9CA3AF]">{episodes.length} episodes found — pick which ones to bring in</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2 mb-3">
-            <input type="text" value={episodeSearch} onChange={e => setEpisodeSearch(e.target.value)}
-              placeholder="Search episodes…"
-              className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]" />
-            <select value={sortOrder} onChange={e => setSortOrder(e.target.value as 'newest' | 'oldest')}
-              className="px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white">
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-            </select>
-            <button onClick={() => setSelected(new Set(filteredEpisodes.map(ep => ep.episodeGuid || ep.originalUrl)))}
-              className="text-xs font-semibold px-3 py-2 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors shrink-0">
-              Select all visible
-            </button>
-          </div>
-
-          <div className="max-h-96 overflow-y-auto space-y-1.5 mb-3">
-            {filteredEpisodes.map(ep => {
-              const key = ep.episodeGuid || ep.originalUrl
-              const isSelected = selected.has(key)
-              return (
-                <label key={key} className={`flex items-start gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-[#C86A43] bg-[#C86A43]/5' : 'border-[#E8E4DD]'}`}>
-                  <input type="checkbox" checked={isSelected} onChange={() => toggleEpisode(key)} className="mt-1 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-[#2D2A26] truncate">{ep.title}</p>
-                    <p className="text-[10px] text-[#9CA3AF] mt-0.5">
-                      {ep.publishedAt ? new Date(ep.publishedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
-                      {ep.durationSeconds ? ` · ${Math.round(ep.durationSeconds / 60)} min` : ''}
-                      {ep.episodeNumber ? ` · Ep ${ep.episodeNumber}` : ''}
-                    </p>
-                    {ep.description && <p className="text-[10px] text-[#6B7280] mt-1 line-clamp-1">{ep.description}</p>}
-                  </div>
-                </label>
-              )
-            })}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button onClick={() => void handleImportSelected()} disabled={selected.size === 0}
-              className="px-4 py-2 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors">
-              Import {selected.size > 0 ? selected.size : ''} selected episode{selected.size === 1 ? '' : 's'}
-            </button>
-            <button onClick={reset} className="text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {doneCount !== null && (
-        <div className="mt-3 flex items-center justify-between">
-          <p className="text-xs text-[#5E6B4A] font-medium">
-            Added {doneCount} episode{doneCount === 1 ? '' : 's'} to Imported Content — private until you review and publish.
-          </p>
-          <button onClick={reset} className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0">
-            Connect another podcast
-          </button>
-        </div>
-      )}
+      <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
 
       <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />
-
-      <div className="border-t border-[#E8E4DD] mt-5 pt-4">
-        <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
-      </div>
     </div>
   )
 }
 
-// ─── Add a single episode (no RSS) ───────────────────────────────────────────
-// The RSS-free complement to "Connect your podcast channel" above — one
-// Spotify or Apple Podcasts episode link, a real embedded player, and the
-// founder writes their own blog. No catalogue, no feed, just like a single
-// YouTube video or website article import. Nested inside the same card
-// rather than its own box, since it's the same "podcast" job, just a
-// lighter-weight path.
+// ─── Add a single podcast episode ────────────────────────────────────────────
+// One Spotify or Apple Podcasts episode link, a real embedded player, and the
+// founder writes their own blog — no RSS feed, no whole-catalogue connect
+// (that flow never reliably resolved a feed from a bare URL/name, so it was
+// removed rather than left half-working).
 
 type EpisodePanelStep = 'input' | 'resolving' | 'review'
 
@@ -436,11 +160,6 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
 
   return (
     <div>
-      <p className="text-sm font-semibold text-[#2D2A26] mb-1">Or add a single episode</p>
-      <p className="text-xs text-[#9CA3AF] mb-3">
-        Paste a link to one Spotify or Apple Podcasts episode — no feed needed. Village embeds the player and you write the blog.
-      </p>
-
       {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
 
       {step === 'input' && (
@@ -1921,14 +1640,12 @@ export function DashboardImportContentPage() {
 
           <p className="text-sm font-semibold text-[#2D2A26] mb-3">Bring in your content</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
-            <div ref={canvaCardRef}>
-              <CanvaImportCard
-                founderId={founderId}
-                expanded={canvaExpanded}
-                onExpandedChange={setCanvaExpanded}
-                onImported={() => reportImported(1)}
-              />
-            </div>
+            <YouTubeConnectForm
+              founderId={founderId}
+              isHighVolume={isHighVolume}
+              sources={sources.filter(s => s.sourceType === 'youtube')}
+              onConnected={() => { loadSources(); reportImported(1) }}
+            />
 
             <div ref={instagramCardRef}>
               <InstagramArchiveImportCard
@@ -1942,19 +1659,21 @@ export function DashboardImportContentPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <YouTubeConnectForm
-              founderId={founderId}
-              isHighVolume={isHighVolume}
-              sources={sources.filter(s => s.sourceType === 'youtube')}
-              onConnected={() => { loadSources(); reportImported(1) }}
-            />
-
             <WebsiteConnectForm
               founderId={founderId}
               isHighVolume={isHighVolume}
               sources={sources.filter(s => s.sourceType === 'website-rss')}
               onConnected={() => { loadSources(); reportImported(1) }}
             />
+
+            <div ref={canvaCardRef}>
+              <CanvaImportCard
+                founderId={founderId}
+                expanded={canvaExpanded}
+                onExpandedChange={setCanvaExpanded}
+                onImported={() => reportImported(1)}
+              />
+            </div>
 
             <PodcastConnectPanel
               founderId={founderId}
