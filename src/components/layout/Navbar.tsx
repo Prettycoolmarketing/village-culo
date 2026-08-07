@@ -10,6 +10,7 @@ import { SearchInput } from '../ui/SearchInput'
 // internal links rather than the navbar, same as any large content site.
 const primaryLinks = [
   { to: '/',           label: 'Piazza',     exact: true  },
+  { to: '/creatives',  label: 'Creatives',  exact: false },
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/mercato',    label: 'Businesses', exact: false },
   { to: '/series',     label: 'Series',     exact: false },
@@ -206,6 +207,12 @@ export function Navbar() {
           {/* Desktop CTA */}
           {!loading && (
             <div className="hidden lg:flex items-center gap-4">
+              <Link
+                to="/creatives"
+                className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
+              >
+                CULO Creatives
+              </Link>
               {user ? (
                 <>
                   <Link
@@ -216,7 +223,7 @@ export function Navbar() {
                   </Link>
                   <Link
                     to="/dashboard/publish"
-                    className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
+                    className="whitespace-nowrap px-4 py-2 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1815] transition-colors"
                   >
                     Publish
                   </Link>
@@ -231,7 +238,7 @@ export function Navbar() {
                   </Link>
                   <Link
                     to="/onboarding"
-                    className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
+                    className="whitespace-nowrap px-4 py-2 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1815] transition-colors"
                   >
                     Become a Publisher
                   </Link>
@@ -304,6 +311,13 @@ export function Navbar() {
               </NavLink>
             ))}
             <div className="pt-3 border-t border-border mt-3 flex flex-col gap-2">
+              <Link
+                to="/creatives"
+                onClick={() => setMobileOpen(false)}
+                className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
+              >
+                CULO Creatives
+              </Link>
               {!loading && (user ? (
                 <>
                   <Link
@@ -316,7 +330,7 @@ export function Navbar() {
                   <Link
                     to="/dashboard/publish"
                     onClick={() => setMobileOpen(false)}
-                    className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
+                    className="block px-3 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl text-center hover:bg-[#1a1815] transition-colors"
                   >
                     Publish
                   </Link>
@@ -333,7 +347,7 @@ export function Navbar() {
                   <Link
                     to="/onboarding"
                     onClick={() => setMobileOpen(false)}
-                    className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
+                    className="block px-3 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl text-center hover:bg-[#1a1815] transition-colors"
                   >
                     Become a Publisher
                   </Link>

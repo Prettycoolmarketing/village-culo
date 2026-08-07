@@ -602,6 +602,9 @@ export function ArchivePage() {
             <div className="max-w-sm mx-auto">
               <WaitlistForm source="archive-page" dark />
             </div>
+            <Link to="/creatives" className="inline-block mt-4 text-xs font-medium text-white/50 hover:text-white/80 transition-colors">
+              Learn more about CULO Creatives →
+            </Link>
           </div>
         </InnerContainer>
       </section>

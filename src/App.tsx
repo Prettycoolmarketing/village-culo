@@ -20,6 +20,7 @@ import { getBusiness }          from './services/businesses'
 
 // ─── Public pages ───────────────────────────────────────────────────────────────
 import { VillagePage }        from './pages/VillagePage'
+import { CreativesPage }      from './pages/CreativesPage'
 import { FoundersPage }       from './pages/FoundersPage'
 import { FounderProfilePage } from './pages/FounderProfilePage'
 import { StoriesPage }        from './pages/StoriesPage'
@@ -214,6 +215,7 @@ export default function App() {
           {/* ── Public site (with Navbar + Footer) ────────────────────────── */}
           <Route element={<PublicLayout />}>
             <Route path="/"                   element={<VillagePage />}          />
+            <Route path="/creatives"          element={<CreativesPage />}        />
             <Route path="/piazza"             element={<Navigate to="/" replace />}      />
             <Route path="/founders"           element={<FoundersPage />}         />
             <Route path="/founders/:slug"     element={<FounderProfilePage />}   />

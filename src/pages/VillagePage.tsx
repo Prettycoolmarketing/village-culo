@@ -131,7 +131,7 @@ export function VillagePage() {
             heading="Featured Founders"
             subheading="Meet the people behind the knowledge."
             action={{ label: 'All Founders', href: '/founders' }}
-            filter={{ publicOnly: true, featured: true, limit: 3 }}
+            filter={{ publicOnly: true, featured: true, limit: 4 }}
             fallbackToPublic
             columns={2}
             cardVariant="default"
@@ -143,7 +143,7 @@ export function VillagePage() {
             heading="Businesses"
             subheading="Discover businesses through the stories and ideas behind them."
             action={{ label: 'Browse Businesses', href: '/mercato' }}
-            filter={{ publicOnly: true, featured: true, limit: 3 }}
+            filter={{ publicOnly: true, featured: true, limit: 4 }}
             fallbackToPublic
             columns={2}
             cardVariant="default"

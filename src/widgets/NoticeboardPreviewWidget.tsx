@@ -28,13 +28,7 @@ export function NoticeboardPreviewWidget({
 
       {events.length === 0 ? (
         <div className="text-center py-10">
-          <p className="font-body text-muted text-sm mb-4">Nothing on the noticeboard yet. Check back soon.</p>
-          <Link
-            to="/onboarding"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
-          >
-            Become a member
-          </Link>
+          <p className="font-body text-muted text-sm">Nothing on the noticeboard yet. Check back soon.</p>
         </div>
       ) : (
         <div
