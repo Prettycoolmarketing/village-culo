@@ -53,7 +53,6 @@ import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPag
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
-import { DashboardSeriesPage }        from './pages/dashboard/DashboardSeriesPage'
 import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
 import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
@@ -188,7 +187,8 @@ export default function App() {
             <Route path="media"          element={<DashboardMediaPage />}        />
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
             <Route path="import-content" element={<DashboardImportContentPage />}/>
-            <Route path="series"         element={<DashboardSeriesPage />}       />
+            {/* Series management moved into Profile's Content tab (Published > Series) — one spot to manage it */}
+            <Route path="series"         element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=published" replace />} />
             <Route path="canva/callback" element={<DashboardCanvaCallbackPage />}/>
             <Route path="opportunities"  element={<DashboardPartnershipPage />}  />
             <Route path="revenue"           element={<DashboardRevenuePage />}         />

@@ -266,7 +266,7 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
+    <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-8 h-full">
       <div className="flex items-center gap-4 mb-2">
         <SourceIcon platform="youtube" size="lg" />
         <p className="text-base font-semibold text-[#2D2A26]">Import your YouTube content</p>
@@ -1639,7 +1639,7 @@ export function DashboardImportContentPage() {
           )}
 
           <p className="text-sm font-semibold text-[#2D2A26] mb-3">Bring in your content</p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
             <YouTubeConnectForm
               founderId={founderId}
               isHighVolume={isHighVolume}
@@ -1647,33 +1647,35 @@ export function DashboardImportContentPage() {
               onConnected={() => { loadSources(); reportImported(1) }}
             />
 
-            <div ref={instagramCardRef}>
-              <InstagramArchiveImportCard
-                founderId={founderId}
-                voiceBrief={founder?.voiceBrief}
-                expanded={instagramExpanded}
-                onExpandedChange={setInstagramExpanded}
-                onImported={count => reportImported(count)}
-              />
+            <div className="flex flex-col gap-6">
+              <div ref={instagramCardRef}>
+                <InstagramArchiveImportCard
+                  founderId={founderId}
+                  voiceBrief={founder?.voiceBrief}
+                  expanded={instagramExpanded}
+                  onExpandedChange={setInstagramExpanded}
+                  onImported={count => reportImported(count)}
+                />
+              </div>
+
+              <div ref={canvaCardRef}>
+                <CanvaImportCard
+                  founderId={founderId}
+                  expanded={canvaExpanded}
+                  onExpandedChange={setCanvaExpanded}
+                  onImported={() => reportImported(1)}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
             <WebsiteConnectForm
               founderId={founderId}
               isHighVolume={isHighVolume}
               sources={sources.filter(s => s.sourceType === 'website-rss')}
               onConnected={() => { loadSources(); reportImported(1) }}
             />
-
-            <div ref={canvaCardRef}>
-              <CanvaImportCard
-                founderId={founderId}
-                expanded={canvaExpanded}
-                onExpandedChange={setCanvaExpanded}
-                onImported={() => reportImported(1)}
-              />
-            </div>
 
             <PodcastConnectPanel
               founderId={founderId}

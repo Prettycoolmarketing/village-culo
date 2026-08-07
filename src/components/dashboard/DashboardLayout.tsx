@@ -157,20 +157,6 @@ export function DashboardLayout() {
           </NavLink>
 
           <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Everything you've imported and published, in one place" />
-
-          <NavLink
-            to="/dashboard/series"
-            className={({ isActive }) =>
-              `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
-                isActive
-                  ? 'bg-[#C86A43] text-white'
-                  : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
-              }`
-            }
-          >
-            <Icon path={icons.series} />
-            Series
-          </NavLink>
           <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} />
 
           {showCapoNav && (

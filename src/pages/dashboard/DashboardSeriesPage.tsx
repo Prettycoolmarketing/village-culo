@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
-import { getCurrentFounderId } from '../../services/currentFounder'
 import { getStories } from '../../services/stories'
 import {
-  getSeriesList, getSeriesEpisodes, createSeries, saveSeries, deleteSeries,
+  getSeriesEpisodes, saveSeries, deleteSeries,
   assignEpisode, removeEpisode, reorderEpisodes, buildSeriesBible,
 } from '../../services/series'
 import { getFounder } from '../../services/founders'
@@ -15,121 +13,9 @@ import type { Series } from '../../types'
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
 
-export function DashboardSeriesPage() {
-  const { user } = useAuth()
-  const founderId = getCurrentFounderId(user) ?? 'dev-user'
-
-  const [tick, setTick] = useState(0)
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [newTitle, setNewTitle] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  void tick
-  function refresh() { setTick(t => t + 1) }
-
-  const seriesList = getSeriesList({ founderId })
-  const active = activeId ? seriesList.find(s => s.id === activeId) : undefined
-
-  async function handleCreate() {
-    if (!newTitle.trim()) return
-    setCreating(true)
-    setError(null)
-    const series = createSeries(founderId, newTitle.trim())
-    const result = await saveSeries(series)
-    setCreating(false)
-    if (!result.success) { setError(result.error ?? 'Could not create series.'); return }
-    setNewTitle('')
-    setActiveId(series.id)
-    refresh()
-  }
-
-  return (
-    <div className="p-8 max-w-5xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Series</h1>
-        <p className="text-sm text-[#6B7280] mt-1 max-w-2xl">
-          Group your episodes into an ordered, binge-able series — Van Life, Sydney Life, whatever your chapters
-          are. Anyone landing on your profile for the first time starts at Episode 1.
-        </p>
-      </div>
-
-      {active ? (
-        <SeriesDetail
-          series={active}
-          founderId={founderId}
-          onBack={() => setActiveId(null)}
-          onChanged={refresh}
-          onDeleted={() => { setActiveId(null); refresh() }}
-        />
-      ) : (
-        <>
-          <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 mb-6 flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              value={newTitle}
-              onChange={e => setNewTitle(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') void handleCreate() }}
-              placeholder="New series name — e.g. Van Life"
-              className={inputClass}
-            />
-            <button
-              onClick={() => void handleCreate()}
-              disabled={creating || !newTitle.trim()}
-              className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0"
-            >
-              {creating ? 'Creating…' : '+ New Series'}
-            </button>
-          </div>
-
-          {error && <p className="text-sm text-red-600 font-medium mb-4">{error}</p>}
-
-          {seriesList.length === 0 ? (
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-10 text-center">
-              <p className="text-sm font-semibold text-[#2D2A26]">No series yet.</p>
-              <p className="text-xs text-[#9CA3AF] mt-1">Create one above, then add your published episodes to it.</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-              {seriesList.map(s => {
-                const episodeCount = getSeriesEpisodes(s.id).length
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => setActiveId(s.id)}
-                    className="w-full flex items-center gap-4 px-5 py-4 hover:bg-[#FBF8F4] transition-colors text-left"
-                  >
-                    {s.coverImage ? (
-                      <img src={s.coverImage} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-lg bg-[#F3EDE6] flex items-center justify-center shrink-0 text-[#C4BDB4]">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 6a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2H4z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold text-[#2D2A26] truncate">{s.title}</p>
-                      <p className="text-xs text-[#9CA3AF] mt-0.5">{episodeCount} episode{episodeCount === 1 ? '' : 's'}</p>
-                    </div>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                      s.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-[#F3EDE6] text-[#9CA3AF]'
-                    }`}>
-                      {s.status === 'published' ? 'Published' : 'Draft'}
-                    </span>
-                    <span className="text-[#9CA3AF] text-xs shrink-0">Manage →</span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  )
-}
-
 // ─── Series detail — rename, cover, publish toggle, episode ordering ────────
+// Used from Profile > Content > Published > Series — the one place series
+// are managed, alongside the Businesses tab's pill-then-editor pattern.
 
 export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }: {
   series: Series

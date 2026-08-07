@@ -1182,7 +1182,7 @@ export function DashboardProfilePage() {
                 }`}
               >
                 <div className="text-left">
-                  <p className="text-xs text-[#9CA3AF]">All content</p>
+                  <p className="text-sm text-[#9CA3AF]">All content</p>
                   <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{allImportedForStats.length}</p>
                 </div>
                 <SourceIcon platform="all" size="lg" />
@@ -1196,7 +1196,7 @@ export function DashboardProfilePage() {
                   }`}
                 >
                   <div className="text-left">
-                    <p className="text-xs text-[#9CA3AF]">{IMPORT_PLATFORM_LABELS[p]}</p>
+                    <p className="text-sm text-[#9CA3AF]">{IMPORT_PLATFORM_LABELS[p]}</p>
                     <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{allImportedForStats.filter(i => i.sourcePlatform === p).length}</p>
                   </div>
                   <SourceIcon platform={p} size="lg" />
@@ -1207,7 +1207,7 @@ export function DashboardProfilePage() {
             <div className="flex gap-2">
               {(['imported', 'published'] as const).map(t => (
                 <button key={t} onClick={() => setContentSubTab(t)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
                     contentSubTab === t ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
                   }`}>
                   {t === 'imported' ? 'Imported content' : 'Published Content'}
@@ -1347,12 +1347,12 @@ export function DashboardProfilePage() {
                   {platforms.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       <button onClick={() => setImportedPlatformFilter('all')}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
                         All {allImported.length}
                       </button>
                       {platforms.map(p => (
                         <button key={p} onClick={() => setImportedPlatformFilter(p)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
                           {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p).length}
                         </button>
                       ))}

@@ -194,7 +194,7 @@ export function CanvaImportCard({
           <div>
             <p className="text-base font-semibold text-[#2D2A26]">Import from Canva</p>
             <p className="text-sm text-[#9CA3AF] mt-0.5">
-              {canProceed ? 'Bring in slides from a Canva design.' : (gateMessage ?? 'Select a format above first.')}
+              {canProceed ? 'Bring in slides from a Canva design — turn them into a blog, reel or carousel, ready to publish.' : (gateMessage ?? 'Select a format above first.')}
             </p>
           </div>
         </div>
