@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { HeroWidget }                from '../widgets/HeroWidget'
 import { FeaturedWidget }            from '../widgets/FeaturedWidget'
@@ -8,7 +9,7 @@ import { FounderGrid }               from '../widgets/FounderGrid'
 import { BusinessGrid }              from '../widgets/BusinessGrid'
 import { MapPreviewWidget }          from '../widgets/MapPreviewWidget'
 import { NoticeboardPreviewWidget }  from '../widgets/NoticeboardPreviewWidget'
-import { ArchiveCTAWidget }          from '../widgets/ArchiveCTAWidget'
+import { WaitlistForm }              from '../components/ui/WaitlistForm'
 import { InnerContainer }            from '../components/layout/PageContainer'
 
 // ─── Section wrapper ───────────────────────────────────────────────────────────
@@ -181,13 +182,29 @@ export function VillagePage() {
         />
       </VillageSection>
 
-      {/* ── 8. Archive CTA ──────────────────────────────────────────────────── */}
-      {/*
-        Dark search-led CTA block. Closes every homepage visit with a discovery prompt.
-        Reinforces the Village's core promise: knowledge lives here permanently.
+      {/* ── 8. CULO Creatives ─────────────────────────────────────────────────
+        Closes every homepage visit with the flagship thing coming next —
+        exclusively in Canva — instead of a search box nobody was asked for.
       */}
       <VillageSection surface tight>
-        <ArchiveCTAWidget variant="dark" />
+        <section className="bg-charcoal rounded-2xl p-10 md:p-14 text-center" aria-labelledby="creatives-cta-heading">
+          <p className="font-body text-xs font-semibold text-primary/80 uppercase tracking-widest mb-4">
+            Coming soon · Exclusively in Canva
+          </p>
+          <h2 id="creatives-cta-heading" className="font-heading text-3xl md:text-4xl font-semibold text-white mb-4 leading-snug">
+            CULO Creatives is coming<br />
+            <span className="text-primary">to Canva.</span>
+          </h2>
+          <p className="font-body text-base text-white/60 max-w-lg mx-auto mb-8">
+            Turn your raw footage and messy thoughts into blogs, carousels and reels — without ever leaving Canva.
+          </p>
+          <div className="max-w-md mx-auto">
+            <WaitlistForm source="village-homepage" dark />
+          </div>
+          <Link to="/creatives" className="inline-block mt-5 text-sm font-medium text-white/50 hover:text-white transition-colors">
+            Learn more about CULO Creatives →
+          </Link>
+        </section>
       </VillageSection>
 
     </main>

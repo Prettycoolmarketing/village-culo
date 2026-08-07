@@ -60,15 +60,7 @@ export function CreativesPage() {
               <div className="max-w-md">
                 <WaitlistForm source="creatives-hero" dark />
                 <p className="font-body text-xs text-white/40 mt-3">
-                  We hate spam. Your email stays private — we'll only email you when it's ready.{' '}
-                  <a
-                    href="https://www.prettycoolmarketing.com/culo"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-white/60 underline underline-offset-2 hover:text-white transition-colors"
-                  >
-                    Watch the demo →
-                  </a>
+                  We hate spam. Your email stays private — we'll only email you when it's ready.
                 </p>
               </div>
             </div>
@@ -137,6 +129,39 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
+      {/* ── Watch the demo ────────────────────────────────────────────────── */}
+      <section className="py-16 md:py-20" aria-labelledby="demo-heading">
+        <InnerContainer>
+          <div className="max-w-2xl mb-8">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+              See it in Canva
+            </p>
+            <h2 id="demo-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
+              Watch the demo.
+            </h2>
+          </div>
+          <div className="max-w-3xl">
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+              <iframe
+                src="https://www.youtube.com/embed/Gg0zgIjZROI?start=2"
+                title="CULO Creatives demo"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+            <a
+              href="https://canva.link/gh6qvlru340vrnt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-5 px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Try the CULO Creatives template in Canva ↗
+            </a>
+          </div>
+        </InnerContainer>
+      </section>
+
       {/* ── Problem / solution ────────────────────────────────────────────── */}
       <section className="py-16 md:py-20" aria-labelledby="freedom-heading">
         <InnerContainer>
@@ -175,7 +200,17 @@ export function CreativesPage() {
               "Business owners don't have time to learn another course or wrestle with AI prompts. They just
               want their story turned into content that sounds like them."
             </p>
-            <p className="font-body text-sm text-muted">Shakas — Founder, CULO &amp; Pretty Cool Marketing</p>
+            <p className="font-body text-sm text-muted mb-8">Shakas — Founder, CULO &amp; Pretty Cool Marketing</p>
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal text-left">
+              <iframe
+                src="https://www.youtube.com/embed/Mv40KqkNwM8?start=250"
+                title="Shakas speaking on Canva and digital accessibility"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+            <p className="font-body text-xs text-muted mt-3">Shakas speaking on Canva and digital accessibility.</p>
           </div>
         </InnerContainer>
       </section>
