@@ -11,13 +11,13 @@ import { SearchInput } from '../ui/SearchInput'
 const primaryLinks = [
   { to: '/',           label: 'Piazza',     exact: true  },
   { to: '/founders',   label: 'Founders',   exact: false },
+  { to: '/mercato',    label: 'Businesses', exact: false },
+  { to: '/series',     label: 'Series',     exact: false },
   { to: '/stories',    label: 'Stories',    exact: false },
 ]
 
 const discoverLinks = [
-  { to: '/series',      label: 'Series'      },
   { to: '/ideas',       label: 'Ideas'       },
-  { to: '/mercato',     label: 'Businesses'  },
   { to: '/map',         label: 'Map'         },
   { to: '/noticeboard', label: 'Noticeboard' },
   { to: '/library',     label: 'Library'     },
