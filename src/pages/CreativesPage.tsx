@@ -66,8 +66,8 @@ export function CreativesPage() {
             </div>
             <div className="relative">
               <img
-                src="https://d1yei2z3i6k35z.cloudfront.net/9196234/69605be390dad_5SeasideTownsinItaly.webp"
-                alt="A founder telling their real story, the kind of raw footage CULO Creatives turns into publish-ready content"
+                src="/creatives/culo-canva-hero.png"
+                alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
                 className="w-full aspect-[4/3] object-cover rounded-3xl"
               />
             </div>
@@ -142,22 +142,31 @@ export function CreativesPage() {
           </div>
           <div className="max-w-3xl">
             <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
-              <iframe
-                src="https://www.youtube.com/embed/Gg0zgIjZROI?start=2"
-                title="CULO Creatives demo"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute inset-0 w-full h-full"
+              <video
+                src="/creatives/culo-app-demo.mp4"
+                controls
+                preload="metadata"
+                className="absolute inset-0 w-full h-full object-contain bg-black"
               />
             </div>
-            <a
-              href="https://canva.link/gh6qvlru340vrnt"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-5 px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-            >
-              Try the CULO Creatives template in Canva ↗
-            </a>
+            <div className="flex flex-wrap items-center gap-4 mt-5">
+              <a
+                href="https://canva.link/gh6qvlru340vrnt"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+              >
+                Try the CULO Creatives template in Canva ↗
+              </a>
+              <a
+                href="https://www.youtube.com/watch?v=Gg0zgIjZROI"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-muted hover:text-primary transition-colors"
+              >
+                Watch on YouTube ↗
+              </a>
+            </div>
           </div>
         </InnerContainer>
       </section>
