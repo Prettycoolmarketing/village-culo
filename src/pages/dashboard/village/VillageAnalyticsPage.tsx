@@ -79,6 +79,22 @@ export function VillageAnalyticsPage() {
 
   const totalPublicPages = published.length + businesses.length + stories.length
 
+  // ── Storage & cost estimate ──────────────────────────────────────────────
+  // Deliberately rough, not a live billing figure — Supabase doesn't expose
+  // real storage bytes to the client app, only the dashboard/CLI can see
+  // that. This scales the one real data point we do have (a direct storage
+  // check in Aug 2026: ~4GB across ~3,776 files, imported_content + stories
+  // ≈ 1,375 items at the time) into a per-item average, then projects it
+  // against real counts here so the number moves as content actually grows.
+  const AVG_MB_PER_CONTENT_ITEM = 2.9
+  const contentItemCount = allContent.length + stories.length
+  const estimatedGB = (contentItemCount * AVG_MB_PER_CONTENT_ITEM) / 1024
+  const PRO_INCLUDED_GB = 100
+  const PRO_BASE = 25
+  const PRO_OVERAGE_PER_GB = 0.0213
+  const estimatedOverageGB = Math.max(0, estimatedGB - PRO_INCLUDED_GB)
+  const estimatedMonthlyCost = PRO_BASE + estimatedOverageGB * PRO_OVERAGE_PER_GB
+
   // Top distributions
   const topIndustries = topN(founders, f => f.industry.name)
   const topLocations  = topN(founders, f => f.location.name)
@@ -170,6 +186,43 @@ export function VillageAnalyticsPage() {
           <StatCard label="Created"        value={totalBatchCreated}    color="text-[#5E6B4A]" />
           <StatCard label="Skipped"        value={totalBatchSkipped}    color="text-[#9CA3AF]" />
           <StatCard label="Errors"         value={totalBatchErrors}     color={totalBatchErrors > 0 ? 'text-red-500' : 'text-[#9CA3AF]'} />
+        </div>
+      </section>
+
+      {/* Storage & cost estimate */}
+      <section className="mb-8">
+        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Storage &amp; Hosting Cost (Rough Estimate)</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+          <StatCard label="Content Items" value={contentItemCount} sub="Imported + published" />
+          <StatCard label="Est. Storage Used" value={`${estimatedGB.toFixed(1)} GB`} color="text-[#C86A43]" />
+          <StatCard label="Pro Plan Included" value={`${PRO_INCLUDED_GB} GB`} sub="$25/mo base" />
+          <StatCard
+            label="Est. Monthly Cost"
+            value={`$${estimatedMonthlyCost.toFixed(2)}`}
+            color={estimatedOverageGB > 0 ? 'text-amber-600' : 'text-[#5E6B4A]'}
+            sub={estimatedOverageGB > 0 ? `${estimatedOverageGB.toFixed(1)}GB over, on Supabase Pro` : 'Within Pro’s included storage'}
+          />
+        </div>
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">Supabase plan reference</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+            <div>
+              <p className="font-semibold text-[#2D2A26]">Free — $0/mo</p>
+              <p className="text-[#9CA3AF] mt-1">1GB storage, 5GB egress. Pauses after 7 days idle. Not viable once live.</p>
+            </div>
+            <div>
+              <p className="font-semibold text-[#2D2A26]">Pro — $25/mo (current)</p>
+              <p className="text-[#9CA3AF] mt-1">100GB storage ($0.0213/GB after), 250GB egress ($0.09/GB after). No idle pause.</p>
+            </div>
+            <div>
+              <p className="font-semibold text-[#2D2A26]">Enterprise — Contact Supabase</p>
+              <p className="text-[#9CA3AF] mt-1">No public pricing. Worth a conversation once well past Pro's included limits at real scale, or if uptime SLAs / dedicated support become necessary.</p>
+            </div>
+          </div>
+          <p className="text-[10px] text-[#C8C3BC] mt-3">
+            Rough estimate only — scaled from a real storage check (~4GB across ~3,776 files) against content item
+            counts at the time. Not a live billing figure; check the Supabase dashboard for actual usage.
+          </p>
         </div>
       </section>
 
