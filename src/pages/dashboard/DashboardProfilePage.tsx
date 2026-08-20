@@ -56,6 +56,19 @@ const FIELD_TO_TAB: Record<string, string> = {
   website: 'overview',
 }
 
+// AI rewriting (via the founder's own Voice & Brand Brief) costs real
+// Anthropic API spend per call — not something to open up to every founder
+// on the free Village tier yet. Gated the same way HIGH_VOLUME_IMPORT_EMAILS
+// is in DashboardImportContentPage.tsx: a plain allowlist, not a real
+// billing/plan system. This is a temporary switch, not the real thing —
+// the actual plan is to make AI rewriting part of a paid CULO Publish tier
+// once that exists; everyone else keeps the free heuristic title/topic
+// suggestions they already get on import, unchanged.
+const VOICE_REWRITE_EMAILS = (import.meta.env.VITE_VOICE_REWRITE_EMAILS ?? '')
+  .split(',')
+  .map((e: string) => e.trim().toLowerCase())
+  .filter(Boolean)
+
 // ─── Shared form helpers ───────────────────────────────────────────────────────
 
 const inputClass =
@@ -742,6 +755,7 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 
 export function DashboardProfilePage() {
   const { user } = useAuth()
+  const canUseVoiceRewrite = VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const navigate = useNavigate()
   const location = useLocation()
   const welcomeBack = Boolean((location.state as { welcomeBack?: boolean } | null)?.welcomeBack)
@@ -1329,7 +1343,7 @@ export function DashboardProfilePage() {
               // same pattern as the Instagram importer; one failure doesn't
               // stop the rest, it just leaves that item as it was.
               async function handleRegenerateSelected() {
-                if (!draft || !liveVoiceBrief?.trim()) return
+                if (!canUseVoiceRewrite || !draft || !liveVoiceBrief?.trim()) return
                 const ids = Array.from(importedChecked)
                 if (ids.length === 0) return
                 setImportedRegenProgress({ done: 0, total: ids.length })
@@ -1475,7 +1489,7 @@ export function DashboardProfilePage() {
                             Delete {importedChecked.size} selected
                           </button>
                         )}
-                        {importedChecked.size > 0 && (
+                        {canUseVoiceRewrite && importedChecked.size > 0 && (
                           <button
                             onClick={() => void handleRegenerateSelected()}
                             disabled={!liveVoiceBrief?.trim() || !!importedRegenProgress}

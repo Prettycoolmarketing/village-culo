@@ -47,6 +47,17 @@ const HIGH_VOLUME_IMPORT_EMAILS = (import.meta.env.VITE_HIGH_VOLUME_IMPORT_EMAIL
   .filter(Boolean)
 const HIGH_VOLUME_DAILY_LIMIT = 2000
 
+// AI rewriting via the founder's Voice & Brand Brief costs real API spend
+// per call — allowlisted for now rather than open to every founder on the
+// free tier, same pattern as HIGH_VOLUME_IMPORT_EMAILS above. Temporary
+// switch, not a real plan/billing system — the intent is for this to
+// become a paid CULO Publish tier feature. Everyone else's Instagram
+// import still works exactly as before: original captions kept as-is.
+const VOICE_REWRITE_EMAILS = (import.meta.env.VITE_VOICE_REWRITE_EMAILS ?? '')
+  .split(',')
+  .map((e: string) => e.trim().toLowerCase())
+  .filter(Boolean)
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 // 'podcast' embeds only when embedUrl is actually set — true for a
@@ -1493,6 +1504,7 @@ export function DashboardImportContentPage() {
   const navigate = useNavigate()
   const founderId = getCurrentFounderId(user) ?? 'dev-user'
   const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
+  const canUseVoiceRewrite = VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const founder = getFounder(founderId)
   // Local, instant copy of the brief — getFounder() is a plain synchronous
   // store read, not React state, so without this the textarea's value prop
@@ -1668,7 +1680,7 @@ export function DashboardImportContentPage() {
               <div ref={instagramCardRef}>
                 <InstagramArchiveImportCard
                   founderId={founderId}
-                  voiceBrief={founder?.voiceBrief}
+                  voiceBrief={canUseVoiceRewrite ? founder?.voiceBrief : undefined}
                   expanded={instagramExpanded}
                   onExpandedChange={setInstagramExpanded}
                   onImported={count => reportImported(count)}
