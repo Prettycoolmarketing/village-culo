@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
-import { updateFounder, deleteFounder } from '../../services/founders'
+import { updateFounder, deleteFounder, getFounder } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, EditForm } from './DashboardImportContentPage'
 import { SeriesDetail } from './DashboardSeriesPage'
@@ -1171,6 +1171,12 @@ export function DashboardProfilePage() {
           void importedTick
           const allImportedForStats = importedContentService.getAll({ founderId: draft.id })
           const statsPlatforms = Array.from(new Set(allImportedForStats.map(i => i.sourcePlatform)))
+          // Reads the live, persisted founder record rather than `draft` —
+          // `draft` seeds from a local, unsaved profile-edit autosave
+          // (culo_v1_profile_draft_*) that can predate or simply never
+          // include a brief saved from Import Content, which silently
+          // disabled Rewrite with no visible reason beyond a hover tooltip.
+          const liveVoiceBrief = getFounder(draft.id)?.voiceBrief
           return (
           <div className="flex flex-col gap-5">
             <Link
@@ -1323,7 +1329,7 @@ export function DashboardProfilePage() {
               // same pattern as the Instagram importer; one failure doesn't
               // stop the rest, it just leaves that item as it was.
               async function handleRegenerateSelected() {
-                if (!draft?.voiceBrief?.trim()) return
+                if (!draft || !liveVoiceBrief?.trim()) return
                 const ids = Array.from(importedChecked)
                 if (ids.length === 0) return
                 setImportedRegenProgress({ done: 0, total: ids.length })
@@ -1331,7 +1337,7 @@ export function DashboardProfilePage() {
                   const item = importedContentService.get(ids[i]!)
                   if (item) {
                     const { blog } = await generateBlogFromVoiceBrief({
-                      voiceBrief: draft.voiceBrief,
+                      voiceBrief: liveVoiceBrief,
                       founderName: draft.name ?? '',
                       caption: item.description,
                       transcript: item.transcriptText,
@@ -1472,8 +1478,8 @@ export function DashboardProfilePage() {
                         {importedChecked.size > 0 && (
                           <button
                             onClick={() => void handleRegenerateSelected()}
-                            disabled={!draft?.voiceBrief?.trim() || !!importedRegenProgress}
-                            title={!draft?.voiceBrief?.trim() ? 'Add your Voice & Brand Brief above first' : 'Rewrite the selected drafts using your Voice & Brand Brief'}
+                            disabled={!liveVoiceBrief?.trim() || !!importedRegenProgress}
+                            title={!liveVoiceBrief?.trim() ? 'Add your Voice & Brand Brief from Import Content first' : 'Rewrite the selected drafts using your Voice & Brand Brief'}
                             className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                           >
                             {importedRegenProgress
