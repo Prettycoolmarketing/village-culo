@@ -9,23 +9,23 @@ import { Link } from 'react-router-dom'
 
 const HOW_IT_WORKS_STEPS = [
   {
-    title: 'Pick a format',
-    desc: 'Choose how you want to share your content in The Village.',
+    title: 'Pick what you want to publish',
+    desc: "Start with a video, story, blog, podcast, Canva design or something you've already imported.",
     icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
   },
   {
-    title: 'Add your content',
-    desc: "You'll add your text, media, and details in the next steps.",
+    title: 'Add the story around it',
+    desc: 'Give CULO the context that makes the piece worth finding. What happened? What did you learn? Why does it matter now?',
     icon: <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />,
   },
   {
-    title: 'Village Intelligence',
-    desc: "We'll help you extract topics, keywords, insights and more.",
+    title: 'Let Village Intelligence connect the dots',
+    desc: 'CULO helps pull out the topics, questions, ideas, people, skills, keywords and insights hiding inside your work — connecting each piece back to the bigger story of you.',
     icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.99-2.386l-.548-.547z" />,
   },
   {
-    title: 'Preview & publish',
-    desc: 'Review everything before it goes live in The Village.',
+    title: 'Check it, then publish',
+    desc: "You're always in control. Preview the story, make changes and publish it to the Village when you're happy with it.",
     icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
   },
 ]
@@ -51,9 +51,12 @@ export function DashboardWelcomePage() {
     <div className="p-8 max-w-[1600px]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#2D2A26]">Welcome to CULO Village</h1>
-        <p className="text-sm text-[#6B7280] mt-1 max-w-2xl leading-relaxed">
-          Everything you need to know before you bring your work in and start publishing — come back here any
-          time you need a refresher.
+        <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl leading-relaxed">
+          This is your starting point. Learn how the Village works, bring in the work you've already created,
+          and start turning it into something people can actually discover.
+        </p>
+        <p className="text-sm text-[#6B7280] mt-2 max-w-2xl leading-relaxed">
+          Come back here whenever you need a refresher.
         </p>
       </div>
 
@@ -61,12 +64,18 @@ export function DashboardWelcomePage() {
         {/* ── Left: orientation ────────────────────────────────────────────── */}
         <div className="flex flex-col gap-4">
           <CollapsibleSection title="What is CULO Village?" defaultOpen>
+            <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
+              CULO Village brings the work you've already created into one connected place. Your YouTube
+              videos, podcasts, blogs, Instagram posts, Canva designs and stories can all become part of your
+              Village profile.
+            </p>
+            <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
+              We don't take your content away from where it already lives. Original content stays at the
+              source.
+            </p>
             <p className="text-sm text-[#6B7280] leading-relaxed">
-              CULO Village is where founders bring their existing work — YouTube, podcasts, blogs, Instagram,
-              Canva designs — into one place, and where that work becomes a real, discoverable body of content.
-              Nothing gets re-uploaded or taken away from where it already lives; it's embedded from the
-              original source and given the context it needs to make sense as a whole story, not a pile of
-              disconnected posts.
+              The Village connects it, gives it context and helps turn years of scattered posts into a body of
+              work that tells people who you are, what you know and what you've built.
             </p>
           </CollapsibleSection>
 
@@ -86,20 +95,31 @@ export function DashboardWelcomePage() {
             </div>
           </CollapsibleSection>
 
-          <CollapsibleSection title="What is the Voice & Brand Brief?">
+          <CollapsibleSection title="Help CULO know who it's writing for">
+            <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
+              Your <strong className="text-[#6B7280] font-semibold">Voice &amp; Brand Brief</strong> gives CULO
+              the context behind your content. It helps CULO understand how you speak, what you care about,
+              what you know from experience, the chapters of your story and the things you would never
+              naturally say.
+            </p>
+            <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
+              Without that context, AI can make very different people sound exactly the same. With it, CULO has
+              something real to work from.
+            </p>
             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-              It's why CULO can find and sound like you: search engines and AI tools surface content that
-              clearly reads as one real person with a consistent voice, not generic AI writing. Without a
-              brief, every piece reads the same no matter which video it's attached to — with one, CULO knows
-              who you are, the real chapters of your story, how you actually talk, and what you'd never say.
-              You can build one right inside Import Content, either by answering a few questions or by
-              bringing in something you've already written.
+              It also helps your published work stay connected around one person, one voice and one growing
+              body of knowledge, making it easier for people, search engines and AI tools to understand what
+              you're actually about.
+            </p>
+            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+              You can create yours inside Import by answering a few questions, or use what another AI already
+              knows about you.
             </p>
             <Link
               to="/dashboard/import-content"
               className="inline-flex text-sm font-semibold px-4 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
             >
-              Set up your Voice & Brand Brief →
+              Set up your Voice &amp; Brand Brief →
             </Link>
           </CollapsibleSection>
         </div>
@@ -114,25 +134,31 @@ export function DashboardWelcomePage() {
             rel="noopener noreferrer"
             className="block bg-[#2D2A26] rounded-2xl px-8 py-8 hover:bg-[#1a1815] transition-colors"
           >
-            <div className="flex flex-col gap-5">
-              <p className="font-heading text-2xl font-semibold text-white leading-snug">
-                CULO Creatives helps founders turn their messy thoughts and raw footage into different formats
-                of content, exclusively in Canva.
-              </p>
-              <span className="self-start inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+            <p className="text-xs font-semibold text-[#C86A43] uppercase tracking-widest mb-3">
+              Need help creating the content itself?
+            </p>
+            <p className="font-heading text-2xl font-semibold text-white leading-snug mb-6">
+              CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats
+              of content, directly inside Canva. Create there. Publish it here. Keep building your Village.
+            </p>
+            <div className="flex justify-end">
+              <span className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
                 Create with CULO in Canva
               </span>
             </div>
           </a>
 
-          <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
-            <iframe
-              src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
-              title="How to publish with CULO"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full"
-            />
+          <div>
+            <p className="text-sm font-semibold text-[#2D2A26] mb-3">See how publishing works</p>
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+              <iframe
+                src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
+                title="How to publish with CULO"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
           </div>
         </div>
       </div>
