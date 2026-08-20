@@ -323,7 +323,7 @@ function FormatStep({ draft, onChange, onNext }: {
 
       {/* New here? See "How it works" and everything about CULO in Canva
           on the Welcome tab — this page stays focused on the one task. */}
-      <div className="max-w-3xl mx-auto">
+      <div>
         <p className="text-sm font-semibold text-[#2D2A26] mb-1">Choose a format</p>
         <p className="text-xs text-[#9CA3AF] mb-3">Bringing in Canva slides? Do that from Import Content instead — pick a format here to write it yourself.</p>
         <div className="grid grid-cols-2 gap-3 mb-8">
@@ -388,7 +388,7 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
   const blogOnly = isBlogOnly(types)
 
   return (
-    <div className="max-w-xl">
+    <div>
       <StepHeader
         title={blogOnly ? 'Write Blog' : 'Add Media'}
         subtitle="Bring what you have today. The Village always has room for more."
@@ -660,7 +660,7 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
   onBack: () => void
 }) {
   return (
-    <div className="max-w-xl mx-auto">
+    <div>
       <StepHeader
         title="Blog"
         subtitle="Paste a transcript to unlock richer diary generation. On YouTube, click ··· below any video, then Show transcript, to copy and paste here. Or just write your story below."
@@ -860,7 +860,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
   ]
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <StepHeader title="Building Your Reach" subtitle="Village is reading your story and building everything else automatically." onBack={onBack} />
 
       {/* ── Trust Score — the number this whole screen is building toward (internally: Authority Score) ── */}
@@ -1314,7 +1314,7 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
   const allBusinesses = business ? [business, ...suggestedBusinesses, ...extraBusinesses] : [...suggestedBusinesses, ...extraBusinesses]
 
   return (
-    <div className="max-w-3xl mx-auto flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <StepHeader title="Preview" subtitle="Exactly what happens when you publish. Remove anything that isn't right." onBack={onBack} />
 
       {/* ── Publishing this story will also… ─────────────────────────────── */}

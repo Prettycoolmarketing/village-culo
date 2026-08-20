@@ -44,8 +44,13 @@ interface MediaUploadProps {
   label?: string
   // 'logo' is a small, centred, padded square with object-contain — for brand
   // marks that must never be cropped or stretched to fill a wide container.
-  // 'square'/'wide' stay full-width (avatars, covers, hero images).
-  aspect?: 'square' | 'wide' | 'auto' | 'logo'
+  // 'wide-contain' is the same object-contain treatment but at the full
+  // width/height a 'wide' banner uses — for a cover image that's actually a
+  // wordmark/graphic (cropping cuts off letters) rather than a photo, where
+  // shrinking all the way down to 'logo' size would look mismatched next to
+  // a "16:9 recommended" hint. 'square'/'wide' stay full-width and cropped
+  // (avatars, covers, hero images).
+  aspect?: 'square' | 'wide' | 'auto' | 'logo' | 'wide-contain'
   uploadOptions?: UploadAndTrackOptions
   className?: string
 }
@@ -120,13 +125,14 @@ export function MediaUpload({
 
   const kind = value ? inferKindFromUrl(value) : (accept === 'any' || accept === 'media') ? 'image' : accept
   const isLogo = aspect === 'logo'
+  const isWideContain = aspect === 'wide-contain'
   const isVideoPreview = kind === 'video' && !!value
   // A vertical video at native aspect ratio inside a "fill the container"
   // box (h-auto + w-full) rendered enormous — full editor width, over a
   // thousand pixels tall — since nothing capped its height. Video previews
   // get a fixed, modest box regardless of `aspect`; the file itself is
   // untouched, this only bounds how large the review player renders.
-  const heightClass = isVideoPreview ? 'h-80' : aspect === 'square' ? 'h-32' : aspect === 'wide' ? 'h-40' : isLogo ? 'h-28' : 'h-auto min-h-[8rem]'
+  const heightClass = isVideoPreview ? 'h-80' : aspect === 'square' ? 'h-32' : (aspect === 'wide' || isWideContain) ? 'h-40' : isLogo ? 'h-28' : 'h-auto min-h-[8rem]'
   const widthClass = isLogo ? 'w-28 mx-auto' : isVideoPreview ? 'w-full max-w-[220px] mx-auto' : 'w-full'
 
   return (
@@ -147,7 +153,7 @@ export function MediaUpload({
         role="button"
         tabIndex={0}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click() }}
-        className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden cursor-pointer ${widthClass} ${heightClass} ${isLogo ? 'p-3 bg-white' : ''} ${
+        className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden cursor-pointer ${widthClass} ${heightClass} ${isLogo || isWideContain ? 'p-3 bg-white' : ''} ${
           dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary'
         } ${uploading ? 'opacity-70 pointer-events-none' : ''}`}
       >
@@ -168,7 +174,7 @@ export function MediaUpload({
               View document ↗
             </a>
           ) : (
-            <img src={value} alt="" className={`w-full h-full ${isLogo ? 'object-contain' : 'object-cover'}`} />
+            <img src={value} alt="" className={`w-full h-full ${isLogo || isWideContain ? 'object-contain' : 'object-cover'}`} />
           )
         ) : (
           <>

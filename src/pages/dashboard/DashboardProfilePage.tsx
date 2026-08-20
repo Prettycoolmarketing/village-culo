@@ -948,7 +948,7 @@ export function DashboardProfilePage() {
               value={draft.coverImage}
               onChange={v => set('coverImage', v || undefined)}
               label="Upload cover"
-              aspect="wide"
+              aspect="wide-contain"
               uploadOptions={{ founderId: draft.id, usageType: 'founder-cover' }}
             />
           </Field>
@@ -1256,13 +1256,17 @@ export function DashboardProfilePage() {
               const allImported = importedContentService.getAll({ founderId: draft.id })
               const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
               const shown = importedPlatformFilter === 'all' ? allImported : allImported.filter(i => i.sourcePlatform === importedPlatformFilter)
-              const readyItems = shown.filter(i => !i.relatedStoryId && isReadyToPublish(i))
+              // Flagged items (title/caption mismatch etc.) are excluded from
+              // every "select all" pool below — still individually
+              // selectable via their own row checkbox, just never swept into
+              // a bulk rewrite/publish without a human actually looking.
+              const readyItems = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview && isReadyToPublish(i))
               // Superset of readyItems — includes drafts that still just carry
               // their original caption/title and haven't been touched yet.
               // "Select all ready to publish" only grabs items already fit to
               // publish; rewriting with the Voice Brief is exactly for the
               // ones that aren't yet, so it needs its own, wider selection.
-              const unpublishedItems = shown.filter(i => !i.relatedStoryId)
+              const unpublishedItems = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview)
 
               function refreshImported() { setImportedTick(t => t + 1) }
 

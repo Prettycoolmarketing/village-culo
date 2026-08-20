@@ -137,7 +137,7 @@ export function DashboardWelcomePage() {
             <p className="text-xs font-semibold text-[#C86A43] uppercase tracking-widest mb-3">
               Need help creating the content itself?
             </p>
-            <p className="font-heading text-2xl font-semibold text-white leading-snug mb-6">
+            <p className="font-heading text-lg font-semibold text-white leading-snug mb-6">
               CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats
               of content, directly inside Canva. Create there. Publish it here. Keep building your Village.
             </p>

@@ -41,6 +41,15 @@ export interface ImportedContent {
   // Builder — the Story mirrors this back via its own importedContentId.
   relatedStoryId?: string
 
+  // Set when a source's title and caption/description don't obviously match
+  // (e.g. a YouTube video whose title and description came from different
+  // uploads) — caught during manual/AI review, not auto-detected. Shown as
+  // an asterisk next to the title and excluded from "select all" bulk
+  // actions so it doesn't get swept into a batch rewrite/publish without a
+  // human actually looking at it first; still individually selectable.
+  flaggedForReview?: boolean
+  flagReason?: string
+
   // Set when this draft was created by a connector scan (see services/connectedSources.ts)
   // rather than a manual paste-a-link import — lets a re-scan skip URLs already imported.
   connectedSourceId?: string

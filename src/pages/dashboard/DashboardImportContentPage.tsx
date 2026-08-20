@@ -1447,10 +1447,20 @@ export function SavedRow({
                 <PlatformBadge platform={item.sourcePlatform} />
                 <a href={viewHref} {...linkProps}
                   className="text-base font-semibold text-[#2D2A26] truncate hover:text-[#C86A43] transition-colors">
-                  {item.title}
+                  {item.title}{item.flaggedForReview && (
+                    <span className="text-amber-600" title={item.flagReason ?? 'Flagged for review — excluded from bulk actions'}>*</span>
+                  )}
                 </a>
                 {!item.relatedStoryId && !ready && (
                   <span className="text-[10px] text-amber-600 shrink-0">needs a title before it can publish</span>
+                )}
+                {item.flaggedForReview && (
+                  <span
+                    className="text-[10px] text-amber-600 shrink-0"
+                    title={item.flagReason ?? 'Flagged for review'}
+                  >
+                    needs review — excluded from bulk actions
+                  </span>
                 )}
               </div>
 
@@ -1658,7 +1668,6 @@ export function DashboardImportContentPage() {
               <VoiceBriefEditor
                 value={voiceBriefDraft}
                 updatedAt={founder.voiceBriefUpdatedAt}
-                founderName={founder.name}
                 onChange={v => {
                   setVoiceBriefDraft(v)
                   void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })
