@@ -144,25 +144,22 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
         )}
       </div>
 
-      {expanded && !voiceBrief?.trim() && (
-        <div className="mt-3 bg-[#FBF1EB] border border-[#F0DDD2] rounded-xl px-4 py-4">
-          <p className="text-sm font-semibold text-[#2D2A26] mb-1">Add your Voice & Brand Brief first</p>
-          <p className="text-xs text-[#6B7280] mb-3 leading-relaxed">
-            Instagram Archive import writes a real, distinct blog for every piece using your own voice —
-            that needs a brief to work from, or every blog would read the same regardless of which video
-            it's attached to.
-          </p>
-          <Link
-            to="/dashboard/profile?tab=settings"
-            className="inline-block text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors"
-          >
-            Add my Voice & Brand Brief →
-          </Link>
-        </div>
-      )}
-
-      {expanded && voiceBrief?.trim() && (
+      {expanded && (
         <div className="mt-3">
+          {!voiceBrief?.trim() && (
+            <div className="mb-4 bg-[#FBF1EB] border border-[#F0DDD2] rounded-xl px-4 py-4">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Tip: add your Voice &amp; Brand Brief above first</p>
+              <p className="text-xs text-[#6B7280] leading-relaxed">
+                You can import your archive right now either way — but with a brief, every piece gets a real,
+                distinct starter blog written in your own voice instead of just keeping the original caption.
+                Add it in the Voice &amp; Brand Brief section above, then come back here any time.
+              </p>
+            </div>
+          )}
+          <p className="text-xs text-[#6B7280] mb-4">
+            Nothing goes public from this — everything lands as a private draft in Content, and only publishes
+            once you review it and choose to publish it yourself.
+          </p>
           <button type="button" onClick={() => setShowInstructions(v => !v)}
             className="text-xs font-semibold text-[#C86A43] hover:underline mb-3">
             {showInstructions ? 'Hide' : 'How do I export my Instagram archive?'}

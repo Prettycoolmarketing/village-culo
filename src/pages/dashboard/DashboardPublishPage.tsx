@@ -277,10 +277,13 @@ function ProgressBar({ step, steps, labels, onStepClick }: {
   const currentIdx = steps.indexOf(step)
   return (
     <div className="flex items-center gap-1 mb-10 overflow-x-auto pb-1">
-      {steps.map((s, i) => {
-        const clickable = i <= currentIdx
-        const inner = (
-          <>
+      {steps.map((s, i) => (
+        <div key={s} className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={() => onStepClick(s)}
+            className={`flex items-center gap-1.5 ${i <= currentIdx ? 'text-[#C86A43]' : 'text-[#9CA3AF]'} hover:opacity-70 transition-opacity`}
+          >
             <div className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center shrink-0 ${
               i < currentIdx   ? 'bg-[#5E6B4A] text-white'
               : i === currentIdx ? 'bg-[#C86A43] text-white'
@@ -289,29 +292,12 @@ function ProgressBar({ step, steps, labels, onStepClick }: {
               {i < currentIdx ? '✓' : i + 1}
             </div>
             <span className="text-[11px] font-medium hidden sm:inline">{labels[s]}</span>
-          </>
-        )
-        return (
-          <div key={s} className="flex items-center gap-1 shrink-0">
-            {clickable ? (
-              <button
-                type="button"
-                onClick={() => onStepClick(s)}
-                className={`flex items-center gap-1.5 ${i <= currentIdx ? 'text-[#C86A43]' : 'text-[#9CA3AF]'} hover:opacity-70 transition-opacity`}
-              >
-                {inner}
-              </button>
-            ) : (
-              <div className={`flex items-center gap-1.5 ${i <= currentIdx ? 'text-[#C86A43]' : 'text-[#9CA3AF]'}`}>
-                {inner}
-              </div>
-            )}
-            {i < steps.length - 1 && (
-              <div className={`w-4 h-px ml-1 ${i < currentIdx ? 'bg-[#5E6B4A]' : 'bg-[#E8E4DD]'}`} />
-            )}
-          </div>
-        )
-      })}
+          </button>
+          {i < steps.length - 1 && (
+            <div className={`w-4 h-px ml-1 ${i < currentIdx ? 'bg-[#5E6B4A]' : 'bg-[#E8E4DD]'}`} />
+          )}
+        </div>
+      ))}
     </div>
   )
 }
@@ -397,16 +383,16 @@ function FormatStep({ draft, onChange, onNext }: {
         </button>
       </div>
 
-      <div className="hidden lg:flex flex-col gap-5 w-80 shrink-0 self-stretch">
+      <div className="hidden lg:flex flex-col gap-5 w-80 shrink-0 self-stretch lg:mt-[5.5rem]">
         <HowItWorksPanel />
-        <div className="flex-1 min-h-[10rem] rounded-2xl border-2 border-dashed border-[#E8E4DD] bg-[#FBF8F4] flex flex-col items-center justify-center text-center px-6 py-8">
-          <div className="w-10 h-10 rounded-full bg-white border border-[#E8E4DD] flex items-center justify-center mb-3">
-            <svg className="w-4 h-4 text-[#C4BDB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <p className="text-sm font-semibold text-[#9CA3AF]">Instructional video coming soon</p>
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+          <iframe
+            src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
+            title="How to publish with CULO"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full"
+          />
         </div>
       </div>
     </div>

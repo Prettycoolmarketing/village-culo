@@ -453,7 +453,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
   }
 
   return (
-    <div className="max-w-2xl flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
       <TabIntro>
         Every business you run — logo, description, where you work, what you're about.
       </TabIntro>
@@ -1060,7 +1060,7 @@ export function DashboardProfilePage() {
 
         {/* ── Overview (Profile) ───────────────────────────────────────── */}
         {tab === 'overview' && (
-          <div className="max-w-2xl flex flex-col gap-6">
+          <div className="flex flex-col gap-6">
 
             <a
               href={`/founders/${draft.slug}`}
@@ -1600,7 +1600,7 @@ export function DashboardProfilePage() {
 
         {/* ── FAQ ──────────────────────────────────────────────────────────── */}
         {tab === 'expertise' && (
-          <div className="max-w-2xl flex flex-col gap-5">
+          <div className="flex flex-col gap-5">
             <TabIntro>
               Real questions people ask you, with real answers. These help both search engines and
               AI systems understand what you know.
@@ -1668,7 +1668,7 @@ export function DashboardProfilePage() {
 
         {/* ── Discovery: SEO, GEO, search preview, visibility ─────────────── */}
         {tab === 'discovery' && (
-          <div className="max-w-2xl flex flex-col gap-5">
+          <div className="flex flex-col gap-5">
             <TabIntro>
               Join the Village Partner program, link the brands you genuinely use, and set up your own
               affiliate program and pitch so other founders can promote you.
@@ -1720,7 +1720,7 @@ export function DashboardProfilePage() {
 
         {/* ── Settings: publishing preferences, account-level settings ────── */}
         {tab === 'settings' && (
-          <div className="max-w-2xl flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
             <TabIntro>
               Account-level details and publishing preferences that don't affect how you're discovered,
               just how your profile behaves.

@@ -57,7 +57,7 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
     <div className="bg-white rounded-xl border border-[#E8E4DD] px-8 py-7">
       <div className="mb-6">
         <p className="text-lg font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
-        <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed max-w-4xl">
+        <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed">
           This is why CULO can find and sound like you: search engines and AI tools surface content that
           clearly reads as one real person with a consistent voice, not generic AI writing. Without a brief,
           every piece reads the same no matter which video it's attached to — with one, CULO knows who you
@@ -77,9 +77,9 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
           read as one cohesive pair, even though the columns aren't equal
           width — one holds a button, the other holds a founder's whole brief. */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-stretch">
-        <div className="bg-[#F8F5F0] rounded-lg p-6 flex flex-col justify-center gap-4">
+        <div className="bg-[#F8F5F0] rounded-lg p-8 flex flex-col justify-center gap-4">
           <div>
-            <p className="text-sm font-semibold text-[#2D2A26] mb-1">Don't want to write it from scratch?</p>
+            <p className="text-lg font-semibold text-[#2D2A26] mb-2">Don't want to write it from scratch?</p>
             <p className="text-sm text-[#6B7280] leading-relaxed">
               Copy this, hand it to whatever AI you already talk to. It reads back through what you've
               already told it — not a cold interview — and only asks you anything if it's genuinely missing.
@@ -104,9 +104,9 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
           </div>
         </div>
 
-        <div className="bg-[#F8F5F0] rounded-lg p-6 flex flex-col gap-4">
+        <div className="bg-[#F8F5F0] rounded-lg p-8 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-[#2D2A26]">Bring the brief back here</p>
+            <p className="text-lg font-semibold text-[#2D2A26]">Bring the brief back here</p>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}

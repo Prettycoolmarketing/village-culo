@@ -1687,10 +1687,6 @@ export function DashboardImportContentPage() {
 
           {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
 
-          <p className="text-xs text-[#9CA3AF] mt-4">
-            Instagram, LinkedIn, TikTok and Canva connections aren't available yet — they each require going through that platform's own app review process.
-          </p>
-
           <div className="mt-6 pt-6 border-t border-[#E8E4DD]">
             <Link to="/dashboard/profile?tab=content" className="text-sm font-semibold text-[#C86A43] hover:underline">
               View everything you've imported so far →
