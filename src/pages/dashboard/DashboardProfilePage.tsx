@@ -502,7 +502,7 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
 
           <div className="grid grid-cols-2 gap-4">
             <Field label="Logo">
-              <MediaUpload value={draft.logo} onChange={v => set('logo', v)} label="Upload logo" aspect="wide"
+              <MediaUpload value={draft.logo} onChange={v => set('logo', v)} label="Upload logo" aspect="logo"
                 uploadOptions={{ founderId, businessId: draft.id, usageType: 'business-logo' }} />
             </Field>
             <Field label="Cover Image">

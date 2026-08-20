@@ -322,77 +322,51 @@ function FormatStep({ draft, onChange, onNext }: {
       />
 
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <div className="w-full lg:w-96 shrink-0">
-            <HowItWorksPanel />
+        <HowItWorksPanel />
+
+        <div>
+          <p className="text-sm font-semibold text-[#2D2A26] mb-1">Choose a format</p>
+          <p className="text-xs text-[#9CA3AF] mb-3">Bringing in Canva slides? Do that from Import Content instead — pick a format here to write it yourself.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+            {FORMATS.map(f => {
+              const active = draft.contentTypes.includes(f.type)
+              return (
+                <button
+                  key={f.type}
+                  onClick={() => toggle(f.type)}
+                  className={`text-left p-4 rounded-2xl border-2 transition-all ${
+                    active
+                      ? 'border-[#C86A43] bg-[#FDF6F3]'
+                      : 'border-[#E8E4DD] bg-white hover:border-[#C86A43]/40 hover:bg-[#FDFAF8]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-2xl">{f.emoji}</span>
+                    {active && (
+                      <div className="w-4 h-4 rounded-full bg-[#C86A43] flex items-center justify-center shrink-0">
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold text-[#2D2A26] mb-0.5">{f.label}</p>
+                  <p className="text-[11px] text-[#9CA3AF] leading-snug">{f.desc}</p>
+                </button>
+              )
+            })}
           </div>
 
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#2D2A26] mb-1">Choose a format</p>
-            <p className="text-xs text-[#9CA3AF] mb-3">Bringing in Canva slides? Do that from Import Content instead — pick a format here to write it yourself.</p>
-            <div className="grid grid-cols-2 gap-3 mb-8">
-              {FORMATS.map(f => {
-                const active = draft.contentTypes.includes(f.type)
-                return (
-                  <button
-                    key={f.type}
-                    onClick={() => toggle(f.type)}
-                    className={`text-left p-4 rounded-2xl border-2 transition-all ${
-                      active
-                        ? 'border-[#C86A43] bg-[#FDF6F3]'
-                        : 'border-[#E8E4DD] bg-white hover:border-[#C86A43]/40 hover:bg-[#FDFAF8]'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-2xl">{f.emoji}</span>
-                      {active && (
-                        <div className="w-4 h-4 rounded-full bg-[#C86A43] flex items-center justify-center shrink-0">
-                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-sm font-semibold text-[#2D2A26] mb-0.5">{f.label}</p>
-                    <p className="text-[11px] text-[#9CA3AF] leading-snug">{f.desc}</p>
-                  </button>
-                )
-              })}
-            </div>
-
-            <button
-              onClick={onNext}
-              disabled={draft.contentTypes.length === 0}
-              className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              {draft.contentTypes.length === 0 ? 'Select at least one format' : 'Continue'}
-            </button>
-          </div>
+          <button
+            onClick={onNext}
+            disabled={draft.contentTypes.length === 0}
+            className="w-full py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {draft.contentTypes.length === 0 ? 'Select at least one format' : 'Continue'}
+          </button>
         </div>
 
-        {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
-            for the real Canva app link once CULO in Canva ships. The video right
-            below is the CULO Creatives walkthrough, so this banner belongs
-            directly above it, not up with the format picker. */}
-        <a
-          href="https://www.prettycoolmarketing.com/culo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block bg-[#2D2A26] rounded-2xl px-8 py-8 mt-8 hover:bg-[#1a1815] transition-colors"
-        >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-            <div>
-              <p className="font-heading text-2xl font-semibold text-white leading-snug">
-                CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
-              </p>
-            </div>
-            <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
-              Create with CULO in Canva
-            </span>
-          </div>
-        </a>
-
-        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal mt-8">
           <iframe
             src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
             title="How to publish with CULO"
@@ -433,23 +407,18 @@ const HOW_IT_WORKS_STEPS = [
 
 function HowItWorksPanel() {
   return (
-    <div className="w-full bg-white rounded-2xl border border-[#E8E4DD] p-8 lg:sticky lg:top-8">
-      <p className="text-lg font-semibold text-[#2D2A26] mb-7">How it works</p>
-      <div className="flex flex-col gap-7">
-        {HOW_IT_WORKS_STEPS.map((s, i) => (
-          <div key={s.title} className="flex gap-4">
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  {s.icon}
-                </svg>
-              </div>
-              {i < HOW_IT_WORKS_STEPS.length - 1 && <div className="w-px flex-1 bg-[#E8E4DD] mt-1.5" />}
+    <div className="w-full bg-white rounded-2xl border border-[#E8E4DD] p-8">
+      <p className="text-lg font-semibold text-[#2D2A26] mb-6">How it works</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {HOW_IT_WORKS_STEPS.map(s => (
+          <div key={s.title}>
+            <div className="w-12 h-12 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                {s.icon}
+              </svg>
             </div>
-            <div className="pb-2">
-              <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
-              <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
-            </div>
+            <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+            <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
           </div>
         ))}
       </div>

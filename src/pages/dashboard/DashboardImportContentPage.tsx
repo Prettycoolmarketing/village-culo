@@ -1704,6 +1704,26 @@ export function DashboardImportContentPage() {
 
           {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
 
+          {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
+              for the real Canva app link once CULO in Canva ships. */}
+          <a
+            href="https://www.prettycoolmarketing.com/culo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block bg-[#2D2A26] rounded-2xl px-8 py-8 mt-8 hover:bg-[#1a1815] transition-colors"
+          >
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+              <div>
+                <p className="font-heading text-2xl font-semibold text-white leading-snug">
+                  CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
+                </p>
+              </div>
+              <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+                Create with CULO in Canva
+              </span>
+            </div>
+          </a>
+
           <div className="mt-6 pt-6 border-t border-[#E8E4DD]">
             <Link to="/dashboard/profile?tab=content" className="text-sm font-semibold text-[#C86A43] hover:underline">
               View everything you've imported so far →
