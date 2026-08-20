@@ -22,6 +22,16 @@ interface RequestBody {
   transcript?: string
   platform: string
   kind?: string
+  // When the caption/transcript are thin (common for Stories, and for any
+  // YouTube import — nothing here auto-fetches captions), the actual
+  // photo(s)/thumbnail are real signal Claude can look at directly instead
+  // of writing blind. Capped and best-effort: a failed fetch just drops
+  // that one image rather than failing the whole request.
+  imageUrls?: string[]
+  // The piece's original posting date — used only to place it within the
+  // right chapter of the founder's chronological story per the brief,
+  // never to invent what happened.
+  postedAt?: string
 }
 
 interface GeneratedBlog {
@@ -35,11 +45,15 @@ interface GeneratedBlog {
 
 const FRAMEWORK_PROMPT = `You are writing on behalf of a real founder, using their Voice & Brand Brief below as the absolute source of truth for who they are, what they've built, and how they write. The brief is supplied by the founder themselves — follow its instructions on tone, structure, what to include and what to avoid exactly.
 
-You are turning ONE piece of previously unpublished, unstructured content (an old social media post/Reel/photo, with only a caption or transcript to go on) into a short, meaningful blog for their permanent publishing profile.
+You are turning ONE piece of previously unpublished, unstructured content (an old social media post/Reel/photo, with only a caption, transcript and/or the actual image(s) to go on) into a short, meaningful blog for their permanent publishing profile.
+
+If one or more images are attached, look at them directly as real evidence of what this piece actually shows — describe what's genuinely depicted (setting, people, activity, mood) the same way you'd use a transcript, not as "an image" you're vaguely gesturing at. Never invent detail beyond what the image, caption, transcript, or brief actually support.
+
+If a posted date is supplied, use it only to place this piece within the correct period of the founder's chronological story per the brief's chapters (e.g. matching it to the right business, life chapter, or time period) — never to invent specific events, numbers or outcomes for that period beyond what the image/caption/transcript actually shows.
 
 Hard rules, regardless of what the brief says:
-- Never invent facts, dates, names, results, or events not present in the brief or the supplied caption/transcript.
-- If the caption/transcript gives very little to go on, write briefly and reflectively rather than padding with invented detail.
+- Never invent facts, dates, names, results, or events not present in the brief, the supplied image(s), or the caption/transcript.
+- If there is genuinely very little to go on (thin caption, no transcript, no usable image), write briefly and reflectively rather than padding with invented detail.
 - Every blog must be genuinely distinct — do not reuse the same opening, structure, or phrasing you'd use for a different piece of content. A reader (or search engine, or AI system) encountering several of this founder's blogs side by side should see real, different content each time, not the same text with a different video attached.
 - Output ONLY a single valid JSON object, no markdown code fences, no commentary before or after it. Match this exact shape:
 
@@ -52,6 +66,31 @@ Hard rules, regardless of what the brief says:
   "questions": ["3 to 5 natural questions a real person, search engine, or AI assistant could use to discover this content, as an array of short strings"]
 }`
 
+// Only worth attaching images when there's little real text to go on — a
+// caption/transcript that's already substantial is stronger, cheaper
+// signal than a photo. Capped at 4: enough to cover a carousel/Story
+// without ballooning the request.
+const THIN_TEXT_THRESHOLD = 80
+const MAX_IMAGES = 4
+const MAX_IMAGE_BYTES = 5_000_000
+
+async function fetchImageAsBase64(url: string): Promise<{ media_type: string; data: string } | undefined> {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return undefined
+    const contentType = res.headers.get('content-type') ?? 'image/jpeg'
+    if (!contentType.startsWith('image/')) return undefined
+    const buf = await res.arrayBuffer()
+    if (buf.byteLength > MAX_IMAGE_BYTES) return undefined
+    let binary = ''
+    const bytes = new Uint8Array(buf)
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!)
+    return { media_type: contentType, data: btoa(binary) }
+  } catch {
+    return undefined
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
 
@@ -62,12 +101,32 @@ serve(async (req) => {
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('AI writing is not configured yet')
 
+    const rawText = [body.transcript, body.caption].filter(Boolean).join(' ').trim()
     const sourceMaterial = [
       body.transcript ? `TRANSCRIPT:\n${body.transcript}` : undefined,
       body.caption ? `CAPTION:\n${body.caption}` : undefined,
-    ].filter(Boolean).join('\n\n') || '(No caption or transcript was captured for this piece — write briefly and reflectively about why this moment was worth preserving, without inventing what it shows.)'
+    ].filter(Boolean).join('\n\n') || '(No caption or transcript was captured for this piece.)'
 
-    const userMessage = `FOUNDER'S VOICE & BRAND BRIEF:\n${body.voiceBrief}\n\n---\n\nSOURCE MATERIAL FOR THIS PIECE (originally posted on ${body.platform}${body.kind ? ` as a ${body.kind}` : ''}):\n${sourceMaterial}`
+    // Thin text is exactly when a photo/thumbnail is worth the extra fetch —
+    // a caption/transcript that already has real substance is stronger,
+    // cheaper signal than asking the model to look at a picture.
+    const candidateImageUrls = (body.imageUrls ?? []).filter(Boolean).slice(0, MAX_IMAGES)
+    const shouldAttachImages = rawText.length < THIN_TEXT_THRESHOLD && candidateImageUrls.length > 0
+    const fetchedImages = shouldAttachImages
+      ? (await Promise.all(candidateImageUrls.map(fetchImageAsBase64))).filter((i): i is { media_type: string; data: string } => !!i)
+      : []
+
+    const postedLine = body.postedAt ? `\nOriginally posted: ${body.postedAt} — use this only to place the piece in the right period of the founder's story per the brief, never to invent what happened.` : ''
+    const imagesNote = fetchedImages.length > 0
+      ? `\n\n${fetchedImages.length} image${fetchedImages.length === 1 ? '' : 's'} from this piece ${fetchedImages.length === 1 ? 'is' : 'are'} attached below — use ${fetchedImages.length === 1 ? 'it' : 'them'} as real evidence of what this piece shows.`
+      : ''
+
+    const userMessageText = `FOUNDER'S VOICE & BRAND BRIEF:\n${body.voiceBrief}\n\n---\n\nSOURCE MATERIAL FOR THIS PIECE (originally posted on ${body.platform}${body.kind ? ` as a ${body.kind}` : ''}):${postedLine}\n${sourceMaterial}${imagesNote}`
+
+    const userContent: unknown[] = [{ type: 'text', text: userMessageText }]
+    for (const img of fetchedImages) {
+      userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } })
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -81,7 +140,7 @@ serve(async (req) => {
         max_tokens: 4000,
         thinking: { type: 'adaptive' },
         system: FRAMEWORK_PROMPT,
-        messages: [{ role: 'user', content: userMessage }],
+        messages: [{ role: 'user', content: userContent }],
       }),
     })
 

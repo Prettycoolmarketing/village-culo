@@ -16,6 +16,10 @@ interface GenerateBlogInput {
   transcript?: string
   platform: string
   kind?: string
+  // Used when caption/transcript are thin — see generate-blog's own notes on
+  // when it actually fetches and attaches these as vision input.
+  imageUrls?: string[]
+  postedAt?: string
 }
 
 export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Promise<{ blog?: GeneratedBlog; error?: string }> {

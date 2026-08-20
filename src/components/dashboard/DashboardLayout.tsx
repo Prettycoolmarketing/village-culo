@@ -129,6 +129,20 @@ export function DashboardLayout() {
         {/* Navigation */}
         <nav className="flex-1 px-2 py-3 flex flex-col">
           <NavLink
+            to="/dashboard/welcome"
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
+                isActive
+                  ? 'bg-[#C86A43] text-white'
+                  : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
+              }`
+            }
+          >
+            <Icon path={icons.home} />
+            Welcome
+          </NavLink>
+
+          <NavLink
             to="/dashboard/import-content"
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${

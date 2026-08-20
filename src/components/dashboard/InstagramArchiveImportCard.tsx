@@ -74,6 +74,8 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
             caption: item.description,
             platform: 'Instagram',
             kind: item.contentTypeHint?.includes('reel') ? 'reel' : item.contentTypeHint?.includes('carousel') ? 'carousel photo post' : 'post',
+            imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
+            postedAt: item.publishedAt ?? item.importedAt,
           })
           if (blog) {
             item.title = blog.title

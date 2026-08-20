@@ -1337,6 +1337,8 @@ export function DashboardProfilePage() {
                       transcript: item.transcriptText,
                       platform: IMPORT_PLATFORM_LABELS[item.sourcePlatform] ?? item.sourcePlatform,
                       kind: item.contentTypeHint?.[0],
+                      imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
+                      postedAt: item.publishedAt ?? item.importedAt,
                     })
                     if (blog) {
                       await importedContentService.upsert({
