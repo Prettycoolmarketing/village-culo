@@ -68,7 +68,7 @@ export function CreativesPage() {
               <img
                 src="/creatives/culo-canva-hero.png"
                 alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
-                className="w-full aspect-[4/3] object-cover rounded-3xl"
+                className="w-full h-auto rounded-3xl"
               />
             </div>
           </div>
