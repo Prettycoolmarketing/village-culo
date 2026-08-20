@@ -87,11 +87,11 @@ function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: 
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
       <div className="flex items-center gap-4 mb-2">
         <SourceIcon platform="podcast" size="lg" />
-        <p className="text-base font-semibold text-[#2D2A26]">Import your podcast content</p>
+        <p className="text-base font-semibold text-[#2D2A26]">Add a podcast episode</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Paste a link to one Spotify or Apple Podcasts episode — no feed, no whole-catalogue connection, just
-        one episode at a time. Village embeds the player and you write the blog.
+        Paste a Spotify or Apple Podcasts episode link to bring that episode into the Village, embed the
+        original player and add your story around it.
       </p>
 
       <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
@@ -269,12 +269,13 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-8 h-full">
       <div className="flex items-center gap-4 mb-2">
         <SourceIcon platform="youtube" size="lg" />
-        <p className="text-base font-semibold text-[#2D2A26]">Import your YouTube content</p>
+        <p className="text-base font-semibold text-[#2D2A26]">Connect YouTube</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
+        Bring your YouTube back catalogue into the Village and turn old videos into new stories, blogs and ideas.
         {isHighVolume
-          ? `Connect your channel to bring in your whole back-catalogue (up to ${HIGH_VOLUME_DAILY_LIMIT.toLocaleString()} videos/day).`
-          : 'Connect your channel to bring in up to 20 previous videos a day — enough to write a real story about each one, not just dump years of content at once.'}
+          ? ` Up to ${HIGH_VOLUME_DAILY_LIMIT.toLocaleString()} videos a day.`
+          : ' Up to 20 previous videos a day — enough to write a real story about each one, not just dump years of content at once.'}
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -289,7 +290,7 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
           disabled={busy || !value.trim()}
           className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
         >
-          {busy ? 'Connecting…' : 'Connect'}
+          {busy ? 'Connecting…' : 'Connect channel'}
         </button>
       </div>
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
@@ -351,9 +352,9 @@ function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: {
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
       <div className="flex items-center gap-4 mb-2">
         <SourceIcon platform="website" size="lg" />
-        <p className="text-base font-semibold text-[#2D2A26]">Transfer Your blogs</p>
+        <p className="text-base font-semibold text-[#2D2A26]">Connect your blogs</p>
       </div>
-      <p className="text-sm text-[#9CA3AF] mb-4">Paste your blog or website URL — Village finds the feed automatically.</p>
+      <p className="text-sm text-[#9CA3AF] mb-4">Paste your website or blog link and CULO will find your feed and bring your existing posts into the Village.</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
@@ -367,7 +368,7 @@ function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: {
           disabled={busy || !value.trim()}
           className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
         >
-          {busy ? 'Connecting…' : 'Connect'}
+          {busy ? 'Connecting…' : 'Connect website'}
         </button>
       </div>
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
@@ -1566,10 +1567,14 @@ export function DashboardImportContentPage() {
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Import Content</h1>
-        <p className="text-sm text-[#6B7280] mt-1 max-w-2xl">
-          Bring in your old YouTube, podcast or blog content — embedded from the original source, never re-uploaded.
-          Add your Voice &amp; Brand Brief below so CULO knows how to actually sound like you when it writes for you.
+        <h1 className="text-2xl font-bold text-[#2D2A26]">Bring your work into the Village</h1>
+        <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl leading-relaxed">
+          Your best ideas are probably already out there. Connect your YouTube, podcast or blog and CULO will
+          bring your existing work into one place — embedded from the original source, never re-uploaded or
+          copied away from it.
+        </p>
+        <p className="text-sm text-[#6B7280] mt-2 max-w-2xl leading-relaxed">
+          Then give CULO a little context about who you are, so the stories it pulls from that work still sound like you.
         </p>
       </div>
 
@@ -1594,7 +1599,7 @@ export function DashboardImportContentPage() {
             </div>
             <div className="flex items-center justify-between gap-3 bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <div>
-                <p className="text-xs text-[#9CA3AF]">Items imported</p>
+                <p className="text-xs text-[#9CA3AF]">Pieces brought in</p>
                 <p className="text-2xl font-bold text-[#2D2A26]">{itemsImported}</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] flex items-center justify-center shrink-0">
@@ -1603,7 +1608,7 @@ export function DashboardImportContentPage() {
             </div>
             <div className="flex items-center justify-between gap-3 bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <div>
-                <p className="text-xs text-[#9CA3AF]">Last scan</p>
+                <p className="text-xs text-[#9CA3AF]">Last checked</p>
                 <p className="text-2xl font-bold text-[#2D2A26]">
                   {lastScan ? new Date(lastScan).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : 'Never'}
                 </p>

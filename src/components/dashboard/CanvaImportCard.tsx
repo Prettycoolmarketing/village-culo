@@ -32,7 +32,7 @@ export function CanvaImportCard({
   onReelVideoReady,
   expanded: controlledExpanded,
   onExpandedChange,
-  buttonLabel = 'Publish designs',
+  buttonLabel = 'Import designs',
 }: {
   founderId: string
   canProceed?: boolean
@@ -192,9 +192,9 @@ export function CanvaImportCard({
         <div className="flex items-center gap-4">
           <SourceIcon platform="canva" size="lg" />
           <div>
-            <p className="text-base font-semibold text-[#2D2A26]">Import from Canva</p>
+            <p className="text-base font-semibold text-[#2D2A26]">Bring in Canva designs</p>
             <p className="text-sm text-[#9CA3AF] mt-0.5">
-              {canProceed ? 'Bring in slides from a Canva design — turn them into a blog, reel or carousel, ready to publish.' : (gateMessage ?? 'Select a format above first.')}
+              {canProceed ? 'Turn your Canva designs into content you can build on in the Village, including blogs, reels and carousels.' : (gateMessage ?? 'Select a format above first.')}
             </p>
           </div>
         </div>

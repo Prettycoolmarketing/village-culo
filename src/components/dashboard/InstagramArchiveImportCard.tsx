@@ -130,9 +130,9 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
         <div className="flex items-center gap-4">
           <SourceIcon platform="instagram" size="lg" />
           <div>
-            <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram Archive</p>
+            <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram archive</p>
             <p className="text-sm text-[#9CA3AF] mt-0.5">
-              Bring years of posts into your permanent knowledge library — captions, dates and media preserved.
+              Bring years of Instagram posts into your Village library with captions, dates and media kept together.
             </p>
           </div>
         </div>

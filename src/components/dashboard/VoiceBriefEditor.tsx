@@ -68,13 +68,15 @@ export function VoiceBriefEditor({ value, updatedAt, founderName, onChange }: {
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] px-8 py-7">
       <div className="mb-6">
-        <p className="text-lg font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
+        <p className="text-lg font-semibold text-[#2D2A26]">Give CULO your context</p>
         <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed">
-          This is why CULO can find and sound like you: search engines and AI tools surface content that
-          clearly reads as one real person with a consistent voice, not generic AI writing. Without a brief,
-          every piece reads the same no matter which video it's attached to — with one, CULO knows who you
-          are, the real chapters of your story, how you actually talk, and what you'd never say, so what it
-          writes actually sounds like you and holds up for both search ranking and AI discovery.
+          CULO can find the stories in your content. Your <strong className="text-[#6B7280] font-semibold">Voice &amp; Brand Brief</strong> helps
+          it understand the person behind them — how you actually speak, what you care about, the chapters of
+          your story, the things you know from experience, and the kind of language you'd never use. So when
+          CULO turns an old video, podcast or blog into something new, it doesn't slap generic AI writing on
+          top — it connects the piece back to you. That consistency also helps your body of work make more
+          sense to search engines and AI discovery tools — one person, one story, connected across everything
+          you publish.
         </p>
         {updatedAt && (
           <p className="text-xs text-[#9CA3AF] mt-1.5">
@@ -98,12 +100,12 @@ export function VoiceBriefEditor({ value, updatedAt, founderName, onChange }: {
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-stretch">
         <div className="bg-[#F8F5F0] rounded-lg p-8 flex flex-col justify-center gap-4">
           <div>
-            <p className="text-lg font-semibold text-[#2D2A26] mb-2">No brief yet?</p>
+            <p className="text-lg font-semibold text-[#2D2A26] mb-2">Help CULO get to know you</p>
             <p className="text-sm text-[#6B7280] leading-relaxed">
-              Two ways to get one: answer a few questions right here and we'll build it with you, or copy this
-              prompt and hand it to whatever AI you already talk to — it reads back through what you've already
-              told it and only asks what's genuinely missing. Paste what it gives you on the right, or upload it
-              as a file.
+              You can build your brief right here by answering a few questions. Or, if you've already spent
+              hours talking to ChatGPT or another AI about your business, use what you've already told it —
+              copy our Brain Transfer prompt into the AI you already use. It'll pull together the useful
+              context it already knows and ask only for what's genuinely missing. Then bring it back to CULO.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -119,7 +121,7 @@ export function VoiceBriefEditor({ value, updatedAt, founderName, onChange }: {
               onClick={handleCopyPrompt}
               className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
             >
-              {copiedPrompt ? 'Copied ✓' : 'Copy prompt for your AI'}
+              {copiedPrompt ? 'Copied ✓' : 'Copy Brain Transfer prompt'}
             </button>
             <button
               type="button"
@@ -133,7 +135,7 @@ export function VoiceBriefEditor({ value, updatedAt, founderName, onChange }: {
 
         <div className="bg-[#F8F5F0] rounded-lg p-8 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-lg font-semibold text-[#2D2A26]">Bring the brief back here</p>
+            <p className="text-lg font-semibold text-[#2D2A26]">Tell us what makes you, you</p>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
