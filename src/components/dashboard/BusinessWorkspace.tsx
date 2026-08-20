@@ -4,12 +4,10 @@ import { sendTransactionalEmail } from '../../services/transactionalEmail'
 import { businessPartnerProfileService, programService, enrollmentService } from '../../services/partnership'
 import { partnerService, newPartnerRequest } from '../../services/partner'
 import type { Partner } from '../../types/partner'
-import type { BusinessPartnerProfile, PartnerProgram, PartnerProgramType, DisclosureType } from '../../types/partnership'
+import type { PartnerProgram, PartnerProgramType, DisclosureType } from '../../types/partnership'
 import { getServices, updateService, deleteService, duplicateService } from '../../services/serviceOfferings'
 import { updateLibraryItem } from '../../services/library'
 import { getServiceMissingItems } from '../../utils/missingAssets'
-import { topics as allTopics } from '../../data/topics'
-import { industries } from '../../data/industries'
 import { HealthBadge } from './PublishingHealth'
 import { OverflowMenu } from '../ui/OverflowMenu'
 import { FAQEditor } from './FAQEditor'
@@ -67,69 +65,6 @@ function DiscoveryToggle({ label, description, enabled, onChange, disabled }: {
     </div>
   )
 }
-
-type ProgramItem = { key: keyof BusinessPartnerProfile; label: string }
-
-function ProgramGroup({ title, description, items, profile, onToggle }: {
-  title: string
-  description: string
-  items: ProgramItem[]
-  profile: BusinessPartnerProfile
-  onToggle: (key: keyof BusinessPartnerProfile) => void
-}) {
-  const activeCount = items.filter(i => profile[i.key] as boolean).length
-  return (
-    <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
-      <div className={`px-4 py-3 flex items-center justify-between gap-3 ${activeCount > 0 ? 'bg-[#C86A43]/5' : 'bg-[#F8F5F0]'}`}>
-        <div>
-          <p className="text-xs font-semibold text-[#2D2A26]">{title}</p>
-          <p className="text-xs text-[#9CA3AF] mt-0.5">{description}</p>
-        </div>
-        {activeCount > 0 && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#C86A43]/10 text-[#C86A43] font-semibold shrink-0 whitespace-nowrap">
-            {activeCount} active
-          </span>
-        )}
-      </div>
-      <div className="divide-y divide-[#F3EDE6]">
-        {items.map(({ key, label }) => (
-          <div key={key} className="flex items-center justify-between gap-4 px-4 py-3">
-            <p className="text-xs text-[#4B4845]">{label}</p>
-            <button
-              onClick={() => onToggle(key)}
-              className={`w-9 h-5 rounded-full transition-colors relative shrink-0 ${(profile[key] as boolean) ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
-              aria-label={`Toggle ${label}`}
-            >
-              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${(profile[key] as boolean) ? 'translate-x-4' : 'translate-x-0.5'}`} />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-const RECOMMEND_PROGRAMS: ProgramItem[] = [
-  { key: 'affiliateEnabled',  label: 'Affiliate Program — publishers earn commission on sales they refer' },
-  { key: 'referralEnabled',   label: 'Referral Program — publishers earn rewards for sign-ups they send' },
-  { key: 'creatorEnabled',    label: 'Creator Program — invite publishers to produce content about you' },
-  { key: 'ambassadorEnabled', label: 'Ambassador Program — long-term brand ambassador relationships' },
-]
-
-const COLLABORATE_PROGRAMS: ProgramItem[] = [
-  { key: 'brandCollaborationsEnabled', label: 'Brand Collaborations — co-branded content and campaigns' },
-  { key: 'communityPartnerEnabled',    label: 'Community Partner — sponsor or co-run communities' },
-  { key: 'mediaPartnerEnabled',        label: 'Media Partner — press and editorial collaboration' },
-  { key: 'sponsorEnabled',             label: 'Sponsorships — sponsor publisher content or events' },
-  { key: 'technologyPartnerEnabled',   label: 'Technology Partner — API integrations and tech partnerships' },
-  { key: 'customPartnershipEnabled',   label: 'Custom — define a unique partnership type' },
-]
-
-const CONNECT_PROGRAMS: ProgramItem[] = [
-  { key: 'podcastGuestEnabled',         label: 'Podcast Guest — offer guest spots on your podcast' },
-  { key: 'workshopPartnerEnabled',      label: 'Workshop Partner — co-create workshops and education' },
-  { key: 'speakerOpportunitiesEnabled', label: 'Speaker Opportunities — offer speaking slots at your events' },
-]
 
 // ─── Become a Partner ─────────────────────────────────────────────────────────
 
@@ -238,48 +173,13 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
   business: Business
   onBusinessUpdate: (b: Business) => void
 }) {
-  const [profile, setProfile] = useState<BusinessPartnerProfile>(
-    () => businessPartnerProfileService.getOrCreate(businessId)
-  )
+  const profile = businessPartnerProfileService.getOrCreate(businessId)
   const [localBiz, setLocalBiz] = useState<Business>(business)
-  const [locationsServedText, setLocationsServedText] = useState(() => (profile.locationsServed ?? []).join(', '))
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  function setP<K extends keyof BusinessPartnerProfile>(key: K, value: BusinessPartnerProfile[K]) {
-    setProfile(prev => ({ ...prev, [key]: value }))
-    setSaved(false)
-  }
-
-  function toggleP(key: keyof BusinessPartnerProfile) {
-    setProfile(prev => ({ ...prev, [key]: !(prev[key] as boolean) }))
-    setSaved(false)
-  }
-
   function setBizBool(key: 'partnerEnabled' | 'villageProActive', value: boolean) {
     setLocalBiz(prev => ({ ...prev, [key]: value }))
-    setSaved(false)
-  }
-
-  function toggleIdealTopic(topicId: string) {
-    const current = profile.idealTopics ?? []
-    setP('idealTopics', current.includes(topicId) ? current.filter(id => id !== topicId) : [...current, topicId])
-  }
-
-  function toggleIdealIndustry(industryId: string) {
-    const current = profile.idealIndustries ?? []
-    setP('idealIndustries', current.includes(industryId) ? current.filter(id => id !== industryId) : [...current, industryId])
-  }
-
-  const ALL_PROGRAM_KEYS = [...RECOMMEND_PROGRAMS, ...COLLABORATE_PROGRAMS, ...CONNECT_PROGRAMS].map(p => p.key)
-  const allProgramsOn = ALL_PROGRAM_KEYS.every(key => profile[key] as boolean)
-
-  function toggleAllPrograms() {
-    const next = !allProgramsOn
-    setProfile(prev => {
-      const patch = Object.fromEntries(ALL_PROGRAM_KEYS.map(key => [key, next]))
-      return { ...prev, ...patch }
-    })
     setSaved(false)
   }
 
@@ -322,161 +222,6 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
       </SectionCard>
 
       <BecomePartnerCard businessId={businessId} business={localBiz} />
-
-      {/* For Publishers */}
-      <SectionCard
-        title="For Publishers"
-        description="Write this for publishers deciding whether to recommend you — not for customers. Be honest, specific, and plain."
-      >
-        <Field
-          label="Discovery Description"
-          hint="What do you do, who do you help, and why would a publisher genuinely recommend you?"
-        >
-          <textarea
-            value={profile.descriptionForDiscovery ?? ''}
-            onChange={e => setP('descriptionForDiscovery', e.target.value || undefined)}
-            rows={4}
-            className={inputClass + ' resize-y'}
-            placeholder="We help small business owners manage their finances without needing an accountant. Our software is built for founders who find accounting overwhelming — straightforward pricing, honest support, no lock-in contracts."
-          />
-        </Field>
-      </SectionCard>
-
-      {/* Discovery Topics & Location */}
-      <SectionCard
-        title="Topics, Industries & Location"
-        description="What topics and industries should a publisher write about to be a strong match for your business?"
-      >
-        <Field label="Topics" hint="Select the topics that best describe what your business does">
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {allTopics.map(topic => {
-              const active = (profile.idealTopics ?? []).includes(topic.id)
-              return (
-                <button
-                  key={topic.id}
-                  onClick={() => toggleIdealTopic(topic.id)}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                    active ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                  }`}
-                >
-                  {topic.name}
-                </button>
-              )
-            })}
-          </div>
-        </Field>
-        <Field label="Industries" hint="Which industries are most relevant to your business?">
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {industries.map(ind => {
-              const active = (profile.idealIndustries ?? []).includes(ind.id)
-              return (
-                <button
-                  key={ind.id}
-                  onClick={() => toggleIdealIndustry(ind.id)}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                    active ? 'bg-[#5E6B4A] text-white border-[#5E6B4A]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#5E6B4A]/50'
-                  }`}
-                >
-                  {ind.name}
-                </button>
-              )
-            })}
-          </div>
-        </Field>
-        <Field
-          label="Locations Served"
-          hint="Where can publishers promote you? (comma separated)"
-        >
-          <input
-            type="text"
-            value={locationsServedText}
-            onChange={e => {
-              setLocationsServedText(e.target.value)
-              const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean)
-              setP('locationsServed', vals.length > 0 ? vals : undefined)
-            }}
-            className={inputClass}
-            placeholder="Australia, New Zealand, UK, USA"
-          />
-        </Field>
-      </SectionCard>
-
-      {/* What You're Open To */}
-      <SectionCard
-        title="What You're Open To"
-        description="Tell publishers what kinds of partnerships and collaborations you're looking for. Be selective — publishers take quality signals seriously."
-      >
-        <button
-          onClick={toggleAllPrograms}
-          className="self-start text-xs font-semibold text-[#C86A43] hover:underline -mt-2"
-        >
-          {allProgramsOn ? 'Turn all off' : 'Turn all on'}
-        </button>
-        <ProgramGroup
-          title="Recommendations & Referrals"
-          description="Publishers earn when they send customers your way"
-          items={RECOMMEND_PROGRAMS}
-          profile={profile}
-          onToggle={toggleP}
-        />
-        <ProgramGroup
-          title="Campaigns & Collaborations"
-          description="Working together on content, events and campaigns"
-          items={COLLABORATE_PROGRAMS}
-          profile={profile}
-          onToggle={toggleP}
-        />
-        <ProgramGroup
-          title="Speaking & Events"
-          description="Podcast guests, workshops and speaking opportunities"
-          items={CONNECT_PROGRAMS}
-          profile={profile}
-          onToggle={toggleP}
-        />
-      </SectionCard>
-
-      {/* Contact & Visibility */}
-      <SectionCard
-        title="Contact & Visibility"
-        description="How should publishers reach you, and who can see this profile?"
-      >
-        <Field label="How should publishers reach you?">
-          <select
-            value={profile.contactPreference ?? 'open'}
-            onChange={e => setP('contactPreference', e.target.value as BusinessPartnerProfile['contactPreference'])}
-            className={inputClass}
-          >
-            <option value="open">Open — publishers can reach out however they like</option>
-            <option value="email">Email — direct contact via email</option>
-            <option value="direct-message">Direct message — through the CULO platform</option>
-            <option value="application-form">Application form — publishers apply via a form</option>
-          </select>
-        </Field>
-        <Field label="Profile visibility" hint="Who can see this Business Discovery Profile?">
-          <div className="flex flex-col gap-3 mt-1">
-            {([
-              { value: 'public',       label: 'Public',       desc: 'Visible to anyone browsing CULO' },
-              { value: 'discoverable', label: 'Discoverable', desc: 'Only surfaces when publishers search or are matched to you' },
-              { value: 'private',      label: 'Private',      desc: 'Hidden from everyone — use this while setting up' },
-            ] as const).map(opt => (
-              <label key={opt.value} className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name={`profileVisibility-${businessId}`}
-                  value={opt.value}
-                  checked={(profile.profileVisibility ?? 'discoverable') === opt.value}
-                  onChange={() => setP('profileVisibility', opt.value)}
-                  className="mt-0.5 accent-[#C86A43]"
-                />
-                <div>
-                  <p className="text-sm font-medium text-[#2D2A26]">{opt.label}</p>
-                  <p className="text-xs text-[#9CA3AF]">{opt.desc}</p>
-                </div>
-              </label>
-            ))}
-          </div>
-        </Field>
-      </SectionCard>
 
       {/* Save */}
       <div className="flex items-center gap-3 pt-2">

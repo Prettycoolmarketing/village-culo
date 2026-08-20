@@ -315,13 +315,14 @@ function FormatStep({ draft, onChange, onNext }: {
   }
 
   return (
-    <div className="flex gap-10 items-center">
-      <div className="max-w-2xl flex-1 min-w-0">
-        <StepHeader
-          title="What's Your Story?"
-          subtitle="Update The Village or edit with CULO in Canva to continue curating your life's work."
-        />
+    <div>
+      <StepHeader
+        title="What's Your Story?"
+        subtitle="Update The Village or edit with CULO in Canva to continue curating your life's work."
+      />
 
+      <div className="flex gap-10 items-start">
+      <div className="max-w-2xl flex-1 min-w-0">
         {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
             for the real Canva app link once CULO in Canva ships. */}
         <a
@@ -383,7 +384,7 @@ function FormatStep({ draft, onChange, onNext }: {
         </button>
       </div>
 
-      <div className="hidden lg:flex flex-col gap-5 w-80 shrink-0 self-stretch lg:mt-[5.5rem]">
+      <div className="hidden lg:flex flex-col gap-5 w-96 shrink-0">
         <HowItWorksPanel />
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
           <iframe
@@ -394,6 +395,7 @@ function FormatStep({ draft, onChange, onNext }: {
             className="absolute inset-0 w-full h-full"
           />
         </div>
+      </div>
       </div>
     </div>
   )
