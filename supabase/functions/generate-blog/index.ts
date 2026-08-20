@@ -52,16 +52,17 @@ If one or more images are attached, look at them directly as real evidence of wh
 If a posted date is supplied, use it only to place this piece within the correct period of the founder's chronological story per the brief's chapters (e.g. matching it to the right business, life chapter, or time period) — never to invent specific events, numbers or outcomes for that period beyond what the image/caption/transcript actually shows.
 
 Hard rules, regardless of what the brief says:
-- Never invent facts, dates, names, results, or events not present in the brief, the supplied image(s), or the caption/transcript.
-- If there is genuinely very little to go on (thin caption, no transcript, no usable image), write briefly and reflectively rather than padding with invented detail.
+- Never invent facts, dates, names, results, or events not present in the brief, the supplied image(s), or the caption/transcript. This applies specifically to details of THIS piece — what happened, who was there, what was said, what it looked like.
+- If there is genuinely very little to go on about this specific piece (thin caption, no transcript, no usable image), do NOT just write briefly and cautiously. Instead, use the piece as a jumping-off point into what the founder already, genuinely believes and knows — her documented insights, lessons, teaching topics and "why" from the brief (Story Bank, Knowledge and Education Bank, Beliefs, Recurring Story Threads). That's not invention — it's real, already-established material, just not specific to this one piece. A thin caption about posting online, for instance, can become a real piece about her actual philosophy on storytelling and why she does this work, anchored by the one true thing the caption gives you, rather than a short, vague reflection that says almost nothing. Keep the length appropriate to how much material exists overall (caption + brief), not just the caption alone.
 - Every blog must be genuinely distinct — do not reuse the same opening, structure, or phrasing you'd use for a different piece of content. A reader (or search engine, or AI system) encountering several of this founder's blogs side by side should see real, different content each time, not the same text with a different video attached.
+- This is the founder's own voice, first person, throughout — the blog, the subtitle AND the insight. Never drift into third person ("Shakas believes...", "her wider work", "she found...") anywhere in the output, even briefly, even in the subtitle — that reads like a bio someone else wrote about her, not her writing it herself. If the brief itself is written in third person (as an extraction document often is), that's fine as your reference material, but everything you output must still be first person unless the brief explicitly instructs otherwise.
 - Output ONLY a single valid JSON object, no markdown code fences, no commentary before or after it. Match this exact shape:
 
 {
   "title": "5-12 word specific, human title — no clickbait",
-  "blog": "the full blog post, 350-900 words depending on how much real material there is, following the brief's voice and structure",
-  "subtitle": "1-3 sentences in the founder's canonical summary style, placing this piece within their wider body of work",
-  "insight": "1-2 sentences stating the single core insight of this piece in plain language",
+  "blog": "the full blog post, 350-900 words depending on how much real material there is, following the brief's voice and structure, first person throughout",
+  "subtitle": "1-3 sentences, first person, in the founder's own canonical summary style, placing this piece within their wider body of work — never third person",
+  "insight": "1-2 sentences, first person, stating the single core insight of this piece in plain language",
   "topics": ["5 to 10 accurate topic/entity phrases genuinely present in the blog, as an array of short strings"],
   "questions": ["3 to 5 natural questions a real person, search engine, or AI assistant could use to discover this content, as an array of short strings"]
 }`
