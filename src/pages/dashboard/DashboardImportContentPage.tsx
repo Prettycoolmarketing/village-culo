@@ -1493,6 +1493,14 @@ export function DashboardImportContentPage() {
   const founderId = getCurrentFounderId(user) ?? 'dev-user'
   const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const founder = getFounder(founderId)
+  // Local, instant copy of the brief — getFounder() is a plain synchronous
+  // store read, not React state, so without this the textarea's value prop
+  // never actually changed after typing or uploading a file: the save to
+  // Supabase went through fine, but nothing re-rendered this component with
+  // the new text, so a file upload looked like it silently did nothing.
+  // Keeping it local (not synced to a slow network round-trip on every
+  // keystroke) also means typing itself never lags waiting on the backend.
+  const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => founder?.voiceBrief)
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [sources, setSources]   = useState<ConnectedSource[]>([])
@@ -1631,9 +1639,12 @@ export function DashboardImportContentPage() {
           {founder && (
             <div className="mb-8">
               <VoiceBriefEditor
-                value={founder.voiceBrief}
+                value={voiceBriefDraft}
                 updatedAt={founder.voiceBriefUpdatedAt}
-                onChange={v => void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })}
+                onChange={v => {
+                  setVoiceBriefDraft(v)
+                  void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })
+                }}
               />
             </div>
           )}

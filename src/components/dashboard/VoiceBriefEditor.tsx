@@ -11,14 +11,23 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
 }) {
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [copiedBrief, setCopiedBrief] = useState(false)
+  const [fileStatus, setFileStatus] = useState<'idle' | 'loading' | 'added'>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleFile(file: File | undefined) {
     if (!file) return
+    setFileStatus('loading')
     const reader = new FileReader()
     reader.onload = () => {
-      if (typeof reader.result === 'string') onChange(reader.result)
+      if (typeof reader.result === 'string') {
+        onChange(reader.result)
+        setFileStatus('added')
+        setTimeout(() => setFileStatus('idle'), 2000)
+      } else {
+        setFileStatus('idle')
+      }
     }
+    reader.onerror = () => setFileStatus('idle')
     reader.readAsText(file)
   }
 
@@ -110,12 +119,21 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 text-base font-semibold px-6 py-3.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shadow-sm shrink-0"
+              disabled={fileStatus === 'loading'}
+              className="inline-flex items-center gap-2 text-base font-semibold px-6 py-3.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-70 disabled:cursor-wait transition-colors shadow-sm shrink-0"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Upload .md or .txt file
+              {fileStatus === 'loading' ? (
+                <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin shrink-0" aria-hidden="true" />
+              ) : fileStatus === 'added' ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              )}
+              {fileStatus === 'loading' ? 'Reading file…' : fileStatus === 'added' ? 'Added ✓' : 'Upload .md or .txt file'}
             </button>
             <input
               ref={fileInputRef}
