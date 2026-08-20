@@ -121,9 +121,24 @@ serve(async (req) => {
       ? `\n\n${fetchedImages.length} image${fetchedImages.length === 1 ? '' : 's'} from this piece ${fetchedImages.length === 1 ? 'is' : 'are'} attached below — use ${fetchedImages.length === 1 ? 'it' : 'them'} as real evidence of what this piece shows.`
       : ''
 
-    const userMessageText = `FOUNDER'S VOICE & BRAND BRIEF:\n${body.voiceBrief}\n\n---\n\nSOURCE MATERIAL FOR THIS PIECE (originally posted on ${body.platform}${body.kind ? ` as a ${body.kind}` : ''}):${postedLine}\n${sourceMaterial}${imagesNote}`
+    // The brief is identical across every item in a founder's batch — often
+    // tens of thousands of tokens, resent in full on every call. Splitting
+    // it into its own cache_control block means a rewrite run over many
+    // items only pays full input price on the first call; every call after
+    // that within the 5-minute cache window reads the brief back at a
+    // fraction of the cost instead of re-billing the whole document. The
+    // per-item source material stays outside the cached block since it's
+    // different every time and would just bust the cache.
+    const perItemText = `SOURCE MATERIAL FOR THIS PIECE (originally posted on ${body.platform}${body.kind ? ` as a ${body.kind}` : ''}):${postedLine}\n${sourceMaterial}${imagesNote}`
 
-    const userContent: unknown[] = [{ type: 'text', text: userMessageText }]
+    const userContent: unknown[] = [
+      {
+        type: 'text',
+        text: `FOUNDER'S VOICE & BRAND BRIEF:\n${body.voiceBrief}`,
+        cache_control: { type: 'ephemeral' },
+      },
+      { type: 'text', text: `---\n\n${perItemText}` },
+    ]
     for (const img of fetchedImages) {
       userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } })
     }
@@ -133,13 +148,21 @@ serve(async (req) => {
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        // Prompt caching is GA on current API versions, but sending the
+        // beta header too costs nothing and guarantees the cache_control
+        // blocks below actually take effect rather than being silently
+        // ignored on some older account/version combination.
+        'anthropic-beta': 'prompt-caching-2024-07-31',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
         model: 'claude-opus-4-8',
         max_tokens: 4000,
         thinking: { type: 'adaptive' },
-        system: FRAMEWORK_PROMPT,
+        // Cached too — identical on every call, any founder, any item — but
+        // the real saving is the brief block above; this one is small
+        // enough it may fall under the minimum cacheable size on its own.
+        system: [{ type: 'text', text: FRAMEWORK_PROMPT, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: userContent }],
       }),
     })
