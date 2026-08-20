@@ -321,31 +321,13 @@ function FormatStep({ draft, onChange, onNext }: {
         subtitle="Update The Village or edit with CULO in Canva to continue curating your life's work."
       />
 
-      <div className="max-w-3xl mx-auto flex flex-col gap-4">
-        {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
-            for the real Canva app link once CULO in Canva ships. */}
-        <a
-          href="https://www.prettycoolmarketing.com/culo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block bg-[#2D2A26] rounded-2xl px-8 py-8 hover:bg-[#1a1815] transition-colors"
-        >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-            <div>
-              <p className="font-heading text-2xl font-semibold text-white leading-snug">
-                CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
-              </p>
-            </div>
-            <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
-              Create with CULO in Canva
-            </span>
-          </div>
-        </a>
+      <div className="flex flex-col gap-4">
+        <HowItWorksPanel />
 
         <div>
           <p className="text-sm font-semibold text-[#2D2A26] mb-1">Choose a format</p>
           <p className="text-xs text-[#9CA3AF] mb-3">Bringing in Canva slides? Do that from Import Content instead — pick a format here to write it yourself.</p>
-          <div className="grid grid-cols-2 gap-3 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
             {FORMATS.map(f => {
               const active = draft.contentTypes.includes(f.type)
               return (
@@ -384,9 +366,7 @@ function FormatStep({ draft, onChange, onNext }: {
           </button>
         </div>
 
-        <HowItWorksPanel />
-
-        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal mt-8">
           <iframe
             src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
             title="How to publish with CULO"

@@ -1175,9 +1175,18 @@ export function DashboardProfilePage() {
           <div className="flex flex-col gap-5">
             <Link
               to="/creatives"
-              className="block text-center py-3 rounded-2xl border border-[#E8E4DD] bg-white text-sm font-bold uppercase tracking-widest text-[#2D2A26] hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
+              className="block bg-[#2D2A26] rounded-2xl px-8 py-8 hover:bg-[#1a1815] transition-colors"
             >
-              Create with CULO in Canva
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                <div>
+                  <p className="font-heading text-2xl font-semibold text-white leading-snug">
+                    CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
+                  </p>
+                </div>
+                <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+                  Create with CULO in Canva
+                </span>
+              </div>
             </Link>
             {/* Real counts only — no invented "storage used" or "last scan"
                 stats, just what's actually in this founder's own content. */}
