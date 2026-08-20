@@ -19,6 +19,7 @@ import { publisherPartnerProfileService, affiliateLinkService } from '../../serv
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
+import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
 import { getMedia } from '../../services/media'
@@ -34,7 +35,6 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { BusinessDiscoveryProfile, BusinessProgramsTab } from '../../components/dashboard/BusinessWorkspace'
 import { StoryEditor } from '../../components/dashboard/StoryEditor'
-import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
 import {
   getFounderMissingItems,
   getMissingCounts,
@@ -783,6 +783,7 @@ export function DashboardProfilePage() {
   )
   const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
+  const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
   const [importedTick, setImportedTick] = useState(0)
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
   const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
@@ -1172,6 +1173,12 @@ export function DashboardProfilePage() {
           const statsPlatforms = Array.from(new Set(allImportedForStats.map(i => i.sourcePlatform)))
           return (
           <div className="flex flex-col gap-5">
+            <Link
+              to="/creatives"
+              className="block text-center py-3 rounded-2xl border border-[#E8E4DD] bg-white text-sm font-bold uppercase tracking-widest text-[#2D2A26] hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
+            >
+              Create with CULO in Canva
+            </Link>
             {/* Real counts only — no invented "storage used" or "last scan"
                 stats, just what's actually in this founder's own content. */}
             <div className="flex flex-wrap gap-4">
@@ -1221,6 +1228,12 @@ export function DashboardProfilePage() {
               const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
               const shown = importedPlatformFilter === 'all' ? allImported : allImported.filter(i => i.sourcePlatform === importedPlatformFilter)
               const readyItems = shown.filter(i => !i.relatedStoryId && isReadyToPublish(i))
+              // Superset of readyItems — includes drafts that still just carry
+              // their original caption/title and haven't been touched yet.
+              // "Select all ready to publish" only grabs items already fit to
+              // publish; rewriting with the Voice Brief is exactly for the
+              // ones that aren't yet, so it needs its own, wider selection.
+              const unpublishedItems = shown.filter(i => !i.relatedStoryId)
 
               function refreshImported() { setImportedTick(t => t + 1) }
 
@@ -1234,6 +1247,10 @@ export function DashboardProfilePage() {
 
               function toggleSelectAllReady() {
                 setImportedChecked(prev => prev.size === readyItems.length ? new Set() : new Set(readyItems.map(i => i.id)))
+              }
+
+              function toggleSelectAllUnpublished() {
+                setImportedChecked(prev => prev.size === unpublishedItems.length ? new Set() : new Set(unpublishedItems.map(i => i.id)))
               }
 
               async function handleImportedStatusChange(id: string, status: ImportedContentStatus) {
@@ -1286,6 +1303,46 @@ export function DashboardProfilePage() {
                 }
                 setImportedChecked(new Set())
                 setImportedBulkPublishing(false)
+                refreshImported()
+              }
+
+              // Rewrites already-imported drafts with the founder's Voice &
+              // Brand Brief, the same real-per-item AI call the Instagram
+              // archive importer uses — for content that was imported before
+              // a brief existed, or that just kept its original caption.
+              // Sequential (each is a real AI call) with visible progress,
+              // same pattern as the Instagram importer; one failure doesn't
+              // stop the rest, it just leaves that item as it was.
+              async function handleRegenerateSelected() {
+                if (!draft?.voiceBrief?.trim()) return
+                const ids = Array.from(importedChecked)
+                if (ids.length === 0) return
+                setImportedRegenProgress({ done: 0, total: ids.length })
+                for (let i = 0; i < ids.length; i++) {
+                  const item = importedContentService.get(ids[i]!)
+                  if (item) {
+                    const { blog } = await generateBlogFromVoiceBrief({
+                      voiceBrief: draft.voiceBrief,
+                      founderName: draft.name ?? '',
+                      caption: item.description,
+                      transcript: item.transcriptText,
+                      platform: IMPORT_PLATFORM_LABELS[item.sourcePlatform] ?? item.sourcePlatform,
+                      kind: item.contentTypeHint?.[0],
+                    })
+                    if (blog) {
+                      await importedContentService.upsert({
+                        ...item,
+                        title: blog.title,
+                        description: blog.blog,
+                        subtitle: blog.subtitle,
+                        topics: Array.from(new Set([...item.topics, ...blog.topics])),
+                      })
+                    }
+                  }
+                  setImportedRegenProgress({ done: i + 1, total: ids.length })
+                }
+                setImportedChecked(new Set())
+                setImportedRegenProgress(null)
                 refreshImported()
               }
 
@@ -1361,18 +1418,28 @@ export function DashboardProfilePage() {
 
                   {saveError && <p className="text-xs text-red-600 font-medium mb-3">{saveError}</p>}
 
-                  {(readyItems.length > 0 || importedChecked.size > 0) && (
+                  {(unpublishedItems.length > 0 || importedChecked.size > 0) && (
                     <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg flex-wrap">
-                      <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={importedChecked.size > 0 && importedChecked.size === readyItems.length}
-                          onChange={toggleSelectAllReady}
-                          disabled={readyItems.length === 0}
-                          className="w-4 h-4 accent-[#C86A43]"
-                        />
-                        Select all ready to publish ({readyItems.length})
-                      </label>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={importedChecked.size > 0 && importedChecked.size === readyItems.length}
+                            onChange={toggleSelectAllReady}
+                            disabled={readyItems.length === 0}
+                            className="w-4 h-4 accent-[#C86A43]"
+                          />
+                          Select all ready to publish ({readyItems.length})
+                        </label>
+                        <button
+                          type="button"
+                          onClick={toggleSelectAllUnpublished}
+                          disabled={unpublishedItems.length === 0}
+                          className="text-xs text-[#9CA3AF] hover:text-[#C86A43] underline decoration-dotted disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          or select all {unpublishedItems.length} unpublished
+                        </button>
+                      </div>
                       <div className="flex items-center gap-2">
                         {importedChecked.size >= 2 && (
                           <button
@@ -1389,6 +1456,18 @@ export function DashboardProfilePage() {
                             className="px-3 py-2 bg-white border border-[#E8E4DD] text-red-600 text-xs font-semibold rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors shrink-0"
                           >
                             Delete {importedChecked.size} selected
+                          </button>
+                        )}
+                        {importedChecked.size > 0 && (
+                          <button
+                            onClick={() => void handleRegenerateSelected()}
+                            disabled={!draft?.voiceBrief?.trim() || !!importedRegenProgress}
+                            title={!draft?.voiceBrief?.trim() ? 'Add your Voice & Brand Brief above first' : 'Rewrite the selected drafts using your Voice & Brand Brief'}
+                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                          >
+                            {importedRegenProgress
+                              ? `Rewriting ${importedRegenProgress.done}/${importedRegenProgress.total}…`
+                              : `Rewrite ${importedChecked.size} with Voice Brief`}
                           </button>
                         )}
                         <button
@@ -1741,11 +1820,18 @@ export function DashboardProfilePage() {
               </div>
             </div>
 
-            <VoiceBriefEditor
-              value={draft.voiceBrief}
-              updatedAt={draft.voiceBriefUpdatedAt}
-              onChange={v => { set('voiceBrief', v); set('voiceBriefUpdatedAt', v ? new Date().toISOString() : undefined) }}
-            />
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Managed from Import Content, next to the imports it writes for.</p>
+              </div>
+              <Link
+                to="/dashboard/import-content"
+                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+              >
+                Open Import Content →
+              </Link>
+            </div>
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Founder ID</p>

@@ -8,37 +8,32 @@
 // flagged as a Reel).
 //
 // Video files are much larger than the slide JPEGs the other Canva
-// functions handle — buffering a whole video in memory the way images are
-// re-uploaded risks the exact WORKER_RESOURCE_LIMIT crash that splitting
-// canva-import-design into two functions just fixed, likely worse. A true
-// streaming re-upload (piping Canva's response straight into Supabase
-// Storage with no buffering) would be the ideal fix, but whether
-// supabase-js's storage upload actually handles a raw ReadableStream body
-// without buffering internally isn't something this codebase has verified —
-// given how many undocumented Canva API surprises this integration has
-// already hit, guessing on another unverified behaviour isn't worth it.
-// Uses the same proven bounded-buffer technique (fetchWithLimit) already
-// confirmed working for images, just with a cap sized for short vertical
-// video instead — a video over the cap reports a clear error rather than
-// crashing.
+// functions handle. The original approach (bounded-buffer download via
+// fetchWithLimit, same as canva-export-images) still crashed the worker
+// with WORKER_RESOURCE_LIMIT even at a 20MB cap — fetchWithLimit's final
+// step copies every streamed chunk into one more same-size buffer (peak
+// ~2x the file size), and the subsequent storage upload likely copies it
+// again, so even a 20MB file meant real peak usage well past what an Edge
+// Function worker gets, on top of V8/runtime overhead.
 //
-// MAX_VIDEO_BYTES was originally 60MB, which crashed the worker with
-// WORKER_RESOURCE_LIMIT in practice rather than hitting the graceful
-// "too large" error below — fetchWithLimit's final step copies every
-// streamed chunk into one more same-size buffer (peak ~2x the file size),
-// and the subsequent storage upload likely copies it again, so a 60MB file
-// meant ~150-180MB of real peak usage before V8/runtime overhead on top of
-// that — comfortably past what an Edge Function worker actually gets.
-// Lowered to a size the graceful-error path can actually be reached at.
+// This now streams instead: Canva's response body (a ReadableStream) is
+// handed straight to supabase-js's storage upload(), which passes a stream
+// body straight through to fetch() with no intermediate buffering
+// (confirmed against storage-js's StorageFileApi — FileBody accepts
+// ReadableStream<Uint8Array> and only Blob/FormData bodies get special-
+// cased, everything else, streams included, is assigned straight to the
+// outgoing request body). Peak memory now stays flat regardless of video
+// size instead of scaling with it, so the byte cap only needs to guard
+// against genuinely unreasonable files, not the worker's own overhead.
 //
 // Deploy: supabase functions deploy canva-export-reel-video
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getValidCanvaAccessToken, assertOwnsFounder } from '../_shared/canva.ts'
-import { createExportJob, fetchWithLimit } from '../_shared/canvaExport.ts'
+import { createExportJob } from '../_shared/canvaExport.ts'
 
-const MAX_VIDEO_BYTES = 20_000_000  // ~20MB — see note above on why 60MB crashed instead of erroring cleanly
+const MAX_VIDEO_BYTES = 300_000_000  // ~300MB — a sanity ceiling, not a memory constraint now that upload is streamed
 
 const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -96,15 +91,23 @@ serve(async (req) => {
     if (!videoUrl) throw new Error('Canva did not return a video for that slide.')
 
     // Canva's export URLs expire in 24h, same reason every other Canva
-    // asset in this app gets re-hosted into our own Storage.
-    const bytes = await fetchWithLimit(videoUrl, MAX_VIDEO_BYTES)
-    if (!bytes) throw new Error('That video was too large to import automatically — download it from Canva and attach it manually in the Publish wizard instead.')
+    // asset in this app gets re-hosted into our own Storage. Streamed
+    // straight through — see note above — so nothing here holds the whole
+    // video in memory at once.
+    const videoRes = await fetch(videoUrl)
+    if (!videoRes.ok || !videoRes.body) throw new Error('Could not download that video from Canva.')
+    const lengthHeader = videoRes.headers.get('content-length')
+    if (lengthHeader && Number(lengthHeader) > MAX_VIDEO_BYTES) {
+      void videoRes.body.cancel()
+      throw new Error('That video was too large to import automatically — download it from Canva and attach it manually in the Publish wizard instead.')
+    }
 
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`
     const path = `${founderId}/${filename}`
-    const { error: uploadError } = await admin.storage.from('media').upload(path, bytes, {
-      cacheControl: '3600', upsert: false, contentType: 'video/mp4',
-    })
+    const { error: uploadError } = await admin.storage.from('media').upload(path, videoRes.body, {
+      cacheControl: '3600', upsert: false, contentType: 'video/mp4', duplex: 'half',
+      // deno-lint-ignore no-explicit-any
+    } as any)
     if (uploadError) throw new Error(uploadError.message)
 
     const { data: publicUrlData } = admin.storage.from('media').getPublicUrl(path)

@@ -27,6 +27,33 @@ export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Prom
   return { blog: data.blog }
 }
 
+export interface VoiceBriefInterviewMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+interface VoiceBriefInterviewTurn {
+  done: boolean
+  message: string
+  brief?: string
+}
+
+// Runs one turn of the in-app Voice Brief interview (see VoiceBriefInterview.tsx)
+// — for a founder with no existing brief and nothing to hand to an outside AI to
+// mine. Send the whole conversation so far; get back either the next question
+// or, once there's enough material, the finished brief.
+export async function runVoiceBriefInterviewTurn(input: {
+  founderName?: string
+  messages: VoiceBriefInterviewMessage[]
+}): Promise<{ turn?: VoiceBriefInterviewTurn; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
+  const { data, error } = await supabase.functions.invoke<VoiceBriefInterviewTurn & { error?: string }>('voice-brief-interview', { body: input })
+  if (error) return { error: error.message }
+  if (data?.error) return { error: data.error }
+  if (!data?.message) return { error: 'AI returned nothing usable' }
+  return { turn: data }
+}
+
 // The prompt a founder can hand to any AI (ChatGPT, Claude, whatever they
 // already use) to help them actually write their own Voice & Brand Brief,
 // rather than staring at a blank textarea. This is a full extraction prompt

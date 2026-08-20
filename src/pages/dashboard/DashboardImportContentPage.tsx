@@ -1641,6 +1641,7 @@ export function DashboardImportContentPage() {
               <VoiceBriefEditor
                 value={voiceBriefDraft}
                 updatedAt={founder.voiceBriefUpdatedAt}
+                founderName={founder.name}
                 onChange={v => {
                   setVoiceBriefDraft(v)
                   void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })

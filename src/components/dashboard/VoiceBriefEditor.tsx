@@ -1,17 +1,20 @@
 import { useRef, useState } from 'react'
 import { VOICE_BRIEF_INTERVIEW_PROMPT } from '../../services/blogWriter'
+import { VoiceBriefInterview } from './VoiceBriefInterview'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
 
-export function VoiceBriefEditor({ value, updatedAt, onChange }: {
+export function VoiceBriefEditor({ value, updatedAt, founderName, onChange }: {
   value: string | undefined
   updatedAt: string | undefined
+  founderName?: string
   onChange: (value: string | undefined) => void
 }) {
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [copiedBrief, setCopiedBrief] = useState(false)
   const [fileStatus, setFileStatus] = useState<'idle' | 'loading' | 'added'>('idle')
+  const [interviewing, setInterviewing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleFile(file: File | undefined) {
@@ -80,28 +83,43 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
         )}
       </div>
 
-      {/* Small side (just enough to hand someone a prompt) next to the big
+      {interviewing ? (
+        <VoiceBriefInterview
+          founderName={founderName}
+          onCancel={() => setInterviewing(false)}
+          onComplete={brief => { onChange(brief); setInterviewing(false) }}
+        />
+      ) : (
+      /* Small side (just enough to hand someone a prompt) next to the big
           side (where the actual brief — the thing with real content — gets
           pasted). Both cards share the same padding/button sizing so they
           read as one cohesive pair, even though the columns aren't equal
-          width — one holds a button, the other holds a founder's whole brief. */}
+          width — one holds a button, the other holds a founder's whole brief. */
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-stretch">
         <div className="bg-[#F8F5F0] rounded-lg p-8 flex flex-col justify-center gap-4">
           <div>
-            <p className="text-lg font-semibold text-[#2D2A26] mb-2">Don't want to write it from scratch?</p>
+            <p className="text-lg font-semibold text-[#2D2A26] mb-2">No brief yet?</p>
             <p className="text-sm text-[#6B7280] leading-relaxed">
-              Copy this, hand it to whatever AI you already talk to. It reads back through what you've
-              already told it — not a cold interview — and only asks you anything if it's genuinely missing.
-              Paste what it gives you on the right, or upload it as a file.
+              Two ways to get one: answer a few questions right here and we'll build it with you, or copy this
+              prompt and hand it to whatever AI you already talk to — it reads back through what you've already
+              told it and only asks what's genuinely missing. Paste what it gives you on the right, or upload it
+              as a file.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
-              onClick={handleCopyPrompt}
-              className="text-base font-semibold px-6 py-3.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shadow-sm"
+              onClick={() => setInterviewing(true)}
+              className="text-base font-semibold px-6 py-3.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shadow-sm"
             >
-              {copiedPrompt ? 'Copied ✓' : 'Copy this prompt'}
+              Answer a few questions
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyPrompt}
+              className="text-sm font-semibold px-4 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+            >
+              {copiedPrompt ? 'Copied ✓' : 'Copy prompt for your AI'}
             </button>
             <button
               type="button"
@@ -169,6 +187,7 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }
