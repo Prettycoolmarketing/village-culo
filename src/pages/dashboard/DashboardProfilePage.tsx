@@ -803,6 +803,8 @@ export function DashboardProfilePage() {
   const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
   const [publishedView, setPublishedView] = useState<'stories' | 'series'>('stories')
   const [activeSeriesId, setActiveSeriesId] = useState<string | null>(null)
+  const [addingSeries, setAddingSeries] = useState(false)
+  const [newSeriesTitle, setNewSeriesTitle] = useState('')
   const [, forceBusinessRefresh] = useState(0)
 
   // A recommendation link can point back at this same page with new query
@@ -1590,11 +1592,17 @@ export function DashboardProfilePage() {
               const activeSeries = activeSeriesId ? founderSeries.find(s => s.id === activeSeriesId) : undefined
 
               async function handleAddSeries() {
-                const title = window.prompt('Name this series — e.g. Van Life')
-                if (!title || !title.trim()) return
-                const series = createSeries(draft!.id, title.trim())
+                if (!newSeriesTitle.trim()) return
+                const series = createSeries(draft!.id, newSeriesTitle.trim())
                 const result = await saveSeries(series)
-                if (result.success) { setActiveSeriesId(series.id); setImportedTick(t => t + 1) }
+                if (result.success) {
+                  setActiveSeriesId(series.id)
+                  setImportedTick(t => t + 1)
+                  setAddingSeries(false)
+                  setNewSeriesTitle('')
+                } else {
+                  setSaveError(result.error ?? 'Could not create that series. Please try again.')
+                }
               }
 
               return (
@@ -1625,10 +1633,40 @@ export function DashboardProfilePage() {
                             {s.title || 'Untitled series'}
                           </button>
                         ))}
-                        <button onClick={() => void handleAddSeries()}
-                          className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-dashed border-[#E8E4DD] text-[#C86A43] hover:border-[#C86A43]/50 transition-colors">
-                          + New Series
-                        </button>
+                        {addingSeries ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              autoFocus
+                              value={newSeriesTitle}
+                              onChange={e => setNewSeriesTitle(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') void handleAddSeries()
+                                if (e.key === 'Escape') { setAddingSeries(false); setNewSeriesTitle('') }
+                              }}
+                              placeholder="e.g. Van Life"
+                              className="px-3 py-1.5 rounded-lg text-sm border border-[#C86A43]/50 text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 w-40"
+                            />
+                            <button
+                              onClick={() => void handleAddSeries()}
+                              disabled={!newSeriesTitle.trim()}
+                              className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                              Create
+                            </button>
+                            <button
+                              onClick={() => { setAddingSeries(false); setNewSeriesTitle('') }}
+                              className="px-2 py-1.5 text-sm text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setAddingSeries(true)}
+                            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-dashed border-[#E8E4DD] text-[#C86A43] hover:border-[#C86A43]/50 transition-colors">
+                            + New Series
+                          </button>
+                        )}
                       </div>
 
                       {activeSeries ? (
