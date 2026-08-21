@@ -1552,10 +1552,10 @@ export function DashboardProfilePage() {
                           <select
                             value=""
                             onChange={e => { if (e.target.value) void handleAddToSeries(e.target.value) }}
-                            title="Tags the selected drafts with a series — nothing gets published"
+                            title="Moves the selected drafts into a series — nothing gets published"
                             className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0 cursor-pointer"
                           >
-                            <option value="" disabled>Add {importedChecked.size} to series…</option>
+                            <option value="" disabled>Move {importedChecked.size} to series…</option>
                             {founderSeries.map(s => (
                               <option key={s.id} value={s.id}>{s.title || 'Untitled series'}</option>
                             ))}
