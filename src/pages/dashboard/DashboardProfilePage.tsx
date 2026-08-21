@@ -1403,7 +1403,10 @@ export function DashboardProfilePage() {
               }
 
               async function handleMergeSelected() {
-                const ids = Array.from(importedChecked)
+                // Draft-only — merging a published item would leave its live
+                // Story pointing at nothing, or wrongly combine two published
+                // pieces. Checked published rows are just silently excluded.
+                const ids = shown.filter(i => importedChecked.has(i.id) && !i.relatedStoryId).map(i => i.id)
                 if (ids.length < 2) return
                 if (!window.confirm(`Merge these ${ids.length} items into one? The others will be deleted — this can't be undone.`)) return
                 const result = await importedContentService.merge(ids)
@@ -1419,7 +1422,12 @@ export function DashboardProfilePage() {
               // something is actually published.
               async function handleAddToSeries(seriesId: string) {
                 if (!seriesId) return
-                const targets = shown.filter(i => importedChecked.has(i.id) && !i.relatedStoryId)
+                // Published items are included here — the checkbox now shows
+                // on every row, and moving something into a series shouldn't
+                // require it to still be a draft. Delete/Merge below stay
+                // scoped to drafts only, since those are destructive and
+                // published items already have a live Story to worry about.
+                const targets = shown.filter(i => importedChecked.has(i.id))
                 if (targets.length === 0) return
                 for (const item of targets) {
                   await importedContentService.upsert({ ...item, seriesId })

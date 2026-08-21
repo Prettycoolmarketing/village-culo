@@ -1405,15 +1405,13 @@ export function SavedRow({
 
   return (
     <div className="flex items-start gap-4 px-5 py-4">
-      {!item.relatedStoryId && (
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={onToggleCheck}
-          className="shrink-0 w-4 h-4 mt-1.5 accent-[#C86A43]"
-          aria-label={`Select "${item.title}"`}
-        />
-      )}
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onToggleCheck}
+        className="shrink-0 w-4 h-4 mt-1.5 accent-[#C86A43]"
+        aria-label={`Select "${item.title}"`}
+      />
       {/* Real external source wins when there is one. Once a real Story
           exists (relatedStoryId), that's the accurate thing to show —
           otherwise, an in-memory preview (no external link to point to at
