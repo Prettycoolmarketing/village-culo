@@ -6,7 +6,7 @@ import { updateFounder, deleteFounder, getFounder } from '../../services/founder
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, EditForm } from './DashboardImportContentPage'
 import { SeriesDetail } from './DashboardSeriesPage'
-import { getSeriesList, createSeries, saveSeries } from '../../services/series'
+import { getSeriesList, createSeries, saveSeries, assignEpisode } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
 import type { ImportedContent } from '../../types/importedContent'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
@@ -1269,6 +1269,7 @@ export function DashboardProfilePage() {
               // publish; rewriting with the Voice Brief is exactly for the
               // ones that aren't yet, so it needs its own, wider selection.
               const unpublishedItems = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview)
+              const founderSeries = getSeriesList({ founderId: draft.id })
 
               function refreshImported() { setImportedTick(t => t + 1) }
 
@@ -1393,6 +1394,32 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
+              // Publishes each selected draft (skipping anything not ready — no
+              // real title yet) as a Story and assigns it straight into the
+              // chosen series, at the next open episode slot. This is the only
+              // way an unpublished import can join a series — series episodes
+              // are Stories — so "add to series" from here means "publish and
+              // slot into this series" in one action, same as the existing
+              // bulk-publish button, just with a series attached.
+              async function handleAddToSeries(seriesId: string) {
+                if (!draft || !seriesId) return
+                const targets = shown.filter(i => importedChecked.has(i.id) && !i.relatedStoryId)
+                if (targets.length === 0) return
+                const ready = targets.filter(isReadyToPublish)
+                const skipped = targets.length - ready.length
+                for (const item of ready) {
+                  const story = buildStoryFromImport(item, draft)
+                  const result = await publishStoryCore(story)
+                  if (result.success) {
+                    await importedContentService.updateStatus(item.id, 'published')
+                    await assignEpisode(story.id, seriesId)
+                  }
+                }
+                setSaveError(skipped > 0 ? `Added ${ready.length} to the series. ${skipped} skipped — give them a real title first.` : null)
+                setImportedChecked(new Set())
+                refreshImported()
+              }
+
               function handleImportedDelete(id: string) {
                 importedContentService.delete(id)
                 refreshImported()
@@ -1439,17 +1466,27 @@ export function DashboardProfilePage() {
               return (
                 <div className="flex gap-6 items-start"><div className="flex-1 min-w-0">
                   {platforms.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      <button onClick={() => setImportedPlatformFilter('all')}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                        All {allImported.length}
-                      </button>
-                      {platforms.map(p => (
-                        <button key={p} onClick={() => setImportedPlatformFilter(p)}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                          {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p).length}
+                    <div className="mb-3">
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        <button onClick={() => setImportedPlatformFilter('all')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                          All {allImported.length}
                         </button>
-                      ))}
+                        <button
+                          onClick={() => { setContentSubTab('published'); setPublishedView('series') }}
+                          className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50 transition-colors"
+                        >
+                          Series →
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {platforms.map(p => (
+                          <button key={p} onClick={() => setImportedPlatformFilter(p)}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                            {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p).length}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 
@@ -1486,6 +1523,19 @@ export function DashboardProfilePage() {
                           >
                             Merge {importedChecked.size} selected
                           </button>
+                        )}
+                        {importedChecked.size > 0 && founderSeries.length > 0 && (
+                          <select
+                            value=""
+                            onChange={e => { if (e.target.value) void handleAddToSeries(e.target.value) }}
+                            title="Publishes the selected drafts and adds them to the chosen series — anything without a real title yet is skipped"
+                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0 cursor-pointer"
+                          >
+                            <option value="" disabled>Add {importedChecked.size} to series…</option>
+                            {founderSeries.map(s => (
+                              <option key={s.id} value={s.id}>{s.title || 'Untitled series'}</option>
+                            ))}
+                          </select>
                         )}
                         {importedChecked.size > 0 && (
                           <button
