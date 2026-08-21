@@ -1590,14 +1590,29 @@ export function DashboardImportContentPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#2D2A26]">Bring your work into the Village</h1>
-        <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl leading-relaxed">
+        <p className="text-sm text-[#6B7280] mt-1.5 leading-relaxed">
           Your best ideas are probably already out there. Connect your YouTube, podcast or blog and CULO will
           bring your existing work into one place — embedded from the original source, never re-uploaded or
-          copied away from it.
+          copied away from it. Then give CULO a little context about who you are, so the stories it pulls
+          from that work still sound like you.
         </p>
-        <p className="text-sm text-[#6B7280] mt-2 max-w-2xl leading-relaxed">
-          Then give CULO a little context about who you are, so the stories it pulls from that work still sound like you.
-        </p>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
+          {[
+            { title: 'Add your Voice & Brand Brief', desc: 'Give CULO the context it needs to sound like you.' },
+            { title: 'Import all content across channels', desc: 'YouTube, podcasts, blogs, Instagram, Canva — bring it all in.' },
+            { title: 'Organise your series', desc: "Sort what you've imported into the chapters of your story." },
+            { title: 'Publish for discovery', desc: 'Put it live so people, search engines and AI can find it.' },
+          ].map((s, i) => (
+            <div key={s.title} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4">
+              <div className="w-7 h-7 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-xs font-bold shrink-0 mb-2">
+                {i + 1}
+              </div>
+              <p className="text-sm font-semibold text-[#2D2A26] mb-0.5">{s.title}</p>
+              <p className="text-xs text-[#9CA3AF] leading-snug">{s.desc}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Real numbers only, straight from this founder's own sources/imports —
