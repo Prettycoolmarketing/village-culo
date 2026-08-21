@@ -59,6 +59,9 @@ export interface ImportedContent {
   insightSource?: string
   factSources?: string[]
   primaryQuestion?: string
+  decision?: 'full_story' | 'short_story' | 'insight_support'
+  possibleGroupHint?: string
+  articleShape?: 'story_led' | 'expertise_led' | 'insight_led' | 'question_led' | 'current_reflection_led' | 'personal'
 
   // Series grouping while still a draft — deliberately separate from
   // Story.seriesId/episodeNumber (see types/index.ts), which only applies

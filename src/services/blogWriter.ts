@@ -10,6 +10,9 @@ export interface GeneratedBlog {
   insightSource?: string
   factSources?: string[]
   primaryQuestion?: string
+  decision?: 'full_story' | 'short_story' | 'insight_support'
+  possibleGroupHint?: string
+  articleShape?: 'story_led' | 'expertise_led' | 'insight_led' | 'question_led' | 'current_reflection_led' | 'personal'
   title?: string
   blog?: string
   subtitle?: string

@@ -48,6 +48,26 @@ interface GeneratedBlog {
   // field below except note is omitted rather than guessed at. A held item
   // is a correct outcome, not a failure — see the framework prompt.
   status: 'ready' | 'insufficient_source'
+  // Only set when status is ready. The unit here isn't "1 video = 1 blog" —
+  // it's "1 piece of evidence, what does it actually deserve." full_story:
+  // enough on its own for a proper piece. short_story: real and worth
+  // keeping, but doesn't stretch to 350+ words honestly — a few hundred
+  // words is fine, don't pad it. insight_support: this piece isn't strong
+  // enough to anchor its own article, but it's genuinely usable as one
+  // illustration inside a broader insight_led piece (still written as its
+  // own short piece here — grouping multiple such items into one shared
+  // article is a separate, not-yet-built batch-aware feature; this just
+  // marks the candidate).
+  decision?: 'full_story' | 'short_story' | 'insight_support'
+  // Set only when the caption/context itself indicates this item is a
+  // fragment of a bigger sequence (e.g. "part 2 of 3", "continued from
+  // yesterday") — never inferred from vague similarity to other content,
+  // since this call never sees the founder's other items. A hint for a
+  // human or a future batch pass, not something this call acts on.
+  possibleGroupHint?: string
+  // Only when status is ready. Not every piece needs to be Shakas' life
+  // story as its plot — see the article-shape guidance below.
+  articleShape?: 'story_led' | 'expertise_led' | 'insight_led' | 'question_led' | 'current_reflection_led' | 'personal'
   note?: string
   // Which of the two writing modes this piece used. source_led: a real
   // piece of source material carries the story; the Insight Brief (if used
@@ -101,6 +121,8 @@ Before writing, work through this silently:
 - What does the source material actually, verifiably establish about this piece? (Keep this list short and honest — most thin captions establish almost nothing beyond a title and a date.)
 - Is there a real story here, or just a label for a story that's been lost?
 - If the story itself is thin: does the Insight Brief contain an established belief (not a guess) that genuinely fits this piece's topic, without needing you to invent what specifically happened? If so, this is insight_led — but it still needs genuinely verified facts to illustrate it, not invented ones.
+- How much does this piece actually earn? Don't stretch a genuinely small, real moment into a 600-word piece with padding to hit a target length, and don't compress a rich one just to be brief. A funny 30-second clip with one real beat is a short_story (a few hundred words is fine); a thin piece that only really works as one example inside a bigger belief is insight_support; a piece with a real arc (setup, tension, what changed) is a full_story.
+- Does the caption/context itself say this is part of a sequence ("part 2 of 3", "continued from...")? If so, set possibleGroupHint — but still write this one piece from only what it actually contains; don't guess at what the other parts might say.
 - List the exact facts you're about to use (this becomes factSources). For each one, confirm it's actually stated somewhere in what you were given, not assumed because it would make the piece flow better.
 - If neither mode gives you enough verified material to write something true and specific, the correct output is status "insufficient_source" — not a plausible-sounding piece built around an invented interpretation or invented supporting detail. A rejected item is a better outcome than a fabricated one, in either mode.
 
@@ -108,7 +130,17 @@ If one or more images are attached, look at them directly as real evidence of wh
 
 If a posted date is supplied, use it only to place this piece within the correct period of the founder's chronological story per the brief's chapters (e.g. matching it to the right business, life chapter, or time period) — never to invent specific events, numbers or outcomes for that period beyond what the image/caption/transcript actually shows.
 
-Structure (when there's enough to write): lived story first, lesson second. Open with what actually happened — the specific moment, decision or thing that was said — and let the teaching point emerge from it naturally, later in the piece. Never open with a lesson, a bullet list, or a generic statement and then attach the story underneath as supporting evidence.
+SIX ARTICLE SHAPES — not every piece is Shakas' life story as its plot. Pick the shape that actually fits, and default to the minimum amount of biography needed:
+- **story_led**: the event itself is the article (a real moment, told in full).
+- **expertise_led**: teaches something, with a founder's actual expertise established in one or two sentences, not a retelling — e.g. "I learned a lot of this from actually running a 4WD tour company" is enough; don't re-explain how the tour company started.
+- **insight_led**: opens with a bigger established belief; her different chapters appear only as brief supporting evidence, not the plot.
+- **question_led**: answers a genuine search question; her experience proves she can answer it, but the article's job is answering the question, not narrating how she got the experience.
+- **current_reflection_led**: something happening now, connected briefly to a past pattern ("we learned versions of this running Stagger too") — no giant backstory.
+- **personal**: sometimes there's no expertise angle at all — a story is simply worth telling.
+
+Hard rule: **do not retell the founder's origin story simply to establish authority.** Once an experience exists elsewhere in the founder's body of work (per the Insight Brief), later articles may reference it in passing — "from my time owning a tour company," "when I designed Billow Beach," "after years filming businesses" — without re-explaining how that chapter began, what happened in it, or how it ended. A reader encountering many of this founder's pieces should see her real experience connected to many different subjects, not the same six-chapter biography retold with a new topic bolted on each time.
+
+Structure (when there's enough to write): lived story first, lesson second. Open with what actually happened — the specific moment, decision or thing that was said — and let the teaching point emerge from it naturally, later in the piece. Never open with a lesson, a bullet list, or a generic statement and then attach the story underneath as supporting evidence. This applies fully to story_led and personal pieces; expertise_led, insight_led, question_led and current_reflection_led pieces should still open with something concrete (a real moment, a real question, a real belief) rather than a generic introduction, but don't need the founder's own story as the centerpiece.
 
 Aim directionally for roughly 70% lived story and personal perspective, 20% teaching that grows directly out of that specific story (not a generic add-on lesson), and at most 10% connecting to the founder's wider work/company — these are directional, not a formula to hit exactly. If the brief specifies different proportions or instructions, follow the brief.
 
@@ -125,13 +157,16 @@ Hard rules, regardless of what the brief says:
 {
   "status": "\"ready\" if there's enough verified material (source and/or Insight Brief) to write something true, or \"insufficient_source\" if not — see the reasoning steps above",
   "note": "only when status is insufficient_source: one honest sentence on what's missing (e.g. 'the title names a specific frustration but the caption doesn't say what it was, and nothing in the Insight Brief covers this angle') — omit entirely when status is ready",
+  "decision": "only when status is ready — \"full_story\", \"short_story\" or \"insight_support\", per the guidance above — pick based on what THIS piece actually earns, not a default length",
+  "possibleGroupHint": "only when the source itself indicates this is part of a sequence (e.g. 'part 2 of 3') — a plain note of what it says, e.g. 'caption says this is part 2 of 3' — omit otherwise",
+  "articleShape": "only when status is ready — \"story_led\", \"expertise_led\", \"insight_led\", \"question_led\", \"current_reflection_led\" or \"personal\", per the six shapes above",
   "generationType": "only when status is ready — \"source_led\" or \"insight_led\", per the two modes above",
   "insightConfidence": "only when the Insight Brief contributed the lesson — \"A\", \"B\" or \"C\" matching its own confidence system — omit if the Insight Brief wasn't used",
   "insightSource": "only when the Insight Brief contributed the lesson — which specific belief/entry, in a few words — omit if not used",
   "factSources": ["only when status is ready — every concrete fact/example actually used, named plainly, each one traceable to what you were actually given"],
   "primaryQuestion": "only when status is ready — the single primary search question this piece answers, one intent per article",
   "title": "only when status is ready — 5-12 word specific, human title — no clickbait. Where it fits naturally, lean toward a real, searchable question or problem the piece answers rather than a purely literary phrase",
-  "blog": "only when status is ready — the full blog post, 350-900 words depending on how much real, verified material there is, following the brief's voice and structure, first person throughout, story-first with the teaching point emerging from it — no invented supporting detail even where it would read better",
+  "blog": "only when status is ready — length follows decision: full_story is 350-900 words with a real arc; short_story is roughly 150-350 words, don't pad it to seem more substantial than it is; insight_support is similar length to short_story, one clean illustration of the belief, not a full argument for it. Always following the brief's voice and structure, first person throughout, story-first with the teaching point emerging from it — no invented supporting detail even where it would read better",
   "subtitle": "only when status is ready — 1-3 sentences, first person, specific to THIS piece's story and angle — never third person",
   "insight": "only when status is ready — 1-2 sentences, first person, stating the single core insight of this piece in plain language",
   "topics": ["only when status is ready — 5 to 10 accurate topic/entity phrases genuinely present in the blog"],

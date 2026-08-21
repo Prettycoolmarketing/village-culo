@@ -1400,6 +1400,9 @@ export function DashboardProfilePage() {
                         insightSource: blog.insightSource,
                         factSources: blog.factSources,
                         primaryQuestion: blog.primaryQuestion,
+                        decision: blog.decision,
+                        possibleGroupHint: blog.possibleGroupHint,
+                        articleShape: blog.articleShape,
                       })
                     } else if (blog?.status === 'insufficient_source') {
                       // Held, not failed — the model correctly declined to
