@@ -1465,8 +1465,25 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
+              const seriesNav = importedFilterMode === 'series' && founderSeries.length > 0 && (
+                <div className="w-56 shrink-0 flex flex-col gap-1.5">
+                  {founderSeries.map(s => (
+                    <button key={s.id} onClick={() => setImportedSeriesFilter(s.id)}
+                      className={`text-left px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === s.id ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                      {s.title || 'Untitled series'} <span className="opacity-70">{allImported.filter(i => i.seriesId === s.id).length}</span>
+                    </button>
+                  ))}
+                  <button onClick={() => setImportedSeriesFilter('unassigned')}
+                    className={`text-left px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === 'unassigned' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                    Unassigned <span className="opacity-70">{allImported.filter(i => !i.seriesId).length}</span>
+                  </button>
+                </div>
+              )
+
               return (
-                <div className="flex gap-6 items-start"><div className="flex-1 min-w-0">
+                <div className="flex gap-6 items-start">
+                {seriesNav}
+                <div className="flex-1 min-w-0">
                   {platforms.length > 0 && (
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1.5 mb-1.5">
@@ -1475,34 +1492,16 @@ export function DashboardProfilePage() {
                           All {allImported.length}
                         </button>
                         <button
-                          onClick={() => { setImportedFilterMode('series'); setImportedSeriesFilter(null) }}
+                          onClick={() => { setImportedFilterMode('series'); setImportedSeriesFilter(founderSeries[0]?.id ?? 'unassigned') }}
                           className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedFilterMode === 'series' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}
                         >
                           Series
                         </button>
                       </div>
-                      {importedFilterMode === 'series' ? (
-                        founderSeries.length === 0 ? (
-                          <p className="text-xs text-[#9CA3AF]">No series yet — create one from Published &gt; Series, then tag drafts here once you've got one.</p>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            <button onClick={() => setImportedSeriesFilter(null)}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === null ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                              All {allImported.length}
-                            </button>
-                            {founderSeries.map(s => (
-                              <button key={s.id} onClick={() => setImportedSeriesFilter(s.id)}
-                                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === s.id ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                                {s.title || 'Untitled series'} {allImported.filter(i => i.seriesId === s.id).length}
-                              </button>
-                            ))}
-                            <button onClick={() => setImportedSeriesFilter('unassigned')}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === 'unassigned' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                              Unassigned {allImported.filter(i => !i.seriesId).length}
-                            </button>
-                          </div>
-                        )
-                      ) : (
+                      {importedFilterMode === 'series' && founderSeries.length === 0 && (
+                        <p className="text-xs text-[#9CA3AF]">No series yet — create one from Published &gt; Series, then tag drafts here once you've got one.</p>
+                      )}
+                      {importedFilterMode === 'platform' && (
                         <div className="flex flex-wrap gap-1.5">
                           {platforms.map(p => (
                             <button key={p} onClick={() => setImportedPlatformFilter(p)}
