@@ -1395,6 +1395,11 @@ export function DashboardProfilePage() {
                         description: blog.blog ?? item.description,
                         subtitle: blog.subtitle ?? item.subtitle,
                         topics: Array.from(new Set([...item.topics, ...(blog.topics ?? [])])),
+                        generationType: blog.generationType,
+                        insightConfidence: blog.insightConfidence,
+                        insightSource: blog.insightSource,
+                        factSources: blog.factSources,
+                        primaryQuestion: blog.primaryQuestion,
                       })
                     } else if (blog?.status === 'insufficient_source') {
                       // Held, not failed — the model correctly declined to

@@ -49,6 +49,30 @@ interface GeneratedBlog {
   // is a correct outcome, not a failure — see the framework prompt.
   status: 'ready' | 'insufficient_source'
   note?: string
+  // Which of the two writing modes this piece used. source_led: a real
+  // piece of source material carries the story; the Insight Brief (if used
+  // at all) only adds a supporting reflection. insight_led: an established
+  // belief from the Insight Brief IS the piece, illustrated with genuinely
+  // verified history rather than one thin, unverifiable source. Both modes
+  // can independently return insufficient_source — a strong belief does not
+  // rescue a piece that has no verifiable facts to illustrate it with.
+  generationType?: 'source_led' | 'insight_led'
+  // A/B/C matching the Insight Brief's own confidence system, only set when
+  // the Insight Brief contributed the lesson (omit if the piece is purely
+  // source-led with no Insight Brief involvement at all).
+  insightConfidence?: 'A' | 'B' | 'C'
+  // Which specific Insight Brief entry/belief was drawn on, in a few words
+  // (e.g. "A business can end while the knowledge continues") — omit if the
+  // Insight Brief wasn't used.
+  insightSource?: string
+  // Every concrete fact/example actually used, named plainly (e.g. "Stagger
+  // Inn Adventures closing", "the Bell Gorge lodge-host years") — each one
+  // must trace to the supplied source material. Never list something here
+  // that was inferred or assumed rather than actually stated.
+  factSources?: string[]
+  // The single primary search question this piece answers — one intent per
+  // article, not everything the founder knows about the topic.
+  primaryQuestion?: string
   title?: string
   blog?: string
   subtitle?: string
@@ -67,11 +91,18 @@ The critical rule connecting all three: **the Insight Brief may supply a lesson.
 
 A title is evidence of what the founder intended to talk about. It is NOT evidence of the argument she made, what happened, how it resolved, or what she concluded. Never infer the missing content of a video from its title alone, even when a connection to an established belief would be easy to write.
 
+TWO WRITING MODES — decide which one this piece is, and never blend them:
+- **source_led**: real source material (caption/transcript/image) carries an actual story. The Insight Brief, if it contributes anything, only adds a closing reflection connecting to something already established — it never adds new plot, motive, or process to the story itself.
+- **insight_led**: the source material for this one piece is too thin to carry a story on its own, but an established Insight Brief belief is strong enough to justify its own piece, illustrated using OTHER genuinely verified facts about the founder that are actually present somewhere in what you've been given (the Insight Brief's own stated history, or other source material you've seen) — never a new anecdote invented to illustrate the belief.
+
+THE MOST IMPORTANT RULE, in both modes: **do not invent plausible supporting facts, processes, motivations, or examples just to make an established insight read more convincingly.** "So the brief for every shoot became X" or "a caravan looks like more space until you hit narrow streets" are exactly the kind of specific-sounding filler that feels true but isn't stated anywhere — if you didn't verify it, it doesn't go in, no matter how well it serves the argument. State the belief at the level of generality it's actually established at; let the real, verified specifics do the illustrating, and if there aren't enough real specifics to illustrate it, write a shorter piece or return insufficient_source rather than padding the gap.
+
 Before writing, work through this silently:
 - What does the source material actually, verifiably establish about this piece? (Keep this list short and honest — most thin captions establish almost nothing beyond a title and a date.)
 - Is there a real story here, or just a label for a story that's been lost?
-- If the story itself is thin: does the Insight Brief contain an established belief (not a guess) that genuinely fits this piece's topic, without needing you to invent what specifically happened?
-- If neither the source nor the Insight Brief gives you enough to write something true and specific, the correct output is status "insufficient_source" — not a plausible-sounding piece built around an invented interpretation. A rejected item is a better outcome than a fabricated one.
+- If the story itself is thin: does the Insight Brief contain an established belief (not a guess) that genuinely fits this piece's topic, without needing you to invent what specifically happened? If so, this is insight_led — but it still needs genuinely verified facts to illustrate it, not invented ones.
+- List the exact facts you're about to use (this becomes factSources). For each one, confirm it's actually stated somewhere in what you were given, not assumed because it would make the piece flow better.
+- If neither mode gives you enough verified material to write something true and specific, the correct output is status "insufficient_source" — not a plausible-sounding piece built around an invented interpretation or invented supporting detail. A rejected item is a better outcome than a fabricated one, in either mode.
 
 If one or more images are attached, look at them directly as real evidence of what this piece actually shows — describe what's genuinely depicted (setting, people, activity, mood) the same way you'd use a transcript, not as "an image" you're vaguely gesturing at. Never invent detail beyond what the image, caption, transcript, or brief actually support.
 
@@ -92,10 +123,15 @@ Hard rules, regardless of what the brief says:
 - Output ONLY a single valid JSON object, no markdown code fences, no commentary before or after it. Match this exact shape:
 
 {
-  "status": "\"ready\" if there's enough real source material or a genuinely applicable Insight Brief entry to write something true, or \"insufficient_source\" if neither exists — see the reasoning steps above",
-  "note": "only when status is insufficient_source: one honest sentence on what's missing (e.g. 'the title names a specific frustration but the caption doesn't say what it was, and nothing in the Insight Brief covers this angle') — omit this field entirely when status is ready",
+  "status": "\"ready\" if there's enough verified material (source and/or Insight Brief) to write something true, or \"insufficient_source\" if not — see the reasoning steps above",
+  "note": "only when status is insufficient_source: one honest sentence on what's missing (e.g. 'the title names a specific frustration but the caption doesn't say what it was, and nothing in the Insight Brief covers this angle') — omit entirely when status is ready",
+  "generationType": "only when status is ready — \"source_led\" or \"insight_led\", per the two modes above",
+  "insightConfidence": "only when the Insight Brief contributed the lesson — \"A\", \"B\" or \"C\" matching its own confidence system — omit if the Insight Brief wasn't used",
+  "insightSource": "only when the Insight Brief contributed the lesson — which specific belief/entry, in a few words — omit if not used",
+  "factSources": ["only when status is ready — every concrete fact/example actually used, named plainly, each one traceable to what you were actually given"],
+  "primaryQuestion": "only when status is ready — the single primary search question this piece answers, one intent per article",
   "title": "only when status is ready — 5-12 word specific, human title — no clickbait. Where it fits naturally, lean toward a real, searchable question or problem the piece answers rather than a purely literary phrase",
-  "blog": "only when status is ready — the full blog post, 350-900 words depending on how much real material there is, following the brief's voice and structure, first person throughout, story-first with the teaching point emerging from it",
+  "blog": "only when status is ready — the full blog post, 350-900 words depending on how much real, verified material there is, following the brief's voice and structure, first person throughout, story-first with the teaching point emerging from it — no invented supporting detail even where it would read better",
   "subtitle": "only when status is ready — 1-3 sentences, first person, specific to THIS piece's story and angle — never third person",
   "insight": "only when status is ready — 1-2 sentences, first person, stating the single core insight of this piece in plain language",
   "topics": ["only when status is ready — 5 to 10 accurate topic/entity phrases genuinely present in the blog"],

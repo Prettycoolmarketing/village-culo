@@ -3,6 +3,13 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 export interface GeneratedBlog {
   status: 'ready' | 'insufficient_source'
   note?: string
+  // Editorial ledger — see generate-blog's FRAMEWORK_PROMPT for the exact
+  // rules governing each field.
+  generationType?: 'source_led' | 'insight_led'
+  insightConfidence?: 'A' | 'B' | 'C'
+  insightSource?: string
+  factSources?: string[]
+  primaryQuestion?: string
   title?: string
   blog?: string
   subtitle?: string

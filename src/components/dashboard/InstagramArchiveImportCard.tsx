@@ -85,6 +85,11 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
             item.description = blog.blog ?? item.description
             item.subtitle = blog.subtitle ?? item.subtitle
             item.topics = Array.from(new Set([...item.topics, ...(blog.topics ?? [])]))
+            item.generationType = blog.generationType
+            item.insightConfidence = blog.insightConfidence
+            item.insightSource = blog.insightSource
+            item.factSources = blog.factSources
+            item.primaryQuestion = blog.primaryQuestion
           } else if (blog?.status === 'insufficient_source') {
             // Held, not failed — correctly declined rather than invented.
             // Original caption stays; flagged the same way a title/caption

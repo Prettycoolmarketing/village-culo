@@ -50,6 +50,16 @@ export interface ImportedContent {
   flaggedForReview?: boolean
   flagReason?: string
 
+  // Editorial ledger from the last AI rewrite — see generate-blog's
+  // FRAMEWORK_PROMPT. Not shown publicly; exists so that at scale
+  // ("show me every article where the lesson was Level C") the founder can
+  // audit how a piece was actually written rather than trusting it blind.
+  generationType?: 'source_led' | 'insight_led'
+  insightConfidence?: 'A' | 'B' | 'C'
+  insightSource?: string
+  factSources?: string[]
+  primaryQuestion?: string
+
   // Series grouping while still a draft — deliberately separate from
   // Story.seriesId/episodeNumber (see types/index.ts), which only applies
   // once something is actually published. This lets a founder sort
