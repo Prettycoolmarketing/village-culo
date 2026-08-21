@@ -6,7 +6,7 @@ import { updateFounder, deleteFounder, getFounder } from '../../services/founder
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, EditForm } from './DashboardImportContentPage'
 import { SeriesDetail } from './DashboardSeriesPage'
-import { getSeriesList, createSeries, saveSeries, assignEpisode } from '../../services/series'
+import { getSeriesList, createSeries, saveSeries } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
 import type { ImportedContent } from '../../types/importedContent'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
@@ -795,6 +795,12 @@ export function DashboardProfilePage() {
   const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>(
     () => (searchParams.get('platform') as ImportedContentPlatform | null) ?? 'all'
   )
+  // Series is its own filter mode within Imported (not just the platform
+  // filter's 'all') — series groupings apply to unpublished drafts too, see
+  // ImportedContent.seriesId, so browsing by series shouldn't require
+  // leaving the Imported list or publishing anything first.
+  const [importedFilterMode, setImportedFilterMode] = useState<'platform' | 'series'>('platform')
+  const [importedSeriesFilter, setImportedSeriesFilter] = useState<string | 'unassigned' | null>(null)
   const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
@@ -1257,7 +1263,13 @@ export function DashboardProfilePage() {
               void importedTick
               const allImported = importedContentService.getAll({ founderId: draft.id })
               const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
-              const shown = importedPlatformFilter === 'all' ? allImported : allImported.filter(i => i.sourcePlatform === importedPlatformFilter)
+              const shown = importedFilterMode === 'series'
+                ? (importedSeriesFilter === null
+                    ? allImported
+                    : importedSeriesFilter === 'unassigned'
+                      ? allImported.filter(i => !i.seriesId)
+                      : allImported.filter(i => i.seriesId === importedSeriesFilter))
+                : importedPlatformFilter === 'all' ? allImported : allImported.filter(i => i.sourcePlatform === importedPlatformFilter)
               // Flagged items (title/caption mismatch etc.) are excluded from
               // every "select all" pool below — still individually
               // selectable via their own row checkbox, just never swept into
@@ -1394,28 +1406,18 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
-              // Publishes each selected draft (skipping anything not ready — no
-              // real title yet) as a Story and assigns it straight into the
-              // chosen series, at the next open episode slot. This is the only
-              // way an unpublished import can join a series — series episodes
-              // are Stories — so "add to series" from here means "publish and
-              // slot into this series" in one action, same as the existing
-              // bulk-publish button, just with a series attached.
+              // Tags the selected drafts with a series — no publishing involved.
+              // Series is being used as an unpublished sorting/grouping layer
+              // for now (see ImportedContent.seriesId); episode order and the
+              // Story-level series/episode fields only come into play once
+              // something is actually published.
               async function handleAddToSeries(seriesId: string) {
-                if (!draft || !seriesId) return
+                if (!seriesId) return
                 const targets = shown.filter(i => importedChecked.has(i.id) && !i.relatedStoryId)
                 if (targets.length === 0) return
-                const ready = targets.filter(isReadyToPublish)
-                const skipped = targets.length - ready.length
-                for (const item of ready) {
-                  const story = buildStoryFromImport(item, draft)
-                  const result = await publishStoryCore(story)
-                  if (result.success) {
-                    await importedContentService.updateStatus(item.id, 'published')
-                    await assignEpisode(story.id, seriesId)
-                  }
+                for (const item of targets) {
+                  await importedContentService.upsert({ ...item, seriesId })
                 }
-                setSaveError(skipped > 0 ? `Added ${ready.length} to the series. ${skipped} skipped — give them a real title first.` : null)
                 setImportedChecked(new Set())
                 refreshImported()
               }
@@ -1468,25 +1470,48 @@ export function DashboardProfilePage() {
                   {platforms.length > 0 && (
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1.5 mb-1.5">
-                        <button onClick={() => setImportedPlatformFilter('all')}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                        <button onClick={() => { setImportedFilterMode('platform'); setImportedPlatformFilter('all') }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedFilterMode === 'platform' && importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
                           All {allImported.length}
                         </button>
                         <button
-                          onClick={() => { setContentSubTab('published'); setPublishedView('series') }}
-                          className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50 transition-colors"
+                          onClick={() => { setImportedFilterMode('series'); setImportedSeriesFilter(null) }}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedFilterMode === 'series' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}
                         >
-                          Series →
+                          Series
                         </button>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {platforms.map(p => (
-                          <button key={p} onClick={() => setImportedPlatformFilter(p)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                            {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p).length}
-                          </button>
-                        ))}
-                      </div>
+                      {importedFilterMode === 'series' ? (
+                        founderSeries.length === 0 ? (
+                          <p className="text-xs text-[#9CA3AF]">No series yet — create one from Published &gt; Series, then tag drafts here once you've got one.</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            <button onClick={() => setImportedSeriesFilter(null)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === null ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                              All {allImported.length}
+                            </button>
+                            {founderSeries.map(s => (
+                              <button key={s.id} onClick={() => setImportedSeriesFilter(s.id)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === s.id ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                                {s.title || 'Untitled series'} {allImported.filter(i => i.seriesId === s.id).length}
+                              </button>
+                            ))}
+                            <button onClick={() => setImportedSeriesFilter('unassigned')}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === 'unassigned' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                              Unassigned {allImported.filter(i => !i.seriesId).length}
+                            </button>
+                          </div>
+                        )
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {platforms.map(p => (
+                            <button key={p} onClick={() => setImportedPlatformFilter(p)}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                              {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p).length}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1528,7 +1553,7 @@ export function DashboardProfilePage() {
                           <select
                             value=""
                             onChange={e => { if (e.target.value) void handleAddToSeries(e.target.value) }}
-                            title="Publishes the selected drafts and adds them to the chosen series — anything without a real title yet is skipped"
+                            title="Tags the selected drafts with a series — nothing gets published"
                             className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0 cursor-pointer"
                           >
                             <option value="" disabled>Add {importedChecked.size} to series…</option>

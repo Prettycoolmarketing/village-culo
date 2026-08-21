@@ -50,6 +50,14 @@ export interface ImportedContent {
   flaggedForReview?: boolean
   flagReason?: string
 
+  // Series grouping while still a draft — deliberately separate from
+  // Story.seriesId/episodeNumber (see types/index.ts), which only applies
+  // once something is actually published. This lets a founder sort
+  // imported/unpublished content into a series before publishing anything,
+  // without forcing a publish just to organise. Episode order within the
+  // series isn't tracked here; that's assigned once the piece is published.
+  seriesId?: string
+
   // Set when this draft was created by a connector scan (see services/connectedSources.ts)
   // rather than a manual paste-a-link import — lets a re-scan skip URLs already imported.
   connectedSourceId?: string
