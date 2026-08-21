@@ -1269,7 +1269,13 @@ export function DashboardProfilePage() {
                     : importedSeriesFilter === 'unassigned'
                       ? allImported.filter(i => !i.seriesId)
                       : allImported.filter(i => i.seriesId === importedSeriesFilter))
-                : importedPlatformFilter === 'all' ? allImported : allImported.filter(i => i.sourcePlatform === importedPlatformFilter)
+                : importedPlatformFilter === 'all'
+                  ? allImported
+                  // Once something's been moved into a series, it drops out of
+                  // its platform tab — the tab is "what's still unsorted from
+                  // this platform," not a permanent record of where it came
+                  // from. "All" is the only view that always shows everything.
+                  : allImported.filter(i => i.sourcePlatform === importedPlatformFilter && !i.seriesId)
               // Flagged items (title/caption mismatch etc.) are excluded from
               // every "select all" pool below — still individually
               // selectable via their own row checkbox, just never swept into
@@ -1506,7 +1512,7 @@ export function DashboardProfilePage() {
                           {platforms.map(p => (
                             <button key={p} onClick={() => setImportedPlatformFilter(p)}
                               className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                              {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p).length}
+                              {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p && !i.seriesId).length}
                             </button>
                           ))}
                         </div>
