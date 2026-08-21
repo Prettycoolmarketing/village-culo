@@ -17,9 +17,10 @@ import { SourceIcon } from '../ui/SourceIcon'
 // video it's attached to, which is bad for SEO (near-duplicate pages) and
 // GEO (nothing distinct for an AI system to cite).
 
-export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, expanded: controlledExpanded, onExpandedChange }: {
+export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief, onImported, expanded: controlledExpanded, onExpandedChange }: {
   founderId: string
   voiceBrief?: string
+  insightBrief?: string
   onImported: (count: number) => void
   expanded?: boolean
   onExpandedChange?: (expanded: boolean) => void
@@ -63,6 +64,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
       // real progress, and a failure on one item never blocks the rest —
       // it just keeps that item's original caption as its description.
       let aiBlogError: string | null = null
+      let heldCount = 0
       if (voiceBrief?.trim()) {
         const founderName = getFounder(founderId)?.name ?? ''
         for (let i = 0; i < built.length; i++) {
@@ -76,12 +78,20 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
             kind: item.contentTypeHint?.includes('reel') ? 'reel' : item.contentTypeHint?.includes('carousel') ? 'carousel photo post' : 'post',
             imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
             postedAt: item.publishedAt ?? item.importedAt,
+            insightBrief,
           })
-          if (blog) {
-            item.title = blog.title
-            item.description = blog.blog
-            item.subtitle = blog.subtitle
-            item.topics = Array.from(new Set([...item.topics, ...blog.topics]))
+          if (blog?.status === 'ready') {
+            item.title = blog.title ?? item.title
+            item.description = blog.blog ?? item.description
+            item.subtitle = blog.subtitle ?? item.subtitle
+            item.topics = Array.from(new Set([...item.topics, ...(blog.topics ?? [])]))
+          } else if (blog?.status === 'insufficient_source') {
+            // Held, not failed — correctly declined rather than invented.
+            // Original caption stays; flagged the same way a title/caption
+            // mismatch is, so it's visible and excluded from bulk actions.
+            heldCount++
+            item.flaggedForReview = true
+            item.flagReason = blog.note ?? 'Not enough source material to rewrite without inventing detail.'
           } else if (blogError) {
             // A config-level failure (e.g. the API key isn't set) will fail
             // identically for every remaining item — no point burning through
@@ -106,6 +116,10 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
       if (aiBlogError) {
         setError(
           `Everything imported, but AI blog writing didn't run (${aiBlogError}) — your original captions were used instead.`
+        )
+      } else if (heldCount > 0) {
+        setError(
+          `Imported fine. ${heldCount} item${heldCount === 1 ? '' : 's'} had too little to go on to write from honestly — held for review (flagged with an asterisk) instead of guessed at.`
         )
       } else if (uploadErrors.length > 0) {
         setError(

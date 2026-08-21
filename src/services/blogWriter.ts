@@ -1,12 +1,14 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 export interface GeneratedBlog {
-  title: string
-  blog: string
-  subtitle: string
-  insight: string
-  topics: string[]
-  questions: string[]
+  status: 'ready' | 'insufficient_source'
+  note?: string
+  title?: string
+  blog?: string
+  subtitle?: string
+  insight?: string
+  topics?: string[]
+  questions?: string[]
 }
 
 interface GenerateBlogInput {
@@ -20,6 +22,11 @@ interface GenerateBlogInput {
   // when it actually fetches and attaches these as vision input.
   imageUrls?: string[]
   postedAt?: string
+  // Separate from voiceBrief: the founder's own source-checked bank of what
+  // they actually believe/know/can teach. Only ever allowed to supply a
+  // lesson when the source material is too thin to carry one on its own —
+  // never used to invent what a thin caption/video was actually about.
+  insightBrief?: string
 }
 
 export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Promise<{ blog?: GeneratedBlog; error?: string }> {

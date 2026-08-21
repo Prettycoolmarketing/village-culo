@@ -1199,6 +1199,7 @@ export function DashboardProfilePage() {
           // include a brief saved from Import Content, which silently
           // disabled Rewrite with no visible reason beyond a hover tooltip.
           const liveVoiceBrief = getFounder(draft.id)?.voiceBrief
+          const liveInsightBrief = getFounder(draft.id)?.insightBrief
           return (
           <div className="flex flex-col gap-5">
             <Link
@@ -1372,6 +1373,7 @@ export function DashboardProfilePage() {
                 const ids = Array.from(importedChecked)
                 if (ids.length === 0) return
                 setImportedRegenProgress({ done: 0, total: ids.length })
+                let held = 0
                 for (let i = 0; i < ids.length; i++) {
                   const item = importedContentService.get(ids[i]!)
                   if (item) {
@@ -1384,14 +1386,27 @@ export function DashboardProfilePage() {
                       kind: item.contentTypeHint?.[0],
                       imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
                       postedAt: item.publishedAt ?? item.importedAt,
+                      insightBrief: liveInsightBrief,
                     })
-                    if (blog) {
+                    if (blog?.status === 'ready') {
                       await importedContentService.upsert({
                         ...item,
-                        title: blog.title,
-                        description: blog.blog,
-                        subtitle: blog.subtitle,
-                        topics: Array.from(new Set([...item.topics, ...blog.topics])),
+                        title: blog.title ?? item.title,
+                        description: blog.blog ?? item.description,
+                        subtitle: blog.subtitle ?? item.subtitle,
+                        topics: Array.from(new Set([...item.topics, ...(blog.topics ?? [])])),
+                      })
+                    } else if (blog?.status === 'insufficient_source') {
+                      // Held, not failed — the model correctly declined to
+                      // invent a story the source material doesn't support.
+                      // Flagged the same way a title/caption mismatch is, so
+                      // it shows an asterisk and drops out of bulk actions
+                      // until a human adds real context.
+                      held++
+                      await importedContentService.upsert({
+                        ...item,
+                        flaggedForReview: true,
+                        flagReason: blog.note ?? 'Not enough source material to rewrite without inventing detail.',
                       })
                     }
                   }
@@ -1399,6 +1414,7 @@ export function DashboardProfilePage() {
                 }
                 setImportedChecked(new Set())
                 setImportedRegenProgress(null)
+                setSaveError(held > 0 ? `${held} item${held === 1 ? '' : 's'} had too little to go on and ${held === 1 ? 'was' : 'were'} held for review instead of guessed at.` : null)
                 refreshImported()
               }
 

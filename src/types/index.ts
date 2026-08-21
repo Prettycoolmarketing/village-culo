@@ -421,6 +421,15 @@ export interface Founder {
   // duplicate text across every imported piece (bad for SEO/GEO).
   voiceBrief?: string
   voiceBriefUpdatedAt?: string
+  // Separate from voiceBrief on purpose: the Voice Brief establishes HOW the
+  // founder sounds; this establishes WHAT they already believe/know/can
+  // teach (their own documented, source-checked insight bank, organised
+  // however the founder wants — by season, by belief, whatever). Kept apart
+  // so generate-blog can hold both to genuinely different standards: the
+  // Village import data is the source of fact, this is the source of
+  // meaning, and neither is allowed to invent facts on the other's behalf.
+  insightBrief?: string
+  insightBriefUpdatedAt?: string
   // Featured Video — published stories (with a real video attached) the
   // founder has chosen to spotlight at the bottom of their profile. Always
   // a pointer into real Stories, never a separate upload.

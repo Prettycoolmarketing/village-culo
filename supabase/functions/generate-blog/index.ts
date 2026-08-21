@@ -32,47 +32,74 @@ interface RequestBody {
   // right chapter of the founder's chronological story per the brief,
   // never to invent what happened.
   postedAt?: string
+  // Deliberately separate from voiceBrief. voiceBrief is HOW the founder
+  // sounds. This is WHAT they already, genuinely believe/know/can teach —
+  // their own source-checked insight bank. The two are held to different
+  // standards below: this one is only ever allowed to supply a lesson the
+  // founder has actually stated: it may never be used to invent what a thin
+  // caption/video was actually about.
+  insightBrief?: string
 }
 
 interface GeneratedBlog {
-  title: string
-  blog: string
-  subtitle: string
-  insight: string
-  topics: string[]
-  questions: string[]
+  // "ready" — enough real source material (caption/transcript/image) or a
+  // genuinely applicable, already-stated insight from insightBrief exists to
+  // write something true. "insufficient_source" — neither exists; every
+  // field below except note is omitted rather than guessed at. A held item
+  // is a correct outcome, not a failure — see the framework prompt.
+  status: 'ready' | 'insufficient_source'
+  note?: string
+  title?: string
+  blog?: string
+  subtitle?: string
+  insight?: string
+  topics?: string[]
+  questions?: string[]
 }
 
-const FRAMEWORK_PROMPT = `You are writing on behalf of a real founder, using their Voice & Brand Brief below as the absolute source of truth for who they are, what they've built, and how they write. The brief is supplied by the founder themselves — follow its instructions on tone, structure, what to include and what to avoid exactly.
+const FRAMEWORK_PROMPT = `You are writing on behalf of a real founder, drawing on three separate documents that must never be blended into one undifferentiated pile of context:
 
-You are turning ONE piece of previously unpublished, unstructured content (an old social media post/Reel/photo, with only a caption, transcript and/or the actual image(s) to go on) into a short, meaningful blog for their permanent publishing profile.
+1. SOURCE MATERIAL (the caption/transcript/image(s)/date for this one piece) — this is the ONLY source of fact about what actually happened in this specific piece. Names, events, decisions, numbers, outcomes: if it isn't here, it isn't a fact you can use.
+2. VOICE & BRAND BRIEF — this establishes HOW the founder sounds: sentence rhythm, vocabulary, structure, tone. It does not supply facts about this piece either.
+3. INSIGHT BRIEF (if supplied) — this establishes WHAT the founder already, genuinely believes, knows and can teach, in their own words, organised however they chose to organise it. It exists for exactly one situation: when the source material is too thin to carry a real lesson on its own, you may draw the teaching portion of the piece from something the founder has already, actually stated here.
+
+The critical rule connecting all three: **the Insight Brief may supply a lesson. It may never supply a fact.** If the source material doesn't tell you what happened, the Insight Brief doesn't get to fill that gap either — it can only tell you what the founder already believes in general, which you may connect to the one true thing the source gives you (a title, a topic, a date). Do not let a plausible-sounding connection stand in for an actual answer.
+
+A title is evidence of what the founder intended to talk about. It is NOT evidence of the argument she made, what happened, how it resolved, or what she concluded. Never infer the missing content of a video from its title alone, even when a connection to an established belief would be easy to write.
+
+Before writing, work through this silently:
+- What does the source material actually, verifiably establish about this piece? (Keep this list short and honest — most thin captions establish almost nothing beyond a title and a date.)
+- Is there a real story here, or just a label for a story that's been lost?
+- If the story itself is thin: does the Insight Brief contain an established belief (not a guess) that genuinely fits this piece's topic, without needing you to invent what specifically happened?
+- If neither the source nor the Insight Brief gives you enough to write something true and specific, the correct output is status "insufficient_source" — not a plausible-sounding piece built around an invented interpretation. A rejected item is a better outcome than a fabricated one.
 
 If one or more images are attached, look at them directly as real evidence of what this piece actually shows — describe what's genuinely depicted (setting, people, activity, mood) the same way you'd use a transcript, not as "an image" you're vaguely gesturing at. Never invent detail beyond what the image, caption, transcript, or brief actually support.
 
 If a posted date is supplied, use it only to place this piece within the correct period of the founder's chronological story per the brief's chapters (e.g. matching it to the right business, life chapter, or time period) — never to invent specific events, numbers or outcomes for that period beyond what the image/caption/transcript actually shows.
 
-Structure: lived story first, lesson second. Open with what actually happened — the specific moment, decision or thing that was said — and let the teaching point emerge from it naturally, later in the piece. Never open with a lesson, a bullet list, or a generic statement and then attach the story underneath as supporting evidence. The reader should feel like they learned something because they followed a real experience, not like they read a tutorial with a personal anecdote bolted on.
+Structure (when there's enough to write): lived story first, lesson second. Open with what actually happened — the specific moment, decision or thing that was said — and let the teaching point emerge from it naturally, later in the piece. Never open with a lesson, a bullet list, or a generic statement and then attach the story underneath as supporting evidence.
 
 Aim directionally for roughly 70% lived story and personal perspective, 20% teaching that grows directly out of that specific story (not a generic add-on lesson), and at most 10% connecting to the founder's wider work/company — these are directional, not a formula to hit exactly. If the brief specifies different proportions or instructions, follow the brief.
 
 Hard rules, regardless of what the brief says:
-- Never invent facts, dates, names, results, or events not present in the brief, the supplied image(s), or the caption/transcript. This applies specifically to details of THIS piece — what happened, who was there, what was said, what it looked like.
-- Never invent precision that wasn't supplied: no specific revenue, customer counts, hours, percentages, dates, or outcomes unless that exact number appears in the brief or source material. Prefer a true, vaguer description ("hours of manual work") over a specific invented one ("six hours of work").
-- Do not manufacture emotional depth (family, burnout, mental health, struggle) that isn't already present in the brief or source material, just because it reads well. If the brief documents a real emotional stake, preserve it; don't add one that isn't there.
-- If there is genuinely very little to go on about this specific piece (thin caption, no transcript, no usable image), do NOT just write briefly and cautiously. Instead, use the piece as a jumping-off point into what the founder already, genuinely believes and knows — her documented insights, lessons, teaching topics and "why" from the brief (Story Bank, Knowledge and Education Bank, Beliefs, Recurring Story Threads). That's not invention — it's real, already-established material, just not specific to this one piece. Keep the length appropriate to how much material exists overall (caption + brief), not just the caption alone.
-- Every blog must be genuinely distinct — do not reuse the same opening, structure, or phrasing you'd use for a different piece of content. A reader (or search engine, or AI system) encountering several of this founder's blogs side by side should see real, different content each time, not the same text with a different video attached.
-- This is the founder's own voice, first person, throughout — the blog, the subtitle AND the insight. Never drift into third person ("she believes...", "her wider work", "she found...") anywhere in the output, even briefly, even in the subtitle — that reads like a bio someone else wrote about her, not her writing it herself. If the brief itself is written in third person (as an extraction document often is), that's fine as your reference material, but everything you output must still be first person unless the brief explicitly instructs otherwise.
-- Write in full flowing paragraphs. Avoid copywriter-voice mannerisms: one-sentence paragraphs stacked for effect, manufactured "mic-drop" lines, constant rhetorical questions, and clichés like "here's the truth," "let that sink in," "nobody talks about this," "game changer," "this changes everything," or fake vulnerability. A strong sentence now and then is good; twenty of them in a row reads as AI-written.
+- Never invent facts, dates, names, results, or events not present in the source material or the Insight Brief's own stated experience. This applies specifically to details of THIS piece — what happened, who was there, what was said, what it looked like.
+- Never invent precision that wasn't supplied: no specific revenue, customer counts, hours, percentages, dates, or outcomes unless that exact number appears in the source material. Prefer a true, vaguer description ("hours of manual work") over a specific invented one ("six hours of work").
+- Do not manufacture emotional depth (family, burnout, mental health, struggle) that isn't already present in the source material or Insight Brief, just because it reads well. If real emotional stakes are documented, preserve them; don't add ones that aren't there.
+- Every blog must be genuinely distinct — do not reuse the same opening, structure, phrasing, or underlying belief (e.g. leaning on the same Insight Brief entry) you'd use for a different piece of content. A reader encountering several of this founder's blogs side by side should see real, different content and different teaching points each time.
+- This is the founder's own voice, first person, throughout — the blog, the subtitle AND the insight. Never drift into third person ("she believes...", "her wider work", "she found...") anywhere in the output, even briefly, even in the subtitle. If the brief or Insight Brief is written in third person (as an extraction document often is), that's fine as reference material, but everything you output must still be first person unless explicitly instructed otherwise.
+- Write in full flowing paragraphs. Avoid copywriter-voice mannerisms: one-sentence paragraphs stacked for effect, manufactured "mic-drop" lines, constant rhetorical questions, and clichés like "here's the truth," "let that sink in," "nobody talks about this," "game changer," "this changes everything," or fake vulnerability.
 - Do not over-explain the founder's company/product. Let the reader arrive at why it matters gradually, through the story — one or two sentences of connection is usually enough. Never open with a product description, and never let the piece read like a disguised ad.
 - Output ONLY a single valid JSON object, no markdown code fences, no commentary before or after it. Match this exact shape:
 
 {
-  "title": "5-12 word specific, human title — no clickbait. Where it fits naturally, lean toward a real, searchable question or problem the piece answers (e.g. what a reader might actually type into Google or ask an AI assistant) rather than a purely literary phrase — useful-curiosity, not a listicle headline",
-  "blog": "the full blog post, 350-900 words depending on how much real material there is, following the brief's voice and structure, first person throughout, story-first with the teaching point emerging from it",
-  "subtitle": "1-3 sentences, first person, specific to THIS piece's story and angle (not a generic canonical bio line) — this is where a strong literary opening phrase belongs if the title itself needed to be more searchable; never third person",
-  "insight": "1-2 sentences, first person, stating the single core insight of this piece in plain language",
-  "topics": ["5 to 10 accurate topic/entity phrases genuinely present in the blog, as an array of short strings"],
-  "questions": ["3 to 5 natural questions a real person, search engine, or AI assistant could use to discover this content, as an array of short strings"]
+  "status": "\"ready\" if there's enough real source material or a genuinely applicable Insight Brief entry to write something true, or \"insufficient_source\" if neither exists — see the reasoning steps above",
+  "note": "only when status is insufficient_source: one honest sentence on what's missing (e.g. 'the title names a specific frustration but the caption doesn't say what it was, and nothing in the Insight Brief covers this angle') — omit this field entirely when status is ready",
+  "title": "only when status is ready — 5-12 word specific, human title — no clickbait. Where it fits naturally, lean toward a real, searchable question or problem the piece answers rather than a purely literary phrase",
+  "blog": "only when status is ready — the full blog post, 350-900 words depending on how much real material there is, following the brief's voice and structure, first person throughout, story-first with the teaching point emerging from it",
+  "subtitle": "only when status is ready — 1-3 sentences, first person, specific to THIS piece's story and angle — never third person",
+  "insight": "only when status is ready — 1-2 sentences, first person, stating the single core insight of this piece in plain language",
+  "topics": ["only when status is ready — 5 to 10 accurate topic/entity phrases genuinely present in the blog"],
+  "questions": ["only when status is ready — 3 to 5 natural questions a real person, search engine, or AI assistant could use to discover this content"]
 }`
 
 // Only worth attaching images when there's little real text to go on — a
@@ -146,8 +173,17 @@ serve(async (req) => {
         text: `FOUNDER'S VOICE & BRAND BRIEF:\n${body.voiceBrief}`,
         cache_control: { type: 'ephemeral' },
       },
-      { type: 'text', text: `---\n\n${perItemText}` },
     ]
+    // Separate cached block, only when supplied — see FRAMEWORK_PROMPT for
+    // the hard boundary on how this may be used (meaning, never facts).
+    if (body.insightBrief?.trim()) {
+      userContent.push({
+        type: 'text',
+        text: `FOUNDER'S INSIGHT BRIEF (what she already believes/knows/can teach — never a source of facts about this specific piece):\n${body.insightBrief}`,
+        cache_control: { type: 'ephemeral' },
+      })
+    }
+    userContent.push({ type: 'text', text: `---\n\n${perItemText}` })
     for (const img of fetchedImages) {
       userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } })
     }

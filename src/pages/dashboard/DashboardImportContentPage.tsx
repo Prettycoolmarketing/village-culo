@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
+import { InsightBriefEditor } from '../../components/dashboard/InsightBriefEditor'
 import { SourceIcon } from '../../components/ui/SourceIcon'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
@@ -1522,6 +1523,7 @@ export function DashboardImportContentPage() {
   // Keeping it local (not synced to a slow network round-trip on every
   // keystroke) also means typing itself never lags waiting on the backend.
   const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => founder?.voiceBrief)
+  const [insightBriefDraft, setInsightBriefDraft] = useState(() => founder?.insightBrief)
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [sources, setSources]   = useState<ConnectedSource[]>([])
@@ -1688,6 +1690,18 @@ export function DashboardImportContentPage() {
               />
             </div>
           )}
+          {founder && (
+            <div className="mb-8">
+              <InsightBriefEditor
+                value={insightBriefDraft}
+                updatedAt={founder.insightBriefUpdatedAt}
+                onChange={v => {
+                  setInsightBriefDraft(v)
+                  void updateFounder({ ...founder, insightBrief: v, insightBriefUpdatedAt: new Date().toISOString() })
+                }}
+              />
+            </div>
+          )}
 
           <p className="text-sm font-semibold text-[#2D2A26] mb-3">Bring in your content</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
@@ -1703,6 +1717,7 @@ export function DashboardImportContentPage() {
                 <InstagramArchiveImportCard
                   founderId={founderId}
                   voiceBrief={canUseVoiceRewrite ? founder?.voiceBrief : undefined}
+                  insightBrief={canUseVoiceRewrite ? founder?.insightBrief : undefined}
                   expanded={instagramExpanded}
                   onExpandedChange={setInstagramExpanded}
                   onImported={count => reportImported(count)}
