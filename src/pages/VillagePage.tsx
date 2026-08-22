@@ -91,7 +91,7 @@ export function VillagePage() {
         </InnerContainer>
 
         {/* Full-width email capture — big and legible for a QR code at a conference */}
-        <div className="border-t border-white/10 bg-black/20">
+        <div>
           <InnerContainer className="py-10 md:py-14">
             <p
               id="creatives-cta-heading"
