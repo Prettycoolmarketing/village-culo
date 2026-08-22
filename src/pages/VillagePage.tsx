@@ -184,28 +184,54 @@ export function VillagePage() {
 
       {/* ── 8. CULO Creatives ─────────────────────────────────────────────────
         Closes every homepage visit with the flagship thing coming next —
-        exclusively in Canva — instead of a search box nobody was asked for.
+        full-bleed and hero-scale (matching /creatives), not a small boxed
+        card, with a full-width email bar for conference QR-code sign-ups.
       */}
-      <VillageSection surface tight>
-        <section className="bg-charcoal rounded-2xl p-10 md:p-14 text-center" aria-labelledby="creatives-cta-heading">
-          <p className="font-body text-xs font-semibold text-primary/80 uppercase tracking-widest mb-4">
-            Coming soon · Exclusively in Canva
-          </p>
-          <h2 id="creatives-cta-heading" className="font-heading text-3xl md:text-4xl font-semibold text-white mb-4 leading-snug">
-            CULO Creatives is coming<br />
-            <span className="text-primary">to Canva.</span>
-          </h2>
-          <p className="font-body text-base text-white/60 max-w-lg mx-auto mb-8">
-            Turn your raw footage and messy thoughts into blogs, carousels and reels — without ever leaving Canva.
-          </p>
-          <div className="max-w-md mx-auto">
-            <WaitlistForm source="village-homepage" dark />
+      <section className="bg-charcoal relative overflow-hidden" aria-labelledby="creatives-heading">
+        <InnerContainer className="pt-20 pb-16 md:pt-28 md:pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="text-center lg:text-left">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+                Coming soon · Exclusively in Canva
+              </p>
+              <h2 id="creatives-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
+                CULO Creatives is coming to Canva.
+              </h2>
+              <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
+                The Canva editing app that turns your raw footage and messy thoughts into blogs, carousels and
+                reels — without ever leaving Canva. Built for founders who aren't short on ideas, just short
+                on time.
+              </p>
+              <Link to="/creatives" className="inline-block text-sm font-medium text-white/50 hover:text-white transition-colors">
+                Learn more about CULO Creatives →
+              </Link>
+            </div>
+            <div className="relative hidden lg:block">
+              <img
+                src="/creatives/culo-canva-hero.png"
+                alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
+                className="w-full h-auto rounded-3xl"
+              />
+            </div>
           </div>
-          <Link to="/creatives" className="inline-block mt-5 text-sm font-medium text-white/50 hover:text-white transition-colors">
-            Learn more about CULO Creatives →
-          </Link>
-        </section>
-      </VillageSection>
+        </InnerContainer>
+
+        {/* Full-width email capture — big and legible for a QR code at a conference */}
+        <div className="border-t border-white/10 bg-black/20">
+          <InnerContainer className="py-10 md:py-14">
+            <p
+              id="creatives-cta-heading"
+              className="font-heading text-2xl md:text-3xl font-semibold text-white text-center mb-6"
+            >
+              Join the waitlist
+            </p>
+            <WaitlistForm source="village-homepage" dark size="lg" />
+            <p className="font-body text-sm text-white/40 mt-5 text-center">
+              We hate spam. Your email stays private — we'll only email you when it's ready.
+            </p>
+          </InnerContainer>
+        </div>
+      </section>
 
     </main>
   )
