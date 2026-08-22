@@ -9,7 +9,6 @@ import { SearchInput } from '../ui/SearchInput'
 // and all SEO/GEO value — they're reached through search, widgets and
 // internal links rather than the navbar, same as any large content site.
 const primaryLinks = [
-  { to: '/',           label: 'Piazza',     exact: true  },
   { to: '/creatives',  label: 'Creatives',  exact: false },
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/mercato',    label: 'Businesses', exact: false },
