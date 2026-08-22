@@ -56,136 +56,10 @@ export function VillagePage() {
         Skip to main content
       </a>
 
-      {/* ── 1. Hero ─────────────────────────────────────────────────────────── */}
-      {/*
-        Headline, search bar and popular topic pills.
-        The front door to the Village — sets the editorial tone.
-      */}
-      <HeroWidget />
-
-      {/* ── 2. Today's Highlights ───────────────────────────────────────────── */}
-      {/*
-        Story of the Day, Founder of the Day, Idea of the Day,
-        Featured Business, Upcoming Event.
-        Pulled from featured: true objects across the data layer.
-      */}
-      <VillageSection surface>
-        <FeaturedWidget
-          heading="Today's Highlights"
-          subheading="The best of the Village, updated as new stories are published."
-        />
-      </VillageSection>
-
-      {/* ── 3. Latest Stories ───────────────────────────────────────────────── */}
-      {/*
-        Six reel-sized vertical story cards.
-        The primary content format — blogs, reels and carousels from real founders.
-        Schema-visible: title, summary, founder, location, topic, CTA all in readable text.
-      */}
-      <VillageSection>
-        <StoryGrid
-          heading="Latest Stories"
-          subheading="Real founder experiences transformed into blogs, reels and carousels."
-          action={{ label: 'View All Stories', href: '/stories' }}
-          filter={{ publicOnly: true, limit: 6 }}
-          hideKey="homepage"
-          columns={3}
-          cardVariant="vertical"
-          showSummary
-          showFounder
-          showTopics
-          showCTA
-          emptyTitle="The Village is about to come alive."
-          emptyMessage="The first stories will appear here as founders begin publishing. Real experiences, real businesses, real ideas — all permanent."
-        />
-      </VillageSection>
-
-      {/* ── 4. Trending Ideas ───────────────────────────────────────────────── */}
-      {/*
-        Knowledge extracted from stories.
-        IdeaGrid with showQuotes enabled — every 4th card becomes a full-width
-        editorial quote from a real founder, breaking the grid rhythm intentionally.
-      */}
-      <VillageSection surface>
-        <IdeaGrid
-          heading="Trending Ideas"
-          subheading="Knowledge extracted from stories across the Village."
-          action={{ label: 'Explore Ideas', href: '/ideas' }}
-          filter={{ publicOnly: true, featured: true, limit: 6 }}
-          fallbackToPublic
-          columns={3}
-          showQuotes
-          emptyTitle="The first ideas are waiting to be discovered."
-          emptyMessage="Ideas are extracted from published founder stories. As founders publish, the knowledge layer of the Village will grow here."
-        />
-      </VillageSection>
-
-      {/* ── 5. Featured Founders + Mercato preview ──────────────────────────── */}
-      {/*
-        Two grids side by side on desktop — people and businesses together.
-        Keeps the human + commercial ecosystem visible in one section.
-      */}
-      <VillageSection>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-
-          <FounderGrid
-            heading="Featured Founders"
-            subheading="Meet the people behind the knowledge."
-            action={{ label: 'All Founders', href: '/founders' }}
-            filter={{ publicOnly: true, featured: true, limit: 4 }}
-            fallbackToPublic
-            columns={2}
-            cardVariant="default"
-            emptyTitle="The first Publisher is about to arrive."
-            emptyMessage="Founders will appear here once they've published to the Village."
-          />
-
-          <BusinessGrid
-            heading="Businesses"
-            subheading="Discover businesses through the stories and ideas behind them."
-            action={{ label: 'Browse Businesses', href: '/mercato' }}
-            filter={{ publicOnly: true, featured: true, limit: 4 }}
-            fallbackToPublic
-            columns={2}
-            cardVariant="default"
-            emptyTitle="Businesses are almost open."
-            emptyMessage="Businesses will appear here once their founders begin publishing."
-          />
-
-        </div>
-      </VillageSection>
-
-      {/* ── 6. Explore by Location ──────────────────────────────────────────── */}
-      {/*
-        Six location cards, portrait orientation.
-        Each shows story count — incentivises publishing from underrepresented cities.
-      */}
-      <VillageSection surface>
-        <MapPreviewWidget
-          heading="Explore by Location"
-          subheading="Discover founders, businesses and stories from across Australia."
-          action={{ label: 'Open Map', href: '/map' }}
-          limit={6}
-        />
-      </VillageSection>
-
-      {/* ── 7. Noticeboard ──────────────────────────────────────────────────── */}
-      {/*
-        Latest events, collaborations, opportunities and requests.
-        Community pulse — keeps the Village feeling alive and active.
-      */}
-      <VillageSection>
-        <NoticeboardPreviewWidget
-          heading="Noticeboard"
-          subheading="Events, collaborations and opportunities from the Village."
-          limit={3}
-        />
-      </VillageSection>
-
-      {/* ── 8. CULO Creatives ─────────────────────────────────────────────────
-        Closes every homepage visit with the flagship thing coming next —
-        full-bleed and hero-scale (matching /creatives), not a small boxed
-        card, with a full-width email bar for conference QR-code sign-ups.
+      {/* ── 1. CULO Creatives ────────────────────────────────────────────────
+        Full-bleed and hero-scale (matching /creatives), with a full-width
+        email bar for conference QR-code sign-ups. First thing visible on
+        load — no scrolling required to find the signup.
       */}
       <section className="bg-charcoal relative overflow-hidden" aria-labelledby="creatives-heading">
         <InnerContainer className="pt-20 pb-16 md:pt-28 md:pb-20">
@@ -232,6 +106,132 @@ export function VillagePage() {
           </InnerContainer>
         </div>
       </section>
+
+      {/* ── 2. Hero ─────────────────────────────────────────────────────────── */}
+      {/*
+        Headline, search bar and popular topic pills.
+        The front door to the Village — sets the editorial tone.
+      */}
+      <HeroWidget />
+
+      {/* ── 3. Today's Highlights ───────────────────────────────────────────── */}
+      {/*
+        Story of the Day, Founder of the Day, Idea of the Day,
+        Featured Business, Upcoming Event.
+        Pulled from featured: true objects across the data layer.
+      */}
+      <VillageSection surface>
+        <FeaturedWidget
+          heading="Today's Highlights"
+          subheading="The best of the Village, updated as new stories are published."
+        />
+      </VillageSection>
+
+      {/* ── 4. Latest Stories ───────────────────────────────────────────────── */}
+      {/*
+        Six reel-sized vertical story cards.
+        The primary content format — blogs, reels and carousels from real founders.
+        Schema-visible: title, summary, founder, location, topic, CTA all in readable text.
+      */}
+      <VillageSection>
+        <StoryGrid
+          heading="Latest Stories"
+          subheading="Real founder experiences transformed into blogs, reels and carousels."
+          action={{ label: 'View All Stories', href: '/stories' }}
+          filter={{ publicOnly: true, limit: 6 }}
+          hideKey="homepage"
+          columns={3}
+          cardVariant="vertical"
+          showSummary
+          showFounder
+          showTopics
+          showCTA
+          emptyTitle="The Village is about to come alive."
+          emptyMessage="The first stories will appear here as founders begin publishing. Real experiences, real businesses, real ideas — all permanent."
+        />
+      </VillageSection>
+
+      {/* ── 5. Trending Ideas ───────────────────────────────────────────────── */}
+      {/*
+        Knowledge extracted from stories.
+        IdeaGrid with showQuotes enabled — every 4th card becomes a full-width
+        editorial quote from a real founder, breaking the grid rhythm intentionally.
+      */}
+      <VillageSection surface>
+        <IdeaGrid
+          heading="Trending Ideas"
+          subheading="Knowledge extracted from stories across the Village."
+          action={{ label: 'Explore Ideas', href: '/ideas' }}
+          filter={{ publicOnly: true, featured: true, limit: 6 }}
+          fallbackToPublic
+          columns={3}
+          showQuotes
+          emptyTitle="The first ideas are waiting to be discovered."
+          emptyMessage="Ideas are extracted from published founder stories. As founders publish, the knowledge layer of the Village will grow here."
+        />
+      </VillageSection>
+
+      {/* ── 6. Featured Founders + Mercato preview ──────────────────────────── */}
+      {/*
+        Two grids side by side on desktop — people and businesses together.
+        Keeps the human + commercial ecosystem visible in one section.
+      */}
+      <VillageSection>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+
+          <FounderGrid
+            heading="Featured Founders"
+            subheading="Meet the people behind the knowledge."
+            action={{ label: 'All Founders', href: '/founders' }}
+            filter={{ publicOnly: true, featured: true, limit: 4 }}
+            fallbackToPublic
+            columns={2}
+            cardVariant="default"
+            emptyTitle="The first Publisher is about to arrive."
+            emptyMessage="Founders will appear here once they've published to the Village."
+          />
+
+          <BusinessGrid
+            heading="Businesses"
+            subheading="Discover businesses through the stories and ideas behind them."
+            action={{ label: 'Browse Businesses', href: '/mercato' }}
+            filter={{ publicOnly: true, featured: true, limit: 4 }}
+            fallbackToPublic
+            columns={2}
+            cardVariant="default"
+            emptyTitle="Businesses are almost open."
+            emptyMessage="Businesses will appear here once their founders begin publishing."
+          />
+
+        </div>
+      </VillageSection>
+
+      {/* ── 7. Explore by Location ──────────────────────────────────────────── */}
+      {/*
+        Six location cards, portrait orientation.
+        Each shows story count — incentivises publishing from underrepresented cities.
+      */}
+      <VillageSection surface>
+        <MapPreviewWidget
+          heading="Explore by Location"
+          subheading="Discover founders, businesses and stories from across Australia."
+          action={{ label: 'Open Map', href: '/map' }}
+          limit={6}
+        />
+      </VillageSection>
+
+      {/* ── 8. Noticeboard ──────────────────────────────────────────────────── */}
+      {/*
+        Latest events, collaborations, opportunities and requests.
+        Community pulse — keeps the Village feeling alive and active.
+      */}
+      <VillageSection>
+        <NoticeboardPreviewWidget
+          heading="Noticeboard"
+          subheading="Events, collaborations and opportunities from the Village."
+          limit={3}
+        />
+      </VillageSection>
 
     </main>
   )
