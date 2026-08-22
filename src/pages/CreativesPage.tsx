@@ -42,36 +42,14 @@ export function CreativesPage() {
     <main className="min-h-screen bg-background">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="bg-charcoal pt-28 pb-20 relative overflow-hidden">
+      <section className="bg-charcoal py-24 md:py-28 relative overflow-hidden text-center">
         <InnerContainer>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Coming soon · Exclusively in Canva
-              </p>
-              <h1 className="font-heading text-4xl sm:text-6xl font-bold text-white mb-6 leading-tight">
-                CULO Creatives is coming to Canva.
-              </h1>
-              <p className="font-body text-lg sm:text-xl text-white/70 leading-relaxed mb-8 max-w-2xl">
-                The Canva editing app that turns your raw footage and messy thoughts into blogs, carousels and
-                reels — without ever leaving Canva. Built for founders who aren't short on ideas, just short
-                on time.
-              </p>
-              <div className="max-w-md">
-                <WaitlistForm source="creatives-hero" dark />
-                <p className="font-body text-xs text-white/40 mt-3">
-                  We hate spam. Your email stays private — we'll only email you when it's ready.
-                </p>
-              </div>
-            </div>
-            <div className="relative">
-              <img
-                src="/creatives/culo-canva-hero.png"
-                alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
-                className="w-full h-auto rounded-3xl"
-              />
-            </div>
-          </div>
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+            Coming soon · Exclusively in Canva
+          </p>
+          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto">
+            What is CULO Creatives — exclusively in Canva.
+          </h1>
         </InnerContainer>
       </section>
 
@@ -224,17 +202,39 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Final CTA ─────────────────────────────────────────────────────── */}
-      <section className="py-16 md:py-24 text-center">
+      {/* ── Final CTA / waitlist ─────────────────────────────────────────────
+        The flagship waitlist moment — held for the bottom of the page so
+        everything above it makes the case first.
+      */}
+      <section className="bg-charcoal pt-20 pb-24 relative overflow-hidden">
         <InnerContainer>
-          <h2 className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4">
-            Be first in when CULO Creatives opens in Canva.
-          </h2>
-          <p className="font-body text-lg text-muted mb-8 max-w-xl mx-auto">
-            No spam, no sales calls — just an email the moment the Canva app is ready for you.
-          </p>
-          <div className="max-w-md mx-auto">
-            <WaitlistForm source="creatives-final-cta" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+                Coming soon · Exclusively in Canva
+              </p>
+              <h2 className="font-heading text-4xl sm:text-6xl font-bold text-white mb-6 leading-tight">
+                CULO Creatives is coming to Canva.
+              </h2>
+              <p className="font-body text-lg sm:text-xl text-white/70 leading-relaxed mb-8 max-w-2xl">
+                The Canva editing app that turns your raw footage and messy thoughts into blogs, carousels and
+                reels — without ever leaving Canva. Built for founders who aren't short on ideas, just short
+                on time.
+              </p>
+              <div className="max-w-md">
+                <WaitlistForm source="creatives-final-cta" dark />
+                <p className="font-body text-xs text-white/40 mt-3">
+                  We hate spam. Your email stays private — we'll only email you when it's ready.
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <img
+                src="/creatives/culo-canva-hero.png"
+                alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
+                className="w-full h-auto rounded-3xl"
+              />
+            </div>
           </div>
         </InnerContainer>
       </section>
