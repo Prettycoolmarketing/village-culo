@@ -158,9 +158,16 @@ export async function pullVisibleRows<T extends { id: string }>(table: string, c
   if (!supabase) return
   const { data, error } = await supabase.from(table).select('data')
   if (error || !data) return
-  mergeIntoCache<T>(cacheKey, data.map(r => r.data as T))
+  // Full replace, not merge: this is every row RLS currently says is visible
+  // to this session, so anything cached locally that's missing from it has
+  // been deleted or is no longer visible (e.g. unpublished) and must not
+  // survive in the cache — an upsert-only merge left stale rows (like an
+  // old published copy of a since-unpublished story) stuck in localStorage
+  // forever, since a row that's gone from the source never has a chance to
+  // overwrite the stale one still sitting there.
+  replaceCache<T>(cacheKey, data.map(r => r.data as T))
 }
 
-export function mergeIntoCache<T extends { id: string }>(cacheKey: string, remote: T[]): void {
-  store.updateMany<T>(cacheKey, remote)
+export function replaceCache<T extends { id: string }>(cacheKey: string, remote: T[]): void {
+  store.set<T>(cacheKey, remote)
 }
