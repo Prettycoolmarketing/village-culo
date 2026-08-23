@@ -530,13 +530,14 @@ function EmbedPreview({ content }: { content: ImportedContent }) {
   const canEmbed = EMBEDDABLE.has(content.sourcePlatform) && !!content.embedUrl
   if (canEmbed) {
     return (
-      <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
+      <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ paddingTop: '56.25%', touchAction: 'pan-y' }}>
         <iframe
           src={content.embedUrl}
           title={content.title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           className="absolute inset-0 w-full h-full"
+          style={{ touchAction: 'pan-y' }}
         />
       </div>
     )
