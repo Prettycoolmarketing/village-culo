@@ -1033,6 +1033,29 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
               uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
             />
           </div>
+
+          {/* Video orientation — a YouTube Short is still vertical despite
+              being a "youtube-video", which otherwise defaults to landscape;
+              no reliable way to detect that from the URL alone. */}
+          <div className="mt-3">
+            <label className="block text-xs font-semibold text-[#2D2A26] mb-1.5">Landscape or vertical?</label>
+            <div className="flex gap-2">
+              {(['vertical', 'landscape'] as const).map(o => (
+                <button
+                  key={o}
+                  type="button"
+                  onClick={() => field('videoOrientation', o)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${
+                    (draft.videoOrientation ?? 'vertical') === o
+                      ? 'bg-[#C86A43] text-white border-[#C86A43]'
+                      : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                  }`}
+                >
+                  {o}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -1328,29 +1351,6 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
               <CreateWithCuloCTA variant="button" label="Create with CULO Creatives exclusively in Canva" />
             </div>
           )}
-        </div>
-
-        {/* Video orientation — a YouTube Short is still vertical despite
-            being a "youtube-video", which otherwise defaults to landscape;
-            no reliable way to detect that from the URL alone. */}
-        <div className="mb-4 border-t border-[#E8E4DD] pt-4">
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1.5">Video shape on the page</label>
-          <div className="flex gap-2">
-            {(['vertical', 'landscape'] as const).map(o => (
-              <button
-                key={o}
-                type="button"
-                onClick={() => field('videoOrientation', o)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${
-                  (draft.videoOrientation ?? 'vertical') === o
-                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                    : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                }`}
-              >
-                {o}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Save / Cancel */}
