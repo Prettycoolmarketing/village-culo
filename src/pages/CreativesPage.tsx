@@ -3,26 +3,35 @@ import { InnerContainer } from '../components/layout/PageContainer'
 import { WaitlistForm } from '../components/ui/WaitlistForm'
 
 const FORMATS = [
-  { emoji: '📝', label: 'Blog', desc: 'A real written article pulled from what you actually said, not a caption stretched thin.' },
-  { emoji: '🎠', label: 'Carousel', desc: 'Swipeable slides built straight from your footage, on-brand and ready to post.' },
-  { emoji: '🎥', label: 'Talking-Head Reel', desc: 'Subtitled, hooked and captioned — publish-ready straight out of Canva.' },
-  { emoji: '🎙️', label: 'Voiceover Reel', desc: 'Your voice over your own footage, edited into a scroll-stopping short.' },
-  { emoji: '🎬', label: 'Vlog / Behind-the-Scenes', desc: 'The real, unpolished moments — the content people actually want to see.' },
-  { emoji: '⚡', label: 'Quick-Rhythm Reel', desc: 'Fast cuts, on-screen hooks, built to hold attention in the first second.' },
+  { emoji: '📝', label: 'Blog', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
+  { emoji: '🎠', label: 'Carousel', desc: 'Pulls the strongest ideas from your footage and turns them into swipeable slides ready to design and publish.' },
+  { emoji: '🎥', label: 'Talking Head Reel', desc: 'Your talking-head footage cleaned up with subtitles, hooks and captions so it is ready to post.' },
+  { emoji: '🎙️', label: 'Voiceover Reel', desc: 'Your words layered over your own footage and shaped into a short-form story.' },
+  { emoji: '🎬', label: 'Vlog / Behind the Scenes', desc: 'The in-between moments, the process and the stuff you probably filmed without knowing what to do with it yet.' },
+  { emoji: '⚡', label: 'Quick Rhythm Reel', desc: 'Short, fast-paced edits with strong opening hooks and tighter cuts built for attention.' },
 ]
 
 const STEPS = [
   {
-    title: 'Tell CULO about your brand',
-    desc: 'A few quick questions about your business, your audience and your voice — CULO uses this to sound like you, not a generic template.',
+    title: 'Let CULO get to know you',
+    paragraphs: [
+      <>Tell CULO about your business, your audience, your voice and the stories behind what you do.</>,
+      <>So what it creates sounds like <strong className="text-charcoal font-semibold">you</strong>, not whoever used the app before you.</>,
+    ],
   },
   {
-    title: 'Upload your raw footage',
-    desc: 'Drop it straight into your media library inside Canva. No editing, no trimming, no second-guessing what\'s "good enough" to use.',
+    title: 'Drop in the footage you already have',
+    paragraphs: [
+      <>Upload the raw videos sitting in your camera roll, content folder or Canva media library.</>,
+      <>No need to trim it first. No need to decide what format it should become. That is CULO's job.</>,
+    ],
   },
   {
-    title: 'Get social-ready posts back',
-    desc: 'At least 5 pieces from every upload — subtitled, captioned and hooked, ready to publish across every platform.',
+    title: 'Turn one upload into multiple pieces',
+    paragraphs: [
+      <>CULO pulls different angles, formats and stories from the same footage and builds them inside Canva.</>,
+      <>Blogs. Carousels. Reels. Voiceovers. Vlogs. You edit what you want, make it yours and publish when you are ready.</>,
+    ],
   },
 ]
 
@@ -61,11 +70,17 @@ export function CreativesPage() {
               What CULO Creatives makes
             </p>
             <h2 id="formats-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight">
-              One upload. At least five social-ready pieces.
+              One upload. A whole stack of content.
             </h2>
+            <p className="font-body text-lg text-muted leading-relaxed mb-3">
+              Give CULO one piece of raw footage and it turns it into multiple ready-to-use formats inside Canva.
+            </p>
+            <p className="font-body text-lg text-muted leading-relaxed mb-3">
+              No bouncing between editing apps. No rebuilding the same idea five different ways. No starting
+              from a blank page every time you want to post.
+            </p>
             <p className="font-body text-lg text-muted leading-relaxed">
-              Every format comes subtitled, hooked and captioned — built inside the Canva editing app you
-              already know, so there's no new tool to learn and no exporting back and forth.
+              Just more from what you already made.
             </p>
           </div>
 
@@ -89,7 +104,7 @@ export function CreativesPage() {
               How it works
             </p>
             <h2 id="how-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
-              Three steps, entirely inside Canva.
+              You bring the footage. CULO does the pulling apart.
             </h2>
           </div>
 
@@ -100,7 +115,9 @@ export function CreativesPage() {
                   {i + 1}
                 </div>
                 <p className="font-heading text-xl font-semibold text-charcoal mb-2">{s.title}</p>
-                <p className="font-body text-base text-muted leading-relaxed">{s.desc}</p>
+                {s.paragraphs.map((p, j) => (
+                  <p key={j} className="font-body text-base text-muted leading-relaxed mb-2 last:mb-0">{p}</p>
+                ))}
               </div>
             ))}
           </div>
