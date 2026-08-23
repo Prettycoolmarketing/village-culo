@@ -54,8 +54,7 @@ export function FeaturedWidget({
           >
             <Link
               to={`/stories/${featuredStory.slug}`}
-              className="block relative overflow-hidden"
-              style={{ aspectRatio: '16/9' }}
+              className="block relative overflow-hidden aspect-[4/5] sm:aspect-video"
               aria-label={`Read ${featuredStory.title}`}
             >
               <img
@@ -64,10 +63,10 @@ export function FeaturedWidget({
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 loading="eager"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/95 via-charcoal/60 to-transparent" aria-hidden="true" />
 
               <div className="absolute inset-0 flex flex-col justify-end p-7 sm:p-6">
-                <div className="flex flex-wrap gap-1.5 mb-4 sm:mb-3">
+                <div className="flex flex-wrap gap-1.5 mb-5 sm:mb-3">
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-white">Story of the Day</span>
                   {featuredStory.contentTypes.map(t => (
                     <span key={t} className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
@@ -75,7 +74,7 @@ export function FeaturedWidget({
                     </span>
                   ))}
                 </div>
-                <h3 className="font-heading text-2xl md:text-3xl font-semibold text-white leading-snug mb-4 sm:mb-3">
+                <h3 className="font-heading text-xl sm:text-2xl md:text-3xl font-semibold text-white leading-snug mb-5 sm:mb-3">
                   {featuredStory.title}
                 </h3>
                 <p className="font-body text-sm text-white/80 line-clamp-2 mb-4 hidden sm:block">
