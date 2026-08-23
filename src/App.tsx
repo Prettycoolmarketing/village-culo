@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Link, Navigate, Outlet } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { seedStore } from './lib/seedStore'
 import { syncPublishedContent } from './lib/publicSync'
@@ -72,6 +72,16 @@ import { CapoPartnersPage }                   from './pages/dashboard/village/Ca
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 import { CAPO_PERMISSIONS } from './utils/permissions'
 
+// ─── Scroll restoration ───────────────────────────────────────────────────────
+// BrowserRouter doesn't reset scroll position on navigation — without this,
+// clicking a story/article link while scrolled partway down a list opens the
+// new page at that same scroll offset instead of the top.
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
 // ─── 404 ────────────────────────────────────────────────────────────────────────
 
 function NotFound() {
@@ -141,6 +151,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ScrollToTop />
         <Routes>
 
           {/* ── Dashboard (no public nav) ──────────────────────────────────── */}
