@@ -478,6 +478,10 @@ export interface Business {
   offers: Offer[]
   status: Status
   featured: boolean
+  // Manually curated display order for the Businesses grid — lower shows
+  // first. Businesses without one keep the existing (createdAt) order,
+  // sorted in after every explicitly-ordered business.
+  featuredOrder?: number
   createdAt: string
   // Knowledge graph extensions
   expertiseIds?: string[]

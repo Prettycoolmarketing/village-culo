@@ -122,6 +122,12 @@ export function FeaturedWidget({
               <p className="font-body text-sm text-muted leading-relaxed line-clamp-2 mb-3">
                 {featuredFounder.bio}
               </p>
+              <Link
+                to="/onboarding"
+                className="inline-block text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-[#b05a35] transition-colors mb-3"
+              >
+                Publish in the Village
+              </Link>
               <div className="flex flex-wrap gap-1.5">
                 {featuredFounder.topics.slice(0, 2).map(t => (
                   <Badge key={t.id} label={t.name} variant="secondary" />

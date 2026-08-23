@@ -18,6 +18,9 @@ export function getBusinesses(filter?: BusinessFilter): Business[] {
   if (filter.topicId)    result = result.filter(b => b.topics.some(t => t.id === filter.topicId))
   if (filter.publicOnly) result = result.filter(b => (b.status === 'published' || b.status === 'featured') && b.name.trim().length > 0)
   if (filter.featured !== undefined) result = result.filter(b => b.featured === filter.featured)
+  // Curated businesses (featuredOrder set) come first, in that order; everyone
+  // else keeps their existing relative order after them (Array#sort is stable).
+  result = result.slice().sort((a, b) => (a.featuredOrder ?? Infinity) - (b.featuredOrder ?? Infinity))
   if (filter.limit)      result = result.slice(0, filter.limit)
   return result
 }
