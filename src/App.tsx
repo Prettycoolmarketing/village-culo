@@ -157,7 +157,14 @@ function PublicLayout() {
 // ─── App ────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  useEffect(() => { void syncPublishedContent() }, [])
+  // getStories()/getFounder()/etc. are plain synchronous cache reads with no
+  // built-in reactivity, so once syncPublishedContent() lands fresh data
+  // nothing re-renders on its own — this re-render is what actually makes
+  // the freshly-synced data show up, instead of whatever was cached from
+  // this tab's last visit (the cause of pages looking "different" until a
+  // hard refresh).
+  const [, setSyncTick] = useState(0)
+  useEffect(() => { void syncPublishedContent().then(() => setSyncTick(t => t + 1)) }, [])
   return (
     <BrowserRouter>
       <AuthProvider>
