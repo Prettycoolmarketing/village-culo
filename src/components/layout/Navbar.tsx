@@ -213,20 +213,12 @@ export function Navbar() {
                 CULO Creatives
               </Link>
               {user ? (
-                <>
-                  <Link
-                    to="/dashboard/home"
-                    className="text-sm font-medium text-charcoal hover:text-primary transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/dashboard/publish"
-                    className="whitespace-nowrap px-4 py-2 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1815] transition-colors"
-                  >
-                    Publish
-                  </Link>
-                </>
+                <Link
+                  to="/dashboard/publish"
+                  className="whitespace-nowrap px-4 py-2 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1815] transition-colors"
+                >
+                  Publish
+                </Link>
               ) : (
                 <>
                   <Link
@@ -318,22 +310,13 @@ export function Navbar() {
                 CULO Creatives
               </Link>
               {!loading && (user ? (
-                <>
-                  <Link
-                    to="/dashboard/home"
-                    onClick={() => setMobileOpen(false)}
-                    className="block px-3 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl text-center hover:border-primary hover:text-primary transition-colors"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/dashboard/publish"
-                    onClick={() => setMobileOpen(false)}
-                    className="block px-3 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl text-center hover:bg-[#1a1815] transition-colors"
-                  >
-                    Publish
-                  </Link>
-                </>
+                <Link
+                  to="/dashboard/publish"
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-3 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl text-center hover:bg-[#1a1815] transition-colors"
+                >
+                  Publish
+                </Link>
               ) : (
                 <>
                   <Link
