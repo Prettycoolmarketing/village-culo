@@ -3,34 +3,32 @@ import { InnerContainer } from '../components/layout/PageContainer'
 import { WaitlistForm } from '../components/ui/WaitlistForm'
 
 const FORMATS = [
-  { emoji: '📝', label: 'Blog', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
-  { emoji: '🎠', label: 'Carousel', desc: 'Pulls the strongest ideas from your footage and turns them into swipeable slides ready to design and publish.' },
-  { emoji: '🎥', label: 'Talking Head Reel', desc: 'Your talking-head footage cleaned up with subtitles, hooks and captions so it is ready to post.' },
-  { emoji: '🎙️', label: 'Voiceover Reel', desc: 'Your words layered over your own footage and shaped into a short-form story.' },
-  { emoji: '🎬', label: 'Vlog / Behind the Scenes', desc: 'The in-between moments, the process and the stuff you probably filmed without knowing what to do with it yet.' },
-  { emoji: '⚡', label: 'Quick Rhythm Reel', desc: 'Short, fast-paced edits with strong opening hooks and tighter cuts built for attention.' },
+  { emoji: '📖', label: 'Blogs', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
+  { emoji: '✍️', label: 'Carousels', desc: 'Pulls the strongest ideas from your footage and turns them into swipeable slides ready to design and publish.' },
+  { emoji: '🗣️', label: 'Talking Head Reels', desc: 'Your talking-head footage cleaned up with subtitles, hooks and captions so it is ready to post.' },
+  { emoji: '🎙️', label: 'Voice Over Reels', desc: 'Your words layered over your own footage and shaped into a short-form story.' },
+  { emoji: '🎥', label: 'Vlog Behind The Scenes Reels', desc: 'The in-between moments, the process and the stuff you probably filmed without knowing what to do with it yet.' },
+  { emoji: '⚡', label: 'Quick Rhythm Reels', desc: 'Short, fast-paced edits with strong opening hooks and tighter cuts built for attention.' },
 ]
 
 const STEPS = [
   {
-    title: 'Let CULO get to know you',
+    title: 'Answer a few personalised questions',
     paragraphs: [
-      <>Tell CULO about your business, your audience, your voice and the stories behind what you do.</>,
-      <>So what it creates sounds like <strong className="text-charcoal font-semibold">you</strong>, not whoever used the app before you.</>,
+      <>Founders begin by answering questions about their business, their audience and their brand.</>,
+      <>CULO continues by generating 3 more personalised questions, so no output is ever the same.</>,
     ],
   },
   {
-    title: 'Drop in the footage you already have',
+    title: 'Add your raw footage',
     paragraphs: [
-      <>Upload the raw videos sitting in your camera roll, content folder or Canva media library.</>,
-      <>No need to trim it first. No need to decide what format it should become. That is CULO's job.</>,
+      <>Add your raw footage in the provided media library and CULO will edit it into social media ready posts.</>,
     ],
   },
   {
-    title: 'Turn one upload into multiple pieces',
+    title: 'Get social media ready content back',
     paragraphs: [
-      <>CULO pulls different angles, formats and stories from the same footage and builds them inside Canva.</>,
-      <>Blogs. Carousels. Reels. Voiceovers. Vlogs. You edit what you want, make it yours and publish when you are ready.</>,
+      <>CULO creates a minimum of 5 social media ready reels, carousels and blogs for your website.</>,
     ],
   },
 ]
@@ -56,9 +54,14 @@ export function CreativesPage() {
           <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
             Coming soon · Exclusively in Canva
           </p>
-          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto">
-            What is CULO Creatives? Coming soon exclusively to Canva!
+          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto mb-6">
+            CULO helps share your story.
           </h1>
+          <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed max-w-2xl mx-auto">
+            CULO is a Canva integrated app that turns your thoughts and raw footage into social media content.
+            Designed for founders and creators, CULO helps you create blogs, carousels and multiple reel
+            formats from the stories, experiences and insights you already have.
+          </p>
         </InnerContainer>
       </section>
 
@@ -73,14 +76,11 @@ export function CreativesPage() {
               One upload. A whole stack of content.
             </h2>
             <p className="font-body text-lg text-muted leading-relaxed mb-3">
-              Give CULO one piece of raw footage and it turns it into multiple ready-to-use formats inside Canva.
-            </p>
-            <p className="font-body text-lg text-muted leading-relaxed mb-3">
-              No bouncing between editing apps. No rebuilding the same idea five different ways. No starting
-              from a blank page every time you want to post.
+              Upload your footage, answer a few personalised questions, and CULO creates blogs, carousels,
+              talking head reels, voice over reels, vlog behind-the-scenes reels and quick rhythm reels.
             </p>
             <p className="font-body text-lg text-muted leading-relaxed">
-              Just more from what you already made.
+              Every reel includes subtitles, an on-screen hook and a caption, ready to publish.
             </p>
           </div>
 
@@ -104,7 +104,7 @@ export function CreativesPage() {
               How it works
             </p>
             <h2 id="how-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
-              You bring the footage. CULO does the pulling apart.
+              Tell your story.
             </h2>
           </div>
 
@@ -174,10 +174,12 @@ export function CreativesPage() {
               From the founder
             </p>
             <p id="founder-note-heading" className="font-heading italic text-2xl sm:text-3xl md:text-4xl text-charcoal leading-snug mb-6">
-              "Business owners don't have time to learn another course or wrestle with AI prompts. They just
-              want their story turned into content that sounds like them."
+              "Business owners don't have time to learn another course or wrestle with AI prompts to get
+              strong storytelling content. I took Pretty Cool Marketing's proven workflow and made it
+              accessible inside Canva — for the billions of users who struggle to tell their story and show
+              up in all formats online."
             </p>
-            <p className="font-body text-sm text-muted mb-8">Shakas — Founder, CULO &amp; Pretty Cool Marketing</p>
+            <p className="font-body text-sm text-muted mb-8">Shakas — CEO / Founder of Pretty Cool Marketing x CULO</p>
             <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal text-left">
               <iframe
                 src="https://www.youtube.com/embed/Mv40KqkNwM8?start=250"
@@ -189,6 +191,15 @@ export function CreativesPage() {
             </div>
             <p className="font-body text-xs text-muted mt-3">Shakas speaking on Canva and digital accessibility.</p>
           </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── Problem statement ─────────────────────────────────────────────── */}
+      <section className="py-16 md:py-20 text-center">
+        <InnerContainer>
+          <p className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-charcoal leading-tight max-w-2xl mx-auto">
+            Stop working your CULO off just to be on social media.
+          </p>
         </InnerContainer>
       </section>
 
