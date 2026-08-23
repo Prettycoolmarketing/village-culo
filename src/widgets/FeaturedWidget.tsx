@@ -66,8 +66,8 @@ export function FeaturedWidget({
               />
               <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
 
-              <div className="absolute inset-0 flex flex-col justify-end p-6">
-                <div className="flex flex-wrap gap-1.5 mb-3">
+              <div className="absolute inset-0 flex flex-col justify-end p-7 sm:p-6">
+                <div className="flex flex-wrap gap-1.5 mb-4 sm:mb-3">
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-white">Story of the Day</span>
                   {featuredStory.contentTypes.map(t => (
                     <span key={t} className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
@@ -75,7 +75,7 @@ export function FeaturedWidget({
                     </span>
                   ))}
                 </div>
-                <h3 className="font-heading text-2xl md:text-3xl font-semibold text-white leading-snug mb-3">
+                <h3 className="font-heading text-2xl md:text-3xl font-semibold text-white leading-snug mb-4 sm:mb-3">
                   {featuredStory.title}
                 </h3>
                 <p className="font-body text-sm text-white/80 line-clamp-2 mb-4 hidden sm:block">
