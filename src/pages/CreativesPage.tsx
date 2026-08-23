@@ -127,7 +127,7 @@ export function CreativesPage() {
       {/* ── Watch the demo ────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20" aria-labelledby="demo-heading">
         <InnerContainer>
-          <div className="max-w-2xl mb-8">
+          <div className="max-w-2xl mx-auto mb-8 text-center">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
               See it in Canva
             </p>
@@ -135,7 +135,7 @@ export function CreativesPage() {
               Watch the demo.
             </h2>
           </div>
-          <div className="max-w-3xl">
+          <div className="max-w-3xl mx-auto">
             <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
               <video
                 src="/creatives/culo-app-demo.mp4"
@@ -144,7 +144,7 @@ export function CreativesPage() {
                 className="absolute inset-0 w-full h-full object-contain bg-black"
               />
             </div>
-            <div className="flex flex-wrap items-center gap-4 mt-5">
+            <div className="flex flex-wrap items-center justify-center gap-4 mt-5">
               <a
                 href="https://canva.link/gh6qvlru340vrnt"
                 target="_blank"
@@ -166,33 +166,6 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Problem / solution ────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20" aria-labelledby="freedom-heading">
-        <InnerContainer>
-          <div className="bg-charcoal rounded-3xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 items-center">
-            <div className="px-8 py-14 md:px-16 md:py-16">
-              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-                Have more freedom
-              </p>
-              <p className="font-heading text-xl sm:text-2xl text-white/80 leading-snug mb-3">
-                Most founders aren't short on ideas.
-              </p>
-              <h2 id="freedom-heading" className="font-heading text-3xl sm:text-4xl font-bold text-white leading-tight mb-8">
-                They're short on time. Stop working yourself into the ground just to show up on social media.
-              </h2>
-              <div className="max-w-md">
-                <WaitlistForm source="creatives-problem-solution" dark />
-              </div>
-            </div>
-            <img
-              src="https://d1yei2z3i6k35z.cloudfront.net/9196234/69133710b9de8_6cb2e91d97660f3581a9b04a089d6263.jpg"
-              alt="A founder with more freedom, having handed their content creation over to CULO Creatives"
-              className="w-full h-full min-h-64 object-cover"
-            />
-          </div>
-        </InnerContainer>
-      </section>
-
       {/* ── Founder note ──────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 bg-surface border-y border-border" aria-labelledby="founder-note-heading">
         <InnerContainer>
@@ -200,7 +173,7 @@ export function CreativesPage() {
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
               From the founder
             </p>
-            <p id="founder-note-heading" className="font-heading text-2xl sm:text-3xl text-charcoal leading-snug mb-6">
+            <p id="founder-note-heading" className="font-heading italic text-2xl sm:text-3xl md:text-4xl text-charcoal leading-snug mb-6">
               "Business owners don't have time to learn another course or wrestle with AI prompts. They just
               want their story turned into content that sounds like them."
             </p>
