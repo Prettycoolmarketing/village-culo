@@ -1473,7 +1473,13 @@ export function SavedRow({
       })()}
       <select
         value={item.status}
-        onChange={e => onStatusChange(e.target.value as ImportedContentStatus)}
+        onChange={e => {
+          const next = e.target.value as ImportedContentStatus
+          const goingLive = (next === 'published' || next === 'featured')
+            && item.status !== 'published' && item.status !== 'featured'
+          if (goingLive && !window.confirm('Publish this to the live Village site? It will be publicly visible immediately.')) return
+          onStatusChange(next)
+        }}
         className={`text-[10px] font-semibold px-2 py-1 rounded-full border-0 focus:outline-none cursor-pointer shrink-0 ${statusColors[item.status]}`}
       >
         {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
