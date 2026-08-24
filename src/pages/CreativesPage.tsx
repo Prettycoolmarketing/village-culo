@@ -14,21 +14,26 @@ const FORMATS = [
 const STEPS = [
   {
     title: 'Answer a few personalised questions',
-    paragraphs: [
-      <>Founders begin by answering questions about their business, their audience and their brand.</>,
-      <>CULO continues by generating 3 more personalised questions, so no output is ever the same.</>,
+    bullets: [
+      <>Complete the <strong className="text-charcoal font-semibold">About You</strong> section — a few quick details about your business and brand.</>,
+      <>CULO uses that to generate personalised questions in <strong className="text-charcoal font-semibold">Shape Your Idea</strong>.</>,
+      <>Your answers shape the hooks, captions, blogs, carousels and Quick Rhythm reel content CULO creates.</>,
     ],
   },
   {
-    title: 'Add your raw footage',
-    paragraphs: [
-      <>Add your raw footage in the provided media library and CULO will edit it into social media ready posts.</>,
+    title: 'Upload your raw footage',
+    bullets: [
+      <>Upload your footage into the right Media Library section — B-roll, Talking Head, Voice Over, Vlog or Photos.</>,
+      <><strong className="text-charcoal font-semibold">B-roll</strong> becomes background footage for Voice Over reels, or rotates silently in Quick Rhythm reels.</>,
+      <><strong className="text-charcoal font-semibold">Talking Head, Voice Over</strong> and <strong className="text-charcoal font-semibold">Vlog</strong> clips are merged into a reel with subtitles, a hook and a caption.</>,
+      <><strong className="text-charcoal font-semibold">Photos</strong> are merged into a carousel slideshow.</>,
     ],
   },
   {
     title: 'Get social media ready content back',
-    paragraphs: [
-      <>CULO creates a minimum of 5 social media ready reels, carousels and blogs for your website.</>,
+    bullets: [
+      <>Ready-to-post content across Quick Rhythm, Voice Over, Talking Head and Vlog Style formats.</>,
+      <>Every reel comes subtitled, hooked and captioned — straight out of Canva.</>,
     ],
   },
 ]
@@ -114,10 +119,15 @@ export function CreativesPage() {
                 <div className="w-11 h-11 rounded-full bg-primary/10 text-primary font-heading font-bold flex items-center justify-center mb-4">
                   {i + 1}
                 </div>
-                <p className="font-heading text-xl font-semibold text-charcoal mb-2">{s.title}</p>
-                {s.paragraphs.map((p, j) => (
-                  <p key={j} className="font-body text-base text-muted leading-relaxed mb-2 last:mb-0">{p}</p>
-                ))}
+                <p className="font-heading text-xl font-semibold text-charcoal mb-3">{s.title}</p>
+                <ul className="space-y-2.5">
+                  {s.bullets.map((b, j) => (
+                    <li key={j} className="flex gap-2.5 font-body text-base text-muted leading-relaxed">
+                      <span className="text-primary shrink-0" aria-hidden="true">•</span>
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
@@ -198,15 +208,6 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Problem statement ─────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 text-center">
-        <InnerContainer>
-          <p className="font-heading text-2xl sm:text-3xl md:text-4xl font-bold text-charcoal leading-tight max-w-2xl mx-auto">
-            Stop working your CULO off just to be on social media.
-          </p>
-        </InnerContainer>
-      </section>
-
       {/* ── Final CTA / waitlist ─────────────────────────────────────────────
         The flagship waitlist moment — held for the bottom of the page so
         everything above it makes the case first.
@@ -219,7 +220,7 @@ export function CreativesPage() {
                 Coming soon · Exclusively in Canva
               </p>
               <h2 className="font-heading text-4xl sm:text-6xl font-bold text-white mb-6 leading-tight">
-                CULO Creatives is coming to Canva.
+                Stop working your CULO off just to be on social media.
               </h2>
               <p className="font-body text-lg sm:text-xl text-white/70 leading-relaxed mb-8 max-w-2xl">
                 The Canva editing app that turns your raw footage and messy thoughts into blogs, carousels and
