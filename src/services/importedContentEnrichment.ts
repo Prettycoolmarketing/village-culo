@@ -284,11 +284,13 @@ function buildAutoSummary(item: ImportedContent): string {
     const preview = sents.slice(0, 2).join(' ')
     if (preview.length > 20) return preview
   }
-  if (item.description) {
-    return item.description.length > 200
-      ? item.description.slice(0, 200) + '...'
-      : item.description
-  }
+  // Not truncated: this is the last-resort source for the full Blog tab
+  // when there's no diaryNote/transcript (see buildStoryFromImport), so
+  // cutting it here used to mean a real, complete description got chopped
+  // to 200 characters with "..." appended before it ever reached the
+  // published page. Anywhere a short teaser is actually wanted (story
+  // cards, meta descriptions), that caller already does its own truncation.
+  if (item.description) return item.description
   const label = PLATFORM_LABELS[item.sourcePlatform] ?? item.sourcePlatform
   const type  = CONTENT_TYPE[item.sourcePlatform] ?? 'piece'
   return `${label} ${type}: ${item.title}`
