@@ -1354,7 +1354,14 @@ export function DashboardProfilePage() {
                 const targets = readyItems.filter(i => importedChecked.has(i.id))
                 for (const item of targets) {
                   const story = buildStoryFromImport(item, draft)
-                  await publishStoryCore(story)
+                  const result = await publishStoryCore(story)
+                  // Same rule as the single-item publish path: only mark the
+                  // import Published once a real Story actually exists behind
+                  // it — otherwise the row keeps saying Draft here forever
+                  // even though a story went live, because nothing else ever
+                  // wrote the status back onto the import record.
+                  if (result.success) await importedContentService.updateStatus(item.id, 'published')
+                  else setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
                 }
                 setImportedChecked(new Set())
                 setImportedBulkPublishing(false)

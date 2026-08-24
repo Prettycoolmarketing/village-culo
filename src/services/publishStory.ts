@@ -75,7 +75,12 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
 
   if (story.importedContentId) {
     const source = importedContentService.get(story.importedContentId)
-    if (source) void importedContentService.upsert({ ...source, relatedStoryId: story.id })
+    // Awaited, not fire-and-forget: callers (e.g. bulk publish) write their
+    // own status update to this same import record immediately after this
+    // function returns — if this write were still in flight, that follow-up
+    // write would read a stale copy without relatedStoryId and clobber it
+    // straight back to empty.
+    if (source) await importedContentService.upsert({ ...source, relatedStoryId: story.id })
   }
 
   if (story.status !== 'published') {
