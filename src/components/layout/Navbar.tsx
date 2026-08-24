@@ -163,7 +163,7 @@ export function Navbar() {
                   to="/dashboard/publish"
                   className="whitespace-nowrap px-4 py-2 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1815] transition-colors"
                 >
-                  Publish
+                  Publish Dashboard
                 </Link>
               ) : (
                 <>
@@ -243,7 +243,7 @@ export function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className="block px-3 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl text-center hover:bg-[#1a1815] transition-colors"
                 >
-                  Publish
+                  Publish Dashboard
                 </Link>
               ) : (
                 <>
