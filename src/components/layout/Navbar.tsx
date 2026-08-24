@@ -3,11 +3,9 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { SearchInput } from '../ui/SearchInput'
 
-// Primary: the three things a first-time visitor actually browses.
-// Secondary (Discover menu): real, valuable destinations that don't need to
-// compete for space in the main bar. Archive and Expertise keep their routes
-// and all SEO/GEO value — they're reached through search, widgets and
-// internal links rather than the navbar, same as any large content site.
+// Archive and Expertise keep their routes and all SEO/GEO value — they're
+// reached through search, widgets and internal links rather than the navbar,
+// same as any large content site.
 const primaryLinks = [
   { to: '/creatives',  label: 'Creatives',  exact: false },
   { to: '/founders',   label: 'Founders',   exact: false },
@@ -16,57 +14,6 @@ const primaryLinks = [
   { to: '/stories',    label: 'Stories',    exact: false },
 ]
 
-const discoverLinks = [
-  { to: '/ideas',       label: 'Ideas'       },
-  { to: '/map',         label: 'Map'         },
-  { to: '/noticeboard', label: 'Noticeboard' },
-  { to: '/library',     label: 'Library'     },
-]
-
-function DiscoverMenu() {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [open])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(o => !o)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium font-body text-charcoal hover:text-primary hover:bg-primary/5 transition-colors duration-150"
-      >
-        Discover
-        <svg className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && (
-        <div role="menu" className="absolute left-0 top-full mt-1 w-48 bg-surface border border-border rounded-xl shadow-lg py-1.5 z-50">
-          {discoverLinks.map(link => (
-            <Link
-              key={link.to}
-              to={link.to}
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              className="block px-3.5 py-2 text-sm text-charcoal hover:bg-primary/5 hover:text-primary transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 // Village Discovery (Sprint 6) — the search entry point the comment above
 // promised but never wired in. Submits to Archive's existing search+facet
@@ -195,7 +142,6 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
-            <DiscoverMenu />
           </nav>
 
           {/* Search */}
@@ -210,7 +156,7 @@ export function Navbar() {
                 to="/creatives"
                 className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
               >
-                CULO Creatives
+                CULO in Canva
               </Link>
               {user ? (
                 <Link
@@ -283,31 +229,13 @@ export function Navbar() {
                 {link.label}
               </NavLink>
             ))}
-            <p className="px-3 pt-3 text-xs font-semibold text-muted uppercase tracking-widest">Discover</p>
-            {discoverLinks.map(link => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileOpen(false)}
-                className={({ isActive }) => `
-                  block px-3 py-2.5 rounded-xl text-sm font-medium font-body
-                  transition-colors duration-150
-                  ${isActive
-                    ? 'text-primary bg-primary/8'
-                    : 'text-charcoal hover:text-primary hover:bg-primary/5'
-                  }
-                `}
-              >
-                {link.label}
-              </NavLink>
-            ))}
             <div className="pt-3 border-t border-border mt-3 flex flex-col gap-2">
               <Link
                 to="/creatives"
                 onClick={() => setMobileOpen(false)}
                 className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
               >
-                CULO Creatives
+                CULO in Canva
               </Link>
               {!loading && (user ? (
                 <Link
