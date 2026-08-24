@@ -1691,7 +1691,7 @@ export function DashboardImportContentPage() {
       {!draft && (
         <div>
           {founder && (
-            <div className="mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-start">
               <VoiceBriefEditor
                 value={voiceBriefDraft}
                 updatedAt={founder.voiceBriefUpdatedAt}
@@ -1700,10 +1700,6 @@ export function DashboardImportContentPage() {
                   void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })
                 }}
               />
-            </div>
-          )}
-          {founder && (
-            <div className="mb-8">
               <InsightBriefEditor
                 value={insightBriefDraft}
                 updatedAt={founder.insightBriefUpdatedAt}

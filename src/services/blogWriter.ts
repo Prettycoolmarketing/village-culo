@@ -1029,3 +1029,132 @@ Before completing the document, confirm that:
 * Another AI could use the file without needing to guess who I am.
 
 Produce the completed markdown document now using the strongest information already available.`
+
+// ─── Insight Brain interview prompt ────────────────────────────────────────────
+// Deliberately separate from VOICE_BRIEF_INTERVIEW_PROMPT — that one extracts
+// HOW a founder sounds; this one extracts WHAT they actually know, believe and
+// have learned (see InsightBriefEditor). generate-blog holds the two to
+// genuinely different standards: the Voice Brief shapes tone and structure,
+// this is a source-checked bank of real lessons it's allowed to draw on when a
+// caption/video alone is too thin — never a place to invent a belief the
+// founder hasn't genuinely already expressed somewhere.
+export const INSIGHT_BRIEF_INTERVIEW_PROMPT = `# MASTER PROMPT: Extract My Insight Brain
+
+## Purpose
+
+Create a permanent markdown reference file called:
+
+\`MASTER_INSIGHT_BRAIN.md\`
+
+This is not my story and it is not my writing voice — those live in a separate
+Voice & Brand Brief. This file is the source of truth for what I actually
+know, believe, have learned and can teach because I have lived it, and why
+those different chapters of my life connect to one another.
+
+An AI should be able to use this file to:
+
+* Recognise a genuine insight when it sees one in something I've filmed, written or said
+* Connect that insight to the chapter of my life/work it came from
+* Know the difference between something I have actually said and something merely plausible
+* Decline to invent a lesson when the source material doesn't actually support one
+
+This is primarily an **extraction task**, not an interview. First examine
+everything you already have access to about me — previous conversations,
+repeated statements, business planning discussions, content drafts, captions,
+transcripts, uploaded documents, website copy. Only ask me directly about
+what is genuinely missing, and keep those questions few and specific.
+
+## Core Principle
+
+The goal is not to make me sound impressive. The goal is to make the
+knowledge I already have — through building, failing, changing direction and
+living an unconventional life — visible, organised and safely reusable. A
+real gap is a better outcome than an invented insight.
+
+## Extraction Method
+
+### Stage One: Build an Evidence Base
+
+Gather everything already available: businesses built (including ones that
+closed), turning points, career/life chapters, recurring topics I return to,
+things I've said more than once, and anything I've explicitly corrected in a
+past draft (that correction is itself a real belief).
+
+### Stage Two: Reconstruct My Timeline as Chapters/Eras
+
+Group my life and work into chapters by **meaning**, not strict chronology —
+the throughline that connects them, not just the dates. For each chapter,
+capture: what I was actually doing, who I was at the time, why it mattered,
+and what I now understand because of it. Do not compress an unconventional
+path into a tidy "I always knew I'd end up here" narrative unless I've
+actually said that.
+
+### Stage Three: Extract My Core Worldview / Insight Bank
+
+Pull out the specific, repeatable beliefs I hold because of what I've lived —
+not generic industry wisdom. For each one, note which chapter(s) it connects
+to, and tag it with a confidence level:
+
+* **Level A — Direct.** I have explicitly said this. Safe to write as my belief.
+* **Level B — Repeated.** It appears consistently across multiple conversations. Safe to use with normal first-person phrasing.
+* **Level C — Strong connection.** It logically connects things I've said but isn't a sentence I've spoken verbatim. Use reflective phrasing ("Looking back, I think…") — never presented as a thought I definitely had at the time.
+* **Level D — Speculative.** Plausible but unsupported. Do not publish as me. Flag it and ask, or leave the gap.
+
+### Stage Four: What I Can Teach
+
+For each chapter/topic, list what I have real, lived authority to speak on —
+distinct from things I merely have an opinion about. Separate lived knowledge
+(I did this myself), professional knowledge (skills/qualifications), and
+emerging theories (a developing thesis, not yet proven by outcomes — label it
+as such).
+
+### Stage Five: Connections Between Chapters
+
+Note where one chapter's lesson clearly carried into a later one (e.g. a
+skill, a frustration, a belief that shows up again in a different business).
+Only draw a connection that's actually supported — don't force every chapter
+to lead tidily into the next.
+
+## What AI May Infer vs What It Must Never Invent
+
+**May:** connect two established experiences that are genuinely related;
+identify a principle supported by a repeated pattern of behaviour; deepen an
+already-established belief with a new example.
+
+**Must never:** invent the specific content of a gap (a video title alone is
+not a transcript); turn an implication into a stated fact; invent emotions,
+conversations, numbers, outcomes or incidents that aren't in the source
+material. When the source is genuinely too thin, the correct output is:
+**"Insufficient source — needs my input or a transcript."** That is a
+successful outcome, not a failure.
+
+## Accuracy and Safety Rules
+
+* Never invent revenue, customer counts, user numbers, testimonials, dates or outcomes.
+* Never convert a plan, application or in-progress project into a completed achievement.
+* Distinguish clearly between something that happened, something ongoing, and something merely intended.
+* Flag anything time-sensitive (current status, pricing, availability) for confirmation before reuse.
+* Treat family, health, faith, relationship and other sensitive material as requiring explicit permission before publication — being in this file is not the same as being cleared for public content.
+
+## Required Markdown Output
+
+Produce \`MASTER_INSIGHT_BRAIN.md\` with sections along these lines (adapt
+headings to fit what's actually true of me, don't force a section that has
+no real content):
+
+1. The Big Picture — the throughline connecting my chapters
+2. Who I Am — identity and developing authority position
+3. What I Have Actually Done — the real body of work, plainly stated
+4. My Timeline — chapters/eras, grouped by meaning
+5. Why I Keep Building — the real motivations underneath the work
+6. My Core Worldview / Insight Bank — each belief tagged with its confidence level and the chapter(s) it connects to
+7. What AI May Infer vs Must Never Invent — the specific guardrails for my material
+8. Per-chapter detail: what belongs here, who I was, what happened, why it matters, what I learned, what I can teach, what not to force
+9. Cross-Chapter Insight Map — real, supported connections only
+10. My Authority Pillars — the handful of things I have genuine standing to speak on
+11. Phrases/Ideas That Fit My Established Thinking — real lines I've actually said or clearly implied, not invented brand copy
+12. How I Actually Write (brief pointer only — full detail lives in the separate Voice & Brand Brief, don't duplicate it here)
+13. The Non-Repetition Test — what makes a new piece about me genuinely add something, versus retelling the same insight again
+14. The End Goal — who I am, what I know, why anyone should listen, stated plainly and without inflation
+
+Produce the completed markdown document now using the strongest information already available, and mark clearly wherever a real gap remains.`

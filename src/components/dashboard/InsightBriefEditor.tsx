@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { INSIGHT_BRIEF_INTERVIEW_PROMPT } from '../../services/blogWriter'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
@@ -14,9 +15,16 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
   updatedAt: string | undefined
   onChange: (value: string | undefined) => void
 }) {
+  const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [copied, setCopied] = useState(false)
   const [fileStatus, setFileStatus] = useState<'idle' | 'loading' | 'added'>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleCopyPrompt() {
+    void navigator.clipboard.writeText(INSIGHT_BRIEF_INTERVIEW_PROMPT)
+    setCopiedPrompt(true)
+    setTimeout(() => setCopiedPrompt(false), 2000)
+  }
 
   function handleFile(file: File | undefined) {
     if (!file) return
@@ -55,9 +63,11 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
         <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed">
           Your <strong className="text-[#6B7280] font-semibold">Insight Brain</strong> is separate from your Voice
           & Brand Brief on purpose. The Voice Brief is how you sound; this is what you actually believe, have
-          learned and can teach — organised however makes sense to you. When a video or caption is too thin to
-          write from on its own, this is the only place CULO is allowed to pull a real lesson from — never
-          invented, always something you've genuinely already said.
+          learned and can teach — organised however makes sense to you. Paste or upload one below, or copy our
+          Insight Brain prompt into whatever AI you already talk to — it pulls together what it already knows
+          about you and asks only what's genuinely missing — then bring it back here. When a video or caption
+          is too thin to write from on its own, this is the only place CULO is allowed to pull a real lesson
+          from — never invented, always something you've genuinely already said.
         </p>
         {updatedAt && (
           <p className="text-xs text-[#9CA3AF] mt-1.5">
@@ -68,6 +78,13 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
 
       <div className="bg-[#F8F5F0] rounded-lg p-8 flex flex-col gap-4">
         <div className="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={handleCopyPrompt}
+            className="text-sm font-semibold px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+          >
+            {copiedPrompt ? 'Copied ✓' : 'Copy Insight Brain prompt'}
+          </button>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
