@@ -205,6 +205,33 @@ export function StoryDetailPage() {
   const VIDEO_PLATFORMS = new Set(['youtube', 'vimeo', 'tiktok'])
   const effectiveReelUrl = story?.reelUrl
     || (story?.ctaUrl && VIDEO_PLATFORMS.has(detectPlatform(story.ctaUrl)) ? story.ctaUrl : undefined)
+  // Same fallback the reel embed itself uses (see the ReelEmbed below) — a
+  // vertical video already fills the frame, so a wide cover-image banner
+  // above it just repeats a cropped, low-quality version of the same shot.
+  const isVerticalVideo = !!effectiveReelUrl && story
+    ? !(story.videoOrientation
+        ? story.videoOrientation === 'landscape'
+        : story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head'))
+    : false
+  const contentBadges = story && (
+    <>
+      {story.contentTypes.map(type => (
+        <span
+          key={type}
+          className={`px-3 py-1 rounded-full text-xs font-medium ${
+            isVerticalVideo ? 'bg-primary/10 text-primary' : 'bg-surface/90 backdrop-blur-sm text-charcoal'
+          }`}
+        >
+          {contentTypeLabel(type)}
+        </span>
+      ))}
+      {story.featured && (
+        <span className="px-3 py-1 rounded-full text-xs font-medium bg-accent text-charcoal">
+          Featured
+        </span>
+      )}
+    </>
+  )
 
   // Base the tabs actually offered on what content is really there, not just
   // which formats were checked in the wizard — a founder who wrote a blog but
@@ -377,40 +404,37 @@ export function StoryDetailPage() {
 
       {/* ── Story hero ──────────────────────────────────────────────────────── */}
       <section aria-labelledby="story-title">
-        {/* Cover image */}
-        <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
-          <img
-            src={story.coverImage}
-            alt={`Cover image for "${story.title}"`}
-            className="w-full h-full object-cover opacity-60"
-            loading="eager"
-          />
-          <div
-            className="absolute inset-0 bg-gradient-to-t from-charcoal/90 via-charcoal/30 to-transparent"
-            aria-hidden="true"
-          />
-          {/* Content type badges over image */}
-          <div className="absolute top-4 left-4 flex flex-wrap gap-2" aria-label="Content formats">
-            {story.contentTypes.map(type => (
-              <span
-                key={type}
-                className="px-3 py-1 rounded-full text-xs font-medium bg-surface/90 backdrop-blur-sm text-charcoal"
-              >
-                {contentTypeLabel(type)}
-              </span>
-            ))}
-            {story.featured && (
-              <span className="px-3 py-1 rounded-full text-xs font-medium bg-accent text-charcoal">
-                Featured
-              </span>
-            )}
+        {/* Cover image — skipped for a vertical video, which already fills
+            the frame; a wide banner above it would just repeat a cropped,
+            lower-quality version of the same shot. */}
+        {!isVerticalVideo && (
+          <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
+            <img
+              src={story.coverImage}
+              alt={`Cover image for "${story.title}"`}
+              className="w-full h-full object-cover opacity-60"
+              loading="eager"
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-charcoal/90 via-charcoal/30 to-transparent"
+              aria-hidden="true"
+            />
+            {/* Content type badges over image */}
+            <div className="absolute top-4 left-4 flex flex-wrap gap-2" aria-label="Content formats">
+              {contentBadges}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Hero content */}
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
             <div className="pt-12 sm:pt-16">
+              {isVerticalVideo && (
+                <div className="flex flex-wrap gap-2 mb-4" aria-label="Content formats">
+                  {contentBadges}
+                </div>
+              )}
               {/* H1 — full-width across the page, not boxed to the reading column below */}
               <h1
                 id="story-title"
