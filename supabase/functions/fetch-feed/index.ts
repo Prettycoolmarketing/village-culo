@@ -72,6 +72,53 @@ function linkOf(block: string): string | undefined {
   return attrOf(block, 'link', 'href')
 }
 
+// YouTube's own channel RSS/Atom feed truncates <media:description> to a
+// short snippet (~100-200 chars, often ending mid-sentence with "...") no
+// matter how long the real video description is — a hard limitation of the
+// free feed, not something this parser does. When a video is a real YouTube
+// watch URL and YOUTUBE_API_KEY is configured, this replaces that truncated
+// snippet with the actual full description from the YouTube Data API.
+const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY')
+
+function extractYouTubeVideoId(link: string): string | undefined {
+  const match = link.match(/[?&]v=([a-zA-Z0-9_-]{11})/) ?? link.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/)
+  return match?.[1]
+}
+
+async function enrichYouTubeDescriptions(items: FeedItem[]): Promise<void> {
+  if (!YOUTUBE_API_KEY) return
+  const idToItems = new Map<string, FeedItem[]>()
+  for (const item of items) {
+    const id = extractYouTubeVideoId(item.link)
+    if (!id) continue
+    const list = idToItems.get(id) ?? []
+    list.push(item)
+    idToItems.set(id, list)
+  }
+  const ids = [...idToItems.keys()]
+  if (ids.length === 0) return
+
+  // videos.list accepts up to 50 ids per call.
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50)
+    try {
+      const res = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${chunk.join(',')}&key=${YOUTUBE_API_KEY}`,
+      )
+      if (!res.ok) continue
+      const data = await res.json()
+      for (const video of data.items ?? []) {
+        const description: string | undefined = video?.snippet?.description
+        if (!description) continue
+        for (const item of idToItems.get(video.id) ?? []) item.description = description
+      }
+    } catch {
+      // A failed enrichment call leaves the RSS snippet in place — still
+      // better than losing the item entirely over a YouTube API hiccup.
+    }
+  }
+}
+
 function parseFeed(xml: string): FeedItem[] {
   const isAtom = /<feed[\s>]/i.test(xml) && !/<rss[\s>]/i.test(xml)
   const blocks = isAtom
@@ -123,6 +170,7 @@ serve(async (req) => {
 
     const xml = await res.text()
     const items = parseFeed(xml)
+    await enrichYouTubeDescriptions(items)
 
     return new Response(JSON.stringify({ items }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
