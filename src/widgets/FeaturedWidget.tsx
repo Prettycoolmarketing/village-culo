@@ -54,7 +54,16 @@ export function FeaturedWidget({
           >
             <Link
               to={`/stories/${featuredStory.slug}`}
-              className="block relative overflow-hidden aspect-[4/5] sm:aspect-video"
+              className={`block relative overflow-hidden ${
+                // Same orientation priority as StoryDetailPage/StoryCard — a
+                // vertical video forced into a wide landscape crop reads as a
+                // weird, off-centre frame instead of the actual shot.
+                (featuredStory.videoOrientation
+                  ? featuredStory.videoOrientation === 'landscape'
+                  : featuredStory.contentTypes.includes('youtube-video') && !featuredStory.contentTypes.includes('reel'))
+                  ? 'aspect-[4/5] sm:aspect-video'
+                  : 'aspect-[3/4] sm:aspect-[9/16]'
+              }`}
               aria-label={`Read ${featuredStory.title}`}
             >
               <img

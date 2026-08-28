@@ -37,8 +37,13 @@ export function StoryCard({
   // 9:16 "reel" frame everywhere meant it got cropped/stretched hard and
   // read as blurry. An actual Reel/vertical upload keeps the tall frame.
   // Both shapes are fine; the point is each matches its real source instead
-  // of one crop being forced on everything.
-  const isLandscapeCover = story.contentTypes.includes('youtube-video') && !story.contentTypes.includes('reel')
+  // of one crop being forced on everything. videoOrientation (set explicitly
+  // in Advanced Edit — a YouTube Short is still vertical despite being
+  // "youtube-video") wins when set; same fallback heuristic as
+  // StoryDetailPage's hero otherwise.
+  const isLandscapeCover = story.videoOrientation
+    ? story.videoOrientation === 'landscape'
+    : story.contentTypes.includes('youtube-video') && !story.contentTypes.includes('reel')
 
   if (variant === 'vertical') {
     return (
