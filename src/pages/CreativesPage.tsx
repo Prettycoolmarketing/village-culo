@@ -14,6 +14,7 @@ const FORMATS = [
 const STEPS = [
   {
     title: 'Answer a few personalised questions',
+    image: '/creatives/step-1-about-you.png',
     bullets: [
       <>Complete the <strong className="text-charcoal font-semibold">About You</strong> section — a few quick details about your business and brand.</>,
       <>CULO uses that to generate personalised questions in <strong className="text-charcoal font-semibold">Shape Your Idea</strong>.</>,
@@ -22,6 +23,7 @@ const STEPS = [
   },
   {
     title: 'Upload your raw footage',
+    image: '/creatives/step-2-uploading-media.png',
     bullets: [
       <>Upload your footage into the right Media Library section — B-roll, Talking Head, Voice Over, Vlog or Photos.</>,
       <><strong className="text-charcoal font-semibold">B-roll</strong> becomes background footage for Voice Over reels, or rotates silently in Quick Rhythm reels.</>,
@@ -31,6 +33,7 @@ const STEPS = [
   },
   {
     title: 'Get social media ready content back',
+    image: '/creatives/step-3-ready-to-post.png',
     bullets: [
       <>Ready-to-post content across Quick Rhythm, Voice Over, Talking Head and Vlog Style formats.</>,
       <>Every reel comes subtitled, hooked and captioned — straight out of Canva.</>,
@@ -116,6 +119,9 @@ export function CreativesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {STEPS.map((s, i) => (
               <div key={s.title}>
+                <div className="rounded-xl overflow-hidden border border-border mb-4 bg-surface">
+                  <img src={s.image} alt={`${s.title} — screenshot of CULO Creatives in Canva`} className="w-full h-auto" loading="lazy" />
+                </div>
                 <div className="w-11 h-11 rounded-full bg-primary/10 text-primary font-heading font-bold flex items-center justify-center mb-4">
                   {i + 1}
                 </div>
