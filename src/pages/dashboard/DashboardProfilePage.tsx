@@ -1674,7 +1674,12 @@ export function DashboardProfilePage() {
                   )}
                 </div>
                 {editingImportedId && importedEditDraft && (
-                  <div className="w-full max-w-xl shrink-0 bg-white rounded-xl border border-[#E8E4DD] p-5 sticky top-4">
+                  // sticky alone doesn't give an element its own scroll — its
+                  // content just gets pinned/clipped once taller than the
+                  // viewport, with no way to reach anything past the fold.
+                  // max-h + overflow-y-auto makes the panel scroll
+                  // independently instead.
+                  <div className="w-full max-w-xl shrink-0 bg-white rounded-xl border border-[#E8E4DD] p-5 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
                     <div className="flex items-center justify-between mb-4">
                       <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
                       <button
