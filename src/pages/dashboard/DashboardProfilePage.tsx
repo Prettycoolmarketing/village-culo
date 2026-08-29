@@ -826,9 +826,17 @@ export function DashboardProfilePage() {
     // absent rather than set to 'overview'.
     setTabState(searchParams.get('tab') ?? 'overview')
     const storyId = searchParams.get('storyId')
+    const editImportedId = searchParams.get('editImportedId')
     if (storyId) {
       setContentSubTab('published')
       setEditingStoryId(storyId)
+    } else if (editImportedId) {
+      setContentSubTab('imported')
+      const item = importedContentService.get(editImportedId)
+      if (item) {
+        setImportedEditDraft(item)
+        setEditingImportedId(editImportedId)
+      }
     } else if (searchParams.get('contentSubTab') === 'published') {
       setContentSubTab('published')
     } else if (searchParams.get('contentSubTab') === 'imported') {

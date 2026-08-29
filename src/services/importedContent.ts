@@ -115,7 +115,11 @@ export const importedContentService = {
     if (filter?.status)     items = items.filter(i => i.status === filter.status)
     if (filter?.platform)   items = items.filter(i => i.sourcePlatform === filter.platform)
     if (filter?.publicOnly) items = items.filter(i => i.status === 'published' || i.status === 'featured')
-    return items
+    // Most recently imported/touched first — otherwise items sit in
+    // whatever order the cache happened to fetch them in, and something a
+    // founder just merged (which bumps importedAt, see merge() below) has
+    // no predictable place to look for it.
+    return items.slice().sort((a, b) => b.importedAt.localeCompare(a.importedAt))
   },
 
   get(id: string): ImportedContent | undefined {
@@ -194,6 +198,11 @@ export const importedContentService = {
       topics,
       locations,
       contentTypeHint: [...contentTypeHint],
+      // Bumped to now so the merged result sorts to the top of the Content
+      // list (see getAll's recency sort) — otherwise it survives under
+      // whichever original item's old timestamp and a founder has no
+      // reliable way to find what they just merged.
+      importedAt: new Date().toISOString(),
     }
 
     const result = await this.upsert(merged)
