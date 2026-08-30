@@ -1004,7 +1004,24 @@ export function DashboardProfilePage() {
     if (!draft) return
     setSaving(true)
     setSaveError(null)
-    const result = await updateFounder(draft)
+    // `draft` is a full clone of Founder, seeded once at mount (or from a
+    // stale localStorage autosave) — it never re-syncs if the record
+    // changes elsewhere in the meantime. Voice & Brand Brief / Insight
+    // Brain are edited exclusively on the Import page, so a save here on a
+    // stale draft used to silently wipe whatever was saved there since —
+    // pulling the live values for the fields this page never edits itself
+    // closes that gap regardless of how old the rest of draft is.
+    const live = getFounder(draft.id)
+    const toSave: Founder = live
+      ? {
+          ...draft,
+          voiceBrief: live.voiceBrief,
+          voiceBriefUpdatedAt: live.voiceBriefUpdatedAt,
+          insightBrief: live.insightBrief,
+          insightBriefUpdatedAt: live.insightBriefUpdatedAt,
+        }
+      : draft
+    const result = await updateFounder(toSave)
     setSaving(false)
     if (result.success) {
       setSaved(true)
