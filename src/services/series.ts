@@ -16,13 +16,23 @@ export interface SeriesFilter {
   publicOnly?: boolean
 }
 
+// Pulls the leading "Season N" number out of a title like "Season 7 - Truck
+// Life..." so seasons sort in real order instead of whatever order the
+// cache happened to fetch them in. Titles without a leading season number
+// sort after every numbered one, alphabetically among themselves.
+function seasonNumber(title: string): number {
+  const match = title.match(/^season\s+(\d+)/i)
+  return match ? parseInt(match[1]!, 10) : Infinity
+}
+
 export function getSeriesList(filter?: SeriesFilter): Series[] {
   let result = live()
-  if (!filter) return result
-  if (filter.founderId)  result = result.filter(s => s.founderId === filter.founderId)
-  if (filter.status)     result = result.filter(s => s.status === filter.status)
-  if (filter.publicOnly) result = result.filter(s => s.status === 'published')
-  return result
+  if (filter) {
+    if (filter.founderId)  result = result.filter(s => s.founderId === filter.founderId)
+    if (filter.status)     result = result.filter(s => s.status === filter.status)
+    if (filter.publicOnly) result = result.filter(s => s.status === 'published')
+  }
+  return result.slice().sort((a, b) => seasonNumber(a.title) - seasonNumber(b.title) || a.title.localeCompare(b.title))
 }
 
 export function getSeries(id: string): Series | undefined {
