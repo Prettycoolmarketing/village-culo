@@ -432,6 +432,7 @@ function SubscribersPanel() {
   const [subs, setSubs] = useState<EmailSubscriber[]>(emailSubscribersService.getAll())
   const [loading, setLoading] = useState(true)
   const [newEmail, setNewEmail] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     void emailSubscribersService.refresh().then(() => {
@@ -455,6 +456,10 @@ function SubscribersPanel() {
     setSubs(prev => prev.filter(s => s.id !== id))
   }
 
+  const filteredSubs = search.trim()
+    ? subs.filter(s => s.email.toLowerCase().includes(search.trim().toLowerCase()))
+    : subs
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
@@ -469,14 +474,29 @@ function SubscribersPanel() {
           Add
         </button>
       </div>
+      {subs.length > 0 && (
+        <input
+          type="search"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search subscribers by email…"
+          className="w-full mb-3 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] focus:outline-none focus:border-[#C86A43]"
+        />
+      )}
       <p className="text-sm text-[#6B7280] mb-3">
-        {loading ? 'Loading…' : `${subs.length} subscriber${subs.length === 1 ? '' : 's'}.`}
+        {loading
+          ? 'Loading…'
+          : search.trim()
+            ? `${filteredSubs.length} of ${subs.length} subscriber${subs.length === 1 ? '' : 's'} match.`
+            : `${subs.length} subscriber${subs.length === 1 ? '' : 's'}.`}
       </p>
       {subs.length === 0 && !loading ? (
         <p className="text-sm text-[#9CA3AF]">No subscribers yet — add one above or import from the Waitlist tab.</p>
+      ) : filteredSubs.length === 0 ? (
+        <p className="text-sm text-[#9CA3AF]">No subscribers match "{search.trim()}".</p>
       ) : (
         <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-          {subs.map(s => (
+          {filteredSubs.map(s => (
             <div key={s.id} className="flex items-center justify-between px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-[#2D2A26]">{s.email}</p>

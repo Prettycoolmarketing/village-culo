@@ -53,22 +53,17 @@ import { DashboardWelcomePage }      from './pages/dashboard/DashboardWelcomePag
 import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
 import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
-import { DashboardPartnershipPage }      from './pages/dashboard/DashboardPartnershipPage'
-import { DashboardRevenuePage }          from './pages/dashboard/DashboardRevenuePage'
 import { DashboardCuratedProfilesPage }  from './pages/dashboard/DashboardCuratedProfilesPage'
 import { DashboardCuratedFounderBuilderPage } from './pages/dashboard/DashboardCuratedFounderBuilderPage'
 import { DashboardBulkImportPage }            from './pages/dashboard/DashboardBulkImportPage'
 import { VillageHQOverviewPage }              from './pages/dashboard/village/VillageHQOverviewPage'
 import { VillageCuratedFoundersPage }         from './pages/dashboard/village/VillageCuratedFoundersPage'
-import { VillageClaimRequestsPage }           from './pages/dashboard/village/VillageClaimRequestsPage'
 import { VillageBulkImportPage }              from './pages/dashboard/village/VillageBulkImportPage'
 import { VillageEmailExportPage }             from './pages/dashboard/village/VillageEmailExportPage'
-import { VillageSpotlightPage }               from './pages/dashboard/village/VillageSpotlightPage'
 import { VillageAnalyticsPage }               from './pages/dashboard/village/VillageAnalyticsPage'
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
 import { CapoTeamPage }                       from './pages/dashboard/village/CapoTeamPage'
-import { CapoSourcesPage }                    from './pages/dashboard/village/CapoSourcesPage'
-import { CapoPartnersPage }                   from './pages/dashboard/village/CapoPartnersPage'
+import { CapoOpportunitiesHubPage }           from './pages/dashboard/village/CapoOpportunitiesHubPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 import { CAPO_PERMISSIONS } from './utils/permissions'
 
@@ -184,21 +179,26 @@ export default function App() {
             {/* Series management moved into Profile's Content tab (Published > Series) — one spot to manage it */}
             <Route path="series"         element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=published" replace />} />
             <Route path="canva/callback" element={<DashboardCanvaCallbackPage />}/>
-            <Route path="opportunities"  element={<DashboardPartnershipPage />}  />
-            <Route path="revenue"           element={<DashboardRevenuePage />}         />
+            {/* Opportunities, Revenue, Claims, Spotlight, Sources and Partners
+                are now sub-tabs of one "Opportunities" hub (see
+                CapoOpportunitiesHubPage) — these keep old links/bookmarks
+                working instead of 404ing. */}
+            <Route path="opportunities"  element={<Navigate to="/dashboard/village/opportunities?tab=opportunities" replace />} />
+            <Route path="revenue"           element={<Navigate to="/dashboard/village/opportunities?tab=revenue" replace />} />
+            <Route path="village/opportunities" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.overview}><CapoOpportunitiesHubPage /></RoleProtectedRoute>} />
             <Route path="curated-profiles" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><DashboardCuratedProfilesPage /></RoleProtectedRoute>} />
             <Route path="curated-profiles/new" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><DashboardCuratedFounderBuilderPage /></RoleProtectedRoute>} />
             <Route path="bulk-import"          element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.imports}><DashboardBulkImportPage /></RoleProtectedRoute>}            />
             <Route path="village"              element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.overview}><VillageHQOverviewPage /></RoleProtectedRoute>}              />
             <Route path="village/founders"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><VillageCuratedFoundersPage /></RoleProtectedRoute>}         />
-            <Route path="village/claims"       element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.claims}><VillageClaimRequestsPage /></RoleProtectedRoute>}           />
+            <Route path="village/claims"       element={<Navigate to="/dashboard/village/opportunities?tab=claims" replace />} />
             <Route path="village/imports"      element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.imports}><VillageBulkImportPage /></RoleProtectedRoute>}              />
             <Route path="village/emails"       element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.emails}><VillageEmailExportPage /></RoleProtectedRoute>}             />
-            <Route path="village/spotlight"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.featured}><VillageSpotlightPage /></RoleProtectedRoute>}               />
-            <Route path="village/featured"     element={<Navigate to="/dashboard/village/spotlight" replace />}                                                              />
-            <Route path="village/editorial"    element={<Navigate to="/dashboard/village/spotlight" replace />}                                                              />
-            <Route path="village/sources"      element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.featured}><CapoSourcesPage /></RoleProtectedRoute>}                     />
-            <Route path="village/partners"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.partners}><CapoPartnersPage /></RoleProtectedRoute>}                     />
+            <Route path="village/spotlight"    element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />} />
+            <Route path="village/featured"     element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />}                                                              />
+            <Route path="village/editorial"    element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />}                                                              />
+            <Route path="village/sources"      element={<Navigate to="/dashboard/village/opportunities?tab=sources" replace />} />
+            <Route path="village/partners"     element={<Navigate to="/dashboard/village/opportunities?tab=partners" replace />} />
             <Route path="village/analytics"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.analytics}><VillageAnalyticsPage /></RoleProtectedRoute>}               />
             <Route path="village/settings"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.settings}><VillageSettingsPage /></RoleProtectedRoute>}                />
             <Route path="village/team"         element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.team}><CapoTeamPage /></RoleProtectedRoute>}                          />
