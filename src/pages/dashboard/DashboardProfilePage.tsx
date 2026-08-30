@@ -303,20 +303,6 @@ function PublisherDiscoveryProfile({ founderId }: {
           </button>
         </div>
 
-        <div className="border-t border-[#E8E4DD] pt-4">
-          <label className="block text-sm font-medium text-[#2D2A26] mb-1.5">Recommended tools I use</label>
-          <p className="text-xs text-[#9CA3AF] mb-2">One per line — "Content 360" not "marketing tools."</p>
-          <textarea
-            value={(profile.genuineRecommendations ?? []).join('\n')}
-            onChange={e => {
-              const vals = e.target.value.split('\n').map(v => v.trim()).filter(Boolean)
-              setP('genuineRecommendations', vals.length > 0 ? vals : undefined)
-            }}
-            rows={4}
-            className={discoveryInputClass + ' resize-y'}
-            placeholder={'Content 360\nCanva\nStripe\nMailchimp\nClaude\nXero\nSquarespace'}
-          />
-        </div>
       </DiscoverySection>
 
       <div className="flex items-center gap-3">

@@ -212,13 +212,6 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
           enabled={localBiz.partnerEnabled ?? false}
           onChange={v => setBizBool('partnerEnabled', v)}
         />
-        <DiscoveryToggle
-          label="CULO Creatives (Canva)"
-          description="Unlock CULO Creatives — turn this business's raw footage and notes into content, exclusively in Canva"
-          enabled={localBiz.villageProActive ?? false}
-          onChange={v => setBizBool('villageProActive', v)}
-          disabled={!(localBiz.partnerEnabled ?? false)}
-        />
       </SectionCard>
 
       <BecomePartnerCard businessId={businessId} business={localBiz} />
