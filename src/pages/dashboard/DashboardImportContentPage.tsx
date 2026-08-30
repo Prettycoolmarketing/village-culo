@@ -15,6 +15,7 @@ import {
   importedContentService,
   PLATFORM_LABELS,
   PLATFORM_COLORS,
+  youtubeThumbnailUrl,
 } from '../../services/importedContent'
 import { syncImportEditsToStory } from '../../services/publishStory'
 import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
@@ -1102,24 +1103,35 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         )}
         {(draft.additionalVideoUrls ?? []).length > 0 && (
           <div className="flex flex-col gap-1.5 mt-3 mb-2">
-            {(draft.additionalVideoUrls ?? []).map((url, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <input
-                  type="url"
-                  value={url}
-                  onChange={e => {
-                    const next = [...(draft.additionalVideoUrls ?? [])]
-                    next[i] = e.target.value
-                    field('additionalVideoUrls', next)
-                  }}
-                  className={INPUT}
-                  placeholder={`Video ${i + 1} URL`}
-                />
-                <button
-                  onClick={() => field('additionalVideoUrls', (draft.additionalVideoUrls ?? []).filter((_, j) => j !== i))}
-                  className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
-              </div>
-            ))}
+            {(draft.additionalVideoUrls ?? []).map((url, i) => {
+              const thumb = youtubeThumbnailUrl(url)
+              return (
+                <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
+                  {thumb ? (
+                    <img src={thumb} alt="" className="w-9 h-9 rounded object-cover shrink-0 bg-[#F3EDE6]" />
+                  ) : (
+                    // No hosted thumbnail for an uploaded video file — the
+                    // muted clip itself, showing its first frame, stands in
+                    // for one instead of a bare URL box.
+                    <video src={url} muted preload="metadata" className="w-9 h-9 rounded object-cover shrink-0 bg-black" />
+                  )}
+                  <input
+                    type="url"
+                    value={url}
+                    onChange={e => {
+                      const next = [...(draft.additionalVideoUrls ?? [])]
+                      next[i] = e.target.value
+                      field('additionalVideoUrls', next)
+                    }}
+                    className={INPUT + ' flex-1'}
+                    placeholder={`Video ${i + 1} URL`}
+                  />
+                  <button
+                    onClick={() => field('additionalVideoUrls', (draft.additionalVideoUrls ?? []).filter((_, j) => j !== i))}
+                    className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
+                </div>
+              )
+            })}
           </div>
         )}
         <div className="mt-3 flex flex-col gap-2">

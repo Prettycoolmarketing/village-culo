@@ -65,6 +65,26 @@ export function generateEmbedUrl(url: string, platform: ImportedContentPlatform)
   return undefined
 }
 
+// A YouTube link has a real, hosted thumbnail image available with no
+// upload/processing needed — used so "Extra Media" can show the actual
+// thumbnail for a merged-in video instead of a bare URL text box (an
+// uploaded video file has no equivalent; that case renders the file itself
+// muted as its own preview instead).
+export function youtubeThumbnailUrl(url: string): string | undefined {
+  try {
+    const u = new URL(url)
+    let videoId: string | null = null
+    if (u.hostname.replace(/^www\./, '') === 'youtu.be') {
+      videoId = u.pathname.slice(1).split('?')[0] || null
+    } else if (u.hostname.replace(/^www\./, '') === 'youtube.com') {
+      videoId = u.searchParams.get('v')
+    }
+    return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export const PLATFORM_LABELS: Record<ImportedContentPlatform, string> = {
   youtube:   'YouTube',
   vimeo:     'Vimeo',
@@ -177,9 +197,25 @@ export const importedContentService = {
     const primary = sorted[0]!
     const rest = sorted.slice(1)
 
+    // reelVideoUrl only ever holds an uploaded/exported video file — a plain
+    // YouTube/Vimeo/TikTok import has no such file, its "video" IS
+    // originalUrl (the real hosted video). Without this fallback, merging
+    // several YouTube items together silently dropped every video but the
+    // primary's own originalUrl (which survives separately via `...primary`)
+    // — every other item's actual video vanished the moment it got deleted.
+    const VIDEO_LINK_PLATFORMS = new Set(['youtube', 'vimeo', 'tiktok'])
+    const effectiveVideo = (i: ImportedContent) =>
+      i.reelVideoUrl ?? (VIDEO_LINK_PLATFORMS.has(i.sourcePlatform) ? i.originalUrl : undefined)
+
     const allImages = Array.from(new Set(items.flatMap(i => i.imageUrls ?? [])))
-    const allVideos = Array.from(new Set(items.flatMap(i => [i.reelVideoUrl, ...(i.additionalVideoUrls ?? [])]).filter((u): u is string => !!u)))
-    const [primaryVideo, ...extraVideos] = allVideos
+    const allVideos = Array.from(new Set(
+      items.flatMap(i => [effectiveVideo(i), ...(i.additionalVideoUrls ?? [])]).filter((u): u is string => !!u),
+    ))
+    // The primary item's own video leads (matches whose title/thumbnail/
+    // description are winning) — everything else becomes an extra video,
+    // regardless of which order they were selected in.
+    const primaryVideo = effectiveVideo(primary) ?? allVideos[0]
+    const extraVideos = allVideos.filter(v => v !== primaryVideo)
     const captions = Array.from(new Set(items.map(i => i.description?.trim()).filter((d): d is string => !!d)))
     const topics = Array.from(new Set(items.flatMap(i => i.topics)))
     const locations = Array.from(new Set(items.flatMap(i => i.locations)))
