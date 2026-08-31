@@ -24,7 +24,7 @@
 
 export const config = {
   matcher: [
-    '/stories/:slug', '/founders/:slug', '/businesses/:slug',
+    '/', '/stories/:slug', '/founders/:slug', '/businesses/:slug',
     '/ideas/:slug', '/series/:slug', '/editorial/:slug', '/library/:slug',
     '/topics/:slug',
   ],
@@ -140,6 +140,66 @@ export default async function middleware(request) {
   const [, section, slug] = url.pathname.split('/')
 
   try {
+    // Homepage — the one route every crawler hits first, and until now the
+    // one place this whole middleware didn't cover. A bot landing on "/"
+    // saw the bare SPA shell (no H1, no text, no links) and never even
+    // discovered the routes above exist to crawl. Real title/H1/body copy
+    // plus real hrefs into Stories/Founders/Businesses/Ideas gives it
+    // somewhere to go from the very first request.
+    if (url.pathname === '/') {
+      const [storiesRes, foundersRes, businessesRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/stories?select=data&status=in.(published,featured)&order=created_at.desc&limit=12`,
+          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }),
+        fetch(`${SUPABASE_URL}/rest/v1/founders?select=data&status=in.(published,featured)&limit=12`,
+          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }),
+        fetch(`${SUPABASE_URL}/rest/v1/businesses?select=data&status=in.(published,featured)&limit=12`,
+          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }),
+      ])
+      const stories: any[]    = storiesRes.ok    ? (await storiesRes.json()).map((r: any) => r.data)    : []
+      const founders: any[]   = foundersRes.ok   ? (await foundersRes.json()).map((r: any) => r.data)   : []
+      const businesses: any[] = businessesRes.ok ? (await businessesRes.json()).map((r: any) => r.data) : []
+
+      const title = 'CULO Village'
+      const description = "Explore stories, ideas, businesses and people publishing real knowledge through CULO. Discover founders across Australia."
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: title,
+        description,
+        url: 'https://www.culovillage.com/',
+      }
+      const linkList = (items: any[], base: string, label: (i: any) => string) => items.length > 0
+        ? `<ul>\n${items.map(i => `<li><a href="${base}/${escapeHtml(i.slug)}">${escapeHtml(label(i))}</a></li>`).join('\n')}\n</ul>`
+        : ''
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(title)}</h1>
+<p>${escapeHtml(description)}</p>
+<p>CULO Village brings the work founders have already created — YouTube videos, podcasts, blogs, Instagram posts, Canva designs and stories — into one connected place, without taking it away from where it already lives. It connects the pieces, gives them context, and helps turn years of scattered posts into a body of work that shows who a founder is, what they know and what they've built.</p>
+<nav>
+<h2>Explore the Village</h2>
+<ul>
+<li><a href="/stories">Stories</a> — founder stories, behind-the-scenes and lessons learned</li>
+<li><a href="/founders">Founders</a> — every founder publishing through the Village</li>
+<li><a href="/mercato">Businesses</a> — the businesses founders have built</li>
+<li><a href="/ideas">Ideas</a> — extracted knowledge and insights that span many founders and stories</li>
+<li><a href="/library">Library</a> — courses, guides and resources founders have published</li>
+</ul>
+</nav>
+${stories.length > 0 ? `<section>\n<h2>Recent Stories</h2>\n${linkList(stories, '/stories', (s: any) => s.title)}\n</section>` : ''}
+${founders.length > 0 ? `<section>\n<h2>Founders</h2>\n${linkList(founders, '/founders', (f: any) => f.name)}\n</section>` : ''}
+${businesses.length > 0 ? `<section>\n<h2>Businesses</h2>\n${linkList(businesses, '/businesses', (b: any) => b.name)}\n</section>` : ''}
+</article>`
+      // renderDocument appends " | CULO Village" to a truthy title — fine
+      // for every other page, but would double up to "CULO Village | CULO
+      // Village" here. Passing undefined lets it fall back to the bare
+      // site name, while the H1 above still reads "CULO Village".
+      const html = renderDocument({
+        title: undefined, description, path: '/', ogType: 'website', jsonLd, bodyHtml,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
     if (section === 'stories' && slug) {
       const story = await fetchPublicRow('stories', slug, '&status=in.(published,featured)')
       if (!story) return
