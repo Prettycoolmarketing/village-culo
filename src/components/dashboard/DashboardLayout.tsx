@@ -198,15 +198,12 @@ export function DashboardLayout() {
               <SectionLabel label="Village Staff" />
               <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
 
-              {(canAccessCapoSection(user?.role, 'founders') || canAccessCapoSection(user?.role, 'team')
+              {(canAccessCapoSection(user?.role, 'founders')
                 || canAccessCapoSection(user?.role, 'emails') || canAccessCapoSection(user?.role, 'analytics')) && (
                 <>
                   <SectionLabel label="People" />
                   {canAccessCapoSection(user?.role, 'founders') && (
                     <NavItem to="/dashboard/village/founders" label="Founders" icon={<Icon path={icons.curated} />} />
-                  )}
-                  {canAccessCapoSection(user?.role, 'team') && (
-                    <NavItem to="/dashboard/village/team" label="Staff" icon={<Icon path={icons.profile} />} />
                   )}
                   {canAccessCapoSection(user?.role, 'emails') && (
                     <NavItem to="/dashboard/village/emails" label="Email Lists" icon={<Icon path={icons.email} />} />
@@ -219,11 +216,18 @@ export function DashboardLayout() {
 
               {/* Bulk Import lives as a tab on the Founders page now —
                   importing founders is a founders operation, not a system
-                  one — so System only ever holds Settings. */}
-              {canAccessCapoSection(user?.role, 'settings') && (
+                  one. Staff (who has CAPO access) moved here too — managing
+                  team/roles is a system-administration concern, not a
+                  People one. */}
+              {(canAccessCapoSection(user?.role, 'team') || canAccessCapoSection(user?.role, 'settings')) && (
                 <>
                   <SectionLabel label="System" />
-                  <NavItem to="/dashboard/village/settings" label="Settings" icon={<Icon path={icons.settings} />} />
+                  {canAccessCapoSection(user?.role, 'team') && (
+                    <NavItem to="/dashboard/village/team" label="Staff" icon={<Icon path={icons.profile} />} />
+                  )}
+                  {canAccessCapoSection(user?.role, 'settings') && (
+                    <NavItem to="/dashboard/village/settings" label="Settings" icon={<Icon path={icons.settings} />} />
+                  )}
                 </>
               )}
             </>
