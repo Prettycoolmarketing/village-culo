@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { getFounders, updateFoundersBatch, deleteFoundersBatch } from '../../../services/founders'
 import { getBusinesses } from '../../../services/businesses'
 import { importedContentService } from '../../../services/importedContent'
@@ -7,6 +7,10 @@ import { founderClaimService } from '../../../services/founderClaim'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { Founder } from '../../../types'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
+import { Tabs } from '../../../components/dashboard/Tabs'
+import { VillageBulkImportPage } from './VillageBulkImportPage'
+import { useAuth } from '../../../contexts/AuthContext'
+import { canAccessCapoSection } from '../../../utils/permissions'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
@@ -85,6 +89,13 @@ function BulkBar({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function VillageCuratedFoundersPage() {
+  const { user } = useAuth()
+  const canSeeFounders = canAccessCapoSection(user?.role, 'founders')
+  const canSeeImports  = canAccessCapoSection(user?.role, 'imports')
+  const [searchParams] = useSearchParams()
+  const [pageTab, setPageTab]     = useState<'founders' | 'imports'>(
+    searchParams.get('tab') === 'imports' || !canSeeFounders ? 'imports' : 'founders',
+  )
   const [tick, setTick]           = useState(0)
   const [bulkError, setBulkError] = useState<string | null>(null)
   const [search, setSearch]       = useState('')
@@ -231,14 +242,30 @@ export function VillageCuratedFoundersPage() {
           <h1 className="text-2xl font-bold text-[#2D2A26]">Curated Founders</h1>
           <p className="text-sm text-[#6B7280] mt-0.5">Search, filter and bulk-manage all founders in the Village.</p>
         </div>
-        <Link
-          to="/dashboard/curated-profiles/new"
-          className="flex-shrink-0 px-4 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-        >
-          + Add Founder
-        </Link>
+        {pageTab === 'founders' && (
+          <Link
+            to="/dashboard/curated-profiles/new"
+            className="flex-shrink-0 px-4 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+          >
+            + Add Founder
+          </Link>
+        )}
       </div>
 
+      <Tabs
+        tabs={[
+          ...(canSeeFounders ? [{ key: 'founders', label: 'Founders' }] : []),
+          ...(canSeeImports ? [{ key: 'imports', label: 'Bulk Import' }] : []),
+        ]}
+        active={pageTab}
+        onChange={key => setPageTab(key as 'founders' | 'imports')}
+        className="mb-6"
+      />
+
+      {pageTab === 'imports' && canSeeImports && <VillageBulkImportPage embedded />}
+
+      {pageTab === 'founders' && canSeeFounders && (
+      <>
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {[
@@ -474,6 +501,8 @@ export function VillageCuratedFoundersPage() {
         onArchive={() => void archiveSelected(selected)}
         onExport={() => exportSelected(selected)}
       />
+      </>
+      )}
     </div>
   )
 }

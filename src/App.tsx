@@ -58,7 +58,6 @@ import { DashboardCuratedFounderBuilderPage } from './pages/dashboard/DashboardC
 import { DashboardBulkImportPage }            from './pages/dashboard/DashboardBulkImportPage'
 import { VillageHQOverviewPage }              from './pages/dashboard/village/VillageHQOverviewPage'
 import { VillageCuratedFoundersPage }         from './pages/dashboard/village/VillageCuratedFoundersPage'
-import { VillageBulkImportPage }              from './pages/dashboard/village/VillageBulkImportPage'
 import { VillageEmailExportPage }             from './pages/dashboard/village/VillageEmailExportPage'
 import { VillageAnalyticsPage }               from './pages/dashboard/village/VillageAnalyticsPage'
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
@@ -190,9 +189,14 @@ export default function App() {
             <Route path="curated-profiles/new" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><DashboardCuratedFounderBuilderPage /></RoleProtectedRoute>} />
             <Route path="bulk-import"          element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.imports}><DashboardBulkImportPage /></RoleProtectedRoute>}            />
             <Route path="village"              element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.overview}><VillageHQOverviewPage /></RoleProtectedRoute>}              />
-            <Route path="village/founders"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><VillageCuratedFoundersPage /></RoleProtectedRoute>}         />
+            {/* Union of founders + imports permissions — Bulk Import (moderator-
+                accessible) is now a tab on this page, which is otherwise
+                editor-gated, so this route has to admit either role. */}
+            <Route path="village/founders"     element={<RoleProtectedRoute allow={[...new Set([...CAPO_PERMISSIONS.founders, ...CAPO_PERMISSIONS.imports])]}><VillageCuratedFoundersPage /></RoleProtectedRoute>}         />
             <Route path="village/claims"       element={<Navigate to="/dashboard/village/opportunities?tab=claims" replace />} />
-            <Route path="village/imports"      element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.imports}><VillageBulkImportPage /></RoleProtectedRoute>}              />
+            {/* Bulk Import is now the "Bulk Import" tab on the Founders page —
+                importing founders is a founders operation, not a system one. */}
+            <Route path="village/imports"      element={<Navigate to="/dashboard/village/founders?tab=imports" replace />} />
             <Route path="village/emails"       element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.emails}><VillageEmailExportPage /></RoleProtectedRoute>}             />
             <Route path="village/spotlight"    element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />} />
             <Route path="village/featured"     element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />}                                                              />

@@ -72,7 +72,10 @@ function BatchRow({ batch, onDelete }: { batch: ImportBatch; onDelete: () => voi
 
 // ─── Village Bulk Import Page ─────────────────────────────────────────────────
 
-export function VillageBulkImportPage() {
+// `embedded` drops the outer page chrome (back link, own padding/max-width)
+// for when this renders as a tab inside another page (Curated Founders)
+// instead of at its own standalone route.
+export function VillageBulkImportPage({ embedded = false }: { embedded?: boolean } = {}) {
   const [tick, setTick] = useState(0)
   void tick
   const refresh = () => setTick(t => t + 1)
@@ -87,14 +90,14 @@ export function VillageBulkImportPage() {
   const totalIntel    = batches.reduce((s, b) => s + b.intelGenerated, 0)
 
   return (
-    <div className="p-8 max-w-5xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <CapoBackLink />
+    <div className={embedded ? '' : 'p-8 max-w-5xl'} style={embedded ? undefined : { fontFamily: "'DM Sans', sans-serif" }}>
+      {!embedded && <CapoBackLink />}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
-          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
-          <h1 className="text-2xl font-bold text-[#2D2A26]">Bulk Import</h1>
+          {!embedded && <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>}
+          {!embedded && <h1 className="text-2xl font-bold text-[#2D2A26]">Bulk Import</h1>}
           <p className="text-sm text-[#6B7280] mt-0.5">
             Import history and batch management. Use Village Import Format JSON.
           </p>

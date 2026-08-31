@@ -87,7 +87,18 @@ function ProfileTabNavItem({ tabValue, label, icon, hint }: { tabValue: string; 
   )
 }
 
-function SectionLabel({ label }: { label: string }) {
+function SectionLabel({ label, large = false }: { label: string; large?: boolean }) {
+  // `large` marks a real boundary, not just a grouping — CAPO is the line
+  // between what every founder sees and what's staff-only, so it reads as
+  // a section heading in its own right instead of a small label like the
+  // grouping ones underneath it (Village Staff, People, System).
+  if (large) {
+    return (
+      <p className="text-sm font-bold text-[#2D2A26] uppercase tracking-widest px-2.5 pt-6 pb-2 mt-2 border-t border-[#E8E4DD]">
+        {label}
+      </p>
+    )
+  }
   return (
     <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest px-2.5 pt-5 pb-1.5">
       {label}
@@ -181,7 +192,7 @@ export function DashboardLayout() {
                   Opportunities/Revenue/Claims/Spotlight/Sources/Partners are
                   all sub-tabs of one Opportunities hub now (matching the
                   Email Lists pattern) instead of six separate nav items. */}
-              <SectionLabel label="CAPO" />
+              <SectionLabel label="CAPO" large />
               <NavItem to="/dashboard/village/opportunities" label="Opportunities" icon={<Icon path={icons.partnership} />} hint="Matches, revenue, claims, spotlight, sources and partners" />
 
               <SectionLabel label="Village Staff" />
@@ -206,15 +217,13 @@ export function DashboardLayout() {
                 </>
               )}
 
-              {(canAccessCapoSection(user?.role, 'imports') || canAccessCapoSection(user?.role, 'settings')) && (
+              {/* Bulk Import lives as a tab on the Founders page now —
+                  importing founders is a founders operation, not a system
+                  one — so System only ever holds Settings. */}
+              {canAccessCapoSection(user?.role, 'settings') && (
                 <>
                   <SectionLabel label="System" />
-                  {canAccessCapoSection(user?.role, 'imports') && (
-                    <NavItem to="/dashboard/village/imports" label="Imports" icon={<Icon path={icons.import} />} />
-                  )}
-                  {canAccessCapoSection(user?.role, 'settings') && (
-                    <NavItem to="/dashboard/village/settings" label="Settings" icon={<Icon path={icons.settings} />} />
-                  )}
+                  <NavItem to="/dashboard/village/settings" label="Settings" icon={<Icon path={icons.settings} />} />
                 </>
               )}
             </>

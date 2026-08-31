@@ -55,9 +55,6 @@ export function VillageHQOverviewPage() {
   const pendingClaims = founderClaimService.getPending()
   const batches      = importBatchService.getAll()
 
-  const curated  = founders.filter(f => f.profileStatus === 'village-curated')
-  const claimed  = founders.filter(f => f.profileStatus === 'claimed')
-  const verified = founders.filter(f => f.profileStatus === 'verified')
   const claimPending = founders.filter(f => f.profileStatus === 'claim-pending')
 
   const publishedStories = stories.filter(s => s.status === 'published' || s.status === 'featured')
@@ -98,16 +95,13 @@ export function VillageHQOverviewPage() {
 
       {tab === 'stats' && (
       <>
-      {/* Primary stats */}
-      <section className="mb-8">
-        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Founders</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Total Founders"    value={founders.length}     color="text-[#C86A43]" to="/dashboard/village/founders" />
-          <StatCard label="Village Curated"   value={curated.length}      color="text-blue-700"   to="/dashboard/village/founders" />
-          <StatCard label="Claimed"           value={claimed.length}      color="text-[#5E6B4A]"  to="/dashboard/village/founders" />
-          <StatCard label="Verified"          value={verified.length}     color="text-[#D6A94D]"  to="/dashboard/village/founders" />
-        </div>
-      </section>
+      {/* Founder stats live on the Founders page itself now (Total/Curated/
+          Claimed/Filtered) — this used to duplicate them here with slightly
+          different numbers depending on which page you checked. */}
+      <p className="text-xs text-[#9CA3AF] -mt-4 mb-6">
+        Founder counts (total, curated, claimed) live on the{' '}
+        <Link to="/dashboard/village/founders" className="text-[#C86A43] font-semibold hover:underline">Founders page</Link> now.
+      </p>
 
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Content</p>
@@ -124,8 +118,8 @@ export function VillageHQOverviewPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label="Pending Claims"    value={pendingClaims.length}  color={pendingClaims.length > 0 ? 'text-amber-600' : 'text-[#2D2A26]'} to="/dashboard/village/claims" />
           <StatCard label="Claim Pending"     value={claimPending.length}   color="text-amber-600"  to="/dashboard/village/claims" />
-          <StatCard label="Import Batches"    value={batches.length}        color="text-[#2D2A26]"  to="/dashboard/village/imports" />
-          <StatCard label="Via Bulk Import"   value={totalImported}         color="text-[#2D2A26]"  to="/dashboard/village/imports" />
+          <StatCard label="Import Batches"    value={batches.length}        color="text-[#2D2A26]"  to="/dashboard/village/founders?tab=imports" />
+          <StatCard label="Via Bulk Import"   value={totalImported}         color="text-[#2D2A26]"  to="/dashboard/village/founders?tab=imports" />
         </div>
       </section>
 
@@ -147,7 +141,7 @@ export function VillageHQOverviewPage() {
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Quick Actions</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <QuickAction label="Add Curated Founder" to="/dashboard/curated-profiles/new"  sub="Manually add a single founder" />
-          <QuickAction label="Bulk Import"         to="/dashboard/village/imports"        sub="Import founders from JSON" />
+          <QuickAction label="Bulk Import"         to="/dashboard/village/founders?tab=imports"        sub="Import founders from JSON" />
           <QuickAction label="Review Claims"       to="/dashboard/village/claims"         sub={`${pendingClaims.length} pending`} />
           <QuickAction label="Export Emails"       to="/dashboard/village/emails"         sub={`${emails.length} emails available`} />
           <QuickAction label="Feature Content"     to="/dashboard/village/spotlight"       sub="Pin founders, stories, businesses" />
