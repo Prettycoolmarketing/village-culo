@@ -23,7 +23,10 @@
 // Supabase RLS rather than by being hidden.
 
 export const config = {
-  matcher: ['/stories/:slug', '/founders/:slug', '/businesses/:slug'],
+  matcher: [
+    '/stories/:slug', '/founders/:slug', '/businesses/:slug',
+    '/ideas/:slug', '/series/:slug', '/editorial/:slug', '/library/:slug',
+  ],
 }
 
 const SUPABASE_URL = 'https://vptbswxntuycbgqnduab.supabase.co'
@@ -161,6 +164,104 @@ ${textToParagraphs(biz.description)}
       const html = renderDocument({
         title: biz.name, description: biz.description || biz.tagline, path: url.pathname,
         ogType: 'website', jsonLd, bodyHtml,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    if (section === 'ideas' && slug) {
+      const idea = await fetchPublicRow('ideas', slug, '&status=in.(published,featured)')
+      if (!idea) return
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        headline: idea.title,
+        description: (idea.description || '').slice(0, 200),
+        ...(idea.createdAt ? { dateCreated: idea.createdAt } : {}),
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(idea.title)}</h1>
+${idea.description ? `<p>${escapeHtml(idea.description)}</p>` : ''}
+${idea.quote ? `<blockquote>${escapeHtml(idea.quote)}</blockquote>` : ''}
+</article>`
+      const html = renderDocument({
+        title: idea.title, description: idea.description, path: url.pathname,
+        ogType: 'article', jsonLd, bodyHtml,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    if (section === 'series' && slug) {
+      const series = await fetchPublicRow('series', slug, '&status=eq.published')
+      if (!series) return
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWorkSeries',
+        name: series.title,
+        description: series.description,
+        ...(series.coverImage ? { image: series.coverImage } : {}),
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(series.title)}</h1>
+${series.description ? `<p>${escapeHtml(series.description)}</p>` : ''}
+</article>`
+      const html = renderDocument({
+        title: series.title, description: series.description, path: url.pathname,
+        ogType: 'article', jsonLd, bodyHtml,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    if (section === 'editorial' && slug) {
+      const feature = await fetchPublicRow('editorial_features', slug, '&status=eq.published')
+      if (!feature) return
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: feature.title,
+        description: (feature.dek || feature.intro || '').slice(0, 200),
+        ...(feature.publishedAt ? { datePublished: feature.publishedAt } : {}),
+        ...(feature.coverImage ? { image: feature.coverImage } : {}),
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(feature.title)}</h1>
+${feature.dek ? `<p><em>${escapeHtml(feature.dek)}</em></p>` : ''}
+${textToParagraphs(feature.intro)}
+</article>`
+      const html = renderDocument({
+        title: feature.title, description: feature.dek || feature.intro, path: url.pathname,
+        ogType: 'article', jsonLd, bodyHtml,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    if (section === 'library' && slug) {
+      // Every status except 'archived' is publicly visible for Library
+      // items (coming-soon, available, pre-order, free-download, etc. all
+      // show on the site) — mirrors LibraryPage/LibraryDetailPage's own
+      // "hide only archived" rule, since LibraryStatus has no 'published'.
+      const item = await fetchPublicRow('library_items', slug, '&status=neq.archived')
+      if (!item) return
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: item.title,
+        description: item.description,
+        ...(item.coverImage ? { image: item.coverImage } : {}),
+        ...(item.price != null ? { offers: { '@type': 'Offer', price: item.price, priceCurrency: item.currency || 'USD' } } : {}),
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(item.title)}</h1>
+${item.subtitle ? `<p><em>${escapeHtml(item.subtitle)}</em></p>` : ''}
+${item.description ? `<p>${escapeHtml(item.description)}</p>` : ''}
+${item.why ? `<p>${escapeHtml(item.why)}</p>` : ''}
+</article>`
+      const html = renderDocument({
+        title: item.title, description: item.description, path: url.pathname,
+        ogType: 'product', jsonLd, bodyHtml,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
