@@ -132,8 +132,8 @@ export function MediaUpload({
   // thousand pixels tall — since nothing capped its height. Video previews
   // get a fixed, modest box regardless of `aspect`; the file itself is
   // untouched, this only bounds how large the review player renders.
-  const heightClass = isVideoPreview ? 'h-80' : aspect === 'square' ? 'h-32' : (aspect === 'wide' || isWideContain) ? 'h-40' : isLogo ? 'h-28' : 'h-auto min-h-[8rem]'
-  const widthClass = isLogo ? 'w-28 mx-auto' : isVideoPreview ? 'w-full max-w-[220px] mx-auto' : 'w-full'
+  const heightClass = isVideoPreview ? 'h-80' : aspect === 'square' ? 'h-32' : (aspect === 'wide' || isWideContain) ? 'h-40' : isLogo ? 'h-40' : 'h-auto min-h-[8rem]'
+  const widthClass = isLogo ? 'w-40 mx-auto' : isVideoPreview ? 'w-full max-w-[220px] mx-auto' : 'w-full'
 
   return (
     <div className={className}>
