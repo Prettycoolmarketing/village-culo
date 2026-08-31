@@ -37,6 +37,18 @@ interface GenerateBlogInput {
   // lesson when the source material is too thin to carry one on its own —
   // never used to invent what a thin caption/video was actually about.
   insightBrief?: string
+  // Rolling window (last ~8) of pieces already generated earlier in this
+  // same batch — the caller accumulates this from each call's own
+  // response as a bulk loop runs. Without it, every call is fully
+  // independent and "be distinct" is an unenforceable instruction; see
+  // generate-blog's FRAMEWORK_PROMPT for how it's actually used.
+  recentAngles?: {
+    title?: string
+    articleShape?: string
+    generationType?: string
+    insightSource?: string
+    primaryQuestion?: string
+  }[]
 }
 
 export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Promise<{ blog?: GeneratedBlog; error?: string }> {

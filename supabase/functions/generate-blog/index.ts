@@ -39,6 +39,21 @@ interface RequestBody {
   // founder has actually stated: it may never be used to invent what a thin
   // caption/video was actually about.
   insightBrief?: string
+  // A rolling window of the last ~8 pieces already generated earlier in
+  // this same batch (bulk import or bulk rewrite) — each call is otherwise
+  // fully independent and has no way to know what any other call just
+  // wrote, which is exactly why bulk-generated batches were reading as
+  // repetitive: the same instruction to "be distinct" with no memory of
+  // what distinct-from actually means. The caller accumulates this from
+  // each call's own response as it goes; see FRAMEWORK_PROMPT for how it's
+  // used.
+  recentAngles?: {
+    title?: string
+    articleShape?: string
+    generationType?: string
+    insightSource?: string
+    primaryQuestion?: string
+  }[]
 }
 
 interface GeneratedBlog {
@@ -148,7 +163,7 @@ Hard rules, regardless of what the brief says:
 - Never invent facts, dates, names, results, or events not present in the source material or the Insight Brief's own stated experience. This applies specifically to details of THIS piece — what happened, who was there, what was said, what it looked like.
 - Never invent precision that wasn't supplied: no specific revenue, customer counts, hours, percentages, dates, or outcomes unless that exact number appears in the source material. Prefer a true, vaguer description ("hours of manual work") over a specific invented one ("six hours of work").
 - Do not manufacture emotional depth (family, burnout, mental health, struggle) that isn't already present in the source material or Insight Brief, just because it reads well. If real emotional stakes are documented, preserve them; don't add ones that aren't there.
-- Every blog must be genuinely distinct — do not reuse the same opening, structure, phrasing, or underlying belief (e.g. leaning on the same Insight Brief entry) you'd use for a different piece of content. A reader encountering several of this founder's blogs side by side should see real, different content and different teaching points each time.
+- Every blog must be genuinely distinct — do not reuse the same opening, structure, phrasing, or underlying belief (e.g. leaning on the same Insight Brief entry) you'd use for a different piece of content. A reader encountering several of this founder's blogs side by side should see real, different content and different teaching points each time. If an ALREADY USED EARLIER IN THIS BATCH list is supplied below, treat it as binding, not a suggestion: do not pick the same articleShape, the same insightSource, or an opening sentence with the same structure as anything on that list, unless the source material for this specific piece leaves genuinely no other honest option — and even then, vary the treatment (different sentence structure, different emphasis) rather than repeating verbatim.
 - This is the founder's own voice, first person, throughout — the blog, the subtitle AND the insight. Never drift into third person ("she believes...", "her wider work", "she found...") anywhere in the output, even briefly, even in the subtitle. If the brief or Insight Brief is written in third person (as an extraction document often is), that's fine as reference material, but everything you output must still be first person unless explicitly instructed otherwise.
 - Write in full flowing paragraphs. Avoid copywriter-voice mannerisms: one-sentence paragraphs stacked for effect, manufactured "mic-drop" lines, constant rhetorical questions, and clichés like "here's the truth," "let that sink in," "nobody talks about this," "game changer," "this changes everything," or fake vulnerability.
 - Do not over-explain the founder's company/product. Let the reader arrive at why it matters gradually, through the story — one or two sentences of connection is usually enough. Never open with a product description, and never let the piece read like a disguised ad.
@@ -236,7 +251,19 @@ serve(async (req) => {
     // fraction of the cost instead of re-billing the whole document. The
     // per-item source material stays outside the cached block since it's
     // different every time and would just bust the cache.
-    const perItemText = `SOURCE MATERIAL FOR THIS PIECE (originally posted on ${body.platform}${body.kind ? ` as a ${body.kind}` : ''}):${postedLine}\n${sourceMaterial}${imagesNote}`
+    // Changes on every call in a batch (it's the whole point), so it stays
+    // outside the cached blocks above rather than busting them. Capped by
+    // the caller to roughly the last 8 — enough to stop a piece reaching
+    // for the same insight/shape as its immediate neighbours without
+    // ballooning the prompt as a batch grows into the dozens.
+    const recentAngles = (body.recentAngles ?? []).filter(a => a.title || a.articleShape || a.insightSource)
+    const recentAnglesBlock = recentAngles.length > 0
+      ? `\n\nALREADY USED EARLIER IN THIS BATCH — DO NOT REPEAT (see the hard rule on distinctness above):\n${recentAngles.map((a, i) =>
+          `${i + 1}. ${a.title ?? '(untitled)'} — shape: ${a.articleShape ?? 'unknown'}${a.generationType ? `, mode: ${a.generationType}` : ''}${a.insightSource ? `, insight used: "${a.insightSource}"` : ''}${a.primaryQuestion ? `, question answered: "${a.primaryQuestion}"` : ''}`
+        ).join('\n')}`
+      : ''
+
+    const perItemText = `SOURCE MATERIAL FOR THIS PIECE (originally posted on ${body.platform}${body.kind ? ` as a ${body.kind}` : ''}):${postedLine}\n${sourceMaterial}${imagesNote}${recentAnglesBlock}`
 
     const userContent: unknown[] = [
       {

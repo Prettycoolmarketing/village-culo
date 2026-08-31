@@ -67,6 +67,12 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
       let heldCount = 0
       if (voiceBrief?.trim()) {
         const founderName = getFounder(founderId)?.name ?? ''
+        // Rolling memory across this batch — each successful call's own
+        // angle gets appended, and only the last 8 are kept so the prompt
+        // doesn't grow unbounded across a large archive. Without this, every
+        // call is independent and has no way to know what any other call in
+        // the same import just wrote.
+        const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
         for (let i = 0; i < built.length; i++) {
           setStage(`Writing blog ${i + 1} of ${built.length}…`)
           const { item } = built[i]!
@@ -79,6 +85,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
             imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
             postedAt: item.publishedAt ?? item.importedAt,
             insightBrief,
+            recentAngles: recentAngles.slice(-8),
           })
           if (blog?.status === 'ready') {
             item.title = blog.title ?? item.title
@@ -93,6 +100,10 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
             item.decision = blog.decision
             item.possibleGroupHint = blog.possibleGroupHint
             item.articleShape = blog.articleShape
+            recentAngles.push({
+              title: blog.title, articleShape: blog.articleShape, generationType: blog.generationType,
+              insightSource: blog.insightSource, primaryQuestion: blog.primaryQuestion,
+            })
           } else if (blog?.status === 'insufficient_source') {
             // Held, not failed — correctly declined rather than invented.
             // Original caption stays; flagged the same way a title/caption

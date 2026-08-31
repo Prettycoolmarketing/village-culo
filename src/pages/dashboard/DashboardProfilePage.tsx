@@ -1435,6 +1435,12 @@ export function DashboardProfilePage() {
                 if (ids.length === 0) return
                 setImportedRegenProgress({ done: 0, total: ids.length })
                 let held = 0
+                // Same rolling-memory fix as the Instagram archive importer —
+                // without this, every item in the batch is rewritten with no
+                // awareness of what any other item in the same batch just
+                // became, which is exactly what made bulk rewrites read as
+                // repetitive.
+                const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
                 for (let i = 0; i < ids.length; i++) {
                   const item = importedContentService.get(ids[i]!)
                   if (item) {
@@ -1448,6 +1454,7 @@ export function DashboardProfilePage() {
                       imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
                       postedAt: item.publishedAt ?? item.importedAt,
                       insightBrief: liveInsightBrief,
+                      recentAngles: recentAngles.slice(-8),
                     })
                     if (blog?.status === 'ready') {
                       await importedContentService.upsert({
@@ -1464,6 +1471,10 @@ export function DashboardProfilePage() {
                         decision: blog.decision,
                         possibleGroupHint: blog.possibleGroupHint,
                         articleShape: blog.articleShape,
+                      })
+                      recentAngles.push({
+                        title: blog.title, articleShape: blog.articleShape, generationType: blog.generationType,
+                        insightSource: blog.insightSource, primaryQuestion: blog.primaryQuestion,
                       })
                     } else if (blog?.status === 'insufficient_source') {
                       // Held, not failed — the model correctly declined to
