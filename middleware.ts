@@ -26,12 +26,58 @@ export const config = {
   matcher: [
     '/stories/:slug', '/founders/:slug', '/businesses/:slug',
     '/ideas/:slug', '/series/:slug', '/editorial/:slug', '/library/:slug',
+    '/topics/:slug',
   ],
 }
 
 const SUPABASE_URL = 'https://vptbswxntuycbgqnduab.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_TMC5OCu3gczdMXgjoqmGnA_3W2BbJpe'
 const SITE_NAME = 'CULO Village'
+
+// Mirrors src/data/topics.ts (name + description only — `count` isn't
+// needed for a crawler snapshot). Topics aren't a Supabase table: they're
+// this curated list plus whatever slug/name a founder types onto their own
+// Story, so a topic page can be "rich" even with no curated entry here as
+// long as at least one published Story carries that topic — same rule
+// TopicPage.tsx itself uses (`isRich`).
+const TOPICS: Record<string, { name: string; description: string }> = {
+  'ai-marketing': { name: 'AI Marketing', description: 'Using artificial intelligence to create, distribute and optimise content.' },
+  'founder-storytelling': { name: 'Founder Storytelling', description: 'How founders use their personal stories to build trust and authority.' },
+  'content-systems': { name: 'Content Systems', description: 'Repeatable systems that make content creation consistent and scalable.' },
+  'camera-roll-marketing': { name: 'Camera Roll Marketing', description: 'Using everyday footage from your phone as marketing content.' },
+  'canva-workflows': { name: 'Canva Workflows', description: 'Efficient design and publishing workflows built inside Canva.' },
+  'short-form-video': { name: 'Short Form Video', description: 'Reels, TikTok and YouTube Shorts strategy for founders.' },
+  'personal-brand': { name: 'Personal Brand', description: 'Building a recognised and trusted name in your industry.' },
+  'local-marketing': { name: 'Local Marketing', description: 'Marketing strategies that work for location-based businesses.' },
+  authenticity: { name: 'Authenticity', description: 'Why showing up as yourself builds deeper connections with your audience.' },
+  'content-strategy': { name: 'Content Strategy', description: 'Planning and executing content that serves a clear business goal.' },
+  'social-media': { name: 'Social Media', description: 'Platform-specific strategy and distribution.' },
+  'email-marketing': { name: 'Email Marketing', description: 'Building and nurturing an audience through email.' },
+  'lead-generation': { name: 'Lead Generation', description: 'Turning content into clients and customers.' },
+  entrepreneurship: { name: 'Entrepreneurship', description: 'The realities and lessons of building a business.' },
+  photography: { name: 'Photography', description: 'Using photography as a storytelling and marketing tool.' },
+  'health-and-wellness': { name: 'Health & Wellness', description: 'Physical and mental wellbeing services, from allied health to holistic care.' },
+  fitness: { name: 'Fitness', description: 'Training, coaching and movement-based businesses.' },
+  'beauty-and-skincare': { name: 'Beauty & Skincare', description: 'Salons, skincare brands and beauty services.' },
+  'fashion-and-retail': { name: 'Fashion & Retail', description: 'Clothing, accessories and physical or online retail.' },
+  'food-and-hospitality': { name: 'Food & Hospitality', description: 'Cafes, restaurants, catering and food producers.' },
+  'trades-and-construction': { name: 'Trades & Construction', description: 'Builders, tradespeople and construction businesses.' },
+  'real-estate': { name: 'Real Estate', description: 'Property sales, management and investment.' },
+  'finance-and-accounting': { name: 'Finance & Accounting', description: 'Bookkeeping, accounting, lending and financial advice.' },
+  legal: { name: 'Legal', description: 'Legal services and advice for individuals and businesses.' },
+  'education-and-training': { name: 'Education & Training', description: 'Tutoring, courses, coaching and skills training.' },
+  technology: { name: 'Technology', description: 'Software, apps and tech-driven products or services.' },
+  'creative-arts': { name: 'Creative Arts', description: 'Design, art, music and other creative practices.' },
+  events: { name: 'Events', description: 'Event planning, styling and production.' },
+  'parenting-and-family': { name: 'Parenting & Family', description: 'Products and services for parents, kids and families.' },
+  'disability-support': { name: 'Disability Support', description: 'NDIS and other disability support services.' },
+  sustainability: { name: 'Sustainability', description: 'Eco-conscious products, services and practices.' },
+  'travel-and-tourism': { name: 'Travel & Tourism', description: 'Travel planning, tours and hospitality experiences.' },
+  automotive: { name: 'Automotive', description: 'Vehicle sales, servicing and related businesses.' },
+  'pets-and-animals': { name: 'Pets & Animals', description: 'Pet care, training and animal-related services.' },
+  'nonprofit-and-community': { name: 'Nonprofit & Community', description: 'Charities, community groups and social enterprises.' },
+  'home-and-interiors': { name: 'Home & Interiors', description: 'Interior design, homewares and home services.' },
+}
 
 // Matches the crawlers that actually can't (or don't reliably) execute
 // JavaScript — this is the whole reason this middleware exists. Extend
@@ -262,6 +308,53 @@ ${item.why ? `<p>${escapeHtml(item.why)}</p>` : ''}
       const html = renderDocument({
         title: item.title, description: item.description, path: url.pathname,
         ogType: 'product', jsonLd, bodyHtml,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    // Topics are an aggregation, not a single row — no `topics` table exists.
+    // A topic is "real" when either it's in the curated TOPICS list above or
+    // at least one published Story carries a matching topic slug, exactly
+    // the same isRich/NotFound rule TopicPage.tsx applies. So this fetches
+    // every published Story and filters in-memory, same as the client does.
+    if (section === 'topics' && slug) {
+      const curated = TOPICS[slug]
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/stories?select=data&status=in.(published,featured)&limit=500`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
+      )
+      if (!res.ok) return
+      const rows: { data: any }[] = await res.json()
+      const matching = rows
+        .map(r => r.data)
+        .filter(s => Array.isArray(s.topics) && s.topics.some((t: any) => t?.slug === slug))
+
+      if (!curated && matching.length === 0) return // matches TopicPage's own NotFound gate
+
+      const name = curated?.name ?? matching[0].topics.find((t: any) => t.slug === slug)?.name ?? slug
+      const description = curated?.description || `Founder stories in CULO Village about ${name}.`
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name,
+        description,
+        hasPart: matching.slice(0, 50).map(s => ({
+          '@type': 'Article',
+          headline: s.title,
+          url: `https://www.culovillage.com/stories/${s.slug}`,
+        })),
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(name)}</h1>
+<p>${escapeHtml(description)}</p>
+${matching.length > 0 ? `<ul>
+${matching.map(s => `<li><a href="/stories/${escapeHtml(s.slug)}">${escapeHtml(s.title)}</a></li>`).join('\n')}
+</ul>` : ''}
+</article>`
+      const html = renderDocument({
+        title: name, description, path: url.pathname,
+        ogType: 'website', jsonLd, bodyHtml,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }

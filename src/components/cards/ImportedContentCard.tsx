@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { ImportedContent } from '../../types/importedContent'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
 import { PLATFORM_LABELS, PLATFORM_COLORS } from '../../services/importedContent'
+import { getStory } from '../../services/stories'
 import { normalizeUrl } from '../../utils/url'
 
 const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok'])
@@ -20,6 +21,16 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
   // thumbnail chops off the top/bottom of the artwork (often where the show
   // name sits). Give it a square box instead so the whole cover shows.
   const thumbAspect   = content.sourcePlatform === 'podcast' ? '100%' : '56.25%'
+
+  // If this import already has a published Story written from it, that's
+  // the real destination — the article gives readers (and crawlers) actual
+  // context the raw embed never does. The external platform link becomes
+  // the secondary "watch/listen at the source" option instead of the only
+  // way in.
+  const relatedStory = content.relatedStoryId ? getStory(content.relatedStoryId) : undefined
+  const articleLink   = relatedStory && (relatedStory.status === 'published' || relatedStory.status === 'featured')
+    ? `/stories/${relatedStory.slug}`
+    : undefined
 
   return (
     <article className="bg-surface rounded-2xl border border-border overflow-hidden">
@@ -63,16 +74,30 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
             target="_blank"
             rel="noopener noreferrer"
             className="font-body text-[10px] text-muted hover:text-primary transition-colors"
-            aria-label={`View on ${platformLabel}`}
+            aria-label={articleLink ? `Watch/listen on ${platformLabel}` : `View on ${platformLabel}`}
           >
-            View on {platformLabel} ↗
+            {articleLink ? `${platformLabel} ↗` : `View on ${platformLabel} ↗`}
           </a>
         </div>
 
-        {/* Title */}
-        <h3 className={`font-heading font-semibold text-charcoal leading-snug ${compact ? 'text-sm' : 'text-base'}`}>
-          {content.title}
-        </h3>
+        {/* Title — links to the written article first when one exists, so
+            readers (and crawlers) land on real context instead of a bare
+            embed; falls back to the external platform when there's no
+            article yet. */}
+        {articleLink ? (
+          <Link to={articleLink} className="group/title">
+            <h3 className={`font-heading font-semibold text-charcoal leading-snug group-hover/title:text-primary transition-colors ${compact ? 'text-sm' : 'text-base'}`}>
+              {content.title}
+            </h3>
+            <span className="font-body text-[10px] font-semibold text-primary mt-1 inline-block">
+              Read the article →
+            </span>
+          </Link>
+        ) : (
+          <h3 className={`font-heading font-semibold text-charcoal leading-snug ${compact ? 'text-sm' : 'text-base'}`}>
+            {content.title}
+          </h3>
+        )}
 
         {/* Description */}
         {content.description && !compact && (
