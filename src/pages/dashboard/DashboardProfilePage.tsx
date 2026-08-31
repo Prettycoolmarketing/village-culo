@@ -787,6 +787,12 @@ export function DashboardProfilePage() {
   // leaving the Imported list or publishing anything first.
   const [importedFilterMode, setImportedFilterMode] = useState<'platform' | 'series'>('platform')
   const [importedSeriesFilter, setImportedSeriesFilter] = useState<string | 'unassigned' | null>(null)
+  // Creating a series used to only be possible from Published > Series —
+  // a founder browsing their raw imports by platform had no way to start
+  // one without leaving this list first. This lets them create it right
+  // here, then move selected drafts into it with the existing dropdown.
+  const [addingImportedSeries, setAddingImportedSeries] = useState(false)
+  const [newImportedSeriesTitle, setNewImportedSeriesTitle] = useState('')
   const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
@@ -1478,6 +1484,31 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
+              // Same "create then drop straight into it" flow as Published >
+              // Series, but reachable without leaving the raw imports list —
+              // creates the series, switches into the Series filter on it,
+              // and (if anything's already checked) moves those drafts in
+              // immediately so creating and organising is one motion.
+              async function handleCreateSeriesFromImported() {
+                if (!newImportedSeriesTitle.trim()) return
+                const series = createSeries(draft!.id, newImportedSeriesTitle.trim())
+                const result = await saveSeries(series)
+                if (!result.success) {
+                  setSaveError(result.error ?? 'Could not create that series. Please try again.')
+                  return
+                }
+                setAddingImportedSeries(false)
+                setNewImportedSeriesTitle('')
+                setImportedFilterMode('series')
+                setImportedSeriesFilter(series.id)
+                if (importedChecked.size > 0) {
+                  const targets = shown.filter(i => importedChecked.has(i.id))
+                  for (const item of targets) await importedContentService.upsert({ ...item, seriesId: series.id })
+                  setImportedChecked(new Set())
+                }
+                refreshImported()
+              }
+
               function handleImportedDelete(id: string) {
                 importedContentService.delete(id)
                 refreshImported()
@@ -1570,6 +1601,53 @@ export function DashboardProfilePage() {
                       )}
                     </div>
                   )}
+
+                  {/* Series creation used to only live in Published > Series —
+                      a founder browsing raw imports had no way to organise them
+                      into a series without leaving this list. Now it's right
+                      here: tick the pieces below, create a series, done. */}
+                  <div className="mb-4 pb-4 border-b border-[#E8E4DD]">
+                    <p className="text-lg font-bold text-[#2D2A26] mb-1">Restructure your content as a series</p>
+                    <p className="text-xs text-[#9CA3AF] mb-3">
+                      Group episodes, posts or videos that belong together — a season, a project, a recurring
+                      segment — into their own series. Tick the pieces below, then create or choose a series to
+                      move them into.
+                    </p>
+                    {addingImportedSeries ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={newImportedSeriesTitle}
+                          onChange={e => setNewImportedSeriesTitle(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') void handleCreateSeriesFromImported()
+                            if (e.key === 'Escape') { setAddingImportedSeries(false); setNewImportedSeriesTitle('') }
+                          }}
+                          placeholder="e.g. Van Life"
+                          className="px-3 py-1.5 rounded-lg text-sm border border-[#C86A43]/50 text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 w-48"
+                        />
+                        <button
+                          onClick={() => void handleCreateSeriesFromImported()}
+                          disabled={!newImportedSeriesTitle.trim()}
+                          className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {importedChecked.size > 0 ? `Create & move ${importedChecked.size}` : 'Create series'}
+                        </button>
+                        <button
+                          onClick={() => { setAddingImportedSeries(false); setNewImportedSeriesTitle('') }}
+                          className="px-2 py-1.5 text-sm text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setAddingImportedSeries(true)}
+                        className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-dashed border-[#E8E4DD] text-[#C86A43] hover:border-[#C86A43]/50 transition-colors">
+                        + New Series
+                      </button>
+                    )}
+                  </div>
 
                   {saveError && <p className="text-xs text-red-600 font-medium mb-3">{saveError}</p>}
 

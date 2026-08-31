@@ -167,6 +167,9 @@ export function DashboardLayout() {
             Import
           </NavLink>
 
+          <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Everything you've imported and published, in one place" />
+          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} />
+
           <NavLink
             to="/dashboard/publish"
             className={({ isActive }) =>
@@ -180,9 +183,6 @@ export function DashboardLayout() {
             <Icon path={icons.publish} />
             Publish
           </NavLink>
-
-          <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Everything you've imported and published, in one place" />
-          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} />
 
           {showCapoNav && (
             <>

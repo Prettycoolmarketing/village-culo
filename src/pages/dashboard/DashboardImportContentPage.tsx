@@ -1723,7 +1723,7 @@ export function DashboardImportContentPage() {
             </div>
           )}
 
-          <p className="text-sm font-semibold text-[#2D2A26] mb-3">Bring in your content</p>
+          <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web pages in the CULO Village for structured discovery</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
             <YouTubeConnectForm
               founderId={founderId}

@@ -58,25 +58,49 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] px-8 py-7">
-      <div className="mb-6">
-        <p className="text-lg font-semibold text-[#2D2A26]">What you already know</p>
-        <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed">
-          Your <strong className="text-[#6B7280] font-semibold">Insight Brain</strong> is separate from your Voice
-          & Brand Brief on purpose. The Voice Brief is how you sound; this is what you actually believe, have
-          learned and can teach — organised however makes sense to you. Paste or upload one below, or copy our
-          Insight Brain prompt into whatever AI you already talk to — it pulls together what it already knows
-          about you and asks only what's genuinely missing — then bring it back here. When a video or caption
-          is too thin to write from on its own, this is the only place CULO is allowed to pull a real lesson
-          from — never invented, always something you've genuinely already said.
-        </p>
-        {updatedAt && (
-          <p className="text-xs text-[#9CA3AF] mt-1.5">
-            Last updated {new Date(updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-lg font-semibold text-[#2D2A26]">What you already know</p>
+          <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed">
+            Your <strong className="text-[#6B7280] font-semibold">Insight Brain</strong> is what you actually
+            know, believe and can teach — separate from how you sound. Paste or upload one below, or copy our
+            prompt into any AI you already use and bring the answers back here. It's the only place CULO can
+            pull a real lesson from when a video or caption is too thin on its own — never invented, always
+            something you've genuinely already said.
           </p>
-        )}
+          {updatedAt && (
+            <p className="text-xs text-[#9CA3AF] mt-1.5">
+              Last updated {new Date(updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={!value}
+            className="text-sm font-semibold px-4 py-2 rounded-lg border border-[#E8E4DD] text-[#2D2A26] bg-white hover:border-[#C86A43]/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {copied ? 'Copied ✓' : 'Copy'}
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={!value}
+            className="text-sm font-semibold px-4 py-2 rounded-lg border border-[#E8E4DD] text-red-600 bg-white hover:border-red-300 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Delete
+          </button>
+        </div>
       </div>
 
       <div className="bg-[#F8F5F0] rounded-lg p-8 flex flex-col gap-4">
+        <textarea
+          value={value ?? ''}
+          onChange={e => onChange(e.target.value || undefined)}
+          placeholder="Paste your Insight Brain here, or upload a file below…"
+          className={inputClass + ' resize-none font-mono text-sm flex-1 min-h-48 p-4 bg-white'}
+        />
         <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
@@ -111,30 +135,6 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
             className="hidden"
             onChange={e => handleFile(e.target.files?.[0])}
           />
-        </div>
-        <textarea
-          value={value ?? ''}
-          onChange={e => onChange(e.target.value || undefined)}
-          placeholder="Paste your Insight Brain here, or upload a file above…"
-          className={inputClass + ' resize-none font-mono text-sm flex-1 min-h-48 p-4 bg-white'}
-        />
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleCopy}
-            disabled={!value}
-            className="text-sm font-semibold px-4 py-2 rounded-lg border border-[#E8E4DD] text-[#2D2A26] bg-white hover:border-[#C86A43]/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {copied ? 'Copied ✓' : 'Copy'}
-          </button>
-          <button
-            type="button"
-            onClick={handleClear}
-            disabled={!value}
-            className="text-sm font-semibold px-4 py-2 rounded-lg border border-[#E8E4DD] text-red-600 bg-white hover:border-red-300 hover:bg-red-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Delete
-          </button>
         </div>
       </div>
     </div>
