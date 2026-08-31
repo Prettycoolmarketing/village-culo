@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder, getFounder } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
-import { SavedRow, isReadyToPublish, EditForm } from './DashboardImportContentPage'
+import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './DashboardImportContentPage'
 import { SeriesDetail } from './DashboardSeriesPage'
 import { getSeriesList, createSeries, saveSeries } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
@@ -793,6 +793,13 @@ export function DashboardProfilePage() {
   // here, then move selected drafts into it with the existing dropdown.
   const [addingImportedSeries, setAddingImportedSeries] = useState(false)
   const [newImportedSeriesTitle, setNewImportedSeriesTitle] = useState('')
+  // Instagram brings in both feed Posts (which almost always have a real
+  // caption) and Stories (which structurally never do) as one undifferentiated
+  // pile — this sub-filter, shown only while the Instagram platform pill is
+  // active, splits them so a founder isn't hunting through no-caption Stories
+  // to find the Posts that are actually one click from being publishable.
+  const [instagramCaptionFilter, setInstagramCaptionFilter] = useState<'all' | 'has' | 'none'>('all')
+  const [autoPublishingCaptioned, setAutoPublishingCaptioned] = useState(false)
   const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
@@ -1281,7 +1288,7 @@ export function DashboardProfilePage() {
               void importedTick
               const allImported = importedContentService.getAll({ founderId: draft.id })
               const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
-              const shown = importedFilterMode === 'series'
+              const shownByPlatform = importedFilterMode === 'series'
                 ? (importedSeriesFilter === null
                     ? allImported
                     : importedSeriesFilter === 'unassigned'
@@ -1294,6 +1301,15 @@ export function DashboardProfilePage() {
                   // this platform," not a permanent record of where it came
                   // from. "All" is the only view that always shows everything.
                   : allImported.filter(i => i.sourcePlatform === importedPlatformFilter && !i.seriesId)
+              // Only meaningful (and only shown) while filtering to Instagram
+              // specifically — Posts vs Stories is an Instagram-shaped
+              // distinction, not a general one.
+              const isInstagramView = importedFilterMode === 'platform' && importedPlatformFilter === 'instagram'
+              const shown = isInstagramView && instagramCaptionFilter !== 'all'
+                ? shownByPlatform.filter(i => instagramCaptionFilter === 'has' ? hasRealCaption(i) : !hasRealCaption(i))
+                : shownByPlatform
+              const instagramHasCaptionCount = isInstagramView ? shownByPlatform.filter(hasRealCaption).length : 0
+              const instagramNoCaptionCount  = isInstagramView ? shownByPlatform.filter(i => !hasRealCaption(i)).length : 0
               // Flagged items (title/caption mismatch etc.) are excluded from
               // every "select all" pool below — still individually
               // selectable via their own row checkbox, just never swept into
@@ -1382,6 +1398,27 @@ export function DashboardProfilePage() {
                 }
                 setImportedChecked(new Set())
                 setImportedBulkPublishing(false)
+                refreshImported()
+              }
+
+              // One click, not select-then-publish: publishes every currently
+              // shown item that already has both a real title and a real
+              // caption straight from its source, with nothing rewritten.
+              // Deliberately stricter than "Select all ready to publish"
+              // (title only) — this is the "just get the ones that don't
+              // need me to look at them" button.
+              const autoPublishCandidates = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i))
+              async function handleAutoPublishCaptioned() {
+                if (!draft || autoPublishCandidates.length === 0) return
+                if (!window.confirm(`Publish ${autoPublishCandidates.length} item${autoPublishCandidates.length === 1 ? '' : 's'} that already ${autoPublishCandidates.length === 1 ? 'has' : 'have'} a real caption? Nothing will be rewritten first.`)) return
+                setAutoPublishingCaptioned(true)
+                for (const item of autoPublishCandidates) {
+                  const story = buildStoryFromImport(item, draft)
+                  const result = await publishStoryCore(story)
+                  if (result.success) await importedContentService.updateStatus(item.id, 'published')
+                  else setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                }
+                setAutoPublishingCaptioned(false)
                 refreshImported()
               }
 
@@ -1592,13 +1629,48 @@ export function DashboardProfilePage() {
                       {importedFilterMode === 'platform' && (
                         <div className="flex flex-wrap gap-1.5">
                           {platforms.map(p => (
-                            <button key={p} onClick={() => setImportedPlatformFilter(p)}
+                            <button key={p} onClick={() => { setImportedPlatformFilter(p); setInstagramCaptionFilter('all') }}
                               className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
                               {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p && !i.seriesId).length}
                             </button>
                           ))}
                         </div>
                       )}
+
+                      {/* Instagram brings in Posts (almost always captioned)
+                          and Stories (structurally never captioned) as one
+                          pile — this splits them so the ones worth a quick
+                          publish aren't buried among ones that need writing
+                          from scratch. */}
+                      {isInstagramView && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {([
+                            ['all',  `All ${shownByPlatform.length}`],
+                            ['has',  `Has caption ${instagramHasCaptionCount}`],
+                            ['none', `No caption ${instagramNoCaptionCount}`],
+                          ] as const).map(([value, label]) => (
+                            <button key={value} onClick={() => setInstagramCaptionFilter(value)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${instagramCaptionFilter === value ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {autoPublishCandidates.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 mb-4 px-4 py-2.5 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-lg flex-wrap">
+                      <p className="text-xs text-[#5E6B4A] font-medium">
+                        {autoPublishCandidates.length} {autoPublishCandidates.length === 1 ? 'item' : 'items'} here already {autoPublishCandidates.length === 1 ? 'has' : 'have'} a real caption — ready to go live as-is.
+                      </p>
+                      <button
+                        onClick={() => void handleAutoPublishCaptioned()}
+                        disabled={autoPublishingCaptioned}
+                        className="shrink-0 px-4 py-2 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5539] disabled:opacity-50 transition-colors"
+                      >
+                        {autoPublishingCaptioned ? 'Publishing…' : `Auto-publish ${autoPublishCandidates.length} captioned`}
+                      </button>
                     </div>
                   )}
 

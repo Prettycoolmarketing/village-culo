@@ -1396,6 +1396,17 @@ export function isReadyToPublish(item: ImportedContent): boolean {
   return item.title.trim().length > 0 && item.title !== `Imported from ${PLATFORM_LABELS[item.sourcePlatform]}`
 }
 
+// Distinct from isReadyToPublish (title only) — this checks whether the
+// founder's own source actually gave this item real caption/description
+// text, before any enrichment or AI rewrite touches it. Instagram Stories
+// come in with no caption at all (structurally, not a data gap) while
+// feed Posts almost always have one; this is what separates the two in
+// the Instagram sub-filter and what the one-click "auto-publish captioned"
+// action uses to decide what's safe to publish untouched.
+export function hasRealCaption(item: ImportedContent): boolean {
+  return (item.description ?? '').trim().length > 0
+}
+
 export function SavedRow({
   item,
   checked,
