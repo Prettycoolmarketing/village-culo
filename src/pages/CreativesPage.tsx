@@ -59,45 +59,9 @@ export function CreativesPage() {
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="bg-charcoal py-24 md:py-28 relative overflow-hidden text-center">
         <InnerContainer>
-          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto">
+          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto uppercase">
             CULO helps share your story.
           </h1>
-        </InnerContainer>
-      </section>
-
-      {/* ── What it makes ─────────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20" aria-labelledby="formats-heading">
-        <InnerContainer>
-          <div className="max-w-2xl mb-12">
-            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-              What CULO Creatives makes
-            </p>
-            <h2 id="formats-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight">
-              Edit your raw footage in one workspace
-            </h2>
-            <p className="font-body text-lg text-muted leading-relaxed mb-3">
-              CULO is a Canva integrated app that turns your thoughts and raw footage into social media
-              content. Designed for founders and creators, CULO helps you create blogs, carousels and multiple
-              reel formats from the stories, experiences and insights you already have.
-            </p>
-            <p className="font-body text-lg text-muted leading-relaxed mb-3">
-              Upload your footage, answer a few personalised questions, and CULO creates blogs, carousels,
-              talking head reels, voice over reels, vlog behind-the-scenes reels and quick rhythm reels.
-            </p>
-            <p className="font-body text-lg text-muted leading-relaxed">
-              Every reel includes subtitles, an on-screen hook and a caption, ready to publish.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {FORMATS.map(f => (
-              <div key={f.label} className="bg-surface border border-border rounded-2xl p-6">
-                <span className="text-3xl mb-3 block">{f.emoji}</span>
-                <p className="font-heading text-lg font-semibold text-charcoal mb-1.5">{f.label}</p>
-                <p className="font-body text-sm text-muted leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
         </InnerContainer>
       </section>
 
@@ -137,8 +101,27 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
+      {/* ── What it makes ─────────────────────────────────────────────────── */}
+      <section className="py-16 md:py-20" aria-labelledby="formats-heading">
+        <InnerContainer>
+          <div className="max-w-2xl">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+              What CULO Creatives makes
+            </p>
+            <h2 id="formats-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight">
+              Edit your raw footage in one workspace
+            </h2>
+            <p className="font-body text-lg text-muted leading-relaxed">
+              CULO is a Canva integrated app that turns your thoughts and raw footage into social media
+              content. Designed for founders and creators, CULO helps you create blogs, carousels and multiple
+              reel formats from the stories, experiences and insights you already have.
+            </p>
+          </div>
+        </InnerContainer>
+      </section>
+
       {/* ── Watch the demo ────────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20" aria-labelledby="demo-heading">
+      <section className="py-16 md:py-20 bg-surface border-y border-border" aria-labelledby="demo-heading">
         <InnerContainer>
           <div className="max-w-2xl mx-auto mb-8 text-center">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
@@ -175,6 +158,35 @@ export function CreativesPage() {
                 Watch on YouTube ↗
               </a>
             </div>
+          </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── What you get back ────────────────────────────────────────────────
+        The two paragraphs describing what CULO actually hands back, together
+        with the format boxes themselves — placed right after the demo so a
+        founder who just watched it sees exactly what it produces.
+      */}
+      <section className="py-16 md:py-20" aria-labelledby="output-heading">
+        <InnerContainer>
+          <div className="max-w-2xl mb-12">
+            <p className="font-body text-lg text-muted leading-relaxed mb-3">
+              Upload your footage, answer a few personalised questions, and CULO creates blogs, carousels,
+              talking head reels, voice over reels, vlog behind-the-scenes reels and quick rhythm reels.
+            </p>
+            <p className="font-body text-lg text-muted leading-relaxed">
+              Every reel includes subtitles, an on-screen hook and a caption, ready to publish.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {FORMATS.map(f => (
+              <div key={f.label} className="bg-surface border border-border rounded-2xl p-6">
+                <span className="text-3xl mb-3 block">{f.emoji}</span>
+                <p className="font-heading text-lg font-semibold text-charcoal mb-1.5">{f.label}</p>
+                <p className="font-body text-sm text-muted leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
           </div>
         </InnerContainer>
       </section>
