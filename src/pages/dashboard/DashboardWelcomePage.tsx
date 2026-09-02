@@ -83,7 +83,7 @@ export function DashboardWelcomePage() {
           content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
           Village.
         </p>
-        <div className="flex justify-end">
+        <div className="flex justify-end mb-10">
           <a
             href="https://www.prettycoolmarketing.com/culo"
             target="_blank"
@@ -93,18 +93,16 @@ export function DashboardWelcomePage() {
             Create with CULO in Canva
           </a>
         </div>
-      </section>
 
-      {/* ── How-to video ─────────────────────────────────────────────────── */}
-      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
-        <p className="text-lg font-semibold text-[#2D2A26] mb-6">How to use CULO Creatives in Canva</p>
-        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal p-3 sm:p-4">
+        {/* ── How-to video ──────────────────────────────────────────────── */}
+        <p className="text-lg font-semibold text-white mb-6">How to use CULO Creatives in Canva</p>
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10">
           <iframe
             src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
             title="How to publish with CULO"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-            className="absolute inset-0 w-full h-full rounded-2xl"
+            className="absolute inset-0 w-full h-full"
           />
         </div>
       </section>
