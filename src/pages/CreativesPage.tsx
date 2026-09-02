@@ -57,11 +57,19 @@ export function CreativesPage() {
     <main className="min-h-screen bg-background">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="bg-charcoal py-24 md:py-28 relative overflow-hidden text-center">
+      <section className="bg-[#1B3A5C] py-24 md:py-28 relative overflow-hidden text-center">
         <InnerContainer>
-          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto uppercase">
-            CULO helps share your story.
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+            What CULO Creatives makes
+          </p>
+          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto mb-6">
+            Edit your raw footage in one workspace
           </h1>
+          <p className="font-body text-base sm:text-lg text-white/80 leading-relaxed max-w-2xl mx-auto">
+            CULO is a Canva integrated app that turns your thoughts and raw footage into social media content.
+            Designed for founders and creators, CULO helps you create blogs, carousels and multiple reel
+            formats from the stories, experiences and insights you already have.
+          </p>
         </InnerContainer>
       </section>
 
@@ -97,25 +105,6 @@ export function CreativesPage() {
                 </ul>
               </div>
             ))}
-          </div>
-        </InnerContainer>
-      </section>
-
-      {/* ── What it makes ─────────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20" aria-labelledby="formats-heading">
-        <InnerContainer>
-          <div className="max-w-2xl">
-            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-              What CULO Creatives makes
-            </p>
-            <h2 id="formats-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight">
-              Edit your raw footage in one workspace
-            </h2>
-            <p className="font-body text-lg text-muted leading-relaxed">
-              CULO is a Canva integrated app that turns your thoughts and raw footage into social media
-              content. Designed for founders and creators, CULO helps you create blogs, carousels and multiple
-              reel formats from the stories, experiences and insights you already have.
-            </p>
           </div>
         </InnerContainer>
       </section>
@@ -196,18 +185,6 @@ export function CreativesPage() {
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
             <div>
-              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                From the founder
-              </p>
-              <p id="founder-note-heading" className="font-heading italic text-2xl sm:text-3xl text-charcoal leading-snug mb-6">
-                "Business owners don't have time to learn another course or wrestle with AI prompts to get
-                strong storytelling content. I took Pretty Cool Marketing's proven workflow and made it
-                accessible inside Canva — for the billions of users who struggle to tell their story and show
-                up in all formats online."
-              </p>
-              <p className="font-body text-sm text-muted">Shakas — CEO / Founder of Pretty Cool Marketing x CULO</p>
-            </div>
-            <div>
               <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
                 <iframe
                   src="https://www.youtube.com/embed/Mv40KqkNwM8?start=250"
@@ -218,6 +195,18 @@ export function CreativesPage() {
                 />
               </div>
               <p className="font-body text-xs text-muted mt-3">Shakas speaking on Canva and digital accessibility.</p>
+            </div>
+            <div className="text-center">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+                From the founder
+              </p>
+              <p id="founder-note-heading" className="font-heading italic text-base sm:text-lg text-charcoal leading-relaxed mb-6">
+                "Business owners don't have time to learn another course or wrestle with AI prompts to get
+                strong storytelling content. I took Pretty Cool Marketing's proven workflow and made it
+                accessible inside Canva — for the billions of users who struggle to tell their story and show
+                up in all formats online."
+              </p>
+              <p className="font-body text-sm text-muted">Shakas — CEO / Founder of Pretty Cool Marketing x CULO</p>
             </div>
           </div>
         </InnerContainer>
