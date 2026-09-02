@@ -33,45 +33,41 @@ const HOW_IT_WORKS_STEPS = [
 
 export function DashboardWelcomePage() {
   return (
-    <div className="flex flex-col" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="p-8 max-w-[1100px] flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* ── What is CULO Village? + How CULO Village Works ──────────────── */}
-      {/* One continuous full-bleed band across the content pane, not two
-          stacked pieces — the welcome copy and the steps that follow it
-          belong together as a single story. */}
-      <section className="w-full px-8 py-10 sm:px-16 sm:py-14 bg-[#1B3A5C] text-white">
-        <div className="max-w-[1100px]">
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold mb-4">Welcome to CULO Village</h1>
-          <p className="text-sm sm:text-base text-white/90 leading-relaxed max-w-2xl mb-6">
-            CULO Village brings the work you've already created into one connected place. Your YouTube videos,
-            podcasts, blogs, Instagram posts, Canva designs and stories can all become part of your Village
-            profile.
-          </p>
-          <Link
-            to="/dashboard/import-content"
-            className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-lg bg-white text-[#1B3A5C] hover:bg-white/90 transition-colors mb-10"
-          >
-            Set up your Voice &amp; Brand Brief →
-          </Link>
+      {/* ── Welcome ───────────────────────────────────────────────────────── */}
+      <div>
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4">Welcome to CULO Village</h1>
+        <Link
+          to="/dashboard/import-content"
+          className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+        >
+          Set up your Voice &amp; Brand Brief →
+        </Link>
+      </div>
 
-          <h2 className="text-lg font-semibold mb-6">How CULO Village Works</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {HOW_IT_WORKS_STEPS.map(s => (
-              <div key={s.title}>
-                <div className="w-11 h-11 rounded-full bg-white/10 text-white flex items-center justify-center shrink-0 mb-3">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    {s.icon}
-                  </svg>
-                </div>
-                <p className="text-base font-semibold mb-1">{s.title}</p>
-                <p className="text-sm text-white/70 leading-relaxed">{s.desc}</p>
+      {/* ── How CULO Village Works ───────────────────────────────────────── */}
+      <section className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-10 sm:py-10">
+        <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">How CULO Village Works</h2>
+        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
+          CULO Village brings the work you've already created into one connected place. Your YouTube videos,
+          podcasts, blogs, Instagram posts, Canva designs and stories can all become part of your Village
+          profile.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {HOW_IT_WORKS_STEPS.map(s => (
+            <div key={s.title}>
+              <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  {s.icon}
+                </svg>
               </div>
-            ))}
-          </div>
+              <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+              <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
-
-      <div className="p-8 max-w-[1100px] flex flex-col gap-6">
 
       {/* ── What is CULO Creatives, Exclusively in Canva? ────────────────── */}
       {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
@@ -106,7 +102,6 @@ export function DashboardWelcomePage() {
           />
         </div>
       </section>
-      </div>
     </div>
   )
 }
