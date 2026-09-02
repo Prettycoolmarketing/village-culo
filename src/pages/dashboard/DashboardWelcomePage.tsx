@@ -36,7 +36,10 @@ export function DashboardWelcomePage() {
     <div className="p-8 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Welcome ───────────────────────────────────────────────────────── */}
-      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Welcome to CULO Village</h1>
+      {/* Matches the px-8 sm:px-12 inner padding every section below uses, so
+          the heading text lines up with the box content instead of sitting
+          flush with the outer page edge. */}
+      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] px-8 sm:px-12">Welcome to CULO Village</h1>
 
       {/* Every section below spans the full width of the content pane (not
           boxed into a narrower max-width column) but keeps its own rounded
