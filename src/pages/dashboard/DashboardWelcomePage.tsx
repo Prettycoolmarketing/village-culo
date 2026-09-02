@@ -33,17 +33,17 @@ const HOW_IT_WORKS_STEPS = [
 
 export function DashboardWelcomePage() {
   return (
-    <div className="flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="p-8 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Welcome ───────────────────────────────────────────────────────── */}
-      <div className="px-8 pt-8 max-w-[1100px]">
-        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Welcome to CULO Village</h1>
-      </div>
+      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Welcome to CULO Village</h1>
+
+      {/* Every section below spans the full width of the content pane (not
+          boxed into a narrower max-width column) but keeps its own rounded
+          corners rather than running edge-to-edge square. */}
 
       {/* ── How CULO Village Works ───────────────────────────────────────── */}
-      {/* Full-bleed edge to edge across the content pane, not boxed into the
-          same max-width column as everything else below it. */}
-      <section className="w-full bg-white border-y border-[#E8E4DD] px-8 py-8 sm:px-16 sm:py-10">
+      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
         <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">How CULO Village Works</h2>
         <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
           CULO Village brings the work you've already created into one connected place. Your YouTube videos,
@@ -73,13 +73,11 @@ export function DashboardWelcomePage() {
         </div>
       </section>
 
-      <div className="px-8 pb-8 max-w-[1100px] flex flex-col gap-6">
-
       {/* ── What is CULO Creatives, Exclusively in Canva? ────────────────── */}
       {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
           for the real Canva app link once CULO in Canva ships. */}
-      <section className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-10 sm:py-10">
-        <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">What is CULO Creatives, Exclusively in Canva?</h2>
+      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
+        <h2 className="text-lg font-bold text-[#2D2A26] mb-3">What is CULO Creatives, Exclusively in Canva?</h2>
         <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
           CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
           content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
@@ -98,8 +96,8 @@ export function DashboardWelcomePage() {
       </section>
 
       {/* ── How-to video ─────────────────────────────────────────────────── */}
-      <section>
-        <p className="text-base font-semibold text-[#2D2A26] mb-4">How to use CULO Creatives in Canva</p>
+      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
+        <p className="text-lg font-semibold text-[#2D2A26] mb-6">How to use CULO Creatives in Canva</p>
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal p-3 sm:p-4">
           <iframe
             src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
@@ -110,7 +108,6 @@ export function DashboardWelcomePage() {
           />
         </div>
       </section>
-      </div>
     </div>
   )
 }
