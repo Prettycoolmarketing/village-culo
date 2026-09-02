@@ -54,7 +54,7 @@ export function CreativesPage() {
   })
 
   return (
-    <main className="min-h-screen bg-[#DCEAF7]">
+    <main className="min-h-screen bg-background">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="bg-charcoal py-24 md:py-28 relative overflow-hidden text-center">
@@ -74,7 +74,7 @@ export function CreativesPage() {
       </section>
 
       {/* ── How it works ──────────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 bg-[#DCEAF7] border-y border-border" aria-labelledby="how-heading">
+      <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="how-heading">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
@@ -110,7 +110,7 @@ export function CreativesPage() {
       </section>
 
       {/* ── Watch the demo ────────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 bg-[#DCEAF7] border-y border-border" aria-labelledby="demo-heading">
+      <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="demo-heading">
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
             <div>
@@ -172,7 +172,7 @@ export function CreativesPage() {
       </section>
 
       {/* ── Founder note ──────────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 bg-[#DCEAF7] border-y border-border" aria-labelledby="founder-note-heading">
+      <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="founder-note-heading">
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
             <div>
