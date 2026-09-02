@@ -33,28 +33,24 @@ const HOW_IT_WORKS_STEPS = [
 
 export function DashboardWelcomePage() {
   return (
-    <div className="p-8 max-w-[1100px] flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── Welcome ───────────────────────────────────────────────────────── */}
-      <div>
-        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4">Welcome to CULO Village</h1>
-        <Link
-          to="/dashboard/import-content"
-          className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
-        >
-          Set up your Voice &amp; Brand Brief →
-        </Link>
+      <div className="px-8 pt-8 max-w-[1100px]">
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Welcome to CULO Village</h1>
       </div>
 
       {/* ── How CULO Village Works ───────────────────────────────────────── */}
-      <section className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-10 sm:py-10">
+      {/* Full-bleed edge to edge across the content pane, not boxed into the
+          same max-width column as everything else below it. */}
+      <section className="w-full bg-white border-y border-[#E8E4DD] px-8 py-8 sm:px-16 sm:py-10">
         <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">How CULO Village Works</h2>
         <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
           CULO Village brings the work you've already created into one connected place. Your YouTube videos,
           podcasts, blogs, Instagram posts, Canva designs and stories can all become part of your Village
           profile.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {HOW_IT_WORKS_STEPS.map(s => (
             <div key={s.title}>
               <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3">
@@ -67,7 +63,17 @@ export function DashboardWelcomePage() {
             </div>
           ))}
         </div>
+        <div className="flex justify-end">
+          <Link
+            to="/dashboard/import-content"
+            className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+          >
+            Set up your Voice &amp; Brand Brief →
+          </Link>
+        </div>
       </section>
+
+      <div className="px-8 pb-8 max-w-[1100px] flex flex-col gap-6">
 
       {/* ── What is CULO Creatives, Exclusively in Canva? ────────────────── */}
       {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
@@ -79,14 +85,16 @@ export function DashboardWelcomePage() {
           content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
           Village.
         </p>
-        <a
-          href="https://www.prettycoolmarketing.com/culo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-        >
-          Create with CULO in Canva
-        </a>
+        <div className="flex justify-end">
+          <a
+            href="https://www.prettycoolmarketing.com/culo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+          >
+            Create with CULO in Canva
+          </a>
+        </div>
       </section>
 
       {/* ── How-to video ─────────────────────────────────────────────────── */}
@@ -102,6 +110,7 @@ export function DashboardWelcomePage() {
           />
         </div>
       </section>
+      </div>
     </div>
   )
 }
