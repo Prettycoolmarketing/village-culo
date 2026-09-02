@@ -1785,7 +1785,7 @@ export function DashboardImportContentPage() {
           {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
 
           <div className="mt-6 pt-6 border-t border-[#E8E4DD]">
-            <Link to="/dashboard/profile?tab=content" className="text-sm font-semibold text-[#C86A43] hover:underline">
+            <Link to="/dashboard/profile?tab=content" className="text-lg font-semibold text-[#C86A43] hover:underline">
               View everything you've imported so far →
             </Link>
           </div>
