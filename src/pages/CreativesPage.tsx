@@ -81,7 +81,7 @@ export function CreativesPage() {
               What CULO Creatives makes
             </p>
             <h2 id="formats-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight">
-              One upload. A whole stack of content.
+              Edit your raw footage in one workspace
             </h2>
             <p className="font-body text-lg text-muted leading-relaxed mb-3">
               Upload your footage, answer a few personalised questions, and CULO creates blogs, carousels,
@@ -225,14 +225,10 @@ export function CreativesPage() {
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
                 Coming soon · Exclusively in Canva
               </p>
-              <h2 className="font-heading text-4xl sm:text-6xl font-bold text-white mb-6 leading-tight">
-                Stop working your CULO off just to be on social media.
+              <h2 className="font-heading text-4xl sm:text-6xl font-bold text-white mb-8 leading-tight">
+                CULO is a Canva integrated app that turns your thoughts and raw footage into social media
+                content.
               </h2>
-              <p className="font-body text-lg sm:text-xl text-white/70 leading-relaxed mb-8 max-w-2xl">
-                The Canva editing app that turns your raw footage and messy thoughts into blogs, carousels and
-                reels — without ever leaving Canva. Built for founders who aren't short on ideas, just short
-                on time.
-              </p>
               <div className="max-w-md">
                 <WaitlistForm source="creatives-final-cta" dark />
                 <p className="font-body text-xs text-white/40 mt-3">

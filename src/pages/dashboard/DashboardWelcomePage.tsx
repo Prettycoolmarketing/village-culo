@@ -77,13 +77,11 @@ export function DashboardWelcomePage() {
       </section>
 
       {/* ── What is CULO Creatives, Exclusively in Canva? ────────────────── */}
-      {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
-          for the real Canva app link once CULO in Canva ships. */}
       <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
         <div className="flex items-start justify-between gap-6 mb-4">
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">What is CULO Creatives, Exclusively in Canva?</h2>
           <a
-            href="https://www.prettycoolmarketing.com/culo"
+            href="https://www.culovillage.com/creatives"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
