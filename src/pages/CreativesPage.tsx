@@ -179,13 +179,23 @@ export function CreativesPage() {
               <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
                 <iframe
                   src="https://www.youtube.com/embed/Mv40KqkNwM8?start=250"
-                  title="Shakas speaking on Canva and digital accessibility"
+                  title="Shakas presenting CULO Creatives in Canva for World Digital Accessibility Day with A11yBytes"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                   className="absolute inset-0 w-full h-full"
                 />
               </div>
-              <p className="font-body text-xs text-muted mt-3">Shakas speaking on Canva and digital accessibility.</p>
+              <p className="font-body text-xs text-muted mt-3">
+                Shakas presenting CULO Creatives in Canva for World Digital Accessibility Day with{' '}
+                <a
+                  href="https://a11ybytes.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  A11yBytes
+                </a>
+              </p>
             </div>
             <div className="text-center">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
