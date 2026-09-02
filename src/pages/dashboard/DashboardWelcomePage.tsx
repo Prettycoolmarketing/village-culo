@@ -66,7 +66,7 @@ export function DashboardWelcomePage() {
         <div className="flex justify-end">
           <Link
             to="/dashboard/import-content"
-            className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+            className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
           >
             Set up your Voice &amp; Brand Brief →
           </Link>
@@ -76,9 +76,9 @@ export function DashboardWelcomePage() {
       {/* ── What is CULO Creatives, Exclusively in Canva? ────────────────── */}
       {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
           for the real Canva app link once CULO in Canva ships. */}
-      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
-        <h2 className="text-lg font-bold text-[#2D2A26] mb-3">What is CULO Creatives, Exclusively in Canva?</h2>
-        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
+      <section className="w-full bg-[#2D2A26] rounded-2xl px-8 py-8 sm:px-12 sm:py-10">
+        <h2 className="text-lg font-bold text-white mb-3">What is CULO Creatives, Exclusively in Canva?</h2>
+        <p className="text-sm text-white/70 leading-relaxed max-w-2xl mb-6">
           CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
           content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
           Village.
