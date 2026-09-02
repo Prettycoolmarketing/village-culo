@@ -10,7 +10,6 @@ const primaryLinks = [
   { to: '/creatives',  label: 'Creatives',  exact: false },
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/mercato',    label: 'Businesses', exact: false },
-  { to: '/series',     label: 'Series',     exact: false },
   { to: '/stories',    label: 'Stories',    exact: false },
 ]
 
