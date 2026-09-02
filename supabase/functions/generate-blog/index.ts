@@ -286,29 +286,59 @@ serve(async (req) => {
       userContent.push({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } })
     }
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        // Prompt caching is GA on current API versions, but sending the
-        // beta header too costs nothing and guarantees the cache_control
-        // blocks below actually take effect rather than being silently
-        // ignored on some older account/version combination.
-        'anthropic-beta': 'prompt-caching-2024-07-31',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-8',
-        max_tokens: 4000,
-        thinking: { type: 'adaptive' },
-        // Cached too — identical on every call, any founder, any item — but
-        // the real saving is the brief block above; this one is small
-        // enough it may fall under the minimum cacheable size on its own.
-        system: [{ type: 'text', text: FRAMEWORK_PROMPT, cache_control: { type: 'ephemeral' } }],
-        messages: [{ role: 'user', content: userContent }],
-      }),
-    })
+    // A batch run makes many of these calls back-to-back, and each one
+    // resends the founder's full Voice + Insight Brief (tens of thousands
+    // of tokens) — real testing showed Anthropic returning transient 429s
+    // under that load even from a modest 11-call run. Retrying once or
+    // twice with a short backoff is the difference between one item
+    // silently failing out of a 200-item batch and the batch actually
+    // completing. Honour the API's own Retry-After header when it sends
+    // one (it knows the real reset time better than a guessed backoff);
+    // fall back to exponential backoff starting at 3s otherwise. Real
+    // (non-transient) errors — bad request, auth, or anything else — fail
+    // immediately, no point retrying those.
+    const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 529])
+    async function callAnthropic(): Promise<Response> {
+      let lastResponse: Response | undefined
+      for (let attempt = 0; attempt < 4; attempt++) {
+        if (attempt > 0) {
+          const retryAfterHeader = lastResponse?.headers.get('retry-after')
+          const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : undefined
+          const delayMs = retryAfterSeconds && !Number.isNaN(retryAfterSeconds)
+            ? retryAfterSeconds * 1000
+            : 3000 * 2 ** (attempt - 1)
+          await new Promise(r => setTimeout(r, delayMs))
+        }
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            // Prompt caching is GA on current API versions, but sending the
+            // beta header too costs nothing and guarantees the cache_control
+            // blocks below actually take effect rather than being silently
+            // ignored on some older account/version combination.
+            'anthropic-beta': 'prompt-caching-2024-07-31',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-opus-4-8',
+            max_tokens: 4000,
+            thinking: { type: 'adaptive' },
+            // Cached too — identical on every call, any founder, any item — but
+            // the real saving is the brief block above; this one is small
+            // enough it may fall under the minimum cacheable size on its own.
+            system: [{ type: 'text', text: FRAMEWORK_PROMPT, cache_control: { type: 'ephemeral' } }],
+            messages: [{ role: 'user', content: userContent }],
+          }),
+        })
+        if (res.ok || !RETRYABLE_STATUS.has(res.status)) return res
+        lastResponse = res
+      }
+      return lastResponse!
+    }
+
+    const response = await callAnthropic()
 
     if (!response.ok) {
       const errText = await response.text()

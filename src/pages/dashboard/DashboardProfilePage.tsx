@@ -1442,6 +1442,11 @@ export function DashboardProfilePage() {
                 // repetitive.
                 const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
                 for (let i = 0; i < ids.length; i++) {
+                  // Same reasoning as the Instagram archive importer: each
+                  // call resends the full Voice + Insight Brief, and firing
+                  // them with zero gap was tripping Anthropic's rate limits
+                  // in testing even at a modest batch size.
+                  if (i > 0) await new Promise(r => setTimeout(r, 500))
                   const item = importedContentService.get(ids[i]!)
                   if (item) {
                     const { blog } = await generateBlogFromVoiceBrief({

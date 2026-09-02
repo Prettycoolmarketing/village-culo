@@ -74,6 +74,13 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
         // the same import just wrote.
         const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
         for (let i = 0; i < built.length; i++) {
+          // A small proactive gap between calls — each one resends the full
+          // Voice + Insight Brief (tens of thousands of tokens), and firing
+          // them back-to-back with zero gap was tripping Anthropic's own
+          // rate limits in testing even at a modest batch size. The
+          // function retries transient failures on its own too; this just
+          // makes tripping the limit in the first place less likely.
+          if (i > 0) await new Promise(r => setTimeout(r, 500))
           setStage(`Writing blog ${i + 1} of ${built.length}…`)
           const { item } = built[i]!
           const { blog, error: blogError } = await generateBlogFromVoiceBrief({
