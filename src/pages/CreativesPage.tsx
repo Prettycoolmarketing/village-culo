@@ -57,15 +57,15 @@ export function CreativesPage() {
     <main className="min-h-screen bg-background">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="bg-[#1B3A5C] py-24 md:py-28 relative overflow-hidden text-center">
+      <section className="bg-[#DCEAF7] py-24 md:py-28 relative overflow-hidden text-center">
         <InnerContainer>
           <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
             What CULO Creatives makes
           </p>
-          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto mb-6">
+          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-charcoal leading-tight max-w-3xl mx-auto mb-6">
             Edit your raw footage in one workspace
           </h1>
-          <p className="font-body text-base sm:text-lg text-white/80 leading-relaxed max-w-2xl mx-auto">
+          <p className="font-body text-base sm:text-lg text-charcoal/70 leading-relaxed max-w-2xl mx-auto">
             CULO is a Canva integrated app that turns your thoughts and raw footage into social media content.
             Designed for founders and creators, CULO helps you create blogs, carousels and multiple reel
             formats from the stories, experiences and insights you already have.
@@ -112,62 +112,57 @@ export function CreativesPage() {
       {/* ── Watch the demo ────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 bg-surface border-y border-border" aria-labelledby="demo-heading">
         <InnerContainer>
-          <div className="max-w-2xl mx-auto mb-8 text-center">
-            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-              See it in Canva
-            </p>
-            <h2 id="demo-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
-              Watch the demo.
-            </h2>
-          </div>
-          <div className="max-w-3xl mx-auto">
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
-              <video
-                src="/creatives/culo-app-demo.mp4"
-                controls
-                preload="metadata"
-                className="absolute inset-0 w-full h-full object-contain bg-black"
-              />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+            <div>
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+                <video
+                  src="/creatives/culo-app-demo.mp4"
+                  controls
+                  preload="metadata"
+                  className="absolute inset-0 w-full h-full object-contain bg-black"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-4 mt-5">
+                <a
+                  href="https://canva.link/gh6qvlru340vrnt"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                >
+                  Try the CULO Creatives template in Canva ↗
+                </a>
+                <a
+                  href="https://www.youtube.com/watch?v=Gg0zgIjZROI"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-muted hover:text-primary transition-colors"
+                >
+                  Watch on YouTube ↗
+                </a>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-4 mt-5">
-              <a
-                href="https://canva.link/gh6qvlru340vrnt"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-              >
-                Try the CULO Creatives template in Canva ↗
-              </a>
-              <a
-                href="https://www.youtube.com/watch?v=Gg0zgIjZROI"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-muted hover:text-primary transition-colors"
-              >
-                Watch on YouTube ↗
-              </a>
+            <div>
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+                See it in Canva
+              </p>
+              <h2 id="demo-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight mb-5">
+                Watch the demo.
+              </h2>
+              <p className="font-body text-lg text-muted leading-relaxed mb-3">
+                Upload your footage, answer a few personalised questions, and CULO creates blogs, carousels,
+                talking head reels, voice over reels, vlog behind-the-scenes reels and quick rhythm reels.
+              </p>
+              <p className="font-body text-lg text-muted leading-relaxed">
+                Every reel includes subtitles, an on-screen hook and a caption, ready to publish.
+              </p>
             </div>
           </div>
         </InnerContainer>
       </section>
 
-      {/* ── What you get back ────────────────────────────────────────────────
-        The two paragraphs describing what CULO actually hands back, together
-        with the format boxes themselves — placed right after the demo so a
-        founder who just watched it sees exactly what it produces.
-      */}
+      {/* ── What it makes ─────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20" aria-labelledby="output-heading">
         <InnerContainer>
-          <div className="max-w-2xl mb-12">
-            <p className="font-body text-lg text-muted leading-relaxed mb-3">
-              Upload your footage, answer a few personalised questions, and CULO creates blogs, carousels,
-              talking head reels, voice over reels, vlog behind-the-scenes reels and quick rhythm reels.
-            </p>
-            <p className="font-body text-lg text-muted leading-relaxed">
-              Every reel includes subtitles, an on-screen hook and a caption, ready to publish.
-            </p>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {FORMATS.map(f => (
               <div key={f.label} className="bg-surface border border-border rounded-2xl p-6">
