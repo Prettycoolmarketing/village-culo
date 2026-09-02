@@ -80,25 +80,25 @@ export function DashboardWelcomePage() {
       {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
           for the real Canva app link once CULO in Canva ships. */}
       <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4">What is CULO Creatives, Exclusively in Canva?</h2>
-        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
-          CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
-          content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
-          Village.
-        </p>
-        <div className="flex justify-end mb-10">
+        <div className="flex items-start justify-between gap-6 mb-4">
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">What is CULO Creatives, Exclusively in Canva?</h2>
           <a
             href="https://www.prettycoolmarketing.com/culo"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
           >
             Create with CULO in Canva
           </a>
         </div>
+        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-10">
+          CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
+          content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
+          Village.
+        </p>
 
         {/* ── How-to video ──────────────────────────────────────────────── */}
-        <p className="text-lg font-semibold text-[#2D2A26] mb-6">How to use CULO Creatives in Canva</p>
+        <p className="text-xl font-semibold text-[#2D2A26] mb-6">How to use CULO Creatives in Canva</p>
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
           <iframe
             src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
