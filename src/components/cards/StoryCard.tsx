@@ -3,7 +3,6 @@ import type { Story, Founder, Business } from '../../types'
 import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
 import { contentTypeLabel } from '../../utils/slugify'
-import { normalizeUrl } from '../../utils/url'
 
 interface StoryCardProps {
   story: Story
@@ -145,20 +144,21 @@ export function StoryCard({
             </div>
           )}
 
-          {/* CTA */}
+          {/* CTA — links into the Village article itself, not out to the
+              original external source. A prominent button on a card is
+              exactly where you don't want to hand the visitor off the site
+              before they've even read the story. */}
           {showCTA && story.ctaLabel && story.ctaUrl && (
-            <a
-              href={normalizeUrl(story.ctaUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to={storyUrl}
               className="mt-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
-              aria-label={`${story.ctaLabel} — related to ${story.title}`}
+              aria-label={`Read ${story.title}`}
             >
-              {story.ctaLabel}
+              Read the story
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
-            </a>
+            </Link>
           )}
         </div>
       </article>
@@ -268,14 +268,12 @@ export function StoryCard({
             </div>
           )}
           {showCTA && story.ctaLabel && story.ctaUrl && (
-            <a
-              href={normalizeUrl(story.ctaUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to={storyUrl}
               className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"
             >
-              {story.ctaLabel} →
-            </a>
+              Read the story →
+            </Link>
           )}
         </div>
       </div>
