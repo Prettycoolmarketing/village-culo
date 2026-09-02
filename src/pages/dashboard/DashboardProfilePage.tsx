@@ -1444,9 +1444,12 @@ export function DashboardProfilePage() {
                 for (let i = 0; i < ids.length; i++) {
                   // Same reasoning as the Instagram archive importer: each
                   // call resends the full Voice + Insight Brief, and firing
-                  // them with zero gap was tripping Anthropic's rate limits
-                  // in testing even at a modest batch size.
-                  if (i > 0) await new Promise(r => setTimeout(r, 500))
+                  // them with too little gap was tripping Anthropic's
+                  // token-throughput rate limits in testing, reproducibly,
+                  // even with a cold rate window — it's real per-batch
+                  // volume for founders with a large brief, not leftover
+                  // load from an earlier run.
+                  if (i > 0) await new Promise(r => setTimeout(r, 1500))
                   const item = importedContentService.get(ids[i]!)
                   if (item) {
                     const { blog } = await generateBlogFromVoiceBrief({
