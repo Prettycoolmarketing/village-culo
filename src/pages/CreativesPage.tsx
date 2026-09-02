@@ -54,7 +54,7 @@ export function CreativesPage() {
   })
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-[#DCEAF7]">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="bg-charcoal py-24 md:py-28 relative overflow-hidden text-center">
