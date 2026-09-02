@@ -76,9 +76,9 @@ export function DashboardWelcomePage() {
       {/* ── What is CULO Creatives, Exclusively in Canva? ────────────────── */}
       {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
           for the real Canva app link once CULO in Canva ships. */}
-      <section className="w-full bg-[#2D2A26] rounded-2xl px-8 py-8 sm:px-12 sm:py-10">
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-4">What is CULO Creatives, Exclusively in Canva?</h2>
-        <p className="text-sm text-white/70 leading-relaxed max-w-2xl mb-6">
+      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
+        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4">What is CULO Creatives, Exclusively in Canva?</h2>
+        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
           CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
           content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
           Village.
@@ -95,8 +95,8 @@ export function DashboardWelcomePage() {
         </div>
 
         {/* ── How-to video ──────────────────────────────────────────────── */}
-        <p className="text-lg font-semibold text-white mb-6">How to use CULO Creatives in Canva</p>
-        <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/10">
+        <p className="text-lg font-semibold text-[#2D2A26] mb-6">How to use CULO Creatives in Canva</p>
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
           <iframe
             src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
             title="How to publish with CULO"
