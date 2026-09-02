@@ -59,17 +59,9 @@ export function CreativesPage() {
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="bg-charcoal py-24 md:py-28 relative overflow-hidden text-center">
         <InnerContainer>
-          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-            Coming soon · Exclusively in Canva
-          </p>
-          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto mb-6">
-            CULO helps founders share their story.
+          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto">
+            CULO helps share your story.
           </h1>
-          <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed max-w-2xl mx-auto">
-            CULO is a Canva integrated app that turns your thoughts and raw footage into social media content.
-            Designed for founders and creators, CULO helps you create blogs, carousels and multiple reel
-            formats from the stories, experiences and insights you already have.
-          </p>
         </InnerContainer>
       </section>
 
@@ -83,6 +75,11 @@ export function CreativesPage() {
             <h2 id="formats-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight">
               Edit your raw footage in one workspace
             </h2>
+            <p className="font-body text-lg text-muted leading-relaxed mb-3">
+              CULO is a Canva integrated app that turns your thoughts and raw footage into social media
+              content. Designed for founders and creators, CULO helps you create blogs, carousels and multiple
+              reel formats from the stories, experiences and insights you already have.
+            </p>
             <p className="font-body text-lg text-muted leading-relaxed mb-3">
               Upload your footage, answer a few personalised questions, and CULO creates blogs, carousels,
               talking head reels, voice over reels, vlog behind-the-scenes reels and quick rhythm reels.
