@@ -170,7 +170,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
   }
 
   return (
-    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-6 h-full">
+    <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-8 h-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-4">
           <SourceIcon platform="instagram" size="lg" />

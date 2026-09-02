@@ -41,17 +41,11 @@ export function DashboardWelcomePage() {
           site's actual brand primary (terracotta), not an arbitrary colour. */}
       <section className="w-full px-8 py-10 sm:px-16 sm:py-14 bg-primary text-white">
         <div className="max-w-[1100px]">
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold mb-4">What is CULO Village?</h1>
-          <p className="text-sm sm:text-base text-white/90 leading-relaxed max-w-2xl mb-3">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold mb-4">Welcome to CULO Village</h1>
+          <p className="text-sm sm:text-base text-white/90 leading-relaxed max-w-2xl mb-6">
             CULO Village brings the work you've already created into one connected place. Your YouTube videos,
             podcasts, blogs, Instagram posts, Canva designs and stories can all become part of your Village
-            profile — without taking your content away from where it already lives. Original content stays at
-            the source.
-          </p>
-          <p className="text-sm sm:text-base text-white/90 leading-relaxed max-w-2xl mb-6">
-            The Village connects it, gives it context and helps turn years of scattered posts into a body of
-            work that tells people who you are, what you know and what you've built. It all works best when it's
-            grounded in your own voice — that's what your Voice &amp; Brand Brief is for.
+            profile.
           </p>
           <Link
             to="/dashboard/import-content"
@@ -83,43 +77,35 @@ export function DashboardWelcomePage() {
       </section>
 
       {/* ── What is CULO Creatives, Exclusively in Canva? ────────────────── */}
+      {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
+          for the real Canva app link once CULO in Canva ships. */}
       <section className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-10 sm:py-10">
         <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">What is CULO Creatives, Exclusively in Canva?</h2>
-        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl">
+        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
           CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
           content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
           Village.
         </p>
+        <a
+          href="https://www.prettycoolmarketing.com/culo"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+        >
+          Create with CULO in Canva
+        </a>
       </section>
-
-      {/* www.prettycoolmarketing.com/culo is a placeholder landing page — swap
-          for the real Canva app link once CULO in Canva ships. */}
-      <a
-        href="https://www.prettycoolmarketing.com/culo"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block bg-[#2D2A26] rounded-2xl px-8 py-8 sm:px-10 hover:bg-[#1a1815] transition-colors"
-      >
-        <p className="text-xs font-semibold text-[#C86A43] uppercase tracking-widest mb-4">
-          Need help creating the content itself?
-        </p>
-        <div className="flex justify-end">
-          <span className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
-            Create with CULO in Canva
-          </span>
-        </div>
-      </a>
 
       {/* ── How-to video ─────────────────────────────────────────────────── */}
       <section>
-        <p className="text-sm font-semibold text-[#2D2A26] mb-3">See how publishing works</p>
-        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+        <p className="text-base font-semibold text-[#2D2A26] mb-4">How to use CULO Creatives in Canva</p>
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal p-3 sm:p-4">
           <iframe
             src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
             title="How to publish with CULO"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 w-full h-full rounded-2xl"
           />
         </div>
       </section>
