@@ -9,17 +9,19 @@ import { slugify } from '../utils/slugify'
 import { supabase } from '../lib/supabase'
 import type { Founder } from '../types'
 
-// Replaces the old "join the waitlist" entry point for the Village itself
-// (the Canva-app "coming soon" waitlist on VillagePage/CreativesPage is a
-// separate, still-live thing — see WaitlistForm). This creates a real
-// account, not a waitlist row: email only, no password up front (better
-// conversion — the founder sets a real password once inside the dashboard,
-// via the "set your password" prompt in DashboardLayout).
+// The real, account-creating join flow — staged at /launch rather than
+// replacing the homepage's "coming soon" waitlist (see WaitlistForm), which
+// stays live and untouched until the Canva app is actually approved. Once
+// it's ready to go live, point culovillage.com's main flow here (or move
+// this page to the root route). Creates a real account, not a waitlist row:
+// email only, no password up front (better conversion — the founder sets a
+// real password once inside the dashboard, via the "set your password"
+// prompt in DashboardLayout).
 //
 // ?source=canva vs the default 'village' tags which funnel actually created
 // the account, so CAPO can tell a Canva Marketplace deep-link apart from a
 // direct culovillage.com signup. This is the exact URL the Canva app's
-// "Join the Village" button should deep-link to: /join?source=canva
+// "Join the Village" button should deep-link to: /launch?source=canva
 
 const COLLABORATOR_CUTOFF = '2027-01-01T00:00:00.000Z'
 const STANDARD_TRIAL_DAYS = 14
