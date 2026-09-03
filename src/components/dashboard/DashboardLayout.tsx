@@ -214,6 +214,18 @@ export function DashboardLayout() {
                 </>
               )}
 
+              {(canAccessCapoSection(user?.role, 'usage') || canAccessCapoSection(user?.role, 'creativeFeedback')) && (
+                <>
+                  <SectionLabel label="CULO Creatives" />
+                  {canAccessCapoSection(user?.role, 'usage') && (
+                    <NavItem to="/dashboard/village/usage" label="Village Usage" icon={<Icon path={icons.analytics} />} />
+                  )}
+                  {canAccessCapoSection(user?.role, 'creativeFeedback') && (
+                    <NavItem to="/dashboard/village/creative-feedback" label="Feedback" icon={<Icon path={icons.email} />} />
+                  )}
+                </>
+              )}
+
               {/* Bulk Import lives as a tab on the Founders page now —
                   importing founders is a founders operation, not a system
                   one. Staff (who has CAPO access) moved here too — managing

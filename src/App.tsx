@@ -63,6 +63,9 @@ import { VillageAnalyticsPage }               from './pages/dashboard/village/Vi
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
 import { CapoTeamPage }                       from './pages/dashboard/village/CapoTeamPage'
 import { CapoOpportunitiesHubPage }           from './pages/dashboard/village/CapoOpportunitiesHubPage'
+import { VillageUsagePage }                   from './pages/dashboard/village/VillageUsagePage'
+import { VillageCreativeFeedbackPage }        from './pages/dashboard/village/VillageCreativeFeedbackPage'
+import { DashboardCreativesPage }             from './pages/dashboard/DashboardCreativesPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 import { CAPO_PERMISSIONS } from './utils/permissions'
 
@@ -207,6 +210,9 @@ export default function App() {
             <Route path="village/settings"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.settings}><VillageSettingsPage /></RoleProtectedRoute>}                />
             <Route path="village/team"         element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.team}><CapoTeamPage /></RoleProtectedRoute>}                          />
             <Route path="settings"         element={<DashboardSettingsPage />}        />
+            <Route path="creatives"        element={<DashboardCreativesPage />}       />
+            <Route path="village/usage"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.usage}><VillageUsagePage /></RoleProtectedRoute>} />
+            <Route path="village/creative-feedback" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.creativeFeedback}><VillageCreativeFeedbackPage /></RoleProtectedRoute>} />
           </Route>
 
           {/* ── Public site (with Navbar + Footer) ────────────────────────── */}

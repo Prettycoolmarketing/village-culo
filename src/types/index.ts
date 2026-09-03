@@ -442,6 +442,61 @@ export interface Founder {
   // Metadata
   seoTitle?: string
   seoDescription?: string
+  // ── CULO Creatives subscription (Sprint: paid tier launch) ────────────
+  // Deliberately its own object rather than flat fields, so the whole
+  // subscription state travels together and stays easy to reset/replace as
+  // one write. Lives inside founders.data (JSONB) like everything else on
+  // this type — no migration needed for these fields specifically.
+  creativeSubscription?: CreativeSubscription
+  // Which product funnel actually created this account — 'village' (email
+  // capture on culovillage.com) vs 'canva' (deep-linked from inside the
+  // Canva Marketplace app once a user is already using CULO Creatives
+  // there). Distinct from joinSource above, which is a free-text "how did
+  // you hear about us" answer collected later in Onboarding, not a signup
+  // funnel tag captured at account-creation time.
+  signupProduct?: 'village' | 'canva'
+  // True once this founder has actually set a real password via the
+  // post-signup "set your password" modal — accounts created through the
+  // email-only join flow start with a throwaway random password and a
+  // session, not a real one the founder knows, until this happens.
+  passwordSet?: boolean
+}
+
+// A founder's status with the paid CULO Creatives product — entirely
+// separate from Founder.status (their public Village profile's
+// draft/published state). See docs/pricing plan: two cohorts get two
+// different Stripe Prices, each immutable once created, so tier
+// (collaborator vs standard) plus its locked-in rate travel together here
+// rather than being derived from a Stripe price ID lookup every time.
+export interface CreativeSubscription {
+  status: 'trial' | 'active' | 'cancelled' | 'expired'
+  // 'collaborator' = original waitlist cohort who gave feedback, locked at
+  // $19/mo forever. 'standard' = anyone who joins from Jan 1 2027 onward,
+  // $25/mo with a 2-week trial. The rate itself isn't stored here — it's
+  // whatever Stripe Price the subscription is actually on — this field is
+  // only for showing/filtering the right UI copy and CAPO reporting.
+  tier?: 'collaborator' | 'standard'
+  // ISO date. For the collaborator cohort this is a fixed calendar date
+  // (2027-01-01T00:00:00.000Z for everyone, not per-signup), for the
+  // standard tier it's 14 days from Stripe's own trial start.
+  trialEnd?: string
+  stripeCustomerId?: string
+  stripeSubscriptionId?: string
+  // Set only once — submitting the feedback form is what actually locks a
+  // collaborator into the $19/mo rate (see CreativeFeedback below). Kept
+  // here too (not just on the feedback record) so the dashboard gate can
+  // check subscription status without a second lookup.
+  feedbackSubmittedAt?: string
+}
+
+// One founder can only ever submit this once (see feedbackSubmittedAt
+// above) — a single open question, not a multi-field survey, per the
+// founder's own decision on what to ask.
+export interface CreativeFeedback {
+  id: string
+  founderId: string
+  answer: string
+  createdAt: string
 }
 
 // ─── Business ──────────────────────────────────────────────────────────────────
