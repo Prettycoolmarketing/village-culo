@@ -37,6 +37,7 @@ import { ExpertiseDetailPage }from './pages/ExpertiseDetailPage'
 import { LibraryPage }        from './pages/LibraryPage'
 import { LibraryDetailPage }  from './pages/LibraryDetailPage'
 import { OnboardingPage }    from './pages/OnboardingPage'
+import { JoinVillagePage }   from './pages/JoinVillagePage'
 
 // ─── Dashboard pages ────────────────────────────────────────────────────────────
 import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
@@ -150,6 +151,11 @@ export default function App() {
       <AuthProvider>
         <ScrollToTop />
         <Routes>
+
+          {/* Standalone, no Navbar/Footer — same reason /dashboard/login is
+              outside PublicLayout. Deep-linked from the Canva Marketplace
+              app via ?source=canva once it's live. */}
+          <Route path="/join" element={<JoinVillagePage />} />
 
           {/* ── Dashboard (no public nav) ──────────────────────────────────── */}
           <Route path="/dashboard/login" element={<DashboardLoginPage />} />

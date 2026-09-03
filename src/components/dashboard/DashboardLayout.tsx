@@ -1,6 +1,9 @@
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
+import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { canAccessCapoSection, hasAnyCapoAccess } from '../../utils/permissions'
+import { getCurrentFounder } from '../../services/currentFounder'
+import { SetPasswordModal } from './SetPasswordModal'
 import type { ReactNode } from 'react'
 
 // ─── Icon helpers ───────────────────────────────────────────────────────────────
@@ -112,6 +115,9 @@ export function DashboardLayout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const showCapoNav = hasAnyCapoAccess(user?.role)
+  const founder = getCurrentFounder(user)
+  const [passwordModalDismissed, setPasswordModalDismissed] = useState(false)
+  const showSetPasswordModal = !!founder && founder.passwordSet === false && !passwordModalDismissed
 
   async function handleSignOut() {
     await signOut()
@@ -120,6 +126,7 @@ export function DashboardLayout() {
 
   return (
     <div className="flex h-screen bg-[#F3F7FA] overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {showSetPasswordModal && <SetPasswordModal onClose={() => setPasswordModalDismissed(true)} />}
 
       {/* ── Left sidebar ────────────────────────────────────────────────────── */}
       <aside className="w-56 shrink-0 border-r border-[#E8E4DD] bg-white flex flex-col overflow-y-auto">

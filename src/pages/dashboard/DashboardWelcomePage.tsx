@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 
 // Landing spot for orientation and promotion — everything that used to be
 // bolted onto Publish or Import Content (How it works, what the Voice Brief
@@ -31,9 +34,48 @@ const HOW_IT_WORKS_STEPS = [
   },
 ]
 
+// Billing is stubbed in this phase (see the launch plan) — this checks only
+// the founder's creativeSubscription status flag, no live Stripe call.
+// Founders with no subscription record at all (pre-existing/curated
+// profiles from before this launched) are treated as having access rather
+// than being blocked by a field that predates them.
+function hasCreativeAccess(sub: { status: string; trialEnd?: string } | undefined): boolean {
+  if (!sub) return true
+  if (sub.status === 'active') return true
+  if (sub.status === 'trial') return !sub.trialEnd || new Date(sub.trialEnd) > new Date()
+  return false
+}
+
 export function DashboardWelcomePage() {
+  const { user } = useAuth()
+  const founder = getCurrentFounder(user)
+  const [showUpgrade, setShowUpgrade] = useState(false)
+  const canUseCreatives = hasCreativeAccess(founder?.creativeSubscription)
+
   return (
     <div className="p-8 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {showUpgrade && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full px-8 py-8">
+            <h2 className="text-xl font-bold text-[#2D2A26] mb-2">Your free access has ended</h2>
+            <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">
+              Upgrade to CULO Creatives for $25/month to keep creating in Canva.
+            </p>
+            <div className="flex items-center justify-between gap-3">
+              <button onClick={() => setShowUpgrade(false)} className="text-sm text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
+                Not now
+              </button>
+              <Link
+                to="/dashboard/creatives"
+                onClick={() => setShowUpgrade(false)}
+                className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+              >
+                Upgrade — $25/month
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Welcome ───────────────────────────────────────────────────────── */}
       {/* Matches the px-8 sm:px-12 inner padding every section below uses, so
@@ -80,14 +122,23 @@ export function DashboardWelcomePage() {
       <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
         <div className="flex items-start justify-between gap-6 mb-4">
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">What is CULO Creatives, Exclusively in Canva?</h2>
-          <a
-            href="https://www.culovillage.com/creatives"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
-          >
-            Create with CULO in Canva
-          </a>
+          {canUseCreatives ? (
+            <a
+              href="https://www.culovillage.com/creatives"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
+            >
+              Create with CULO in Canva
+            </a>
+          ) : (
+            <button
+              onClick={() => setShowUpgrade(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
+            >
+              Create with CULO in Canva
+            </button>
+          )}
         </div>
         <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-10">
           CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
