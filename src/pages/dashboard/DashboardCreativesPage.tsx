@@ -3,6 +3,19 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { creativeFeedbackService } from '../../services/creativeFeedback'
 
+// Placeholder — swap for the real $25/mo Stripe Payment Link once it
+// exists (see the launch plan: standard-tier link goes live Jan 1 2027).
+// Same pattern as CULO_CANVA_URL in CreateWithCuloCTA.tsx — one constant to
+// update later, not scattered hrefs.
+const UPGRADE_PAYMENT_LINK = 'https://www.prettycoolmarketing.com/culo'
+
+function hasCreativeAccess(sub: { status: string; trialEnd?: string } | undefined): boolean {
+  if (!sub) return true
+  if (sub.status === 'active') return true
+  if (sub.status === 'trial') return !sub.trialEnd || new Date(sub.trialEnd) > new Date()
+  return false
+}
+
 // Where a founder gives their one piece of CULO Creatives feedback — doing
 // so locks them into the $19/mo collaborator rate (see
 // submit-creative-feedback Edge Function) rather than the $25/mo rate new
@@ -19,6 +32,7 @@ export function DashboardCreativesPage() {
 
   const subscription = founder?.creativeSubscription
   const alreadySubmitted = !!subscription?.feedbackSubmittedAt
+  const hasAccess = hasCreativeAccess(subscription)
 
   async function handleSubmit() {
     if (!founder || !answer.trim()) return
@@ -36,7 +50,24 @@ export function DashboardCreativesPage() {
 
   return (
     <div className="p-8 max-w-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <h1 className="text-2xl font-bold text-[#2D2A26] mb-2">CULO Creatives feedback</h1>
+      <h1 className="text-2xl font-bold text-[#2D2A26] mb-2">CULO Creatives</h1>
+
+      {!hasAccess && (
+        <div className="bg-[#C86A43]/10 border border-[#C86A43]/30 rounded-2xl px-8 py-6 mb-6">
+          <p className="text-base font-semibold text-[#2D2A26] mb-1">Your free access has ended</p>
+          <p className="text-sm text-[#6B7280] mb-4 leading-relaxed">
+            Upgrade to CULO Creatives for $25/month to keep creating in Canva.
+          </p>
+          <a
+            href={UPGRADE_PAYMENT_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+          >
+            Upgrade — $25/month
+          </a>
+        </div>
+      )}
 
       {alreadySubmitted ? (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">
