@@ -34,6 +34,14 @@ export function DashboardCreativesPage() {
   const alreadySubmitted = !!subscription?.feedbackSubmittedAt
   const hasAccess = hasCreativeAccess(subscription)
 
+  // client_reference_id is how stripe-creatives-webhook links the resulting
+  // Stripe customer back to this founder (see that function's header comment)
+  // — Stripe carries this query param through to the Checkout Session
+  // untouched, so it must be on the link every time, not just documented.
+  const upgradeUrl = founder
+    ? `${UPGRADE_PAYMENT_LINK}?client_reference_id=${encodeURIComponent(founder.id)}${user?.email ? `&prefilled_email=${encodeURIComponent(user.email)}` : ''}`
+    : UPGRADE_PAYMENT_LINK
+
   async function handleSubmit() {
     if (!founder || !answer.trim()) return
     setSubmitting(true)
@@ -59,7 +67,7 @@ export function DashboardCreativesPage() {
             Upgrade to CULO Creatives for $25/month to keep creating in Canva.
           </p>
           <a
-            href={UPGRADE_PAYMENT_LINK}
+            href={upgradeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
