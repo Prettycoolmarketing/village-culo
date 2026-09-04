@@ -9,7 +9,7 @@ import { slugify } from '../utils/slugify'
 import { supabase } from '../lib/supabase'
 import type { Founder } from '../types'
 
-// The real, account-creating join flow — staged at /launch rather than
+// The real, account-creating join flow — staged at /join rather than
 // replacing the homepage's "coming soon" waitlist (see WaitlistForm), which
 // stays live and untouched until the Canva app is actually approved. Once
 // it's ready to go live, point culovillage.com's main flow here (or move
@@ -21,7 +21,7 @@ import type { Founder } from '../types'
 // ?source=canva vs the default 'village' tags which funnel actually created
 // the account, so CAPO can tell a Canva Marketplace deep-link apart from a
 // direct culovillage.com signup. This is the exact URL the Canva app's
-// "Join the Village" button should deep-link to: /launch?source=canva
+// "Join the Village" button should deep-link to: /join?source=canva
 
 const COLLABORATOR_CUTOFF = '2027-01-01T00:00:00.000Z'
 const STANDARD_TRIAL_DAYS = 14

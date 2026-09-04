@@ -153,13 +153,13 @@ export default function App() {
         <Routes>
 
           {/* Standalone, no Navbar/Footer — same reason /dashboard/login is
-              outside PublicLayout. Staged at /launch (not the homepage or
-              /join) so it doesn't disturb the live "coming soon" waitlist
-              while the Canva app is still in review — move/link this to
+              outside PublicLayout. Staged at /join (not the homepage) so it
+              doesn't disturb the live "coming soon" waitlist while the
+              Canva app is still in review — move/link this to
               culovillage.com's main flow once it's ready to go live.
               Deep-linked from the Canva Marketplace app via ?source=canva
               once it's live. */}
-          <Route path="/launch" element={<JoinVillagePage />} />
+          <Route path="/join" element={<JoinVillagePage />} />
 
           {/* ── Dashboard (no public nav) ──────────────────────────────────── */}
           <Route path="/dashboard/login" element={<DashboardLoginPage />} />
