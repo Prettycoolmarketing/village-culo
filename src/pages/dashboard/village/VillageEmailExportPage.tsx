@@ -145,9 +145,14 @@ function WaitlistPanel() {
   const [importedMsg, setImportedMsg] = useState<string | null>(null)
 
   useEffect(() => {
-    void waitlistService.refresh().then(() => {
-      setEntries(waitlistService.getAll())
+    void waitlistService.refresh().then(async () => {
+      const fresh = waitlistService.getAll()
+      setEntries(fresh)
       setLoading(false)
+      // Waitlist signups count toward the Subscribers total automatically —
+      // no more manual "Import all" click needed for the count on the
+      // Subscribers tab to actually reflect everyone who's opted in.
+      await emailSubscribersService.importFromWaitlist(fresh)
     })
   }, [])
 

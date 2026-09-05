@@ -191,6 +191,20 @@ export function DashboardLayout() {
             Publish
           </NavLink>
 
+          <NavLink
+            to="/dashboard/creatives"
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
+                isActive
+                  ? 'bg-[#C86A43] text-white'
+                  : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
+              }`
+            }
+          >
+            <Icon path={icons.media} />
+            Culo in Canva
+          </NavLink>
+
           {showCapoNav && (
             <>
               {/* Everything from here down is staff-only — the CAPO label
