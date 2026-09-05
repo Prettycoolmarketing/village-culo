@@ -16,7 +16,7 @@ import { InnerContainer } from '../components/layout/PageContainer'
 // filling in, not a signup form blocking them from moving on.
 
 export function JoinOfferPage() {
-  usePageMeta({ title: 'Lock in your rate', ogType: 'website' })
+  usePageMeta({ title: 'Start creating', ogType: 'website' })
   const { user, loading } = useAuth()
   const navigate = useNavigate()
   const founder = getCurrentFounder(user)
