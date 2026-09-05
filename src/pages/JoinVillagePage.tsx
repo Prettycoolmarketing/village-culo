@@ -133,42 +133,52 @@ export function JoinVillagePage() {
     <main className="min-h-screen bg-background">
 
       {/* ── Hero / join form — dark, same charcoal treatment as Creatives'
-          own hero, since this page's job (get the email) deserves the same
-          weight as that page's opening statement. */}
-      <section className="bg-charcoal text-center py-20 md:py-28" aria-labelledby="join-heading">
+          own hero. Copy + form on the left, hero photo on the right, so the
+          image isn't just decoration stacked below — it sits right where
+          the eye lands next. */}
+      <section className="bg-charcoal py-20 md:py-28" aria-labelledby="join-heading">
         <InnerContainer>
-          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-            Free while CULO Creatives is in Canva review
-          </p>
-          <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-[1.1] max-w-3xl mx-auto">
-            Join The Culo Village to receive free access to Culo Creatives: Exclusively in Canva.
-          </h1>
-          <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-2xl mx-auto">
-            It's time to share your messy thoughts and raw footage into structured social media posts and
-            publish your previously created content across platforms with CULO.
-          </p>
-          <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@email.com"
-              aria-label="Email address"
-              className="flex-1 min-w-0 rounded-xl px-5 py-4 text-base bg-white/10 text-white placeholder:text-white/50 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors"
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="text-center lg:text-left">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+                Free while CULO Creatives is in Canva review
+              </p>
+              <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight [text-wrap:balance]">
+                Join The Culo Village for free access to Culo Creatives — exclusively in Canva.
+              </h1>
+              <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
+                It's time to share your messy thoughts and raw footage into structured social media posts and
+                publish your previously created content across platforms with CULO.
+              </p>
+              <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  aria-label="Email address"
+                  className="flex-1 min-w-0 rounded-xl px-5 py-4 text-base bg-white/10 text-white placeholder:text-white/50 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+                >
+                  {submitting ? 'Joining…' : 'Join free'}
+                </button>
+              </form>
+              {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
+              <p className="font-body text-xs text-white/40 mt-4">
+                One email, no password needed yet — you'll land straight in your dashboard.
+              </p>
+            </div>
+            <img
+              src={HERO_IMAGE}
+              alt="A Canva project full of finished CULO Creatives content — vlog style reels, talking head reels, quick rhythm reels, voice over reels and captions, all generated from one founder's raw footage"
+              className="w-full h-auto rounded-3xl"
             />
-            <button
-              type="submit"
-              disabled={submitting}
-              className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
-            >
-              {submitting ? 'Joining…' : 'Join free'}
-            </button>
-          </form>
-          {error && <p className="font-body text-sm text-red-400 text-center mt-3">{error}</p>}
-          <p className="font-body text-xs text-white/40 mt-4">
-            One email, no password needed yet — you'll land straight in your dashboard.
-          </p>
+          </div>
         </InnerContainer>
       </section>
 
@@ -190,6 +200,17 @@ export function JoinVillagePage() {
         </div>
         <InnerContainer className="relative">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+            <div>
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+                <iframe
+                  src="https://www.youtube.com/embed/qe0pMAlpVFc?start=22"
+                  title="How to publish with CULO"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
+                />
+              </div>
+            </div>
             <div>
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
                 What is CULO Creatives?
@@ -214,25 +235,18 @@ export function JoinVillagePage() {
                 demands of closed platforms algorithms.
               </p>
             </div>
-            <div>
-              <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
-                <iframe
-                  src="https://www.youtube.com/embed/qe0pMAlpVFc?start=22"
-                  title="How to publish with CULO"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="absolute inset-0 w-full h-full"
-                />
-              </div>
-            </div>
           </div>
         </InnerContainer>
       </section>
 
-      {/* ── Product screenshot grid — 3 over 3 ───────────────────────────── */}
+      {/* ── Product screenshot grid — 3 over 3, with the "raw footage" line
+          as a single-line title spanning the top instead of sitting beside
+          a separate hero image (that image now lives up in the dark hero). */}
       <section className="py-16 md:py-20 border-y border-border" aria-labelledby="product-heading">
         <InnerContainer>
-          <p id="product-heading" className="sr-only">CULO Creatives in Canva, screenshots</p>
+          <h2 id="product-heading" className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-charcoal text-center leading-tight mb-10 lg:whitespace-nowrap">
+            Turn your raw footage into social media posts in one workspace
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
             {GRID_ROW_1.map(src => (
               <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
@@ -242,23 +256,6 @@ export function JoinVillagePage() {
             {GRID_ROW_2.map(src => (
               <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
             ))}
-          </div>
-        </InnerContainer>
-      </section>
-
-      {/* ── Hero banner image + title — image on the left, big statement on
-          the right, at the very bottom before the footer. */}
-      <section className="py-16 md:py-20 bg-background">
-        <InnerContainer>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
-            <img
-              src={HERO_IMAGE}
-              alt="A Canva project full of finished CULO Creatives content — vlog style reels, talking head reels, quick rhythm reels, voice over reels and captions, all generated from one founder's raw footage"
-              className="w-full h-auto rounded-3xl"
-            />
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
-              Turn your raw footage into social media posts in one workspace
-            </h2>
           </div>
         </InnerContainer>
       </section>
