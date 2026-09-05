@@ -64,12 +64,14 @@ export function JoinOfferPage() {
               Lock in free access to Culo Creatives in Canva until January 1, 2027
             </h1>
             <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
-              Add your payment details now and you're locked at <strong className="text-charcoal">$19/month</strong> —
-              free until Jan 1, 2027, then $19/month for as long as you stay subscribed. Wait, or cancel before
-              then, and it's <strong className="text-charcoal">$25/month</strong> like everyone else who joins later.
+              Add your payment details now and you're locked at <strong className="text-charcoal">$19/month AUD</strong>.
+              <br /><br />
+              Free until Jan 1, 2027, then $19/month AUD for as long as you stay subscribed. Wait, or cancel
+              before then, and it's <strong className="text-charcoal">$25/month AUD</strong> like everyone else
+              who joins later.
             </p>
             {alreadyLockedIn ? (
-              <p className="font-heading text-lg font-semibold text-charcoal">You're locked in at $19/month ✓</p>
+              <p className="font-heading text-lg font-semibold text-charcoal">You're locked in at $19/month AUD ✓</p>
             ) : (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
@@ -78,7 +80,7 @@ export function JoinOfferPage() {
                   rel="noopener noreferrer"
                   className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
-                  Lock in Culo Creatives in Canva — $19/month
+                  Lock in Culo Creatives in Canva, forever $19 a month
                 </a>
                 {/* Deliberately quieter than the orange CTA — the site's
                     established dark/secondary button, not a co-equal
@@ -87,7 +89,7 @@ export function JoinOfferPage() {
                   to="/dashboard/welcome"
                   className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
                 >
-                  Not now, take me to my dashboard
+                  Not now, take me to my village dashboard
                 </Link>
               </div>
             )}
