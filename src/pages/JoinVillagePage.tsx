@@ -264,11 +264,11 @@ export function JoinVillagePage() {
                 for easy, humanised, storytelling, content.
               </p>
               <p className="font-body text-base text-muted leading-relaxed">
-                Someone may have the most amazing business and be a talented, knowledgable founder but without
-                consistent content speaking to their target audience with purposeful hooks, subtitles, captions
-                in an all in one easy to manage/approve workspace and scheduled to all platforms with
-                back-linked to websites/articles, they will struggle with visibility and keeping up with the
-                demands of closed platforms algorithms.
+                A founder can have an amazing business and be genuinely talented and knowledgeable. But without
+                consistent content that speaks to their audience with purposeful hooks, subtitles and captions,
+                managed in one easy workspace, scheduled across every platform, and back-linked to their
+                website and articles, they'll struggle with visibility and with keeping up with the demands of
+                closed platform algorithms.
               </p>
             </div>
           </div>
