@@ -17,7 +17,7 @@ import { InnerContainer } from '../components/layout/PageContainer'
 
 export function JoinOfferPage() {
   usePageMeta({ title: 'Lock in your rate', ogType: 'website' })
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
   const founder = getCurrentFounder(user)
 
@@ -27,6 +27,19 @@ export function JoinOfferPage() {
   const [saving, setSaving] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
 
+  // AuthContext's session restore is async — on a fresh page load (a
+  // redeploy, a refresh, opening the link again) `user` starts out null
+  // for a moment before it resolves. Redirecting to /join on that instant
+  // was kicking already-logged-in founders back to the start of the whole
+  // funnel every single time. Wait for loading to finish before deciding
+  // there's really no founder.
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
   if (!founder) return <Navigate to="/join" replace />
 
   const paymentUrl = buildPaymentUrl(COLLABORATOR_PAYMENT_LINK, founder.id, user?.email)
