@@ -57,29 +57,27 @@ export function JoinOfferPage() {
             {alreadyLockedIn ? (
               <p className="font-heading text-lg font-semibold text-white">You're locked in at $19/month ✓</p>
             ) : (
-              <a
-                href={paymentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-              >
-                Lock in Culo Creatives in Canva — $19/month
-              </a>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <a
+                  href={paymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                >
+                  Lock in Culo Creatives in Canva — $19/month
+                </a>
+                {/* Deliberately quieter than the orange CTA — a cooler blue
+                    gradient instead of a second high-contrast button, since
+                    this is the less-likely path, not a co-equal choice. */}
+                <Link
+                  to="/dashboard/welcome"
+                  className="inline-flex px-8 py-4 text-white text-base font-semibold rounded-xl transition-opacity hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #7CA9CC 0%, #4E7A9E 100%)' }}
+                >
+                  Not now, take me to my dashboard
+                </Link>
+              </div>
             )}
-          </InnerContainer>
-        </section>
-
-        {/* ── Quiet escape hatch, not a second offer — a founder who isn't
-            ready to pay yet is still already a Village member either way,
-            so this is just "skip for now," not a real second choice. */}
-        <section className="py-10 text-center">
-          <InnerContainer>
-            <Link
-              to="/dashboard/welcome"
-              className="font-body text-sm text-muted hover:text-charcoal transition-colors"
-            >
-              Not now, take me to my dashboard →
-            </Link>
           </InnerContainer>
         </section>
 
