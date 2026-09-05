@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { updateFounder } from '../services/founders'
 import { linkOwnFounder } from '../services/currentFounder'
@@ -16,6 +17,39 @@ const HERO_IMAGE = '/join/join-hero.png'
 
 const GRID_ROW_1 = ['/join/grid-1.png', '/join/grid-2.png', '/join/grid-3.png']
 const GRID_ROW_2 = ['/join/grid-4.png', '/join/grid-5.png', '/join/grid-6.png']
+
+// Same "How it works" steps as CreativesPage's "Tell your story" section —
+// reused verbatim (same images/copy) rather than re-described, so a founder
+// gets the identical walkthrough whichever page they land on first.
+const STEPS = [
+  {
+    title: 'Answer a few personalised questions',
+    image: '/creatives/step-1-about-you.png',
+    bullets: [
+      <>Complete the <strong className="text-charcoal font-semibold">About You</strong> section — a few quick details about your business and brand.</>,
+      <>CULO uses that to generate personalised questions in <strong className="text-charcoal font-semibold">Shape Your Idea</strong>.</>,
+      <>Your answers shape the hooks, captions, blogs, carousels and Quick Rhythm reel content CULO creates.</>,
+    ],
+  },
+  {
+    title: 'Upload your raw footage',
+    image: '/creatives/step-2-uploading-media.png',
+    bullets: [
+      <>Upload your footage into the right Media Library section — B-roll, Talking Head, Voice Over, Vlog or Photos.</>,
+      <><strong className="text-charcoal font-semibold">B-roll</strong> becomes background footage for Voice Over reels, or rotates silently in Quick Rhythm reels.</>,
+      <><strong className="text-charcoal font-semibold">Talking Head, Voice Over</strong> and <strong className="text-charcoal font-semibold">Vlog</strong> clips are merged into a reel with subtitles, a hook and a caption.</>,
+      <><strong className="text-charcoal font-semibold">Photos</strong> are merged into a carousel slideshow.</>,
+    ],
+  },
+  {
+    title: 'Get social media ready content back',
+    image: '/creatives/step-3-ready-to-post.png',
+    bullets: [
+      <>Ready-to-post content across Quick Rhythm, Voice Over, Talking Head and Vlog Style formats.</>,
+      <>Every reel comes subtitled, hooked and captioned — straight out of Canva.</>,
+    ],
+  },
+]
 
 // The real, account-creating join flow — staged at /join rather than
 // replacing the homepage's "coming soon" waitlist (see WaitlistForm), which
@@ -35,6 +69,12 @@ const COLLABORATOR_CUTOFF = '2027-01-01T00:00:00.000Z'
 const STANDARD_TRIAL_DAYS = 14
 
 export function JoinVillagePage() {
+  usePageMeta({
+    title: 'Culo Creatives in Canva',
+    description: 'Join the CULO Village for free access to Culo Creatives, exclusively in Canva, till January 1st 2027.',
+    ogType: 'website',
+  })
+
   const { signUp } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -141,10 +181,9 @@ export function JoinVillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Free till January 1st 2027
+                Join The Culo Village
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
-                Join The Culo Village to<br />
                 Access Culo Creatives<br />
                 Exclusively In Canva
               </h1>
@@ -217,7 +256,7 @@ export function JoinVillagePage() {
                 What is CULO Creatives in Canva?
               </p>
               <h2 id="what-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-                Free access till January 1st 2027.
+                Edit your raw footage in one workspace
               </h2>
               <p className="font-body text-base text-muted leading-relaxed mb-4">
                 Culo Creatives is a design platform exclusively available in Canva helping founders edit their
@@ -252,6 +291,43 @@ export function JoinVillagePage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {GRID_ROW_2.map(src => (
               <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
+            ))}
+          </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── How it works — same "Tell your story" section as CreativesPage,
+          reused directly under the screenshot grid. */}
+      <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="how-heading">
+        <InnerContainer>
+          <div className="max-w-2xl mb-12">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+              How it works
+            </p>
+            <h2 id="how-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal leading-tight">
+              Tell your story.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {STEPS.map((s, i) => (
+              <div key={s.title}>
+                <div className="rounded-xl overflow-hidden border border-border mb-4 bg-surface">
+                  <img src={s.image} alt={`${s.title} — screenshot of CULO Creatives in Canva`} className="w-full h-auto" loading="lazy" />
+                </div>
+                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary font-heading font-bold flex items-center justify-center mb-4">
+                  {i + 1}
+                </div>
+                <p className="font-heading text-xl font-semibold text-charcoal mb-3">{s.title}</p>
+                <ul className="space-y-2.5">
+                  {s.bullets.map((b, j) => (
+                    <li key={j} className="flex gap-2.5 font-body text-base text-muted leading-relaxed">
+                      <span className="text-primary shrink-0" aria-hidden="true">•</span>
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </div>
         </InnerContainer>
