@@ -16,27 +16,27 @@ const STEPS = [
     title: 'Answer a few personalised questions',
     image: '/creatives/step-1-about-you.png',
     bullets: [
-      <>Complete the <strong className="text-charcoal font-semibold">About You</strong> section — a few quick details about your business and brand.</>,
+      <>Complete the <strong className="text-charcoal font-semibold">About You</strong> section with a few quick details about your business and brand.</>,
       <>CULO uses that to generate personalised questions in <strong className="text-charcoal font-semibold">Shape Your Idea</strong>.</>,
-      <>Your answers shape the hooks, captions, blogs, carousels and Quick Rhythm reel content CULO creates.</>,
+      <>Your answers shape the hooks, captions, blogs, carousels and Quick Rhythm reels CULO creates.</>,
     ],
   },
   {
     title: 'Upload your raw footage',
     image: '/creatives/step-2-uploading-media.png',
     bullets: [
-      <>Upload your footage into the right Media Library section — B-roll, Talking Head, Voice Over, Vlog or Photos.</>,
+      <>Upload your footage into the right Media Library section: B-roll, Talking Head, Voice Over, Vlog or Photos.</>,
       <><strong className="text-charcoal font-semibold">B-roll</strong> becomes background footage for Voice Over reels, or rotates silently in Quick Rhythm reels.</>,
-      <><strong className="text-charcoal font-semibold">Talking Head, Voice Over</strong> and <strong className="text-charcoal font-semibold">Vlog</strong> clips are merged into a reel with subtitles, a hook and a caption.</>,
-      <><strong className="text-charcoal font-semibold">Photos</strong> are merged into a carousel slideshow.</>,
+      <><strong className="text-charcoal font-semibold">Talking Head, Voice Over</strong> and <strong className="text-charcoal font-semibold">Vlog</strong> clips merge into a reel with subtitles, a hook and a caption.</>,
+      <><strong className="text-charcoal font-semibold">Photos</strong> merge into a carousel slideshow.</>,
     ],
   },
   {
     title: 'Get social media ready content back',
     image: '/creatives/step-3-ready-to-post.png',
     bullets: [
-      <>Ready-to-post content across Quick Rhythm, Voice Over, Talking Head and Vlog Style formats.</>,
-      <>Every reel comes subtitled, hooked and captioned — straight out of Canva.</>,
+      <>Ready to post content across Quick Rhythm, Voice Over, Talking Head and Vlog Style formats.</>,
+      <>Every reel comes subtitled, hooked and captioned, straight out of Canva.</>,
     ],
   },
 ]
