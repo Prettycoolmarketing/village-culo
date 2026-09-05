@@ -3,11 +3,17 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { creativeFeedbackService } from '../../services/creativeFeedback'
 
-// Placeholder — swap for the real $25/mo Stripe Payment Link once it
-// exists (see the launch plan: standard-tier link goes live Jan 1 2027).
-// Same pattern as CULO_CANVA_URL in CreateWithCuloCTA.tsx — one constant to
-// update later, not scattered hrefs.
-const UPGRADE_PAYMENT_LINK = 'https://www.prettycoolmarketing.com/culo'
+// Test-mode Stripe Payment Links, created via the one-off
+// stripe-setup-creatives Edge Function. Swap for live-mode links (re-run
+// that function once STRIPE_SECRET_KEY is switched to a live key) when
+// ready to launch for real. Standard-tier link isn't meant to go public
+// until Jan 1 2027 — see the launch plan — this constant just needs to
+// exist so the CTA below has somewhere to point once trial access lapses.
+const UPGRADE_PAYMENT_LINK = 'https://buy.stripe.com/test_00000000000000'
+// $19/mo collaborator link — free until Jan 1 2027 (trial_end is fixed up
+// server-side by stripe-creatives-webhook after checkout), locked in by
+// submitting the feedback below.
+const COLLABORATOR_PAYMENT_LINK = 'https://buy.stripe.com/test_00000000000001'
 
 function hasCreativeAccess(sub: { status: string; trialEnd?: string } | undefined): boolean {
   if (!sub) return true
@@ -41,6 +47,10 @@ export function DashboardCreativesPage() {
   const upgradeUrl = founder
     ? `${UPGRADE_PAYMENT_LINK}?client_reference_id=${encodeURIComponent(founder.id)}${user?.email ? `&prefilled_email=${encodeURIComponent(user.email)}` : ''}`
     : UPGRADE_PAYMENT_LINK
+  const collaboratorUrl = founder
+    ? `${COLLABORATOR_PAYMENT_LINK}?client_reference_id=${encodeURIComponent(founder.id)}${user?.email ? `&prefilled_email=${encodeURIComponent(user.email)}` : ''}`
+    : COLLABORATOR_PAYMENT_LINK
+  const hasBilling = !!subscription?.stripeSubscriptionId
 
   async function handleSubmit() {
     if (!founder || !answer.trim()) return
@@ -80,10 +90,25 @@ export function DashboardCreativesPage() {
       {alreadySubmitted ? (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">
           <p className="text-sm font-semibold text-[#5E6B4A] mb-2">Thanks — you're locked in at $19/month ✓</p>
-          <p className="text-sm text-[#6B7280] leading-relaxed">
+          <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
             Your feedback has been received. Your CULO Creatives rate is locked at $19/month, regardless of
             what it costs new members later.
           </p>
+          {!hasBilling && (
+            <>
+              <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+                Add your payment details now to keep this rate — you won't be charged until January 1, 2027.
+              </p>
+              <a
+                href={collaboratorUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
+              >
+                Set up billing — $19/month from Jan 1, 2027
+              </a>
+            </>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">

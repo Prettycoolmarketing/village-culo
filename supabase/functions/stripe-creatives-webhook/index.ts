@@ -89,10 +89,30 @@ serve(async (req) => {
         if (!founderId || typeof session.customer !== 'string') break
         const { data: founderRow } = await admin.from('founders').select('id, data').eq('id', founderId).maybeSingle()
         if (!founderRow) break
-        await patchSubscription(founderId, founderRow.data as Record<string, unknown>, {
+
+        const founderData = founderRow.data as Record<string, unknown>
+        const existingSub = (founderData.creativeSubscription as Record<string, unknown>) ?? {}
+        const subscriptionId = typeof session.subscription === 'string' ? session.subscription : undefined
+
+        // The Payment Link itself can only offer a rolling trial_period_days,
+        // not a fixed calendar date — but the collaborator cohort's trialEnd
+        // (2027-01-01, set once at signup in JoinVillagePage) is a fixed date
+        // everyone shares regardless of when they actually check out. So the
+        // founder record is the source of truth here: push it onto the real
+        // Stripe subscription right after checkout, overriding whatever
+        // trial the link itself started.
+        const storedTrialEnd = existingSub.trialEnd as string | undefined
+        if (subscriptionId && storedTrialEnd && new Date(storedTrialEnd) > new Date()) {
+          await stripe.subscriptions.update(subscriptionId, {
+            trial_end: Math.floor(new Date(storedTrialEnd).getTime() / 1000),
+            proration_behavior: 'none',
+          })
+        }
+
+        await patchSubscription(founderId, founderData, {
           status: 'active',
           stripeCustomerId: session.customer,
-          stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : undefined,
+          stripeSubscriptionId: subscriptionId,
         })
         break
       }
