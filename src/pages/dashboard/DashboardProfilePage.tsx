@@ -8,6 +8,7 @@ import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './Dashboar
 import { SeriesDetail } from './DashboardSeriesPage'
 import { getSeriesList, createSeries, saveSeries } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
+import { PartnershipSettingsPanel } from '../../components/dashboard/PartnershipSettingsPanel'
 import type { ImportedContent } from '../../types/importedContent'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -2130,6 +2131,8 @@ export function DashboardProfilePage() {
               Join the Village Partner program, link the brands you genuinely use, and set up your own
               affiliate program and pitch so other founders can promote you.
             </TabIntro>
+
+            <PartnershipSettingsPanel />
 
             <PublisherDiscoveryProfile founderId={draft.id} />
 

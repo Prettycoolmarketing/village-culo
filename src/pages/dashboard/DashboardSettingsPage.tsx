@@ -1,39 +1,15 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { resetAndReseed } from '../../lib/seedStore'
-import { getCurrentFounderId } from '../../services/currentFounder'
-import { publisherSettingsService } from '../../services/partnership'
-import type { PublisherPartnershipSettings } from '../../types/partnership'
+import { hasAnyCapoAccess } from '../../utils/permissions'
 
 export function DashboardSettingsPage() {
   const { user, isConfigured } = useAuth()
   const [resetting, setResetting] = useState(false)
   const [resetDone, setResetDone] = useState(false)
-
-  // Canonical founderId: resolved via getCurrentFounder so Settings, Partnership,
-  // Profile and Detection all share the same key for the actual logged-in founder.
-  const founderId = getCurrentFounderId(user) ?? 'dev-user'
-  const [partnerSettings, setPartnerSettings] = useState<PublisherPartnershipSettings>(
-    () => publisherSettingsService.getOrCreate(founderId)
-  )
-  const [partnerSaved, setPartnerSaved] = useState(false)
-  const [partnerSaveError, setPartnerSaveError] = useState<string | null>(null)
-
-  function togglePartner(key: keyof PublisherPartnershipSettings) {
-    setPartnerSettings(prev => ({ ...prev, [key]: !prev[key as keyof typeof prev] }))
-    setPartnerSaved(false)
-  }
-
-  async function savePartnerSettings() {
-    setPartnerSaveError(null)
-    const result = await publisherSettingsService.upsert(partnerSettings)
-    if (result.success) {
-      setPartnerSaved(true)
-      setTimeout(() => setPartnerSaved(false), 2000)
-    } else {
-      setPartnerSaveError(result.error ?? 'Save failed. Please try again.')
-    }
-  }
+  // Database/Supabase-connection status is a dev-ops detail — members don't
+  // need to see it, only staff who'd actually act on it.
+  const canSeeDatabaseStatus = hasAnyCapoAccess(user?.role)
 
   function handleReset() {
     if (!window.confirm('This will reset all local edits back to the original demo data. Are you sure?')) return
@@ -95,7 +71,8 @@ export function DashboardSettingsPage() {
         </div>
       </section>
 
-      {/* Supabase status */}
+      {/* Supabase status — staff only, members don't need to see this */}
+      {canSeeDatabaseStatus && (
       <section className="mb-8">
         <h2 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Database</h2>
         <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
@@ -120,69 +97,7 @@ export function DashboardSettingsPage() {
           )}
         </div>
       </section>
-
-      {/* Partnerships */}
-      <section className="mb-8">
-        <h2 className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-4">Partnerships</h2>
-        <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
-
-          {/* Master toggle */}
-          <div className="px-5 py-4 flex items-center justify-between border-b border-[#F3EDE6]">
-            <div>
-              <p className="text-sm font-semibold text-[#2D2A26]">Turn on Partnerships</p>
-              <p className="text-xs text-[#9CA3AF] mt-0.5">Enable recommendations, opportunities and partnership features</p>
-            </div>
-            <button
-              onClick={() => togglePartner('partnershipEnabled')}
-              className={`w-11 h-6 rounded-full transition-colors relative ${partnerSettings.partnershipEnabled ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
-              aria-label="Toggle partnership"
-            >
-              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${partnerSettings.partnershipEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-          </div>
-
-          {/* Individual options */}
-          {([
-            { key: 'receiveRecommendations',       label: 'Enable Recommendations',       desc: 'Detect brands and products in your stories' },
-            { key: 'receiveOpportunities',          label: 'Receive Opportunities',         desc: 'Speaking, podcasts, collaborations and campaigns' },
-            { key: 'receiveCampaigns',              label: 'Receive Campaign Invitations',  desc: 'Businesses can invite you to campaigns' },
-            { key: 'receiveBusinessMatches',        label: 'Business Matches',              desc: 'Get matched with relevant businesses' },
-            { key: 'receivePodcastOpportunities',   label: 'Podcast Opportunities',         desc: 'Podcast guest appearances' },
-            { key: 'receiveSpeakingOpportunities',  label: 'Speaking Opportunities',        desc: 'Events and conference invitations' },
-            { key: 'receiveCollaborationRequests',  label: 'Collaboration Requests',        desc: 'Publisher and business collaboration invitations' },
-          ] as Array<{ key: keyof PublisherPartnershipSettings; label: string; desc: string }>).map(({ key, label, desc }) => (
-            <div key={key} className="px-5 py-3.5 flex items-center justify-between gap-4 border-b border-[#F3EDE6] last:border-0">
-              <div>
-                <p className="text-sm font-medium text-[#2D2A26]">{label}</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">{desc}</p>
-              </div>
-              <button
-                onClick={() => togglePartner(key)}
-                disabled={!partnerSettings.partnershipEnabled}
-                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 disabled:opacity-40 ${
-                  (partnerSettings[key] as boolean) ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'
-                }`}
-                aria-label={`Toggle ${label}`}
-              >
-                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
-                  (partnerSettings[key] as boolean) ? 'translate-x-6' : 'translate-x-1'
-                }`} />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-3 flex items-center gap-3">
-          <button
-            onClick={savePartnerSettings}
-            className="px-4 py-2 text-sm font-semibold bg-[#C86A43] text-white rounded-lg hover:bg-[#b05a35] transition-colors"
-          >
-            Save Partnership Settings
-          </button>
-          {partnerSaved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
-          {partnerSaveError && <p className="text-sm text-red-600 font-medium">{partnerSaveError}</p>}
-        </div>
-      </section>
+      )}
 
       {/* Village link */}
       <section>
