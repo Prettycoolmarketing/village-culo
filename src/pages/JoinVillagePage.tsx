@@ -275,29 +275,8 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
-      {/* ── Product screenshot grid — 3 over 3, with the "raw footage" line
-          as a single-line title spanning the top instead of sitting beside
-          a separate hero image (that image now lives up in the dark hero). */}
-      <section className="py-16 md:py-20 border-y border-border" aria-labelledby="product-heading">
-        <InnerContainer>
-          <h2 id="product-heading" className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-charcoal text-center leading-tight mb-10 lg:whitespace-nowrap">
-            Turn your raw footage into social media posts in one workspace
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-            {GRID_ROW_1.map(src => (
-              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {GRID_ROW_2.map(src => (
-              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
-            ))}
-          </div>
-        </InnerContainer>
-      </section>
-
       {/* ── How it works — same "Tell your story" section as CreativesPage,
-          reused directly under the screenshot grid. */}
+          now sitting above the screenshot grid instead of below it. */}
       <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="how-heading">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
@@ -328,6 +307,26 @@ export function JoinVillagePage() {
                   ))}
                 </ul>
               </div>
+            ))}
+          </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── Product screenshot grid — 3 over 3, with the "raw footage" line
+          as a single-line title spanning the top, now under How It Works. */}
+      <section className="py-16 md:py-20 border-y border-border" aria-labelledby="product-heading">
+        <InnerContainer>
+          <h2 id="product-heading" className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-charcoal text-center leading-tight mb-10 lg:whitespace-nowrap">
+            Turn your raw footage into social media posts in one workspace
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+            {GRID_ROW_1.map(src => (
+              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {GRID_ROW_2.map(src => (
+              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
             ))}
           </div>
         </InnerContainer>
