@@ -41,21 +41,35 @@ export function JoinOfferPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-background">
-        <section className="bg-charcoal py-16 md:py-20 text-center">
-          <InnerContainer>
+        <section className="relative overflow-hidden py-16 md:py-20 text-center" aria-labelledby="offer-heading">
+          <div
+            className="absolute inset-0"
+            style={{ background: 'linear-gradient(135deg, #DCEBF5 0%, #EAF2F8 45%, #F3F7FA 100%)' }}
+            aria-hidden="true"
+          >
+            <div
+              className="absolute -top-32 -right-32 w-[550px] h-[550px] rounded-full opacity-50"
+              style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }}
+            />
+            <div
+              className="absolute -bottom-24 -left-24 w-[450px] h-[450px] rounded-full opacity-30"
+              style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }}
+            />
+          </div>
+          <InnerContainer className="relative">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
               Founding collaborator offer
             </p>
-            <h1 className="font-heading text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight max-w-2xl mx-auto">
+            <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
               Lock in free access to Culo Creatives in Canva until January 1, 2027
             </h1>
-            <p className="font-body text-base text-white/70 max-w-xl mx-auto leading-relaxed mb-8">
-              Add your payment details now and you're locked at <strong className="text-white">$19/month</strong> —
+            <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
+              Add your payment details now and you're locked at <strong className="text-charcoal">$19/month</strong> —
               free until Jan 1, 2027, then $19/month for as long as you stay subscribed. Wait, or cancel before
-              then, and it's <strong className="text-white">$25/month</strong> like everyone else who joins later.
+              then, and it's <strong className="text-charcoal">$25/month</strong> like everyone else who joins later.
             </p>
             {alreadyLockedIn ? (
-              <p className="font-heading text-lg font-semibold text-white">You're locked in at $19/month ✓</p>
+              <p className="font-heading text-lg font-semibold text-charcoal">You're locked in at $19/month ✓</p>
             ) : (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
@@ -66,13 +80,12 @@ export function JoinOfferPage() {
                 >
                   Lock in Culo Creatives in Canva — $19/month
                 </a>
-                {/* Deliberately quieter than the orange CTA — a cooler blue
-                    gradient instead of a second high-contrast button, since
-                    this is the less-likely path, not a co-equal choice. */}
+                {/* Deliberately quieter than the orange CTA — the site's
+                    established dark/secondary button, not a co-equal
+                    high-contrast choice, since this is the less-likely path. */}
                 <Link
                   to="/dashboard/welcome"
-                  className="inline-flex px-8 py-4 text-white text-base font-semibold rounded-xl transition-opacity hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg, #7CA9CC 0%, #4E7A9E 100%)' }}
+                  className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
                 >
                   Not now, take me to my dashboard
                 </Link>
