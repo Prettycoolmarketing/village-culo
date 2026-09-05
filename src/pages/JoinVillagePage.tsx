@@ -70,7 +70,7 @@ const STANDARD_TRIAL_DAYS = 14
 
 export function JoinVillagePage() {
   usePageMeta({
-    title: 'Culo Creatives in Canva',
+    title: 'Culo In Canva',
     description: 'Join the CULO Village for free access to Culo Creatives, exclusively in Canva, till January 1st 2027.',
     ogType: 'website',
   })
@@ -341,7 +341,7 @@ export function JoinVillagePage() {
             What is The Culo Village?
           </p>
           <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-            One joint publishing house for everything you've already created.
+            Republish everything you've already posted across channels for discovery.
           </h2>
           <p className="font-body text-base text-muted leading-relaxed mb-8">
             The Culo Village helps founders structure their previously posted content across platforms and
