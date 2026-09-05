@@ -25,6 +25,7 @@ export function JoinOfferPage() {
   const [bio, setBio] = useState(founder?.bio ?? '')
   const [website, setWebsite] = useState(founder?.website ?? '')
   const [saving, setSaving] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
 
   if (!founder) return <Navigate to="/join" replace />
 
@@ -100,15 +101,18 @@ export function JoinOfferPage() {
               webpages so it's discoverable across the Village and by AI search. You can come back and lock in
               Culo Creatives in Canva anytime before January 1, 2027 from your dashboard.
             </p>
-            <a
-              href="#profile"
-              className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
-            >
-              I'll join the Culo Village instead
-            </a>
+            {!showProfile && (
+              <button
+                onClick={() => setShowProfile(true)}
+                className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
+              >
+                I'll publish in the Culo Village instead
+              </button>
+            )}
           </InnerContainer>
         </section>
 
+        {showProfile && (
         <section id="profile" className="py-12 md:py-16 scroll-mt-20">
           <InnerContainer className="max-w-2xl">
             {/* ── Simplified profile — styled like the start of a founder
@@ -163,6 +167,7 @@ export function JoinOfferPage() {
             </div>
           </InnerContainer>
         </section>
+        )}
 
         <Footer />
       </main>
