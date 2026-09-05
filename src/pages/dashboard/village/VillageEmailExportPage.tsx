@@ -261,6 +261,7 @@ export function VillageEmailExportPage() {
 
       <Tabs
         tabs={[
+          { key: 'joined',      label: 'Joined' },
           { key: 'export',      label: 'Export' },
           { key: 'waitlist',    label: 'Waitlist' },
           { key: 'subscribers', label: 'Subscribers' },
@@ -271,6 +272,7 @@ export function VillageEmailExportPage() {
         className="mb-6"
       />
 
+      {pageTab === 'joined' && <JoinedPanel />}
       {pageTab === 'waitlist' && <WaitlistPanel />}
       {pageTab === 'subscribers' && <SubscribersPanel />}
       {pageTab === 'campaigns' && <CampaignsPanel />}
@@ -385,6 +387,70 @@ export function VillageEmailExportPage() {
         </p>
       </div>
       </>
+      )}
+    </div>
+  )
+}
+
+// ─── Joined panel — /join-flow signups, with their actual email ────────────────
+// A dedicated tab rather than just an Export segment, so CAPO can see who
+// signed up (and their email) without downloading a CSV first — the export
+// segment ("Village Join Signups") still exists for actually sending to them.
+
+function JoinedPanel() {
+  const founders = getFounders().filter(f => !!f.signupProduct)
+  const sorted = [...founders].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+  function handleExport() {
+    const rows = sorted.map(f => ({
+      email: f.signupEmail ?? '', firstName: '', lastName: '', fullName: f.name,
+      profileStatus: f.profileStatus ?? f.status, founderSlug: f.slug,
+      profileUrl: `${window.location.origin}/founders/${f.slug}`, claimUrl: '',
+      businessName: '', tags: f.signupProduct === 'canva' ? 'canva-join' : 'village-join', createdAt: f.createdAt,
+    })).filter(r => r.email)
+    if (rows.length === 0) return
+    downloadCSV(toCSV(rows), `culo-village-join-signups-${new Date().toISOString().slice(0, 10)}.csv`)
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-[#6B7280]">
+          {sorted.length} signup{sorted.length === 1 ? '' : 's'} via /join (Village or Canva).
+        </p>
+        <button
+          onClick={handleExport}
+          disabled={sorted.length === 0}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 transition-colors"
+        >
+          Export CSV
+        </button>
+      </div>
+      {sorted.length === 0 ? (
+        <p className="text-sm text-[#9CA3AF]">No /join signups yet.</p>
+      ) : (
+        <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+          {sorted.map(f => (
+            <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.signupEmail ?? f.name}</p>
+                <p className="text-[10px] text-[#9CA3AF]">
+                  via {f.signupProduct === 'canva' ? 'Canva' : 'Village'} ·{' '}
+                  {new Date(f.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {f.passwordSet && ' · password set'}
+                </p>
+              </div>
+              <a
+                href={`/founders/${f.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-[#C86A43] hover:underline shrink-0"
+              >
+                View ↗
+              </a>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
