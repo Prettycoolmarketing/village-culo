@@ -415,11 +415,11 @@ export function VillageCuratedFoundersPage() {
               className="accent-[#C86A43]"
             />
           </div>
-          <p className="col-span-4 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Founder</p>
+          <p className="col-span-3 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Founder</p>
           <p className="col-span-2 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Industry</p>
           <p className="col-span-1 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide text-center">Links</p>
           <p className="col-span-2 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Status</p>
-          <p className="col-span-2 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Actions</p>
+          <p className="col-span-3 text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">Actions</p>
         </div>
 
         {filtered.length === 0 ? (
@@ -445,7 +445,7 @@ export function VillageCuratedFoundersPage() {
                       className="accent-[#C86A43]"
                     />
                   </div>
-                  <div className="col-span-4 flex items-center gap-2.5 min-w-0">
+                  <div className="col-span-3 flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-full bg-[#F3EDE6] flex-shrink-0 flex items-center justify-center text-[#C86A43] text-xs font-bold">
                       {f.avatar
                         ? <img src={f.avatar} alt="" className="w-full h-full rounded-full object-cover" />
@@ -474,7 +474,7 @@ export function VillageCuratedFoundersPage() {
                   <div className="col-span-2">
                     <StatusPill status={f.profileStatus ?? f.status} />
                   </div>
-                  <div className="col-span-2 flex items-center gap-2">
+                  <div className="col-span-3 flex flex-wrap items-center gap-x-2 gap-y-1">
                     <Link
                       to={`/founders/${f.slug}`}
                       target="_blank"
@@ -502,7 +502,7 @@ export function VillageCuratedFoundersPage() {
                       <ConfirmButton
                         label="Delete"
                         confirmLabel="Yes, delete"
-                        message={f.signupProduct ? `Delete ${f.name}'s login too?` : 'Delete this founder?'}
+                        message="Delete permanently?"
                         onConfirm={() => void handleDeleteAccount(f)}
                         disabled={deletingId === f.id}
                         className="text-[10px] text-red-500 hover:text-red-600 transition-colors"

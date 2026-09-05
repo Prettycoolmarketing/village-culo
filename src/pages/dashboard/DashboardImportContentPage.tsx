@@ -1713,27 +1713,6 @@ export function DashboardImportContentPage() {
       {/* Connect a channel or feed */}
       {!draft && (
         <div>
-          {founder && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-start">
-              <VoiceBriefEditor
-                value={voiceBriefDraft}
-                updatedAt={founder.voiceBriefUpdatedAt}
-                onChange={v => {
-                  setVoiceBriefDraft(v)
-                  void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })
-                }}
-              />
-              <InsightBriefEditor
-                value={insightBriefDraft}
-                updatedAt={founder.insightBriefUpdatedAt}
-                onChange={v => {
-                  setInsightBriefDraft(v)
-                  void updateFounder({ ...founder, insightBrief: v, insightBriefUpdatedAt: new Date().toISOString() })
-                }}
-              />
-            </div>
-          )}
-
           <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web pages in the CULO Village for structured discovery</p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
             <YouTubeConnectForm
@@ -1789,6 +1768,32 @@ export function DashboardImportContentPage() {
               View everything you've imported so far →
             </Link>
           </div>
+
+          {/* Voice & Insight Briefs — moved to the bottom, after the actual
+              import connectors. These feed the AI blog-rewrite pipeline,
+              which doesn't do anything useful until there's real imported
+              content to rewrite, so they don't earn top billing above the
+              thing that actually brings content in. */}
+          {founder && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 pt-8 border-t border-[#E8E4DD] items-start">
+              <VoiceBriefEditor
+                value={voiceBriefDraft}
+                updatedAt={founder.voiceBriefUpdatedAt}
+                onChange={v => {
+                  setVoiceBriefDraft(v)
+                  void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })
+                }}
+              />
+              <InsightBriefEditor
+                value={insightBriefDraft}
+                updatedAt={founder.insightBriefUpdatedAt}
+                onChange={v => {
+                  setInsightBriefDraft(v)
+                  void updateFounder({ ...founder, insightBrief: v, insightBriefUpdatedAt: new Date().toISOString() })
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 

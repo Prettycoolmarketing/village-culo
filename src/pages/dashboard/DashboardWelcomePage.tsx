@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
+import { hasCreativeAccess } from '../../utils/creativeAccess'
 
 // Landing spot for orientation and promotion — everything that used to be
 // bolted onto Publish or Import Content (How it works, what the Voice Brief
@@ -39,13 +40,6 @@ const HOW_IT_WORKS_STEPS = [
 // Founders with no subscription record at all (pre-existing/curated
 // profiles from before this launched) are treated as having access rather
 // than being blocked by a field that predates them.
-function hasCreativeAccess(sub: { status: string; trialEnd?: string } | undefined): boolean {
-  if (!sub) return true
-  if (sub.status === 'active') return true
-  if (sub.status === 'trial') return !sub.trialEnd || new Date(sub.trialEnd) > new Date()
-  return false
-}
-
 export function DashboardWelcomePage() {
   const { user } = useAuth()
   const founder = getCurrentFounder(user)

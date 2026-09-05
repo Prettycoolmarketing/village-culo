@@ -3,13 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { creativeFeedbackService } from '../../services/creativeFeedback'
 import { UPGRADE_PAYMENT_LINK, COLLABORATOR_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
-
-function hasCreativeAccess(sub: { status: string; trialEnd?: string } | undefined): boolean {
-  if (!sub) return true
-  if (sub.status === 'active') return true
-  if (sub.status === 'trial') return !sub.trialEnd || new Date(sub.trialEnd) > new Date()
-  return false
-}
+import { hasCreativeAccess } from '../../utils/creativeAccess'
 
 // Where a founder gives their one piece of CULO Creatives feedback — doing
 // so locks them into the $19/mo collaborator rate (see
