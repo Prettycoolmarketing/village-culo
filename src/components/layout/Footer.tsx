@@ -28,9 +28,9 @@ const sections = [
 ]
 
 const publishSection = {
-  heading: 'Publish',
+  heading: 'Publish your story',
   links: [
-    { to: '/onboarding', label: 'Become a Publisher' },
+    { to: '/join', label: 'Join the culo village' },
   ],
 }
 
