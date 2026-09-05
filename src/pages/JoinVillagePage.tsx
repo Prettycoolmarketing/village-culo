@@ -12,11 +12,7 @@ import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
 import type { Founder } from '../types'
 
-// TODO: swap for the real hero photo once it's back on hand — the original
-// (Screenshot 2026-06-23 at 4.48.10 pm.png) went missing from Desktop
-// between being requested and being copied in. Using the existing Canva
-// hero shot as a placeholder so the page isn't blocked on it.
-const HERO_IMAGE = '/creatives/culo-canva-hero.png'
+const HERO_IMAGE = '/join/join-hero.png'
 
 const GRID_ROW_1 = ['/join/grid-1.png', '/join/grid-2.png', '/join/grid-3.png']
 const GRID_ROW_2 = ['/join/grid-4.png', '/join/grid-5.png', '/join/grid-6.png']
@@ -192,7 +188,7 @@ export function JoinVillagePage() {
         <InnerContainer>
           <img
             src={HERO_IMAGE}
-            alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
+            alt="A Canva project full of finished CULO Creatives content — vlog style reels, talking head reels, quick rhythm reels, voice over reels and captions, all generated from one founder's raw footage"
             className="w-full h-auto rounded-3xl"
           />
         </InnerContainer>
