@@ -26,7 +26,7 @@ function StatCard({ label, value, sub }: { label: string; value: number | string
   )
 }
 
-export function VillageUsagePage() {
+export function VillageUsagePage({ embedded = false }: { embedded?: boolean } = {}) {
   const founders = getFounders()
   const allContent = importedContentService.getAll()
 
@@ -55,7 +55,8 @@ export function VillageUsagePage() {
   const recommendTiering = totalFounders >= 100 || (top && top.count >= 200)
 
   return (
-    <div className="p-8 max-w-5xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className={embedded ? '' : 'p-8 max-w-5xl'} style={embedded ? undefined : { fontFamily: "'DM Sans', sans-serif" }}>
+      {!embedded && (
       <div className="mb-6">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Village Usage</h1>
@@ -64,6 +65,7 @@ export function VillageUsagePage() {
           decide when it's time to introduce tiered limits.
         </p>
       </div>
+      )}
 
       {recommendTiering && (
         <div className="bg-[#C86A43]/10 border border-[#C86A43]/30 rounded-xl px-5 py-4 mb-6">

@@ -10,6 +10,7 @@ import { Tabs, type DashTab } from '../../../components/dashboard/Tabs'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 import { JOIN_SOURCE_LABELS } from '../../../constants/joinSource'
+import { VillageUsagePage } from './VillageUsagePage'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
@@ -85,15 +86,6 @@ export function VillageHQOverviewPage() {
   // Emails available (unique emails from claim requests)
   const emails = [...new Set(allClaims.map(c => c.requesterEmail.toLowerCase()).filter(Boolean))]
 
-  // Recent activity — newest founders + newest claims
-  const recentFounders = [...founders]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, 5)
-
-  const recentClaims = [...allClaims]
-    .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt))
-    .slice(0, 3)
-
   const totalImported = batches.reduce((sum, b) => sum + b.created, 0)
 
   // ── Admin/owner-only analytics (merged in from the former standalone
@@ -139,7 +131,7 @@ export function VillageHQOverviewPage() {
   const [tab, setTab] = useState('analytics')
   const TABS: DashTab[] = [
     { key: 'analytics', label: 'Analytics' },
-    { key: 'activity', label: 'Recent Activity' },
+    { key: 'usage', label: 'Usage' },
   ]
 
   return (
@@ -273,84 +265,7 @@ export function VillageHQOverviewPage() {
       </>
       )}
 
-      {tab === 'activity' && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* Recent founders */}
-        <section>
-          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Newest Founders</p>
-          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-            {recentFounders.length === 0 ? (
-              <div className="px-5 py-6 text-center">
-                <p className="text-xs text-[#9CA3AF]">No founders yet.</p>
-              </div>
-            ) : recentFounders.map(f => (
-              <div key={f.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="w-8 h-8 rounded-full bg-[#F3EDE6] flex items-center justify-center text-[#C86A43] text-sm font-bold flex-shrink-0">
-                  {f.avatar ? <img src={f.avatar} alt="" className="w-full h-full object-cover rounded-full" /> : f.name[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.name}</p>
-                  <p className="text-[10px] text-[#9CA3AF]">{f.industry.name} · {f.location.name}</p>
-                </div>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${
-                  f.profileStatus === 'village-curated' ? 'bg-blue-50 text-blue-700'
-                  : f.profileStatus === 'claimed' ? 'bg-[#5E6B4A]/10 text-[#5E6B4A]'
-                  : f.profileStatus === 'verified' ? 'bg-[#C86A43]/10 text-[#C86A43]'
-                  : 'bg-[#F3EDE6] text-[#9CA3AF]'
-                }`}>
-                  {f.profileStatus ?? 'no status'}
-                </span>
-              </div>
-            ))}
-            <div className="px-4 py-2.5">
-              <Link to="/dashboard/village/founders" className="text-xs text-[#C86A43] font-semibold hover:underline">
-                View all founders →
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Recent claims */}
-        <section>
-          <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Recent Claim Requests</p>
-          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-            {recentClaims.length === 0 ? (
-              <div className="px-5 py-6 text-center">
-                <p className="text-xs text-[#9CA3AF]">No claims yet.</p>
-              </div>
-            ) : recentClaims.map(c => {
-              const founder = founders.find(f => f.id === c.founderId)
-              return (
-                <div key={c.id} className="px-4 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[#2D2A26]">{c.requesterName}</p>
-                      <p className="text-xs text-[#9CA3AF]">
-                        {founder ? `Claiming ${founder.name}` : 'Unknown profile'} ·{' '}
-                        {new Date(c.requestedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
-                      </p>
-                    </div>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${
-                      c.status === 'pending' ? 'bg-amber-50 text-amber-700'
-                      : c.status === 'approved' ? 'bg-[#5E6B4A]/10 text-[#5E6B4A]'
-                      : 'bg-red-50 text-red-600'
-                    }`}>
-                      {c.status}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-            <div className="px-4 py-2.5">
-              <Link to="/dashboard/village/claims" className="text-xs text-[#C86A43] font-semibold hover:underline">
-                Review all claims →
-              </Link>
-            </div>
-          </div>
-        </section>
-      </div>
-      )}
+      {tab === 'usage' && <VillageUsagePage embedded />}
     </div>
   )
 }

@@ -221,11 +221,14 @@ export function DashboardLayout() {
                 </>
               )}
 
+              {/* Village Usage moved into Village Overview's Usage tab —
+                  content-transfer volume is a Village-wide concern, not
+                  specific to paying Creatives members. */}
               {(canAccessCapoSection(user?.role, 'usage') || canAccessCapoSection(user?.role, 'creativeFeedback')) && (
                 <>
                   <SectionLabel label="CULO Creatives" />
                   {canAccessCapoSection(user?.role, 'usage') && (
-                    <NavItem to="/dashboard/village/usage" label="Village Usage" icon={<Icon path={icons.analytics} />} />
+                    <NavItem to="/dashboard/village/creative-members" label="Members" icon={<Icon path={icons.curated} />} />
                   )}
                   {canAccessCapoSection(user?.role, 'creativeFeedback') && (
                     <NavItem to="/dashboard/village/creative-feedback" label="Feedback" icon={<Icon path={icons.email} />} />

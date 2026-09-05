@@ -64,7 +64,7 @@ import { VillageEmailExportPage }             from './pages/dashboard/village/Vi
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
 import { CapoTeamPage }                       from './pages/dashboard/village/CapoTeamPage'
 import { CapoOpportunitiesHubPage }           from './pages/dashboard/village/CapoOpportunitiesHubPage'
-import { VillageUsagePage }                   from './pages/dashboard/village/VillageUsagePage'
+import { VillageCreativeMembersPage }         from './pages/dashboard/village/VillageCreativeMembersPage'
 import { VillageCreativeFeedbackPage }        from './pages/dashboard/village/VillageCreativeFeedbackPage'
 import { DashboardCreativesPage }             from './pages/dashboard/DashboardCreativesPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
@@ -232,7 +232,9 @@ export default function App() {
             <Route path="village/team"         element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.team}><CapoTeamPage /></RoleProtectedRoute>}                          />
             <Route path="settings"         element={<DashboardSettingsPage />}        />
             <Route path="creatives"        element={<DashboardCreativesPage />}       />
-            <Route path="village/usage"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.usage}><VillageUsagePage /></RoleProtectedRoute>} />
+            {/* Usage moved into Village Overview's Usage tab. */}
+            <Route path="village/usage"    element={<Navigate to="/dashboard/village" replace />} />
+            <Route path="village/creative-members" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.usage}><VillageCreativeMembersPage /></RoleProtectedRoute>} />
             <Route path="village/creative-feedback" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.creativeFeedback}><VillageCreativeFeedbackPage /></RoleProtectedRoute>} />
           </Route>
 
