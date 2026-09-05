@@ -69,9 +69,9 @@ export function Footer() {
               <span className="block font-body text-sm text-white/50 mt-1">Village</span>
             </Link>
             <p className="mt-4 text-sm text-white/60 leading-relaxed">
-              Create in CULO in Canva.<br />
-              Publish to The Village.<br />
-              Be discovered for what you know.
+              Create with Culo Creatives in Canva<br />
+              Publish to The Culo Village<br />
+              Be discovered for your creatives across platforms
             </p>
             <Link to="/" aria-label="CULO Village — Home" className="inline-block mt-5 -ml-3 sm:-ml-4">
               <img src="/culo_logo.png" alt="CULO Village" className="w-40 h-40 sm:w-56 sm:h-56 opacity-80 hover:opacity-100 transition-opacity" />
@@ -101,7 +101,7 @@ export function Footer() {
           <div>
             <h3 className="font-heading text-white font-semibold text-base mb-4">Meet the founder</h3>
             <p className="text-sm text-white/60 leading-relaxed mb-4">
-              Shakas is a serial entrepreneur — she previously owned a tour company, designed a unique 3-in-1
+              Shakas is a serial entrepreneur. She previously owned a tour company, designed a unique 3-in-1
               beach bag, and is proud owner of Pretty Cool Marketing x The Culo Village.
             </p>
             <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export function Footer() {
             · Brisbane, Australia
           </p>
           <p className="text-xs text-white/30">
-            Create in CULO in Canva. Publish to The Village.
+            Create with Culo Creatives in Canva. Publish to The Culo Village.
           </p>
         </div>
       </div>
