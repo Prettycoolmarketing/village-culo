@@ -9,6 +9,7 @@ import type { Founder } from '../../../types'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import { VillageBulkImportPage } from './VillageBulkImportPage'
+import { EmailExportPanel } from '../../../components/dashboard/EmailExportPanel'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 
@@ -92,6 +93,7 @@ export function VillageCuratedFoundersPage() {
   const { user } = useAuth()
   const canSeeFounders = canAccessCapoSection(user?.role, 'founders')
   const canSeeImports  = canAccessCapoSection(user?.role, 'imports')
+  const canSeeEmails   = canAccessCapoSection(user?.role, 'emails')
   // Deleting an account (not just a curated profile) gets a tighter bar
   // than the founders section itself — matches the edge function's own
   // admin/owner check, this is just so the button isn't shown to editors
@@ -99,8 +101,10 @@ export function VillageCuratedFoundersPage() {
   const canDeleteAccounts = user?.role === 'admin' || user?.role === 'owner'
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
-  const [pageTab, setPageTab]     = useState<'founders' | 'imports'>(
-    searchParams.get('tab') === 'imports' || !canSeeFounders ? 'imports' : 'founders',
+  const [pageTab, setPageTab]     = useState<'founders' | 'imports' | 'export'>(
+    searchParams.get('tab') === 'imports' ? 'imports'
+    : searchParams.get('tab') === 'export' ? 'export'
+    : !canSeeFounders ? 'imports' : 'founders',
   )
   const [tick, setTick]           = useState(0)
   const [bulkError, setBulkError] = useState<string | null>(null)
@@ -272,13 +276,15 @@ export function VillageCuratedFoundersPage() {
         tabs={[
           ...(canSeeFounders ? [{ key: 'founders', label: 'Founders' }] : []),
           ...(canSeeImports ? [{ key: 'imports', label: 'Bulk Import' }] : []),
+          ...(canSeeEmails ? [{ key: 'export', label: 'Export' }] : []),
         ]}
         active={pageTab}
-        onChange={key => setPageTab(key as 'founders' | 'imports')}
+        onChange={key => setPageTab(key as 'founders' | 'imports' | 'export')}
         className="mb-6"
       />
 
       {pageTab === 'imports' && canSeeImports && <VillageBulkImportPage embedded />}
+      {pageTab === 'export' && canSeeEmails && <EmailExportPanel />}
 
       {pageTab === 'founders' && canSeeFounders && (
       <>
