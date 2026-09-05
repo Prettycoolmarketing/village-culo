@@ -141,14 +141,13 @@ export function JoinVillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Free while CULO Creatives is in Canva review
+                Free access to Culo Creatives in Canva till January 1st 2027
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight [text-wrap:balance]">
-                Join The Culo Village for free access to Culo Creatives — exclusively in Canva.
+                Join The Culo Village for Culo Creatives — <span className="text-primary">Exclusively in Canva</span>.
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
-                It's time to share your messy thoughts and raw footage into structured social media posts and
-                publish your previously created content across platforms with CULO.
+                It's time to share your messy thoughts and raw footage into structured social media posts.
               </p>
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
                 <input
@@ -213,15 +212,11 @@ export function JoinVillagePage() {
             </div>
             <div>
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-                What is CULO Creatives?
+                What is CULO Creatives in Canva?
               </p>
               <h2 id="what-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-                One joint publishing house for everything you've already created.
+                Free access till January 1st 2027.
               </h2>
-              <p className="font-body text-base text-muted leading-relaxed mb-4">
-                The Culo Village helps founders structure their previously posted content across platforms and
-                republish as individual webpages for AI search-ability as a joint publishing house.
-              </p>
               <p className="font-body text-base text-muted leading-relaxed mb-4">
                 Culo Creatives is a design platform exclusively available in Canva helping founders edit their
                 messy thoughts and raw footage into different formats of reels, carousels, captions and blogs
@@ -257,6 +252,30 @@ export function JoinVillagePage() {
               <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
             ))}
           </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── What is The Culo Village — the Village pitch lives here, separate
+          from the Creatives-in-Canva copy above, with an orange arrow back
+          up to the join form instead of repeating the email capture again. */}
+      <section className="py-16 md:py-20 bg-background" aria-labelledby="village-heading">
+        <InnerContainer className="text-center max-w-2xl">
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+            What is The Culo Village?
+          </p>
+          <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
+            One joint publishing house for everything you've already created.
+          </h2>
+          <p className="font-body text-base text-muted leading-relaxed mb-8">
+            The Culo Village helps founders structure their previously posted content across platforms and
+            republish as individual webpages for AI search-ability as a joint publishing house.
+          </p>
+          <a href="#join-heading" className="inline-flex flex-col items-center gap-2 text-primary font-body text-sm font-semibold hover:text-[#b05a35] transition-colors">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+            Join to be discovered
+          </a>
         </InnerContainer>
       </section>
 
