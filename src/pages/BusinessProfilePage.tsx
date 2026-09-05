@@ -17,6 +17,7 @@ import { StoryGrid }                  from '../widgets/StoryGrid'
 import { LibraryGrid }               from '../widgets/LibraryGrid'
 import { FounderCard }                from '../components/cards/FounderCard'
 import { BusinessCard }               from '../components/cards/BusinessCard'
+import { StoryCard }                  from '../components/cards/StoryCard'
 import { BizLogo }                    from '../components/ui/BizLogo'
 import { Badge }                      from '../components/ui/Badge'
 import { InnerContainer }             from '../components/layout/PageContainer'
@@ -353,21 +354,10 @@ export function BusinessProfilePage() {
             {mentionedInStories.length > 0 && (
               <section aria-labelledby="mentioned-in-stories-heading" className="mt-6">
                 <h2 id="mentioned-in-stories-heading" className="font-heading text-lg font-semibold text-charcoal mb-3">Mentioned In Stories</h2>
-                <ul className="flex flex-col gap-1.5" role="list">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list">
                   {mentionedInStories.map(s => (
                     <li key={s.id}>
-                      <Link
-                        to={`/stories/${s.slug}`}
-                        className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-border hover:border-primary transition-colors group"
-                      >
-                        <span className="min-w-0">
-                          <span className="text-sm text-charcoal group-hover:text-primary transition-colors truncate block">{s.title}</span>
-                          <span className="text-xs text-muted">Story</span>
-                        </span>
-                        <span className="text-[10px] font-medium text-muted uppercase tracking-wide shrink-0">
-                          Mentioned
-                        </span>
-                      </Link>
+                      <StoryCard story={s} variant="compact" showSummary={false} showFounder={false} showTopics={false} showCTA={false} />
                     </li>
                   ))}
                 </ul>
