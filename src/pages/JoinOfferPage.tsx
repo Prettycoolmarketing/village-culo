@@ -56,37 +56,61 @@ export function JoinOfferPage() {
             <h1 className="font-heading text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight max-w-2xl mx-auto">
               Lock in free access to Culo Creatives in Canva until January 1, 2027
             </h1>
-            <p className="font-body text-base text-white/70 max-w-xl mx-auto leading-relaxed">
+            <p className="font-body text-base text-white/70 max-w-xl mx-auto leading-relaxed mb-8">
               Add your payment details now and you're locked at <strong className="text-white">$19/month</strong> —
               free until Jan 1, 2027, then $19/month for as long as you stay subscribed. Wait, or cancel before
               then, and it's <strong className="text-white">$25/month</strong> like everyone else who joins later.
             </p>
+            {alreadyLockedIn ? (
+              <p className="font-heading text-lg font-semibold text-white">You're locked in at $19/month ✓</p>
+            ) : (
+              <a
+                href={paymentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+              >
+                Lock in Culo Creatives in Canva — $19/month
+              </a>
+            )}
           </InnerContainer>
         </section>
 
-        <section className="py-12 md:py-16">
-          <InnerContainer className="max-w-2xl">
-            {alreadyLockedIn ? (
-              <div className="bg-white rounded-2xl border border-border px-8 py-8 text-center mb-10">
-                <p className="font-heading text-lg font-semibold text-charcoal mb-2">You're locked in at $19/month ✓</p>
-                <p className="font-body text-sm text-muted">You won't be charged until January 1, 2027.</p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-border px-8 py-8 text-center mb-10">
-                <a
-                  href={paymentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-                >
-                  Lock in $19/month — free until Jan 1, 2027
-                </a>
-                <p className="font-body text-xs text-muted mt-3">
-                  Opens Stripe's secure checkout. You can also do this later from your dashboard.
-                </p>
-              </div>
-            )}
+        {/* ── Or just join the Village — same pale-blue gradient treatment as
+            /join's "What is CULO Creatives" section, offering the other real
+            path: no payment now, join as a Village member and decide on
+            Creatives later. */}
+        <section className="relative overflow-hidden py-16 md:py-20 text-center" aria-labelledby="village-instead-heading">
+          <div className="absolute inset-0 bg-background" aria-hidden="true">
+            <div
+              className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
+              style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }}
+            />
+            <div
+              className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full opacity-10"
+              style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }}
+            />
+          </div>
+          <InnerContainer className="relative max-w-2xl">
+            <h2 id="village-instead-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
+              Not ready for Creatives yet?
+            </h2>
+            <p className="font-body text-base text-muted leading-relaxed mb-8">
+              The Culo Village is free to join on its own — publish your existing content as individual
+              webpages so it's discoverable across the Village and by AI search. You can come back and lock in
+              Culo Creatives in Canva anytime before January 1, 2027 from your dashboard.
+            </p>
+            <a
+              href="#profile"
+              className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
+            >
+              I'll join the Culo Village instead
+            </a>
+          </InnerContainer>
+        </section>
 
+        <section id="profile" className="py-12 md:py-16 scroll-mt-20">
+          <InnerContainer className="max-w-2xl">
             {/* ── Simplified profile — styled like the start of a founder
                 profile, since this is exactly what they're building. Every
                 field is optional; Continue always works. */}

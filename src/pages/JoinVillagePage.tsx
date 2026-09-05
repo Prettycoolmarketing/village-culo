@@ -9,10 +9,13 @@ import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
 
-const HERO_IMAGE = '/join/join-hero.png'
+// Resized/compressed from the original 1971x1430 PNG (~1MB) down to a
+// 1200px-wide JPEG (~100KB) — the raw screenshot was slow to load in the
+// hero, which is above the fold on first paint.
+const HERO_IMAGE = '/join/join-hero.jpg'
 
-const GRID_ROW_1 = ['/join/grid-1.png', '/join/grid-2.png', '/join/grid-3.png']
-const GRID_ROW_2 = ['/join/grid-4.png', '/join/grid-5.png', '/join/grid-6.png']
+const GRID_ROW_1 = ['/join/grid-1.jpg', '/join/grid-2.jpg', '/join/grid-3.jpg']
+const GRID_ROW_2 = ['/join/grid-4.jpg', '/join/grid-5.jpg', '/join/grid-6.jpg']
 
 // Same "How it works" steps as CreativesPage's "Tell your story" section —
 // reused verbatim (same images/copy) rather than re-described, so a founder
