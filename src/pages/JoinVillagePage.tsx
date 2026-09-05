@@ -9,6 +9,7 @@ import { slugify } from '../utils/slugify'
 import { supabase } from '../lib/supabase'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Footer } from '../components/layout/Footer'
+import { InnerContainer } from '../components/layout/PageContainer'
 import type { Founder } from '../types'
 
 // TODO: swap for the real hero photo once it's back on hand — the original
@@ -119,28 +120,45 @@ export function JoinVillagePage() {
 
   if (checkEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FBF1EB] px-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <main className="min-h-screen bg-background flex items-center justify-center px-6">
         <div className="max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-[#2D2A26] mb-3">Check your email</h1>
-          <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
-            We sent a confirmation link to <span className="font-medium text-[#2D2A26]">{email}</span>. Click it,
+          <h1 className="font-heading text-2xl font-bold text-charcoal mb-3">Check your email</h1>
+          <p className="font-body text-sm text-muted leading-relaxed mb-6">
+            We sent a confirmation link to <span className="font-medium text-charcoal">{email}</span>. Click it,
             then come back here to get into your dashboard.
           </p>
           <WebmailButtons />
         </div>
-      </div>
+      </main>
     )
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      {/* ── Hero / join form ──────────────────────────────────────────────── */}
-      <section className="bg-[#FBF1EB] px-6 py-16 md:py-24">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-[#2D2A26] mb-6 leading-[1.1]">
+    <main className="min-h-screen bg-background">
+
+      {/* ── Hero / join form — same pale-blue-with-soft-gradient-circles
+          background as the Village homepage hero (HeroWidget), not the
+          charcoal treatment Creatives uses, since this page's job is the
+          signup itself. */}
+      <section className="relative overflow-hidden text-center py-20 md:py-28" aria-labelledby="join-heading">
+        <div className="absolute inset-0 bg-background" aria-hidden="true">
+          <div
+            className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
+            style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full opacity-10"
+            style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }}
+          />
+        </div>
+        <InnerContainer className="relative">
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+            Free while CULO Creatives is in Canva review
+          </p>
+          <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-charcoal mb-6 leading-[1.1] max-w-3xl mx-auto">
             Join The Culo Village to receive free access to Culo Creatives: Exclusively in Canva.
           </h1>
-          <p className="text-base md:text-lg text-[#6B7280] leading-relaxed mb-10 max-w-2xl mx-auto">
+          <p className="font-body text-base md:text-lg text-muted leading-relaxed mb-10 max-w-2xl mx-auto">
             It's time to share your messy thoughts and raw footage into structured social media posts and
             publish your previously created content across platforms with CULO.
           </p>
@@ -152,88 +170,96 @@ export function JoinVillagePage() {
               onChange={e => setEmail(e.target.value)}
               placeholder="you@email.com"
               aria-label="Email address"
-              className="flex-1 min-w-0 rounded-xl px-5 py-4 text-base bg-white text-[#2D2A26] placeholder:text-[#9CA3AF] border border-[#E8E4DD] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+              className="flex-1 min-w-0 rounded-xl px-5 py-4 text-base bg-white text-charcoal placeholder:text-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
             <button
               type="submit"
               disabled={submitting}
-              className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+              className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
             >
               {submitting ? 'Joining…' : 'Join free'}
             </button>
           </form>
-          {error && <p className="text-sm text-red-600 text-center mt-3">{error}</p>}
-          <p className="text-xs text-[#9CA3AF] mt-4">
+          {error && <p className="font-body text-sm text-red-600 text-center mt-3">{error}</p>}
+          <p className="font-body text-xs text-muted mt-4">
             One email, no password needed yet — you'll land straight in your dashboard.
           </p>
-        </div>
+        </InnerContainer>
       </section>
 
       {/* ── Hero banner image ─────────────────────────────────────────────── */}
-      <section className="bg-[#FBF1EB]">
-        <div className="max-w-6xl mx-auto px-6 pb-16 md:pb-24">
+      <section className="bg-background border-y border-border py-16 md:py-20">
+        <InnerContainer>
           <img
             src={HERO_IMAGE}
             alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
             className="w-full h-auto rounded-3xl"
           />
-        </div>
-      </section>
-
-      {/* ── What is CULO Creatives ────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-16 md:py-24">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-base md:text-lg text-[#2D2A26] leading-relaxed mb-6">
-            The Culo Village helps founders structure their previously posted content across platforms and
-            republish as individual webpages for AI search-ability as a joint publishing house.
-          </p>
-          <p className="text-base md:text-lg text-[#2D2A26] leading-relaxed mb-6">
-            Culo Creatives is a design platform exclusively available in Canva helping founders edit their
-            messy thoughts and raw footage into different formats of reels, carousels, captions and blogs for
-            easy, humanised, storytelling, content.
-          </p>
-          <p className="text-base md:text-lg text-[#2D2A26] leading-relaxed">
-            Someone may have the most amazing business and be a talented, knowledgable founder but without
-            consistent content speaking to their target audience with purposeful hooks, subtitles, captions in
-            an all in one easy to manage/approve workspace and scheduled to all platforms with back-linked to
-            websites/articles, they will struggle with visibility and keeping up with the demands of closed
-            platforms algorithms.
-          </p>
-        </div>
+        </InnerContainer>
       </section>
 
       {/* ── Product screenshot grid — 3 over 3 ───────────────────────────── */}
-      <section className="bg-[#FBF1EB] px-6 py-16 md:py-24">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-16 md:py-20" aria-labelledby="product-heading">
+        <InnerContainer>
+          <p id="product-heading" className="sr-only">CULO Creatives in Canva, screenshots</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
             {GRID_ROW_1.map(src => (
-              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl" />
+              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
             ))}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {GRID_ROW_2.map(src => (
-              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl" />
+              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
             ))}
           </div>
-        </div>
+        </InnerContainer>
       </section>
 
-      {/* ── How-to video ──────────────────────────────────────────────────── */}
-      <section className="bg-white px-6 py-16 md:py-24">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#2D2A26]">
-            <iframe
-              src="https://www.youtube.com/embed/qe0pMAlpVFc?start=22"
-              title="How to publish with CULO"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full"
-            />
+      {/* ── What is CULO Creatives — copy sits next to the video, same
+          side-by-side pattern as CreativesPage's "Watch the demo" section. */}
+      <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="what-heading">
+        <InnerContainer>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+            <div>
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+                What is CULO Creatives?
+              </p>
+              <h2 id="what-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
+                One joint publishing house for everything you've already created.
+              </h2>
+              <p className="font-body text-base text-muted leading-relaxed mb-4">
+                The Culo Village helps founders structure their previously posted content across platforms and
+                republish as individual webpages for AI search-ability as a joint publishing house.
+              </p>
+              <p className="font-body text-base text-muted leading-relaxed mb-4">
+                Culo Creatives is a design platform exclusively available in Canva helping founders edit their
+                messy thoughts and raw footage into different formats of reels, carousels, captions and blogs
+                for easy, humanised, storytelling, content.
+              </p>
+              <p className="font-body text-base text-muted leading-relaxed">
+                Someone may have the most amazing business and be a talented, knowledgable founder but without
+                consistent content speaking to their target audience with purposeful hooks, subtitles, captions
+                in an all in one easy to manage/approve workspace and scheduled to all platforms with
+                back-linked to websites/articles, they will struggle with visibility and keeping up with the
+                demands of closed platforms algorithms.
+              </p>
+            </div>
+            <div>
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+                <iframe
+                  src="https://www.youtube.com/embed/qe0pMAlpVFc?start=22"
+                  title="How to publish with CULO"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        </InnerContainer>
       </section>
 
       <Footer />
-    </div>
+    </main>
   )
 }

@@ -1,24 +1,27 @@
 import { Link } from 'react-router-dom'
 
+// Discover mirrors the navbar's primaryLinks (src/components/layout/Navbar.tsx)
+// exactly, same order — the footer had drifted to a different, older set of
+// links than what's actually in the top nav.
 const sections = [
   {
     heading: 'Discover',
     links: [
-      { to: '/',            label: 'Piazza'      },
-      { to: '/stories',     label: 'Stories'     },
+      { to: '/creatives', label: 'Creatives'  },
+      { to: '/founders',  label: 'Founders'   },
+      { to: '/mercato',   label: 'Businesses' },
+      { to: '/stories',   label: 'Stories'    },
+    ],
+  },
+  {
+    heading: 'More',
+    links: [
       { to: '/series',      label: 'Series'      },
       { to: '/ideas',       label: 'Ideas'       },
       { to: '/map',         label: 'Map'         },
       { to: '/archive',     label: 'Archive'     },
       { to: '/expertise',   label: 'Expertise'   },
       { to: '/library',     label: 'Library'     },
-    ],
-  },
-  {
-    heading: 'People',
-    links: [
-      { to: '/founders',    label: 'Founders'    },
-      { to: '/mercato',     label: 'Businesses'  },
       { to: '/noticeboard', label: 'Noticeboard' },
     ],
   },
