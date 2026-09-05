@@ -103,6 +103,15 @@ export function VillageHQOverviewPage() {
   // elsewhere: no Newest Founders (Recent Activity tab has that), no
   // storage/hosting cost estimate (Village Usage page covers content-volume
   // decisions now), no raw founder/claimed counts (Founders page owns those).
+  // Anyone with signupProduct set came through /join (village or canva source)
+  // rather than the older Onboarding wizard or a curated/claimed profile —
+  // see JoinVillagePage/JoinConfirmPage/ensureJoinedFounder.
+  const joinedViaJoinFlow   = founders.filter(f => !!f.signupProduct)
+  const passwordSetCount    = joinedViaJoinFlow.filter(f => f.passwordSet).length
+  const lockedInCollaborators = founders.filter(f => f.creativeSubscription?.tier === 'collaborator' && !!f.creativeSubscription.stripeSubscriptionId).length
+  const fromCanva   = joinedViaJoinFlow.filter(f => f.signupProduct === 'canva')
+  const fromVillage = joinedViaJoinFlow.filter(f => f.signupProduct === 'village')
+
   const claimed    = founders.filter(f => f.profileStatus === 'claimed' || f.profileStatus === 'verified')
   const selfJoined = founders.filter(f => !!f.userId && f.profileStatus !== 'village-curated')
   const curatedByStaff = founders.filter(f => f.profileStatus === 'village-curated')
@@ -189,6 +198,16 @@ export function VillageHQOverviewPage() {
           permission the standalone page always required. */}
       {canSeeAnalytics && (
       <>
+      <section className="mb-8">
+        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">CULO Creatives Join Funnel</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <StatCard label="Joined via /join"  value={joinedViaJoinFlow.length}   color="text-[#2D2A26]" to="/dashboard/village/founders" />
+          <StatCard label="Password Set"      value={passwordSetCount}           color="text-[#2D2A26]" sub={`of ${joinedViaJoinFlow.length} joined`} />
+          <StatCard label="Locked In $19/mo"  value={lockedInCollaborators}      color="text-[#5E6B4A]" to="/dashboard/village/creative-feedback" />
+          <StatCard label="From Canva"        value={fromCanva.length}          color="text-[#2D2A26]" sub={`vs ${fromVillage.length} from Village`} />
+        </div>
+      </section>
+
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Founder Health</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

@@ -2,18 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { creativeFeedbackService } from '../../services/creativeFeedback'
-
-// Test-mode Stripe Payment Links, created via the one-off
-// stripe-setup-creatives Edge Function. Swap for live-mode links (re-run
-// that function once STRIPE_SECRET_KEY is switched to a live key) when
-// ready to launch for real. Standard-tier link isn't meant to go public
-// until Jan 1 2027 — see the launch plan — this constant just needs to
-// exist so the CTA below has somewhere to point once trial access lapses.
-const UPGRADE_PAYMENT_LINK = 'https://buy.stripe.com/test_00000000000000'
-// $19/mo collaborator link — free until Jan 1 2027 (trial_end is fixed up
-// server-side by stripe-creatives-webhook after checkout), locked in by
-// submitting the feedback below.
-const COLLABORATOR_PAYMENT_LINK = 'https://buy.stripe.com/test_00000000000001'
+import { UPGRADE_PAYMENT_LINK, COLLABORATOR_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
 
 function hasCreativeAccess(sub: { status: string; trialEnd?: string } | undefined): boolean {
   if (!sub) return true
@@ -40,16 +29,8 @@ export function DashboardCreativesPage() {
   const alreadySubmitted = !!subscription?.feedbackSubmittedAt
   const hasAccess = hasCreativeAccess(subscription)
 
-  // client_reference_id is how stripe-creatives-webhook links the resulting
-  // Stripe customer back to this founder (see that function's header comment)
-  // — Stripe carries this query param through to the Checkout Session
-  // untouched, so it must be on the link every time, not just documented.
-  const upgradeUrl = founder
-    ? `${UPGRADE_PAYMENT_LINK}?client_reference_id=${encodeURIComponent(founder.id)}${user?.email ? `&prefilled_email=${encodeURIComponent(user.email)}` : ''}`
-    : UPGRADE_PAYMENT_LINK
-  const collaboratorUrl = founder
-    ? `${COLLABORATOR_PAYMENT_LINK}?client_reference_id=${encodeURIComponent(founder.id)}${user?.email ? `&prefilled_email=${encodeURIComponent(user.email)}` : ''}`
-    : COLLABORATOR_PAYMENT_LINK
+  const upgradeUrl = buildPaymentUrl(UPGRADE_PAYMENT_LINK, founder?.id ?? '', user?.email)
+  const collaboratorUrl = buildPaymentUrl(COLLABORATOR_PAYMENT_LINK, founder?.id ?? '', user?.email)
   const hasBilling = !!subscription?.stripeSubscriptionId
 
   async function handleSubmit() {

@@ -2,17 +2,12 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
-import { updateFounder } from '../services/founders'
-import { linkOwnFounder } from '../services/currentFounder'
-import { locations } from '../data/locations'
-import { industries } from '../data/industries'
-import { slugify } from '../utils/slugify'
+import { ensureJoinedFounder } from '../services/joinFlow'
 import { supabase } from '../lib/supabase'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
-import type { Founder } from '../types'
 
 const HERO_IMAGE = '/join/join-hero.png'
 
@@ -66,9 +61,6 @@ const STEPS = [
 // direct culovillage.com signup. This is the exact URL the Canva app's
 // "Join the Village" button should deep-link to: /join?source=canva
 
-const COLLABORATOR_CUTOFF = '2027-01-01T00:00:00.000Z'
-const STANDARD_TRIAL_DAYS = 14
-
 export function JoinVillagePage() {
   usePageMeta({
     title: 'Culo In Canva',
@@ -94,10 +86,10 @@ export function JoinVillagePage() {
     setError(null)
 
     // Founder never sees or needs this — it's a throwaway credential that
-    // establishes their session; the "set your password" modal replaces it
-    // with a real one the moment they land in the dashboard.
+    // establishes their session; the very next step (JoinConfirmPage) has
+    // them replace it with a real one.
     const throwawayPassword = crypto.randomUUID()
-    const signUpResult = await signUp(trimmed, throwawayPassword)
+    const signUpResult = await signUp(trimmed, throwawayPassword, `/join/confirm?source=${source}`)
 
     if (signUpResult.error) {
       setSubmitting(false)
@@ -105,54 +97,26 @@ export function JoinVillagePage() {
       return
     }
     if (signUpResult.needsConfirmation) {
+      // The overwhelmingly common case (Supabase's "Confirm email" is on) —
+      // no session exists yet, so there's no userId to attach a founder
+      // record to. JoinConfirmPage creates it once they click the email
+      // link and land back here with a real session — see ensureJoinedFounder.
       setSubmitting(false)
       setCheckEmail(true)
       return
     }
 
-    // signUp() doesn't hand back the new user's id directly — pull it from
-    // the session it just established, right after the call, rather than
-    // waiting on AuthContext's own state to catch up on the next render.
+    // Only reached when email confirmation is off and a session exists
+    // immediately — same ensureJoinedFounder() call JoinConfirmPage makes,
+    // so both paths converge on one function rather than duplicating it.
     const userId = (await supabase?.auth.getUser())?.data.user?.id
+    setSubmitting(false)
     if (!userId) {
-      setSubmitting(false)
       setError('Could not create your account. Please try again.')
       return
     }
-
-    const now = new Date()
-    const isPreLaunchCohort = now.toISOString() < COLLABORATOR_CUTOFF
-    const founderId = crypto.randomUUID()
-    const founder: Founder = {
-      id: founderId,
-      slug: slugify(trimmed.split('@')[0] || 'founder') + '-' + Math.random().toString(36).slice(2, 6),
-      name: trimmed.split('@')[0] || 'New Founder',
-      bio: '',
-      avatar: '/placeholders/village-founder.svg',
-      location: locations[0]!,
-      industry: industries[0]!,
-      businessId: '',
-      topics: [],
-      status: 'draft',
-      featured: false,
-      createdAt: now.toISOString(),
-      userId,
-      signupProduct: source,
-      passwordSet: false,
-      creativeSubscription: isPreLaunchCohort
-        ? { status: 'trial', trialEnd: COLLABORATOR_CUTOFF }
-        : { status: 'trial', tier: 'standard', trialEnd: new Date(now.getTime() + STANDARD_TRIAL_DAYS * 86400000).toISOString() },
-    }
-
-    const result = await updateFounder(founder)
-    setSubmitting(false)
-    if (!result.success) {
-      setError(result.error ?? 'Could not create your account. Please try again.')
-      return
-    }
-    void linkOwnFounder(founderId)
-
-    navigate('/dashboard/welcome?setPassword=1', { replace: true })
+    await ensureJoinedFounder(userId, trimmed, source)
+    navigate('/join/confirm', { replace: true })
   }
 
   if (checkEmail) {

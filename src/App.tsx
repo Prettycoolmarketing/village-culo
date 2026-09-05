@@ -38,6 +38,8 @@ import { LibraryPage }        from './pages/LibraryPage'
 import { LibraryDetailPage }  from './pages/LibraryDetailPage'
 import { OnboardingPage }    from './pages/OnboardingPage'
 import { JoinVillagePage }   from './pages/JoinVillagePage'
+import { JoinConfirmPage }   from './pages/JoinConfirmPage'
+import { JoinOfferPage }     from './pages/JoinOfferPage'
 
 // ─── Dashboard pages ────────────────────────────────────────────────────────────
 import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
@@ -158,6 +160,13 @@ export default function App() {
               Deep-linked from the Canva Marketplace app via ?source=canva
               once it's live. */}
           <Route path="/join" element={<JoinVillagePage />} />
+          {/* Where Supabase's confirmation email link actually lands (see
+              AuthContext.signUp's redirectPath) — set password first, before
+              ever reaching the dashboard. */}
+          <Route path="/join/confirm" element={<JoinConfirmPage />} />
+          {/* The pricing lock-in + simplified profile step, styled like the
+              founder profile they're building. */}
+          <Route path="/join/offer" element={<JoinOfferPage />} />
 
           {/* ── Dashboard (no public nav) ──────────────────────────────────── */}
           <Route path="/dashboard/login" element={<DashboardLoginPage />} />
