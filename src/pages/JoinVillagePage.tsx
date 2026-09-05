@@ -9,6 +9,7 @@ import { industries } from '../data/industries'
 import { slugify } from '../utils/slugify'
 import { supabase } from '../lib/supabase'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
+import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
 import type { Founder } from '../types'
@@ -156,21 +157,26 @@ export function JoinVillagePage() {
 
   if (checkEmail) {
     return (
-      <main className="min-h-screen bg-background flex items-center justify-center px-6">
-        <div className="max-w-md w-full text-center">
-          <h1 className="font-heading text-2xl font-bold text-charcoal mb-3">Check your email</h1>
-          <p className="font-body text-sm text-muted leading-relaxed mb-6">
-            We sent a confirmation link to <span className="font-medium text-charcoal">{email}</span>. Click it,
-            then come back here to get into your dashboard.
-          </p>
-          <WebmailButtons />
-        </div>
-      </main>
+      <>
+        <Navbar />
+        <main className="min-h-screen bg-background flex items-center justify-center px-6">
+          <div className="max-w-md w-full text-center">
+            <h1 className="font-heading text-2xl font-bold text-charcoal mb-3">Check your email</h1>
+            <p className="font-body text-sm text-muted leading-relaxed mb-6">
+              We sent a confirmation link to <span className="font-medium text-charcoal">{email}</span>. Click it,
+              then come back here to get into your dashboard.
+            </p>
+            <WebmailButtons />
+          </div>
+        </main>
+      </>
     )
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <>
+      <Navbar />
+      <main className="min-h-screen bg-background">
 
       {/* ── Hero / join form — dark, same charcoal treatment as Creatives'
           own hero. Copy + form on the left, hero photo on the right, so the
@@ -358,5 +364,6 @@ export function JoinVillagePage() {
 
       <Footer />
     </main>
+    </>
   )
 }
