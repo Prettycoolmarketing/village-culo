@@ -1,4 +1,5 @@
 import { readCache, writeEntity, writeEntityBatch, deleteEntity, deleteEntityBatch, type WriteResult } from '../lib/entityStore'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import type { Founder, FounderFilter } from '../types'
 
 const KEY = 'founders'
@@ -76,4 +77,21 @@ export function deleteFounder(id: string): Promise<WriteResult> {
 
 export function deleteFoundersBatch(ids: string[]): Promise<WriteResult> {
   return deleteEntityBatch({ cacheKey: KEY, ids, table: TABLE })
+}
+
+// Unlike deleteFounder (which only ever removes the founders row), this also
+// deletes the underlying Supabase Auth login via the delete-founder-account
+// Edge Function — see that function's header comment for why a hard account
+// delete needs the service role and can't be a direct client call.
+export async function deleteFounderAccount(founderId: string): Promise<WriteResult> {
+  if (!isSupabaseConfigured || !supabase) {
+    return deleteEntity({ cacheKey: KEY, id: founderId, table: TABLE })
+  }
+  const { data, error } = await supabase.functions.invoke<{ success?: boolean; error?: string }>(
+    'delete-founder-account', { body: { founderId } },
+  )
+  if (error || data?.error) {
+    return { success: false, error: data?.error || (error instanceof Error ? error.message : 'Could not delete this account.') }
+  }
+  return deleteEntity({ cacheKey: KEY, id: founderId, table: TABLE })
 }

@@ -96,7 +96,10 @@ export function VillageEmailExportPage() {
     const { firstName, lastName } = splitName(f.name)
     const biz = businesses.find(b => b.id === f.businessId)
     return {
-      email:         claimEmailByFounder.get(f.id) ?? '',
+      // signupEmail covers /join-flow founders (see ensureJoinedFounder) —
+      // they have no claim record, so claimEmailByFounder alone left them
+      // with no email at all and silently dropped from every export.
+      email:         claimEmailByFounder.get(f.id) ?? f.signupEmail ?? '',
       firstName,
       lastName,
       fullName:      f.name,
@@ -178,6 +181,19 @@ export function VillageEmailExportPage() {
     return deduplicate([...fromFounders, ...fromClaims])
   }
 
+  // Founders who came through the email-only /join flow (see
+  // ensureJoinedFounder) — tagged by which funnel actually created the
+  // account so a Village signup and a Canva Marketplace signup can be told
+  // apart in the export, same distinction CAPO already sees in Analytics.
+  function getJoinSignups(): EmailRow[] {
+    return applyFilters(
+      founders
+        .filter(f => !!f.signupProduct)
+        .map(f => founderToRow(f, f.signupProduct === 'canva' ? 'canva-join' : 'village-join'))
+        .filter(r => r.email)
+    )
+  }
+
   // Preview
   function showPreview(label: string, rows: EmailRow[]) {
     const deduped = deduplicate(rows)
@@ -198,6 +214,12 @@ export function VillageEmailExportPage() {
       description: 'Every unique email from founders and claim requests.',
       rows: getAllEmails,
       filename: 'culo-village-all-emails',
+    },
+    {
+      label: 'Village Join Signups',
+      description: 'Founders who signed up via /join (Village or Canva source).',
+      rows: getJoinSignups,
+      filename: 'culo-village-join-signups',
     },
     {
       label: 'Claimed Founders',

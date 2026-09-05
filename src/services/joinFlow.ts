@@ -55,6 +55,7 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
     createdAt: now.toISOString(),
     userId,
     signupProduct: source,
+    signupEmail: email,
     passwordSet: false,
     creativeSubscription: isPreLaunchCohort
       ? { status: 'trial', trialEnd: COLLABORATOR_CUTOFF }

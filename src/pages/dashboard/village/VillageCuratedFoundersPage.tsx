@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { getFounders, updateFoundersBatch, deleteFoundersBatch } from '../../../services/founders'
+import { getFounders, updateFoundersBatch, deleteFoundersBatch, deleteFounderAccount } from '../../../services/founders'
 import { getBusinesses } from '../../../services/businesses'
 import { importedContentService } from '../../../services/importedContent'
 import { founderClaimService } from '../../../services/founderClaim'
@@ -92,6 +92,12 @@ export function VillageCuratedFoundersPage() {
   const { user } = useAuth()
   const canSeeFounders = canAccessCapoSection(user?.role, 'founders')
   const canSeeImports  = canAccessCapoSection(user?.role, 'imports')
+  // Deleting an account (not just a curated profile) gets a tighter bar
+  // than the founders section itself — matches the edge function's own
+  // admin/owner check, this is just so the button isn't shown to editors
+  // who'd get a permission error clicking it.
+  const canDeleteAccounts = user?.role === 'admin' || user?.role === 'owner'
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
   const [pageTab, setPageTab]     = useState<'founders' | 'imports'>(
     searchParams.get('tab') === 'imports' || !canSeeFounders ? 'imports' : 'founders',
@@ -113,6 +119,15 @@ export function VillageCuratedFoundersPage() {
   void tick
 
   const refresh = () => { setTick(t => t + 1); setSelected(new Set()) }
+
+  async function handleDeleteAccount(f: Founder) {
+    setBulkError(null)
+    setDeletingId(f.id)
+    const result = await deleteFounderAccount(f.id)
+    setDeletingId(null)
+    if (!result.success) { setBulkError(result.error ?? 'Could not delete this account. Try again.'); return }
+    refresh()
+  }
 
   const founders  = getFounders()
   const businesses = getBusinesses()
@@ -151,7 +166,8 @@ export function VillageCuratedFoundersPage() {
         f.name.toLowerCase().includes(q) ||
         f.industry.name.toLowerCase().includes(q) ||
         f.location.name.toLowerCase().includes(q) ||
-        f.slug.toLowerCase().includes(q)
+        f.slug.toLowerCase().includes(q) ||
+        f.signupEmail?.toLowerCase().includes(q)
       )
     }
 
@@ -433,9 +449,10 @@ export function VillageCuratedFoundersPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.name}</p>
                       <p className="text-[10px] text-[#9CA3AF] truncate">
-                        {biz?.name ?? '—'}
+                        {f.signupEmail ?? biz?.name ?? '—'}
                         {contentCount > 0 && ` · ${contentCount} import${contentCount !== 1 ? 's' : ''}`}
                         {hasEmail && ' · ✉'}
+                        {f.signupProduct && ` · via ${f.signupProduct === 'canva' ? 'Canva' : 'Village'}`}
                       </p>
                     </div>
                   </div>
@@ -474,6 +491,16 @@ export function VillageCuratedFoundersPage() {
                       >
                         Verify
                       </button>
+                    )}
+                    {canDeleteAccounts && (
+                      <ConfirmButton
+                        label="Delete"
+                        confirmLabel="Yes, delete"
+                        message={f.signupProduct ? `Delete ${f.name}'s login too?` : 'Delete this founder?'}
+                        onConfirm={() => void handleDeleteAccount(f)}
+                        disabled={deletingId === f.id}
+                        className="text-[10px] text-red-500 hover:text-red-600 transition-colors"
+                      />
                     )}
                   </div>
                 </div>

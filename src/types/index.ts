@@ -460,6 +460,12 @@ export interface Founder {
   // email-only join flow start with a throwaway random password and a
   // session, not a real one the founder knows, until this happens.
   passwordSet?: boolean
+  // The email they actually signed up with (see ensureJoinedFounder) — only
+  // set for /join-flow founders. Founder has no other email field: claimEmail
+  // is a different concept (a claim requester's email, which may differ from
+  // this). Lets CAPO surface and manage /join signups in Founders and Email
+  // Lists without joining out to auth.users, which isn't queryable client-side.
+  signupEmail?: string
 }
 
 // A founder's status with the paid CULO Creatives product — entirely
