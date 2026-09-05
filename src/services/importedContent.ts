@@ -77,9 +77,17 @@ export function youtubeThumbnailUrl(url: string): string | undefined {
     if (u.hostname.replace(/^www\./, '') === 'youtu.be') {
       videoId = u.pathname.slice(1).split('?')[0] || null
     } else if (u.hostname.replace(/^www\./, '') === 'youtube.com') {
-      videoId = u.searchParams.get('v')
+      // Shorts URLs (youtube.com/shorts/<id>) didn't match here before,
+      // silently skipping the thumbnail entirely for exactly the vertical
+      // content most likely to be imported as a Short — checked before the
+      // ?v= case since Shorts URLs never carry that param.
+      const shortsMatch = u.pathname.match(/^\/shorts\/([\w-]+)/)
+      videoId = shortsMatch ? shortsMatch[1]! : u.searchParams.get('v')
     }
-    return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : undefined
+    // sddefault (640x480) over hqdefault (480x360) — meaningfully sharper
+    // once a vertical card crops/scales it, and still reliably available
+    // (unlike maxresdefault, which 404s for plenty of videos).
+    return videoId ? `https://i.ytimg.com/vi/${videoId}/sddefault.jpg` : undefined
   } catch {
     return undefined
   }

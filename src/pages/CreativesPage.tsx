@@ -11,6 +11,18 @@ const FORMATS = [
   { emoji: '⚡', label: 'Quick Rhythm Reels', desc: 'Short, fast-paced edits with strong opening hooks and tighter cuts built for attention.' },
 ]
 
+// Placeholder tiles for the "Follow along" mockup below — no real Instagram
+// photos to pull in, so brand-colour gradients stand in for post thumbnails
+// rather than faking content that was never posted.
+const INSTAGRAM_TILE_GRADIENTS = [
+  'linear-gradient(135deg, #C86A43 0%, #E8A87C 100%)',
+  'linear-gradient(135deg, #2D2A26 0%, #5E6B4A 100%)',
+  'linear-gradient(135deg, #7CA9CC 0%, #2D2A26 100%)',
+  'linear-gradient(135deg, #5E6B4A 0%, #C86A43 100%)',
+  'linear-gradient(135deg, #E8A87C 0%, #7CA9CC 100%)',
+  'linear-gradient(135deg, #2D2A26 0%, #C86A43 100%)',
+]
+
 const STEPS = [
   {
     title: 'Answer a few personalised questions',
@@ -210,6 +222,49 @@ export function CreativesPage() {
               <p className="font-body text-sm text-muted">Shakas — CEO / Founder of Pretty Cool Marketing x CULO</p>
             </div>
           </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── Follow on Instagram — a design mockup, not a live feed embed.
+          Static tiles link out to the real account rather than an Elfsight
+          widget playing real posts, per the founder's own call: no need to
+          actually pull/play videos here, just point people at the account. */}
+      <section className="py-16 md:py-20" aria-labelledby="instagram-heading">
+        <InnerContainer>
+          <div className="flex items-center justify-between gap-4 mb-8">
+            <h2 id="instagram-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal">
+              Follow along on Instagram
+            </h2>
+            <a
+              href="https://instagram.com/shakasdesigner"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-1.5 font-body text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors"
+            >
+              @shakasdesigner ↗
+            </a>
+          </div>
+          <a
+            href="https://instagram.com/shakasdesigner"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 group"
+            aria-label="View @shakasdesigner on Instagram"
+          >
+            {INSTAGRAM_TILE_GRADIENTS.map((gradient, i) => (
+              <div
+                key={i}
+                className="relative aspect-square rounded-lg sm:rounded-xl overflow-hidden group-hover:opacity-90 transition-opacity"
+                style={{ background: gradient }}
+              >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white/80" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+            ))}
+          </a>
         </InnerContainer>
       </section>
 
