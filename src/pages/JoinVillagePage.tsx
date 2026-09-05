@@ -210,7 +210,7 @@ export function JoinVillagePage() {
               </form>
               {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
               <p className="font-body text-xs text-white/40 mt-4">
-                Join the culo village for free, no spam emails, culo creatives free access till january 1st 2027
+                Free access to culo creatives in canva till january 1st 2027, no spam emails, publish in the village
               </p>
             </div>
             <img
