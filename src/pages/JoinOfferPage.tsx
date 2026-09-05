@@ -77,11 +77,11 @@ export function JoinOfferPage() {
           </InnerContainer>
         </section>
 
-        {/* ── Or just join the Village — same pale-blue gradient treatment as
-            /join's "What is CULO Creatives" section, offering the other real
-            path: no payment now, join as a Village member and decide on
-            Creatives later. */}
-        <section className="relative overflow-hidden py-16 md:py-20 text-center" aria-labelledby="village-instead-heading">
+        {/* ── You're already a member — same pale-blue gradient treatment as
+            /join's "What is CULO Creatives" section, running underneath both
+            the intro copy and the revealed profile form so it reads as one
+            cohesive block instead of a white section breaking it up. */}
+        <section className="relative overflow-hidden py-16 md:py-20" aria-labelledby="village-instead-heading">
           <div className="absolute inset-0 bg-background" aria-hidden="true">
             <div
               className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
@@ -92,82 +92,85 @@ export function JoinOfferPage() {
               style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }}
             />
           </div>
-          <InnerContainer className="relative max-w-2xl">
+          <InnerContainer className="relative max-w-2xl text-center">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+              You're already a member
+            </p>
             <h2 id="village-instead-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
-              Not ready for Creatives yet?
+              Not ready for Creatives yet? Keep publishing in the Village.
             </h2>
-            <p className="font-body text-base text-muted leading-relaxed mb-8">
-              The Culo Village is free to join on its own — publish your existing content as individual
-              webpages so it's discoverable across the Village and by AI search. You can come back and lock in
-              Culo Creatives in Canva anytime before January 1, 2027 from your dashboard.
+            <p className="font-body text-base text-muted leading-relaxed mb-8 max-w-xl mx-auto">
+              You've already joined the Culo Village — publish your existing content as individual webpages so
+              it's discoverable across the Village and by AI search. You can come back and lock in Culo
+              Creatives in Canva anytime before January 1, 2027 from your dashboard.
             </p>
             {!showProfile && (
               <button
                 onClick={() => setShowProfile(true)}
                 className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
               >
-                I'll publish in the Culo Village instead
+                Continue publishing in the Village
               </button>
             )}
           </InnerContainer>
-        </section>
 
-        {showProfile && (
-        <section id="profile" className="py-12 md:py-16 scroll-mt-20">
-          <InnerContainer className="max-w-2xl">
+          {showProfile && (
+          <InnerContainer className="relative max-w-2xl mt-4">
             {/* ── Simplified profile — styled like the start of a founder
                 profile, since this is exactly what they're building. Every
                 field is optional; Continue always works. */}
-            <h2 className="font-heading text-xl font-semibold text-charcoal mb-1">Your founder profile</h2>
-            <p className="font-body text-sm text-muted mb-6">
-              A few details for your CULO Village profile — you can add or change these anytime.
-            </p>
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="block font-body text-xs font-semibold text-charcoal uppercase tracking-wide mb-1.5">Name</label>
-                <input
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Your name"
-                  className="w-full rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-                />
+            <div className="bg-white rounded-2xl border border-border px-8 py-8">
+              <h3 className="font-heading text-xl font-semibold text-charcoal mb-1">Your founder profile</h3>
+              <p className="font-body text-sm text-muted mb-6">
+                A few details for your CULO Village profile — you can add or change these anytime.
+              </p>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block font-body text-xs font-semibold text-charcoal uppercase tracking-wide mb-1.5">Name</label>
+                  <input
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block font-body text-xs font-semibold text-charcoal uppercase tracking-wide mb-1.5">Bio</label>
+                  <textarea
+                    value={bio}
+                    onChange={e => setBio(e.target.value)}
+                    rows={4}
+                    placeholder="What you do and who you help..."
+                    className="w-full rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"
+                  />
+                </div>
+                <div>
+                  <label className="block font-body text-xs font-semibold text-charcoal uppercase tracking-wide mb-1.5">Website or link</label>
+                  <input
+                    value={website}
+                    onChange={e => setWebsite(e.target.value)}
+                    placeholder="yourbusiness.com"
+                    className="w-full rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block font-body text-xs font-semibold text-charcoal uppercase tracking-wide mb-1.5">Bio</label>
-                <textarea
-                  value={bio}
-                  onChange={e => setBio(e.target.value)}
-                  rows={4}
-                  placeholder="What you do and who you help..."
-                  className="w-full rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-y"
-                />
-              </div>
-              <div>
-                <label className="block font-body text-xs font-semibold text-charcoal uppercase tracking-wide mb-1.5">Website or link</label>
-                <input
-                  value={website}
-                  onChange={e => setWebsite(e.target.value)}
-                  placeholder="yourbusiness.com"
-                  className="w-full rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-                />
-              </div>
-            </div>
 
-            <div className="flex items-center justify-between gap-4 mt-8">
-              <Link to="/dashboard/welcome" className="font-body text-sm text-muted hover:text-charcoal transition-colors">
-                Skip for now →
-              </Link>
-              <button
-                onClick={() => void handleSave()}
-                disabled={saving}
-                className="px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
-              >
-                {saving ? 'Saving…' : 'Save and continue to dashboard'}
-              </button>
+              <div className="flex items-center justify-between gap-4 mt-8">
+                <Link to="/dashboard/welcome" className="font-body text-sm text-muted hover:text-charcoal transition-colors">
+                  Skip for now →
+                </Link>
+                <button
+                  onClick={() => void handleSave()}
+                  disabled={saving}
+                  className="px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+                >
+                  {saving ? 'Saving…' : 'Save and continue to dashboard'}
+                </button>
+              </div>
             </div>
           </InnerContainer>
+          )}
         </section>
-        )}
 
         <Footer />
       </main>
