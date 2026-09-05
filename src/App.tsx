@@ -54,13 +54,11 @@ import { DashboardWelcomePage }      from './pages/dashboard/DashboardWelcomePag
 import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
 import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
-import { DashboardCuratedProfilesPage }  from './pages/dashboard/DashboardCuratedProfilesPage'
 import { DashboardCuratedFounderBuilderPage } from './pages/dashboard/DashboardCuratedFounderBuilderPage'
 import { DashboardBulkImportPage }            from './pages/dashboard/DashboardBulkImportPage'
 import { VillageHQOverviewPage }              from './pages/dashboard/village/VillageHQOverviewPage'
 import { VillageCuratedFoundersPage }         from './pages/dashboard/village/VillageCuratedFoundersPage'
 import { VillageEmailExportPage }             from './pages/dashboard/village/VillageEmailExportPage'
-import { VillageAnalyticsPage }               from './pages/dashboard/village/VillageAnalyticsPage'
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
 import { CapoTeamPage }                       from './pages/dashboard/village/CapoTeamPage'
 import { CapoOpportunitiesHubPage }           from './pages/dashboard/village/CapoOpportunitiesHubPage'
@@ -198,7 +196,10 @@ export default function App() {
             <Route path="opportunities"  element={<Navigate to="/dashboard/village/opportunities?tab=opportunities" replace />} />
             <Route path="revenue"           element={<Navigate to="/dashboard/village/opportunities?tab=revenue" replace />} />
             <Route path="village/opportunities" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.overview}><CapoOpportunitiesHubPage /></RoleProtectedRoute>} />
-            <Route path="curated-profiles" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><DashboardCuratedProfilesPage /></RoleProtectedRoute>} />
+            {/* Superseded by the Founders page (village/founders) — this was
+                a separate curated/pending/claimed listing with no nav link
+                of its own, now consolidated there. */}
+            <Route path="curated-profiles" element={<Navigate to="/dashboard/village/founders" replace />} />
             <Route path="curated-profiles/new" element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.founders}><DashboardCuratedFounderBuilderPage /></RoleProtectedRoute>} />
             <Route path="bulk-import"          element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.imports}><DashboardBulkImportPage /></RoleProtectedRoute>}            />
             <Route path="village"              element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.overview}><VillageHQOverviewPage /></RoleProtectedRoute>}              />
@@ -216,7 +217,8 @@ export default function App() {
             <Route path="village/editorial"    element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />}                                                              />
             <Route path="village/sources"      element={<Navigate to="/dashboard/village/opportunities?tab=sources" replace />} />
             <Route path="village/partners"     element={<Navigate to="/dashboard/village/opportunities?tab=partners" replace />} />
-            <Route path="village/analytics"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.analytics}><VillageAnalyticsPage /></RoleProtectedRoute>}               />
+            {/* Merged into Village Overview's Analytics tab. */}
+            <Route path="village/analytics"    element={<Navigate to="/dashboard/village" replace />} />
             <Route path="village/settings"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.settings}><VillageSettingsPage /></RoleProtectedRoute>}                />
             <Route path="village/team"         element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.team}><CapoTeamPage /></RoleProtectedRoute>}                          />
             <Route path="settings"         element={<DashboardSettingsPage />}        />

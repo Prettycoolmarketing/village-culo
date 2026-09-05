@@ -205,8 +205,11 @@ export function DashboardLayout() {
               <SectionLabel label="Village Staff" />
               <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
 
+              {/* Analytics is no longer its own nav item — it's the default
+                  tab on Village Overview above now (still gated to
+                  admin/owner within that page, same bar as before). */}
               {(canAccessCapoSection(user?.role, 'founders')
-                || canAccessCapoSection(user?.role, 'emails') || canAccessCapoSection(user?.role, 'analytics')) && (
+                || canAccessCapoSection(user?.role, 'emails')) && (
                 <>
                   <SectionLabel label="People" />
                   {canAccessCapoSection(user?.role, 'founders') && (
@@ -214,9 +217,6 @@ export function DashboardLayout() {
                   )}
                   {canAccessCapoSection(user?.role, 'emails') && (
                     <NavItem to="/dashboard/village/emails" label="Email Lists" icon={<Icon path={icons.email} />} />
-                  )}
-                  {canAccessCapoSection(user?.role, 'analytics') && (
-                    <NavItem to="/dashboard/village/analytics" label="Analytics" icon={<Icon path={icons.analytics} />} />
                   )}
                 </>
               )}

@@ -25,13 +25,14 @@ const sections = [
       { to: '/noticeboard', label: 'Noticeboard' },
     ],
   },
-  {
-    heading: 'Publish',
-    links: [
-      { to: '/onboarding',     label: 'Become a Publisher' },
-    ],
-  },
 ]
+
+const publishSection = {
+  heading: 'Publish',
+  links: [
+    { to: '/onboarding', label: 'Become a Publisher' },
+  ],
+}
 
 // Shakas's own accounts (see src/data/founders.ts 'shakas' record and
 // src/data/media.ts) — the person behind CULO, not the CULO Village brand
@@ -96,11 +97,12 @@ export function Footer() {
             </nav>
           ))}
 
-          {/* Meet the founder */}
+          {/* Meet the founder — sits between More and Publish */}
           <div>
             <h3 className="font-heading text-white font-semibold text-base mb-4">Meet the founder</h3>
             <p className="text-sm text-white/60 leading-relaxed mb-4">
-              Shakas — Founder of Pretty Cool Marketing x CULO
+              Shakas is a serial entrepreneur — she previously owned a tour company, designed a unique 3-in-1
+              beach bag, and is proud owner of Pretty Cool Marketing x The Culo Village.
             </p>
             <div className="flex items-center gap-3">
               {FOUNDER_SOCIALS.map(social => (
@@ -119,6 +121,20 @@ export function Footer() {
               ))}
             </div>
           </div>
+
+          {/* Publish */}
+          <nav aria-label={`${publishSection.heading} links`}>
+            <h3 className="font-heading text-white font-semibold text-base mb-4">{publishSection.heading}</h3>
+            <ul className="space-y-2.5">
+              {publishSection.links.map(link => (
+                <li key={link.label}>
+                  <Link to={link.to} className="text-sm text-white/60 hover:text-white transition-colors">
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
 
         <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
