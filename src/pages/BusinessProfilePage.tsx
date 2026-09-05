@@ -14,7 +14,6 @@ import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { getServices }                     from '../services/serviceOfferings'
 import { StoryGrid }                  from '../widgets/StoryGrid'
-import { IdeaGrid }                   from '../widgets/IdeaGrid'
 import { LibraryGrid }               from '../widgets/LibraryGrid'
 import { FounderCard }                from '../components/cards/FounderCard'
 import { BusinessCard }               from '../components/cards/BusinessCard'
@@ -354,11 +353,20 @@ export function BusinessProfilePage() {
             {mentionedInStories.length > 0 && (
               <section aria-labelledby="mentioned-in-stories-heading" className="mt-6">
                 <h2 id="mentioned-in-stories-heading" className="font-heading text-lg font-semibold text-charcoal mb-3">Mentioned In Stories</h2>
-                <ul className="flex flex-col gap-2">
+                <ul className="flex flex-col gap-1.5" role="list">
                   {mentionedInStories.map(s => (
                     <li key={s.id}>
-                      <Link to={`/stories/${s.slug}`} className="text-sm text-primary hover:text-[#b05a35] transition-colors font-medium">
-                        {s.title} ↗
+                      <Link
+                        to={`/stories/${s.slug}`}
+                        className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-border hover:border-primary transition-colors group"
+                      >
+                        <span className="min-w-0">
+                          <span className="text-sm text-charcoal group-hover:text-primary transition-colors truncate block">{s.title}</span>
+                          <span className="text-xs text-muted">Story</span>
+                        </span>
+                        <span className="text-[10px] font-medium text-muted uppercase tracking-wide shrink-0">
+                          Mentioned
+                        </span>
                       </Link>
                     </li>
                   ))}
@@ -664,21 +672,6 @@ export function BusinessProfilePage() {
                 />
               </section>
 
-              {/* Ideas */}
-              <section aria-labelledby="business-ideas-heading">
-                <h2 id="business-ideas-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                  Ideas connected to {business.name}
-                </h2>
-                <p className="font-body text-sm text-muted mb-6">Knowledge extracted from this business's stories.</p>
-                <IdeaGrid
-                  filter={{ businessId: business.id, publicOnly: true }}
-                  columns={2}
-                  cardVariant="default"
-                  emptyTitle="No ideas linked yet"
-                  emptyMessage="Ideas will appear here as stories are published and knowledge is extracted."
-                />
-              </section>
-
               {/* Founder */}
               {founder && (
                 <section aria-labelledby="business-founder-heading">
@@ -692,14 +685,15 @@ export function BusinessProfilePage() {
                 </section>
               )}
 
-              {/* Library */}
+              {/* Library — hidden entirely when empty rather than showing a
+                  placeholder card, since an unpublished Library reads as
+                  more "unfinished profile" than "nothing to see yet". */}
               <LibraryGrid
                 heading="Library"
                 subheading={`Resources, templates and products published by ${business.name}.`}
                 filter={{ businessId: business.id }}
                 columns={2}
-                emptyTitle="Nothing published yet"
-                emptyMessage={`${business.name} hasn't added any Library items yet.`}
+                hideEmpty
               />
 
               {/* Related businesses */}
