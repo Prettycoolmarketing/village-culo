@@ -141,10 +141,12 @@ export function JoinVillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Free access to Culo Creatives in Canva till January 1st 2027
+                Free till January 1st 2027
               </p>
-              <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight [text-wrap:balance]">
-                Join The Culo Village for Culo Creatives — <span className="text-primary">Exclusively in Canva</span>.
+              <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
+                Join The Culo Village to<br />
+                Access Culo Creatives<br />
+                Exclusively In Canva
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
                 It's time to share your messy thoughts and raw footage into structured social media posts.
@@ -169,7 +171,7 @@ export function JoinVillagePage() {
               </form>
               {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
               <p className="font-body text-xs text-white/40 mt-4">
-                One email, no password needed yet — you'll land straight in your dashboard.
+                Join the culo village for free, no spam emails, culo creatives free access till january 1st 2027
               </p>
             </div>
             <img
