@@ -18,12 +18,12 @@ const HOW_IT_WORKS_STEPS = [
     desc: 'Link the accounts, channels and platforms where your work or knowledge is already spread out.',
   },
   {
-    title: 'Republish for maximum visibility',
-    desc: 'Turn your imported content into valuable blogs, or re-edit your story so it gets seen.',
+    title: 'Republish for ultimate visibility',
+    desc: "Your imported content is restructured into valuable articles linking to its relevant sources, or feel free to re-edit your words.",
   },
   {
     title: 'Village Intelligence connects the dots',
-    desc: 'For AI search-ability — pulling out the topics, questions, ideas, people, skills, keywords and insights hiding inside your work, and connecting each piece back to the bigger story of you.',
+    desc: 'CULO detects your topics, questions/answers, ideas, keywords and insights hiding inside your work, and connects each piece back to you, positioning you as an authority in your field.',
   },
   {
     title: 'Check it, then publish',
