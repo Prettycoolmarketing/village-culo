@@ -52,7 +52,6 @@ import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPag
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
-import { DashboardVillagerPage }     from './pages/dashboard/DashboardVillagerPage'
 import { DashboardWelcomePage }      from './pages/dashboard/DashboardWelcomePage'
 import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
@@ -195,7 +194,10 @@ export default function App() {
             <Route path="media"          element={<DashboardMediaPage />}        />
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
             <Route path="import-content" element={<DashboardImportContentPage />}/>
-            <Route path="villager"       element={<DashboardVillagerPage />}      />
+            {/* Imported content is a Profile > Content subtab now (its own
+                sidebar link for quick access, still fully manageable from
+                Content) — see DashboardLayout's nav. */}
+            <Route path="villager"       element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=imported" replace />} />
             <Route path="welcome"        element={<DashboardWelcomePage />}      />
             {/* Series is its own top-level tab in Profile's Content section now */}
             <Route path="series"         element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=series" replace />} />

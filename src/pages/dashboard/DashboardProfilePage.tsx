@@ -772,13 +772,26 @@ export function DashboardProfilePage() {
     }, { replace: true })
   }
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
-  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published' | 'series'>(() =>
+  // "Imported content" (the raw, platform-filtered list) is reachable from
+  // its own sidebar link right under Import now, not one of the main
+  // Content tabs — it's still this same subtab under the hood (still
+  // "manageable from Content", just not first in line), so URLs/links to it
+  // keep working exactly as before. Ready/Needs more take its place as the
+  // two tabs a founder actually needs day-to-day: what's good to publish
+  // right now, and what still needs work before it can be.
+  const [contentSubTab, setContentSubTab] = useState<'ready' | 'review' | 'imported' | 'published' | 'series'>(() =>
     searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId')
       ? 'published'
       : searchParams.get('contentSubTab') === 'series'
         ? 'series'
-        : 'imported'
+        : searchParams.get('contentSubTab') === 'imported'
+          ? 'imported'
+          : searchParams.get('contentSubTab') === 'review'
+            ? 'review'
+            : 'ready'
   )
+  const [readyChecked, setReadyChecked] = useState<Set<string>>(new Set())
+  const [readyBulkPublishing, setReadyBulkPublishing] = useState(false)
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
   const [editingImportedId, setEditingImportedId] = useState<string | null>(null)
   const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
@@ -834,6 +847,10 @@ export function DashboardProfilePage() {
       setContentSubTab('series')
     } else if (searchParams.get('contentSubTab') === 'imported') {
       setContentSubTab('imported')
+    } else if (searchParams.get('contentSubTab') === 'review') {
+      setContentSubTab('review')
+    } else if (searchParams.get('contentSubTab') === 'ready') {
+      setContentSubTab('ready')
     }
     const platform = searchParams.get('platform')
     if (platform) setImportedPlatformFilter(platform as ImportedContentPlatform)
@@ -1282,16 +1299,127 @@ export function DashboardProfilePage() {
               ))}
             </div>
 
-            <div className="flex gap-2">
-              {(['imported', 'published', 'series'] as const).map(t => (
+            <div className="flex gap-2 flex-wrap">
+              {(['ready', 'review', 'published', 'series'] as const).map(t => (
                 <button key={t} onClick={() => setContentSubTab(t)}
                   className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
                     contentSubTab === t ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
                   }`}>
-                  {t === 'imported' ? 'Imported content' : t === 'published' ? 'Published Content' : 'Series'}
+                  {t === 'ready' ? 'Ready to publish' : t === 'review' ? 'Needs more value' : t === 'published' ? 'Published Content' : 'Series'}
                 </button>
               ))}
             </div>
+
+            {/* Ready / Needs more value — every unpublished import split by
+                whether it already has a real caption and passes the
+                readiness check, across every platform at once. This is
+                where a founder lands right after importing (see the "Go to
+                Content" banner on Import Content) — what's actually
+                actionable right now, not a filter buried per-platform
+                inside the raw Imported content list. */}
+            {(contentSubTab === 'ready' || contentSubTab === 'review') && (() => {
+              void importedTick
+              const allImported = importedContentService.getAll({ founderId: draft.id })
+              const notPublished = allImported.filter(i => !i.relatedStoryId)
+              const isItemReady = (i: ImportedContent) => !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i)
+              const readyItems = notPublished.filter(isItemReady)
+              const reviewItems = notPublished.filter(i => !isItemReady(i))
+              const shownReady = contentSubTab === 'ready' ? readyItems : reviewItems
+
+              function toggleReadyChecked(id: string) {
+                setReadyChecked(prev => {
+                  const next = new Set(prev)
+                  if (next.has(id)) next.delete(id); else next.add(id)
+                  return next
+                })
+              }
+
+              function openInImported(id: string) {
+                setSearchParams(prev => {
+                  const p = new URLSearchParams(prev)
+                  p.set('tab', 'content')
+                  p.set('editImportedId', id)
+                  return p
+                })
+              }
+
+              function handleReadyDelete(id: string) {
+                importedContentService.delete(id)
+                setImportedTick(t => t + 1)
+              }
+
+              async function publishItems(items: ImportedContent[]) {
+                if (!draft || items.length === 0) return
+                setReadyBulkPublishing(true)
+                for (const item of items) {
+                  const story = buildStoryFromImport(item, draft)
+                  const result = await publishStoryCore(story)
+                  if (result.success) await importedContentService.updateStatus(item.id, 'published')
+                  else setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                }
+                setReadyChecked(new Set())
+                setReadyBulkPublishing(false)
+                setImportedTick(t => t + 1)
+              }
+
+              return (
+                <div>
+                  {contentSubTab === 'ready' && readyItems.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 mb-4 px-4 py-2.5 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-lg flex-wrap">
+                      <p className="text-xs text-[#5E6B4A] font-medium">
+                        {readyItems.length} {readyItems.length === 1 ? 'item' : 'items'} already {readyItems.length === 1 ? 'has' : 'have'} a real caption — ready to go live as-is.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {readyChecked.size > 0 && (
+                          <button
+                            onClick={() => void publishItems(readyItems.filter(i => readyChecked.has(i.id)))}
+                            disabled={readyBulkPublishing}
+                            className="shrink-0 px-4 py-2 bg-white border border-[#5E6B4A]/40 text-[#5E6B4A] text-xs font-semibold rounded-lg hover:bg-[#5E6B4A]/10 disabled:opacity-50 transition-colors"
+                          >
+                            Publish {readyChecked.size} selected
+                          </button>
+                        )}
+                        <button
+                          onClick={() => void publishItems(readyItems)}
+                          disabled={readyBulkPublishing}
+                          className="shrink-0 px-4 py-2 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5539] disabled:opacity-50 transition-colors"
+                        >
+                          {readyBulkPublishing ? 'Publishing…' : `Publish all ${readyItems.length} ready`}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {contentSubTab === 'review' && reviewItems.length > 0 && (
+                    <p className="text-xs text-[#9CA3AF] mb-4">
+                      Missing a real caption, a title, or flagged for a look — open one to fix it up, then it'll move to Ready on its own.
+                    </p>
+                  )}
+
+                  {shownReady.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                      <p className="text-sm font-semibold text-[#2D2A26]">
+                        {contentSubTab === 'ready' ? 'Nothing ready to publish yet.' : 'Nothing needs more value — everything imported is ready to go.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                      {shownReady.map(item => (
+                        <SavedRow
+                          key={item.id}
+                          item={item}
+                          checked={readyChecked.has(item.id)}
+                          onToggleCheck={() => toggleReadyChecked(item.id)}
+                          onAdvancedEdit={() => openInImported(item.id)}
+                          onDelete={() => handleReadyDelete(item.id)}
+                          onStatusChange={status => void importedContentService.updateStatus(item.id, status).then(() => setImportedTick(t => t + 1))}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {contentSubTab === 'imported' && (() => {
               void importedTick
