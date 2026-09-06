@@ -1624,20 +1624,19 @@ export function DashboardImportContentPage() {
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Bring your work into the Village</h1>
+        <h1 className="text-2xl font-bold text-[#2D2A26]">Transfer your work into the Village</h1>
         <p className="text-sm text-[#6B7280] mt-1.5 leading-relaxed">
           Your best ideas are probably already out there. Connect your YouTube, podcast or blog and CULO will
-          bring your existing work into one place — embedded from the original source, never re-uploaded or
-          copied away from it. Then give CULO a little context about who you are, so the stories it pulls
-          from that work still sound like you.
+          bring your existing posted content into one place, embedded from the original source, never
+          re-uploaded or copied away from it, just restructured for your ultimate visibility.
         </p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
           {[
-            { title: 'Add your Voice & Brand Brief', desc: 'Give CULO the context it needs to sound like you.' },
-            { title: 'Import all content across channels', desc: 'YouTube, podcasts, blogs, Instagram, Canva — bring it all in.' },
+            { title: 'Connect and import', desc: 'YouTube, Instagram Archives, Podcast episodes, Articles.' },
+            { title: 'Upload your brand brief', desc: "Give Culo's Intelligence context to help shape your story, if needed." },
             { title: 'Organise your series', desc: "Sort what you've imported into the chapters of your story." },
-            { title: 'Publish for discovery', desc: 'Put it live so people, search engines and AI can find it.' },
+            { title: 'Publish for discovery', desc: 'Being in the Village means your expertise positions you and your business as an authority.' },
           ].map((s, i) => (
             <div key={s.title} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4">
               <div className="w-7 h-7 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-xs font-bold shrink-0 mb-2">
