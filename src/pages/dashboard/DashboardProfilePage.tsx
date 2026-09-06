@@ -1379,31 +1379,32 @@ export function DashboardProfilePage() {
                 setImportedTick(t => t + 1)
               }
 
+              function toggleSelectAllReady() {
+                setReadyChecked(prev =>
+                  prev.size === readyItems.length ? new Set() : new Set(readyItems.map(i => i.id))
+                )
+              }
+
               return (
                 <div>
                   {contentSubTab === 'ready' && readyItems.length > 0 && (
-                    <div className="flex items-center justify-between gap-3 mb-4 px-4 py-2.5 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-lg flex-wrap">
-                      <p className="text-xs text-[#5E6B4A] font-medium">
-                        {readyItems.length} {readyItems.length === 1 ? 'item' : 'items'} already {readyItems.length === 1 ? 'has' : 'have'} a real caption — ready to go live as-is.
-                      </p>
-                      <div className="flex items-center gap-2">
-                        {readyChecked.size > 0 && (
-                          <button
-                            onClick={() => void publishItems(readyItems.filter(i => readyChecked.has(i.id)))}
-                            disabled={readyBulkPublishing}
-                            className="shrink-0 px-4 py-2 bg-white border border-[#5E6B4A]/40 text-[#5E6B4A] text-xs font-semibold rounded-lg hover:bg-[#5E6B4A]/10 disabled:opacity-50 transition-colors"
-                          >
-                            Publish {readyChecked.size} selected
-                          </button>
-                        )}
-                        <button
-                          onClick={() => void publishItems(readyItems)}
-                          disabled={readyBulkPublishing}
-                          className="shrink-0 px-4 py-2 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5539] disabled:opacity-50 transition-colors"
-                        >
-                          {readyBulkPublishing ? 'Publishing…' : `Publish all ${readyItems.length} ready`}
-                        </button>
-                      </div>
+                    <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                      <label className="flex items-center gap-2 text-sm font-medium text-[#2D2A26] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={readyChecked.size > 0 && readyChecked.size === readyItems.length}
+                          onChange={toggleSelectAllReady}
+                          className="w-4 h-4 accent-[#C86A43]"
+                        />
+                        Select all ({readyItems.length})
+                      </label>
+                      <button
+                        onClick={() => void publishItems(readyItems.filter(i => readyChecked.has(i.id)))}
+                        disabled={readyChecked.size === 0 || readyBulkPublishing}
+                        className="shrink-0 px-4 py-2 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5539] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {readyBulkPublishing ? 'Publishing…' : `Publish ${readyChecked.size || ''} selected`}
+                      </button>
                     </div>
                   )}
 
