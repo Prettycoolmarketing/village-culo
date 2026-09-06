@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const SITE_NAME = 'CULO Village'
+const SITE_NAME = 'The Culo Village'
 const MARKER    = 'data-page-meta'
 const LD_MARKER = 'data-page-jsonld'
 

@@ -15,6 +15,21 @@ import { SourceIcon } from '../ui/SourceIcon'
 import type { ImportedContent } from '../../types/importedContent'
 import type { ContentType } from '../../types'
 
+// Loads the already-exported slide image just to read its natural
+// dimensions — cheap (it's cached from the export), and it's the only
+// reliable signal we have client-side for whether a Canva design is a
+// vertical Reel template or a landscape/square one. Falls back to
+// 'vertical' (the common case) if the image can't be read for any reason.
+function detectImageOrientation(imageUrl: string | undefined): Promise<'vertical' | 'horizontal'> {
+  return new Promise(resolve => {
+    if (!imageUrl) { resolve('vertical'); return }
+    const img = new Image()
+    img.onload = () => resolve(img.naturalHeight >= img.naturalWidth ? 'vertical' : 'horizontal')
+    img.onerror = () => resolve('vertical')
+    img.src = imageUrl
+  })
+}
+
 // Shared between the Publish wizard's Choose Formats step and the Import
 // Content page — same "pick a design, click the slides you want, done" flow
 // (no forced grouping), just parameterised for where it's used:
@@ -157,7 +172,13 @@ export function CanvaImportCard({
       setBusy(true)
       setStage('Exporting your Reel video — this can take a few minutes…')
       try {
-        reelVideoUrl = await exportCanvaReelVideo(founderId, designId, result.pageNumbers[indices[0]!] ?? indices[0]! + 1, 'vertical')
+        // Orientation comes from the slide itself, not a fixed guess — a
+        // founder's Canva design can just as easily be a landscape deck as
+        // a vertical Reel template, and forcing 'vertical' cropped/stretched
+        // the wrong ones. The already-exported slide image tells us the
+        // real aspect ratio for free.
+        const orientation = await detectImageOrientation(result.imageUrls[indices[0]!])
+        reelVideoUrl = await exportCanvaReelVideo(founderId, designId, result.pageNumbers[indices[0]!] ?? indices[0]! + 1, orientation)
       } catch (err) {
         // Don't discard the slides just because the video failed — the
         // images already exported successfully. Falling back to save them
@@ -230,7 +251,7 @@ export function CanvaImportCard({
         <div className="flex items-center gap-4">
           <SourceIcon platform="canva" size="lg" />
           <div>
-            <p className="text-base font-semibold text-[#2D2A26]">Bring in Canva designs</p>
+            <p className="text-base font-semibold text-[#2D2A26]">Publish your Canva designs</p>
             <p className="text-sm text-[#9CA3AF] mt-0.5">
               {canProceed ? 'Turn your Canva designs into content you can build on in the Village, including blogs, reels and carousels.' : (gateMessage ?? 'Select a format above first.')}
             </p>

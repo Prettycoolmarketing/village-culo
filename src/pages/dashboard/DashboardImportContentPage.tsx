@@ -7,7 +7,6 @@ import { InsightBriefEditor } from '../../components/dashboard/InsightBriefEdito
 import { SourceIcon } from '../../components/ui/SourceIcon'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
-import { getBusinesses } from '../../services/businesses'
 import { getFounder, updateFounder } from '../../services/founders'
 import { partnerService } from '../../services/partner'
 import { getStory } from '../../services/stories'
@@ -857,7 +856,6 @@ interface EditFormProps {
 }
 
 export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
-  const businesses = getBusinesses()
   const activePartners = partnerService.getAll({ status: 'active' })
   const [transcriptFlash, setTranscriptFlash] = useState(false)
   const [shapeTrigger, setShapeTrigger] = useState(0)
@@ -868,7 +866,6 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   // to the rejoined array. Only the array is kept in sync as the founder
   // types; the raw text stays exactly what they typed.
   const [topicsText, setTopicsText] = useState(() => draft.topics.join(', '))
-  const [locationsText, setLocationsText] = useState(() => draft.locations.join(', '))
 
   function field<K extends keyof ImportedContent>(key: K, value: ImportedContent[K]) {
     onChange({ ...draft, [key]: value })
@@ -1029,12 +1026,6 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         <textarea value={draft.description ?? ''}
           onChange={e => field('description', e.target.value || undefined)}
           rows={6} className={TEXTAREA} placeholder="Tell us about your experience with this — what happened, what you learned, why it's worth sharing." />
-        {(draft.description ?? '').trim().length > 0 && (
-          <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
-            className="mt-2 px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors">
-            Shape these as Q&A to boost your online presence
-          </button>
-        )}
       </div>
 
       {/* Search & AI preview — always derived from Title + Subtitle/Blog, no
@@ -1162,25 +1153,6 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
             aspect="auto"
             uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
           />
-        </div>
-      </div>
-
-      {/* Business + Published At */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Related Business</label>
-          <select value={draft.businessId ?? ''}
-            onChange={e => field('businessId', e.target.value || undefined)}
-            className={SELECT}>
-            <option value="">None</option>
-            {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Original Publish Date</label>
-          <input type="date" value={draft.publishedAt ? draft.publishedAt.slice(0, 10) : ''}
-            onChange={e => field('publishedAt', e.target.value || undefined)}
-            className={INPUT} />
         </div>
       </div>
 
@@ -1333,8 +1305,11 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       {/* ── Publishing fields ──────────────────────────────────────────────── */}
       <div className="border-t border-[#E8E4DD] pt-5 mt-4">
 
-        {/* Topics + Locations */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        {/* Topics — Locations is no longer a manual field here: Village
+            Intelligence detects it from the content itself (see the
+            "Locations" AddableSection above), so there's nothing for a
+            founder to type or get wrong. */}
+        <div className="grid grid-cols-1 gap-4 mb-4">
           <div>
             <label className="block text-xs font-semibold text-[#2D2A26] mb-1">
               Topics <span className="font-normal text-[#9CA3AF]">comma-separated</span>
@@ -1342,14 +1317,12 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
             <input type="text" value={topicsText}
               onChange={e => { setTopicsText(e.target.value); field('topics', parseList(e.target.value)) }}
               className={INPUT} placeholder="e.g. marketing, content, strategy" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-[#2D2A26] mb-1">
-              Locations <span className="font-normal text-[#9CA3AF]">comma-separated</span>
-            </label>
-            <input type="text" value={locationsText}
-              onChange={e => { setLocationsText(e.target.value); field('locations', parseList(e.target.value)) }}
-              className={INPUT} placeholder="e.g. Sydney, Melbourne" />
+            {(draft.description ?? '').trim().length > 0 && (
+              <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
+                className="mt-2 px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors">
+                Shape these as Q&A to boost your online presence
+              </button>
+            )}
           </div>
         </div>
 
@@ -1723,13 +1696,22 @@ export function DashboardImportContentPage() {
       {!draft && (
         <div>
           <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web pages in the CULO Village for structured discovery</p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
-            <YouTubeConnectForm
-              founderId={founderId}
-              isHighVolume={isHighVolume}
-              sources={sources.filter(s => s.sourceType === 'youtube')}
-              onConnected={() => { loadSources(); reportImported(1) }}
-            />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
+            <div className="flex flex-col gap-6">
+              <YouTubeConnectForm
+                founderId={founderId}
+                isHighVolume={isHighVolume}
+                sources={sources.filter(s => s.sourceType === 'youtube')}
+                onConnected={() => { loadSources(); reportImported(1) }}
+              />
+
+              <PodcastConnectPanel
+                founderId={founderId}
+                isHighVolume={isHighVolume}
+                sources={sources.filter(s => s.sourceType === 'podcast-rss')}
+                onConnected={() => { loadSources(); reportImported(1) }}
+              />
+            </div>
 
             <div className="flex flex-col gap-6">
               <div ref={instagramCardRef}>
@@ -1743,30 +1725,21 @@ export function DashboardImportContentPage() {
                 />
               </div>
 
-              <div ref={canvaCardRef}>
-                <CanvaImportCard
-                  founderId={founderId}
-                  expanded={canvaExpanded}
-                  onExpandedChange={setCanvaExpanded}
-                  onImported={() => reportImported(1)}
-                />
-              </div>
+              <WebsiteConnectForm
+                founderId={founderId}
+                isHighVolume={isHighVolume}
+                sources={sources.filter(s => s.sourceType === 'website-rss')}
+                onConnected={() => { loadSources(); reportImported(1) }}
+              />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <WebsiteConnectForm
+          <div ref={canvaCardRef}>
+            <CanvaImportCard
               founderId={founderId}
-              isHighVolume={isHighVolume}
-              sources={sources.filter(s => s.sourceType === 'website-rss')}
-              onConnected={() => { loadSources(); reportImported(1) }}
-            />
-
-            <PodcastConnectPanel
-              founderId={founderId}
-              isHighVolume={isHighVolume}
-              sources={sources.filter(s => s.sourceType === 'podcast-rss')}
-              onConnected={() => { loadSources(); reportImported(1) }}
+              expanded={canvaExpanded}
+              onExpandedChange={setCanvaExpanded}
+              onImported={() => reportImported(1)}
             />
           </div>
 

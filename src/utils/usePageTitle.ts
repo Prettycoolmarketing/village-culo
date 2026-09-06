@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const SITE = 'CULO Village'
+const SITE = 'The Culo Village'
 
 /**
  * Sets document.title for the current page.
