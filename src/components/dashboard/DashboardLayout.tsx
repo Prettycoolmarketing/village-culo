@@ -90,31 +90,6 @@ function ProfileTabNavItem({ tabValue, label, icon, hint }: { tabValue: string; 
   )
 }
 
-// Imported content lives right under Import in the sidebar — the raw,
-// platform-filtered list of everything brought in, as distinct from the
-// Ready/Needs more/Published/Series tabs that live at the top of Content
-// itself. Still the same Content > Imported subtab under the hood (still
-// fully manageable from Content), just given its own quick way in from
-// right where content actually enters the Village.
-function ImportedContentNavItem() {
-  const location = useLocation()
-  const params = new URLSearchParams(location.search)
-  const isActive = location.pathname === '/dashboard/profile' && params.get('tab') === 'content' && (params.get('contentSubTab') ?? 'ready') === 'imported'
-  return (
-    <NavLink
-      to="/dashboard/profile?tab=content&contentSubTab=imported"
-      className={
-        `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
-          isActive ? 'bg-[#C86A43] text-white' : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
-        }`
-      }
-    >
-      <Icon path={icons.curated} />
-      Imported Content
-    </NavLink>
-  )
-}
-
 function SectionLabel({ label, large = false }: { label: string; large?: boolean }) {
   // `large` marks a real boundary, not just a grouping — CAPO is the line
   // between what every founder sees and what's staff-only, so it reads as
@@ -258,8 +233,6 @@ export function DashboardLayout() {
             <Icon path={icons.importc} />
             Import
           </NavLink>
-
-          <ImportedContentNavItem />
 
           <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Ready to publish, needs more value, published, and series" />
           <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} />

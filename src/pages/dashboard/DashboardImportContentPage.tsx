@@ -1802,8 +1802,12 @@ export function DashboardImportContentPage() {
 
           {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
 
+          {/* The one way to reach the raw, platform-filtered imported list —
+              no separate sidebar entry for it (having two spots to get to
+              the same list was confusing), just this link, right at the
+              bottom of the page where content actually comes in. */}
           <div className="mt-6 pt-6 border-t border-[#E8E4DD]">
-            <Link to="/dashboard/profile?tab=content" className="text-2xl font-bold text-[#C86A43] hover:underline">
+            <Link to="/dashboard/profile?tab=content&contentSubTab=imported" className="text-2xl font-bold text-[#C86A43] hover:underline">
               View everything you've imported so far
             </Link>
           </div>
