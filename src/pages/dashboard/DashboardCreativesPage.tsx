@@ -61,12 +61,12 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex sm:justify-end">
         <a
           href={hasAccess ? CULO_CANVA_URL : joinUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
+          className="flex justify-center sm:inline-flex items-center gap-2 px-6 py-4 sm:py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors w-full sm:w-auto sm:shrink-0"
         >
           {hasAccess ? 'Create with CULO in Canva' : 'Join Culo Creatives'}
         </a>

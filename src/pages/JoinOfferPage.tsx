@@ -39,7 +39,7 @@ export function JoinOfferPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar dark />
       <main className="min-h-screen bg-background">
         <section className="relative overflow-hidden pt-24 pb-16 md:py-20 text-center" aria-labelledby="offer-heading">
           <div className="absolute inset-0 bg-background" aria-hidden="true">
@@ -77,7 +77,7 @@ export function JoinOfferPage() {
                   href={paymentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                  className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold uppercase tracking-wide rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
                   Lock in Culo Creatives in Canva, forever $19 a month
                 </a>
@@ -86,7 +86,7 @@ export function JoinOfferPage() {
                     high-contrast choice, since this is the less-likely path. */}
                 <Link
                   to="/dashboard/welcome"
-                  className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
+                  className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold uppercase tracking-wide rounded-xl hover:bg-[#1a1815] transition-colors"
                 >
                   Not now, take me to my village dashboard
                 </Link>

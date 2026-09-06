@@ -1805,9 +1805,11 @@ export function DashboardImportContentPage() {
           {/* The one way to reach the raw, platform-filtered imported list —
               no separate sidebar entry for it (having two spots to get to
               the same list was confusing), just this link, right at the
-              bottom of the page where content actually comes in. */}
-          <div className="mt-6 pt-6 border-t border-[#E8E4DD]">
-            <Link to="/dashboard/profile?tab=content&contentSubTab=imported" className="text-2xl font-bold text-[#C86A43] hover:underline">
+              bottom of the page where content actually comes in. Opens
+              straight to Ready to Publish — what's actually actionable —
+              not the raw list itself. */}
+          <div className="mt-6 pt-6 pb-10 border-t border-[#E8E4DD]">
+            <Link to="/dashboard/profile?tab=content&contentSubTab=ready" className="text-2xl font-bold text-[#C86A43] hover:underline">
               View everything you've imported so far
             </Link>
           </div>

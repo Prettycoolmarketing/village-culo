@@ -30,30 +30,16 @@ import { topics as allTopics } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
 import { isSupabaseConfigured } from '../../lib/supabase'
 import { Tabs } from '../../components/dashboard/Tabs'
-import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
 import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { BusinessDiscoveryProfile, BusinessProgramsTab } from '../../components/dashboard/BusinessWorkspace'
 import { StoryEditor } from '../../components/dashboard/StoryEditor'
-import {
-  getFounderMissingItems,
-  type MissingItem,
-} from '../../utils/missingAssets'
 import { getFounderAppearsOn, getBusinessAppearsOn } from '../../utils/appearsOn'
-import { focusField } from '../../utils/focusField'
 import { loadDraft, saveDraft, clearDraft } from '../../utils/draftAutosave'
 import { suggestFaqsFromFounder } from '../../services/founderEnrichment'
 import type { BlogQaPair } from '../../services/importedContentEnrichment'
 import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
-
-// Every existing field keeps its home; this map only changed which tab a
-// recommendation jumps to, not what data exists.
-const FIELD_TO_TAB: Record<string, string> = {
-  avatar: 'overview', coverImage: 'overview', bio: 'overview', socials: 'overview',
-  topics: 'expertise', faqs: 'expertise',
-  website: 'overview',
-}
 
 // AI rewriting (via the founder's own Voice & Brand Brief) costs real
 // Anthropic API spend per call — not something to open up to every founder
@@ -878,7 +864,6 @@ export function DashboardProfilePage() {
     )
   }
 
-  const missing     = getFounderMissingItems(draft)
   const appearsOn  = getFounderAppearsOn(draft.id)
 
   // Relationships — everything this founder is connected to across the Village.
@@ -1091,7 +1076,7 @@ export function DashboardProfilePage() {
       {/* Page header — hidden on Content, which is a focused view of just
           your imported/published items, not the rest of the profile. */}
       {tab !== 'content' && (
-        <div className="flex items-center justify-between px-8 pt-8 pb-5 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-8 pt-8 pb-5 shrink-0">
           <div className="flex items-center gap-4">
             <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover bg-[#F3EDE6]" />
             <div className="flex items-center gap-3">
@@ -1237,35 +1222,30 @@ export function DashboardProfilePage() {
             </div>
 
 
-            <div className="grid grid-cols-5 gap-3">
-              <Link to="/dashboard/profile?tab=businesses" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {/* Businesses drops out on mobile — 5 across was too cramped
+                  for "Businesses" to fit without wrapping; it's still one
+                  tap away from Profile's own Businesses tab. */}
+              <Link to="/dashboard/profile?tab=businesses" className="hidden sm:block bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderBusinesses.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Businesses</p>
               </Link>
-              <Link to="/dashboard/profile?tab=content&contentSubTab=published" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
+              <Link to="/dashboard/profile?tab=content&contentSubTab=published" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderStories.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Stories</p>
               </Link>
-              <Link to="/dashboard/ideas" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
+              <Link to="/dashboard/ideas" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderIdeas.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Ideas</p>
               </Link>
-              <Link to="/dashboard/library" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
+              <Link to="/dashboard/library" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderLibrary.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Library</p>
               </Link>
-              <Link to="/dashboard/media" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4 text-center hover:border-[#C86A43]/40 transition-colors">
+              <Link to="/dashboard/media" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderMedia.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Media</p>
               </Link>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Profile Progress</p>
-              <MissingAssetsPanel
-                items={missing}
-                onAction={(item: MissingItem) => { setTab(FIELD_TO_TAB[item.field] ?? 'overview'); focusField(item.field) }}
-              />
             </div>
 
           </div>
@@ -2160,7 +2140,11 @@ export function DashboardProfilePage() {
               </Field>
             </div>
 
-            <div className="border-t border-[#E8E4DD] pt-5">
+            {/* Hidden on mobile — mostly just the empty "No relationships
+                mapped yet" state, which reads as clutter on a small screen
+                with nothing actionable in it. Still visible on larger
+                screens. */}
+            <div className="hidden sm:block border-t border-[#E8E4DD] pt-5">
               <RelationshipsPanel
                 groups={[
                   {

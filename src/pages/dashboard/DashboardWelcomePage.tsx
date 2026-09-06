@@ -71,7 +71,7 @@ export function DashboardWelcomePage() {
         <div className="flex flex-col sm:items-end gap-3">
           <Link
             to="/dashboard/import-content"
-            className="flex justify-center sm:inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
+            className="flex justify-center sm:inline-flex text-sm font-semibold px-5 py-4 sm:py-2.5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
           >
             Connect your accounts
           </Link>

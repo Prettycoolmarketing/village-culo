@@ -58,7 +58,7 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
         )}
       </div>
 
-      <div className="bg-[#F8F5F0] rounded-lg p-8 flex flex-col gap-4">
+      <div className="bg-[#FBF1EB] rounded-lg p-8 flex flex-col gap-4">
         <textarea
           value={value ?? ''}
           onChange={e => onChange(e.target.value || undefined)}
