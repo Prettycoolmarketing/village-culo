@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { canAccessCapoSection, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
-import { hasCreativeAccess } from '../../utils/creativeAccess'
 import { SetPasswordModal } from './SetPasswordModal'
 import type { ReactNode } from 'react'
 
@@ -243,7 +242,7 @@ export function DashboardLayout() {
             }
           >
             <Icon path={icons.media} />
-            {hasCreativeAccess(founder?.creativeSubscription) ? 'Create with Culo in Canva' : 'Join Culo in Canva'}
+            Culo Creatives in Canva
           </NavLink>
 
           {showCapoNav && (

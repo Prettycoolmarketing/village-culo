@@ -4,7 +4,77 @@ import { getCurrentFounder } from '../../services/currentFounder'
 import { creativeFeedbackService } from '../../services/creativeFeedback'
 import { UPGRADE_PAYMENT_LINK, COLLABORATOR_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
 import { hasCreativeAccess } from '../../utils/creativeAccess'
+import { Tabs, type DashTab } from '../../components/dashboard/Tabs'
 
+const CULO_CANVA_URL = 'https://www.culovillage.com/creatives'
+
+const HOW_IT_WORKS_STEPS = [
+  {
+    title: 'Answer a few personalised questions',
+    desc: 'Complete About You and Shape Your Idea so CULO generates hooks, captions, blogs, carousels and Quick Rhythm reel content in your voice.',
+  },
+  {
+    title: 'Upload your raw footage',
+    desc: 'B-roll, Talking Head, Voice Over, Vlog or Photos — each becomes a different reel or carousel format.',
+  },
+  {
+    title: 'Get social media ready content back',
+    desc: 'Every reel comes subtitled, hooked and captioned, straight out of Canva.',
+  },
+]
+
+// ─── Welcome tab ────────────────────────────────────────────────────────────
+
+function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: string }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-start justify-between gap-6">
+        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">What is CULO Creatives, Exclusively in Canva?</h2>
+        <a
+          href={hasAccess ? CULO_CANVA_URL : joinUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
+        >
+          {hasAccess ? 'Create with CULO in Canva' : 'Join Culo Creatives'}
+        </a>
+      </div>
+
+      <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl">
+        CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
+        content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
+        Village.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {HOW_IT_WORKS_STEPS.map((s, i) => (
+          <div key={s.title} className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5">
+            <div className="w-8 h-8 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-xs font-bold shrink-0 mb-3">
+              {i + 1}
+            </div>
+            <p className="text-sm font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+            <p className="text-xs text-[#9CA3AF] leading-relaxed">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <p className="text-xl font-semibold text-[#2D2A26] mb-6">How to use CULO Creatives in Canva</p>
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+          <iframe
+            src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
+            title="How to publish with CULO"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Submit Feedback tab ────────────────────────────────────────────────────
 // Where a founder gives their one piece of CULO Creatives feedback — doing
 // so locks them into the $19/mo collaborator rate (see
 // submit-creative-feedback Edge Function) rather than the $25/mo rate new
@@ -12,26 +82,30 @@ import { hasCreativeAccess } from '../../utils/creativeAccess'
 // the plan this was built from: asking more than one thing here just adds
 // friction to something that's meant to feel like a quick, genuine check-in.
 
-export function DashboardCreativesPage() {
-  const { user } = useAuth()
-  const founder = getCurrentFounder(user)
+function FeedbackTab({
+  founderId,
+  hasAccess,
+  upgradeUrl,
+  alreadySubmitted,
+  hasBilling,
+  collaboratorUrl,
+}: {
+  founderId: string
+  hasAccess: boolean
+  upgradeUrl: string
+  alreadySubmitted: boolean
+  hasBilling: boolean
+  collaboratorUrl: string
+}) {
   const [answer, setAnswer] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const subscription = founder?.creativeSubscription
-  const alreadySubmitted = !!subscription?.feedbackSubmittedAt
-  const hasAccess = hasCreativeAccess(subscription)
-
-  const upgradeUrl = buildPaymentUrl(UPGRADE_PAYMENT_LINK, founder?.id ?? '', user?.email)
-  const collaboratorUrl = buildPaymentUrl(COLLABORATOR_PAYMENT_LINK, founder?.id ?? '', user?.email)
-  const hasBilling = !!subscription?.stripeSubscriptionId
-
   async function handleSubmit() {
-    if (!founder || !answer.trim()) return
+    if (!answer.trim()) return
     setSubmitting(true)
     setError(null)
-    const result = await creativeFeedbackService.submit({ founderId: founder.id, answer: answer.trim() })
+    const result = await creativeFeedbackService.submit({ founderId, answer: answer.trim() })
     setSubmitting(false)
     if (!result.success) { setError(result.error ?? 'Could not submit feedback. Please try again.'); return }
     // Local optimistic update so the page reflects the lock-in immediately —
@@ -39,12 +113,8 @@ export function DashboardCreativesPage() {
     window.location.reload()
   }
 
-  if (!founder) return null
-
   return (
-    <div className="p-8 max-w-2xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <h1 className="text-2xl font-bold text-[#2D2A26] mb-2">CULO Creatives</h1>
-
+    <div className="max-w-2xl">
       {!hasAccess && (
         <div className="bg-[#C86A43]/10 border border-[#C86A43]/30 rounded-2xl px-8 py-6 mb-6">
           <p className="text-base font-semibold text-[#2D2A26] mb-1">Your free access has ended</p>
@@ -116,6 +186,49 @@ export function DashboardCreativesPage() {
             {submitting ? 'Submitting…' : 'Submit feedback and lock in $19/month'}
           </button>
         </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Page ───────────────────────────────────────────────────────────────────
+
+export function DashboardCreativesPage() {
+  const { user } = useAuth()
+  const founder = getCurrentFounder(user)
+  const [tab, setTab] = useState('welcome')
+
+  const subscription = founder?.creativeSubscription
+  const alreadySubmitted = !!subscription?.feedbackSubmittedAt
+  const hasAccess = hasCreativeAccess(subscription)
+  const hasBilling = !!subscription?.stripeSubscriptionId
+
+  const upgradeUrl = buildPaymentUrl(UPGRADE_PAYMENT_LINK, founder?.id ?? '', user?.email)
+  const collaboratorUrl = buildPaymentUrl(COLLABORATOR_PAYMENT_LINK, founder?.id ?? '', user?.email)
+
+  if (!founder) return null
+
+  const TABS: DashTab[] = [
+    { key: 'welcome', label: 'Welcome' },
+    { key: 'feedback', label: 'Submit Feedback' },
+  ]
+
+  return (
+    <div className="p-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      <h1 className="text-2xl font-bold text-[#2D2A26] mb-6">Culo Creatives in Canva</h1>
+
+      <Tabs tabs={TABS} active={tab} onChange={setTab} className="mb-6" />
+
+      {tab === 'welcome' && <WelcomeTab hasAccess={hasAccess} joinUrl={upgradeUrl} />}
+      {tab === 'feedback' && (
+        <FeedbackTab
+          founderId={founder.id}
+          hasAccess={hasAccess}
+          upgradeUrl={upgradeUrl}
+          alreadySubmitted={alreadySubmitted}
+          hasBilling={hasBilling}
+          collaboratorUrl={collaboratorUrl}
+        />
       )}
     </div>
   )
