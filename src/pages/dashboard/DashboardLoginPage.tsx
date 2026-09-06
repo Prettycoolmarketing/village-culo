@@ -43,7 +43,9 @@ export function DashboardLoginPage() {
       const { error: err } = await signIn(email, password)
       setLoading(false)
       if (err) { setError(err); return }
-      navigate('/dashboard/home')
+      // A returning founder wants to see what's waiting for them, not the
+      // Welcome page again — straight to Content (Ready to Publish).
+      navigate('/dashboard/profile?tab=content')
     } else {
       const { error: err, needsConfirmation } = await signUp(email, password)
       setLoading(false)
