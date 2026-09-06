@@ -33,12 +33,10 @@ import { Tabs } from '../../components/dashboard/Tabs'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
 import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
-import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { BusinessDiscoveryProfile, BusinessProgramsTab } from '../../components/dashboard/BusinessWorkspace'
 import { StoryEditor } from '../../components/dashboard/StoryEditor'
 import {
   getFounderMissingItems,
-  getMissingCounts,
   type MissingItem,
 } from '../../utils/missingAssets'
 import { getFounderAppearsOn, getBusinessAppearsOn } from '../../utils/appearsOn'
@@ -868,7 +866,6 @@ export function DashboardProfilePage() {
   }
 
   const missing     = getFounderMissingItems(draft)
-  const counts      = getMissingCounts(missing)
   const appearsOn  = getFounderAppearsOn(draft.id)
 
   // Relationships — everything this founder is connected to across the Village.
@@ -1050,14 +1047,6 @@ export function DashboardProfilePage() {
             <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover bg-[#F3EDE6]" />
             <div>
               <h1 className="text-xl font-bold text-[#2D2A26]">{draft.name}</h1>
-              <div className="flex items-center gap-3 mt-0.5">
-                <HealthBadge missing={missing} />
-                {counts.total > 0 && (
-                  <span className="text-xs text-[#9CA3AF]">
-                    {counts.total} {counts.total === 1 ? 'recommendation' : 'recommendations'} to grow your profile
-                  </span>
-                )}
-              </div>
             </div>
           </div>
           <div className="flex items-center gap-3">

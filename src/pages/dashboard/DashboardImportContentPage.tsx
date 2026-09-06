@@ -1593,6 +1593,16 @@ export function DashboardImportContentPage() {
     setDraft(item)
   }, [searchParams])
 
+  // Coming back from Canva OAuth (DashboardCanvaCallbackPage redirects here
+  // with ?canvaConnected=1) — auto-expand the card and scroll it into view
+  // so connecting only ever costs the one click that started it, instead of
+  // landing on a fresh page mount that forgot it was mid-import.
+  useEffect(() => {
+    if (searchParams.get('canvaConnected') !== '1') return
+    setCanvaExpanded(true)
+    canvaCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [searchParams])
+
   async function handleSave() {
     if (!draft) return
     setSaveError(null)

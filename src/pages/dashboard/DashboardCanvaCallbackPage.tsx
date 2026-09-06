@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { consumeCanvaPkceVerifier, exchangeCanvaCode } from '../../services/canva'
 
 // Canva redirects the browser here after the founder approves (or denies)
@@ -9,6 +9,7 @@ import { consumeCanvaPkceVerifier, exchangeCanvaCode } from '../../services/canv
 // of Canva's redirect at all.
 export function DashboardCanvaCallbackPage() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [status, setStatus] = useState<'working' | 'done' | 'error'>('working')
   const [error, setError] = useState('')
 
@@ -24,7 +25,15 @@ export function DashboardCanvaCallbackPage() {
     if (!pkce) { setStatus('error'); setError('This connection link expired — try connecting again.'); return }
 
     void exchangeCanvaCode(pkce.founderId, code, pkce.verifier)
-      .then(() => setStatus('done'))
+      .then(() => {
+        setStatus('done')
+        // Auto-return instead of making the founder click "Back to Import
+        // Content" and then press "Import designs" again once there —
+        // ?canvaConnected=1 tells that page to auto-expand the Canva card
+        // and load designs immediately, so connecting only ever costs the
+        // one click that started it.
+        setTimeout(() => navigate('/dashboard/import-content?canvaConnected=1', { replace: true }), 600)
+      })
       .catch(err => { setStatus('error'); setError(err instanceof Error ? err.message : 'Could not connect Canva.') })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -34,12 +43,7 @@ export function DashboardCanvaCallbackPage() {
       <div className="bg-white rounded-2xl border border-[#E8E4DD] p-8 max-w-sm w-full text-center">
         {status === 'working' && <p className="text-sm text-[#6B7280]">Connecting your Canva account…</p>}
         {status === 'done' && (
-          <>
-            <p className="text-sm font-semibold text-[#2D2A26] mb-3">Canva connected</p>
-            <Link to="/dashboard/import-content" className="text-sm text-[#C86A43] font-semibold hover:underline">
-              Back to Import Content →
-            </Link>
-          </>
+          <p className="text-sm font-semibold text-[#2D2A26]">Canva connected — taking you back…</p>
         )}
         {status === 'error' && (
           <>

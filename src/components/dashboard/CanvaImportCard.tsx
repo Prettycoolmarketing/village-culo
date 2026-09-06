@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   isCanvaConfigured,
   getCanvaStatus,
@@ -6,6 +6,7 @@ import {
   listCanvaDesigns,
   importCanvaDesign,
   exportCanvaReelVideo,
+  fetchCanvaSlideTexts,
   type CanvaDesignSummary,
   type CanvaImportResult,
 } from '../../services/canva'
@@ -71,9 +72,7 @@ export function CanvaImportCard({
   // if already connected — loads designs immediately, instead of making the
   // founder click "Publish designs" and then a second "Browse my Canva
   // designs" button right after it.
-  async function handleBrowseClick() {
-    if (!canProceed) return
-    setExpanded(true)
+  async function checkConnectionAndLoad() {
     setError(null)
     let isConnected = connected
     if (isConnected === null) {
@@ -90,6 +89,29 @@ export function CanvaImportCard({
       }
     }
   }
+
+  function handleBrowseClick() {
+    if (!canProceed) return
+    setExpanded(true)
+    void checkConnectionAndLoad()
+  }
+
+  // Covers coming back from the Canva OAuth redirect already connected: the
+  // parent page (DashboardImportContentPage) sets expanded=true once it sees
+  // ?canvaConnected=1, but that alone did nothing here before — this card
+  // still needed its own separate "Import designs" click to actually check
+  // the connection and load designs, meaning the founder pressed what was
+  // functionally the same button twice (once before connecting, once after
+  // being sent back). Firing the same check the moment we're expanded but
+  // haven't checked yet closes that gap.
+  const autoCheckedRef = useRef(false)
+  useEffect(() => {
+    if (expanded && connected === null && !autoCheckedRef.current) {
+      autoCheckedRef.current = true
+      void checkConnectionAndLoad()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded])
 
   async function handlePick(id: string) {
     setError(null)
@@ -147,6 +169,21 @@ export function CanvaImportCard({
       setStage(null)
     }
 
+    // Pull the actual caption/copy text off the selected slides — a real
+    // text-run extraction from the Canva file itself (see canva-export-text),
+    // not OCR guessing at pixels — so a founder doesn't have to retype what
+    // they already wrote in the design just to get a usable caption/blog
+    // starting point. Never blocks the save if it fails or comes back empty.
+    let slideText: string | undefined
+    try {
+      const pageNumbers = indices.map(i => result.pageNumbers[i] ?? i + 1)
+      const { textsByPage } = await fetchCanvaSlideTexts(founderId, designId, pageNumbers)
+      const joined = pageNumbers.map(p => textsByPage[p]).filter(Boolean).join('\n\n').trim()
+      if (joined) slideText = joined
+    } catch {
+      // Non-fatal — the slides/video already exported fine either way.
+    }
+
     // No real destination to send anyone to once re-hosted here — the Canva
     // design page itself isn't meant for public viewers, so it must never
     // become the fallback "view original" link a founder didn't ask for.
@@ -161,6 +198,7 @@ export function CanvaImportCard({
       imageUrls: indices.map(i => result.imageUrls[i]!),
       reelVideoUrl,
       title: indices.length > 1 || groupsCreated === 0 ? result.title : `${result.title} (${groupsCreated + 1})`,
+      description: slideText,
       contentTypeHint: reelVideoUrl && !resolvedHint?.includes('reel') ? [...(resolvedHint ?? []), 'reel'] : resolvedHint,
       importedAt: new Date().toISOString(),
       status: 'draft',
