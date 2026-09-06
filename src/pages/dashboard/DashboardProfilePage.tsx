@@ -770,13 +770,25 @@ export function DashboardProfilePage() {
     }, { replace: true })
   }
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
-  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published' | 'series'>(() =>
+  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published' | 'series' | 'villager'>(() =>
     searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId')
       ? 'published'
       : searchParams.get('contentSubTab') === 'series'
         ? 'series'
-        : 'imported'
+        : searchParams.get('contentSubTab') === 'villager'
+          ? 'villager'
+          : 'imported'
   )
+  // Villager is where a founder lands right after importing — everything
+  // already captioned and ready to check off (Ready) separated from
+  // everything that still needs a caption/blog written before it can go out
+  // (Review), across every platform at once instead of buried per-platform
+  // inside Imported content.
+  const [villagerView, setVillagerView] = useState<'ready' | 'review'>(() =>
+    searchParams.get('villagerView') === 'review' ? 'review' : 'ready'
+  )
+  const [villagerChecked, setVillagerChecked] = useState<Set<string>>(new Set())
+  const [villagerBulkPublishing, setVillagerBulkPublishing] = useState(false)
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
   const [editingImportedId, setEditingImportedId] = useState<string | null>(null)
   const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
@@ -842,6 +854,9 @@ export function DashboardProfilePage() {
       setContentSubTab('published')
     } else if (searchParams.get('contentSubTab') === 'series') {
       setContentSubTab('series')
+    } else if (searchParams.get('contentSubTab') === 'villager') {
+      setContentSubTab('villager')
+      setVillagerView(searchParams.get('villagerView') === 'review' ? 'review' : 'ready')
     } else if (searchParams.get('contentSubTab') === 'imported') {
       setContentSubTab('imported')
     }
@@ -1273,15 +1288,136 @@ export function DashboardProfilePage() {
             </div>
 
             <div className="flex gap-2">
-              {(['imported', 'published', 'series'] as const).map(t => (
+              {(['villager', 'imported', 'published', 'series'] as const).map(t => (
                 <button key={t} onClick={() => setContentSubTab(t)}
                   className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
                     contentSubTab === t ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
                   }`}>
-                  {t === 'imported' ? 'Imported content' : t === 'published' ? 'Published Content' : 'Series'}
+                  {t === 'villager' ? 'Villager' : t === 'imported' ? 'Imported content' : t === 'published' ? 'Published Content' : 'Series'}
                 </button>
               ))}
             </div>
+
+            {/* Villager — where a founder lands right after importing.
+                Splits every unpublished import into what's already
+                captioned and ready to check off (Ready) and what still
+                needs a caption/blog before it can go out (Review), across
+                every platform at once — not a filter buried per-platform
+                inside Imported content. */}
+            {contentSubTab === 'villager' && (() => {
+              void importedTick
+              const allImported = importedContentService.getAll({ founderId: draft.id })
+              const notPublished = allImported.filter(i => !i.relatedStoryId)
+              const isReady = (i: ImportedContent) => !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i)
+              const readyItems = notPublished.filter(isReady)
+              const reviewItems = notPublished.filter(i => !isReady(i))
+              const shownVillager = villagerView === 'ready' ? readyItems : reviewItems
+
+              function toggleVillagerChecked(id: string) {
+                setVillagerChecked(prev => {
+                  const next = new Set(prev)
+                  if (next.has(id)) next.delete(id); else next.add(id)
+                  return next
+                })
+              }
+
+              function openInImported(id: string) {
+                setSearchParams(prev => {
+                  const p = new URLSearchParams(prev)
+                  p.set('tab', 'content')
+                  p.set('editImportedId', id)
+                  return p
+                })
+              }
+
+              function handleVillagerDelete(id: string) {
+                importedContentService.delete(id)
+                setImportedTick(t => t + 1)
+              }
+
+              async function publishItems(items: ImportedContent[]) {
+                if (!draft || items.length === 0) return
+                setVillagerBulkPublishing(true)
+                for (const item of items) {
+                  const story = buildStoryFromImport(item, draft)
+                  const result = await publishStoryCore(story)
+                  if (result.success) await importedContentService.updateStatus(item.id, 'published')
+                  else setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                }
+                setVillagerChecked(new Set())
+                setVillagerBulkPublishing(false)
+                setImportedTick(t => t + 1)
+              }
+
+              return (
+                <div>
+                  <div className="flex gap-2 mb-4">
+                    {(['ready', 'review'] as const).map(v => (
+                      <button key={v} onClick={() => setVillagerView(v)}
+                        className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
+                          villagerView === v ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                        }`}>
+                        {v === 'ready' ? `Ready ${readyItems.length}` : `Review ${reviewItems.length}`}
+                      </button>
+                    ))}
+                  </div>
+
+                  {villagerView === 'ready' && readyItems.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 mb-4 px-4 py-2.5 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-lg flex-wrap">
+                      <p className="text-xs text-[#5E6B4A] font-medium">
+                        {readyItems.length} {readyItems.length === 1 ? 'item' : 'items'} already {readyItems.length === 1 ? 'has' : 'have'} a real caption — ready to go live as-is.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {villagerChecked.size > 0 && (
+                          <button
+                            onClick={() => void publishItems(readyItems.filter(i => villagerChecked.has(i.id)))}
+                            disabled={villagerBulkPublishing}
+                            className="shrink-0 px-4 py-2 bg-white border border-[#5E6B4A]/40 text-[#5E6B4A] text-xs font-semibold rounded-lg hover:bg-[#5E6B4A]/10 disabled:opacity-50 transition-colors"
+                          >
+                            Publish {villagerChecked.size} selected
+                          </button>
+                        )}
+                        <button
+                          onClick={() => void publishItems(readyItems)}
+                          disabled={villagerBulkPublishing}
+                          className="shrink-0 px-4 py-2 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5539] disabled:opacity-50 transition-colors"
+                        >
+                          {villagerBulkPublishing ? 'Publishing…' : `Publish all ${readyItems.length} ready`}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {villagerView === 'review' && reviewItems.length > 0 && (
+                    <p className="text-xs text-[#9CA3AF] mb-4">
+                      Missing a real caption, a title, or flagged for a look — open one to fix it up, then it'll move to Ready on its own.
+                    </p>
+                  )}
+
+                  {shownVillager.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                      <p className="text-sm font-semibold text-[#2D2A26]">
+                        {villagerView === 'ready' ? 'Nothing ready to publish yet.' : 'Nothing needs review — everything imported is ready to go.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                      {shownVillager.map(item => (
+                        <SavedRow
+                          key={item.id}
+                          item={item}
+                          checked={villagerChecked.has(item.id)}
+                          onToggleCheck={() => toggleVillagerChecked(item.id)}
+                          onAdvancedEdit={() => openInImported(item.id)}
+                          onDelete={() => handleVillagerDelete(item.id)}
+                          onStatusChange={status => void importedContentService.updateStatus(item.id, status).then(() => setImportedTick(t => t + 1))}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
 
             {contentSubTab === 'imported' && (() => {
               void importedTick

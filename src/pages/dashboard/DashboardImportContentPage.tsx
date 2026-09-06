@@ -1698,7 +1698,7 @@ export function DashboardImportContentPage() {
             {justImportedCount} {justImportedCount === 1 ? 'item' : 'items'} imported. Review and publish it from Content.
           </p>
           <Link
-            to="/dashboard/profile?tab=content"
+            to="/dashboard/profile?tab=content&contentSubTab=villager&villagerView=ready"
             className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
           >
             Go to Content →
