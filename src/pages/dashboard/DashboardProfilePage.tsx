@@ -770,8 +770,12 @@ export function DashboardProfilePage() {
     }, { replace: true })
   }
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
-  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published'>(() =>
-    searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId') ? 'published' : 'imported'
+  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published' | 'series'>(() =>
+    searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId')
+      ? 'published'
+      : searchParams.get('contentSubTab') === 'series'
+        ? 'series'
+        : 'imported'
   )
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
   const [editingImportedId, setEditingImportedId] = useState<string | null>(null)
@@ -805,7 +809,6 @@ export function DashboardProfilePage() {
   const [importedTick, setImportedTick] = useState(0)
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
   const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
-  const [publishedView, setPublishedView] = useState<'stories' | 'series'>('stories')
   const [activeSeriesId, setActiveSeriesId] = useState<string | null>(null)
   const [addingSeries, setAddingSeries] = useState(false)
   const [newSeriesTitle, setNewSeriesTitle] = useState('')
@@ -837,6 +840,8 @@ export function DashboardProfilePage() {
       }
     } else if (searchParams.get('contentSubTab') === 'published') {
       setContentSubTab('published')
+    } else if (searchParams.get('contentSubTab') === 'series') {
+      setContentSubTab('series')
     } else if (searchParams.get('contentSubTab') === 'imported') {
       setContentSubTab('imported')
     }
@@ -1232,11 +1237,15 @@ export function DashboardProfilePage() {
               </div>
             </Link>
             {/* Real counts only — no invented "storage used" or "last scan"
-                stats, just what's actually in this founder's own content. */}
-            <div className="flex flex-wrap gap-4">
+                stats, just what's actually in this founder's own content.
+                One line always — wrapping onto a second row on a narrower
+                screen made "All content" and the platform stats read as two
+                unrelated groups instead of one row of filters; this scrolls
+                horizontally instead of stacking. */}
+            <div className="flex gap-4 overflow-x-auto pb-1">
               <button
                 onClick={() => { setContentSubTab('imported'); setImportedPlatformFilter('all') }}
-                className={`flex-1 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
+                className={`shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
                   contentSubTab === 'imported' && importedPlatformFilter === 'all' ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
                 }`}
               >
@@ -1250,7 +1259,7 @@ export function DashboardProfilePage() {
                 <button
                   key={p}
                   onClick={() => { setContentSubTab('imported'); setImportedPlatformFilter(p) }}
-                  className={`flex-1 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
+                  className={`shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
                     contentSubTab === 'imported' && importedPlatformFilter === p ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
                   }`}
                 >
@@ -1264,12 +1273,12 @@ export function DashboardProfilePage() {
             </div>
 
             <div className="flex gap-2">
-              {(['imported', 'published'] as const).map(t => (
+              {(['imported', 'published', 'series'] as const).map(t => (
                 <button key={t} onClick={() => setContentSubTab(t)}
                   className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
                     contentSubTab === t ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
                   }`}>
-                  {t === 'imported' ? 'Imported content' : 'Published Content'}
+                  {t === 'imported' ? 'Imported content' : t === 'published' ? 'Published Content' : 'Series'}
                 </button>
               ))}
             </div>
@@ -1883,6 +1892,65 @@ export function DashboardProfilePage() {
               const sortedStories = [...founderStories].sort((a, b) =>
                 publishedSort === 'newest' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
               )
+
+              return founderStories.length === 0 ? (
+                <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                  <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
+                  <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+                    Publish Story
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-end mb-2">
+                    <select
+                      value={publishedSort}
+                      onChange={e => setPublishedSort(e.target.value as 'newest' | 'oldest')}
+                      className="text-xs px-2 py-1.5 rounded-lg border border-[#E8E4DD] bg-white text-[#6B7280] focus:outline-none focus:border-[#C86A43]"
+                    >
+                      <option value="newest">Newest first</option>
+                      <option value="oldest">Oldest first</option>
+                    </select>
+                  </div>
+                  <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                  {sortedStories.map(story => {
+                    return (
+                      <div key={story.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
+                        <button onClick={() => setEditingStoryId(story.id)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
+                          <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
+                            <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
+                          </div>
+                        </button>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                          story.status === 'published' || story.status === 'featured'
+                            ? 'bg-green-100 text-green-700'
+                            : story.status === 'draft'
+                            ? 'bg-[#F3EDE6] text-[#9CA3AF]'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {story.status}
+                        </span>
+                        <ConfirmButton
+                          label="Delete"
+                          confirmLabel="Confirm"
+                          onConfirm={() => { void deleteStory(story.id).then(() => setImportedTick(t => t + 1)) }}
+                          className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0"
+                        />
+                      </div>
+                    )
+                  })}
+                  </div>
+                </>
+              )
+            })()}
+
+            {/* Series used to be a small pill buried inside Published
+                Content — now its own top-level tab next to Imported/
+                Published, styled identically to both, since it's just as
+                real a way of browsing a founder's content as either. */}
+            {contentSubTab === 'series' && (() => {
               const founderSeries = getSeriesList({ founderId: draft.id })
               const activeSeries = activeSeriesId ? founderSeries.find(s => s.id === activeSeriesId) : undefined
 
@@ -1901,137 +1969,68 @@ export function DashboardProfilePage() {
               }
 
               return (
-                <div>
-                  <div className="flex gap-2 mb-4">
-                    <button onClick={() => setPublishedView('stories')}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                        publishedView === 'stories' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                      }`}>
-                      Stories
-                    </button>
-                    <button onClick={() => setPublishedView('series')}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                        publishedView === 'series' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                      }`}>
-                      Series
-                    </button>
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-wrap gap-2">
+                    {founderSeries.map(s => (
+                      <button key={s.id} onClick={() => setActiveSeriesId(s.id)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          activeSeriesId === s.id ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                        }`}>
+                        {s.title || 'Untitled series'}
+                      </button>
+                    ))}
+                    {addingSeries ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={newSeriesTitle}
+                          onChange={e => setNewSeriesTitle(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') void handleAddSeries()
+                            if (e.key === 'Escape') { setAddingSeries(false); setNewSeriesTitle('') }
+                          }}
+                          placeholder="e.g. Van Life"
+                          className="px-3 py-1.5 rounded-lg text-sm border border-[#C86A43]/50 text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 w-40"
+                        />
+                        <button
+                          onClick={() => void handleAddSeries()}
+                          disabled={!newSeriesTitle.trim()}
+                          className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Create
+                        </button>
+                        <button
+                          onClick={() => { setAddingSeries(false); setNewSeriesTitle('') }}
+                          className="px-2 py-1.5 text-sm text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setAddingSeries(true)}
+                        className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-dashed border-[#E8E4DD] text-[#C86A43] hover:border-[#C86A43]/50 transition-colors">
+                        + New Series
+                      </button>
+                    )}
                   </div>
 
-                  {publishedView === 'series' ? (
-                    <div className="flex flex-col gap-5">
-                      <div className="flex flex-wrap gap-2">
-                        {founderSeries.map(s => (
-                          <button key={s.id} onClick={() => setActiveSeriesId(s.id)}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                              activeSeriesId === s.id ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                            }`}>
-                            {s.title || 'Untitled series'}
-                          </button>
-                        ))}
-                        {addingSeries ? (
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="text"
-                              autoFocus
-                              value={newSeriesTitle}
-                              onChange={e => setNewSeriesTitle(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') void handleAddSeries()
-                                if (e.key === 'Escape') { setAddingSeries(false); setNewSeriesTitle('') }
-                              }}
-                              placeholder="e.g. Van Life"
-                              className="px-3 py-1.5 rounded-lg text-sm border border-[#C86A43]/50 text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 w-40"
-                            />
-                            <button
-                              onClick={() => void handleAddSeries()}
-                              disabled={!newSeriesTitle.trim()}
-                              className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            >
-                              Create
-                            </button>
-                            <button
-                              onClick={() => { setAddingSeries(false); setNewSeriesTitle('') }}
-                              className="px-2 py-1.5 text-sm text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button onClick={() => setAddingSeries(true)}
-                            className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-dashed border-[#E8E4DD] text-[#C86A43] hover:border-[#C86A43]/50 transition-colors">
-                            + New Series
-                          </button>
-                        )}
-                      </div>
-
-                      {activeSeries ? (
-                        <SeriesDetail
-                          key={activeSeries.id}
-                          series={activeSeries}
-                          founderId={draft.id}
-                          onBack={() => setActiveSeriesId(null)}
-                          onChanged={() => setImportedTick(t => t + 1)}
-                          onDeleted={() => setActiveSeriesId(null)}
-                        />
-                      ) : founderSeries.length === 0 ? (
-                        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
-                          <p className="text-sm font-semibold text-[#2D2A26]">No series yet.</p>
-                          <p className="text-xs text-[#9CA3AF] mt-1">Start one above — name it, then add your published stories as episodes.</p>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-[#9CA3AF]">Pick a series above to manage it.</p>
-                      )}
-                    </div>
-                  ) : founderStories.length === 0 ? (
+                  {activeSeries ? (
+                    <SeriesDetail
+                      key={activeSeries.id}
+                      series={activeSeries}
+                      founderId={draft.id}
+                      onBack={() => setActiveSeriesId(null)}
+                      onChanged={() => setImportedTick(t => t + 1)}
+                      onDeleted={() => setActiveSeriesId(null)}
+                    />
+                  ) : founderSeries.length === 0 ? (
                     <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
-                      <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
-                      <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
-                        Publish Story
-                      </Link>
+                      <p className="text-sm font-semibold text-[#2D2A26]">No series yet.</p>
+                      <p className="text-xs text-[#9CA3AF] mt-1">Start one above — name it, then add your published stories as episodes.</p>
                     </div>
                   ) : (
-                    <>
-                      <div className="flex justify-end mb-2">
-                        <select
-                          value={publishedSort}
-                          onChange={e => setPublishedSort(e.target.value as 'newest' | 'oldest')}
-                          className="text-xs px-2 py-1.5 rounded-lg border border-[#E8E4DD] bg-white text-[#6B7280] focus:outline-none focus:border-[#C86A43]"
-                        >
-                          <option value="newest">Newest first</option>
-                          <option value="oldest">Oldest first</option>
-                        </select>
-                      </div>
-                      <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                      {sortedStories.map(story => {
-                        return (
-                          <div key={story.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
-                            <button onClick={() => setEditingStoryId(story.id)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
-                              <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
-                                <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
-                              </div>
-                            </button>
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                              story.status === 'published' || story.status === 'featured'
-                                ? 'bg-green-100 text-green-700'
-                                : story.status === 'draft'
-                                ? 'bg-[#F3EDE6] text-[#9CA3AF]'
-                                : 'bg-amber-100 text-amber-700'
-                            }`}>
-                              {story.status}
-                            </span>
-                            <ConfirmButton
-                              label="Delete"
-                              confirmLabel="Confirm"
-                              onConfirm={() => { void deleteStory(story.id).then(() => setImportedTick(t => t + 1)) }}
-                              className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0"
-                            />
-                          </div>
-                        )
-                      })}
-                      </div>
-                    </>
+                    <p className="text-xs text-[#9CA3AF]">Pick a series above to manage it.</p>
                   )}
                 </div>
               )
