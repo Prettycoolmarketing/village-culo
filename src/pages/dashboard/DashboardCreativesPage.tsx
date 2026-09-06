@@ -28,17 +28,7 @@ const HOW_IT_WORKS_STEPS = [
 function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: string }) {
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-6">
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">What is CULO Creatives, Exclusively in Canva?</h2>
-        <a
-          href={hasAccess ? CULO_CANVA_URL : joinUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
-        >
-          {hasAccess ? 'Create with CULO in Canva' : 'Join Culo Creatives'}
-        </a>
-      </div>
+      <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">What is CULO Creatives, Exclusively in Canva?</h2>
 
       <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl">
         CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
@@ -69,6 +59,17 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
             className="absolute inset-0 w-full h-full"
           />
         </div>
+      </div>
+
+      <div className="flex justify-end">
+        <a
+          href={hasAccess ? CULO_CANVA_URL : joinUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors shrink-0"
+        >
+          {hasAccess ? 'Create with CULO in Canva' : 'Join Culo Creatives'}
+        </a>
       </div>
     </div>
   )

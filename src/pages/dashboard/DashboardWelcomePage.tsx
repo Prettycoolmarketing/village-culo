@@ -1,82 +1,88 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
+import { hasCreativeAccess } from '../../utils/creativeAccess'
+import { UPGRADE_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
 
 // Landing spot for orientation and promotion — everything that used to be
 // bolted onto Publish or Import Content (How it works, what the Voice Brief
-// is for, the CULO Creatives pitch + walkthrough) lives here instead, so
-// those task pages stay focused on the one thing they're for. Laid out as a
-// single top-to-bottom story rather than a two-column split, so it reads in
-// the order a brand-new founder actually needs it: what this is → how it
-// works → how to make the content itself → watch it happen.
+// is for) lives here instead, so those task pages stay focused on the one
+// thing they're for. The CULO Creatives pitch + walkthrough itself moved to
+// its own Welcome tab on the Culo Creatives in Canva page.
+
+const CULO_CANVA_URL = 'https://www.culovillage.com/creatives'
 
 const HOW_IT_WORKS_STEPS = [
   {
-    title: 'Pick what you want to publish',
-    desc: "Start with a video, story, blog, podcast, Canva design or something you've already imported.",
-    icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
+    title: 'Connect and import your life’s work',
+    desc: 'Directly from the accounts, channels and platforms your work or knowledge is already spread out across.',
   },
   {
-    title: 'Add the story around it',
-    desc: 'Give CULO the context that makes the piece worth finding. What happened? What did you learn? Why does it matter now?',
-    icon: <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />,
+    title: 'Republish for maximum visibility',
+    desc: 'Turn your imported content into valuable blogs, or re-edit your story so it gets seen.',
   },
   {
-    title: 'Let Village Intelligence connect the dots',
-    desc: 'CULO helps pull out the topics, questions, ideas, people, skills, keywords and insights hiding inside your work — connecting each piece back to the bigger story of you.',
-    icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.99-2.386l-.548-.547z" />,
+    title: 'Village Intelligence connects the dots',
+    desc: 'For AI search-ability — pulling out the topics, questions, ideas, people, skills, keywords and insights hiding inside your work, and connecting each piece back to the bigger story of you.',
   },
   {
     title: 'Check it, then publish',
-    desc: "You're always in control. Preview the story, make changes and publish it to the Village when you're happy with it.",
-    icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
+    desc: "You're always in control. Preview the story, make changes and publish it to the Village when you're happy with your story.",
   },
 ]
 
-// Billing is stubbed in this phase (see the launch plan) — this checks only
-// the founder's creativeSubscription status flag, no live Stripe call.
-// Founders with no subscription record at all (pre-existing/curated
-// profiles from before this launched) are treated as having access rather
-// than being blocked by a field that predates them.
 export function DashboardWelcomePage() {
+  const { user } = useAuth()
+  const founder = getCurrentFounder(user)
+  const canUseCreatives = hasCreativeAccess(founder?.creativeSubscription)
+  const upgradeUrl = buildPaymentUrl(UPGRADE_PAYMENT_LINK, founder?.id ?? '', user?.email)
+
   return (
     <div className="p-8 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* ── Welcome ───────────────────────────────────────────────────────── */}
       {/* Matches the px-8 sm:px-12 inner padding every section below uses, so
           the heading text lines up with the box content instead of sitting
           flush with the outer page edge. */}
-      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] px-8 sm:px-12">Welcome to CULO Village</h1>
+      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] px-8 sm:px-12">Welcome to The Culo Village</h1>
 
       {/* Every section below spans the full width of the content pane (not
           boxed into a narrower max-width column) but keeps its own rounded
           corners rather than running edge-to-edge square. */}
 
-      {/* ── How CULO Village Works ───────────────────────────────────────── */}
+      {/* ── How The Culo Village Works ───────────────────────────────────── */}
       <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
-        <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">How CULO Village Works</h2>
+        <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">How The Culo Village Works</h2>
         <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
-          CULO Village brings the work you've already created into one connected place. Your YouTube videos,
-          podcasts, blogs, Instagram posts, Canva designs and stories can all become part of your Village
-          profile.
+          The Culo Village structures your previously posted content from disconnected channels and accounts
+          across platforms like YouTube, podcasts, Instagram and blogs, and republishes them as individual web
+          articles for AI search-ability and to position you as an authority in your field.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {HOW_IT_WORKS_STEPS.map(s => (
+          {HOW_IT_WORKS_STEPS.map((s, i) => (
             <div key={s.title}>
-              <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  {s.icon}
-                </svg>
+              <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
+                {i + 1}
               </div>
               <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
               <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
             </div>
           ))}
         </div>
-        <div className="flex justify-end">
+        <div className="flex flex-col items-end gap-3">
           <Link
             to="/dashboard/import-content"
             className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
           >
-            Set up your Voice &amp; Brand Brief →
+            Connect your accounts →
           </Link>
+          <a
+            href={canUseCreatives ? CULO_CANVA_URL : upgradeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+          >
+            Create with Culo Creatives in Canva
+          </a>
         </div>
       </section>
     </div>
