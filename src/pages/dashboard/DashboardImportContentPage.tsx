@@ -284,10 +284,7 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
         <p className="text-base font-semibold text-[#2D2A26]">Connect YouTube</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Bring your YouTube back catalogue into the Village and turn old videos into new stories, blogs and ideas.
-        {isHighVolume
-          ? ` Up to ${HIGH_VOLUME_DAILY_LIMIT.toLocaleString()} videos a day.`
-          : ' Up to 20 previous videos a day — enough to write a real story about each one, not just dump years of content at once.'}
+        Bring your YouTube back catalogue into the Village and turn old videos into new stories,
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -1713,56 +1710,60 @@ export function DashboardImportContentPage() {
       {!draft && (
         <div>
           <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web pages in the CULO Village for structured discovery</p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-start">
-            <div className="flex flex-col gap-6">
+          {/* A real 2-column grid with each card explicitly placed by row,
+              not two independent flex columns — flex columns have no idea
+              how tall the other column's cards are, so a taller YouTube
+              card (more copy) than Instagram Archive left every card below
+              it out of step no matter how much margin got added by hand.
+              Placing cards by grid row means row 1's height is driven by
+              whichever of YouTube/Instagram is taller, row 2 by whichever
+              of Podcast/Blog is taller, and so on — top edges always align. */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
+            <div className="lg:col-start-1 lg:row-start-1">
               <YouTubeConnectForm
                 founderId={founderId}
                 isHighVolume={isHighVolume}
                 sources={sources.filter(s => s.sourceType === 'youtube')}
                 onConnected={() => { loadSources(); reportImported(1) }}
               />
-
-              {/* Extra breathing room here specifically — the YouTube card
-                  runs taller than Instagram Archive on the right (more
-                  copy), so the standard gap alone left Podcast starting
-                  noticeably higher than Connect your blogs beside it. */}
-              <div className="mt-8">
-                <PodcastConnectPanel
-                  founderId={founderId}
-                  isHighVolume={isHighVolume}
-                  sources={sources.filter(s => s.sourceType === 'podcast-rss')}
-                  onConnected={() => { loadSources(); reportImported(1) }}
-                />
-              </div>
             </div>
 
-            <div className="flex flex-col gap-6">
-              <div ref={instagramCardRef}>
-                <InstagramArchiveImportCard
-                  founderId={founderId}
-                  voiceBrief={canUseVoiceRewrite ? founder?.voiceBrief : undefined}
-                  insightBrief={canUseVoiceRewrite ? founder?.insightBrief : undefined}
-                  expanded={instagramExpanded}
-                  onExpandedChange={setInstagramExpanded}
-                  onImported={count => reportImported(count)}
-                />
-              </div>
+            <div ref={instagramCardRef} className="lg:col-start-2 lg:row-start-1">
+              <InstagramArchiveImportCard
+                founderId={founderId}
+                voiceBrief={canUseVoiceRewrite ? founder?.voiceBrief : undefined}
+                insightBrief={canUseVoiceRewrite ? founder?.insightBrief : undefined}
+                expanded={instagramExpanded}
+                onExpandedChange={setInstagramExpanded}
+                onImported={count => reportImported(count)}
+              />
+            </div>
 
+            <div className="lg:col-start-1 lg:row-start-2">
+              <PodcastConnectPanel
+                founderId={founderId}
+                isHighVolume={isHighVolume}
+                sources={sources.filter(s => s.sourceType === 'podcast-rss')}
+                onConnected={() => { loadSources(); reportImported(1) }}
+              />
+            </div>
+
+            <div className="lg:col-start-2 lg:row-start-2">
               <WebsiteConnectForm
                 founderId={founderId}
                 isHighVolume={isHighVolume}
                 sources={sources.filter(s => s.sourceType === 'website-rss')}
                 onConnected={() => { loadSources(); reportImported(1) }}
               />
+            </div>
 
-              <div ref={canvaCardRef}>
-                <CanvaImportCard
-                  founderId={founderId}
-                  expanded={canvaExpanded}
-                  onExpandedChange={setCanvaExpanded}
-                  onImported={() => reportImported(1)}
-                />
-              </div>
+            <div ref={canvaCardRef} className="lg:col-start-2 lg:row-start-3">
+              <CanvaImportCard
+                founderId={founderId}
+                expanded={canvaExpanded}
+                onExpandedChange={setCanvaExpanded}
+                onImported={() => reportImported(1)}
+              />
             </div>
           </div>
 
