@@ -1305,7 +1305,7 @@ export function DashboardProfilePage() {
                   className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
                     contentSubTab === t ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
                   }`}>
-                  {t === 'ready' ? 'Ready to publish' : t === 'review' ? 'Needs more value' : t === 'published' ? 'Published Content' : 'Series'}
+                  {t === 'ready' ? 'Ready to Publish' : t === 'review' ? 'Needs More Value' : t === 'published' ? 'Published Content' : 'Series'}
                 </button>
               ))}
             </div>

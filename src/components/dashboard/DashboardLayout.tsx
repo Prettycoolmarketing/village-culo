@@ -110,7 +110,7 @@ function ImportedContentNavItem() {
       }
     >
       <Icon path={icons.curated} />
-      Imported content
+      Imported Content
     </NavLink>
   )
 }
