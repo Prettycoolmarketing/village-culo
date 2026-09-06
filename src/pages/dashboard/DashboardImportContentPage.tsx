@@ -776,10 +776,22 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
                     <li key={i} className="border border-[#E8E4DD] rounded-lg p-2.5 bg-white">
                       <div className="flex items-center justify-between gap-2 mb-1.5">
                         <span className="text-[11px] font-medium text-[#2D2A26] flex-1">{pair.question}</span>
-                        {isSaved && (
+                        {isSaved ? (
                           <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full border shrink-0 border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A]">
                             ✓ Saved
                           </span>
+                        ) : (
+                          // For when Village Intelligence gets it wrong — too
+                          // AI-sounding, off-base, or just not a question the
+                          // founder wants to answer. Drops just this one
+                          // suggestion; once they've cleared every one, the
+                          // whole "Questions this content answers" box goes
+                          // away with them (guarded by blogQaPairs.length above).
+                          <button type="button"
+                            onClick={() => setBlogQaPairs(prev => prev.filter((_, j) => j !== i))}
+                            className="shrink-0 text-[9px] font-semibold text-[#9CA3AF] hover:text-red-500 px-1.5">
+                            Remove
+                          </button>
                         )}
                       </div>
                       {!isSaved && (
@@ -858,7 +870,12 @@ interface EditFormProps {
 export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   const activePartners = partnerService.getAll({ status: 'active' })
   const [transcriptFlash, setTranscriptFlash] = useState(false)
-  const [shapeTrigger, setShapeTrigger] = useState(0)
+  // Content imported with a real blog/caption already written (a blog import,
+  // or Canva text pulled off a slide) has enough to shape into Q&A straight
+  // away — no reason to make a founder find and click the button themselves
+  // when there's already something worth analysing. Anything shorter than a
+  // couple of sentences starts closed, same as before.
+  const [shapeTrigger, setShapeTrigger] = useState(() => (draft.description ?? '').trim().split(/\s+/).filter(Boolean).length > 20 ? 1 : 0)
   // Raw text, not derived from draft.topics.join(', ') on every keystroke —
   // typing a trailing comma (about to start the next item) was getting
   // immediately stripped back out because parseList().filter(Boolean) drops
