@@ -8,7 +8,6 @@ import {
   exportCanvaReelVideo,
   fetchCanvaSlideTexts,
   type CanvaDesignSummary,
-  type CanvaImportResult,
 } from '../../services/canva'
 import { importedContentService } from '../../services/importedContent'
 import { SourceIcon } from '../ui/SourceIcon'
@@ -28,6 +27,18 @@ function detectImageOrientation(imageUrl: string | undefined): Promise<'vertical
     img.onerror = () => resolve('vertical')
     img.src = imageUrl
   })
+}
+
+// One flat slide pool, each slide tagged with the design it actually came
+// from — a founder batching several Canva designs in one sitting picks all
+// of them up front, then groups slides into pieces without caring which
+// design each slide belongs to. designId/pageNumber travel per-slide since
+// Reel export and text extraction are both scoped to one design at a time.
+interface CombinedResult {
+  imageUrls: string[]
+  pageNumbers: number[]
+  designIds: string[]
+  designTitles: Record<string, string>
 }
 
 // Shared between the Publish wizard's Choose Formats step and the Import
@@ -67,8 +78,13 @@ export function CanvaImportCard({
   const [connected, setConnected] = useState<boolean | null>(null)
   const [designs, setDesigns] = useState<CanvaDesignSummary[]>([])
   const [designsLoaded, setDesignsLoaded] = useState(false)
-  const [designId, setDesignId] = useState('')
-  const [result, setResult] = useState<CanvaImportResult | null>(null)
+  // A founder doing a real content batch has many designs to get through in
+  // one sitting, not one — so the browse grid is multi-select, and picking
+  // several imports all of them into one combined slide pool the founder
+  // groups from, rather than forcing a full "pick, group, done, browse
+  // again" round trip per design.
+  const [pickedDesignIds, setPickedDesignIds] = useState<Set<string>>(new Set())
+  const [result, setResult] = useState<CombinedResult | null>(null)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -128,20 +144,48 @@ export function CanvaImportCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded])
 
-  async function handlePick(id: string) {
+  function toggleDesignPick(id: string) {
+    setPickedDesignIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  // Imports every design the founder checked, one Canva export call each
+  // (Canva's export API is per-design, no batch endpoint), and flattens them
+  // into one slide pool tagged by origin. One design failing to export
+  // doesn't lose the rest — it's reported alongside whatever did come in.
+  async function handleImportPicked() {
+    if (pickedDesignIds.size === 0) return
     setError(null)
-    setDesignId(id)
     setBusy(true)
-    try {
-      setResult(await importCanvaDesign(founderId, id))
+    const imageUrls: string[] = []
+    const pageNumbers: number[] = []
+    const designIds: string[] = []
+    const designTitles: Record<string, string> = {}
+    const failed: string[] = []
+    for (const id of pickedDesignIds) {
+      try {
+        const imported = await importCanvaDesign(founderId, id)
+        designTitles[id] = imported.title
+        imported.imageUrls.forEach((url, i) => {
+          imageUrls.push(url)
+          pageNumbers.push(imported.pageNumbers[i] ?? i + 1)
+          designIds.push(id)
+        })
+      } catch (err) {
+        failed.push(designs.find(d => d.id === id)?.title ?? id)
+      }
+    }
+    if (failed.length > 0) setError(`Couldn't import: ${failed.join(', ')}. The rest are ready below.`)
+    if (imageUrls.length > 0) {
+      setResult({ imageUrls, pageNumbers, designIds, designTitles })
       setSelected(new Set())
       setUsedIndices(new Set())
       setGroupsCreated(0)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not import that design.')
-    } finally {
-      setBusy(false)
     }
+    setBusy(false)
   }
 
   function toggleSlide(i: number) {
@@ -178,7 +222,7 @@ export function CanvaImportCard({
         // the wrong ones. The already-exported slide image tells us the
         // real aspect ratio for free.
         const orientation = await detectImageOrientation(result.imageUrls[indices[0]!])
-        reelVideoUrl = await exportCanvaReelVideo(founderId, designId, result.pageNumbers[indices[0]!] ?? indices[0]! + 1, orientation)
+        reelVideoUrl = await exportCanvaReelVideo(founderId, result.designIds[indices[0]!]!, result.pageNumbers[indices[0]!] ?? indices[0]! + 1, orientation)
       } catch (err) {
         // Don't discard the slides just because the video failed — the
         // images already exported successfully. Falling back to save them
@@ -195,21 +239,29 @@ export function CanvaImportCard({
     // not OCR guessing at pixels — so a founder doesn't have to retype what
     // they already wrote in the design just to get a usable caption/blog
     // starting point. Never blocks the save if it fails or comes back empty.
-    let slideText: string | undefined
-    try {
-      const pageNumbers = indices.map(i => result.pageNumbers[i] ?? i + 1)
-      const { textsByPage } = await fetchCanvaSlideTexts(founderId, designId, pageNumbers)
-      const joined = pageNumbers.map(p => textsByPage[p]).filter(Boolean).join('\n\n').trim()
-      if (joined) slideText = joined
-    } catch {
-      // Non-fatal — the slides/video already exported fine either way.
+    // A single group can mix slides from more than one imported design now,
+    // so this fetches per-design (the export API is scoped that way) and
+    // stitches the answers back together in the founder's selection order.
+    const slideTexts: string[] = []
+    for (const designId of [...new Set(indices.map(i => result.designIds[i]))]) {
+      const pagesForDesign = indices
+        .filter(i => result.designIds[i] === designId)
+        .map(i => result.pageNumbers[i] ?? i + 1)
+      try {
+        const { textsByPage } = await fetchCanvaSlideTexts(founderId, designId!, pagesForDesign)
+        pagesForDesign.forEach(p => { if (textsByPage[p]) slideTexts.push(textsByPage[p]!) })
+      } catch {
+        // Non-fatal — the slides/video already exported fine either way.
+      }
     }
+    const slideText = slideTexts.join('\n\n').trim() || undefined
 
     // No real destination to send anyone to once re-hosted here — the Canva
     // design page itself isn't meant for public viewers, so it must never
     // become the fallback "view original" link a founder didn't ask for.
     const resolvedHint = contentTypeHint
       ?? (asType === 'reel' ? ['reel' as const] : asType === 'carousel' ? ['carousel' as const] : undefined)
+    const groupTitle = result.designTitles[result.designIds[indices[0]!]!] ?? 'Canva design'
     const item: ImportedContent = {
       id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       founderId,
@@ -218,7 +270,7 @@ export function CanvaImportCard({
       thumbnailUrl: result.imageUrls[indices[0]!],
       imageUrls: indices.map(i => result.imageUrls[i]!),
       reelVideoUrl,
-      title: indices.length > 1 || groupsCreated === 0 ? result.title : `${result.title} (${groupsCreated + 1})`,
+      title: indices.length > 1 || groupsCreated === 0 ? groupTitle : `${groupTitle} (${groupsCreated + 1})`,
       description: slideText,
       contentTypeHint: reelVideoUrl && !resolvedHint?.includes('reel') ? [...(resolvedHint ?? []), 'reel'] : resolvedHint,
       importedAt: new Date().toISOString(),
@@ -283,14 +335,31 @@ export function CanvaImportCard({
           )}
 
           {connected === true && !result && designs.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-              {designs.map(d => (
-                <button key={d.id} type="button" onClick={() => void handlePick(d.id)} disabled={busy}
-                  className="text-left rounded-lg overflow-hidden border border-[#E8E4DD] hover:border-[#C86A43]/40 transition-colors disabled:opacity-50">
-                  {d.thumbnailUrl && <img src={d.thumbnailUrl} alt="" className="w-full aspect-video object-cover bg-[#F3EDE6]" />}
-                  <p className="text-[11px] text-[#2D2A26] px-2 py-1.5 truncate">{d.title}</p>
-                </button>
-              ))}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Tick every design you want to work through — then import them all at once</p>
+                {pickedDesignIds.size > 0 && (
+                  <button type="button" onClick={() => void handleImportPicked()} disabled={busy}
+                    className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
+                    {busy ? 'Importing…' : `Import ${pickedDesignIds.size} design${pickedDesignIds.size === 1 ? '' : 's'}`}
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {designs.map(d => {
+                  const isPicked = pickedDesignIds.has(d.id)
+                  return (
+                    <button key={d.id} type="button" onClick={() => toggleDesignPick(d.id)} disabled={busy}
+                      className={`text-left rounded-lg overflow-hidden border-2 transition-colors relative disabled:opacity-50 ${
+                        isPicked ? 'border-[#C86A43]' : 'border-transparent hover:border-[#E8E4DD]'
+                      }`}>
+                      {d.thumbnailUrl && <img src={d.thumbnailUrl} alt="" className="w-full aspect-video object-cover bg-[#F3EDE6]" />}
+                      <p className="text-[11px] text-[#2D2A26] px-2 py-1.5 truncate">{d.title}</p>
+                      {isPicked && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C86A43] text-white text-[9px] flex items-center justify-center">✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           )}
 
@@ -340,9 +409,9 @@ export function CanvaImportCard({
                     Save as Reel
                   </button>
                   {(usedIndices.size > 0 || groupsCreated > 0) && (
-                    <button type="button" onClick={() => setResult(null)}
+                    <button type="button" onClick={() => { setResult(null); setPickedDesignIds(new Set()) }}
                       className="ml-auto text-xs font-semibold text-[#5E6B4A] hover:underline">
-                      Done — browse another design
+                      Done — pick more designs
                     </button>
                   )}
                 </div>
