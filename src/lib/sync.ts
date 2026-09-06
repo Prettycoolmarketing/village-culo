@@ -12,6 +12,7 @@ const SYNCED_TABLES: Array<{ table: string; cacheKey: string }> = [
   { table: 'founders',                       cacheKey: 'founders' },
   { table: 'businesses',                     cacheKey: 'businesses' },
   { table: 'stories',                        cacheKey: 'stories' },
+  { table: 'series',                         cacheKey: 'series' },
   { table: 'library_items',                  cacheKey: 'library' },
   { table: 'services',                       cacheKey: 'services' },
   { table: 'ideas',                          cacheKey: 'ideas' },
