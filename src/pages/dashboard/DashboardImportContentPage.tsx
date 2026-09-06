@@ -1748,16 +1748,16 @@ export function DashboardImportContentPage() {
                 sources={sources.filter(s => s.sourceType === 'website-rss')}
                 onConnected={() => { loadSources(); reportImported(1) }}
               />
-            </div>
-          </div>
 
-          <div ref={canvaCardRef}>
-            <CanvaImportCard
-              founderId={founderId}
-              expanded={canvaExpanded}
-              onExpandedChange={setCanvaExpanded}
-              onImported={() => reportImported(1)}
-            />
+              <div ref={canvaCardRef}>
+                <CanvaImportCard
+                  founderId={founderId}
+                  expanded={canvaExpanded}
+                  onExpandedChange={setCanvaExpanded}
+                  onImported={() => reportImported(1)}
+                />
+              </div>
+            </div>
           </div>
 
           {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
