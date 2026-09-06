@@ -52,6 +52,7 @@ import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPag
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
+import { DashboardVillagerPage }     from './pages/dashboard/DashboardVillagerPage'
 import { DashboardWelcomePage }      from './pages/dashboard/DashboardWelcomePage'
 import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
@@ -194,9 +195,10 @@ export default function App() {
             <Route path="media"          element={<DashboardMediaPage />}        />
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
             <Route path="import-content" element={<DashboardImportContentPage />}/>
+            <Route path="villager"       element={<DashboardVillagerPage />}      />
             <Route path="welcome"        element={<DashboardWelcomePage />}      />
-            {/* Series management moved into Profile's Content tab (Published > Series) — one spot to manage it */}
-            <Route path="series"         element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=published" replace />} />
+            {/* Series is its own top-level tab in Profile's Content section now */}
+            <Route path="series"         element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=series" replace />} />
             <Route path="canva/callback" element={<DashboardCanvaCallbackPage />}/>
             {/* Opportunities, Revenue, Claims, Spotlight, Sources and Partners
                 are now sub-tabs of one "Opportunities" hub (see

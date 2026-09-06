@@ -1,5 +1,17 @@
 import type { Location } from '../types'
 
+// A brand-new founder record needs *some* Location to satisfy the type
+// (Founder.location isn't optional) before they've told us anything real —
+// this deliberately isn't locations[0] (Brisbane), which used to be the
+// default and made every fresh signup's profile read as if they were based
+// in Brisbane before they'd entered a single detail. Not part of the real
+// directory list, so it never appears in "Explore by Location" or matches
+// any <select> option — display code should treat id === 'unset' as "ask
+// them to fill this in" rather than showing it as a real place.
+export const UNSET_LOCATION: Location = {
+  id: 'unset', slug: 'unset', name: '', state: '', country: '', description: '', image: '',
+}
+
 // Comprehensive Australia-wide list — every state and territory capital plus
 // the regional centres founders actually come from. If someone still can't
 // find their city, Onboarding's Location field offers an "Other" option that

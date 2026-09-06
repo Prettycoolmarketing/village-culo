@@ -2,8 +2,8 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { store } from '../lib/store'
 import { updateFounder } from './founders'
 import { linkOwnFounder } from './currentFounder'
-import { locations } from '../data/locations'
-import { industries } from '../data/industries'
+import { UNSET_LOCATION } from '../data/locations'
+import { UNSET_INDUSTRY } from '../data/industries'
 import { slugify } from '../utils/slugify'
 import type { Founder } from '../types'
 
@@ -46,8 +46,12 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
     name: email.split('@')[0] || 'New Founder',
     bio: '',
     avatar: '/placeholders/village-founder.svg',
-    location: locations[0]!,
-    industry: industries[0]!,
+    // Deliberately not locations[0]/industries[0] — this founder hasn't told
+    // us anything yet (just an email/password), so their profile shouldn't
+    // read as if they're a Brisbane marketer before they've filled in a
+    // single real detail. See UNSET_LOCATION/UNSET_INDUSTRY.
+    location: UNSET_LOCATION,
+    industry: UNSET_INDUSTRY,
     businessId: '',
     topics: [],
     status: 'draft',

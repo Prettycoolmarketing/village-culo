@@ -115,7 +115,7 @@ function FeedbackTab({
   }
 
   return (
-    <div className="max-w-2xl">
+    <div>
       {!hasAccess && (
         <div className="bg-[#C86A43]/10 border border-[#C86A43]/30 rounded-2xl px-8 py-6 mb-6">
           <p className="text-base font-semibold text-[#2D2A26] mb-1">Your free access has ended</p>
@@ -164,28 +164,37 @@ function FeedbackTab({
             <strong className="text-[#2D2A26] font-semibold">January 1, 2027</strong> to keep using CULO
             Creatives past that date.
           </p>
-          <label className="block text-sm font-semibold text-[#2D2A26] mb-2">
-            What did you love and dislike about CULO Creatives?
-          </label>
-          <p className="text-xs text-[#9CA3AF] mb-3">
-            Your feedback helps us improve, and we value your time and effort to explain your suggestions and
-            feedback.
-          </p>
-          <textarea
-            value={answer}
-            onChange={e => setAnswer(e.target.value)}
-            rows={8}
-            placeholder="What worked, what didn't, what you'd change..."
-            className="w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] resize-y transition-colors"
-          />
-          {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
-          <button
-            onClick={() => void handleSubmit()}
-            disabled={!answer.trim() || submitting}
-            className="mt-4 px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {submitting ? 'Submitting…' : 'Submit feedback and lock in $19/month'}
-          </button>
+          {/* Question stays put in its own column on desktop instead of
+              scrolling away above a tall box — full dashboard width, with
+              the question visible the whole time a founder is writing. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,20rem)_1fr] gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-[#2D2A26] mb-2">
+                What did you love and dislike about CULO Creatives?
+              </label>
+              <p className="text-xs text-[#9CA3AF]">
+                Your feedback helps us improve, and we value your time and effort to explain your suggestions and
+                feedback.
+              </p>
+            </div>
+            <div>
+              <textarea
+                value={answer}
+                onChange={e => setAnswer(e.target.value)}
+                rows={14}
+                placeholder="What worked, what didn't, what you'd change..."
+                className="w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] resize-y transition-colors"
+              />
+              {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+              <button
+                onClick={() => void handleSubmit()}
+                disabled={!answer.trim() || submitting}
+                className="mt-4 px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {submitting ? 'Submitting…' : 'Submit feedback and lock in $19/month'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

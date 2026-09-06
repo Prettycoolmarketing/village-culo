@@ -135,12 +135,12 @@ export function DashboardLayout() {
     mainRef.current?.scrollTo(0, 0)
   }, [location.pathname])
 
-  // The desktop tab should read "Culo Village Member" everywhere inside the
+  // The desktop tab should read "Culo Villager" everywhere inside the
   // dashboard, regardless of which page a founder is on — this is their
   // workspace, not a public Village page, so it gets its own fixed title
   // rather than each dashboard page setting its own.
   useEffect(() => {
-    document.title = 'Culo Village Member'
+    document.title = 'Culo Villager'
   }, [location.pathname])
 
   async function handleSignOut() {
@@ -232,6 +232,20 @@ export function DashboardLayout() {
           >
             <Icon path={icons.importc} />
             Import
+          </NavLink>
+
+          <NavLink
+            to="/dashboard/villager"
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-bold transition-colors mb-1 ${
+                isActive
+                  ? 'bg-[#C86A43] text-white'
+                  : 'text-[#4B4845] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
+              }`
+            }
+          >
+            <Icon path={icons.curated} />
+            Villager
           </NavLink>
 
           <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Everything you've imported and published, in one place" />

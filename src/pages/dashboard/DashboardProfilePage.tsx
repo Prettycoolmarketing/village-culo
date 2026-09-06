@@ -512,11 +512,13 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Location">
               <select value={draft.location.id} onChange={e => { const l = locations.find(x => x.id === e.target.value); if (l) set('location', l) }} className={inputClass}>
+                {draft.location.id === 'unset' && <option value="unset" disabled>Select a location…</option>}
                 {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
             </Field>
             <Field label="Industry">
               <select value={draft.industry.id} onChange={e => { const i = industries.find(x => x.id === e.target.value); if (i) set('industry', i) }} className={inputClass}>
+                {draft.industry.id === 'unset' && <option value="unset" disabled>Select an industry…</option>}
                 {industries.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
               </select>
             </Field>
@@ -770,25 +772,13 @@ export function DashboardProfilePage() {
     }, { replace: true })
   }
   const [faqSuggestions, setFaqSuggestions] = useState<BlogQaPair[] | null>(null)
-  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published' | 'series' | 'villager'>(() =>
+  const [contentSubTab, setContentSubTab] = useState<'imported' | 'published' | 'series'>(() =>
     searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId')
       ? 'published'
       : searchParams.get('contentSubTab') === 'series'
         ? 'series'
-        : searchParams.get('contentSubTab') === 'villager'
-          ? 'villager'
-          : 'imported'
+        : 'imported'
   )
-  // Villager is where a founder lands right after importing — everything
-  // already captioned and ready to check off (Ready) separated from
-  // everything that still needs a caption/blog written before it can go out
-  // (Review), across every platform at once instead of buried per-platform
-  // inside Imported content.
-  const [villagerView, setVillagerView] = useState<'ready' | 'review'>(() =>
-    searchParams.get('villagerView') === 'review' ? 'review' : 'ready'
-  )
-  const [villagerChecked, setVillagerChecked] = useState<Set<string>>(new Set())
-  const [villagerBulkPublishing, setVillagerBulkPublishing] = useState(false)
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
   const [editingImportedId, setEditingImportedId] = useState<string | null>(null)
   const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
@@ -796,18 +786,6 @@ export function DashboardProfilePage() {
   const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>(
     () => (searchParams.get('platform') as ImportedContentPlatform | null) ?? 'all'
   )
-  // Series is its own filter mode within Imported (not just the platform
-  // filter's 'all') — series groupings apply to unpublished drafts too, see
-  // ImportedContent.seriesId, so browsing by series shouldn't require
-  // leaving the Imported list or publishing anything first.
-  const [importedFilterMode, setImportedFilterMode] = useState<'platform' | 'series'>('platform')
-  const [importedSeriesFilter, setImportedSeriesFilter] = useState<string | 'unassigned' | null>(null)
-  // Creating a series used to only be possible from Published > Series —
-  // a founder browsing their raw imports by platform had no way to start
-  // one without leaving this list first. This lets them create it right
-  // here, then move selected drafts into it with the existing dropdown.
-  const [addingImportedSeries, setAddingImportedSeries] = useState(false)
-  const [newImportedSeriesTitle, setNewImportedSeriesTitle] = useState('')
   // Instagram brings in both feed Posts (which almost always have a real
   // caption) and Stories (which structurally never do) as one undifferentiated
   // pile — this sub-filter, shown only while the Instagram platform pill is
@@ -854,9 +832,6 @@ export function DashboardProfilePage() {
       setContentSubTab('published')
     } else if (searchParams.get('contentSubTab') === 'series') {
       setContentSubTab('series')
-    } else if (searchParams.get('contentSubTab') === 'villager') {
-      setContentSubTab('villager')
-      setVillagerView(searchParams.get('villagerView') === 'review' ? 'review' : 'ready')
     } else if (searchParams.get('contentSubTab') === 'imported') {
       setContentSubTab('imported')
     }
@@ -1065,8 +1040,24 @@ export function DashboardProfilePage() {
         <div className="flex items-center justify-between px-8 pt-8 pb-5 shrink-0">
           <div className="flex items-center gap-4">
             <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover bg-[#F3EDE6]" />
-            <div>
+            <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-[#2D2A26]">{draft.name}</h1>
+              {/* Moved here from Settings — "am I featured" belongs right
+                  next to who's asking, not buried a tab away. */}
+              <button
+                onClick={() => set('featured', !draft.featured)}
+                title="Featured on Village Homepage — surfaces you in the Village homepage feed"
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors shrink-0 ${
+                  draft.featured
+                    ? 'bg-[#C86A43]/10 border-[#C86A43]/40 text-[#C86A43]'
+                    : 'bg-white border-[#E8E4DD] text-[#9CA3AF] hover:border-[#C86A43]/30 hover:text-[#C86A43]'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill={draft.featured ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                Featured
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -1133,7 +1124,11 @@ export function DashboardProfilePage() {
                 <img src={draft.avatar} alt="" className="w-16 h-16 rounded-full object-cover bg-[#F3EDE6] shrink-0" />
                 <div>
                   <p className="font-semibold text-[#2D2A26]">{draft.name}</p>
-                  <p className="text-sm text-[#6B7280] mt-1">{draft.location.name} · {draft.industry.name}</p>
+                  {(draft.location.name || draft.industry.name) && (
+                    <p className="text-sm text-[#6B7280] mt-1">
+                      {[draft.location.name, draft.industry.name].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
                   <p className="text-sm text-[#6B7280] mt-2 line-clamp-2">{draft.bio}</p>
                 </div>
               </div>
@@ -1288,158 +1283,31 @@ export function DashboardProfilePage() {
             </div>
 
             <div className="flex gap-2">
-              {(['villager', 'imported', 'published', 'series'] as const).map(t => (
+              {(['imported', 'published', 'series'] as const).map(t => (
                 <button key={t} onClick={() => setContentSubTab(t)}
                   className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
                     contentSubTab === t ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
                   }`}>
-                  {t === 'villager' ? 'Villager' : t === 'imported' ? 'Imported content' : t === 'published' ? 'Published Content' : 'Series'}
+                  {t === 'imported' ? 'Imported content' : t === 'published' ? 'Published Content' : 'Series'}
                 </button>
               ))}
             </div>
-
-            {/* Villager — where a founder lands right after importing.
-                Splits every unpublished import into what's already
-                captioned and ready to check off (Ready) and what still
-                needs a caption/blog before it can go out (Review), across
-                every platform at once — not a filter buried per-platform
-                inside Imported content. */}
-            {contentSubTab === 'villager' && (() => {
-              void importedTick
-              const allImported = importedContentService.getAll({ founderId: draft.id })
-              const notPublished = allImported.filter(i => !i.relatedStoryId)
-              const isReady = (i: ImportedContent) => !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i)
-              const readyItems = notPublished.filter(isReady)
-              const reviewItems = notPublished.filter(i => !isReady(i))
-              const shownVillager = villagerView === 'ready' ? readyItems : reviewItems
-
-              function toggleVillagerChecked(id: string) {
-                setVillagerChecked(prev => {
-                  const next = new Set(prev)
-                  if (next.has(id)) next.delete(id); else next.add(id)
-                  return next
-                })
-              }
-
-              function openInImported(id: string) {
-                setSearchParams(prev => {
-                  const p = new URLSearchParams(prev)
-                  p.set('tab', 'content')
-                  p.set('editImportedId', id)
-                  return p
-                })
-              }
-
-              function handleVillagerDelete(id: string) {
-                importedContentService.delete(id)
-                setImportedTick(t => t + 1)
-              }
-
-              async function publishItems(items: ImportedContent[]) {
-                if (!draft || items.length === 0) return
-                setVillagerBulkPublishing(true)
-                for (const item of items) {
-                  const story = buildStoryFromImport(item, draft)
-                  const result = await publishStoryCore(story)
-                  if (result.success) await importedContentService.updateStatus(item.id, 'published')
-                  else setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
-                }
-                setVillagerChecked(new Set())
-                setVillagerBulkPublishing(false)
-                setImportedTick(t => t + 1)
-              }
-
-              return (
-                <div>
-                  <div className="flex gap-2 mb-4">
-                    {(['ready', 'review'] as const).map(v => (
-                      <button key={v} onClick={() => setVillagerView(v)}
-                        className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
-                          villagerView === v ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                        }`}>
-                        {v === 'ready' ? `Ready ${readyItems.length}` : `Review ${reviewItems.length}`}
-                      </button>
-                    ))}
-                  </div>
-
-                  {villagerView === 'ready' && readyItems.length > 0 && (
-                    <div className="flex items-center justify-between gap-3 mb-4 px-4 py-2.5 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-lg flex-wrap">
-                      <p className="text-xs text-[#5E6B4A] font-medium">
-                        {readyItems.length} {readyItems.length === 1 ? 'item' : 'items'} already {readyItems.length === 1 ? 'has' : 'have'} a real caption — ready to go live as-is.
-                      </p>
-                      <div className="flex items-center gap-2">
-                        {villagerChecked.size > 0 && (
-                          <button
-                            onClick={() => void publishItems(readyItems.filter(i => villagerChecked.has(i.id)))}
-                            disabled={villagerBulkPublishing}
-                            className="shrink-0 px-4 py-2 bg-white border border-[#5E6B4A]/40 text-[#5E6B4A] text-xs font-semibold rounded-lg hover:bg-[#5E6B4A]/10 disabled:opacity-50 transition-colors"
-                          >
-                            Publish {villagerChecked.size} selected
-                          </button>
-                        )}
-                        <button
-                          onClick={() => void publishItems(readyItems)}
-                          disabled={villagerBulkPublishing}
-                          className="shrink-0 px-4 py-2 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5539] disabled:opacity-50 transition-colors"
-                        >
-                          {villagerBulkPublishing ? 'Publishing…' : `Publish all ${readyItems.length} ready`}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {villagerView === 'review' && reviewItems.length > 0 && (
-                    <p className="text-xs text-[#9CA3AF] mb-4">
-                      Missing a real caption, a title, or flagged for a look — open one to fix it up, then it'll move to Ready on its own.
-                    </p>
-                  )}
-
-                  {shownVillager.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
-                      <p className="text-sm font-semibold text-[#2D2A26]">
-                        {villagerView === 'ready' ? 'Nothing ready to publish yet.' : 'Nothing needs review — everything imported is ready to go.'}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                      {shownVillager.map(item => (
-                        <SavedRow
-                          key={item.id}
-                          item={item}
-                          checked={villagerChecked.has(item.id)}
-                          onToggleCheck={() => toggleVillagerChecked(item.id)}
-                          onAdvancedEdit={() => openInImported(item.id)}
-                          onDelete={() => handleVillagerDelete(item.id)}
-                          onStatusChange={status => void importedContentService.updateStatus(item.id, status).then(() => setImportedTick(t => t + 1))}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })()}
 
             {contentSubTab === 'imported' && (() => {
               void importedTick
               const allImported = importedContentService.getAll({ founderId: draft.id })
               const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
-              const shownByPlatform = importedFilterMode === 'series'
-                ? (importedSeriesFilter === null
-                    ? allImported
-                    : importedSeriesFilter === 'unassigned'
-                      ? allImported.filter(i => !i.seriesId)
-                      : allImported.filter(i => i.seriesId === importedSeriesFilter))
-                : importedPlatformFilter === 'all'
-                  ? allImported
-                  // Once something's been moved into a series, it drops out of
-                  // its platform tab — the tab is "what's still unsorted from
-                  // this platform," not a permanent record of where it came
-                  // from. "All" is the only view that always shows everything.
-                  : allImported.filter(i => i.sourcePlatform === importedPlatformFilter && !i.seriesId)
+              const shownByPlatform = importedPlatformFilter === 'all'
+                ? allImported
+                // Once something's been moved into a series, it drops out of
+                // its platform tab — the tab is "what's still unsorted from
+                // this platform," not a permanent record of where it came
+                // from. "All" is the only view that always shows everything.
+                : allImported.filter(i => i.sourcePlatform === importedPlatformFilter && !i.seriesId)
               // Only meaningful (and only shown) while filtering to Instagram
               // specifically — Posts vs Stories is an Instagram-shaped
               // distinction, not a general one.
-              const isInstagramView = importedFilterMode === 'platform' && importedPlatformFilter === 'instagram'
+              const isInstagramView = importedPlatformFilter === 'instagram'
               const shown = isInstagramView && instagramCaptionFilter !== 'all'
                 ? shownByPlatform.filter(i => instagramCaptionFilter === 'has' ? hasRealCaption(i) : !hasRealCaption(i))
                 : shownByPlatform
@@ -1675,31 +1543,6 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
-              // Same "create then drop straight into it" flow as Published >
-              // Series, but reachable without leaving the raw imports list —
-              // creates the series, switches into the Series filter on it,
-              // and (if anything's already checked) moves those drafts in
-              // immediately so creating and organising is one motion.
-              async function handleCreateSeriesFromImported() {
-                if (!newImportedSeriesTitle.trim()) return
-                const series = createSeries(draft!.id, newImportedSeriesTitle.trim())
-                const result = await saveSeries(series)
-                if (!result.success) {
-                  setSaveError(result.error ?? 'Could not create that series. Please try again.')
-                  return
-                }
-                setAddingImportedSeries(false)
-                setNewImportedSeriesTitle('')
-                setImportedFilterMode('series')
-                setImportedSeriesFilter(series.id)
-                if (importedChecked.size > 0) {
-                  const targets = shown.filter(i => importedChecked.has(i.id))
-                  for (const item of targets) await importedContentService.upsert({ ...item, seriesId: series.id })
-                  setImportedChecked(new Set())
-                }
-                refreshImported()
-              }
-
               function handleImportedDelete(id: string) {
                 importedContentService.delete(id)
                 refreshImported()
@@ -1749,47 +1592,19 @@ export function DashboardProfilePage() {
                   {platforms.length > 0 && (
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1.5 mb-1.5">
-                        <button onClick={() => { setImportedFilterMode('platform'); setImportedPlatformFilter('all') }}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedFilterMode === 'platform' && importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                        <button onClick={() => setImportedPlatformFilter('all')}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
                           All {allImported.length}
                         </button>
-                        <button
-                          onClick={() => { setImportedFilterMode('series'); setImportedSeriesFilter(founderSeries[0]?.id ?? 'unassigned') }}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedFilterMode === 'series' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}
-                        >
-                          Series
-                        </button>
                       </div>
-                      {importedFilterMode === 'series' && founderSeries.length === 0 && (
-                        <p className="text-xs text-[#9CA3AF]">No series yet — create one from Published &gt; Series, then tag drafts here once you've got one.</p>
-                      )}
-                      {importedFilterMode === 'series' && founderSeries.length > 0 && (
-                        // Same row layout/styling as the platform pills below —
-                        // one consistent way of switching what's shown, whether
-                        // by platform or by series.
-                        <div className="flex flex-wrap gap-1.5">
-                          {founderSeries.map(s => (
-                            <button key={s.id} onClick={() => setImportedSeriesFilter(s.id)}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === s.id ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                              {s.title || 'Untitled series'} {allImported.filter(i => i.seriesId === s.id).length}
-                            </button>
-                          ))}
-                          <button onClick={() => setImportedSeriesFilter('unassigned')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedSeriesFilter === 'unassigned' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                            Unassigned {allImported.filter(i => !i.seriesId).length}
+                      <div className="flex flex-wrap gap-1.5">
+                        {platforms.map(p => (
+                          <button key={p} onClick={() => { setImportedPlatformFilter(p); setInstagramCaptionFilter('all') }}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                            {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p && !i.seriesId).length}
                           </button>
-                        </div>
-                      )}
-                      {importedFilterMode === 'platform' && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {platforms.map(p => (
-                            <button key={p} onClick={() => { setImportedPlatformFilter(p); setInstagramCaptionFilter('all') }}
-                              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                              {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p && !i.seriesId).length}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                        ))}
+                      </div>
 
                       {/* Instagram brings in Posts (almost always captioned)
                           and Stories (structurally never captioned) as one
@@ -1827,53 +1642,6 @@ export function DashboardProfilePage() {
                       </button>
                     </div>
                   )}
-
-                  {/* Series creation used to only live in Published > Series —
-                      a founder browsing raw imports had no way to organise them
-                      into a series without leaving this list. Now it's right
-                      here: tick the pieces below, create a series, done. */}
-                  <div className="mb-4 pb-4 border-b border-[#E8E4DD]">
-                    <p className="text-lg font-bold text-[#2D2A26] mb-1">Restructure your content as a series</p>
-                    <p className="text-xs text-[#9CA3AF] mb-3">
-                      Group episodes, posts or videos that belong together — a season, a project, a recurring
-                      segment — into their own series. Tick the pieces below, then create or choose a series to
-                      move them into.
-                    </p>
-                    {addingImportedSeries ? (
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="text"
-                          autoFocus
-                          value={newImportedSeriesTitle}
-                          onChange={e => setNewImportedSeriesTitle(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') void handleCreateSeriesFromImported()
-                            if (e.key === 'Escape') { setAddingImportedSeries(false); setNewImportedSeriesTitle('') }
-                          }}
-                          placeholder="e.g. Van Life"
-                          className="px-3 py-1.5 rounded-lg text-sm border border-[#C86A43]/50 text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 w-48"
-                        />
-                        <button
-                          onClick={() => void handleCreateSeriesFromImported()}
-                          disabled={!newImportedSeriesTitle.trim()}
-                          className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {importedChecked.size > 0 ? `Create & move ${importedChecked.size}` : 'Create series'}
-                        </button>
-                        <button
-                          onClick={() => { setAddingImportedSeries(false); setNewImportedSeriesTitle('') }}
-                          className="px-2 py-1.5 text-sm text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setAddingImportedSeries(true)}
-                        className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-dashed border-[#E8E4DD] text-[#C86A43] hover:border-[#C86A43]/50 transition-colors">
-                        + New Series
-                      </button>
-                    )}
-                  </div>
 
                   {saveError && <p className="text-xs text-red-600 font-medium mb-3">{saveError}</p>}
 
@@ -2309,21 +2077,6 @@ export function DashboardProfilePage() {
               Account-level details and publishing preferences that don't affect how you're discovered,
               just how your profile behaves.
             </TabIntro>
-
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-[#2D2A26]">Featured on Village Homepage</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">Surfaces this founder in the Village homepage feed.</p>
-                </div>
-                <button
-                  onClick={() => set('featured', !draft.featured)}
-                  className={`w-11 h-6 rounded-full transition-colors ${draft.featured ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
-                >
-                  <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform mx-1 ${draft.featured ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-              </div>
-            </div>
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
               <div>

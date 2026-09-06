@@ -1,5 +1,10 @@
 import type { Industry } from '../types'
 
+// See UNSET_LOCATION in data/locations.ts — same reasoning, for the same
+// reason: a fresh signup shouldn't default to industries[0] (Marketing &
+// Advertising) before they've told us anything about themselves.
+export const UNSET_INDUSTRY: Industry = { id: 'unset', slug: 'unset', name: '' }
+
 // Master list — broad enough to cover most founders without forcing a
 // mismatch. Onboarding's Industry field also offers an "Other" option for
 // anything genuinely uncovered.
