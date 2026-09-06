@@ -28,7 +28,7 @@ export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [addingId, setAddingId] = useState('')
+  const [addingIds, setAddingIds] = useState<Set<string>>(new Set())
 
   const episodes = getSeriesEpisodes(series.id)
   const availableStories = getStories({ founderId, publicOnly: true }).filter(s => s.seriesId !== series.id)
@@ -47,11 +47,28 @@ export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }
     else setSaveError(result.error ?? 'Save failed. Please try again.')
   }
 
-  async function handleAddEpisode() {
-    if (!addingId) return
-    const result = await assignEpisode(addingId, series.id)
-    if (!result.success) { setSaveError(result.error ?? 'Could not add that episode.'); return }
-    setAddingId('')
+  function toggleAdding(storyId: string) {
+    setAddingIds(prev => {
+      const next = new Set(prev)
+      if (next.has(storyId)) next.delete(storyId); else next.add(storyId)
+      return next
+    })
+  }
+
+  // Click-to-select-many, then one "Add" — same shape as everywhere else a
+  // founder picks several things before acting on them (Publish, bulk
+  // rewrite), rather than the old one-at-a-time dropdown. Added episodes
+  // disappear from this list and appear in Episodes above as soon as
+  // onChanged() re-fetches, same as how a used Canva slide moves out of
+  // the picker once it's part of a saved piece.
+  async function handleAddEpisodes() {
+    if (addingIds.size === 0) return
+    setSaveError(null)
+    for (const storyId of addingIds) {
+      const result = await assignEpisode(storyId, series.id)
+      if (!result.success) { setSaveError(result.error ?? 'Could not add one of those episodes.'); break }
+    }
+    setAddingIds(new Set())
     onChanged()
   }
 
@@ -191,15 +208,33 @@ export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }
         )}
 
         {availableStories.length > 0 ? (
-          <div className="flex items-center gap-2 pt-2 border-t border-[#F3EDE6] mt-1">
-            <select value={addingId} onChange={e => setAddingId(e.target.value)} className={inputClass}>
-              <option value="">Add a published story as the next episode…</option>
-              {availableStories.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-            </select>
-            <button onClick={() => void handleAddEpisode()} disabled={!addingId}
-              className="px-4 py-2.5 bg-[#2D2A26] text-white text-sm font-semibold rounded-lg hover:bg-[#1a1815] disabled:opacity-40 transition-colors shrink-0">
-              Add
-            </button>
+          <div className="pt-3 border-t border-[#F3EDE6] mt-1 flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide">Click the ones to add</p>
+              {addingIds.size > 0 && (
+                <button onClick={() => void handleAddEpisodes()}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shrink-0">
+                  Add {addingIds.size} to series
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              {availableStories.map(s => {
+                const isSelected = addingIds.has(s.id)
+                return (
+                  <button key={s.id} type="button" onClick={() => toggleAdding(s.id)}
+                    className={`flex items-center gap-3 border rounded-lg px-3 py-2.5 text-left transition-colors ${
+                      isSelected ? 'border-[#C86A43] bg-[#C86A43]/5' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
+                    }`}>
+                    <img src={s.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                    <p className="text-sm font-medium text-[#2D2A26] truncate flex-1">{s.title}</p>
+                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
+                      isSelected ? 'bg-[#C86A43] border-[#C86A43] text-white' : 'border-[#E8E4DD] text-transparent'
+                    }`}>✓</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         ) : (
           <p className="text-xs text-[#9CA3AF] pt-2 border-t border-[#F3EDE6] mt-1">
