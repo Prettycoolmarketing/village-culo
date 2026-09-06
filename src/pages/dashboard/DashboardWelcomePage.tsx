@@ -14,8 +14,8 @@ const CULO_CANVA_URL = 'https://www.culovillage.com/creatives'
 
 const HOW_IT_WORKS_STEPS = [
   {
-    title: 'Connect and import your life’s work',
-    desc: 'Directly from the accounts, channels and platforms your work or knowledge is already spread out across.',
+    title: 'Connect your accounts',
+    desc: 'Link the accounts, channels and platforms where your work or knowledge is already spread out.',
   },
   {
     title: 'Republish for maximum visibility',
