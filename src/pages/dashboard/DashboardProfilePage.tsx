@@ -1337,7 +1337,11 @@ export function DashboardProfilePage() {
             {(contentSubTab === 'ready' || contentSubTab === 'review') && (() => {
               void importedTick
               const allImported = importedContentService.getAll({ founderId: draft.id })
-              const notPublished = allImported.filter(i => !i.relatedStoryId)
+              // Two independent signals for "already published" — relatedStoryId
+              // (set once a real Story exists behind it) and status itself —
+              // checked together rather than trusting just one, so an item
+              // published through any path still drops out of both lists here.
+              const notPublished = allImported.filter(i => !i.relatedStoryId && i.status !== 'published' && i.status !== 'featured')
               const isItemReady = (i: ImportedContent) => !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i)
               const readyItems = notPublished.filter(isItemReady)
               const reviewItems = notPublished.filter(i => !isItemReady(i))
