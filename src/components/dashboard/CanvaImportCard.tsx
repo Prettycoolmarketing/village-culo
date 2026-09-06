@@ -310,7 +310,7 @@ export function CanvaImportCard({
       </div>
       {!expanded && (
         <button type="button" onClick={() => void handleBrowseClick()} disabled={!canProceed}
-          className="w-full text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors">
+          className="w-full sm:w-auto text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors">
           {buttonLabel}
         </button>
       )}
