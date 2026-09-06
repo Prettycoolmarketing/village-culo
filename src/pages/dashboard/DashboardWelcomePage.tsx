@@ -68,18 +68,18 @@ export function DashboardWelcomePage() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col items-end gap-3">
+        <div className="flex flex-col sm:items-end gap-3">
           <Link
             to="/dashboard/import-content"
-            className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+            className="flex justify-center sm:inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
           >
-            Connect your accounts →
+            Connect your accounts
           </Link>
           <a
             href={canUseCreatives ? CULO_CANVA_URL : upgradeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+            className="flex justify-center sm:inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
           >
             Create with Culo Creatives in Canva
           </a>

@@ -1,5 +1,5 @@
 import { Outlet, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { canAccessCapoSection, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
@@ -114,6 +114,7 @@ function SectionLabel({ label, large = false }: { label: string; large?: boolean
 export function DashboardLayout() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const showCapoNav = hasAnyCapoAccess(user?.role)
   const founder = getCurrentFounder(user)
   const [passwordModalDismissed, setPasswordModalDismissed] = useState(false)
@@ -122,6 +123,17 @@ export function DashboardLayout() {
   // below the md breakpoint; on desktop the responsive classes below make it
   // static and always visible regardless of this state.
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
+  // The dashboard scrolls inside <main>, not the window — App.tsx's global
+  // ScrollToTop does window.scrollTo(0,0), which does nothing here since
+  // this element is the one with overflow-y-auto and persists across route
+  // changes (only its children swap via Outlet). Without this, navigating
+  // from partway down one page (e.g. Welcome) to another landed still
+  // scrolled down instead of at the top.
+  const mainRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0)
+  }, [location.pathname])
 
   async function handleSignOut() {
     await signOut()
@@ -328,7 +340,7 @@ export function DashboardLayout() {
 
       {/* ── Main content — pt-14 on mobile clears the fixed hamburger bar;
           md:pt-0 removes that once the sidebar is back in normal flow. ──── */}
-      <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
+      <main ref={mainRef} className="flex-1 overflow-y-auto pt-14 md:pt-0">
         <Outlet />
       </main>
     </div>
