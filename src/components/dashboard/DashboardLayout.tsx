@@ -135,12 +135,12 @@ export function DashboardLayout() {
     mainRef.current?.scrollTo(0, 0)
   }, [location.pathname])
 
-  // The desktop tab should read "Culo Member" everywhere inside the
+  // The desktop tab should read "Culo Village Member" everywhere inside the
   // dashboard, regardless of which page a founder is on — this is their
   // workspace, not a public Village page, so it gets its own fixed title
   // rather than each dashboard page setting its own.
   useEffect(() => {
-    document.title = 'Culo Member'
+    document.title = 'Culo Village Member'
   }, [location.pathname])
 
   async function handleSignOut() {
