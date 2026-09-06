@@ -20,7 +20,7 @@ import { publisherPartnerProfileService, affiliateLinkService } from '../../serv
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
-import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief } from '../../services/blogWriter'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
 import { getMedia } from '../../services/media'
@@ -743,6 +743,7 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 export function DashboardProfilePage() {
   const { user } = useAuth()
   const canUseVoiceRewrite = VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
+  const [bioGenerating, setBioGenerating] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const welcomeBack = Boolean((location.state as { welcomeBack?: boolean } | null)?.welcomeBack)
@@ -915,6 +916,34 @@ export function DashboardProfilePage() {
   // your name/photo/links doesn't require a separate tab — same draft/set, one
   // source of truth, just shown in two places.
   function renderIdentityFields(draft: Founder) {
+    const liveVoiceBriefForBio = getFounder(draft.id)?.voiceBrief
+
+    // Extracts as much real, accurate information as the founder has
+    // already written into their Voice & Brand Brief instead of asking
+    // them to retype the same story into Bio — see generate-bio's own
+    // honesty rule: only what the brief actually states, never invented
+    // filler when the brief is thin.
+    async function handleGenerateBio() {
+      const liveFounder = getFounder(draft.id)
+      if (!liveFounder?.voiceBrief?.trim()) return
+      setBioGenerating(true)
+      setSaveError(null)
+      const { bio, error } = await generateBioFromVoiceBrief({
+        voiceBrief: liveFounder.voiceBrief,
+        founderName: draft.name,
+        insightBrief: liveFounder.insightBrief,
+        existingBio: draft.bio,
+      })
+      setBioGenerating(false)
+      if (error) { setSaveError(error); return }
+      if (bio?.status === 'insufficient_source') {
+        setSaveError(bio.note ?? 'Not enough in your Voice Brief yet to write an accurate bio from it — add more detail and try again.')
+        return
+      }
+      if (bio?.bio) set('bio', bio.bio)
+      if (bio?.seoTitle && !draft.seoTitle) set('seoTitle', bio.seoTitle)
+    }
+
     return (
       <>
         <Field label="Display Name" hint="Your name as it appears everywhere on the Village — headings, cards, breadcrumbs. Keep it short and real (e.g. your actual name), not a full descriptor.">
@@ -924,6 +953,14 @@ export function DashboardProfilePage() {
           <input type="text" value={draft.seoTitle ?? ''} onChange={e => set('seoTitle', e.target.value || undefined)} className={inputClass} placeholder="e.g. Australian Tech Founder & Content Creator" />
         </Field>
         <Field label="Bio" hint="Write in your own voice — aim for 200+ characters. This is what search engines and the Village show publicly — no separate SEO text to fill in.">
+          {canUseVoiceRewrite && (
+            <button type="button" onClick={() => void handleGenerateBio()}
+              disabled={bioGenerating || !liveVoiceBriefForBio?.trim()}
+              title={!liveVoiceBriefForBio?.trim() ? 'Add your Voice & Brand Brief from Import Content first' : 'Fill in your Bio using what you’ve already written in your Voice & Brand Brief'}
+              className="mb-1.5 text-xs font-semibold text-[#C86A43] hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline">
+              {bioGenerating ? 'Writing from your Voice Brief…' : 'Fill in from Voice Brief'}
+            </button>
+          )}
           <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
           <p className="text-xs text-right text-[#9CA3AF] mt-1">{draft.bio.length} chars</p>
         </Field>

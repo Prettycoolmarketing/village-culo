@@ -60,6 +60,34 @@ export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Prom
   return { blog: data.blog }
 }
 
+export interface GeneratedBio {
+  status: 'ready' | 'insufficient_source'
+  note?: string
+  bio?: string
+  seoTitle?: string
+}
+
+interface GenerateBioInput {
+  voiceBrief: string
+  founderName: string
+  insightBrief?: string
+  existingBio?: string
+}
+
+// Writes the founder's public Bio (and, if there's a genuinely distinct
+// hook, an SEO Title) straight from their Voice & Brand Brief — see
+// generate-bio's own notes for the same honesty rule generate-blog follows:
+// only what the brief actually states, never a plausible-sounding filler
+// bio when the brief is too thin.
+export async function generateBioFromVoiceBrief(input: GenerateBioInput): Promise<{ bio?: GeneratedBio; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
+  const { data, error } = await supabase.functions.invoke<{ bio?: GeneratedBio; error?: string }>('generate-bio', { body: input })
+  if (error) return { error: error.message }
+  if (data?.error) return { error: data.error }
+  if (!data?.bio) return { error: 'AI returned nothing usable' }
+  return { bio: data.bio }
+}
+
 export interface VoiceBriefInterviewMessage {
   role: 'user' | 'assistant'
   content: string
