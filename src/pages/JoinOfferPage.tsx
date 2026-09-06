@@ -41,18 +41,14 @@ export function JoinOfferPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-background">
-        <section className="relative overflow-hidden py-16 md:py-20 text-center" aria-labelledby="offer-heading">
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(135deg, #DCEBF5 0%, #EAF2F8 45%, #F3F7FA 100%)' }}
-            aria-hidden="true"
-          >
+        <section className="relative overflow-hidden pt-24 pb-16 md:py-20 text-center" aria-labelledby="offer-heading">
+          <div className="absolute inset-0 bg-background" aria-hidden="true">
             <div
-              className="absolute -top-32 -right-32 w-[550px] h-[550px] rounded-full opacity-50"
+              className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
               style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }}
             />
             <div
-              className="absolute -bottom-24 -left-24 w-[450px] h-[450px] rounded-full opacity-30"
+              className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full opacity-10"
               style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }}
             />
           </div>

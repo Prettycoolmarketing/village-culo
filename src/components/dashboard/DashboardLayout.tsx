@@ -119,6 +119,10 @@ export function DashboardLayout() {
   const founder = getCurrentFounder(user)
   const [passwordModalDismissed, setPasswordModalDismissed] = useState(false)
   const showSetPasswordModal = !!founder && founder.passwordSet === false && !passwordModalDismissed
+  // Closed by default on mobile — the sidebar only becomes an overlay drawer
+  // below the md breakpoint; on desktop the responsive classes below make it
+  // static and always visible regardless of this state.
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   async function handleSignOut() {
     await signOut()
@@ -129,8 +133,44 @@ export function DashboardLayout() {
     <div className="flex h-screen bg-[#F3F7FA] overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {showSetPasswordModal && <SetPasswordModal onClose={() => setPasswordModalDismissed(true)} />}
 
-      {/* ── Left sidebar ────────────────────────────────────────────────────── */}
-      <aside className="w-56 shrink-0 border-r border-[#E8E4DD] bg-white flex flex-col overflow-y-auto">
+      {/* Mobile top bar — hamburger + brand mark, hidden on desktop where the
+          sidebar is already always visible. */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 bg-white border-b border-[#E8E4DD] flex items-center gap-3 px-4">
+        <button
+          onClick={() => setMobileNavOpen(o => !o)}
+          aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
+          className="w-9 h-9 -ml-1.5 flex items-center justify-center text-[#2D2A26] shrink-0"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+            {mobileNavOpen
+              ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
+          </svg>
+        </button>
+        <div className="w-7 h-7 rounded-lg bg-[#C86A43] flex items-center justify-center shrink-0">
+          <span className="text-white text-xs font-bold leading-none">C</span>
+        </div>
+        <p className="text-[13px] font-bold text-[#2D2A26]">CULO</p>
+      </div>
+
+      {/* Backdrop — mobile only, closes the drawer on tap outside it. */}
+      {mobileNavOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-30"
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ── Left sidebar — a fixed overlay drawer on mobile (closed by
+          default, toggled by the hamburger above), the normal static
+          in-flow sidebar on desktop (md:) exactly as before. ───────────── */}
+      <aside
+        className={`w-64 md:w-56 shrink-0 border-r border-[#E8E4DD] bg-white flex flex-col overflow-y-auto
+          fixed inset-y-0 left-0 z-40 transform transition-transform duration-200
+          md:static md:transform-none md:translate-x-0
+          ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
 
         {/* Brand mark */}
         <div className="px-4 py-4 border-b border-[#E8E4DD]">
@@ -146,7 +186,7 @@ export function DashboardLayout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-3 flex flex-col">
+        <nav className="flex-1 px-2 py-3 flex flex-col" onClick={() => setMobileNavOpen(false)}>
           <NavLink
             to="/dashboard/welcome"
             className={({ isActive }) =>
@@ -272,7 +312,7 @@ export function DashboardLayout() {
         </nav>
 
         {/* Bottom: settings + user */}
-        <div className="px-2 py-3 border-t border-[#E8E4DD]">
+        <div className="px-2 py-3 border-t border-[#E8E4DD]" onClick={() => setMobileNavOpen(false)}>
           <NavItem to="/dashboard/settings" label="Settings" icon={<Icon path={icons.settings} />} />
           <div className="mt-3 px-2.5 flex items-center justify-between">
             <p className="text-xs text-[#6B7280] truncate max-w-[120px]">{user?.email}</p>
@@ -287,8 +327,9 @@ export function DashboardLayout() {
         </div>
       </aside>
 
-      {/* ── Main content ────────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto">
+      {/* ── Main content — pt-14 on mobile clears the fixed hamburger bar;
+          md:pt-0 removes that once the sidebar is back in normal flow. ──── */}
+      <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
         <Outlet />
       </main>
     </div>
