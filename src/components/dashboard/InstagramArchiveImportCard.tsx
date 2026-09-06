@@ -171,21 +171,23 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
 
   return (
     <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-8 h-full">
-      <div className="flex items-center gap-4 mb-2">
-        <SourceIcon platform="instagram" size="lg" />
-        <div>
-          <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram archive</p>
-          <p className="text-sm text-[#9CA3AF] mt-0.5">
-            Bring years of Instagram posts into your Village library with captions, dates and media kept together.
-          </p>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-4">
+          <SourceIcon platform="instagram" size="lg" />
+          <div>
+            <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram archive</p>
+            <p className="text-sm text-[#9CA3AF] mt-0.5">
+              Bring years of Instagram posts into your Village library with captions, dates and media kept together.
+            </p>
+          </div>
         </div>
+        {!expanded && (
+          <button type="button" onClick={() => setExpanded(true)}
+            className="w-full sm:w-auto text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors shrink-0">
+            Import archive
+          </button>
+        )}
       </div>
-      {!expanded && (
-        <button type="button" onClick={() => setExpanded(true)}
-          className="w-full sm:w-auto text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors">
-          Import archive
-        </button>
-      )}
 
       {expanded && (
         <div className="mt-3">
