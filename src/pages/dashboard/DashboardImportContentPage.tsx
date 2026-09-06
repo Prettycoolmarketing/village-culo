@@ -1633,8 +1633,8 @@ export function DashboardImportContentPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
           {[
-            { title: 'Connect and import', desc: 'YouTube, Instagram Archives, Podcast episodes, Articles.' },
-            { title: 'Upload your brand brief', desc: "Give Culo's Intelligence context to help shape your story, if needed." },
+            { title: 'Connect and import', desc: 'YouTube, Instagram Archives, Podcast episodes, Articles and your Culo Creative designs in Canva.' },
+            { title: 'Upload your brand brief', desc: 'Give The Village Intelligence context to help shape your story, if needed.' },
             { title: 'Organise your series', desc: "Sort what you've imported into the chapters of your story." },
             { title: 'Publish for discovery', desc: 'Being in the Village means your expertise positions you and your business as an authority.' },
           ].map((s, i) => (
