@@ -54,17 +54,20 @@ export function JoinOfferPage() {
           </div>
           <InnerContainer className="relative">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-              Founding collaborator offer
+              Welcome to The Culo Village
             </p>
             <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
-              Lock in free access to Culo Creatives in Canva until January 1, 2027
+              Free access to Culo Creatives in Canva until January 1, 2027
             </h1>
+            <p className="font-body text-base font-semibold text-charcoal max-w-xl mx-auto mb-3">
+              Founding rate, locked in
+            </p>
             <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
-              Add your payment details now and you're locked at <strong className="text-charcoal">$19/month AUD</strong>.
+              Start using Culo Creatives in Canva free now and secure the <strong className="text-charcoal">$19 AUD/month</strong> founding
+              rate before the standard price moves to $25.
               <br /><br />
-              Free until Jan 1, 2027, then $19/month AUD for as long as you stay subscribed. Wait, or cancel
-              before then, and it's <strong className="text-charcoal">$25/month AUD</strong> like everyone else
-              who joins later.
+              You won't be charged until 1 January 2027. After that, your $19 rate stays in place for as long
+              as you keep your subscription active.
             </p>
             {alreadyLockedIn ? (
               <p className="font-heading text-lg font-semibold text-charcoal">You're locked in at $19/month AUD ✓</p>
