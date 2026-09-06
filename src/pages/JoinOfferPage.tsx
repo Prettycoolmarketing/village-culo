@@ -77,18 +77,18 @@ export function JoinOfferPage() {
                   href={paymentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold uppercase tracking-wide rounded-xl hover:bg-[#b05a35] transition-colors"
+                  className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
-                  Lock in Culo Creatives in Canva, forever $19 a month
+                  Lock In Culo Creatives in Canva, Forever $19 a Month
                 </a>
                 {/* Deliberately quieter than the orange CTA — the site's
                     established dark/secondary button, not a co-equal
                     high-contrast choice, since this is the less-likely path. */}
                 <Link
                   to="/dashboard/welcome"
-                  className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold uppercase tracking-wide rounded-xl hover:bg-[#1a1815] transition-colors"
+                  className="inline-flex px-8 py-4 bg-charcoal text-white text-base font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
                 >
-                  Not now, take me to my village dashboard
+                  Not Now, Take Me to My Village Dashboard
                 </Link>
               </div>
             )}
