@@ -1722,12 +1722,18 @@ export function DashboardImportContentPage() {
                 onConnected={() => { loadSources(); reportImported(1) }}
               />
 
-              <PodcastConnectPanel
-                founderId={founderId}
-                isHighVolume={isHighVolume}
-                sources={sources.filter(s => s.sourceType === 'podcast-rss')}
-                onConnected={() => { loadSources(); reportImported(1) }}
-              />
+              {/* Extra breathing room here specifically — the YouTube card
+                  runs taller than Instagram Archive on the right (more
+                  copy), so the standard gap alone left Podcast starting
+                  noticeably higher than Connect your blogs beside it. */}
+              <div className="mt-8">
+                <PodcastConnectPanel
+                  founderId={founderId}
+                  isHighVolume={isHighVolume}
+                  sources={sources.filter(s => s.sourceType === 'podcast-rss')}
+                  onConnected={() => { loadSources(); reportImported(1) }}
+                />
+              </div>
             </div>
 
             <div className="flex flex-col gap-6">
@@ -1763,8 +1769,8 @@ export function DashboardImportContentPage() {
           {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
 
           <div className="mt-6 pt-6 border-t border-[#E8E4DD]">
-            <Link to="/dashboard/profile?tab=content" className="text-lg font-semibold text-[#C86A43] hover:underline">
-              View everything you've imported so far →
+            <Link to="/dashboard/profile?tab=content" className="text-2xl font-bold text-[#C86A43] hover:underline">
+              View everything you've imported so far
             </Link>
           </div>
 
