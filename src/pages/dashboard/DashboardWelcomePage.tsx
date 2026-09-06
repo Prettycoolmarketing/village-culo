@@ -38,7 +38,7 @@ export function DashboardWelcomePage() {
   const upgradeUrl = buildPaymentUrl(UPGRADE_PAYMENT_LINK, founder?.id ?? '', user?.email)
 
   return (
-    <div className="p-8 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="p-8 sm:pt-12 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {/* ── Welcome ───────────────────────────────────────────────────────── */}
       {/* Matches the px-8 sm:px-12 inner padding every section below uses, so
           the heading text lines up with the box content instead of sitting

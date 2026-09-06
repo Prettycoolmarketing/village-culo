@@ -1715,8 +1715,8 @@ export function DashboardImportContentPage() {
               original caption; with it, every import gets shaped into a
               real blog in the founder's own voice as it comes in. */}
           {founder && (
-            <div className="mb-8 pb-8 border-b border-[#E8E4DD]">
-              <p className="text-xl font-bold text-[#2D2A26] mb-1">Do this first if you want CULO to help shape your story</p>
+            <div className="mt-4 sm:mt-6 mb-8 pb-8 border-b border-[#E8E4DD]">
+              <p className="text-xl font-bold text-[#2D2A26] mb-1">Do this first so CULO can help shape your story</p>
               <p className="text-sm text-[#9CA3AF] mb-4">
                 Optional, but it's what turns a raw caption into a real blog written in your own voice — add it now
                 and every import from here on benefits from it.
