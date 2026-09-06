@@ -1709,6 +1709,39 @@ export function DashboardImportContentPage() {
       {/* Connect a channel or feed */}
       {!draft && (
         <div>
+          {/* Voice & Insight Briefs — back above the import connectors,
+              where they started. This is the one thing worth doing before
+              anything else: without it, CULO can only keep each import's
+              original caption; with it, every import gets shaped into a
+              real blog in the founder's own voice as it comes in. */}
+          {founder && (
+            <div className="mb-8 pb-8 border-b border-[#E8E4DD]">
+              <p className="text-xl font-bold text-[#2D2A26] mb-1">Do this first if you want CULO to help shape your story</p>
+              <p className="text-sm text-[#9CA3AF] mb-4">
+                Optional, but it's what turns a raw caption into a real blog written in your own voice — add it now
+                and every import from here on benefits from it.
+              </p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <VoiceBriefEditor
+                  value={voiceBriefDraft}
+                  updatedAt={founder.voiceBriefUpdatedAt}
+                  onChange={v => {
+                    setVoiceBriefDraft(v)
+                    void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })
+                  }}
+                />
+                <InsightBriefEditor
+                  value={insightBriefDraft}
+                  updatedAt={founder.insightBriefUpdatedAt}
+                  onChange={v => {
+                    setInsightBriefDraft(v)
+                    void updateFounder({ ...founder, insightBrief: v, insightBriefUpdatedAt: new Date().toISOString() })
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web pages in the CULO Village for structured discovery</p>
           {/* A real 2-column grid with each card explicitly placed by row,
               not two independent flex columns — flex columns have no idea
@@ -1774,32 +1807,6 @@ export function DashboardImportContentPage() {
               View everything you've imported so far
             </Link>
           </div>
-
-          {/* Voice & Insight Briefs — moved to the bottom, after the actual
-              import connectors. These feed the AI blog-rewrite pipeline,
-              which doesn't do anything useful until there's real imported
-              content to rewrite, so they don't earn top billing above the
-              thing that actually brings content in. */}
-          {founder && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 pt-8 border-t border-[#E8E4DD] items-start">
-              <VoiceBriefEditor
-                value={voiceBriefDraft}
-                updatedAt={founder.voiceBriefUpdatedAt}
-                onChange={v => {
-                  setVoiceBriefDraft(v)
-                  void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })
-                }}
-              />
-              <InsightBriefEditor
-                value={insightBriefDraft}
-                updatedAt={founder.insightBriefUpdatedAt}
-                onChange={v => {
-                  setInsightBriefDraft(v)
-                  void updateFounder({ ...founder, insightBrief: v, insightBriefUpdatedAt: new Date().toISOString() })
-                }}
-              />
-            </div>
-          )}
         </div>
       )}
 
