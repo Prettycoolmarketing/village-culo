@@ -1,10 +1,8 @@
 import { useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { parseInstagramArchiveFile, buildImportedContentFromArchive } from '../../services/instagramArchive'
-import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
 import { importedContentService } from '../../services/importedContent'
 import { getBusinesses } from '../../services/businesses'
-import { getFounder } from '../../services/founders'
 import { SourceIcon } from '../ui/SourceIcon'
 
 // Bring in a whole Instagram export ZIP at once — posts, reels and stories
@@ -12,15 +10,19 @@ import { SourceIcon } from '../ui/SourceIcon'
 // order), grouped by day in the list below once imported. Nothing is
 // published: everything lands as a private draft, same as any other import.
 //
-// Gated on the founder having a Voice & Brand Brief (Profile > Settings) —
-// without one, every AI-generated blog reads the same regardless of which
-// video it's attached to, which is bad for SEO (near-duplicate pages) and
-// GEO (nothing distinct for an AI system to cite).
+// Deliberately does NOT run AI blog-writing on every item during import —
+// this used to call generateBlogFromVoiceBrief in a loop over the whole
+// archive the moment a Voice Brief existed, which meant importing a
+// 2,000-item archive burned 2,000 real AI calls before Archive Unlock ever
+// got a chance to gate anything. Every other import path (YouTube, podcast,
+// website) only ever saves raw metadata/captions at import time; this now
+// matches that — real AI writing happens later, opt-in, via "Rewrite with
+// Voice Brief" on whatever a founder actually selects (naturally their free
+// 10 first, or anything after they unlock the rest).
 
-export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief, onImported, expanded: controlledExpanded, onExpandedChange }: {
+export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, expanded: controlledExpanded, onExpandedChange }: {
   founderId: string
   voiceBrief?: string
-  insightBrief?: string
   onImported: (count: number) => void
   expanded?: boolean
   onExpandedChange?: (expanded: boolean) => void
@@ -58,81 +60,6 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
       setStage('Extracting media and creating pieces…')
       const { built, uploadErrors } = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), businessId || undefined)
 
-      // A real, distinct blog per piece — using the founder's own voice, not
-      // a generic template — so publishing several of these doesn't read as
-      // duplicate content. Runs one at a time (each is a real AI call) with
-      // real progress, and a failure on one item never blocks the rest —
-      // it just keeps that item's original caption as its description.
-      let aiBlogError: string | null = null
-      let heldCount = 0
-      if (voiceBrief?.trim()) {
-        const founderName = getFounder(founderId)?.name ?? ''
-        // Rolling memory across this batch — each successful call's own
-        // angle gets appended, and only the last 8 are kept so the prompt
-        // doesn't grow unbounded across a large archive. Without this, every
-        // call is independent and has no way to know what any other call in
-        // the same import just wrote.
-        const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
-        for (let i = 0; i < built.length; i++) {
-          // A proactive gap between calls — each one resends the full Voice
-          // + Insight Brief (for some founders, tens of thousands of
-          // tokens), and firing them with too little space between was
-          // still tripping Anthropic's own token-throughput rate limits in
-          // testing, even hours apart with a cold rate window — the limit
-          // is real per-batch token volume, not anything left over from a
-          // previous run. The function retries transient failures on its
-          // own too; this just makes tripping the limit in the first place
-          // less likely for founders with a large brief.
-          if (i > 0) await new Promise(r => setTimeout(r, 1500))
-          setStage(`Writing blog ${i + 1} of ${built.length}…`)
-          const { item } = built[i]!
-          const { blog, error: blogError } = await generateBlogFromVoiceBrief({
-            voiceBrief,
-            founderName,
-            caption: item.description,
-            platform: 'Instagram',
-            kind: item.contentTypeHint?.includes('reel') ? 'reel' : item.contentTypeHint?.includes('carousel') ? 'carousel photo post' : 'post',
-            imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
-            postedAt: item.publishedAt ?? item.importedAt,
-            insightBrief,
-            recentAngles: recentAngles.slice(-8),
-          })
-          if (blog?.status === 'ready') {
-            item.title = blog.title ?? item.title
-            item.description = blog.blog ?? item.description
-            item.subtitle = blog.subtitle ?? item.subtitle
-            item.topics = Array.from(new Set([...item.topics, ...(blog.topics ?? [])]))
-            item.generationType = blog.generationType
-            item.insightConfidence = blog.insightConfidence
-            item.insightSource = blog.insightSource
-            item.factSources = blog.factSources
-            item.primaryQuestion = blog.primaryQuestion
-            item.decision = blog.decision
-            item.possibleGroupHint = blog.possibleGroupHint
-            item.articleShape = blog.articleShape
-            recentAngles.push({
-              title: blog.title, articleShape: blog.articleShape, generationType: blog.generationType,
-              insightSource: blog.insightSource, primaryQuestion: blog.primaryQuestion,
-            })
-          } else if (blog?.status === 'insufficient_source') {
-            // Held, not failed — correctly declined rather than invented.
-            // Original caption stays; flagged the same way a title/caption
-            // mismatch is, so it's visible and excluded from bulk actions.
-            heldCount++
-            item.flaggedForReview = true
-            item.flagReason = blog.note ?? 'Not enough source material to rewrite without inventing detail.'
-          } else if (blogError) {
-            // A config-level failure (e.g. the API key isn't set) will fail
-            // identically for every remaining item — no point burning through
-            // the whole archive one silent failure at a time. Keep everyone's
-            // original captions and surface it once, instead of the founder
-            // wondering later why nothing got an AI blog.
-            aiBlogError = blogError
-            break
-          }
-        }
-      }
-
       setStage('Saving to your Village…')
       let imported = 0
       for (const { item } of built) {
@@ -142,15 +69,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
 
       setStage(null)
       setResult({ imported, skipped: posts.length - imported })
-      if (aiBlogError) {
-        setError(
-          `Everything imported, but AI blog writing didn't run (${aiBlogError}) — your original captions were used instead.`
-        )
-      } else if (heldCount > 0) {
-        setError(
-          `Imported fine. ${heldCount} item${heldCount === 1 ? '' : 's'} had too little to go on to write from honestly — held for review (flagged with an asterisk) instead of guessed at.`
-        )
-      } else if (uploadErrors.length > 0) {
+      if (uploadErrors.length > 0) {
         setError(
           `${uploadErrors.length} file${uploadErrors.length === 1 ? '' : 's'} couldn't upload (likely too large for the current storage limit) — ` +
           `everything else imported fine: ${uploadErrors.slice(0, 3).join('; ')}${uploadErrors.length > 3 ? '…' : ''}`
@@ -195,9 +114,9 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, insightBrief
             <div className="mb-4 bg-[#FBF1EB] border border-[#F0DDD2] rounded-xl px-4 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Tip: add your Voice &amp; Brand Brief above first</p>
               <p className="text-xs text-[#6B7280] leading-relaxed">
-                You can import your archive right now either way — but with a brief, every piece gets a real,
-                distinct starter blog written in your own voice instead of just keeping the original caption.
-                Add it in the Voice &amp; Brand Brief section above, then come back here any time.
+                You can import your archive right now either way — original captions come across as-is. Add a
+                brief and you can turn any piece into a real, distinct blog written in your own voice afterward,
+                right from Content.
               </p>
             </div>
           )}

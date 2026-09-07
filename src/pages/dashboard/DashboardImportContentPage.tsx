@@ -1770,7 +1770,6 @@ export function DashboardImportContentPage() {
               <InstagramArchiveImportCard
                 founderId={founderId}
                 voiceBrief={canUseVoiceRewrite ? founder?.voiceBrief : undefined}
-                insightBrief={canUseVoiceRewrite ? founder?.insightBrief : undefined}
                 expanded={instagramExpanded}
                 onExpandedChange={setInstagramExpanded}
                 onImported={count => reportImported(count)}
