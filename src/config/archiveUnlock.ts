@@ -13,13 +13,15 @@
 // price doesn't), so the top tier is a base + per-piece formula instead of
 // a bigger flat number.
 //
-// Test-mode Payment Links (one-time, NOT subscription) — swap for live-mode
-// links the same way paymentLinks.ts documents. Each must carry
-// client_reference_id (see buildPaymentUrl) so stripe-archive-unlock-webhook
-// can find the founder from the resulting Checkout Session.
-export const ARCHIVE_UNLOCK_TIER_1_LINK = 'https://buy.stripe.com/test_10000000000000' // <= 50 pieces — $19
-export const ARCHIVE_UNLOCK_TIER_2_LINK = 'https://buy.stripe.com/test_10000000000001' // 51-250 pieces — $39
-export const ARCHIVE_UNLOCK_TIER_3_LINK = 'https://buy.stripe.com/test_10000000000002' // 251-1,000 pieces — $79
+// Live-mode Payment Links (one-time, NOT subscription), created via the
+// one-off stripe-setup-archive-unlock Edge Function — AUD, branded product
+// names/descriptions, redirect back to Content on completion. Each must
+// carry client_reference_id (see buildPaymentUrl) so
+// stripe-archive-unlock-webhook can find the founder from the resulting
+// Checkout Session.
+export const ARCHIVE_UNLOCK_TIER_1_LINK = 'https://buy.stripe.com/aFafZi5rP28z2au92T83C0a' // <= 50 pieces — $19 AUD
+export const ARCHIVE_UNLOCK_TIER_2_LINK = 'https://buy.stripe.com/4gMfZi8E16oP4iCbb183C0b' // 51-250 pieces — $39 AUD
+export const ARCHIVE_UNLOCK_TIER_3_LINK = 'https://buy.stripe.com/28EdRadYlaF52au5QH83C0c' // 251-1,000 pieces — $79 AUD
 
 // Free preview — same number regardless of tier or archive size.
 export const ARCHIVE_UNLOCK_FREE_COUNT = 10
@@ -34,13 +36,13 @@ export interface ArchiveUnlockTier {
 
 // maxCount is inclusive of this tier's upper bound; 'custom' has none.
 const TIERS: Array<ArchiveUnlockTier & { maxCount: number | null }> = [
-  { id: 'tier1', label: 'Up to 50 pieces', price: 19, priceLabel: '$19 once', paymentLink: ARCHIVE_UNLOCK_TIER_1_LINK, maxCount: 50 },
-  { id: 'tier2', label: '51–250 pieces', price: 39, priceLabel: '$39 once', paymentLink: ARCHIVE_UNLOCK_TIER_2_LINK, maxCount: 250 },
-  { id: 'tier3', label: '251–1,000 pieces', price: 79, priceLabel: '$79 once', paymentLink: ARCHIVE_UNLOCK_TIER_3_LINK, maxCount: 1000 },
+  { id: 'tier1', label: 'Up to 50 pieces', price: 19, priceLabel: '$19 AUD once', paymentLink: ARCHIVE_UNLOCK_TIER_1_LINK, maxCount: 50 },
+  { id: 'tier2', label: '51–250 pieces', price: 39, priceLabel: '$39 AUD once', paymentLink: ARCHIVE_UNLOCK_TIER_2_LINK, maxCount: 250 },
+  { id: 'tier3', label: '251–1,000 pieces', price: 79, priceLabel: '$79 AUD once', paymentLink: ARCHIVE_UNLOCK_TIER_3_LINK, maxCount: 1000 },
   // Stripe Payment Links can't do dynamic per-piece pricing, so past 1,000
   // this is a formula shown to the founder rather than a fixed-price link —
   // routes to a "get in touch" flow instead of straight to Stripe.
-  { id: 'custom', label: '1,001+ pieces', price: null, priceLabel: '$79 + $0.08/piece over 1,000', paymentLink: null, maxCount: null },
+  { id: 'custom', label: '1,001+ pieces', price: null, priceLabel: '$79 AUD + $0.08/piece over 1,000', paymentLink: null, maxCount: null },
 ]
 
 /** Which tier a given total-detected-pieces count falls into. */
