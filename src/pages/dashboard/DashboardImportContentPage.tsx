@@ -17,6 +17,7 @@ import {
   youtubeThumbnailUrl,
 } from '../../services/importedContent'
 import { syncImportEditsToStory } from '../../services/publishStory'
+import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
 import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
@@ -1698,7 +1699,11 @@ export function DashboardImportContentPage() {
             {justImportedCount} {justImportedCount === 1 ? 'item' : 'items'} imported. Review and publish it from Content.
           </p>
           <Link
-            to="/dashboard/profile?tab=content&contentSubTab=ready"
+            to={
+              !founder?.archiveUnlocked && importedContentService.getAll({ founderId }).length > ARCHIVE_UNLOCK_FREE_COUNT
+                ? '/dashboard/archive-found'
+                : '/dashboard/profile?tab=content&contentSubTab=ready'
+            }
             className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
           >
             Go to Content →

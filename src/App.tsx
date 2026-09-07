@@ -52,6 +52,7 @@ import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPag
 import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
+import { DashboardArchiveFoundPage } from './pages/dashboard/DashboardArchiveFoundPage'
 import { DashboardWelcomePage }      from './pages/dashboard/DashboardWelcomePage'
 import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
@@ -194,6 +195,7 @@ export default function App() {
             <Route path="media"          element={<DashboardMediaPage />}        />
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
             <Route path="import-content" element={<DashboardImportContentPage />}/>
+            <Route path="archive-found"  element={<DashboardArchiveFoundPage />}  />
             {/* Imported content is a Profile > Content subtab now (its own
                 sidebar link for quick access, still fully manageable from
                 Content) — see DashboardLayout's nav. */}

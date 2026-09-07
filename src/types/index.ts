@@ -466,6 +466,14 @@ export interface Founder {
   // this). Lets CAPO surface and manage /join signups in Founders and Email
   // Lists without joining out to auth.users, which isn't queryable client-side.
   signupEmail?: string
+  // True once this founder has paid the one-time Archive Unlock fee —
+  // before that, only their top 10 most-ready imported pieces are usable;
+  // the rest of whatever they've imported sits locked behind the fee (see
+  // utils/archiveUnlock.ts). Entirely separate from creativeSubscription —
+  // a founder can unlock their archive without ever subscribing to
+  // Creatives, and vice versa.
+  archiveUnlocked?: boolean
+  archiveUnlockedAt?: string
 }
 
 // A founder's status with the paid CULO Creatives product — entirely

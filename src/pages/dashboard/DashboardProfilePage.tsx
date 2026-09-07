@@ -5,6 +5,7 @@ import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder, getFounder } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './DashboardImportContentPage'
+import { getUnlockedImportedIds } from '../../utils/archiveUnlock'
 import { SeriesDetail } from './DashboardSeriesPage'
 import { getSeriesList, createSeries, saveSeries } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
@@ -1346,6 +1347,12 @@ export function DashboardProfilePage() {
               const readyItems = notPublished.filter(isItemReady)
               const reviewItems = notPublished.filter(i => !isItemReady(i))
               const shownReady = contentSubTab === 'ready' ? readyItems : reviewItems
+              // Archive Unlock — until a founder pays the one-time fee, only
+              // their strongest ARCHIVE_UNLOCK_FREE_COUNT unpublished pieces
+              // (plus anything already published) are actually usable; the
+              // rest render as locked rows below instead of a normal SavedRow.
+              const liveFounderForUnlock = getFounder(draft.id)
+              const unlockedIds = getUnlockedImportedIds(allImported, liveFounderForUnlock)
 
               function toggleReadyChecked(id: string) {
                 setReadyChecked(prev => {
@@ -1370,9 +1377,13 @@ export function DashboardProfilePage() {
               }
 
               async function publishItems(items: ImportedContent[]) {
-                if (!draft || items.length === 0) return
+                // Defence in depth — locked rows have no checkbox in the UI,
+                // but never trust that alone to keep a locked piece from
+                // being published without paying for it.
+                const publishable = items.filter(i => unlockedIds.has(i.id))
+                if (!draft || publishable.length === 0) return
                 setReadyBulkPublishing(true)
-                for (const item of items) {
+                for (const item of publishable) {
                   const story = buildStoryFromImport(item, draft)
                   const result = await publishStoryCore(story)
                   if (result.success) await importedContentService.updateStatus(item.id, 'published')
@@ -1383,9 +1394,12 @@ export function DashboardProfilePage() {
                 setImportedTick(t => t + 1)
               }
 
+              const unlockedReadyItems = readyItems.filter(i => unlockedIds.has(i.id))
+              const lockedReadyCount = readyItems.length - unlockedReadyItems.length
+
               function toggleSelectAllReady() {
                 setReadyChecked(prev =>
-                  prev.size === readyItems.length ? new Set() : new Set(readyItems.map(i => i.id))
+                  prev.size === unlockedReadyItems.length ? new Set() : new Set(unlockedReadyItems.map(i => i.id))
                 )
               }
 
@@ -1396,11 +1410,16 @@ export function DashboardProfilePage() {
                       <label className="flex items-center gap-2 text-sm font-medium text-[#2D2A26] cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={readyChecked.size > 0 && readyChecked.size === readyItems.length}
+                          checked={readyChecked.size > 0 && readyChecked.size === unlockedReadyItems.length}
                           onChange={toggleSelectAllReady}
                           className="w-4 h-4 accent-[#C86A43]"
                         />
-                        Select all ({readyItems.length})
+                        Select all ({unlockedReadyItems.length})
+                        {lockedReadyCount > 0 && (
+                          <Link to="/dashboard/archive-found" className="text-xs font-normal text-[#C86A43] hover:underline ml-1">
+                            + {lockedReadyCount} locked
+                          </Link>
+                        )}
                       </label>
                       <button
                         onClick={() => void publishItems(readyItems.filter(i => readyChecked.has(i.id)))}
@@ -1426,7 +1445,7 @@ export function DashboardProfilePage() {
                     </div>
                   ) : (
                     <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                      {shownReady.map(item => (
+                      {shownReady.map(item => unlockedIds.has(item.id) ? (
                         <SavedRow
                           key={item.id}
                           item={item}
@@ -1436,6 +1455,20 @@ export function DashboardProfilePage() {
                           onDelete={() => handleReadyDelete(item.id)}
                           onStatusChange={status => void importedContentService.updateStatus(item.id, status).then(() => setImportedTick(t => t + 1))}
                         />
+                      ) : (
+                        <div key={item.id} className="flex items-center gap-4 px-5 py-4">
+                          <img src={item.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6] opacity-40 grayscale" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#9CA3AF] truncate blur-[3px] select-none">{item.title}</p>
+                          </div>
+                          <Link to="/dashboard/archive-found"
+                            className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-[#C86A43] hover:underline">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Unlock
+                          </Link>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -1446,6 +1479,11 @@ export function DashboardProfilePage() {
             {contentSubTab === 'imported' && (() => {
               void importedTick
               const allImported = importedContentService.getAll({ founderId: draft.id })
+              // Not shown as locked rows here (this is a browsing/editing
+              // view, not the sell surface) — but publishing from here must
+              // still be blocked for a locked piece, or the Archive Unlock
+              // paywall could just be skipped entirely from this tab.
+              const unlockedIdsImported = getUnlockedImportedIds(allImported, getFounder(draft.id))
               const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
               const shownByPlatform = importedPlatformFilter === 'all'
                 ? allImported
@@ -1496,6 +1534,10 @@ export function DashboardProfilePage() {
 
               async function handleImportedStatusChange(id: string, status: ImportedContentStatus) {
                 const item = importedContentService.get(id)
+                if ((status === 'published' || status === 'featured') && item && !unlockedIdsImported.has(id)) {
+                  setSaveError('This piece is part of your locked archive — unlock it before publishing.')
+                  return
+                }
                 if (status === 'published' || status === 'featured') {
                   if (item && draft && !item.relatedStoryId && isReadyToPublish(item)) {
                     const story = buildStoryFromImport(item, draft)
@@ -1537,7 +1579,7 @@ export function DashboardProfilePage() {
               async function handleImportedBulkPublish() {
                 if (!draft) return
                 setImportedBulkPublishing(true)
-                const targets = readyItems.filter(i => importedChecked.has(i.id))
+                const targets = readyItems.filter(i => importedChecked.has(i.id) && unlockedIdsImported.has(i.id))
                 for (const item of targets) {
                   const story = buildStoryFromImport(item, draft)
                   const result = await publishStoryCore(story)
@@ -1560,7 +1602,7 @@ export function DashboardProfilePage() {
               // Deliberately stricter than "Select all ready to publish"
               // (title only) — this is the "just get the ones that don't
               // need me to look at them" button.
-              const autoPublishCandidates = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i))
+              const autoPublishCandidates = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i) && unlockedIdsImported.has(i.id))
               async function handleAutoPublishCaptioned() {
                 if (!draft || autoPublishCandidates.length === 0) return
                 if (!window.confirm(`Publish ${autoPublishCandidates.length} item${autoPublishCandidates.length === 1 ? '' : 's'} that already ${autoPublishCandidates.length === 1 ? 'has' : 'have'} a real caption? Nothing will be rewritten first.`)) return
