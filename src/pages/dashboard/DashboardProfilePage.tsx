@@ -1626,7 +1626,11 @@ export function DashboardProfilePage() {
               // stop the rest, it just leaves that item as it was.
               async function handleRegenerateSelected() {
                 if (!canUseVoiceRewrite || !draft || !liveVoiceBrief?.trim()) return
-                const ids = Array.from(importedChecked)
+                // Real AI spend per item — never run it on a piece that's
+                // still locked behind Archive Unlock, or a founder could
+                // burn the cost this feature exists to gate before ever
+                // paying for it.
+                const ids = Array.from(importedChecked).filter(id => unlockedIdsImported.has(id))
                 if (ids.length === 0) return
                 setImportedRegenProgress({ done: 0, total: ids.length })
                 let held = 0
