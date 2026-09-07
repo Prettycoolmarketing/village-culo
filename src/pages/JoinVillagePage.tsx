@@ -161,7 +161,7 @@ export function JoinVillagePage() {
                 Exclusively In Canva
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
-                It's time to share your messy thoughts and raw footage into structured social media posts.
+                It's time to share your messy thoughts and raw footage into structured social media posts, join the Culo Village to republish your previously posted content across platforms structured for discovery as web articles.
               </p>
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
                 <input
