@@ -178,12 +178,12 @@ export function JoinVillagePage() {
                   disabled={submitting}
                   className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
                 >
-                  {submitting ? 'Joining…' : 'Join free'}
+                  {submitting ? 'Joining…' : 'Join the Village'}
                 </button>
               </form>
               {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
               <p className="font-body text-xs text-white/40 mt-4">
-                Free access to culo creatives in canva till january 1st 2027, no spam emails, publish in the village
+                The Village is free forever · Culo Creatives in Canva is free until January 1, 2027 · No spam emails
               </p>
             </div>
             <img
@@ -195,11 +195,96 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
-      {/* ── What is CULO Creatives — moved up right under the join form,
-          on the Village's signature pale-blue gradient background (same
-          soft radial circles as the homepage's HeroWidget). Copy sits next
-          to the video, same side-by-side pattern as CreativesPage's "Watch
-          the demo" section. */}
+      {/* ── Moving "The Culo Village" banner — dark, marquee-style, same
+          repeated-wordmark treatment as a scrolling brand strip, sitting
+          right above the Village pitch below it. Placed right after the
+          hero, ahead of the Creatives walkthrough, so a founder knows what
+          the Village actually is before reading three sections about the
+          Creatives tool inside it. */}
+      <section className="bg-charcoal py-6 overflow-hidden" aria-hidden="true">
+        <style>{`
+          @keyframes culo-village-marquee {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+          }
+        `}</style>
+        <div className="flex w-max" style={{ animation: 'culo-village-marquee 24s linear infinite' }}>
+          {[0, 1].map(group => (
+            <div key={group} className="flex items-center shrink-0">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <span key={i} className="flex items-center shrink-0">
+                  <span className="font-heading text-2xl sm:text-3xl font-bold text-white/90 mx-6 whitespace-nowrap">
+                    The Culo Village
+                  </span>
+                  <span className="text-primary text-2xl" aria-hidden="true">•</span>
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── What is The Culo Village — text left, a live scaled-down preview
+          of a real founder page on the right, so it's an actual example
+          rather than a description of one. */}
+      <section className="py-16 md:py-20 bg-background" aria-labelledby="village-heading">
+        <InnerContainer>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+            <div>
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+                What is The Culo Village?
+              </p>
+              <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
+                Republish everything you've already posted across channels for discovery.
+              </h2>
+              <p className="font-body text-base text-muted leading-relaxed mb-4">
+                The Culo Village helps founders structure their previously posted content across platforms and
+                republish as individual webpages for AI search-ability as a joint publishing house.
+              </p>
+              <p className="font-body text-base text-muted leading-relaxed mb-8">
+                Membership in the Village itself is free, forever. Culo Creatives, the AI editing tool in Canva
+                covered next, is a separate, optional part of it — free until January 1, 2027, then $19 AUD/month
+                for founders who joined before that date.
+              </p>
+              <a href="#join-heading" className="inline-flex items-center gap-2 text-primary font-body text-sm font-semibold hover:text-[#b05a35] transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+                Join to be discovered
+              </a>
+            </div>
+            <a
+              href="https://www.culovillage.com/founders/shakas-designer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl overflow-hidden border border-border shadow-lg bg-white hover:shadow-xl transition-shadow"
+              aria-label="See an example CULO Village founder page (opens in a new tab)"
+            >
+              <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F3EDE6] border-b border-border">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-300" />
+                <span className="ml-3 text-[10px] text-muted truncate font-body">culovillage.com/founders/shakas-designer</span>
+              </div>
+              <div className="relative overflow-hidden" style={{ aspectRatio: '4 / 3' }}>
+                <iframe
+                  src="https://www.culovillage.com/founders/shakas-designer"
+                  title="Example CULO Village founder page"
+                  className="absolute top-0 left-0 border-0 pointer-events-none"
+                  style={{ width: '250%', height: '250%', transform: 'scale(0.4)', transformOrigin: 'top left' }}
+                  loading="lazy"
+                  tabIndex={-1}
+                />
+              </div>
+            </a>
+          </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── What is CULO Creatives — on the Village's signature pale-blue
+          gradient background (same soft radial circles as the homepage's
+          HeroWidget). Copy sits next to the video, same side-by-side
+          pattern as CreativesPage's "Watch the demo" section. */}
       <section className="relative overflow-hidden py-16 md:py-20" aria-labelledby="what-heading">
         <div className="absolute inset-0 bg-background" aria-hidden="true">
           <div
@@ -301,84 +386,6 @@ export function JoinVillagePage() {
             {GRID_ROW_2.map(src => (
               <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
             ))}
-          </div>
-        </InnerContainer>
-      </section>
-
-      {/* ── Moving "The Culo Village" banner — dark, marquee-style, same
-          repeated-wordmark treatment as a scrolling brand strip, sitting
-          right above the Village pitch below it. */}
-      <section className="bg-charcoal py-6 overflow-hidden" aria-hidden="true">
-        <style>{`
-          @keyframes culo-village-marquee {
-            from { transform: translateX(0); }
-            to   { transform: translateX(-50%); }
-          }
-        `}</style>
-        <div className="flex w-max" style={{ animation: 'culo-village-marquee 24s linear infinite' }}>
-          {[0, 1].map(group => (
-            <div key={group} className="flex items-center shrink-0">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <span key={i} className="flex items-center shrink-0">
-                  <span className="font-heading text-2xl sm:text-3xl font-bold text-white/90 mx-6 whitespace-nowrap">
-                    The Culo Village
-                  </span>
-                  <span className="text-primary text-2xl" aria-hidden="true">•</span>
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── What is The Culo Village — text left, a live scaled-down preview
-          of a real founder page on the right, so it's an actual example
-          rather than a description of one. */}
-      <section className="py-16 md:py-20 bg-background" aria-labelledby="village-heading">
-        <InnerContainer>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
-            <div>
-              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-                What is The Culo Village?
-              </p>
-              <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-                Republish everything you've already posted across channels for discovery.
-              </h2>
-              <p className="font-body text-base text-muted leading-relaxed mb-8">
-                The Culo Village helps founders structure their previously posted content across platforms and
-                republish as individual webpages for AI search-ability as a joint publishing house.
-              </p>
-              <a href="#join-heading" className="inline-flex items-center gap-2 text-primary font-body text-sm font-semibold hover:text-[#b05a35] transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
-                Join to be discovered
-              </a>
-            </div>
-            <a
-              href="https://www.culovillage.com/founders/shakas-designer"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-2xl overflow-hidden border border-border shadow-lg bg-white hover:shadow-xl transition-shadow"
-              aria-label="See an example CULO Village founder page (opens in a new tab)"
-            >
-              <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F3EDE6] border-b border-border">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-300" />
-                <span className="ml-3 text-[10px] text-muted truncate font-body">culovillage.com/founders/shakas-designer</span>
-              </div>
-              <div className="relative overflow-hidden" style={{ aspectRatio: '4 / 3' }}>
-                <iframe
-                  src="https://www.culovillage.com/founders/shakas-designer"
-                  title="Example CULO Village founder page"
-                  className="absolute top-0 left-0 border-0 pointer-events-none"
-                  style={{ width: '250%', height: '250%', transform: 'scale(0.4)', transformOrigin: 'top left' }}
-                  loading="lazy"
-                  tabIndex={-1}
-                />
-              </div>
-            </a>
           </div>
         </InnerContainer>
       </section>
