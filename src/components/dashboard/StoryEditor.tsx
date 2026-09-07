@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { updateStory, deleteStory } from '../../services/stories'
+import { updateStory, deleteStory, uniqueStorySlug } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { getIdeas } from '../../services/ideas'
@@ -90,17 +90,25 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
   async function handleSave() {
     setSaving(true)
     setSaveError(null)
-    const result = await updateStory(draft)
+    // The slug used to only ever get set once, at creation — editing the
+    // title here never touched it, so the public URL silently went stale
+    // (or stuck on a thin one-off slug from whatever the title was at
+    // first-publish). Recomputes from the current title on every save;
+    // a no-op when the title hasn't changed since the slug already matches.
+    const desiredSlug = uniqueStorySlug(draft.title, draft.id)
+    const toSave = desiredSlug === draft.slug ? draft : { ...draft, slug: desiredSlug }
+    const result = await updateStory(toSave)
     setSaving(false)
     if (result.success) {
-      if (draft.status === 'published' || draft.status === 'featured') {
-        const intel = villageContentIntelligenceService.analyse(storyToInput(draft))
+      if (toSave.status === 'published' || toSave.status === 'featured') {
+        const intel = villageContentIntelligenceService.analyse(storyToInput(toSave))
         void villageContentIntelligenceService.upsert(intel)
-        void syncIdeasFromStory(draft, intel)
-        void refreshAuthorityScores(draft)
+        void syncIdeasFromStory(toSave, intel)
+        void refreshAuthorityScores(toSave)
       }
+      if (toSave.slug !== draft.slug) setDraft(toSave)
       setSaved(true)
-      onSave(draft)
+      onSave(toSave)
     } else {
       setSaveError(result.error ?? 'Save failed. Please try again.')
     }

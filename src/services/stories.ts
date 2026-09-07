@@ -1,4 +1,5 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
+import { slugify } from '../utils/slugify'
 import type { Story, StoryFilter } from '../types'
 
 const KEY = 'stories'
@@ -6,6 +7,22 @@ const TABLE = 'stories'
 
 function live(): Story[] {
   return readCache<Story>(KEY)
+}
+
+// A story's slug was previously only ever set once, at creation — editing
+// the title afterward (StoryEditor) never touched it, so the public URL
+// silently went stale (or stuck on a bad one-off slug like "unknown" if the
+// title was thin/generic the moment it was first published). Called from
+// StoryEditor's save so the URL actually follows the title from here on;
+// ignoreId excludes the story's own current slug from the collision check
+// so re-saving with the same title is a no-op, not a "-2" suffix.
+export function uniqueStorySlug(title: string, ignoreId?: string): string {
+  const root = slugify(title) || 'story'
+  const taken = new Set(live().filter(s => s.id !== ignoreId).map(s => s.slug))
+  if (!taken.has(root)) return root
+  let n = 2
+  while (taken.has(`${root}-${n}`)) n++
+  return `${root}-${n}`
 }
 
 export function getStories(filter?: StoryFilter): Story[] {
