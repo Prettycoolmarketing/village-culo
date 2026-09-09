@@ -480,6 +480,14 @@ export interface Founder {
   // (see getUnlockedImportedIds). Undefined with archiveUnlocked=true means
   // an uncapped unlock.
   archiveUnlockCap?: number
+  // The real amount actually charged (in `archiveUnlockCurrency`, e.g.
+  // "aud"), set by stripe-archive-unlock-webhook from the Checkout
+  // Session's own amount_total — the source of truth for Village revenue
+  // reporting, rather than guessing a tier from the founder's current
+  // archive size (which can drift after later imports). Undefined for
+  // anyone unlocked before this was tracked.
+  archiveUnlockAmount?: number
+  archiveUnlockCurrency?: string
 }
 
 // A founder's status with the paid CULO Creatives product — entirely

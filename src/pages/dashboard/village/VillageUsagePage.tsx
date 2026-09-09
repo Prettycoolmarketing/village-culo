@@ -50,13 +50,15 @@ export function VillageUsagePage({ embedded = false }: { embedded?: boolean } = 
   const activeImporters = byFounder.size
   const avgPerFounder = activeImporters ? (allContent.length / activeImporters).toFixed(1) : '0'
 
-  // Archive Unlock revenue — the founder record only ever stores whether/
-  // when someone unlocked (not what they paid), so this estimates each
-  // unlocked founder's price from their real archive size at their real
-  // tier: the $699 subset price if they capped at 5,000, otherwise
-  // whatever flat tier their total item count falls into.
+  // Archive Unlock revenue — stripe-archive-unlock-webhook stores the real
+  // amount charged (archiveUnlockAmount) straight from the Checkout
+  // Session, so this uses that directly. Only falls back to estimating a
+  // tier from the founder's current archive size for anyone unlocked
+  // before that was tracked (archiveUnlockAmount undefined).
   const unlockedFounders = founders.filter(f => f.archiveUnlocked)
+  const estimatedCount = unlockedFounders.filter(f => f.archiveUnlockAmount == null).length
   const archiveRevenue = unlockedFounders.reduce((sum, f) => {
+    if (f.archiveUnlockAmount != null) return sum + f.archiveUnlockAmount
     if (f.archiveUnlockCap) return sum + ARCHIVE_UNLOCK_SUBSET_5000_PRICE
     return sum + getArchiveUnlockPrice(byFounder.get(f.id) ?? 0)
   }, 0)
@@ -83,7 +85,11 @@ export function VillageUsagePage({ embedded = false }: { embedded?: boolean } = 
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         <StatCard label="Archive Unlock — founders unlocked" value={unlockedFounders.length} />
-        <StatCard label="Est. Village Revenue" value={`$${archiveRevenue.toLocaleString()}`} sub="Archive Unlock, one-time" />
+        <StatCard
+          label="Village Revenue"
+          value={`$${archiveRevenue.toLocaleString()}`}
+          sub={estimatedCount > 0 ? `Archive Unlock · ${estimatedCount} pre-tracking, estimated` : 'Archive Unlock, one-time'}
+        />
       </div>
 
       <h2 className="text-sm font-semibold text-[#2D2A26] mb-3">Top importers</h2>

@@ -83,11 +83,18 @@ serve(async (req) => {
           // archive. Any other link is a full unlock.
           const linkId = typeof session.payment_link === 'string' ? session.payment_link : session.payment_link?.id
           const isSubset = !!SUBSET_LINK_ID && linkId === SUBSET_LINK_ID
+          // The real amount actually charged — Village Usage's revenue
+          // tracking uses this directly instead of guessing a tier from
+          // the founder's current archive size (which can drift from what
+          // they paid, e.g. after later imports).
+          const amountPaid = typeof session.amount_total === 'number' ? session.amount_total / 100 : undefined
           await admin.from('founders').update({
             data: {
               ...founderData,
               archiveUnlocked: true,
               archiveUnlockedAt: new Date().toISOString(),
+              archiveUnlockAmount: amountPaid,
+              archiveUnlockCurrency: session.currency ?? undefined,
               ...(isSubset ? { archiveUnlockCap: SUBSET_CAP } : { archiveUnlockCap: undefined }),
             },
           }).eq('id', founderId)
