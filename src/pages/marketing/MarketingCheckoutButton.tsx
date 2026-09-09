@@ -27,7 +27,7 @@ export function MarketingCheckoutButton({
 
   const btn =
     tone === 'light'
-      ? 'bg-background text-charcoal hover:bg-white'
+      ? 'bg-surface text-charcoal hover:bg-white'
       : 'bg-primary text-white hover:bg-[#b05a35]'
   const noteText = tone === 'light' ? 'text-white/80' : 'text-muted'
   const noteLink = tone === 'light' ? 'text-white underline' : 'text-primary hover:underline'

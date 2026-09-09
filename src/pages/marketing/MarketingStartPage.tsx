@@ -28,8 +28,8 @@ export function MarketingStartPage() {
   )}`
 
   return (
-    <main className="min-h-screen bg-background">
-      <section className="relative overflow-hidden bg-background py-20 md:py-24 text-center border-b border-border">
+    <main className="min-h-screen bg-surface">
+      <section className="relative overflow-hidden bg-surface py-20 md:py-24 text-center border-b border-border">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
           <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }} />
           <div className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }} />
@@ -51,7 +51,7 @@ export function MarketingStartPage() {
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 bg-background">
+      <section className="py-16 md:py-20 bg-surface">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             What to send

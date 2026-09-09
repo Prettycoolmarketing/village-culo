@@ -32,7 +32,7 @@ export function MarketingPublishingPage() {
   })
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-surface">
       <MarketingHero
         kicker="Offer one · one-off service"
         title="Publishing in the Culo Village"
@@ -45,7 +45,7 @@ export function MarketingPublishingPage() {
       />
 
       {/* What's included */}
-      <section className="py-16 md:py-20 bg-background border-b border-border">
+      <section className="py-16 md:py-20 bg-surface border-b border-border">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             What's included
@@ -65,7 +65,7 @@ export function MarketingPublishingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-16 md:py-20 bg-background">
+      <section className="py-16 md:py-20 bg-surface">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
             <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
@@ -90,7 +90,7 @@ export function MarketingPublishingPage() {
       </section>
 
       {/* DIY / Village note */}
-      <section className="py-14 bg-background border-y border-border">
+      <section className="py-14 bg-surface border-y border-border">
         <InnerContainer className="max-w-3xl text-center">
           <p className="font-body text-lg text-charcoal leading-relaxed">
             Clients can also do this themselves by becoming a Culo Village member. The Village is set
@@ -104,7 +104,7 @@ export function MarketingPublishingPage() {
       </section>
 
       {/* Final CTA — cream section (like the hero), orange button */}
-      <section className="py-16 md:py-20 bg-background border-t border-border">
+      <section className="py-16 md:py-20 bg-surface border-t border-border">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>

@@ -48,7 +48,7 @@ export function MarketingLandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-surface">
       <MarketingHero
         kicker="Pretty Cool Marketing"
         title="Done for you inside the Village"
@@ -83,7 +83,7 @@ export function MarketingLandingPage() {
       />
 
       {/* ── Who this is for ───────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 bg-background border-b border-border">
+      <section className="py-16 md:py-20 bg-surface border-b border-border">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             Who this is for
@@ -114,7 +114,7 @@ export function MarketingLandingPage() {
       </section>
 
       {/* ── The two services ─────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 bg-background">
+      <section className="py-16 md:py-20 bg-surface">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-6">
             <OfferCard
@@ -136,7 +136,7 @@ export function MarketingLandingPage() {
       </section>
 
       {/* ── DIY note ──────────────────────────────────────────────────────── */}
-      <section className="py-14 bg-background border-y border-border">
+      <section className="py-14 bg-surface border-y border-border">
         <InnerContainer className="max-w-3xl text-center">
           <h2 className="font-heading text-2xl md:text-3xl font-bold text-charcoal mb-4">
             Want to do it yourself?
@@ -156,7 +156,7 @@ export function MarketingLandingPage() {
       </section>
 
       {/* ── Ready to start — cream section, orange buttons ───────────────── */}
-      <section className="py-16 md:py-20 bg-background border-t border-border">
+      <section className="py-16 md:py-20 bg-surface border-t border-border">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>

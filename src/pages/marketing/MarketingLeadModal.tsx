@@ -65,7 +65,7 @@ export function MarketingLeadModal({
       aria-label={`See rates for ${offerLabel}`}
     >
       <div
-        className="w-full max-w-md bg-background rounded-2xl shadow-lg p-7 relative"
+        className="w-full max-w-md bg-surface rounded-2xl shadow-lg p-7 relative"
         onClick={e => e.stopPropagation()}
       >
         <button

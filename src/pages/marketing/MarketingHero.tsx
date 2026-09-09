@@ -22,7 +22,7 @@ export function MarketingHero({
   right?: ReactNode
 }) {
   return (
-    <section className="relative overflow-hidden bg-background py-16 md:py-24 border-b border-border">
+    <section className="relative overflow-hidden bg-surface py-16 md:py-24 border-b border-border">
       {/* Soft radial gradient — same as the homepage / Join hero */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div

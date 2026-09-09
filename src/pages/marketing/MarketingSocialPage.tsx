@@ -45,13 +45,13 @@ export function MarketingSocialPage() {
   })
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-surface">
       <MarketingHero
         kicker="Offer two · monthly partnership"
         title="Social media content, edited and distributed for you."
         description="Two tiers. Tier 2 edits and schedules 30 posts a month across every platform and into the Village. Tier 3 adds a half-day shoot every 4 weeks in the PCM frameworks, on a fast turnaround built on the app and editing process."
         right={
-          <div className="bg-background rounded-2xl p-7 shadow-lg flex flex-col gap-4">
+          <div className="bg-surface rounded-2xl p-7 shadow-lg flex flex-col gap-4">
             <a href="#tier-2" className="block">
               <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Tier 2</p>
               <p className="font-heading text-2xl font-bold text-charcoal">$3,000 AUD <span className="text-sm font-normal text-muted">/ month</span></p>
@@ -66,7 +66,7 @@ export function MarketingSocialPage() {
       />
 
       {/* Tiers */}
-      <section className="py-16 md:py-20 bg-background">
+      <section className="py-16 md:py-20 bg-surface">
         <InnerContainer>
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Tier 2 */}
@@ -109,7 +109,7 @@ export function MarketingSocialPage() {
       </section>
 
       {/* Turnaround */}
-      <section className="py-16 md:py-20 bg-background border-y border-border">
+      <section className="py-16 md:py-20 bg-surface border-y border-border">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             The turnaround
@@ -134,7 +134,7 @@ export function MarketingSocialPage() {
       </section>
 
       {/* Terms */}
-      <section className="py-16 md:py-20 bg-background">
+      <section className="py-16 md:py-20 bg-surface">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             How the partnership works
@@ -151,7 +151,7 @@ export function MarketingSocialPage() {
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 bg-background border-t border-border">
+      <section className="py-16 md:py-20 bg-surface border-t border-border">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
