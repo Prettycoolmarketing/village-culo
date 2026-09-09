@@ -8,21 +8,36 @@ import { PCM_SUPPORT_EMAIL } from '../../config/pcmPaymentLinks'
 
 type Dest = { label: string; source: string; to: string }
 
-const PUBLISHING: Dest = { label: 'Publishing service', source: 'marketing-publishing', to: '/marketing/publishing' }
-const SOCIAL: Dest = { label: 'Social media partnerships', source: 'marketing-social', to: '/marketing/social' }
+const PUBLISHING: Dest = { label: 'Publishing Service', source: 'marketing-publishing', to: '/marketing/publishing' }
+const SOCIAL: Dest = { label: 'Social Media Partnership', source: 'marketing-social', to: '/marketing/social' }
+
+const WHO_LIST = ['Your ideas.', 'Your experience.', 'Your business.', 'Your authority.']
+
+const PUBLISHING_BODY = [
+  'We go through the content you have already published across YouTube, podcasts, Instagram and your website and turn each piece into a structured Village article.',
+  'Each article is built around the real idea, story or lesson inside the original content and connected back to your founder profile.',
+  'You walk away with a growing body of searchable work that positions you around the things you actually know.',
+  'We also give you the links to your founder profile and published articles so you can connect them back to your website, socials and existing content.',
+]
+
+const SOCIAL_BODY = [
+  'This is for founders who want to keep showing up without having to manage the whole content machine themselves.',
+  'We create up to 30 pieces of content each month using CULO Creatives across formats like Quick Rhythm, voiceover, talking head, carousel and founder story content.',
+  'We handle hooks, captions, editing, scheduling and publishing across your social platforms and into CULO Village.',
+  'An optional filming tier includes a half day content shoot every four weeks using Pretty Cool Marketing filming frameworks, with the footage turned around into content for the month ahead.',
+]
 
 export function MarketingLandingPage() {
   const navigate = useNavigate()
   const [dest, setDest] = useState<Dest | null>(null)
 
   usePageMeta({
-    title: 'Done For You Services in the Village — Pretty Cool Marketing',
+    title: 'Done for you inside the Village — Pretty Cool Marketing',
     description:
-      'Done for you services in the Culo Village. Two ways to work with us: a one-off publishing service, or an ongoing social media content partnership.',
+      'We take the videos, podcasts, blogs, website pages and Instagram posts you already have, turn them into structured founder content, and publish them into CULO Village so your work is easier to find through search and AI. Or we run your social content end to end.',
     keywords: [
-      'Pretty Cool Marketing', 'done for you services', 'content republishing service',
-      'AI search authority', 'founder authority positioning', 'social media content agency',
-      'Culo Village',
+      'Pretty Cool Marketing', 'done for you services', 'founder content', 'content republishing',
+      'CULO Village', 'AI search', 'social media partnership', 'founder library',
     ],
   })
 
@@ -36,12 +51,16 @@ export function MarketingLandingPage() {
     <main className="min-h-screen bg-pcm-cream">
       <MarketingHero
         kicker="Pretty Cool Marketing"
-        title="Done for you services in the Village."
+        title="Done for you inside the Village"
         description={
           <>
-            We take the content you have already made — across YouTube, podcasts, your website and
-            Instagram — restructure it, and republish each piece so AI and search can find you as a
-            founder and an expert. Or we run your social media content end to end.
+            <p className="mb-4">You have probably already created the content.</p>
+            <p className="mb-4">
+              We take the videos, podcasts, blogs, website pages and Instagram posts you already have,
+              turn them into structured founder content, and publish them into CULO Village so your
+              work is easier to find through search and AI.
+            </p>
+            <p>Or, if you want the whole thing handled, we run your social content end to end.</p>
           </>
         }
         right={
@@ -51,13 +70,13 @@ export function MarketingLandingPage() {
               onClick={() => go(PUBLISHING)}
               className="px-5 py-3 bg-pcm-orange text-white text-sm font-semibold rounded-xl text-center hover:bg-pcm-orange-dark transition-colors"
             >
-              Publishing service
+              Publishing Service
             </button>
             <button
               onClick={() => go(SOCIAL)}
               className="px-5 py-3 border border-pcm-linen text-pcm-dark text-sm font-semibold rounded-xl text-center hover:border-pcm-orange transition-colors"
             >
-              Social media partnerships
+              Social Media Partnership
             </button>
           </div>
         }
@@ -70,42 +89,46 @@ export function MarketingLandingPage() {
             Who this is for
           </p>
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-6 leading-tight">
-            Founders who have already said the valuable things — just not in a place AI can read them.
+            Founders who have already said the valuable things
           </h2>
-          <p className="font-body text-lg text-pcm-muted leading-relaxed">
-            Your best thinking is buried in podcast episodes, old captions, talking-head videos and
-            website pages that were never built for search. The Culo Village is set up for
-            searchability. We move your work into it and structure it so it positions you as a
-            business, a speaker, an authority — whatever your dream is.
+          <p className="font-body text-lg text-pcm-muted leading-relaxed mb-4">
+            Your best thinking is often buried in old podcast episodes, captions, talking head videos,
+            interviews and website pages.
+          </p>
+          <p className="font-body text-lg text-pcm-muted leading-relaxed mb-8">
+            Pretty Cool Marketing pulls that work back out, gives it structure and republishes it
+            inside CULO Village so it starts building a clear body of work around you.
+          </p>
+          <ul className="space-y-2">
+            {WHO_LIST.map(item => (
+              <li key={item} className="flex gap-3 font-body text-lg text-pcm-dark leading-relaxed">
+                <span className="text-pcm-orange font-bold shrink-0">—</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+          <p className="font-body text-lg text-pcm-dark leading-relaxed mt-6 font-semibold">
+            All connected in one place.
           </p>
         </InnerContainer>
       </section>
 
-      {/* ── The two offers ────────────────────────────────────────────────── */}
+      {/* ── The two services ─────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 bg-pcm-sand">
         <InnerContainer>
-          <div className="max-w-2xl mb-12">
-            <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
-              What we do
-            </p>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
-              Two ways to work with us.
-            </h2>
-          </div>
-
           <div className="grid md:grid-cols-2 gap-6">
             <OfferCard
-              kicker="One-off service"
-              title="Publishing service"
-              body="We transfer everything you have previously posted across YouTube, podcasts, websites and Instagram, and republish each piece as an individual article — restructured to position you as an authority and a business in your area. You get the link to your founder profile and every published article, and we encourage you to link them from your social accounts and your website."
-              cta="See the publishing service"
+              kicker="Publishing Service"
+              title="Turn your back catalogue into a founder library"
+              paragraphs={PUBLISHING_BODY}
+              cta="See the Publishing Service"
               onClick={() => go(PUBLISHING)}
             />
             <OfferCard
-              kicker="Monthly partnership"
-              title="Social media partnerships"
-              body="30 posts a month edited in Culo Creatives across Quick Rhythm, voice over and talking head, scheduled to every platform and into the Village with curated captions and hooks. An optional tier adds a half-day shoot every 4 weeks in the PCM frameworks, filmed and edited to a fast turnaround."
-              cta="See the social media tiers"
+              kicker="Social Media Partnership"
+              title="We run the content with you"
+              paragraphs={SOCIAL_BODY}
+              cta="See the Social Media Partnerships"
               onClick={() => go(SOCIAL)}
             />
           </div>
@@ -115,17 +138,24 @@ export function MarketingLandingPage() {
       {/* ── DIY note ──────────────────────────────────────────────────────── */}
       <section className="py-14 bg-pcm-sand border-y border-pcm-linen">
         <InnerContainer className="max-w-3xl text-center">
-          <p className="font-body text-lg text-pcm-dark leading-relaxed">
-            You can also do this yourself by becoming a Culo Village member.{' '}
+          <h2 className="font-heading text-2xl md:text-3xl font-bold text-pcm-dark mb-4">
+            Want to do it yourself?
+          </h2>
+          <p className="font-body text-lg text-pcm-dark leading-relaxed mb-3">
+            You can build and publish your own founder library directly inside CULO Village.
+          </p>
+          <p className="font-body text-lg mb-3">
             <a href="https://www.culovillage.com" className="text-pcm-dark font-semibold underline hover:text-pcm-orange">
-              Learn about the Village →
-            </a>{' '}
-            We are the service that takes care of it for you.
+              Learn about CULO Village →
+            </a>
+          </p>
+          <p className="font-body text-lg text-pcm-muted leading-relaxed">
+            Pretty Cool Marketing is simply the done for you version.
           </p>
         </InnerContainer>
       </section>
 
-      {/* ── Footer CTA — cream section (like the hero), orange buttons ────── */}
+      {/* ── Ready to start — cream section, orange buttons ───────────────── */}
       <section className="py-16 md:py-20 bg-pcm-cream border-t border-pcm-linen">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
@@ -134,11 +164,13 @@ export function MarketingLandingPage() {
                 Ready to start?
               </h2>
               <p className="mt-4 font-body text-lg text-pcm-dark/80 leading-relaxed">
-                Pick a service and we’ll show you the rates. Or email us first at{' '}
+                Choose the service that fits what you need and we will show you the pricing.
+              </p>
+              <p className="mt-2 font-body text-lg text-pcm-dark/80 leading-relaxed">
+                Or email us at{' '}
                 <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-pcm-dark font-semibold underline">
                   {PCM_SUPPORT_EMAIL}
                 </a>
-                .
               </p>
             </div>
             <div className="md:justify-self-end w-full md:max-w-xs flex flex-col gap-3">
@@ -146,13 +178,13 @@ export function MarketingLandingPage() {
                 onClick={() => go(PUBLISHING)}
                 className="px-6 py-3 bg-pcm-orange text-white text-sm font-semibold rounded-xl hover:bg-pcm-orange-dark transition-colors"
               >
-                Publishing service
+                Publishing Service
               </button>
               <button
                 onClick={() => go(SOCIAL)}
                 className="px-6 py-3 bg-pcm-orange text-white text-sm font-semibold rounded-xl hover:bg-pcm-orange-dark transition-colors"
               >
-                Social media partnerships
+                Social Media Partnership
               </button>
             </div>
           </div>
@@ -171,15 +203,17 @@ export function MarketingLandingPage() {
 }
 
 function OfferCard({
-  kicker, title, body, cta, onClick,
+  kicker, title, paragraphs, cta, onClick,
 }: {
-  kicker: string; title: string; body: string; cta: string; onClick: () => void
+  kicker: string; title: string; paragraphs: string[]; cta: string; onClick: () => void
 }) {
   return (
     <div className="bg-pcm-cream border border-pcm-linen rounded-2xl p-8 flex flex-col shadow-card">
       <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">{kicker}</p>
-      <h3 className="font-heading text-2xl font-bold text-pcm-dark mb-4">{title}</h3>
-      <p className="font-body text-pcm-muted leading-relaxed flex-1 mb-6">{body}</p>
+      <h3 className="font-heading text-2xl font-bold text-pcm-dark mb-4 leading-tight">{title}</h3>
+      <div className="font-body text-pcm-muted leading-relaxed flex-1 mb-6 space-y-3">
+        {paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+      </div>
       <button
         onClick={onClick}
         className="inline-flex justify-center px-5 py-2.5 bg-pcm-orange text-white text-sm font-semibold rounded-xl hover:bg-pcm-orange-dark transition-colors"
