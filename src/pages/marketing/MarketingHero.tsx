@@ -21,18 +21,18 @@ export function MarketingHero({
   right?: ReactNode
 }) {
   return (
-    <section className="bg-pcm-cream py-16 md:py-24 border-b border-pcm-linen">
+    <section className="bg-pcm-orange py-16 md:py-24">
       <InnerContainer>
         <div className={`grid gap-10 lg:gap-16 items-center ${right ? 'lg:grid-cols-2' : ''}`}>
           {/* Left — the pitch */}
           <div>
-            <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-4">
+            <p className="font-body text-xs font-semibold text-white/80 uppercase tracking-widest mb-4">
               {kicker}
             </p>
-            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-pcm-dark leading-tight mb-6">
+            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
               {title}
             </h1>
-            <div className="font-body text-base sm:text-lg text-pcm-dark/80 leading-relaxed max-w-xl">
+            <div className="font-body text-base sm:text-lg text-white/85 leading-relaxed max-w-xl [&_a]:text-white [&_a]:underline">
               {description}
             </div>
           </div>

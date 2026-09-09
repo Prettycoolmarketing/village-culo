@@ -331,6 +331,7 @@ export function DashboardLayout() {
                 <>
                   <SectionLabel label="Pretty Cool Marketing" />
                   <NavItem to="/dashboard/pcm" label="Client Tracker" icon={<Icon path={icons.services} />} />
+                  <NavItem to="/dashboard/pcm/leads" label="Leads" icon={<Icon path={icons.email} />} />
                 </>
               )}
             </>

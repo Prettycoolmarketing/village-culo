@@ -151,21 +151,21 @@ export function MarketingSocialPage() {
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 text-center bg-pcm-cream border-t border-pcm-linen">
+      <section className="py-16 md:py-20 text-center bg-pcm-orange">
         <InnerContainer className="max-w-2xl">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-6 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
             Start a partnership
           </h2>
-          <p className="font-body text-pcm-muted mb-8">
+          <p className="font-body text-white/85 mb-8">
             After payment you'll get instructions to email {PCM_SUPPORT_EMAIL} your raw footage and
             drive links.{' '}
-            <Link to="/marketing/start?offer=tier2" className="text-pcm-dark hover:underline">
+            <Link to="/marketing/start?offer=tier2" className="text-white underline">
               Preview the instructions →
             </Link>
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-lg mx-auto">
-            <MarketingCheckoutButton offerId="tier2" />
-            <MarketingCheckoutButton offerId="tier3" />
+            <MarketingCheckoutButton offerId="tier2" tone="dark" />
+            <MarketingCheckoutButton offerId="tier3" tone="dark" />
           </div>
         </InnerContainer>
       </section>

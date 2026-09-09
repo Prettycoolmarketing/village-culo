@@ -74,6 +74,7 @@ import { VillageCreativeFeedbackPage }        from './pages/dashboard/village/Vi
 import { DashboardCreativesPage }             from './pages/dashboard/DashboardCreativesPage'
 import { PcmClientsPage }                     from './pages/dashboard/pcm/PcmClientsPage'
 import { PcmClientDetailPage }                from './pages/dashboard/pcm/PcmClientDetailPage'
+import { PcmLeadsPage }                       from './pages/dashboard/pcm/PcmLeadsPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 import { CAPO_PERMISSIONS } from './utils/permissions'
 
@@ -246,6 +247,7 @@ export default function App() {
 
             {/* ── Pretty Cool Marketing — done-for-you service client tracker ── */}
             <Route path="pcm"              element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.pcm}><PcmClientsPage /></RoleProtectedRoute>}      />
+            <Route path="pcm/leads"        element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.pcm}><PcmLeadsPage /></RoleProtectedRoute>}        />
             <Route path="pcm/:clientId"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.pcm}><PcmClientDetailPage /></RoleProtectedRoute>} />
 
             <Route path="creatives"        element={<DashboardCreativesPage />}       />

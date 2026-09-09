@@ -103,16 +103,16 @@ export function MarketingPublishingPage() {
         </InnerContainer>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-16 md:py-20 text-center">
+      {/* Final CTA — orange section, dark button */}
+      <section className="py-16 md:py-20 text-center bg-pcm-orange">
         <InnerContainer className="max-w-md">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-6 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
             Start your publishing service
           </h2>
-          <MarketingCheckoutButton offerId="publishing" />
-          <p className="mt-6 font-body text-sm text-pcm-muted">
+          <MarketingCheckoutButton offerId="publishing" tone="dark" />
+          <p className="mt-6 font-body text-sm text-white/85">
             After payment you'll get instructions to email us your material.{' '}
-            <Link to="/marketing/start?offer=publishing" className="text-pcm-dark hover:underline">
+            <Link to="/marketing/start?offer=publishing" className="text-white underline">
               Preview those instructions →
             </Link>
           </p>
