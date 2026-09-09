@@ -45,7 +45,7 @@ export function MarketingPublishingPage() {
       />
 
       {/* What's included */}
-      <section className="py-16 md:py-20 bg-pcm-cream border-b border-pcm-linen">
+      <section className="py-16 md:py-20 bg-pcm-sand border-b border-pcm-linen">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
             What's included
@@ -65,7 +65,7 @@ export function MarketingPublishingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20 bg-pcm-sand">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
             <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
@@ -77,7 +77,7 @@ export function MarketingPublishingPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             {STEPS.map(step => (
-              <div key={step.n} className="bg-pcm-sand border border-pcm-linen rounded-2xl p-7 shadow-card">
+              <div key={step.n} className="bg-pcm-cream border border-pcm-linen rounded-2xl p-7 shadow-card">
                 <div className="w-9 h-9 rounded-full bg-pcm-orange/10 flex items-center justify-center mb-4">
                   <span className="font-heading font-bold text-pcm-dark">{step.n}</span>
                 </div>
@@ -90,7 +90,7 @@ export function MarketingPublishingPage() {
       </section>
 
       {/* DIY / Village note */}
-      <section className="py-14 bg-pcm-cream border-y border-pcm-linen">
+      <section className="py-14 bg-pcm-sand border-y border-pcm-linen">
         <InnerContainer className="max-w-3xl text-center">
           <p className="font-body text-lg text-pcm-dark leading-relaxed">
             Clients can also do this themselves by becoming a Culo Village member. The Village is set
@@ -103,23 +103,23 @@ export function MarketingPublishingPage() {
         </InnerContainer>
       </section>
 
-      {/* Final CTA — orange section, light button + dark writing */}
-      <section className="py-16 md:py-20 bg-pcm-orange">
+      {/* Final CTA — cream section (like the hero), orange button */}
+      <section className="py-16 md:py-20 bg-pcm-cream border-t border-pcm-linen">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-white leading-tight">
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
                 Start your publishing service
               </h2>
-              <p className="mt-4 font-body text-sm text-white/85">
+              <p className="mt-4 font-body text-sm text-pcm-dark/80">
                 After payment you'll get instructions to email us your material.{' '}
-                <Link to="/marketing/start?offer=publishing" className="text-white underline">
+                <Link to="/marketing/start?offer=publishing" className="text-pcm-dark underline">
                   Preview those instructions →
                 </Link>
               </p>
             </div>
             <div className="md:justify-self-end w-full md:max-w-xs">
-              <MarketingCheckoutButton offerId="publishing" tone="light" />
+              <MarketingCheckoutButton offerId="publishing" />
             </div>
           </div>
         </InnerContainer>

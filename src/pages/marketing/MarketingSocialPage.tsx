@@ -66,11 +66,11 @@ export function MarketingSocialPage() {
       />
 
       {/* Tiers */}
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20 bg-pcm-sand">
         <InnerContainer>
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Tier 2 */}
-            <div id="tier-2" className="bg-pcm-sand border border-pcm-linen rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
+            <div id="tier-2" className="bg-pcm-cream border border-pcm-linen rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
               <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-2">Tier 2</p>
               <h2 className="font-heading text-2xl font-bold text-pcm-dark mb-2">Content Editing &amp; Distribution</h2>
               <p className="font-body text-pcm-dark mb-6">
@@ -88,7 +88,7 @@ export function MarketingSocialPage() {
             </div>
 
             {/* Tier 3 */}
-            <div id="tier-3" className="bg-pcm-sand border-2 border-pcm-orange rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
+            <div id="tier-3" className="bg-pcm-cream border-2 border-pcm-orange rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
               <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-2">Tier 3</p>
               <h2 className="font-heading text-2xl font-bold text-pcm-dark mb-2">Content Creator</h2>
               <p className="font-body text-pcm-dark mb-6">
@@ -109,7 +109,7 @@ export function MarketingSocialPage() {
       </section>
 
       {/* Turnaround */}
-      <section className="py-16 md:py-20 bg-pcm-cream border-y border-pcm-linen">
+      <section className="py-16 md:py-20 bg-pcm-sand border-y border-pcm-linen">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
             The turnaround
@@ -134,7 +134,7 @@ export function MarketingSocialPage() {
       </section>
 
       {/* Terms */}
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20 bg-pcm-sand">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
             How the partnership works
@@ -151,24 +151,24 @@ export function MarketingSocialPage() {
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 bg-pcm-orange">
+      <section className="py-16 md:py-20 bg-pcm-cream border-t border-pcm-linen">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-white leading-tight">
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
                 Start the partnership
               </h2>
-              <p className="mt-4 font-body text-sm text-white/85">
+              <p className="mt-4 font-body text-sm text-pcm-dark/80">
                 After payment you'll get instructions to email {PCM_SUPPORT_EMAIL} your raw footage
                 and drive links.{' '}
-                <Link to="/marketing/start?offer=tier2" className="text-white underline">
+                <Link to="/marketing/start?offer=tier2" className="text-pcm-dark underline">
                   Preview the instructions →
                 </Link>
               </p>
             </div>
             <div className="md:justify-self-end w-full md:max-w-xs flex flex-col gap-4">
-              <MarketingCheckoutButton offerId="tier2" tone="light" />
-              <MarketingCheckoutButton offerId="tier3" tone="light" />
+              <MarketingCheckoutButton offerId="tier2" />
+              <MarketingCheckoutButton offerId="tier3" />
             </div>
           </div>
         </InnerContainer>

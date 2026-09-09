@@ -47,7 +47,7 @@ export function MarketingStartPage() {
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20 bg-pcm-sand">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
             What to send
@@ -64,7 +64,7 @@ export function MarketingStartPage() {
             ))}
           </ul>
 
-          <div className="bg-pcm-sand border border-pcm-linen rounded-2xl p-8 shadow-card">
+          <div className="bg-pcm-cream border border-pcm-linen rounded-2xl p-8 shadow-card">
             <p className="font-body text-sm text-pcm-muted mb-1">Send to</p>
             <p className="font-heading text-xl font-bold text-pcm-dark mb-5">{PCM_SUPPORT_EMAIL}</p>
             <a
