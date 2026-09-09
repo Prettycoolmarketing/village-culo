@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { hasCreativeAccess } from '../../utils/creativeAccess'
-import { UPGRADE_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
 
 // Landing spot for orientation and promotion — everything that used to be
 // bolted onto Publish or Import Content (How it works, what the Voice Brief
@@ -35,7 +34,6 @@ export function DashboardWelcomePage() {
   const { user } = useAuth()
   const founder = getCurrentFounder(user)
   const canUseCreatives = hasCreativeAccess(founder?.creativeSubscription)
-  const upgradeUrl = buildPaymentUrl(UPGRADE_PAYMENT_LINK, founder?.id ?? '', user?.email)
 
   return (
     <div className="p-8 sm:pt-12 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -75,14 +73,28 @@ export function DashboardWelcomePage() {
           >
             Import your content into The Village
           </Link>
-          <a
-            href={canUseCreatives ? CULO_CANVA_URL : upgradeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
-          >
-            Create with Culo Creatives in Canva
-          </a>
+          {canUseCreatives ? (
+            <a
+              href={CULO_CANVA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+            >
+              Create with Culo Creatives in Canva
+            </a>
+          ) : (
+            // Not subscribed yet — send them to the Culo Creatives page's
+            // lock-in flow (submit feedback to keep the $19/mo founding
+            // rate, billing set up but not charged until 1 Jan 2027) rather
+            // than straight to the $25/mo Stripe checkout, which skips the
+            // founding rate entirely.
+            <Link
+              to="/dashboard/creatives"
+              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+            >
+              Get Culo Creatives in Canva — lock in $19/month
+            </Link>
+          )}
         </div>
       </section>
     </div>
