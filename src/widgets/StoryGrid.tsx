@@ -30,6 +30,10 @@ interface StoryGridProps {
   // "Turn off" control) is excluded here even though it still matches
   // `filter` otherwise — stays published everywhere else, just not this grid.
   hideKey?: string
+  // Stories to leave out even though they match `filter` — e.g. a founder's
+  // own Featured Video picks, so the same story doesn't show up twice on
+  // one profile page (once as the featured video, once again in this grid).
+  excludeIds?: string[]
   // Render nothing at all when there's no content, instead of an empty
   // state with a CTA — for profile pages, where an unpublished section
   // reads as "this founder isn't active" rather than an invitation.
@@ -58,10 +62,13 @@ export function StoryGrid({
   emptyTitle,
   emptyMessage,
   hideKey,
+  excludeIds,
   hideEmpty = false,
 }: StoryGridProps) {
   const fetched = explicitStories ?? getStories(filter)
-  const stories = hideKey ? fetched.filter(s => !s.hiddenLocations?.includes(hideKey)) : fetched
+  const stories = fetched
+    .filter(s => !hideKey || !s.hiddenLocations?.includes(hideKey))
+    .filter(s => !excludeIds?.includes(s.id))
 
   if (hideEmpty && stories.length === 0) return null
 

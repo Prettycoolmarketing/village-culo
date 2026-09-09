@@ -599,11 +599,14 @@ export function FounderProfilePage() {
             {/* ── Left: Primary content ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
 
-              {/* Stories */}
+              {/* Stories — a story already picked as a Featured Video below is
+                  left out here, so it doesn't show up twice on the same
+                  profile page. */}
               <StoryGrid
                 heading={`Stories by ${founder.name}`}
                 subheading={`Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
                 filter={{ founderId: founder.id, publicOnly: true }}
+                excludeIds={featuredVideoStories.map(s => s.id)}
                 hideKey="founder-profile"
                 columns={2}
                 cardVariant="vertical"
