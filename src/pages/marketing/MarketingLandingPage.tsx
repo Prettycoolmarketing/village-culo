@@ -64,7 +64,7 @@ export function MarketingLandingPage() {
       />
 
       {/* ── Who this is for ───────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 border-b border-pcm-linen">
+      <section className="py-16 md:py-20 bg-pcm-sand border-b border-pcm-linen">
         <InnerContainer className="max-w-3xl">
           <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
             Who this is for
@@ -82,7 +82,7 @@ export function MarketingLandingPage() {
       </section>
 
       {/* ── The two offers ────────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20">
+      <section className="py-16 md:py-20 bg-pcm-sand">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
             <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
@@ -113,7 +113,7 @@ export function MarketingLandingPage() {
       </section>
 
       {/* ── DIY note ──────────────────────────────────────────────────────── */}
-      <section className="py-14 border-y border-pcm-linen">
+      <section className="py-14 bg-pcm-sand border-y border-pcm-linen">
         <InnerContainer className="max-w-3xl text-center">
           <p className="font-body text-lg text-pcm-dark leading-relaxed">
             You can also do this yourself by becoming a Culo Village member.{' '}
@@ -176,7 +176,7 @@ function OfferCard({
   kicker: string; title: string; body: string; cta: string; onClick: () => void
 }) {
   return (
-    <div className="bg-pcm-sand border border-pcm-linen rounded-2xl p-8 flex flex-col shadow-card">
+    <div className="bg-pcm-cream border border-pcm-linen rounded-2xl p-8 flex flex-col shadow-card">
       <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">{kicker}</p>
       <h3 className="font-heading text-2xl font-bold text-pcm-dark mb-4">{title}</h3>
       <p className="font-body text-pcm-muted leading-relaxed flex-1 mb-6">{body}</p>
