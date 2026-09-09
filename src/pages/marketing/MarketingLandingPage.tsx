@@ -65,7 +65,7 @@ export function MarketingLandingPage() {
         }
         right={
           <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-lg flex flex-col gap-3">
-            <p className="font-heading text-lg font-bold text-charcoal mb-1">Two ways to work with us</p>
+            <p className="font-heading text-2xl md:text-3xl font-bold text-charcoal text-center mb-2">Two ways to work with us</p>
             <button
               onClick={() => go(PUBLISHING)}
               className="px-5 py-3 bg-primary text-white text-sm font-semibold rounded-xl text-center hover:bg-[#b05a35] transition-colors"
@@ -74,7 +74,7 @@ export function MarketingLandingPage() {
             </button>
             <button
               onClick={() => go(SOCIAL)}
-              className="px-5 py-3 border border-border text-charcoal text-sm font-semibold rounded-xl text-center hover:border-primary transition-colors"
+              className="px-5 py-3 bg-charcoal text-white text-sm font-semibold rounded-xl text-center hover:bg-[#1a1815] transition-colors"
             >
               Social Media Partnership
             </button>
@@ -130,6 +130,7 @@ export function MarketingLandingPage() {
               paragraphs={SOCIAL_BODY}
               cta="See the Social Media Partnerships"
               onClick={() => go(SOCIAL)}
+              dark
             />
           </div>
         </InnerContainer>
@@ -162,7 +163,7 @@ export function MarketingLandingPage() {
               </button>
               <button
                 onClick={() => go(SOCIAL)}
-                className="px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                className="px-6 py-3 bg-charcoal text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
               >
                 Social Media Partnership
               </button>
@@ -205,9 +206,9 @@ export function MarketingLandingPage() {
 }
 
 function OfferCard({
-  kicker, title, paragraphs, cta, onClick,
+  kicker, title, paragraphs, cta, onClick, dark = false,
 }: {
-  kicker: string; title: string; paragraphs: string[]; cta: string; onClick: () => void
+  kicker: string; title: string; paragraphs: string[]; cta: string; onClick: () => void; dark?: boolean
 }) {
   return (
     <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-10 flex flex-col shadow-card">
@@ -218,7 +219,9 @@ function OfferCard({
       </div>
       <button
         onClick={onClick}
-        className="inline-flex justify-center px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+        className={`inline-flex justify-center px-5 py-2.5 text-white text-sm font-semibold rounded-xl transition-colors ${
+          dark ? 'bg-charcoal hover:bg-[#1a1815]' : 'bg-primary hover:bg-[#b05a35]'
+        }`}
       >
         {cta}
       </button>
