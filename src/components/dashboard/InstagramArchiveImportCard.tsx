@@ -2,7 +2,6 @@ import { useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { parseInstagramArchiveFile, buildImportedContentFromArchive } from '../../services/instagramArchive'
 import { importedContentService } from '../../services/importedContent'
-import { getBusinesses } from '../../services/businesses'
 import { SourceIcon } from '../ui/SourceIcon'
 
 // Bring in a whole Instagram export ZIP at once — posts, reels and stories
@@ -35,8 +34,6 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ imported: number; skipped: number } | null>(null)
-  const businesses = getBusinesses({ founderId })
-  const [businessId, setBusinessId] = useState<string>('')
 
   async function handleFile(file: File | undefined) {
     if (!file) return
@@ -58,7 +55,10 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
       }
 
       setStage('Extracting media and creating pieces…')
-      const { built, uploadErrors } = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), businessId || undefined)
+      // Not tied to a specific business — during the join funnel a founder
+      // may not have added business details yet, and every imported piece
+      // already links back to them as the founder regardless.
+      const { built, uploadErrors } = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), undefined)
 
       setStage('Saving to your Village…')
       let imported = 0
@@ -125,7 +125,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
             once you review it and choose to publish it yourself.
           </p>
           <button type="button" onClick={() => setShowInstructions(v => !v)}
-            className="text-xs font-semibold text-[#C86A43] hover:underline mb-3">
+            className="text-base font-semibold text-[#C86A43] hover:underline mb-4">
             {showInstructions ? 'Hide' : 'How do I export my Instagram archive?'}
           </button>
 
@@ -153,25 +153,6 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
                   Hide instructions
                 </button>
               </div>
-            </div>
-          )}
-
-          {businesses.length > 0 && (
-            <div className="mb-4">
-              <label className="block text-xs font-semibold text-[#2D2A26] mb-1.5">
-                Which business is this Instagram account for?
-              </label>
-              <select
-                value={businessId}
-                onChange={e => setBusinessId(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
-              >
-                <option value="">Not tied to a specific business</option>
-                {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
-              <p className="text-[10px] text-[#9CA3AF] mt-1">
-                If you run more than one Instagram account for different businesses, export and upload each one separately, choosing the matching business each time.
-              </p>
             </div>
           )}
 
