@@ -79,7 +79,7 @@ export function DashboardWelcomePage() {
             href={canUseCreatives ? CULO_CANVA_URL : upgradeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex justify-center sm:inline-flex text-lg font-semibold px-8 py-6 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+            className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
           >
             Create with Culo Creatives in Canva
           </a>
