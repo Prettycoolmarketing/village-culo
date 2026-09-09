@@ -127,13 +127,18 @@ export function MediaUpload({
   const isLogo = aspect === 'logo'
   const isWideContain = aspect === 'wide-contain'
   const isVideoPreview = kind === 'video' && !!value
+  // A landscape (16:9) video preview instead of the default tall/narrow
+  // box — opt in with aspect="wide" on a video upload, e.g. Advanced
+  // edit's single Video field, so there's one clear landscape view rather
+  // than a vertical phone-shaped preview.
+  const isLandscapeVideo = isVideoPreview && aspect === 'wide'
   // A vertical video at native aspect ratio inside a "fill the container"
   // box (h-auto + w-full) rendered enormous — full editor width, over a
   // thousand pixels tall — since nothing capped its height. Video previews
   // get a fixed, modest box regardless of `aspect`; the file itself is
   // untouched, this only bounds how large the review player renders.
-  const heightClass = isVideoPreview ? 'h-80' : aspect === 'square' ? 'h-32' : (aspect === 'wide' || isWideContain) ? 'h-40' : isLogo ? 'h-40' : 'h-auto min-h-[8rem]'
-  const widthClass = isLogo ? 'w-40 mx-auto' : isVideoPreview ? 'w-full max-w-[220px] mx-auto' : 'w-full'
+  const heightClass = isLandscapeVideo ? 'aspect-video' : isVideoPreview ? 'h-80' : aspect === 'square' ? 'h-32' : (aspect === 'wide' || isWideContain) ? 'h-40' : isLogo ? 'h-40' : 'h-auto min-h-[8rem]'
+  const widthClass = isLogo ? 'w-40 mx-auto' : isLandscapeVideo ? 'w-full' : isVideoPreview ? 'w-full max-w-[220px] mx-auto' : 'w-full'
 
   return (
     <div className={className}>

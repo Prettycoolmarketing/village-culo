@@ -1052,17 +1052,18 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       {draft.reelVideoUrl && (
         <div className="mb-4">
           <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Video</label>
-          <video src={draft.reelVideoUrl} controls className="w-full max-h-96 rounded-lg bg-black" />
-          <div className="mt-2">
-            <MediaUpload
-              value={draft.reelVideoUrl}
-              onChange={v => field('reelVideoUrl', v || undefined)}
-              accept="video"
-              label="Replace video"
-              aspect="auto"
-              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
-            />
-          </div>
+          {/* One landscape view, not two — MediaUpload's own preview (in
+              landscape via aspect="wide") is the only video shown here,
+              with Replace/Remove built in, instead of a duplicate raw
+              <video> tag above it. */}
+          <MediaUpload
+            value={draft.reelVideoUrl}
+            onChange={v => field('reelVideoUrl', v || undefined)}
+            accept="video"
+            label="Replace video"
+            aspect="wide"
+            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+          />
         </div>
       )}
 
@@ -1074,16 +1075,14 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
       <div className="mb-4 border-t border-[#E8E4DD] pt-4 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-5">
         <div>
           <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Thumbnail</label>
-          <div className="w-full aspect-square rounded-lg border border-[#E8E4DD] bg-[#F8F5F0] overflow-hidden flex items-center justify-center mb-2">
-            {draft.thumbnailUrl
-              ? <img src={draft.thumbnailUrl} alt="" className="w-full h-full object-contain" />
-              : <span className="text-[10px] text-[#9CA3AF]">No thumbnail</span>}
-          </div>
+          {/* wide-contain, not wide — the whole cover photo stays visible
+              instead of being cropped to fill the box, and MediaUpload's
+              own preview is the only one shown (no separate duplicate). */}
           <MediaUpload
             value={draft.thumbnailUrl}
             onChange={v => field('thumbnailUrl', v || undefined)}
             label="Upload thumbnail"
-            aspect="wide"
+            aspect="wide-contain"
             uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId }}
           />
           <p className="text-[10px] text-[#9CA3AF] mt-1.5 mb-1">Or use the thumbnail from the original source:</p>
