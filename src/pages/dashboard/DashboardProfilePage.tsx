@@ -8,7 +8,7 @@ import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './Dashboar
 import { getUnlockedImportedIds } from '../../utils/archiveUnlock'
 import { getArchiveTier } from '../../config/archiveUnlock'
 import { SeriesDetail } from './DashboardSeriesPage'
-import { getSeriesList, createSeries, saveSeries } from '../../services/series'
+import { getSeriesList, getSeriesEpisodes, createSeries, saveSeries } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
 import { PartnershipSettingsPanel } from '../../components/dashboard/PartnershipSettingsPanel'
 import type { ImportedContent } from '../../types/importedContent'
@@ -2161,17 +2161,24 @@ export function DashboardProfilePage() {
 
               return (
                 <div className="flex flex-col gap-5">
-                  <div className="flex flex-wrap gap-2">
-                    {founderSeries.map(s => (
-                      <button key={s.id} onClick={() => setActiveSeriesId(s.id)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                          activeSeriesId === s.id ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                        }`}>
-                        {s.title || 'Untitled series'}
-                      </button>
-                    ))}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {founderSeries.map(s => {
+                      const episodeCount = getSeriesEpisodes(s.id).length
+                      const isActive = activeSeriesId === s.id
+                      return (
+                        <button key={s.id} onClick={() => setActiveSeriesId(s.id)}
+                          className={`flex flex-col items-start gap-1 px-4 py-3.5 rounded-xl border text-left transition-colors ${
+                            isActive ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#2D2A26] border-[#E8E4DD] hover:border-[#C86A43]/50'
+                          }`}>
+                          <span className="text-sm font-semibold truncate w-full">{s.title || 'Untitled series'}</span>
+                          <span className={`text-xs ${isActive ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
+                            {episodeCount} episode{episodeCount === 1 ? '' : 's'}
+                          </span>
+                        </button>
+                      )
+                    })}
                     {addingSeries ? (
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-col gap-2 px-4 py-3.5 rounded-xl border border-[#C86A43]/50 bg-white">
                         <input
                           type="text"
                           autoFocus
@@ -2182,25 +2189,27 @@ export function DashboardProfilePage() {
                             if (e.key === 'Escape') { setAddingSeries(false); setNewSeriesTitle('') }
                           }}
                           placeholder="e.g. Van Life"
-                          className="px-3 py-1.5 rounded-lg text-sm border border-[#C86A43]/50 text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 w-40"
+                          className="px-2.5 py-1.5 rounded-lg text-sm border border-[#E8E4DD] text-[#2D2A26] bg-white focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 w-full"
                         />
-                        <button
-                          onClick={() => void handleAddSeries()}
-                          disabled={!newSeriesTitle.trim()}
-                          className="px-3 py-1.5 rounded-lg text-sm font-semibold bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
-                          Create
-                        </button>
-                        <button
-                          onClick={() => { setAddingSeries(false); setNewSeriesTitle('') }}
-                          className="px-2 py-1.5 text-sm text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
-                        >
-                          Cancel
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => void handleAddSeries()}
+                            disabled={!newSeriesTitle.trim()}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Create
+                          </button>
+                          <button
+                            onClick={() => { setAddingSeries(false); setNewSeriesTitle('') }}
+                            className="px-2 py-1.5 text-xs text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <button onClick={() => setAddingSeries(true)}
-                        className="px-3 py-1.5 rounded-lg text-sm font-semibold border border-dashed border-[#E8E4DD] text-[#C86A43] hover:border-[#C86A43]/50 transition-colors">
+                        className="flex items-center justify-center px-4 py-3.5 rounded-xl border border-dashed border-[#E8E4DD] text-[#C86A43] text-sm font-semibold hover:border-[#C86A43]/50 transition-colors">
                         + New Series
                       </button>
                     )}

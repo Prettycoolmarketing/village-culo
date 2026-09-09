@@ -29,6 +29,7 @@ export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set())
+  const [episodesTab, setEpisodesTab] = useState<'episodes' | 'add'>('episodes')
 
   const episodes = getSeriesEpisodes(series.id)
   const availableStories = getStories({ founderId, publicOnly: true }).filter(s => s.seriesId !== series.id)
@@ -177,70 +178,87 @@ export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 flex flex-col gap-3">
-        <p className="text-sm font-semibold text-[#2D2A26]">Episodes</p>
+      <div className="bg-white rounded-xl border border-[#E8E4DD] p-5 flex flex-col gap-4">
+        <div className="flex gap-2">
+          <button onClick={() => setEpisodesTab('episodes')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+              episodesTab === 'episodes' ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+            }`}>
+            Episodes ({episodes.length})
+          </button>
+          <button onClick={() => setEpisodesTab('add')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+              episodesTab === 'add' ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
+            }`}>
+            Add to Series
+          </button>
+        </div>
 
-        {episodes.length === 0 ? (
-          <p className="text-xs text-[#9CA3AF]">No episodes yet — add one of your published stories below.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {episodes.map((ep, i) => (
-              <div key={ep.id} className="flex items-center gap-3 border border-[#E8E4DD] rounded-lg px-3 py-2.5">
-                <span className="text-xs font-semibold text-[#9CA3AF] w-6 text-center shrink-0">{i + 1}</span>
-                <img src={ep.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-                <p className="text-sm font-medium text-[#2D2A26] truncate flex-1">{ep.title}</p>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => void handleMove(i, -1)} disabled={i === 0}
-                    className="w-7 h-7 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Move up">↑</button>
-                  <button onClick={() => void handleMove(i, 1)} disabled={i === episodes.length - 1}
-                    className="w-7 h-7 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Move down">↓</button>
+        {episodesTab === 'episodes' && (
+          episodes.length === 0 ? (
+            <p className="text-xs text-[#9CA3AF]">No episodes yet — switch to "Add to Series" to add one of your published stories.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {episodes.map((ep, i) => (
+                <div key={ep.id} className="flex items-center gap-3 border border-[#E8E4DD] rounded-lg px-3 py-2.5">
+                  <span className="text-xs font-semibold text-[#9CA3AF] w-6 text-center shrink-0">{i + 1}</span>
+                  <img src={ep.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                  <p className="text-sm font-medium text-[#2D2A26] truncate flex-1">{ep.title}</p>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => void handleMove(i, -1)} disabled={i === 0}
+                      className="w-7 h-7 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Move up">↑</button>
+                    <button onClick={() => void handleMove(i, 1)} disabled={i === episodes.length - 1}
+                      className="w-7 h-7 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43]/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors" aria-label="Move down">↓</button>
+                  </div>
+                  <Link to={`/dashboard/profile?tab=content&contentSubTab=published&storyId=${ep.id}`}
+                    className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0">
+                    Edit episode →
+                  </Link>
+                  <button onClick={() => void handleRemoveEpisode(ep.id)} className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors shrink-0">
+                    Remove
+                  </button>
                 </div>
-                <Link to={`/dashboard/profile?tab=content&contentSubTab=published&storyId=${ep.id}`}
-                  className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0">
-                  Edit episode →
-                </Link>
-                <button onClick={() => void handleRemoveEpisode(ep.id)} className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors shrink-0">
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
         )}
 
-        {availableStories.length > 0 ? (
-          <div className="pt-3 border-t border-[#F3EDE6] mt-1 flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide">Click the ones to add</p>
-              {addingIds.size > 0 && (
-                <button onClick={() => void handleAddEpisodes()}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shrink-0">
-                  Add {addingIds.size} to series
-                </button>
-              )}
-            </div>
-            <div className="flex flex-col gap-2">
-              {availableStories.map(s => {
-                const isSelected = addingIds.has(s.id)
-                return (
-                  <button key={s.id} type="button" onClick={() => toggleAdding(s.id)}
-                    className={`flex items-center gap-3 border rounded-lg px-3 py-2.5 text-left transition-colors ${
-                      isSelected ? 'border-[#C86A43] bg-[#C86A43]/5' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
-                    }`}>
-                    <img src={s.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
-                    <p className="text-sm font-medium text-[#2D2A26] truncate flex-1">{s.title}</p>
-                    <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
-                      isSelected ? 'bg-[#C86A43] border-[#C86A43] text-white' : 'border-[#E8E4DD] text-transparent'
-                    }`}>✓</span>
+        {episodesTab === 'add' && (
+          availableStories.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide">Click the ones to add</p>
+                {addingIds.size > 0 && (
+                  <button onClick={() => void handleAddEpisodes()}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors shrink-0">
+                    Add {addingIds.size} to series
                   </button>
-                )
-              })}
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                {availableStories.map(s => {
+                  const isSelected = addingIds.has(s.id)
+                  return (
+                    <button key={s.id} type="button" onClick={() => toggleAdding(s.id)}
+                      className={`flex items-center gap-3 border rounded-lg px-3 py-2.5 text-left transition-colors ${
+                        isSelected ? 'border-[#C86A43] bg-[#C86A43]/5' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
+                      }`}>
+                      <img src={s.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
+                      <p className="text-sm font-medium text-[#2D2A26] truncate flex-1">{s.title}</p>
+                      <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 text-[10px] font-bold transition-colors ${
+                        isSelected ? 'bg-[#C86A43] border-[#C86A43] text-white' : 'border-[#E8E4DD] text-transparent'
+                      }`}>✓</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        ) : (
-          <p className="text-xs text-[#9CA3AF] pt-2 border-t border-[#F3EDE6] mt-1">
-            Every published story is already in a series, or you haven't published one yet — {' '}
-            <Link to="/dashboard/publish" className="text-[#C86A43] hover:underline font-medium">publish one</Link> to add it here.
-          </p>
+          ) : (
+            <p className="text-xs text-[#9CA3AF]">
+              Every published story is already in a series, or you haven't published one yet — {' '}
+              <Link to="/dashboard/publish" className="text-[#C86A43] hover:underline font-medium">publish one</Link> to add it here.
+            </p>
+          )
         )}
       </div>
     </div>
