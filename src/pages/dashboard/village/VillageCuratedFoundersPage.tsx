@@ -474,40 +474,46 @@ export function VillageCuratedFoundersPage() {
                   <div className="col-span-2">
                     <StatusPill status={f.profileStatus ?? f.status} />
                   </div>
-                  <div className="col-span-3 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <div className="col-span-3 flex items-center justify-between gap-2">
+                    {/* View sits alone on the far left, well clear of the
+                        destructive actions on the right — deliberately not
+                        next to Delete, so the two are never in easy reach
+                        of the same misclick. */}
                     <Link
                       to={`/founders/${f.slug}`}
                       target="_blank"
-                      className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
+                      className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors shrink-0"
                     >
                       View ↗
                     </Link>
-                    {(!f.profileStatus || f.profileStatus === 'village-curated') && (
-                      <button
-                        onClick={() => { founderClaimService.markCurated(f.id); refresh() }}
-                        className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
-                      >
-                        {!f.profileStatus ? 'Set Curated' : 'Re-curate'}
-                      </button>
-                    )}
-                    {f.profileStatus === 'claimed' && (
-                      <button
-                        onClick={() => { founderClaimService.markVerified(f.id); refresh() }}
-                        className="text-[10px] text-[#C86A43] hover:underline"
-                      >
-                        Verify
-                      </button>
-                    )}
-                    {canDeleteAccounts && (
-                      <ConfirmButton
-                        label="Delete"
-                        confirmLabel="Yes, delete"
-                        message="Delete permanently?"
-                        onConfirm={() => void handleDeleteAccount(f)}
-                        disabled={deletingId === f.id}
-                        className="text-[10px] text-red-500 hover:text-red-600 transition-colors"
-                      />
-                    )}
+                    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                      {(!f.profileStatus || f.profileStatus === 'village-curated') && (
+                        <button
+                          onClick={() => { founderClaimService.markCurated(f.id); refresh() }}
+                          className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
+                        >
+                          {!f.profileStatus ? 'Set Curated' : 'Re-curate'}
+                        </button>
+                      )}
+                      {f.profileStatus === 'claimed' && (
+                        <button
+                          onClick={() => { founderClaimService.markVerified(f.id); refresh() }}
+                          className="text-[10px] text-[#C86A43] hover:underline"
+                        >
+                          Verify
+                        </button>
+                      )}
+                      {canDeleteAccounts && (
+                        <ConfirmButton
+                          label="Delete"
+                          confirmLabel="Yes, delete"
+                          message="Delete permanently?"
+                          onConfirm={() => void handleDeleteAccount(f)}
+                          disabled={deletingId === f.id}
+                          className="text-[10px] text-red-500 hover:text-red-600 transition-colors"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               )
