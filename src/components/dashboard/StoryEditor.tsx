@@ -69,7 +69,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [showCoverVideo, setShowCoverVideo] = useState(false)
   const [rewriting, setRewriting] = useState(false)
   const [rewriteError, setRewriteError] = useState<string | null>(null)
   const [blogBeforeRewrite, setBlogBeforeRewrite] = useState<string | null>(null)
@@ -225,11 +224,17 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
   const isVisible = draft.status === 'published' || draft.status === 'featured'
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] flex flex-col">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[#F3EDE6]">
-        <button onClick={onClose} className="text-xs font-semibold text-[#9CA3AF] hover:text-[#2D2A26] transition-colors">
-          ← Back to Content
-        </button>
+    // Floating popup over a dimmed backdrop, same shell as Advanced edit
+    // (Imported Content's editor) — a founder gets one consistent editing
+    // feel whether the piece is still a draft or already published,
+    // instead of a popup for one and an inline page-swap for the other.
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+    <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4 flex flex-col">
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm font-semibold text-[#2D2A26]">Edit this story</p>
         <div className="flex items-center gap-2">
           {saved && <span className="text-xs text-green-600 font-medium">Saved ✓</span>}
           {saveError && <span className="text-xs text-red-600 font-medium">{saveError}</span>}
@@ -248,10 +253,19 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
             onConfirm={() => void handleDelete()}
             className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
           />
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       </div>
 
-      <div className="px-5 py-5 flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
         <Field label="Title">
           <input type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
         </Field>
@@ -325,20 +339,41 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
           </Field>
         )}
 
+        {/* One video view, always visible — no click-to-reveal, same
+            declutter as Advanced edit. ReelContent (not MediaUpload's own
+            preview) is the one shown here since reelUrl is often an
+            external platform link (Instagram/YouTube), not just an
+            uploaded file, and ReelContent is the component that already
+            handles both correctly. */}
         {hasReel && (
-          <Field label="Reel URL">
-            <input type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
-            <div className="mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <Field label="Reel URL">
+              <input type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
+              {draft.reelUrl && (
+                <div className="mt-2">
+                  <ReelContent reelUrl={draft.reelUrl} title={draft.title} summary={draft.summary} landscape />
+                </div>
+              )}
+              <div className="mt-2">
+                <MediaUpload
+                  onChange={v => set('reelUrl', v || undefined)}
+                  accept="video"
+                  label="Upload a video for the reel"
+                  aspect="auto"
+                  uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+                />
+              </div>
+            </Field>
+            <Field label="Cover Image">
               <MediaUpload
-                value={draft.reelUrl}
-                onChange={v => set('reelUrl', v || undefined)}
-                accept="video"
-                label="Upload a video for the reel"
-                aspect="auto"
-                uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
+                value={draft.coverImage}
+                onChange={v => set('coverImage', v)}
+                label="Upload cover"
+                aspect="wide-contain"
+                uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
               />
-            </div>
-          </Field>
+            </Field>
+          </div>
         )}
 
         <Field label="Extra photos / video" hint="Add extra photos, a carousel, or another reel/video clip — works alongside the primary content above.">
@@ -407,41 +442,19 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
           </div>
         </Field>
 
-        <Field label="Cover Image">
-          {/* A cover image alone doesn't say what the post actually is —
-              if there's a real video behind this story (Reel URL above, or
-              an extra video attached below), let a founder watch it right
-              here instead of only ever seeing a still frame. Free to show:
-              it's the same reel/embed URL already saved, no new upload or
-              API call, just rendering it inline via the shared
-              ReelContent component (same one the public story page uses). */}
-          {(draft.reelUrl || (draft.additionalReelUrls ?? []).some(Boolean)) && (
-            <button
-              type="button"
-              onClick={() => setShowCoverVideo(v => !v)}
-              className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#C86A43] hover:underline"
-            >
-              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
-              {showCoverVideo ? 'Hide video' : 'Watch this post'}
-            </button>
-          )}
-          {showCoverVideo && (draft.reelUrl || (draft.additionalReelUrls ?? []).find(Boolean)) && (
-            <div className="mb-3">
-              <ReelContent
-                reelUrl={draft.reelUrl || (draft.additionalReelUrls ?? []).find(Boolean)}
-                title={draft.title}
-                summary={draft.summary}
-              />
-            </div>
-          )}
-          <MediaUpload
-            value={draft.coverImage}
-            onChange={v => set('coverImage', v)}
-            label="Upload cover"
-            aspect="wide"
-            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
-          />
-        </Field>
+        {/* Only shown alone when there's no reel — otherwise it already
+            sits next to the video above. */}
+        {!hasReel && (
+          <Field label="Cover Image">
+            <MediaUpload
+              value={draft.coverImage}
+              onChange={v => set('coverImage', v)}
+              label="Upload cover"
+              aspect="wide-contain"
+              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
+            />
+          </Field>
+        )}
 
         {founderBusinesses.length > 0 && (
           <Field label="Business" hint="Which business this story is primarily about — drives uploads and the main 'Founded by' credit.">
@@ -543,6 +556,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
           </button>
         </div>
       </div>
+    </div>
     </div>
   )
 }
