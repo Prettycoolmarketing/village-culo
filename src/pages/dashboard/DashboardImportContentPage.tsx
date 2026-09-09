@@ -21,7 +21,6 @@ import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
 import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
-import { deriveSeoTitle, deriveSeoDescription } from '../../utils/seo'
 import { MediaUpload, inferKindFromUrl } from '../../components/ui/MediaUpload'
 import {
   villageContentIntelligenceService,
@@ -71,11 +70,6 @@ export const STATUS_OPTIONS: { value: ImportedContentStatus; label: string }[] =
   { value: 'draft',     label: 'Draft'     },
   { value: 'published', label: 'Published' },
   { value: 'archived',  label: 'Archived'  },
-]
-
-const TRANSCRIPT_STATUS_OPTIONS = [
-  { value: 'none',   label: 'No transcript'     },
-  { value: 'manual', label: 'Pasted manually'   },
 ]
 
 const SOURCE_TYPE_LABELS: Record<ConnectedSourceType, string> = {
@@ -867,7 +861,39 @@ interface EditFormProps {
 
 export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
   const activePartners = partnerService.getAll({ status: 'active' })
-  const [transcriptFlash, setTranscriptFlash] = useState(false)
+  const [listening, setListening] = useState(false)
+  const recognitionRef = useRef<{ stop: () => void } | null>(null)
+
+  // Dictation — the browser's own free, local speech-to-text (Web Speech
+  // API), no server call and no AI spend. Talk through the story and it
+  // transcribes straight into Blog; a founder can clean it up or run it
+  // through Rewrite/Shape afterward.
+  function toggleDictation() {
+    const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition
+    if (!Ctor) {
+      alert("Dictation isn't supported in this browser — try Chrome, Edge or Safari.")
+      return
+    }
+    if (listening) {
+      recognitionRef.current?.stop()
+      return
+    }
+    const recognition = new Ctor()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.lang = navigator.language || 'en-US'
+    recognition.onresult = e => {
+      let transcript = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i]![0]!.transcript
+      if (!transcript.trim()) return
+      onChange({ ...draft, description: `${draft.description ?? ''} ${transcript}`.trim() })
+    }
+    recognition.onerror = () => setListening(false)
+    recognition.onend = () => setListening(false)
+    recognitionRef.current = recognition
+    recognition.start()
+    setListening(true)
+  }
   // Content imported with a real blog/caption already written (a blog import,
   // or Canva text pulled off a slide) has enough to shape into Q&A straight
   // away — no reason to make a founder find and click the button themselves
@@ -905,33 +931,6 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
 
   function parseList(raw: string): string[] {
     return raw.split(',').map(s => s.trim()).filter(Boolean)
-  }
-
-  function handleSaveTranscript() {
-    const updated: ImportedContent = {
-      ...draft,
-      transcriptStatus:     'manual',
-      transcriptSource:     'manual',
-      transcriptImportedAt: new Date().toISOString(),
-    }
-    onChange(updated)
-    // Re-analyse immediately with the transcript included — the knowledge graph
-    // shouldn't wait for a full form save to pick up what's likely the richest
-    // text this item will ever have.
-    const intel = villageContentIntelligenceService.analyse(importedContentToInput(updated))
-    void villageContentIntelligenceService.upsert(intel)
-    setTranscriptFlash(true)
-    setTimeout(() => setTranscriptFlash(false), 2000)
-  }
-
-  function handleClearTranscript() {
-    onChange({
-      ...draft,
-      transcriptText:        undefined,
-      transcriptStatus:      'none',
-      transcriptSource:      undefined,
-      transcriptImportedAt:  undefined,
-    })
   }
 
   function addTopic(t: string) {
@@ -986,33 +985,9 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         </button>
       </div>
 
-      {/* Video orientation — kept above the embed/video preview on purpose:
-          a swipe starting on the embed or video below can get captured by
-          it instead of scrolling the page, making anything placed after it
-          unreachable on mobile. A YouTube Short is still vertical despite
-          being a "youtube-video", which otherwise defaults to landscape; no
-          reliable way to detect that from the URL alone. */}
-      {(draft.reelVideoUrl || (draft.embedUrl && EMBEDDABLE.has(draft.sourcePlatform))) && (
-        <div className="mb-5">
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1.5">Landscape or vertical?</label>
-          <div className="flex gap-2">
-            {(['vertical', 'landscape'] as const).map(o => (
-              <button
-                key={o}
-                type="button"
-                onClick={() => field('videoOrientation', o)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors capitalize ${
-                  (draft.videoOrientation ?? 'vertical') === o
-                    ? 'bg-[#C86A43] text-white border-[#C86A43]'
-                    : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
-                }`}
-              >
-                {o}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Only ever landscape in this view now — one less decision to make
+          here; a genuine vertical Reel still renders correctly wherever
+          it's actually published, this is just the editor's own preview. */}
 
       {/* Embed preview */}
       <div className="mb-5">
@@ -1043,12 +1018,31 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           rows={6} className={TEXTAREA} placeholder="Tell us about your experience with this — what happened, what you learned, why it's worth sharing." />
       </div>
 
-      {/* Search & AI preview — always derived from Title + Subtitle/Blog, no
-          separate field to fill in and keep in sync by hand. */}
-      <div className="mb-4 bg-[#F8F5F0] rounded-lg px-4 py-3">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1.5">What search engines and AI will show</p>
-        <p className="text-sm text-[#C86A43] font-medium truncate">{deriveSeoTitle(draft.title)}</p>
-        <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.subtitle, draft.description)}</p>
+      {/* Dictate straight into Blog (free, local Web Speech API — no
+          server call, no AI spend), and Shape as Q&A right here next to
+          it — only once there's actually something in Blog worth shaping,
+          not before. */}
+      <div className="mb-4 flex flex-col items-center gap-3 py-2">
+        <button
+          type="button"
+          onClick={toggleDictation}
+          title={listening ? 'Stop dictating' : 'Dictate your story — speaks straight into the Blog field'}
+          className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
+            listening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#2D2A26] text-white hover:bg-[#1a1815]'
+          }`}
+        >
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+            <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
+          </svg>
+        </button>
+        {listening && <span className="text-xs text-red-500 font-medium">Listening…</span>}
+        {(draft.description ?? '').trim().length > 0 && (
+          <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
+            className="px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors">
+            Shape these as Q&A to boost your online presence
+          </button>
+        )}
       </div>
 
       {/* Video — its own section, not the Thumbnail field. A video was
@@ -1072,27 +1066,35 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         </div>
       )}
 
-      {/* Thumbnail */}
-      <div className="mb-4">
-        <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Thumbnail</label>
-        <MediaUpload
-          value={draft.thumbnailUrl}
-          onChange={v => field('thumbnailUrl', v || undefined)}
-          label="Upload thumbnail"
-          aspect="wide"
-          uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId }}
-        />
-        <p className="text-[10px] text-[#9CA3AF] mt-1.5 mb-1">Or use the thumbnail from the original source:</p>
-        <input type="url" value={draft.thumbnailUrl ?? ''}
-          onChange={e => field('thumbnailUrl', e.target.value || undefined)}
-          className={INPUT} placeholder="https://..." />
-      </div>
+      {/* Thumbnail small on the left (the whole image visible, not
+          cropped), Extra Media using the rest of the width on the right —
+          two separate stacked full-width sections read as one long form;
+          side by side, they read as what they actually are: one photo
+          plus whatever else goes with it. */}
+      <div className="mb-4 border-t border-[#E8E4DD] pt-4 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-5">
+        <div>
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Thumbnail</label>
+          <div className="w-full aspect-square rounded-lg border border-[#E8E4DD] bg-[#F8F5F0] overflow-hidden flex items-center justify-center mb-2">
+            {draft.thumbnailUrl
+              ? <img src={draft.thumbnailUrl} alt="" className="w-full h-full object-contain" />
+              : <span className="text-[10px] text-[#9CA3AF]">No thumbnail</span>}
+          </div>
+          <MediaUpload
+            value={draft.thumbnailUrl}
+            onChange={v => field('thumbnailUrl', v || undefined)}
+            label="Upload thumbnail"
+            aspect="wide"
+            uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId }}
+          />
+          <p className="text-[10px] text-[#9CA3AF] mt-1.5 mb-1">Or use the thumbnail from the original source:</p>
+          <input type="url" value={draft.thumbnailUrl ?? ''}
+            onChange={e => field('thumbnailUrl', e.target.value || undefined)}
+            className={INPUT} placeholder="https://..." />
+        </div>
 
-      {/* Extra media — add more beyond what came in with the original
-          import, same "just add more" pattern as publishing directly. */}
-      <div className="mb-4 border-t border-[#E8E4DD] pt-4">
-        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Extra Media</p>
-        <p className="text-xs text-[#9CA3AF] mb-3">Add extra photos, a carousel, or another reel/video to go with this piece.</p>
+        <div>
+          <p className="text-sm font-semibold text-[#2D2A26] mb-1">Extra Media</p>
+          <p className="text-xs text-[#9CA3AF] mb-3">Add extra photos, a carousel, or another reel/video to go with this piece.</p>
 
         {(draft.imageUrls ?? []).length > 0 && (
           <div className="flex flex-col gap-1.5 mb-2">
@@ -1168,6 +1170,7 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
             aspect="auto"
             uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'carousel-slide' }}
           />
+        </div>
         </div>
       </div>
 
@@ -1249,68 +1252,6 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         </button>
       </div>
 
-      {/* ── Transcript section ─────────────────────────────────────────────── */}
-      <div className="border-t border-[#E8E4DD] pt-5 mt-1 mb-1">
-        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Transcript</p>
-        <p className="text-xs text-[#9CA3AF] mb-4 leading-relaxed">
-          Paste a transcript to unlock richer diary generation. On YouTube, click ··· below any video → <em>Show transcript</em> → copy and paste here.
-        </p>
-
-        {/* Status selector */}
-        <div className="mb-3">
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Transcript Status</label>
-          <select
-            value={draft.transcriptStatus ?? 'none'}
-            onChange={e => onChange({ ...draft, transcriptStatus: e.target.value as ImportedContent['transcriptStatus'] })}
-            className={SELECT}
-          >
-            {TRANSCRIPT_STATUS_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Transcript textarea — shown when status is manual */}
-        {(draft.transcriptStatus === 'manual' || draft.transcriptStatus === 'available' || draft.transcriptStatus === 'generated') && (
-          <div className="mb-3">
-            <textarea
-              value={draft.transcriptText ?? ''}
-              onChange={e => onChange({ ...draft, transcriptText: e.target.value || undefined })}
-              rows={9}
-              className={`${TEXTAREA} font-mono text-xs`}
-              placeholder="Paste transcript text here..."
-            />
-            {draft.transcriptText && (
-              <p className="text-[10px] text-[#9CA3AF] mt-1">
-                {draft.transcriptText.trim().split(/\s+/).length.toLocaleString()} words
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Transcript actions */}
-        <div className="flex items-center gap-3">
-          {draft.transcriptStatus !== 'unavailable' && (
-            <button
-              type="button"
-              onClick={handleSaveTranscript}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-colors ${
-                transcriptFlash
-                  ? 'border-[#5E6B4A]/40 bg-[#5E6B4A]/10 text-[#5E6B4A]'
-                  : 'border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]'
-              }`}
-            >
-              {transcriptFlash ? '✓ Transcript saved' : 'Save Transcript'}
-            </button>
-          )}
-          {draft.transcriptText && (
-            <button type="button" onClick={handleClearTranscript}
-              className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors">
-              Clear
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
       {shapeTrigger > 0 && (
@@ -1332,12 +1273,6 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
             <input type="text" value={topicsText}
               onChange={e => { setTopicsText(e.target.value); field('topics', parseList(e.target.value)) }}
               className={INPUT} placeholder="e.g. marketing, content, strategy" />
-            {(draft.description ?? '').trim().length > 0 && (
-              <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
-                className="mt-2 px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors">
-                Shape these as Q&A to boost your online presence
-              </button>
-            )}
           </div>
         </div>
 
