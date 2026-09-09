@@ -47,9 +47,12 @@ export function DashboardArchiveFoundPage() {
         piece{totalCount === 1 ? '' : 's'} of your story
       </h1>
 
-      <p className="inline-flex items-center px-6 py-3.5 bg-[#C86A43] text-white text-base font-semibold rounded-xl mb-4">
+      <Link
+        to="/dashboard/profile?tab=content&contentSubTab=ready"
+        className="inline-flex items-center px-6 py-3.5 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors mb-4"
+      >
         Your {ARCHIVE_UNLOCK_FREE_COUNT} strongest posts are free, forever
-      </p>
+      </Link>
       <div>
         <button
           onClick={() => setShowWhy(v => !v)}
@@ -90,22 +93,22 @@ export function DashboardArchiveFoundPage() {
             href={buildPaymentUrl(tier.paymentLink, founder.id, user?.email)}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col justify-center gap-2 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl p-10 transition-colors"
+            className="group flex flex-col justify-center gap-3 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl p-12 transition-colors"
           >
-            <p className="text-sm font-semibold text-[#C86A43] group-hover:text-white/80 uppercase tracking-wide transition-colors">Waiting to be unlocked</p>
-            <p className="text-6xl sm:text-7xl font-bold text-[#2D2A26] group-hover:text-white transition-colors">{locked.length}</p>
-            <p className="text-base font-semibold text-[#C86A43] group-hover:text-white transition-colors mt-2">
+            <p className="text-lg font-semibold text-[#C86A43] group-hover:text-white/80 uppercase tracking-wide transition-colors">Waiting to be unlocked</p>
+            <p className="text-8xl sm:text-9xl font-bold text-[#2D2A26] group-hover:text-white transition-colors">{locked.length}</p>
+            <p className="text-xl font-semibold text-[#C86A43] group-hover:text-white transition-colors mt-2">
               Unlock now — {tier.priceLabel} →
             </p>
           </a>
         ) : (
           <a
             href={`mailto:support@prettycoolmarketing.com?subject=${encodeURIComponent(`Archive unlock — ${totalCount} pieces (${founder.name})`)}`}
-            className="group flex flex-col justify-center gap-2 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl p-10 transition-colors"
+            className="group flex flex-col justify-center gap-3 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl p-12 transition-colors"
           >
-            <p className="text-sm font-semibold text-[#C86A43] group-hover:text-white/80 uppercase tracking-wide transition-colors">Waiting to be unlocked</p>
-            <p className="text-6xl sm:text-7xl font-bold text-[#2D2A26] group-hover:text-white transition-colors">{locked.length}</p>
-            <p className="text-base font-semibold text-[#C86A43] group-hover:text-white transition-colors mt-2">
+            <p className="text-lg font-semibold text-[#C86A43] group-hover:text-white/80 uppercase tracking-wide transition-colors">Waiting to be unlocked</p>
+            <p className="text-8xl sm:text-9xl font-bold text-[#2D2A26] group-hover:text-white transition-colors">{locked.length}</p>
+            <p className="text-xl font-semibold text-[#C86A43] group-hover:text-white transition-colors mt-2">
               Get a quote — {tier.priceLabel} →
             </p>
           </a>
@@ -138,7 +141,7 @@ export function DashboardArchiveFoundPage() {
           as one consistent "this is what's behind the paywall" treatment
           across both pages, rather than two different styles. */}
       <div>
-        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide mb-3">Locked ({locked.length})</p>
+        <p className="text-lg font-bold text-[#2D2A26] uppercase tracking-wide mb-3">Locked ({locked.length})</p>
         <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
           {lockedShown.map(item => (
             <div key={item.id} className="flex items-center gap-4 px-5 py-4">
