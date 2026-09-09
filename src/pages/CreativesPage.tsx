@@ -1,6 +1,8 @@
 import { usePageMeta } from '../utils/usePageMeta'
 import { InnerContainer } from '../components/layout/PageContainer'
-import { WaitlistForm } from '../components/ui/WaitlistForm'
+import { COLLABORATOR_PAYMENT_LINK } from '../config/paymentLinks'
+
+const JOIN_URL = 'https://www.culovillage.com/join'
 
 const FORMATS = [
   { emoji: '📖', label: 'Blogs', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
@@ -213,25 +215,38 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Final CTA / waitlist ─────────────────────────────────────────────
-        The flagship waitlist moment — held for the bottom of the page so
-        everything above it makes the case first.
+      {/* ── Final CTA ────────────────────────────────────────────────────────
+        Held for the bottom of the page so everything above it makes the
+        case first. Join the Village first (free, and where the founding
+        rate is locked to a real account), or go straight to checkout.
       */}
       <section className="bg-charcoal pt-20 pb-24 relative overflow-hidden">
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Coming soon · Exclusively in Canva
+                Culo Creatives · Exclusively in Canva
               </p>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-8 leading-tight">
                 CULO is a Canva integrated app that turns your thoughts and raw footage into social media
                 content.
               </h2>
-              <div className="max-w-md">
-                <WaitlistForm source="creatives-final-cta" dark />
-                <p className="font-body text-xs text-white/40 mt-3">
-                  We hate spam. Your email stays private — we'll only email you when it's ready.
+              <div className="max-w-md flex flex-col gap-3">
+                <a
+                  href={JOIN_URL}
+                  className="inline-flex items-center justify-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                >
+                  Join The Culo Village free
+                </a>
+                <a
+                  href={COLLABORATOR_PAYMENT_LINK}
+                  className="inline-flex items-center justify-center px-6 py-3.5 border border-white/25 text-white text-base font-semibold rounded-xl hover:border-white transition-colors"
+                >
+                  Start Culo Creatives — $19 AUD/month
+                </a>
+                <p className="font-body text-xs text-white/40 mt-1">
+                  The Village is free forever. Culo Creatives is free until 1 January 2027, then $19 AUD/month
+                  for founders who start before then.
                 </p>
               </div>
             </div>
