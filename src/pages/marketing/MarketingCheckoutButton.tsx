@@ -6,8 +6,8 @@ import { PCM_OFFERS, PCM_SUPPORT_EMAIL, isLive, type PcmOffer } from '../../conf
  * otherwise it falls back to an email so the funnel still works before the
  * links are live.
  *
- * tone: 'orange' (default) for cream/sand backgrounds, 'dark' for the
- * orange CTA sections where an orange button would disappear.
+ * tone: 'orange' (default) for cream/sand backgrounds, 'light' for the
+ * orange CTA sections — a light button with dark writing.
  */
 export function MarketingCheckoutButton({
   offerId,
@@ -16,7 +16,7 @@ export function MarketingCheckoutButton({
 }: {
   offerId: PcmOffer['id']
   className?: string
-  tone?: 'orange' | 'dark'
+  tone?: 'orange' | 'light'
 }) {
   const offer = PCM_OFFERS[offerId]
   const live = isLive(offer.paymentLink)
@@ -26,11 +26,11 @@ export function MarketingCheckoutButton({
     : `mailto:${PCM_SUPPORT_EMAIL}?subject=${encodeURIComponent(`I'd like to start: ${offer.name}`)}`
 
   const btn =
-    tone === 'dark'
-      ? 'bg-pcm-dark text-white hover:bg-[#1a110b]'
+    tone === 'light'
+      ? 'bg-pcm-cream text-pcm-dark hover:bg-white'
       : 'bg-pcm-orange text-white hover:bg-pcm-orange-dark'
-  const noteText = tone === 'dark' ? 'text-white/80' : 'text-pcm-muted'
-  const noteLink = tone === 'dark' ? 'text-white underline' : 'text-pcm-orange hover:underline'
+  const noteText = tone === 'light' ? 'text-white/80' : 'text-pcm-muted'
+  const noteLink = tone === 'light' ? 'text-white underline' : 'text-pcm-orange hover:underline'
 
   return (
     <div className={className}>

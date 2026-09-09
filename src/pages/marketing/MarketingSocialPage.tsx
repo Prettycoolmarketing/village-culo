@@ -151,21 +151,25 @@ export function MarketingSocialPage() {
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 text-center bg-pcm-orange">
-        <InnerContainer className="max-w-2xl">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-6 leading-tight">
-            Start a partnership
-          </h2>
-          <p className="font-body text-white/85 mb-8">
-            After payment you'll get instructions to email {PCM_SUPPORT_EMAIL} your raw footage and
-            drive links.{' '}
-            <Link to="/marketing/start?offer=tier2" className="text-white underline">
-              Preview the instructions →
-            </Link>
-          </p>
-          <div className="grid sm:grid-cols-2 gap-4 max-w-lg mx-auto">
-            <MarketingCheckoutButton offerId="tier2" tone="dark" />
-            <MarketingCheckoutButton offerId="tier3" tone="dark" />
+      <section className="py-16 md:py-20 bg-pcm-orange">
+        <InnerContainer>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-white leading-tight">
+                Start the partnership
+              </h2>
+              <p className="mt-4 font-body text-sm text-white/85">
+                After payment you'll get instructions to email {PCM_SUPPORT_EMAIL} your raw footage
+                and drive links.{' '}
+                <Link to="/marketing/start?offer=tier2" className="text-white underline">
+                  Preview the instructions →
+                </Link>
+              </p>
+            </div>
+            <div className="md:justify-self-end w-full md:max-w-xs flex flex-col gap-4">
+              <MarketingCheckoutButton offerId="tier2" tone="light" />
+              <MarketingCheckoutButton offerId="tier3" tone="light" />
+            </div>
           </div>
         </InnerContainer>
       </section>

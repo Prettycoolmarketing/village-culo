@@ -125,32 +125,36 @@ export function MarketingLandingPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Footer CTA — orange section, dark buttons ─────────────────────── */}
-      <section className="py-16 md:py-20 bg-pcm-orange text-center">
-        <InnerContainer className="max-w-2xl">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-            Ready to start?
-          </h2>
-          <p className="font-body text-lg text-white/85 leading-relaxed mb-8">
-            Pick a service and we’ll show you the rates. Or email us first at{' '}
-            <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-white font-semibold underline">
-              {PCM_SUPPORT_EMAIL}
-            </a>
-            .
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={() => go(PUBLISHING)}
-              className="px-6 py-3 bg-pcm-dark text-white text-sm font-semibold rounded-xl hover:bg-[#1a110b] transition-colors"
-            >
-              Publishing service
-            </button>
-            <button
-              onClick={() => go(SOCIAL)}
-              className="px-6 py-3 bg-pcm-dark text-white text-sm font-semibold rounded-xl hover:bg-[#1a110b] transition-colors"
-            >
-              Social media partnerships
-            </button>
+      {/* ── Footer CTA — orange section, light buttons + dark writing ─────── */}
+      <section className="py-16 md:py-20 bg-pcm-orange">
+        <InnerContainer>
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-white leading-tight">
+                Ready to start?
+              </h2>
+              <p className="mt-4 font-body text-lg text-white/85 leading-relaxed">
+                Pick a service and we’ll show you the rates. Or email us first at{' '}
+                <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-white font-semibold underline">
+                  {PCM_SUPPORT_EMAIL}
+                </a>
+                .
+              </p>
+            </div>
+            <div className="md:justify-self-end w-full md:max-w-xs flex flex-col gap-3">
+              <button
+                onClick={() => go(PUBLISHING)}
+                className="px-6 py-3 bg-pcm-cream text-pcm-dark text-sm font-semibold rounded-xl hover:bg-white transition-colors"
+              >
+                Publishing service
+              </button>
+              <button
+                onClick={() => go(SOCIAL)}
+                className="px-6 py-3 bg-pcm-cream text-pcm-dark text-sm font-semibold rounded-xl hover:bg-white transition-colors"
+              >
+                Social media partnerships
+              </button>
+            </div>
           </div>
         </InnerContainer>
       </section>

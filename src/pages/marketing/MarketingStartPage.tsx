@@ -29,17 +29,17 @@ export function MarketingStartPage() {
 
   return (
     <main className="min-h-screen bg-pcm-cream">
-      <section className="bg-pcm-orange py-20 md:py-24 text-center">
+      <section className="bg-pcm-cream py-20 md:py-24 text-center border-b border-pcm-linen">
         <InnerContainer className="max-w-2xl">
-          <p className="font-body text-xs font-semibold text-white/80 uppercase tracking-widest mb-4">
+          <p className="font-body text-xs font-semibold text-pcm-dark/70 uppercase tracking-widest mb-4">
             {offer ? offer.name : 'Pretty Cool Marketing'}
           </p>
-          <h1 className="font-heading text-4xl sm:text-5xl font-bold text-white leading-tight mb-6">
+          <h1 className="font-heading text-4xl sm:text-5xl font-bold text-pcm-dark leading-tight mb-6">
             You’re in. Here’s the one thing we need from you.
           </h1>
-          <p className="font-body text-lg text-white/85 leading-relaxed">
+          <p className="font-body text-lg text-pcm-dark/80 leading-relaxed">
             To get started we need your material. Email everything below to{' '}
-            <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-white underline">
+            <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-pcm-dark underline">
               {PCM_SUPPORT_EMAIL}
             </a>
             .
