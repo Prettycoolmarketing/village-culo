@@ -51,7 +51,7 @@ export function MarketingSocialPage() {
         title="Social media content, edited and distributed for you."
         description="Two tiers. Tier 2 edits and schedules 30 posts a month across every platform and into the Village. Tier 3 adds a half-day shoot every 4 weeks in the PCM frameworks, on a fast turnaround built on the app and editing process."
         right={
-          <div className="bg-surface rounded-2xl p-7 shadow-lg flex flex-col gap-4">
+          <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-10 shadow-lg flex flex-col gap-4">
             <a href="#tier-2" className="block">
               <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Tier 2</p>
               <p className="font-heading text-2xl font-bold text-charcoal">$3,000 AUD <span className="text-sm font-normal text-muted">/ month</span></p>
@@ -68,9 +68,9 @@ export function MarketingSocialPage() {
       {/* Tiers */}
       <section className="py-16 md:py-20 bg-surface">
         <InnerContainer>
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-8">
             {/* Tier 2 */}
-            <div id="tier-2" className="bg-surface border border-border rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
+            <div id="tier-2" className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-10 shadow-card flex flex-col scroll-mt-24">
               <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Tier 2</p>
               <h2 className="font-heading text-2xl font-bold text-charcoal mb-2">Content Editing &amp; Distribution</h2>
               <p className="font-body text-charcoal mb-6">
@@ -88,7 +88,7 @@ export function MarketingSocialPage() {
             </div>
 
             {/* Tier 3 */}
-            <div id="tier-3" className="bg-surface border-2 border-primary rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
+            <div id="tier-3" className="bg-[#EBF2F8] border-2 border-primary rounded-2xl p-10 shadow-card flex flex-col scroll-mt-24">
               <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Tier 3</p>
               <h2 className="font-heading text-2xl font-bold text-charcoal mb-2">Content Creator</h2>
               <p className="font-body text-charcoal mb-6">

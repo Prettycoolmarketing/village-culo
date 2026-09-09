@@ -74,7 +74,7 @@ export function MarketingPriceCard({
   children: ReactNode
 }) {
   return (
-    <div className="bg-surface border border-border rounded-2xl p-7 shadow-lg">
+    <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-lg">
       <p className="font-heading text-4xl font-bold text-charcoal">{price}</p>
       <p className="font-body text-sm text-muted mt-1 mb-5">{cadence}</p>
       {children}

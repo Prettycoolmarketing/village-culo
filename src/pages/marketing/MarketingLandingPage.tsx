@@ -64,7 +64,7 @@ export function MarketingLandingPage() {
           </>
         }
         right={
-          <div className="bg-surface border border-border rounded-2xl p-7 shadow-lg flex flex-col gap-3">
+          <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-lg flex flex-col gap-3">
             <p className="font-heading text-lg font-bold text-charcoal mb-1">Two ways to work with us</p>
             <button
               onClick={() => go(PUBLISHING)}
@@ -116,7 +116,7 @@ export function MarketingLandingPage() {
       {/* ── The two services ─────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 bg-surface">
         <InnerContainer>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-8">
             <OfferCard
               kicker="Publishing Service"
               title="Turn your back catalogue into a founder library"
@@ -208,7 +208,7 @@ function OfferCard({
   kicker: string; title: string; paragraphs: string[]; cta: string; onClick: () => void
 }) {
   return (
-    <div className="bg-surface border border-border rounded-2xl p-8 flex flex-col shadow-card">
+    <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-10 flex flex-col shadow-card">
       <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">{kicker}</p>
       <h3 className="font-heading text-2xl font-bold text-charcoal mb-4 leading-tight">{title}</h3>
       <div className="font-body text-muted leading-relaxed flex-1 mb-6 space-y-3">

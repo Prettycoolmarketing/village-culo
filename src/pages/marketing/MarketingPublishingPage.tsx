@@ -75,9 +75,9 @@ export function MarketingPublishingPage() {
               Four steps.
             </h2>
           </div>
-          <div className="grid sm:grid-cols-2 gap-6">
+          <div className="grid sm:grid-cols-2 gap-8">
             {STEPS.map(step => (
-              <div key={step.n} className="bg-surface border border-border rounded-2xl p-7 shadow-card">
+              <div key={step.n} className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-card">
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <span className="font-heading font-bold text-charcoal">{step.n}</span>
                 </div>

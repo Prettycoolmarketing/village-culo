@@ -68,7 +68,7 @@ export function MarketingStartPage() {
             ))}
           </ul>
 
-          <div className="bg-surface border border-border rounded-2xl p-8 shadow-card">
+          <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-10 shadow-card">
             <p className="font-body text-sm text-muted mb-1">Send to</p>
             <p className="font-heading text-xl font-bold text-charcoal mb-5">{PCM_SUPPORT_EMAIL}</p>
             <a
