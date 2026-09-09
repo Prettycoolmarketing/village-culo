@@ -130,21 +130,24 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
           </button>
 
           {showInstructions && (
-            <div className="mb-4 bg-[#F8F5F0] rounded-lg p-4">
-              <p className="text-xs font-semibold text-[#2D2A26] mb-2">In the Instagram app or on instagram.com:</p>
-              <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside space-y-1.5">
+            <div className="mb-4 bg-[#F8F5F0] rounded-lg p-5">
+              <p className="text-xs font-semibold text-[#2D2A26] mb-3">In the Instagram app or on instagram.com:</p>
+              <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside space-y-3">
                 <li>Go to <span className="font-medium text-[#2D2A26]">Settings → Accounts Centre → Your information and permissions</span>.</li>
                 <li>Select the Instagram account you want to republish for visibility.</li>
                 <li>Tap <span className="font-medium text-[#2D2A26]">Export to device</span>.</li>
                 <li>Click <span className="font-medium text-[#2D2A26]">"Customise information"</span>.</li>
-                <li>Click <span className="font-medium text-[#2D2A26]">"Clear all"</span>, then tick <span className="font-medium text-[#2D2A26]">Media</span> only — leave <span className="font-medium text-[#2D2A26]">Information about you</span> and everything else (Messages, Comments, Ads, Security, etc.) unticked. That's all our importer reads.</li>
+                <li>Click <span className="font-medium text-[#2D2A26]">"Clear all"</span> on all sections.</li>
+                <li>Re-tick <span className="font-medium text-[#2D2A26]">"Media"</span> only — that's all our importer reads.</li>
+                <li>Click <span className="font-medium text-[#2D2A26]">Save</span>.</li>
                 <li>Set <span className="font-medium text-[#2D2A26]">Format: JSON</span> (not HTML — we can't read HTML exports).</li>
                 <li>Set <span className="font-medium text-[#2D2A26]">Media quality: High</span>.</li>
-                <li>Tap <span className="font-medium text-[#2D2A26]">Create files</span>. Instagram builds it in the background and emails you when it's ready — this can take anywhere from a few minutes to a day.</li>
+                <li>Tap <span className="font-medium text-[#2D2A26]">"Start Exporting"</span>.</li>
+                <li>Instagram will email you when your file is ready — this can take anywhere from a few minutes to a day.</li>
                 <li>Open that email (or go back to Accounts Centre → Your activity → Download or transfer information) and download the <span className="font-medium text-[#2D2A26]">.zip</span> file to your device.</li>
                 <li>Come back to this page and drag that .zip file into the box below, or click Browse files to select it.</li>
               </ol>
-              <div className="flex justify-end mt-3">
+              <div className="flex justify-end mt-4">
                 <button type="button" onClick={() => setShowInstructions(false)}
                   className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] transition-colors">
                   Hide instructions
