@@ -1,9 +1,11 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useRef, type ReactNode } from 'react'
 import { updateStory, deleteStory, uniqueStorySlug } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { getIdeas } from '../../services/ideas'
 import { getBusinesses } from '../../services/businesses'
+import { getFounder } from '../../services/founders'
+import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
 import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
 import { ReelContent } from '../ui/ReelContent'
 import { ConfirmButton } from '../ui/ConfirmButton'
@@ -36,6 +38,27 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 const CONTENT_TYPES: ContentType[] = ['blog', 'reel', 'carousel']
 
+// Minimal Web Speech API surface — not in every TS DOM lib version, and
+// only the handful of members dictation actually uses.
+interface SpeechRecognitionResultLike { [index: number]: { transcript: string }; length: number }
+interface SpeechRecognitionEventLike { resultIndex: number; results: { [index: number]: SpeechRecognitionResultLike; length: number } }
+interface SpeechRecognitionLike {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  onresult: ((e: SpeechRecognitionEventLike) => void) | null
+  onerror: (() => void) | null
+  onend: (() => void) | null
+  start(): void
+  stop(): void
+}
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognitionLike
+    webkitSpeechRecognition?: new () => SpeechRecognitionLike
+  }
+}
+
 export function StoryEditor({ story, onSave, onDelete, onClose }: {
   story: Story
   onSave: (s: Story) => void
@@ -47,6 +70,82 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [showCoverVideo, setShowCoverVideo] = useState(false)
+  const [rewriting, setRewriting] = useState(false)
+  const [rewriteError, setRewriteError] = useState<string | null>(null)
+  const [blogBeforeRewrite, setBlogBeforeRewrite] = useState<string | null>(null)
+  const [listening, setListening] = useState(false)
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
+
+  // Rewrite with AI — same real, per-call AI spend as "Rewrite with Voice
+  // Brief" on Imported Content, just aimed at a Story's own Blog field
+  // instead: the current Blog text goes in as the source material
+  // (transcript), the founder's Voice & Brand Brief shapes how it comes
+  // back out. Snapshots the pre-rewrite text so one "Undo rewrite" always
+  // gets back exactly what was there before — never silently lost.
+  async function handleRewriteBlog() {
+    const founder = getFounder(draft.founderId)
+    if (!founder?.voiceBrief?.trim()) {
+      setRewriteError('Add a Voice & Brand Brief in your profile first — Rewrite with AI needs it to write in your voice.')
+      return
+    }
+    if (!draft.blog?.trim()) {
+      setRewriteError('Nothing to rewrite yet — write or dictate something first.')
+      return
+    }
+    setRewriting(true)
+    setRewriteError(null)
+    const result = await generateBlogFromVoiceBrief({
+      voiceBrief: founder.voiceBrief,
+      founderName: founder.name,
+      transcript: draft.blog,
+      platform: draft.contentTypes[0] ?? 'blog',
+    })
+    setRewriting(false)
+    if (result.error || !result.blog?.blog) {
+      setRewriteError(result.error ?? 'Could not rewrite this. Please try again.')
+      return
+    }
+    setBlogBeforeRewrite(draft.blog)
+    set('blog', result.blog.blog)
+  }
+
+  function handleUndoRewrite() {
+    if (blogBeforeRewrite === null) return
+    set('blog', blogBeforeRewrite)
+    setBlogBeforeRewrite(null)
+  }
+
+  // Dictation — the browser's own free, local speech-to-text (Web Speech
+  // API), no server call and no AI spend. Appends each finalised chunk as
+  // it's recognised; a founder can then hit Rewrite with AI on top of
+  // whatever it transcribed to turn it into a real blog.
+  function toggleDictation() {
+    const SpeechRecognitionCtor = window.SpeechRecognition ?? window.webkitSpeechRecognition
+    if (!SpeechRecognitionCtor) {
+      setRewriteError("Dictation isn't supported in this browser — try Chrome, Edge or Safari.")
+      return
+    }
+    if (listening) {
+      recognitionRef.current?.stop()
+      return
+    }
+    const recognition = new SpeechRecognitionCtor()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.lang = navigator.language || 'en-US'
+    recognition.onresult = (e: SpeechRecognitionEventLike) => {
+      let transcript = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i]![0]!.transcript
+      if (!transcript.trim()) return
+      setDraft(prev => ({ ...prev, blog: `${prev.blog ?? ''} ${transcript}`.trim() }))
+      setSaved(false)
+    }
+    recognition.onerror = () => setListening(false)
+    recognition.onend = () => setListening(false)
+    recognitionRef.current = recognition
+    recognition.start()
+    setListening(true)
+  }
 
   const founderIdeas = getIdeas({ founderId: draft.founderId })
   const founderBusinesses = getBusinesses({ founderId: draft.founderId }).filter(b => b.name.trim().length > 0)
@@ -182,6 +281,40 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
 
         {hasBlog && (
           <Field label="Blog">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <button
+                type="button"
+                onClick={toggleDictation}
+                title={listening ? 'Stop dictating' : 'Dictate your story — speaks straight into the Blog field'}
+                className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                  listening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#2D2A26] text-white hover:bg-[#1a1815]'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+                  <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRewriteBlog()}
+                disabled={rewriting}
+                className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FBF1EB] text-[#C86A43] hover:bg-[#C86A43]/10 disabled:opacity-50 transition-colors"
+              >
+                {rewriting ? 'Rewriting…' : '✨ Rewrite with AI'}
+              </button>
+              {blogBeforeRewrite !== null && (
+                <button
+                  type="button"
+                  onClick={handleUndoRewrite}
+                  className="text-xs font-semibold px-3 py-2 rounded-lg text-[#6B7280] bg-[#F3EDE6] hover:bg-[#E8E4DD] transition-colors"
+                >
+                  ↺ Undo rewrite
+                </button>
+              )}
+              {listening && <span className="text-xs text-red-500 font-medium">Listening…</span>}
+            </div>
+            {rewriteError && <p className="text-xs text-red-600 mb-2">{rewriteError}</p>}
             <textarea
               value={draft.blog ?? ''}
               onChange={e => set('blog', e.target.value || undefined)}
