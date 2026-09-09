@@ -183,7 +183,7 @@ export function JoinVillagePage() {
               </form>
               {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
               <p className="font-body text-xs text-white/40 mt-4">
-                The Village is free forever · Culo Creatives in Canva is free until January 1, 2027 · No spam emails
+                The Culo Village helps you be found by ai, Culo Creatives in Canva is free until January 1, 2027 · No spam emails
               </p>
             </div>
             <img
