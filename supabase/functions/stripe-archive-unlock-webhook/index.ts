@@ -20,6 +20,11 @@
 // STRIPE_ARCHIVE_UNLOCK_WEBHOOK_SECRET so it doesn't collide with
 // stripe-creatives-webhook's STRIPE_WEBHOOK_SECRET. STRIPE_SECRET_KEY is
 // shared (already set for the other Stripe functions).
+//
+// ARCHIVE_SUBSET_LINK_ID (optional): the Payment Link id (plink_…) for the
+// "publish my most-ready 5,000 for $699" option. When a checkout comes
+// from that link, this sets archiveUnlockCap = 5000 instead of a full
+// unlock (see src/config/archiveUnlock.ts and utils/archiveUnlock.ts).
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -29,6 +34,8 @@ const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const STRIPE_SECRET_KEY     = Deno.env.get('STRIPE_SECRET_KEY')
 const WEBHOOK_SECRET        = Deno.env.get('STRIPE_ARCHIVE_UNLOCK_WEBHOOK_SECRET')
+const SUBSET_LINK_ID        = Deno.env.get('ARCHIVE_SUBSET_LINK_ID')  // plink_… for the "publish 5,000" option
+const SUBSET_CAP            = 5000
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -71,8 +78,18 @@ serve(async (req) => {
         const { data: founderRow } = await admin.from('founders').select('id, data').eq('id', founderId).maybeSingle()
         if (founderRow) {
           const founderData = founderRow.data as Record<string, unknown>
+          // The "$699 for my most-ready 5,000" option comes from its own
+          // Payment Link — cap the unlock rather than opening the whole
+          // archive. Any other link is a full unlock.
+          const linkId = typeof session.payment_link === 'string' ? session.payment_link : session.payment_link?.id
+          const isSubset = !!SUBSET_LINK_ID && linkId === SUBSET_LINK_ID
           await admin.from('founders').update({
-            data: { ...founderData, archiveUnlocked: true, archiveUnlockedAt: new Date().toISOString() },
+            data: {
+              ...founderData,
+              archiveUnlocked: true,
+              archiveUnlockedAt: new Date().toISOString(),
+              ...(isSubset ? { archiveUnlockCap: SUBSET_CAP } : { archiveUnlockCap: undefined }),
+            },
           }).eq('id', founderId)
         }
       }

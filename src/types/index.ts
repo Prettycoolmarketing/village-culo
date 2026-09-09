@@ -474,6 +474,12 @@ export interface Founder {
   // Creatives, and vice versa.
   archiveUnlocked?: boolean
   archiveUnlockedAt?: string
+  // Set instead of a full unlock when a founder with a very large archive
+  // (>10,000 pieces) takes the "publish my most-ready 5,000 for $699"
+  // option — only that many pieces become usable, ranked most-ready first
+  // (see getUnlockedImportedIds). Undefined with archiveUnlocked=true means
+  // an uncapped unlock.
+  archiveUnlockCap?: number
 }
 
 // A founder's status with the paid CULO Creatives product — entirely

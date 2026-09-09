@@ -4,7 +4,10 @@ import { getCurrentFounderId } from '../../services/currentFounder'
 import { getFounder } from '../../services/founders'
 import { importedContentService } from '../../services/importedContent'
 import { getUnlockedImportedIds, hasArchiveAccess } from '../../utils/archiveUnlock'
-import { getArchiveTier, ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
+import {
+  getArchiveTier, ARCHIVE_UNLOCK_FREE_COUNT, isLive, offersSubsetUnlock,
+  ARCHIVE_UNLOCK_SUBSET_5000_LINK, ARCHIVE_UNLOCK_SUBSET_5000_COUNT, ARCHIVE_UNLOCK_SUBSET_5000_PRICE,
+} from '../../config/archiveUnlock'
 import { buildPaymentUrl } from '../../config/paymentLinks'
 
 // The "money screen" — shown once, right after an import, when a founder
@@ -74,7 +77,7 @@ export function DashboardArchiveFoundPage() {
           button (no separate colored panel repeating the same pitch), next
           to a real preview of what it looks like once it's live. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch mb-10 pt-6">
-        {tier.paymentLink ? (
+        {isLive(tier.paymentLink) ? (
           <a
             href={buildPaymentUrl(tier.paymentLink, founder.id, user?.email)}
             target="_blank"
@@ -122,6 +125,30 @@ export function DashboardArchiveFoundPage() {
         )}
       </div>
 
+      {/* Very large archives: cap the cost by publishing only the most-ready
+          5,000 instead of paying the top-tier flat fee for everything. */}
+      {offersSubsetUnlock(totalCount) && (
+        <div className="mb-10 -mt-2">
+          {isLive(ARCHIVE_UNLOCK_SUBSET_5000_LINK) ? (
+            <a
+              href={buildPaymentUrl(ARCHIVE_UNLOCK_SUBSET_5000_LINK, founder.id, user?.email)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full px-6 py-4 bg-white hover:bg-[#FBF1EB] border border-[#E8E4DD] rounded-2xl text-base font-semibold text-[#2D2A26] transition-colors"
+            >
+              Or publish just your {ARCHIVE_UNLOCK_SUBSET_5000_COUNT.toLocaleString()} most-ready pieces — ${ARCHIVE_UNLOCK_SUBSET_5000_PRICE} AUD once →
+            </a>
+          ) : (
+            <a
+              href={`mailto:support@prettycoolmarketing.com?subject=${encodeURIComponent(`Archive unlock — publish ${ARCHIVE_UNLOCK_SUBSET_5000_COUNT} of ${totalCount} (${founder.name})`)}`}
+              className="flex items-center justify-center gap-2 w-full px-6 py-4 bg-white hover:bg-[#FBF1EB] border border-[#E8E4DD] rounded-2xl text-base font-semibold text-[#2D2A26] transition-colors"
+            >
+              Or publish just your {ARCHIVE_UNLOCK_SUBSET_5000_COUNT.toLocaleString()} most-ready pieces — ${ARCHIVE_UNLOCK_SUBSET_5000_PRICE} AUD once →
+            </a>
+          )}
+        </div>
+      )}
+
       {/* The locked pieces themselves, underneath — blurred the same way
           Content's Ready to Publish tab shows a locked row, so this reads
           as one consistent "this is what's behind the paywall" treatment
@@ -147,7 +174,7 @@ export function DashboardArchiveFoundPage() {
         {/* A second unlock CTA right at the bottom — a founder who's
             scrolled all the way through the blurred list shouldn't have to
             scroll back up to actually unlock it. */}
-        {tier.paymentLink ? (
+        {isLive(tier.paymentLink) ? (
           <a
             href={buildPaymentUrl(tier.paymentLink, founder.id, user?.email)}
             target="_blank"

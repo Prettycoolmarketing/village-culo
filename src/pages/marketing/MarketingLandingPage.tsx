@@ -197,21 +197,6 @@ export function MarketingLandingPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Access Culo Creatives — sends them to /join to enter their email ── */}
-      <section className="py-12 bg-[#EBF2F8] text-center border-t border-[#CFE0EE]">
-        <InnerContainer>
-          <a
-            href="https://www.culovillage.com/join"
-            className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-            </svg>
-            Access Culo Creatives In Canva
-          </a>
-        </InnerContainer>
-      </section>
-
       <MarketingLeadModal
         open={dest !== null}
         onClose={() => setDest(null)}

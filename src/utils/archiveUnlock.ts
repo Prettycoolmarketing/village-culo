@@ -29,9 +29,20 @@ function rankForUnlock(items: ImportedContent[]): ImportedContent[] {
  * else is capped at ARCHIVE_UNLOCK_FREE_COUNT, picking the most ready first.
  */
 export function getUnlockedImportedIds(items: ImportedContent[], founder: Founder | null | undefined): Set<string> {
-  if (hasArchiveAccess(founder)) return new Set(items.map(i => i.id))
   const alreadyPublished = items.filter(i => !!i.relatedStoryId || i.status === 'published' || i.status === 'featured')
   const unpublished = items.filter(i => !alreadyPublished.includes(i))
+
+  if (hasArchiveAccess(founder)) {
+    // Capped unlock (the "publish my most-ready 5,000" option) — everything
+    // already published stays usable, plus the top N unpublished pieces.
+    const cap = founder?.archiveUnlockCap
+    if (typeof cap === 'number' && cap > 0 && cap < unpublished.length) {
+      const capSlice = rankForUnlock(unpublished).slice(0, cap)
+      return new Set([...alreadyPublished, ...capSlice].map(i => i.id))
+    }
+    return new Set(items.map(i => i.id))
+  }
+
   const freeSlice = rankForUnlock(unpublished).slice(0, ARCHIVE_UNLOCK_FREE_COUNT)
   return new Set([...alreadyPublished, ...freeSlice].map(i => i.id))
 }
