@@ -1422,12 +1422,12 @@ export function SavedRow({
   }
 
   return (
-    <div className="flex items-start gap-4 px-5 py-4">
+    <div className="flex items-center gap-4 px-5 py-5">
       <input
         type="checkbox"
         checked={checked}
         onChange={onToggleCheck}
-        className="shrink-0 w-4 h-4 mt-1.5 accent-[#C86A43]"
+        className="shrink-0 w-4 h-4 accent-[#C86A43]"
         aria-label={`Select "${item.title}"`}
       />
       {/* Real external source wins when there is one. Once a real Story
@@ -1496,31 +1496,32 @@ export function SavedRow({
           if (goingLive && !window.confirm('Publish this to the live Village site? It will be publicly visible immediately.')) return
           onStatusChange(next)
         }}
-        className={`text-[10px] font-semibold px-2 py-1 rounded-full border-0 focus:outline-none cursor-pointer shrink-0 ${statusColors[item.status]}`}
+        className={`text-xs font-semibold px-3 py-1.5 rounded-full border-0 focus:outline-none cursor-pointer shrink-0 ${statusColors[item.status]}`}
       >
         {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
-      <div className="flex items-center gap-2 shrink-0 pt-0.5">
+      <div className="flex items-center gap-2 shrink-0">
         {item.relatedStoryId && (
           publishedStory ? (
-            <Link to={`/stories/${publishedStory.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#5E6B4A] font-medium hover:underline">
+            <Link to={`/stories/${publishedStory.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[#5E6B4A] font-medium hover:underline">
               ✓ View published story →
             </Link>
           ) : (
-            <span className="text-xs text-[#5E6B4A] font-medium">✓ Story published</span>
+            <span className="text-sm text-[#5E6B4A] font-medium">✓ Story published</span>
           )
         )}
-        <button onClick={onAdvancedEdit} className="text-xs text-[#9CA3AF] hover:text-[#C86A43] transition-colors">
+        <button onClick={onAdvancedEdit}
+          className="text-sm font-medium text-[#6B7280] bg-[#F3EDE6] px-4 py-2.5 rounded-lg hover:text-[#C86A43] hover:bg-[#FBF1EB] transition-colors">
           Edit your story
         </button>
         {confirmDelete ? (
           <>
-            <button onClick={onDelete} className="text-xs text-red-600 font-semibold">Confirm</button>
-            <button onClick={() => setConfirmDelete(false)} className="text-xs text-[#9CA3AF]">Cancel</button>
+            <button onClick={onDelete} className="text-sm font-semibold text-white bg-red-500 px-4 py-2.5 rounded-lg hover:bg-red-600 transition-colors">Confirm</button>
+            <button onClick={() => setConfirmDelete(false)} className="text-sm font-medium text-[#6B7280] bg-[#F3EDE6] px-4 py-2.5 rounded-lg hover:bg-[#E8E4DD] transition-colors">Cancel</button>
           </>
         ) : (
           <button onClick={() => setConfirmDelete(true)}
-            className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors">
+            className="text-sm font-medium text-[#9CA3AF] bg-[#F3EDE6] px-4 py-2.5 rounded-lg hover:text-red-500 hover:bg-red-50 transition-colors">
             Delete
           </button>
         )}

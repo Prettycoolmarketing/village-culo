@@ -6,6 +6,7 @@ import { updateFounder, deleteFounder, getFounder } from '../../services/founder
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './DashboardImportContentPage'
 import { getUnlockedImportedIds } from '../../utils/archiveUnlock'
+import { getArchiveTier } from '../../config/archiveUnlock'
 import { SeriesDetail } from './DashboardSeriesPage'
 import { getSeriesList, createSeries, saveSeries } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
@@ -1257,6 +1258,9 @@ export function DashboardProfilePage() {
           void importedTick
           const allImportedForStats = importedContentService.getAll({ founderId: draft.id })
           const statsPlatforms = Array.from(new Set(allImportedForStats.map(i => i.sourcePlatform)))
+          const isPublishedStat = (i: ImportedContent) => !!i.relatedStoryId || i.status === 'published' || i.status === 'featured'
+          const publishedStatCount = allImportedForStats.filter(isPublishedStat).length
+          const unpublishedStatCount = allImportedForStats.length - publishedStatCount
           // Reads the live, persisted founder record rather than `draft` —
           // `draft` seeds from a local, unsaved profile-edit autosave
           // (culo_v1_profile_draft_*) that can predate or simply never
@@ -1299,6 +1303,38 @@ export function DashboardProfilePage() {
                   <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{allImportedForStats.length}</p>
                 </div>
                 <SourceIcon platform="all" size="lg" />
+              </button>
+              <button
+                onClick={() => setContentSubTab('published')}
+                className={`shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
+                  contentSubTab === 'published' ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
+                }`}
+              >
+                <div className="text-left">
+                  <p className="text-sm text-[#9CA3AF]">Published</p>
+                  <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{publishedStatCount}</p>
+                </div>
+                <span className="w-9 h-9 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+              </button>
+              <button
+                onClick={() => setContentSubTab('ready')}
+                className={`shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
+                  contentSubTab === 'ready' || contentSubTab === 'review' ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
+                }`}
+              >
+                <div className="text-left">
+                  <p className="text-sm text-[#9CA3AF]">Unpublished</p>
+                  <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{unpublishedStatCount}</p>
+                </div>
+                <span className="w-9 h-9 rounded-full bg-[#D6A94D]/20 text-amber-700 flex items-center justify-center shrink-0">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
               </button>
               {statsPlatforms.map(p => (
                 <button
@@ -1424,7 +1460,7 @@ export function DashboardProfilePage() {
                       <button
                         onClick={() => void publishItems(readyItems.filter(i => readyChecked.has(i.id)))}
                         disabled={readyChecked.size === 0 || readyBulkPublishing}
-                        className="shrink-0 px-4 py-2 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5539] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="shrink-0 px-6 py-3 bg-[#5E6B4A]/10 text-[#5E6B4A] text-sm font-semibold rounded-xl border border-[#5E6B4A]/20 hover:bg-[#5E6B4A]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         {readyBulkPublishing ? 'Publishing…' : `Publish ${readyChecked.size || ''} selected`}
                       </button>
@@ -1432,9 +1468,18 @@ export function DashboardProfilePage() {
                   )}
 
                   {contentSubTab === 'review' && reviewItems.length > 0 && (
-                    <p className="text-xs text-[#9CA3AF] mb-4">
-                      Missing a real caption, a title, or flagged for a look — open one to fix it up, then it'll move to Ready on its own.
-                    </p>
+                    <div className="text-center mb-6">
+                      <p className="text-sm text-[#6B7280] max-w-xl mx-auto mb-4">
+                        Publish your full archive to help your customers find you with AI — each piece published in
+                        The Culo Village creates an article that positions your story online.
+                      </p>
+                      <Link
+                        to="/dashboard/archive-found"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                      >
+                        Publish your full archive
+                      </Link>
+                    </div>
                   )}
 
                   {shownReady.length === 0 ? (
@@ -1443,35 +1488,62 @@ export function DashboardProfilePage() {
                         {contentSubTab === 'ready' ? 'Nothing ready to publish yet.' : 'Nothing needs more value — everything imported is ready to go.'}
                       </p>
                     </div>
-                  ) : (
-                    <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                      {shownReady.map(item => unlockedIds.has(item.id) ? (
-                        <SavedRow
-                          key={item.id}
-                          item={item}
-                          checked={readyChecked.has(item.id)}
-                          onToggleCheck={() => toggleReadyChecked(item.id)}
-                          onAdvancedEdit={() => openInImported(item.id)}
-                          onDelete={() => handleReadyDelete(item.id)}
-                          onStatusChange={status => void importedContentService.updateStatus(item.id, status).then(() => setImportedTick(t => t + 1))}
-                        />
-                      ) : (
-                        <div key={item.id} className="flex items-center gap-4 px-5 py-4">
-                          <img src={item.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6] opacity-40 grayscale" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#9CA3AF] truncate blur-[3px] select-none">{item.title}</p>
+                  ) : (() => {
+                    const visibleReady = shownReady.filter(item => unlockedIds.has(item.id))
+                    const hiddenReady = shownReady.filter(item => !unlockedIds.has(item.id))
+                    const archiveTier = getArchiveTier(allImported.length)
+                    return (
+                      <>
+                        {visibleReady.length > 0 && (
+                          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                            {visibleReady.map(item => (
+                              <SavedRow
+                                key={item.id}
+                                item={item}
+                                checked={readyChecked.has(item.id)}
+                                onToggleCheck={() => toggleReadyChecked(item.id)}
+                                onAdvancedEdit={() => openInImported(item.id)}
+                                onDelete={() => handleReadyDelete(item.id)}
+                                onStatusChange={status => void importedContentService.updateStatus(item.id, status).then(() => setImportedTick(t => t + 1))}
+                              />
+                            ))}
                           </div>
-                          <Link to="/dashboard/archive-found"
-                            className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-[#C86A43] hover:underline">
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        )}
+
+                        {hiddenReady.length > 0 && (
+                          <Link
+                            to="/dashboard/archive-found"
+                            className="flex items-center justify-center gap-2 my-4 px-6 py-4 rounded-xl bg-[#FBF1EB] text-[#C86A43] text-sm font-semibold border border-[#C86A43]/20 hover:bg-[#C86A43] hover:text-white transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
-                            Unlock
+                            Unlock {hiddenReady.length} more piece{hiddenReady.length === 1 ? '' : 's'} — {archiveTier.priceLabel}
                           </Link>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        )}
+
+                        {hiddenReady.length > 0 && (
+                          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                            {hiddenReady.map(item => (
+                              <div key={item.id} className="flex items-center gap-4 px-5 py-5">
+                                <img src={item.thumbnailUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6] opacity-40 grayscale" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-[#9CA3AF] truncate blur-[3px] select-none">{item.title}</p>
+                                </div>
+                                <Link to="/dashboard/archive-found"
+                                  className="shrink-0 flex items-center gap-2 text-sm font-semibold text-[#C86A43] bg-[#FBF1EB] px-4 py-2.5 rounded-lg border border-[#C86A43]/20 hover:bg-[#C86A43] hover:text-white transition-colors">
+                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                  </svg>
+                                  Unlock
+                                </Link>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               )
             })()}
@@ -2014,17 +2086,18 @@ export function DashboardProfilePage() {
                   </div>
                   <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
                   {sortedStories.map(story => {
+                    const isLive = story.status === 'published' || story.status === 'featured'
                     return (
-                      <div key={story.id} className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-[#FBF8F4] transition-colors">
-                        <button onClick={() => setEditingStoryId(story.id)} className="flex items-center gap-4 flex-1 min-w-0 text-left">
+                      <div key={story.id} className="w-full flex items-center gap-4 px-5 py-4 hover:bg-[#FBF8F4] transition-colors">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
                           <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
                           <div className="flex-1 min-w-0">
                             <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
                             <p className="text-xs text-[#9CA3AF] mt-0.5">{story.contentTypes.join(' · ')} · {story.createdAt}</p>
                           </div>
-                        </button>
+                        </div>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                          story.status === 'published' || story.status === 'featured'
+                          isLive
                             ? 'bg-green-100 text-green-700'
                             : story.status === 'draft'
                             ? 'bg-[#F3EDE6] text-[#9CA3AF]'
@@ -2032,12 +2105,30 @@ export function DashboardProfilePage() {
                         }`}>
                           {story.status}
                         </span>
-                        <ConfirmButton
-                          label="Delete"
-                          confirmLabel="Confirm"
-                          onConfirm={() => { void deleteStory(story.id).then(() => setImportedTick(t => t + 1)) }}
-                          className="text-xs text-[#9CA3AF] hover:text-red-500 shrink-0"
-                        />
+                        <div className="flex items-center gap-2 shrink-0">
+                          {isLive && (
+                            <Link
+                              to={`/stories/${story.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-[#5E6B4A] bg-[#5E6B4A]/10 px-4 py-2.5 rounded-lg hover:bg-[#5E6B4A]/20 transition-colors"
+                            >
+                              View story →
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => setEditingStoryId(story.id)}
+                            className="text-sm font-medium text-[#6B7280] bg-[#F3EDE6] px-4 py-2.5 rounded-lg hover:text-[#C86A43] hover:bg-[#FBF1EB] transition-colors"
+                          >
+                            Edit this story
+                          </button>
+                          <ConfirmButton
+                            label="Delete"
+                            confirmLabel="Confirm"
+                            onConfirm={() => { void deleteStory(story.id).then(() => setImportedTick(t => t + 1)) }}
+                            className="text-sm font-medium text-[#9CA3AF] bg-[#F3EDE6] px-4 py-2.5 rounded-lg hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                          />
+                        </div>
                       </div>
                     )
                   })}
