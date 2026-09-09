@@ -1103,7 +1103,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
             className={inp + ' mt-1'}
           >
             <option value="">+ Connect a business…</option>
-            {getBusinesses().filter(b => !suggestedBusinesses.some(s => s.id === b.id) && !extraBusinesses.some(s => s.id === b.id)).map(b => (
+            {getBusinesses({ founderId: draft.founderId }).filter(b => !suggestedBusinesses.some(s => s.id === b.id) && !extraBusinesses.some(s => s.id === b.id)).map(b => (
               <option key={b.id} value={b.id}>{b.name}</option>
             ))}
           </select>

@@ -5,6 +5,7 @@ import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaS
 import { getIdeas } from '../../services/ideas'
 import { getBusinesses } from '../../services/businesses'
 import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
+import { ReelContent } from '../ui/ReelContent'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { AppearsOnPanel } from './AppearsOnPanel'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
@@ -45,6 +46,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [showCoverVideo, setShowCoverVideo] = useState(false)
 
   const founderIdeas = getIdeas({ founderId: draft.founderId })
   const founderBusinesses = getBusinesses({ founderId: draft.founderId }).filter(b => b.name.trim().length > 0)
@@ -273,6 +275,32 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
         </Field>
 
         <Field label="Cover Image">
+          {/* A cover image alone doesn't say what the post actually is —
+              if there's a real video behind this story (Reel URL above, or
+              an extra video attached below), let a founder watch it right
+              here instead of only ever seeing a still frame. Free to show:
+              it's the same reel/embed URL already saved, no new upload or
+              API call, just rendering it inline via the shared
+              ReelContent component (same one the public story page uses). */}
+          {(draft.reelUrl || (draft.additionalReelUrls ?? []).some(Boolean)) && (
+            <button
+              type="button"
+              onClick={() => setShowCoverVideo(v => !v)}
+              className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[#C86A43] hover:underline"
+            >
+              <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+              {showCoverVideo ? 'Hide video' : 'Watch this post'}
+            </button>
+          )}
+          {showCoverVideo && (draft.reelUrl || (draft.additionalReelUrls ?? []).find(Boolean)) && (
+            <div className="mb-3">
+              <ReelContent
+                reelUrl={draft.reelUrl || (draft.additionalReelUrls ?? []).find(Boolean)}
+                title={draft.title}
+                summary={draft.summary}
+              />
+            </div>
+          )}
           <MediaUpload
             value={draft.coverImage}
             onChange={v => set('coverImage', v)}

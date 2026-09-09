@@ -54,6 +54,42 @@ function similarity(a: string, b: string): number {
 
 const SIMILARITY_THRESHOLD = 0.6
 
+// A lesson comes out of villageIntelligence as a whole extracted sentence
+// ("I learned that following your dreams means taking risks even when the
+// outcome feels uncertain") — fine as the Idea's own description, but a bad
+// title. Ideas are meant to be small, generic, shareable categories other
+// founders can recognise and click into too (Authenticity, Travel, Writing
+// A Novel) — not a wall of long, story-specific sentences that only ever
+// grows and never gets reused. Strip the common "I learned that..." lead-in
+// and cap it to a short, title-cased phrase; the full sentence still lives
+// in `description` for anyone who opens the idea.
+const IDEA_LEAD_INS = [
+  'i learned that', 'i learnt that', 'i realized that', 'i realised that',
+  'i learned', 'i learnt', 'i realized', 'i realised',
+  'the key lesson was that', 'the biggest lesson was that',
+  'one thing i learned is that', 'one lesson i learned is that',
+  'my biggest takeaway was that', 'the takeaway is that',
+  'what i learned is that', 'it taught me that', 'this taught me that',
+  'taught me that', 'taught me',
+]
+const IDEA_TITLE_MAX_WORDS = 5
+
+function shortenIdeaTitle(sentence: string): string {
+  let s = sentence.trim()
+  const lower = s.toLowerCase()
+  for (const leadIn of IDEA_LEAD_INS) {
+    if (lower.startsWith(leadIn)) { s = s.slice(leadIn.length).trim(); break }
+  }
+  s = s.replace(/^(that|to)\s+/i, '')
+  const words = s.split(/\s+/).filter(Boolean).slice(0, IDEA_TITLE_MAX_WORDS)
+  s = words.join(' ').replace(/[,;:.!?]+$/, '')
+  if (!s) return sentence.trim().slice(0, 40)
+  return s
+    .split(' ')
+    .map(w => (w.length > 0 ? w[0]!.toUpperCase() + w.slice(1) : w))
+    .join(' ')
+}
+
 /** Shared matching rule — the one place "is this the same idea?" is decided, used by both the real sync and the read-only preview so they can never disagree. */
 function findIdeaMatch(pool: Idea[], story: Story, lessonText: string): number {
   const storyTopicIds = new Set(story.topics.map(t => t.id))
@@ -77,10 +113,11 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
   const pool = [...getIdeas()]
 
   for (const lessonText of intel.lessons) {
-    const title = lessonText.trim()
-    if (!title) continue
+    const trimmed = lessonText.trim()
+    if (!trimmed) continue
+    const title = shortenIdeaTitle(trimmed)
 
-    const candidateIdx = findIdeaMatch(pool, story, title)
+    const candidateIdx = findIdeaMatch(pool, story, trimmed)
 
     if (candidateIdx !== -1) {
       const candidate = pool[candidateIdx]
@@ -113,7 +150,7 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
       id,
       slug: slugify(title) || id,
       title,
-      description: lessonText,
+      description: trimmed,
       topics: story.topics,
       relatedStoryIds: [story.id],
       relatedFounderIds: [story.founderId],
@@ -236,10 +273,11 @@ export function previewIdeaImpact(story: Story, intel: VillageContentIntelligenc
   const touched = new Set<string>()
 
   for (const lessonText of intel.lessons) {
-    const title = lessonText.trim()
-    if (!title) continue
+    const trimmed = lessonText.trim()
+    if (!trimmed) continue
+    const title = shortenIdeaTitle(trimmed)
 
-    const idx = findIdeaMatch(pool, story, title)
+    const idx = findIdeaMatch(pool, story, trimmed)
     if (idx !== -1) {
       const idea = pool[idx]
       if (!touched.has(idea.id) && !idea.relatedStoryIds.includes(story.id)) {
@@ -254,7 +292,7 @@ export function previewIdeaImpact(story: Story, intel: VillageContentIntelligenc
     // the same draft strengthens it instead of double-counting as new —
     // exactly what syncIdeasFromStory does for real.
     pool.push({
-      id: `preview-${newIdeas}`, slug: '', title, description: title, topics: story.topics,
+      id: `preview-${newIdeas}`, slug: '', title, description: trimmed, topics: story.topics,
       relatedStoryIds: [story.id],
       relatedFounderIds: story.founderId ? [story.founderId] : [],
       relatedBusinessIds: story.businessId ? [story.businessId] : [],
