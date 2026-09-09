@@ -1460,7 +1460,7 @@ export function DashboardProfilePage() {
                       <button
                         onClick={() => void publishItems(readyItems.filter(i => readyChecked.has(i.id)))}
                         disabled={readyChecked.size === 0 || readyBulkPublishing}
-                        className="shrink-0 px-6 py-3 bg-[#5E6B4A]/10 text-[#5E6B4A] text-sm font-semibold rounded-xl border border-[#5E6B4A]/20 hover:bg-[#5E6B4A]/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="shrink-0 px-6 py-3 bg-[#FBF1EB] text-[#C86A43] text-sm font-semibold rounded-xl border border-[#C86A43]/20 hover:bg-[#C86A43]/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         {readyBulkPublishing ? 'Publishing…' : `Publish ${readyChecked.size || ''} selected`}
                       </button>
