@@ -34,12 +34,11 @@ interface StoryGridProps {
   // own Featured Video picks, so the same story doesn't show up twice on
   // one profile page (once as the featured video, once again in this grid).
   excludeIds?: string[]
-  // Bubbles blog-type stories to the front, ahead of reels/carousels/etc —
-  // for a founder's own profile grid, the first thing a visitor sees. A
-  // written blog almost always has a real, sharp cover image; a reel's
-  // thumbnail is a video-frame grab that can come out soft or blurry,
-  // especially from an older import. Order within each group (blog vs.
-  // everything else) is otherwise left as fetched.
+  // Puts a founder's own Feature picks first, then bubbles blog-type
+  // stories ahead of reels/carousels/etc — for a founder's own profile
+  // grid, the first thing a visitor sees. A written blog almost always has
+  // a real, sharp cover image; a reel's thumbnail is a video-frame grab
+  // that can come out soft or blurry, especially from an older import.
   sortBlogsFirst?: boolean
   // Render nothing at all when there's no content, instead of an empty
   // state with a CTA — for profile pages, where an unpublished section
@@ -79,7 +78,14 @@ export function StoryGrid({
     .filter(s => !excludeIds?.includes(s.id))
 
   if (sortBlogsFirst) {
+    // A founder's own "Feature" pick always wins first, regardless of
+    // type — that's a deliberate choice, not a heuristic. Below that,
+    // blogs (a real, sharp cover image) rank ahead of reels/carousels
+    // (a video-frame thumbnail, which is what tends to read as blurry).
     stories = [...stories].sort((a, b) => {
+      const aFeatured = a.featured ? 1 : 0
+      const bFeatured = b.featured ? 1 : 0
+      if (aFeatured !== bFeatured) return bFeatured - aFeatured
       const aBlog = a.contentTypes.includes('blog') ? 1 : 0
       const bBlog = b.contentTypes.includes('blog') ? 1 : 0
       return bBlog - aBlog

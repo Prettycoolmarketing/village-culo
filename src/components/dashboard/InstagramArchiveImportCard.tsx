@@ -134,9 +134,10 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
               <p className="text-xs font-semibold text-[#2D2A26] mb-2">In the Instagram app or on instagram.com:</p>
               <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside space-y-1.5">
                 <li>Go to <span className="font-medium text-[#2D2A26]">Settings → Accounts Centre → Your information and permissions</span>.</li>
-                <li>Tap <span className="font-medium text-[#2D2A26]">Download or transfer information</span>, then select the Instagram account you want to export.</li>
-                <li>Choose <span className="font-medium text-[#2D2A26]">"Some of your information"</span>, then on the checklist tick <span className="font-medium text-[#2D2A26]">Media</span> only — leave everything else (Messages, Comments, Ads, Security, etc.) unticked. That's all our importer reads.</li>
-                <li>Set <span className="font-medium text-[#2D2A26]">Date range: All time</span>.</li>
+                <li>Select the Instagram account you want to republish for visibility.</li>
+                <li>Tap <span className="font-medium text-[#2D2A26]">Export to device</span>.</li>
+                <li>Click <span className="font-medium text-[#2D2A26]">"Customise information"</span>.</li>
+                <li>Click <span className="font-medium text-[#2D2A26]">"Clear all"</span>, then tick <span className="font-medium text-[#2D2A26]">Media</span> only — leave <span className="font-medium text-[#2D2A26]">Information about you</span> and everything else (Messages, Comments, Ads, Security, etc.) unticked. That's all our importer reads.</li>
                 <li>Set <span className="font-medium text-[#2D2A26]">Format: JSON</span> (not HTML — we can't read HTML exports).</li>
                 <li>Set <span className="font-medium text-[#2D2A26]">Media quality: High</span>.</li>
                 <li>Tap <span className="font-medium text-[#2D2A26]">Create files</span>. Instagram builds it in the background and emails you when it's ready — this can take anywhere from a few minutes to a day.</li>
