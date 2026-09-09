@@ -1496,18 +1496,21 @@ export function SavedRow({
           if (goingLive && !window.confirm('Publish this to the live Village site? It will be publicly visible immediately.')) return
           onStatusChange(next)
         }}
-        className={`text-xs font-semibold px-3 py-1.5 rounded-full border-0 focus:outline-none cursor-pointer shrink-0 ${statusColors[item.status]}`}
+        className={`text-sm font-medium px-4 py-2.5 rounded-lg border-0 focus:outline-none cursor-pointer shrink-0 ${statusColors[item.status]}`}
       >
         {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
       <div className="flex items-center gap-2 shrink-0">
         {item.relatedStoryId && (
           publishedStory ? (
-            <Link to={`/stories/${publishedStory.slug}`} target="_blank" rel="noopener noreferrer" className="text-sm text-[#5E6B4A] font-medium hover:underline">
+            <Link to={`/stories/${publishedStory.slug}`} target="_blank" rel="noopener noreferrer"
+              className="text-sm font-medium text-[#5E6B4A] bg-[#5E6B4A]/10 px-4 py-2.5 rounded-lg hover:bg-[#5E6B4A]/20 transition-colors">
               ✓ View published story →
             </Link>
           ) : (
-            <span className="text-sm text-[#5E6B4A] font-medium">✓ Story published</span>
+            <span className="text-sm font-medium text-[#5E6B4A] bg-[#5E6B4A]/10 px-4 py-2.5 rounded-lg">
+              ✓ Story published
+            </span>
           )
         )}
         <button onClick={onAdvancedEdit}
