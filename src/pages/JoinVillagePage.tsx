@@ -235,16 +235,17 @@ export function JoinVillagePage() {
                 What is The Culo Village?
               </p>
               <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-                Republish everything you've already posted across channels for discovery.
+                Republish everything you've already posted, structured for AI search.
               </h2>
               <p className="font-body text-base text-muted leading-relaxed mb-4">
-                The Culo Village helps founders structure their previously posted content across platforms and
-                republish as individual webpages for AI search-ability as a joint publishing house.
+                The Culo Village is a joint publishing house. We help founders restructure their previously
+                posted content from across platforms and republish each piece as its own webpage, so AI and
+                search can find you.
               </p>
               <p className="font-body text-base text-muted leading-relaxed mb-8">
-                Membership in the Village itself is free, forever. Culo Creatives, the AI editing tool in Canva
-                covered next, is a separate, optional part of it — free until January 1, 2027, then $19 AUD/month
-                for founders who joined before that date.
+                Membership is free, forever, and your first 10 articles are on us. Culo Creatives, the editing
+                tool inside Canva covered next, is a separate optional add-on — free until 1 January 2027, then
+                early founders keep the $19 AUD/month founding rate for as long as they stay subscribed.
               </p>
               <a href="#join-heading" className="inline-flex items-center gap-2 text-primary font-body text-sm font-semibold hover:text-[#b05a35] transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -387,6 +388,24 @@ export function JoinVillagePage() {
               <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
             ))}
           </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── Final CTA ─────────────────────────────────────────────────────── */}
+      <section className="py-16 md:py-20 text-center" aria-label="Join The Culo Village">
+        <InnerContainer>
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
+            Every founder has a story worth finding.
+          </h2>
+          <p className="font-body text-base text-muted leading-relaxed mb-8 max-w-xl mx-auto">
+            Join The Culo Village free, publish your first 10 articles on us, and start being found.
+          </p>
+          <a
+            href="#join-heading"
+            className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+          >
+            Join The Culo Village
+          </a>
         </InnerContainer>
       </section>
 
