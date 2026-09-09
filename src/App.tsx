@@ -40,6 +40,10 @@ import { OnboardingPage }    from './pages/OnboardingPage'
 import { JoinVillagePage }   from './pages/JoinVillagePage'
 import { JoinConfirmPage }   from './pages/JoinConfirmPage'
 import { JoinOfferPage }     from './pages/JoinOfferPage'
+import { MarketingLandingPage }    from './pages/marketing/MarketingLandingPage'
+import { MarketingPublishingPage } from './pages/marketing/MarketingPublishingPage'
+import { MarketingSocialPage }     from './pages/marketing/MarketingSocialPage'
+import { MarketingStartPage }      from './pages/marketing/MarketingStartPage'
 
 // ─── Dashboard pages ────────────────────────────────────────────────────────────
 import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
@@ -68,6 +72,8 @@ import { CapoOpportunitiesHubPage }           from './pages/dashboard/village/Ca
 import { VillageCreativeMembersPage }         from './pages/dashboard/village/VillageCreativeMembersPage'
 import { VillageCreativeFeedbackPage }        from './pages/dashboard/village/VillageCreativeFeedbackPage'
 import { DashboardCreativesPage }             from './pages/dashboard/DashboardCreativesPage'
+import { PcmClientsPage }                     from './pages/dashboard/pcm/PcmClientsPage'
+import { PcmClientDetailPage }                from './pages/dashboard/pcm/PcmClientDetailPage'
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 import { CAPO_PERMISSIONS } from './utils/permissions'
 
@@ -237,6 +243,11 @@ export default function App() {
             <Route path="village/settings"     element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.settings}><VillageSettingsPage /></RoleProtectedRoute>}                />
             <Route path="village/team"         element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.team}><CapoTeamPage /></RoleProtectedRoute>}                          />
             <Route path="settings"         element={<DashboardSettingsPage />}        />
+
+            {/* ── Pretty Cool Marketing — done-for-you service client tracker ── */}
+            <Route path="pcm"              element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.pcm}><PcmClientsPage /></RoleProtectedRoute>}      />
+            <Route path="pcm/:clientId"    element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.pcm}><PcmClientDetailPage /></RoleProtectedRoute>} />
+
             <Route path="creatives"        element={<DashboardCreativesPage />}       />
             {/* Usage moved into Village Overview's Usage tab. */}
             <Route path="village/usage"    element={<Navigate to="/dashboard/village" replace />} />
@@ -270,6 +281,10 @@ export default function App() {
             <Route path="/library"            element={<LibraryPage />}          />
             <Route path="/library/:slug"      element={<LibraryDetailPage />}    />
             <Route path="/onboarding"         element={<OnboardingPage />}       />
+            <Route path="/marketing"              element={<MarketingLandingPage />}    />
+            <Route path="/marketing/publishing"   element={<MarketingPublishingPage />} />
+            <Route path="/marketing/social"       element={<MarketingSocialPage />}     />
+            <Route path="/marketing/start"        element={<MarketingStartPage />}      />
             <Route path="/claim/:slug"        element={<ClaimProfilePage />}     />
             <Route path="*"                   element={<NotFound />}             />
           </Route>

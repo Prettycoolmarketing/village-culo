@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pretty Cool Marketing</title>
+  <meta name="description" content="Pretty Cool Marketing is the done-for-you service arm of the Culo Village — restructuring and republishing your content so AI finds you as an authority." />
+  <!--
+    Standalone landing page for the prettycoolmarketing.com domain.
+    Host this file (rename to index.html) on that domain while the full
+    /marketing section lives on culovillage.com. Every button points into
+    the Village. Fonts load from Google; colours match the Culo brand.
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #C86A43; --primary-dark: #b05a35;
+      --charcoal: #2D2A26; --muted: #7A7570; --bg: #F3F7FA; --surface: #fff; --border: #E8E2D9;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--charcoal); -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+    h1, h2 { font-family: "Playfair Display", Georgia, serif; line-height: 1.1; }
+    .hero { background: var(--charcoal); color: #fff; text-align: center; padding: 96px 0; }
+    .kicker { text-transform: uppercase; letter-spacing: .15em; font-size: 12px; font-weight: 600; color: var(--primary); margin-bottom: 16px; }
+    .hero h1 { font-size: clamp(32px, 6vw, 52px); margin-bottom: 20px; }
+    .hero p { color: rgba(255,255,255,.7); font-size: 18px; line-height: 1.6; margin-bottom: 32px; }
+    .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    a.btn { display: inline-block; padding: 14px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; text-decoration: none; transition: .15s; }
+    a.primary { background: var(--primary); color: #fff; }
+    a.primary:hover { background: var(--primary-dark); }
+    a.ghost { border: 1px solid rgba(255,255,255,.25); color: #fff; }
+    a.ghost:hover { border-color: #fff; }
+    section.offers { padding: 72px 0; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 20px; }
+    .card h2 { font-size: 24px; margin-bottom: 8px; }
+    .price { font-size: 28px; font-weight: 800; }
+    .cadence { color: var(--muted); font-size: 14px; }
+    .card p.body { color: var(--muted); line-height: 1.6; margin: 16px 0 20px; }
+    footer { text-align: center; padding: 48px 0 64px; color: var(--muted); font-size: 14px; }
+    footer a { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="wrap">
+      <p class="kicker">Pretty Cool Marketing</p>
+      <h1>We do the work of positioning you as the authority in your field.</h1>
+      <p>The done-for-you service arm of the Culo Village. We take the content you have already made across YouTube, podcasts, your website and Instagram, restructure it, and republish each piece as its own article so AI and search can find you.</p>
+      <div class="btns">
+        <a class="btn primary" href="https://www.culovillage.com/marketing/publishing">Publishing service — $900 one-off</a>
+        <a class="btn ghost" href="https://www.culovillage.com/marketing/social">Social media partnerships</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="offers">
+    <div class="wrap">
+      <div class="card">
+        <p class="kicker" style="color:var(--primary)">Offer one · one-off service</p>
+        <h2>Publishing in the Culo Village</h2>
+        <p><span class="price">$900 AUD</span> <span class="cadence">one-off payment</span></p>
+        <p class="body">We transfer everything you have previously posted across YouTube, podcasts, websites and Instagram and republish each piece as an individual article — restructured to position you as an authority and a business in your area.</p>
+        <a class="btn primary" href="https://www.culovillage.com/marketing/publishing">See the publishing service</a>
+      </div>
+      <div class="card">
+        <p class="kicker" style="color:var(--primary)">Offer two · monthly partnership</p>
+        <h2>Social media content</h2>
+        <p><span class="price">From $3,000 AUD</span> <span class="cadence">per month</span></p>
+        <p class="body">Tier 2 — 30 posts a month edited in Culo Creatives and scheduled to every platform and into the Village. Tier 3 adds a half-day shoot every 4 weeks in the PCM frameworks.</p>
+        <a class="btn primary" href="https://www.culovillage.com/marketing/social">See the social media tiers</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>Pretty Cool Marketing · <a href="mailto:support@prettycoolmarketing.com">support@prettycoolmarketing.com</a></p>
+      <p style="margin-top:8px">Learn about the Village at <a href="https://www.culovillage.com">culovillage.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>

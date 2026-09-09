@@ -326,6 +326,13 @@ export function DashboardLayout() {
                   )}
                 </>
               )}
+
+              {canAccessCapoSection(user?.role, 'pcm') && (
+                <>
+                  <SectionLabel label="Pretty Cool Marketing" />
+                  <NavItem to="/dashboard/pcm" label="Client Tracker" icon={<Icon path={icons.services} />} />
+                </>
+              )}
             </>
           )}
         </nav>

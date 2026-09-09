@@ -14,6 +14,14 @@ const sections = [
     ],
   },
   {
+    heading: 'Services',
+    links: [
+      { to: '/marketing',            label: 'Pretty Cool Marketing' },
+      { to: '/marketing/publishing', label: 'Publishing service'    },
+      { to: '/marketing/social',     label: 'Social media'          },
+    ],
+  },
+  {
     heading: 'More',
     links: [
       { to: '/series',      label: 'Series'      },
@@ -60,7 +68,7 @@ export function Footer() {
   return (
     <footer className="bg-charcoal text-white/80 font-body" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-10">
 
           {/* Brand column */}
           <div className="md:col-span-1">

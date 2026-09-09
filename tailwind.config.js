@@ -22,6 +22,19 @@ export default {
         noticeboard: '#B85C3A',
         founders:    '#A8532E',
         piazza:      '#8C6850',
+
+        // ── Pretty Cool Marketing — the service side of the Village ────────
+        // Warm terracotta + cream, pulled from prettycoolmarketing.com, so
+        // the /marketing funnels read as a sibling brand to the Village's
+        // cooler blue-grey palette rather than the same page.
+        'pcm-orange':      '#D37342',
+        'pcm-orange-dark': '#B95C2F',
+        'pcm-dark':        '#2A1C15',
+        'pcm-cream':       '#FDEFE6',
+        'pcm-sand':        '#FFFAF6',
+        'pcm-linen':       '#F0E7DD',
+        'pcm-ink':         '#2C2A2B',
+        'pcm-muted':       '#6E6A66',
       },
       fontFamily: {
         heading: ['"Playfair Display"', 'Georgia', 'serif'],
