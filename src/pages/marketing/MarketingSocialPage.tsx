@@ -36,7 +36,7 @@ export function MarketingSocialPage() {
   usePageMeta({
     title: 'Social media content — Tier 2 & Tier 3 | Pretty Cool Marketing',
     description:
-      'Tier 2: 30 posts a month edited in Culo Creatives and scheduled across every platform for $3,000/mo. Tier 3: adds a half-day shoot every 4 weeks in the PCM frameworks for $3,888 every 4 weeks.',
+      'Tier 2: 30 posts a month edited in Culo Creatives and scheduled across every platform for $3,000/mo. Tier 3: adds a half-day shoot every 4 weeks in the PCM frameworks for $3,888 per month.',
     keywords: [
       'social media content agency', 'content editing and distribution', 'content creator retainer',
       'done for you social media', 'talking head reels', 'voice over reels', 'Quick Rhythm reels',
@@ -59,7 +59,7 @@ export function MarketingSocialPage() {
             <div className="border-t border-border" />
             <a href="#tier-3" className="block">
               <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Tier 3</p>
-              <p className="font-heading text-2xl font-bold text-charcoal">$3,888 AUD <span className="text-sm font-normal text-muted">/ 4 weeks</span></p>
+              <p className="font-heading text-2xl font-bold text-charcoal">$3,888 AUD <span className="text-sm font-normal text-muted">/ month</span></p>
             </a>
           </div>
         }
@@ -90,10 +90,10 @@ export function MarketingSocialPage() {
             {/* Tier 3 */}
             <div id="tier-3" className="bg-[#EBF2F8] border-2 border-primary rounded-2xl p-10 shadow-card flex flex-col scroll-mt-24">
               <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Tier 3</p>
-              <h2 className="font-heading text-2xl font-bold text-charcoal mb-2">Content Creator</h2>
+              <h2 className="font-heading text-2xl font-bold text-charcoal mb-2">Content Creator Full Service</h2>
               <p className="font-body text-charcoal mb-6">
                 <span className="text-3xl font-bold">$3,888 AUD</span>{' '}
-                <span className="text-muted text-sm">every 4 weeks</span>
+                <span className="text-muted text-sm">per month</span>
               </p>
               <ul className="space-y-3 flex-1 mb-6">
                 {TIER3_POINTS.map(p => (

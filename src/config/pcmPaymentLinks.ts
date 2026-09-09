@@ -7,9 +7,10 @@
 // real URLs in below. Until then they point at "#" and the funnel buttons
 // fall back to an email CTA.
 //
-//   1. Publishing in the Culo Village — one-off, $900 AUD
-//   2. Social — Tier 2 (Content editing & distribution) — $3,000 AUD / month
-//   3. Social — Tier 3 (Content creator) — $3,888 AUD every 4 weeks
+// Stripe products / Payment Links to create (AUD), then paste the URLs below:
+//   1. "Village Service"              — one-off, $900 AUD
+//   2. "Social Media Service"         — recurring, $3,000 AUD / month
+//   3. "Content Creator Full Service" — recurring, $3,888 AUD / month
 //
 // Set each link's post-payment redirect to:
 //   https://culovillage.com/marketing/start?offer=publishing   (etc.)
@@ -23,32 +24,32 @@ export interface PcmOffer {
   paymentLink: string
 }
 
-export const PCM_PUBLISHING_LINK = '#' // TODO: paste Stripe Payment Link — $900 AUD one-off
-export const PCM_TIER2_LINK      = '#' // TODO: paste Stripe Payment Link — $3,000 AUD / month
-export const PCM_TIER3_LINK      = '#' // TODO: paste Stripe Payment Link — $3,888 AUD / 4 weeks
+export const PCM_PUBLISHING_LINK = '#' // TODO: paste Stripe Payment Link — "Village Service" $900 AUD one-off
+export const PCM_TIER2_LINK      = '#' // TODO: paste Stripe Payment Link — "Social Media Service" $3,000 AUD / month
+export const PCM_TIER3_LINK      = '#' // TODO: paste Stripe Payment Link — "Content Creator Full Service" $3,888 AUD / month
 
 export const PCM_SUPPORT_EMAIL = 'support@prettycoolmarketing.com'
 
 export const PCM_OFFERS: Record<PcmOffer['id'], PcmOffer> = {
   publishing: {
     id: 'publishing',
-    name: 'Publishing in the Culo Village',
+    name: 'Village Service',
     priceLabel: '$900 AUD',
     cadence: 'one-off',
     paymentLink: PCM_PUBLISHING_LINK,
   },
   tier2: {
     id: 'tier2',
-    name: 'Content Editing & Distribution',
+    name: 'Social Media Service',
     priceLabel: '$3,000 AUD',
     cadence: 'per month',
     paymentLink: PCM_TIER2_LINK,
   },
   tier3: {
     id: 'tier3',
-    name: 'Content Creator',
+    name: 'Content Creator Full Service',
     priceLabel: '$3,888 AUD',
-    cadence: 'every 4 weeks',
+    cadence: 'per month',
     paymentLink: PCM_TIER3_LINK,
   },
 }

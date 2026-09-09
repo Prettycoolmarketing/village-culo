@@ -8,6 +8,8 @@ interface NoticeboardPreviewWidgetProps {
   subheading?: string
   limit?: number
   className?: string
+  /** Render nothing at all when there are no events (instead of the empty state). */
+  hideWhenEmpty?: boolean
 }
 
 export function NoticeboardPreviewWidget({
@@ -15,8 +17,11 @@ export function NoticeboardPreviewWidget({
   subheading = 'Events, collaborations and opportunities from the Village.',
   limit = 3,
   className = '',
+  hideWhenEmpty = false,
 }: NoticeboardPreviewWidgetProps) {
   const events = filterEvents({ limit })
+
+  if (hideWhenEmpty && events.length === 0) return null
 
   return (
     <section aria-label={heading} className={className}>

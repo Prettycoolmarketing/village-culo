@@ -9,6 +9,7 @@ import { FounderGrid }               from '../widgets/FounderGrid'
 import { BusinessGrid }              from '../widgets/BusinessGrid'
 import { MapPreviewWidget }          from '../widgets/MapPreviewWidget'
 import { NoticeboardPreviewWidget }  from '../widgets/NoticeboardPreviewWidget'
+import { filterEvents }              from '../utils/filters'
 import { WaitlistForm }              from '../components/ui/WaitlistForm'
 import { InnerContainer }            from '../components/layout/PageContainer'
 
@@ -223,15 +224,19 @@ export function VillagePage() {
       {/* ── 8. Noticeboard ──────────────────────────────────────────────────── */}
       {/*
         Latest events, collaborations, opportunities and requests.
-        Community pulse — keeps the Village feeling alive and active.
+        Hidden entirely when there's nothing on the noticeboard yet, rather
+        than showing an empty "check back soon" band on the homepage.
       */}
-      <VillageSection>
-        <NoticeboardPreviewWidget
-          heading="Noticeboard"
-          subheading="Events, collaborations and opportunities from the Village."
-          limit={3}
-        />
-      </VillageSection>
+      {filterEvents({ limit: 3 }).length > 0 && (
+        <VillageSection>
+          <NoticeboardPreviewWidget
+            heading="Noticeboard"
+            subheading="Events, collaborations and opportunities from the Village."
+            limit={3}
+            hideWhenEmpty
+          />
+        </VillageSection>
+      )}
 
     </main>
   )
