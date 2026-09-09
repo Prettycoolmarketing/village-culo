@@ -8,11 +8,11 @@ interface Props {
   waitlistSource?: string
 }
 
-// www.prettycoolmarketing.com/culo is a placeholder landing page — swap for
-// the real Canva app link once CULO in Canva ships. Every "Create/Continue
-// with CULO in Canva" button across the app points here, not into the
-// dashboard, so it's one link to update later, not a dozen.
-const CULO_CANVA_URL = 'https://www.prettycoolmarketing.com/culo'
+// Every "Create/Continue with CULO in Canva" button across the app points
+// here — one link to update, not a dozen. Currently the Join the Village
+// page, where visitors enter their email; swap for the real Canva app link
+// once CULO in Canva ships.
+const CULO_CANVA_URL = 'https://www.culovillage.com/join'
 
 export function CreateWithCuloCTA({ variant = 'button', label, waitlistSource }: Props) {
   const href = CULO_CANVA_URL
