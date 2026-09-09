@@ -143,6 +143,27 @@ export function DashboardArchiveFoundPage() {
             </div>
           )}
         </div>
+
+        {/* A second unlock CTA right at the bottom — a founder who's
+            scrolled all the way through the blurred list shouldn't have to
+            scroll back up to actually unlock it. */}
+        {tier.paymentLink ? (
+          <a
+            href={buildPaymentUrl(tier.paymentLink, founder.id, user?.email)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 flex items-center justify-center w-full px-8 py-6 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl text-xl font-semibold text-[#C86A43] hover:text-white transition-colors"
+          >
+            Unlock all {locked.length} pieces — {tier.priceLabel} →
+          </a>
+        ) : (
+          <a
+            href={`mailto:support@prettycoolmarketing.com?subject=${encodeURIComponent(`Archive unlock — ${totalCount} pieces (${founder.name})`)}`}
+            className="mt-6 flex items-center justify-center w-full px-8 py-6 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl text-xl font-semibold text-[#C86A43] hover:text-white transition-colors"
+          >
+            Get a quote — {tier.priceLabel} →
+          </a>
+        )}
       </div>
     </div>
   )
