@@ -82,14 +82,21 @@ export function DashboardArchiveFoundPage() {
         </svg>
       </button>
       {showWhy && (
-        <div className="bg-[#FBF1EB] border border-[#C86A43]/20 rounded-xl p-5 mb-8 max-w-2xl">
+        <div className="bg-[#FBF1EB] border border-[#C86A43]/20 rounded-xl p-5 mb-8 max-w-2xl flex flex-col gap-2.5">
           <p className="text-sm text-[#2D2A26] leading-relaxed">
-            Every piece you publish here becomes a real web page of your own — link it to your website or share it
-            on LinkedIn, and it works as a genuine backlink pointing straight back to you, the kind of credibility a
-            PR agency would normally charge you to build. A page-per-post archive like this is also exactly what AI
-            search actually reads — structured articles, not a caption buried in someone else's feed — so it's how
-            you get found there instead of staying invisible to it. Add the Village badge to your own site, and
-            every one of those links leads straight back to you too.
+            Every piece you publish here becomes a real web page of your own.
+          </p>
+          <p className="text-sm text-[#2D2A26] leading-relaxed">
+            Link it to your website or share it on LinkedIn, and it works as a genuine backlink pointing straight
+            back to you, the kind of credibility a PR agency would normally charge you to build.
+          </p>
+          <p className="text-sm text-[#2D2A26] leading-relaxed">
+            A page-per-post archive like this is also exactly what AI search actually reads: structured articles,
+            not a caption buried in someone else's feed, so it's how you get found there instead of staying
+            invisible to it.
+          </p>
+          <p className="text-sm text-[#2D2A26] leading-relaxed">
+            Add the Village badge to your own site, and every one of those links leads straight back to you too.
           </p>
         </div>
       )}

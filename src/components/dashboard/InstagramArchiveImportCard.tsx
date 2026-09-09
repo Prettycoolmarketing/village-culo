@@ -114,15 +114,18 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
             <div className="mb-4 bg-[#FBF1EB] border border-[#F0DDD2] rounded-xl px-4 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Tip: add your Voice &amp; Brand Brief above first</p>
               <p className="text-xs text-[#6B7280] leading-relaxed">
-                You can import your archive right now either way — original captions come across as-is. Add a
-                brief and you can turn any piece into a real, distinct blog written in your own voice afterward,
-                right from Content.
+                You can import your archive right now either way, original captions come across as-is.
+                <br />
+                Add a brief and you can turn any piece into a real, distinct blog written in your own voice
+                afterward, right from Content.
               </p>
             </div>
           )}
           <p className="text-xs text-[#6B7280] mb-4">
-            Nothing goes public from this — everything lands as a private draft in Content, and only publishes
-            once you review it and choose to publish it yourself.
+            Nothing goes public from this.
+            <br />
+            Everything lands as a private draft in Content, and only publishes once you review it and choose to
+            publish it yourself.
           </p>
           <button type="button" onClick={() => setShowInstructions(v => !v)}
             className="text-base font-semibold text-[#C86A43] hover:underline mb-4">

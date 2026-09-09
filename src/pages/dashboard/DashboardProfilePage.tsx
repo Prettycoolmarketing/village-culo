@@ -1470,8 +1470,9 @@ export function DashboardProfilePage() {
                   {contentSubTab === 'review' && reviewItems.length > 0 && (
                     <div className="text-center mb-6">
                       <p className="text-sm text-[#6B7280] max-w-xl mx-auto mb-4">
-                        Publish your full archive to help your customers find you with AI — each piece published in
-                        The Culo Village creates an article that positions your story online.
+                        Publish your full archive to help your customers find you with AI
+                        <br />
+                        Each piece published in The Culo Village creates an article that positions your story online.
                       </p>
                       <Link
                         to="/dashboard/archive-found"
