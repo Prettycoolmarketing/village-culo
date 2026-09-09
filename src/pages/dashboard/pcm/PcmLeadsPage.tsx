@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Tabs } from '../../../components/dashboard/Tabs'
 import { pcmLeadsService, type PcmLead } from '../../../services/pcmLeads'
 import { downloadCSV } from '../../../utils/emailExport'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
@@ -10,6 +11,13 @@ const SOURCE_LABELS: Record<string, string> = {
   'marketing-publishing': 'Publishing service',
   'marketing-social': 'Social media',
   marketing: 'Marketing page',
+}
+
+type LeadTab = 'all' | 'publishing' | 'social'
+function tabForSource(source: string): 'publishing' | 'social' | 'other' {
+  if (source === 'marketing-publishing') return 'publishing'
+  if (source === 'marketing-social') return 'social'
+  return 'other'
 }
 
 function leadsToCSV(leads: PcmLead[]): string {
@@ -28,6 +36,7 @@ function leadsToCSV(leads: PcmLead[]): string {
 export function PcmLeadsPage() {
   const [leads, setLeads] = useState<PcmLead[]>(pcmLeadsService.getAll())
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<LeadTab>('all')
 
   useEffect(() => {
     let alive = true
@@ -43,6 +52,10 @@ export function PcmLeadsPage() {
     void pcmLeadsService.delete(id).then(() => setLeads(pcmLeadsService.getAll()))
   }
 
+  const pubCount = leads.filter(l => tabForSource(l.source) === 'publishing').length
+  const socCount = leads.filter(l => tabForSource(l.source) === 'social').length
+  const shown = tab === 'all' ? leads : leads.filter(l => tabForSource(l.source) === tab)
+
   return (
     <div className="p-8 sm:pt-12 flex flex-col gap-6 max-w-4xl" style={font}>
       <div className="flex items-center justify-between gap-4 flex-wrap px-2">
@@ -53,9 +66,9 @@ export function PcmLeadsPage() {
             People who asked to see rates on <Link to="/marketing" className="text-[#C86A43] hover:underline">culovillage.com/marketing</Link>.
           </p>
         </div>
-        {leads.length > 0 && (
+        {shown.length > 0 && (
           <button
-            onClick={() => downloadCSV(leadsToCSV(leads), `pcm-leads-${new Date().toISOString().slice(0, 10)}.csv`)}
+            onClick={() => downloadCSV(leadsToCSV(shown), `pcm-leads-${tab}-${new Date().toISOString().slice(0, 10)}.csv`)}
             className="text-sm font-semibold px-4 py-2.5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
           >
             Export CSV
@@ -63,15 +76,25 @@ export function PcmLeadsPage() {
         )}
       </div>
 
+      <Tabs
+        tabs={[
+          { key: 'all', label: `All (${leads.length})` },
+          { key: 'publishing', label: `Publishing Services (${pubCount})` },
+          { key: 'social', label: `Social Media Services (${socCount})` },
+        ]}
+        active={tab}
+        onChange={k => setTab(k as LeadTab)}
+      />
+
       {loading && leads.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] p-12 text-center text-sm text-[#6B7280]">Loading…</div>
-      ) : leads.length === 0 ? (
+      ) : shown.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] p-12 text-center text-sm text-[#6B7280]">
-          No leads yet.
+          {leads.length === 0 ? 'No leads yet.' : 'No leads in this category.'}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] overflow-hidden">
-          {leads.map(l => (
+          {shown.map(l => (
             <div key={l.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-6 py-4 border-b border-[#F0EBE3] last:border-0">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#2D2A26]">{l.name || '—'}</p>

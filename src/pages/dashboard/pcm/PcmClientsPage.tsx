@@ -1,19 +1,24 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Tabs } from '../../../components/dashboard/Tabs'
 import {
   getPcmClients, createPcmClient, currentStage,
-  PCM_OFFER_LABELS, type PcmOfferId,
+  PCM_OFFER_LABELS, PCM_OFFER_IDS, type PcmOfferId,
 } from '../../../lib/pcmClients'
 
 const font = { fontFamily: "'DM Sans', sans-serif" }
 const inputClass =
   'w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
 
+// Packages where a shoot / next-shoot date is meaningful.
+const SHOOT_PACKAGES: PcmOfferId[] = ['content', 'full']
+
 export function PcmClientsPage() {
   const [clients, setClients] = useState(getPcmClients())
+  const [tab, setTab] = useState<'all' | PcmOfferId>('all')
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({
-    name: '', email: '', offer: 'tier2' as PcmOfferId,
+    name: '', email: '', offer: 'publishing' as PcmOfferId,
     startDate: new Date().toISOString().slice(0, 10), nextShootDate: '',
   })
 
@@ -23,17 +28,21 @@ export function PcmClientsPage() {
     e.preventDefault()
     if (!form.name.trim() || !form.email.trim()) return
     createPcmClient(form)
-    setForm({ name: '', email: '', offer: 'tier2', startDate: new Date().toISOString().slice(0, 10), nextShootDate: '' })
+    setForm({ name: '', email: '', offer: 'publishing', startDate: new Date().toISOString().slice(0, 10), nextShootDate: '' })
     setAdding(false)
     refresh()
   }
+
+  const shown = tab === 'all' ? clients : clients.filter(c => c.offer === tab)
+  const countFor = (id: PcmOfferId) => clients.filter(c => c.offer === id).length
 
   return (
     <div className="p-8 sm:pt-12 flex flex-col gap-6" style={font}>
       <div className="flex items-center justify-between px-2 gap-4 flex-wrap">
         <div>
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Pretty Cool Marketing</h1>
-          <p className="text-sm text-[#6B7280] mt-1">Client tracker — where every client is in the pipeline.</p>
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Pretty Cool Marketing</p>
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Client Tracker</h1>
+          <p className="text-sm text-[#6B7280] mt-1">Where every client is in the pipeline, by package.</p>
         </div>
         <button
           onClick={() => setAdding(a => !a)}
@@ -54,9 +63,9 @@ export function PcmClientsPage() {
             <input type="email" className={inputClass} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
           </label>
           <label className="text-sm text-[#2D2A26]">
-            <span className="block font-medium mb-1">Offer</span>
+            <span className="block font-medium mb-1">Package</span>
             <select className={inputClass} value={form.offer} onChange={e => setForm({ ...form, offer: e.target.value as PcmOfferId })}>
-              {(Object.keys(PCM_OFFER_LABELS) as PcmOfferId[]).map(id => (
+              {PCM_OFFER_IDS.map(id => (
                 <option key={id} value={id}>{PCM_OFFER_LABELS[id]}</option>
               ))}
             </select>
@@ -65,7 +74,7 @@ export function PcmClientsPage() {
             <span className="block font-medium mb-1">Start date</span>
             <input type="date" className={inputClass} value={form.startDate} onChange={e => setForm({ ...form, startDate: e.target.value })} />
           </label>
-          {form.offer === 'tier3' && (
+          {SHOOT_PACKAGES.includes(form.offer) && (
             <label className="text-sm text-[#2D2A26]">
               <span className="block font-medium mb-1">Next shoot date</span>
               <input type="date" className={inputClass} value={form.nextShootDate} onChange={e => setForm({ ...form, nextShootDate: e.target.value })} />
@@ -79,13 +88,24 @@ export function PcmClientsPage() {
         </form>
       )}
 
-      {clients.length === 0 ? (
+      <Tabs
+        tabs={[
+          { key: 'all', label: `All (${clients.length})` },
+          ...PCM_OFFER_IDS.map(id => ({ key: id, label: `${PCM_OFFER_LABELS[id]} (${countFor(id)})` })),
+        ]}
+        active={tab}
+        onChange={k => setTab(k as 'all' | PcmOfferId)}
+      />
+
+      {shown.length === 0 ? (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] p-12 text-center">
-          <p className="text-sm text-[#6B7280]">No clients yet. Add one to start tracking their pipeline.</p>
+          <p className="text-sm text-[#6B7280]">
+            {clients.length === 0 ? 'No clients yet. Add one to start tracking their pipeline.' : 'No clients in this package.'}
+          </p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] overflow-hidden">
-          {clients.map(c => {
+          {shown.map(c => {
             const stage = currentStage(c)
             return (
               <Link
@@ -95,8 +115,11 @@ export function PcmClientsPage() {
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#2D2A26] truncate">{c.name}</p>
-                  <p className="text-xs text-[#9CA3AF] truncate">{PCM_OFFER_LABELS[c.offer]}</p>
+                  <p className="text-xs text-[#9CA3AF] truncate">{c.email}</p>
                 </div>
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full shrink-0 bg-[#EEF1F6] text-[#4B5563]">
+                  {PCM_OFFER_LABELS[c.offer]}
+                </span>
                 <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
                   stage.id === 'live' ? 'bg-[#E7F0E5] text-[#5E6B4A]'
                   : stage.id === 'new' ? 'bg-[#F3EDE6] text-[#7A7570]'

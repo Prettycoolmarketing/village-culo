@@ -61,7 +61,7 @@ export function PcmClientDetailPage() {
         </p>
         <p className="text-xs text-[#9CA3AF] mt-1">
           Started {client.startDate || '—'}
-          {client.offer === 'tier3' && client.nextShootDate ? ` · Next shoot ${client.nextShootDate}` : ''}
+          {(client.offer === 'content' || client.offer === 'full') && client.nextShootDate ? ` · Next shoot ${client.nextShootDate}` : ''}
         </p>
       </div>
 

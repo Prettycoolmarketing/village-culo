@@ -17,7 +17,15 @@
 
 const KEY = 'pcm_clients_v1'
 
-export type PcmOfferId = 'publishing' | 'tier2' | 'tier3'
+export type PcmOfferId = 'publishing' | 'social' | 'content' | 'full'
+
+// Old records used tier2/tier3 before the packages were split out — map
+// them on read so nothing breaks.
+const LEGACY_OFFERS: Record<string, PcmOfferId> = { tier2: 'social', tier3: 'full' }
+function normalizeOffer(o: string): PcmOfferId {
+  if (o === 'publishing' || o === 'social' || o === 'content' || o === 'full') return o
+  return LEGACY_OFFERS[o] ?? 'publishing'
+}
 
 export type PcmStageId = 'raw' | 'editing' | 'approvals' | 'live'
 
@@ -47,15 +55,20 @@ export interface PcmClient {
 }
 
 export const PCM_OFFER_LABELS: Record<PcmOfferId, string> = {
-  publishing: 'Publishing ($900 one-off)',
-  tier2: 'Tier 2 — Editing & Distribution ($3,000/mo)',
-  tier3: 'Tier 3 — Content Creator ($3,888/4wks)',
+  publishing: 'Publishing',
+  social:     'Social Media',
+  content:    'Content',
+  full:       'Full Service',
 }
+
+/** Order for package tabs in Capo. */
+export const PCM_OFFER_IDS: PcmOfferId[] = ['publishing', 'social', 'content', 'full']
 
 function read(): PcmClient[] {
   try {
     const raw = localStorage.getItem(KEY)
-    return raw ? (JSON.parse(raw) as PcmClient[]) : []
+    if (!raw) return []
+    return (JSON.parse(raw) as PcmClient[]).map(c => ({ ...c, offer: normalizeOffer(c.offer as string) }))
   } catch {
     return []
   }
