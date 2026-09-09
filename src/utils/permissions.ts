@@ -17,7 +17,7 @@ import type { UserRole } from '../contexts/AuthContext'
 export type CapoSection =
   | 'overview' | 'founders' | 'imports' | 'claims' | 'emails'
   | 'featured' | 'analytics' | 'settings' | 'team' | 'editorial' | 'partners'
-  | 'usage' | 'creativeFeedback'
+  | 'usage' | 'creativeFeedback' | 'pcm'
 
 export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
   overview:  ['moderator', 'editor', 'admin', 'owner'],
@@ -37,6 +37,9 @@ export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
   // both admin/owner only, same bar as analytics/partners above.
   usage:            ['admin', 'owner'],
   creativeFeedback: ['admin', 'owner'],
+  // Pretty Cool Marketing client tracker — done-for-you service delivery.
+  // Open to any staff role for now; roles get split out later.
+  pcm:              ['moderator', 'editor', 'admin', 'owner'],
 }
 
 export function canAccessCapoSection(role: UserRole | undefined, section: CapoSection): boolean {
