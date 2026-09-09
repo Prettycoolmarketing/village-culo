@@ -794,7 +794,6 @@ export function DashboardProfilePage() {
   // active, splits them so a founder isn't hunting through no-caption Stories
   // to find the Posts that are actually one click from being publishable.
   const [instagramCaptionFilter, setInstagramCaptionFilter] = useState<'all' | 'has' | 'none'>('all')
-  const [autoPublishingCaptioned, setAutoPublishingCaptioned] = useState(false)
   const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
   const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
@@ -1669,27 +1668,6 @@ export function DashboardProfilePage() {
                 refreshImported()
               }
 
-              // One click, not select-then-publish: publishes every currently
-              // shown item that already has both a real title and a real
-              // caption straight from its source, with nothing rewritten.
-              // Deliberately stricter than "Select all ready to publish"
-              // (title only) — this is the "just get the ones that don't
-              // need me to look at them" button.
-              const autoPublishCandidates = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i) && unlockedIdsImported.has(i.id))
-              async function handleAutoPublishCaptioned() {
-                if (!draft || autoPublishCandidates.length === 0) return
-                if (!window.confirm(`Publish ${autoPublishCandidates.length} item${autoPublishCandidates.length === 1 ? '' : 's'} that already ${autoPublishCandidates.length === 1 ? 'has' : 'have'} a real caption? Nothing will be rewritten first.`)) return
-                setAutoPublishingCaptioned(true)
-                for (const item of autoPublishCandidates) {
-                  const story = buildStoryFromImport(item, draft)
-                  const result = await publishStoryCore(story)
-                  if (result.success) await importedContentService.updateStatus(item.id, 'published')
-                  else setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
-                }
-                setAutoPublishingCaptioned(false)
-                refreshImported()
-              }
-
               // Rewrites already-imported drafts with the founder's Voice &
               // Brand Brief, the same real-per-item AI call the Instagram
               // archive importer uses — for content that was imported before
@@ -1857,7 +1835,11 @@ export function DashboardProfilePage() {
 
               return (
                 <div className="flex gap-6 items-start">
-                <div className="flex-1 min-w-0">
+                {/* Hidden (not just squeezed narrow) while the Advanced
+                    edit panel is open below — that panel should get the
+                    majority of the page, not compete with the full list
+                    for space. */}
+                <div className={importedEditDraft ? 'hidden' : 'flex-1 min-w-0'}>
                   {platforms.length > 0 && (
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1.5 mb-1.5">
@@ -1894,21 +1876,6 @@ export function DashboardProfilePage() {
                           ))}
                         </div>
                       )}
-                    </div>
-                  )}
-
-                  {autoPublishCandidates.length > 0 && (
-                    <div className="flex items-center justify-between gap-3 mb-4 px-4 py-2.5 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-lg flex-wrap">
-                      <p className="text-xs text-[#5E6B4A] font-medium">
-                        {autoPublishCandidates.length} {autoPublishCandidates.length === 1 ? 'item' : 'items'} here already {autoPublishCandidates.length === 1 ? 'has' : 'have'} a real caption — ready to go live as-is.
-                      </p>
-                      <button
-                        onClick={() => void handleAutoPublishCaptioned()}
-                        disabled={autoPublishingCaptioned}
-                        className="shrink-0 px-4 py-2 bg-[#5E6B4A] text-white text-xs font-semibold rounded-lg hover:bg-[#4a5539] disabled:opacity-50 transition-colors"
-                      >
-                        {autoPublishingCaptioned ? 'Publishing…' : `Auto-publish ${autoPublishCandidates.length} captioned`}
-                      </button>
                     </div>
                   )}
 
@@ -2023,7 +1990,7 @@ export function DashboardProfilePage() {
                   // viewport, with no way to reach anything past the fold.
                   // max-h + overflow-y-auto makes the panel scroll
                   // independently instead.
-                  <div className="w-full max-w-xl shrink-0 bg-white rounded-xl border border-[#E8E4DD] p-5 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+                  <div className="w-full max-w-4xl mx-auto bg-white rounded-xl border border-[#E8E4DD] p-6 max-h-[calc(100vh-2rem)] overflow-y-auto">
                     <div className="flex items-center justify-between mb-4">
                       <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
                       <button
