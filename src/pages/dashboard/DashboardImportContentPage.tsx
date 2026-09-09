@@ -1023,6 +1023,7 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           it — only once there's actually something in Blog worth shaping,
           not before. */}
       <div className="mb-4 flex flex-col items-center gap-3 py-2">
+        <p className="text-xs font-semibold text-[#6B7280]">Say your story to be shaped as your blog</p>
         <button
           type="button"
           onClick={toggleDictation}
