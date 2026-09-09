@@ -32,7 +32,7 @@ export function MarketingPublishingPage() {
   })
 
   return (
-    <main className="min-h-screen bg-pcm-sand">
+    <main className="min-h-screen bg-pcm-cream">
       <MarketingHero
         kicker="Offer one · one-off service"
         title="Publishing in the Culo Village"
@@ -47,16 +47,16 @@ export function MarketingPublishingPage() {
       {/* What's included */}
       <section className="py-16 md:py-20 bg-pcm-cream border-b border-pcm-linen">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-pcm-orange uppercase tracking-widest mb-3">
+          <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
             What's included
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-ink mb-8 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-8 leading-tight">
             A done-for-you move into a home built for search.
           </h2>
           <ul className="space-y-4">
             {INCLUDED.map(item => (
               <li key={item} className="flex gap-3 font-body text-lg text-pcm-muted leading-relaxed">
-                <span className="text-pcm-orange font-bold shrink-0">—</span>
+                <span className="text-pcm-dark font-bold shrink-0">—</span>
                 {item}
               </li>
             ))}
@@ -68,20 +68,20 @@ export function MarketingPublishingPage() {
       <section className="py-16 md:py-20">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
-            <p className="font-body text-xs font-semibold text-pcm-orange uppercase tracking-widest mb-3">
+            <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
               How it works
             </p>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-ink leading-tight">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
               Four steps.
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             {STEPS.map(step => (
-              <div key={step.n} className="bg-white border border-pcm-linen rounded-2xl p-7 shadow-card">
+              <div key={step.n} className="bg-pcm-sand border border-pcm-linen rounded-2xl p-7 shadow-card">
                 <div className="w-9 h-9 rounded-full bg-pcm-orange/10 flex items-center justify-center mb-4">
-                  <span className="font-heading font-bold text-pcm-orange">{step.n}</span>
+                  <span className="font-heading font-bold text-pcm-dark">{step.n}</span>
                 </div>
-                <h3 className="font-heading text-xl font-bold text-pcm-ink mb-2">{step.title}</h3>
+                <h3 className="font-heading text-xl font-bold text-pcm-dark mb-2">{step.title}</h3>
                 <p className="font-body text-pcm-muted leading-relaxed">{step.body}</p>
               </div>
             ))}
@@ -92,11 +92,11 @@ export function MarketingPublishingPage() {
       {/* DIY / Village note */}
       <section className="py-14 bg-pcm-cream border-y border-pcm-linen">
         <InnerContainer className="max-w-3xl text-center">
-          <p className="font-body text-lg text-pcm-ink leading-relaxed">
+          <p className="font-body text-lg text-pcm-dark leading-relaxed">
             Clients can also do this themselves by becoming a Culo Village member. The Village is set
             up for searchability — we are the service that restructures your blogs, articles and
             stories and takes care of it for you.{' '}
-            <a href="https://www.culovillage.com" className="text-pcm-orange font-semibold hover:underline">
+            <a href="https://www.culovillage.com" className="text-pcm-dark font-semibold hover:underline">
               Learn about the Village →
             </a>
           </p>
@@ -106,13 +106,13 @@ export function MarketingPublishingPage() {
       {/* Final CTA */}
       <section className="py-16 md:py-20 text-center">
         <InnerContainer className="max-w-md">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-ink mb-6 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-6 leading-tight">
             Start your publishing service
           </h2>
           <MarketingCheckoutButton offerId="publishing" />
           <p className="mt-6 font-body text-sm text-pcm-muted">
             After payment you'll get instructions to email us your material.{' '}
-            <Link to="/marketing/start?offer=publishing" className="text-pcm-orange hover:underline">
+            <Link to="/marketing/start?offer=publishing" className="text-pcm-dark hover:underline">
               Preview those instructions →
             </Link>
           </p>

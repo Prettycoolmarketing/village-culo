@@ -17,14 +17,14 @@ export function MarketingLandingPage() {
   })
 
   return (
-    <main className="min-h-screen bg-pcm-sand">
+    <main className="min-h-screen bg-pcm-cream">
       <MarketingHero
         kicker="Pretty Cool Marketing"
         title="We do the work of positioning you as the authority in your field."
         description={
           <>
             The done-for-you service arm of the{' '}
-            <a href="https://www.culovillage.com" className="text-white underline hover:text-pcm-orange">
+            <a href="https://www.culovillage.com" className="text-pcm-dark underline hover:text-pcm-dark">
               Culo Village
             </a>
             . We take the content you have already made — across YouTube, podcasts, your website and
@@ -34,7 +34,7 @@ export function MarketingLandingPage() {
         }
         right={
           <div className="bg-pcm-sand rounded-2xl p-7 shadow-lg flex flex-col gap-3">
-            <p className="font-heading text-lg font-bold text-pcm-ink mb-1">Two ways to work with us</p>
+            <p className="font-heading text-lg font-bold text-pcm-dark mb-1">Two ways to work with us</p>
             <Link
               to="/marketing/publishing"
               className="px-5 py-3 bg-pcm-orange text-white text-sm font-semibold rounded-xl text-center hover:bg-pcm-orange-dark transition-colors"
@@ -43,7 +43,7 @@ export function MarketingLandingPage() {
             </Link>
             <Link
               to="/marketing/social"
-              className="px-5 py-3 border border-pcm-linen text-pcm-ink text-sm font-semibold rounded-xl text-center hover:border-pcm-orange hover:text-pcm-orange transition-colors"
+              className="px-5 py-3 border border-pcm-linen text-pcm-dark text-sm font-semibold rounded-xl text-center hover:border-pcm-orange hover:text-pcm-dark transition-colors"
             >
               Social media partnerships
             </Link>
@@ -54,10 +54,10 @@ export function MarketingLandingPage() {
       {/* ── Who this is for ───────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 bg-pcm-cream border-y border-pcm-linen">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-pcm-orange uppercase tracking-widest mb-3">
+          <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
             Who this is for
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-ink mb-6 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-6 leading-tight">
             Founders who have already said the valuable things — just not in a place AI can read them.
           </h2>
           <p className="font-body text-lg text-pcm-muted leading-relaxed">
@@ -73,10 +73,10 @@ export function MarketingLandingPage() {
       <section className="py-16 md:py-20">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
-            <p className="font-body text-xs font-semibold text-pcm-orange uppercase tracking-widest mb-3">
+            <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
               What we do
             </p>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-ink leading-tight">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
               Two ways to work with us.
             </h2>
           </div>
@@ -107,9 +107,9 @@ export function MarketingLandingPage() {
       {/* ── DIY note ──────────────────────────────────────────────────────── */}
       <section className="py-14 bg-pcm-cream border-y border-pcm-linen">
         <InnerContainer className="max-w-3xl text-center">
-          <p className="font-body text-lg text-pcm-ink leading-relaxed">
+          <p className="font-body text-lg text-pcm-dark leading-relaxed">
             You can also do this yourself by becoming a Culo Village member.{' '}
-            <a href="https://www.culovillage.com" className="text-pcm-orange font-semibold hover:underline">
+            <a href="https://www.culovillage.com" className="text-pcm-dark font-semibold hover:underline">
               Learn about the Village →
             </a>{' '}
             We are the service that takes care of it for you.
@@ -120,12 +120,12 @@ export function MarketingLandingPage() {
       {/* ── Footer CTA ────────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 text-center">
         <InnerContainer className="max-w-2xl">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-ink mb-4 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-4 leading-tight">
             Ready to start?
           </h2>
           <p className="font-body text-lg text-pcm-muted leading-relaxed mb-8">
             Pick an offer above and check out. Or email us first at{' '}
-            <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-pcm-orange font-semibold hover:underline">
+            <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-pcm-dark font-semibold hover:underline">
               {PCM_SUPPORT_EMAIL}
             </a>
             .
@@ -142,10 +142,10 @@ function OfferCard({
   kicker: string; title: string; price: string; cadence: string; body: string; to: string; cta: string
 }) {
   return (
-    <div className="bg-white border border-pcm-linen rounded-2xl p-8 flex flex-col shadow-card">
-      <p className="font-body text-xs font-semibold text-pcm-orange uppercase tracking-widest mb-3">{kicker}</p>
-      <h3 className="font-heading text-2xl font-bold text-pcm-ink mb-2">{title}</h3>
-      <p className="font-body text-pcm-ink mb-5">
+    <div className="bg-pcm-sand border border-pcm-linen rounded-2xl p-8 flex flex-col shadow-card">
+      <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">{kicker}</p>
+      <h3 className="font-heading text-2xl font-bold text-pcm-dark mb-2">{title}</h3>
+      <p className="font-body text-pcm-dark mb-5">
         <span className="text-3xl font-bold">{price}</span>{' '}
         <span className="text-pcm-muted text-sm">{cadence}</span>
       </p>
