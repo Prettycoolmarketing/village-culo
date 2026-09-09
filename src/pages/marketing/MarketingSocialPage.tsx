@@ -45,42 +45,42 @@ export function MarketingSocialPage() {
   })
 
   return (
-    <main className="min-h-screen bg-pcm-cream">
+    <main className="min-h-screen bg-background">
       <MarketingHero
         kicker="Offer two · monthly partnership"
         title="Social media content, edited and distributed for you."
         description="Two tiers. Tier 2 edits and schedules 30 posts a month across every platform and into the Village. Tier 3 adds a half-day shoot every 4 weeks in the PCM frameworks, on a fast turnaround built on the app and editing process."
         right={
-          <div className="bg-pcm-sand rounded-2xl p-7 shadow-lg flex flex-col gap-4">
+          <div className="bg-background rounded-2xl p-7 shadow-lg flex flex-col gap-4">
             <a href="#tier-2" className="block">
-              <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest">Tier 2</p>
-              <p className="font-heading text-2xl font-bold text-pcm-dark">$3,000 AUD <span className="text-sm font-normal text-pcm-muted">/ month</span></p>
+              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Tier 2</p>
+              <p className="font-heading text-2xl font-bold text-charcoal">$3,000 AUD <span className="text-sm font-normal text-muted">/ month</span></p>
             </a>
-            <div className="border-t border-pcm-linen" />
+            <div className="border-t border-border" />
             <a href="#tier-3" className="block">
-              <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest">Tier 3</p>
-              <p className="font-heading text-2xl font-bold text-pcm-dark">$3,888 AUD <span className="text-sm font-normal text-pcm-muted">/ 4 weeks</span></p>
+              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Tier 3</p>
+              <p className="font-heading text-2xl font-bold text-charcoal">$3,888 AUD <span className="text-sm font-normal text-muted">/ 4 weeks</span></p>
             </a>
           </div>
         }
       />
 
       {/* Tiers */}
-      <section className="py-16 md:py-20 bg-pcm-sand">
+      <section className="py-16 md:py-20 bg-background">
         <InnerContainer>
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Tier 2 */}
-            <div id="tier-2" className="bg-pcm-cream border border-pcm-linen rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
-              <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-2">Tier 2</p>
-              <h2 className="font-heading text-2xl font-bold text-pcm-dark mb-2">Content Editing &amp; Distribution</h2>
-              <p className="font-body text-pcm-dark mb-6">
+            <div id="tier-2" className="bg-surface border border-border rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
+              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Tier 2</p>
+              <h2 className="font-heading text-2xl font-bold text-charcoal mb-2">Content Editing &amp; Distribution</h2>
+              <p className="font-body text-charcoal mb-6">
                 <span className="text-3xl font-bold">$3,000 AUD</span>{' '}
-                <span className="text-pcm-muted text-sm">per month</span>
+                <span className="text-muted text-sm">per month</span>
               </p>
               <ul className="space-y-3 flex-1 mb-6">
                 {TIER2_POINTS.map(p => (
-                  <li key={p} className="flex gap-3 font-body text-pcm-muted leading-relaxed">
-                    <span className="text-pcm-dark font-bold shrink-0">—</span>{p}
+                  <li key={p} className="flex gap-3 font-body text-muted leading-relaxed">
+                    <span className="text-charcoal font-bold shrink-0">—</span>{p}
                   </li>
                 ))}
               </ul>
@@ -88,17 +88,17 @@ export function MarketingSocialPage() {
             </div>
 
             {/* Tier 3 */}
-            <div id="tier-3" className="bg-pcm-cream border-2 border-pcm-orange rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
-              <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-2">Tier 3</p>
-              <h2 className="font-heading text-2xl font-bold text-pcm-dark mb-2">Content Creator</h2>
-              <p className="font-body text-pcm-dark mb-6">
+            <div id="tier-3" className="bg-surface border-2 border-primary rounded-2xl p-8 shadow-card flex flex-col scroll-mt-24">
+              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Tier 3</p>
+              <h2 className="font-heading text-2xl font-bold text-charcoal mb-2">Content Creator</h2>
+              <p className="font-body text-charcoal mb-6">
                 <span className="text-3xl font-bold">$3,888 AUD</span>{' '}
-                <span className="text-pcm-muted text-sm">every 4 weeks</span>
+                <span className="text-muted text-sm">every 4 weeks</span>
               </p>
               <ul className="space-y-3 flex-1 mb-6">
                 {TIER3_POINTS.map(p => (
-                  <li key={p} className="flex gap-3 font-body text-pcm-muted leading-relaxed">
-                    <span className="text-pcm-dark font-bold shrink-0">—</span>{p}
+                  <li key={p} className="flex gap-3 font-body text-muted leading-relaxed">
+                    <span className="text-charcoal font-bold shrink-0">—</span>{p}
                   </li>
                 ))}
               </ul>
@@ -109,24 +109,24 @@ export function MarketingSocialPage() {
       </section>
 
       {/* Turnaround */}
-      <section className="py-16 md:py-20 bg-pcm-sand border-y border-pcm-linen">
+      <section className="py-16 md:py-20 bg-background border-y border-border">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
+          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             The turnaround
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-4 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-4 leading-tight">
             From shoot day to scheduled in about two weeks.
           </h2>
-          <p className="font-body text-pcm-muted leading-relaxed mb-8">
+          <p className="font-body text-muted leading-relaxed mb-8">
             Shoot days take 1 day to film, 2 days to back up and 3 days to edit — 6 days. Then roughly
             4 days for approvals, and scheduling takes about 4 days. Every 4 weeks, so content is
             scheduled, edited and live within the next 2 weeks. These are approximate.
           </p>
-          <div className="border border-pcm-linen rounded-2xl overflow-hidden">
+          <div className="border border-border rounded-2xl overflow-hidden">
             {TIMELINE.map(([when, what], i) => (
-              <div key={when} className={`flex gap-4 px-5 py-4 ${i % 2 ? 'bg-pcm-cream' : 'bg-pcm-sand'}`}>
-                <span className="font-body text-sm font-semibold text-pcm-dark w-24 shrink-0">{when}</span>
-                <span className="font-body text-pcm-dark">{what}</span>
+              <div key={when} className={`flex gap-4 px-5 py-4 ${i % 2 ? 'bg-surface' : 'bg-background'}`}>
+                <span className="font-body text-sm font-semibold text-charcoal w-24 shrink-0">{when}</span>
+                <span className="font-body text-charcoal">{what}</span>
               </div>
             ))}
           </div>
@@ -134,34 +134,34 @@ export function MarketingSocialPage() {
       </section>
 
       {/* Terms */}
-      <section className="py-16 md:py-20 bg-pcm-sand">
+      <section className="py-16 md:py-20 bg-background">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
+          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             How the partnership works
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-8 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight">
             The details, up front.
           </h2>
-          <div className="space-y-6 font-body text-pcm-muted leading-relaxed">
-            <p><strong className="text-pcm-dark">Ceasing the partnership.</strong> Clients can cease the partnership at any time. If you do, no content from those shoots or that editing may be used — if you don't like the content that's been processed, it isn't yours to run.</p>
-            <p><strong className="text-pcm-dark">Between shoots.</strong> Once scheduling is done, clients manage their own community engagement until the next shoot.</p>
-            <p><strong className="text-pcm-dark">Failed posts and missed days.</strong> If a post fails, it's up to you to manage it and contact PCM with any questions. If a day is missed due to computer error, that post is scheduled for the next day.</p>
-            <p><strong className="text-pcm-dark">No shoot?</strong> Provide 30 days' worth of raw footage instead — 10-second B-rolls through to 1-minute talking heads — and we edit that in line with Tier 2.</p>
+          <div className="space-y-6 font-body text-muted leading-relaxed">
+            <p><strong className="text-charcoal">Ceasing the partnership.</strong> Clients can cease the partnership at any time. If you do, no content from those shoots or that editing may be used — if you don't like the content that's been processed, it isn't yours to run.</p>
+            <p><strong className="text-charcoal">Between shoots.</strong> Once scheduling is done, clients manage their own community engagement until the next shoot.</p>
+            <p><strong className="text-charcoal">Failed posts and missed days.</strong> If a post fails, it's up to you to manage it and contact PCM with any questions. If a day is missed due to computer error, that post is scheduled for the next day.</p>
+            <p><strong className="text-charcoal">No shoot?</strong> Provide 30 days' worth of raw footage instead — 10-second B-rolls through to 1-minute talking heads — and we edit that in line with Tier 2.</p>
           </div>
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 bg-pcm-cream border-t border-pcm-linen">
+      <section className="py-16 md:py-20 bg-background border-t border-border">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
                 Start the partnership
               </h2>
-              <p className="mt-4 font-body text-sm text-pcm-dark/80">
+              <p className="mt-4 font-body text-sm text-charcoal/80">
                 After payment you'll get instructions to email {PCM_SUPPORT_EMAIL} your raw footage
                 and drive links.{' '}
-                <Link to="/marketing/start?offer=tier2" className="text-pcm-dark underline">
+                <Link to="/marketing/start?offer=tier2" className="text-charcoal underline">
                   Preview the instructions →
                 </Link>
               </p>

@@ -32,7 +32,7 @@ export function MarketingPublishingPage() {
   })
 
   return (
-    <main className="min-h-screen bg-pcm-cream">
+    <main className="min-h-screen bg-background">
       <MarketingHero
         kicker="Offer one · one-off service"
         title="Publishing in the Culo Village"
@@ -45,18 +45,18 @@ export function MarketingPublishingPage() {
       />
 
       {/* What's included */}
-      <section className="py-16 md:py-20 bg-pcm-sand border-b border-pcm-linen">
+      <section className="py-16 md:py-20 bg-background border-b border-border">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
+          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             What's included
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-8 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight">
             A done-for-you move into a home built for search.
           </h2>
           <ul className="space-y-4">
             {INCLUDED.map(item => (
-              <li key={item} className="flex gap-3 font-body text-lg text-pcm-muted leading-relaxed">
-                <span className="text-pcm-dark font-bold shrink-0">—</span>
+              <li key={item} className="flex gap-3 font-body text-lg text-muted leading-relaxed">
+                <span className="text-charcoal font-bold shrink-0">—</span>
                 {item}
               </li>
             ))}
@@ -65,24 +65,24 @@ export function MarketingPublishingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-16 md:py-20 bg-pcm-sand">
+      <section className="py-16 md:py-20 bg-background">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
-            <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
+            <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
               How it works
             </p>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
               Four steps.
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             {STEPS.map(step => (
-              <div key={step.n} className="bg-pcm-cream border border-pcm-linen rounded-2xl p-7 shadow-card">
-                <div className="w-9 h-9 rounded-full bg-pcm-orange/10 flex items-center justify-center mb-4">
-                  <span className="font-heading font-bold text-pcm-dark">{step.n}</span>
+              <div key={step.n} className="bg-surface border border-border rounded-2xl p-7 shadow-card">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <span className="font-heading font-bold text-charcoal">{step.n}</span>
                 </div>
-                <h3 className="font-heading text-xl font-bold text-pcm-dark mb-2">{step.title}</h3>
-                <p className="font-body text-pcm-muted leading-relaxed">{step.body}</p>
+                <h3 className="font-heading text-xl font-bold text-charcoal mb-2">{step.title}</h3>
+                <p className="font-body text-muted leading-relaxed">{step.body}</p>
               </div>
             ))}
           </div>
@@ -90,13 +90,13 @@ export function MarketingPublishingPage() {
       </section>
 
       {/* DIY / Village note */}
-      <section className="py-14 bg-pcm-sand border-y border-pcm-linen">
+      <section className="py-14 bg-background border-y border-border">
         <InnerContainer className="max-w-3xl text-center">
-          <p className="font-body text-lg text-pcm-dark leading-relaxed">
+          <p className="font-body text-lg text-charcoal leading-relaxed">
             Clients can also do this themselves by becoming a Culo Village member. The Village is set
             up for searchability — we are the service that restructures your blogs, articles and
             stories and takes care of it for you.{' '}
-            <a href="https://www.culovillage.com" className="text-pcm-dark font-semibold hover:underline">
+            <a href="https://www.culovillage.com" className="text-charcoal font-semibold hover:underline">
               Learn about the Village →
             </a>
           </p>
@@ -104,16 +104,16 @@ export function MarketingPublishingPage() {
       </section>
 
       {/* Final CTA — cream section (like the hero), orange button */}
-      <section className="py-16 md:py-20 bg-pcm-cream border-t border-pcm-linen">
+      <section className="py-16 md:py-20 bg-background border-t border-border">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
                 Start your publishing service
               </h2>
-              <p className="mt-4 font-body text-sm text-pcm-dark/80">
+              <p className="mt-4 font-body text-sm text-charcoal/80">
                 After payment you'll get instructions to email us your material.{' '}
-                <Link to="/marketing/start?offer=publishing" className="text-pcm-dark underline">
+                <Link to="/marketing/start?offer=publishing" className="text-charcoal underline">
                   Preview those instructions →
                 </Link>
               </p>

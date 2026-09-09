@@ -16,19 +16,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --orange: #D37342; --orange-dark: #B95C2F;
-      --dark: #2A1C15; --muted: #6E6A66;
-      --cream: #FDEFE6; --sand: #FFFAF6; --border: #F0E7DD;
+      --orange: #C86A43; --orange-dark: #b05a35;
+      --dark: #2D2A26; --muted: #7A7570;
+      --bg: #F3F7FA; --surface: #FFFFFF; --border: #E8E2D9;
     }
     * { box-sizing: border-box; margin: 0; }
-    body { font-family: Inter, system-ui, sans-serif; background: var(--cream); color: var(--dark); -webkit-font-smoothing: antialiased; }
+    body { font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--dark); -webkit-font-smoothing: antialiased; }
     .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
     h1, h2 { font-family: "Playfair Display", Georgia, serif; line-height: 1.1; color: var(--dark); }
     a { color: var(--dark); }
-    .hero { background: var(--cream); color: var(--dark); text-align: center; padding: 96px 0; border-bottom: 1px solid var(--border); }
-    .kicker { text-transform: uppercase; letter-spacing: .15em; font-size: 12px; font-weight: 600; color: rgba(42,28,21,.7); margin-bottom: 16px; }
+    .hero { position: relative; overflow: hidden; background:
+      radial-gradient(circle at 85% 0%, rgba(124,169,204,.28) 0%, transparent 45%),
+      radial-gradient(circle at 0% 100%, rgba(94,107,74,.15) 0%, transparent 45%),
+      var(--bg);
+      color: var(--dark); text-align: center; padding: 96px 0; border-bottom: 1px solid var(--border); }
+    .kicker { text-transform: uppercase; letter-spacing: .15em; font-size: 12px; font-weight: 600; color: var(--orange); margin-bottom: 16px; }
     .hero h1 { font-size: clamp(32px, 6vw, 52px); margin-bottom: 20px; }
-    .hero p { color: rgba(42,28,21,.8); font-size: 18px; line-height: 1.6; margin-bottom: 32px; }
+    .hero p { color: var(--muted); font-size: 18px; line-height: 1.6; margin-bottom: 32px; }
     .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
     a.btn { display: inline-block; padding: 14px 24px; border-radius: 12px; font-weight: 600; font-size: 15px; text-decoration: none; transition: .15s; }
     a.primary { background: var(--orange); color: #fff; }
@@ -36,7 +40,7 @@
     a.ghost { border: 1px solid var(--border); color: var(--dark); }
     a.ghost:hover { border-color: var(--orange); }
     section.offers { padding: 72px 0; }
-    .card { background: var(--sand); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 20px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 20px; }
     .card h2 { font-size: 24px; margin-bottom: 8px; }
     .price { font-size: 28px; font-weight: 800; }
     .cadence { color: var(--muted); font-size: 14px; }

@@ -27,10 +27,10 @@ export function MarketingCheckoutButton({
 
   const btn =
     tone === 'light'
-      ? 'bg-pcm-cream text-pcm-dark hover:bg-white'
-      : 'bg-pcm-orange text-white hover:bg-pcm-orange-dark'
-  const noteText = tone === 'light' ? 'text-white/80' : 'text-pcm-muted'
-  const noteLink = tone === 'light' ? 'text-white underline' : 'text-pcm-orange hover:underline'
+      ? 'bg-background text-charcoal hover:bg-white'
+      : 'bg-primary text-white hover:bg-[#b05a35]'
+  const noteText = tone === 'light' ? 'text-white/80' : 'text-muted'
+  const noteLink = tone === 'light' ? 'text-white underline' : 'text-primary hover:underline'
 
   return (
     <div className={className}>

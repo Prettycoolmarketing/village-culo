@@ -48,7 +48,7 @@ export function MarketingLandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-pcm-cream">
+    <main className="min-h-screen bg-background">
       <MarketingHero
         kicker="Pretty Cool Marketing"
         title="Done for you inside the Village"
@@ -64,17 +64,17 @@ export function MarketingLandingPage() {
           </>
         }
         right={
-          <div className="bg-pcm-sand border border-pcm-linen rounded-2xl p-7 shadow-lg flex flex-col gap-3">
-            <p className="font-heading text-lg font-bold text-pcm-dark mb-1">Two ways to work with us</p>
+          <div className="bg-surface border border-border rounded-2xl p-7 shadow-lg flex flex-col gap-3">
+            <p className="font-heading text-lg font-bold text-charcoal mb-1">Two ways to work with us</p>
             <button
               onClick={() => go(PUBLISHING)}
-              className="px-5 py-3 bg-pcm-orange text-white text-sm font-semibold rounded-xl text-center hover:bg-pcm-orange-dark transition-colors"
+              className="px-5 py-3 bg-primary text-white text-sm font-semibold rounded-xl text-center hover:bg-[#b05a35] transition-colors"
             >
               Publishing Service
             </button>
             <button
               onClick={() => go(SOCIAL)}
-              className="px-5 py-3 border border-pcm-linen text-pcm-dark text-sm font-semibold rounded-xl text-center hover:border-pcm-orange transition-colors"
+              className="px-5 py-3 border border-border text-charcoal text-sm font-semibold rounded-xl text-center hover:border-primary transition-colors"
             >
               Social Media Partnership
             </button>
@@ -83,38 +83,38 @@ export function MarketingLandingPage() {
       />
 
       {/* ── Who this is for ───────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 bg-pcm-sand border-b border-pcm-linen">
+      <section className="py-16 md:py-20 bg-background border-b border-border">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">
+          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             Who this is for
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark mb-6 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-6 leading-tight">
             Founders who have already said the valuable things
           </h2>
-          <p className="font-body text-lg text-pcm-muted leading-relaxed mb-4">
+          <p className="font-body text-lg text-muted leading-relaxed mb-4">
             Your best thinking is often buried in old podcast episodes, captions, talking head videos,
             interviews and website pages.
           </p>
-          <p className="font-body text-lg text-pcm-muted leading-relaxed mb-8">
+          <p className="font-body text-lg text-muted leading-relaxed mb-8">
             Pretty Cool Marketing pulls that work back out, gives it structure and republishes it
             inside CULO Village so it starts building a clear body of work around you.
           </p>
           <ul className="space-y-2">
             {WHO_LIST.map(item => (
-              <li key={item} className="flex gap-3 font-body text-lg text-pcm-dark leading-relaxed">
-                <span className="text-pcm-orange font-bold shrink-0">—</span>
+              <li key={item} className="flex gap-3 font-body text-lg text-charcoal leading-relaxed">
+                <span className="text-primary font-bold shrink-0">—</span>
                 {item}
               </li>
             ))}
           </ul>
-          <p className="font-body text-lg text-pcm-dark leading-relaxed mt-6 font-semibold">
+          <p className="font-body text-lg text-charcoal leading-relaxed mt-6 font-semibold">
             All connected in one place.
           </p>
         </InnerContainer>
       </section>
 
       {/* ── The two services ─────────────────────────────────────────────── */}
-      <section className="py-16 md:py-20 bg-pcm-sand">
+      <section className="py-16 md:py-20 bg-background">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-6">
             <OfferCard
@@ -136,39 +136,39 @@ export function MarketingLandingPage() {
       </section>
 
       {/* ── DIY note ──────────────────────────────────────────────────────── */}
-      <section className="py-14 bg-pcm-sand border-y border-pcm-linen">
+      <section className="py-14 bg-background border-y border-border">
         <InnerContainer className="max-w-3xl text-center">
-          <h2 className="font-heading text-2xl md:text-3xl font-bold text-pcm-dark mb-4">
+          <h2 className="font-heading text-2xl md:text-3xl font-bold text-charcoal mb-4">
             Want to do it yourself?
           </h2>
-          <p className="font-body text-lg text-pcm-dark leading-relaxed mb-3">
+          <p className="font-body text-lg text-charcoal leading-relaxed mb-3">
             You can build and publish your own founder library directly inside CULO Village.
           </p>
           <p className="font-body text-lg mb-3">
-            <a href="https://www.culovillage.com" className="text-pcm-dark font-semibold underline hover:text-pcm-orange">
+            <a href="https://www.culovillage.com" className="text-charcoal font-semibold underline hover:text-primary">
               Learn about CULO Village →
             </a>
           </p>
-          <p className="font-body text-lg text-pcm-muted leading-relaxed">
+          <p className="font-body text-lg text-muted leading-relaxed">
             Pretty Cool Marketing is simply the done for you version.
           </p>
         </InnerContainer>
       </section>
 
       {/* ── Ready to start — cream section, orange buttons ───────────────── */}
-      <section className="py-16 md:py-20 bg-pcm-cream border-t border-pcm-linen">
+      <section className="py-16 md:py-20 bg-background border-t border-border">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-pcm-dark leading-tight">
+              <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
                 Ready to start?
               </h2>
-              <p className="mt-4 font-body text-lg text-pcm-dark/80 leading-relaxed">
+              <p className="mt-4 font-body text-lg text-charcoal/80 leading-relaxed">
                 Choose the service that fits what you need and we will show you the pricing.
               </p>
-              <p className="mt-2 font-body text-lg text-pcm-dark/80 leading-relaxed">
+              <p className="mt-2 font-body text-lg text-charcoal/80 leading-relaxed">
                 Or email us at{' '}
-                <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-pcm-dark font-semibold underline">
+                <a href={`mailto:${PCM_SUPPORT_EMAIL}`} className="text-charcoal font-semibold underline">
                   {PCM_SUPPORT_EMAIL}
                 </a>
               </p>
@@ -176,13 +176,13 @@ export function MarketingLandingPage() {
             <div className="md:justify-self-end w-full md:max-w-xs flex flex-col gap-3">
               <button
                 onClick={() => go(PUBLISHING)}
-                className="px-6 py-3 bg-pcm-orange text-white text-sm font-semibold rounded-xl hover:bg-pcm-orange-dark transition-colors"
+                className="px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
               >
                 Publishing Service
               </button>
               <button
                 onClick={() => go(SOCIAL)}
-                className="px-6 py-3 bg-pcm-orange text-white text-sm font-semibold rounded-xl hover:bg-pcm-orange-dark transition-colors"
+                className="px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
               >
                 Social Media Partnership
               </button>
@@ -208,15 +208,15 @@ function OfferCard({
   kicker: string; title: string; paragraphs: string[]; cta: string; onClick: () => void
 }) {
   return (
-    <div className="bg-pcm-cream border border-pcm-linen rounded-2xl p-8 flex flex-col shadow-card">
-      <p className="font-body text-xs font-semibold text-pcm-dark uppercase tracking-widest mb-3">{kicker}</p>
-      <h3 className="font-heading text-2xl font-bold text-pcm-dark mb-4 leading-tight">{title}</h3>
-      <div className="font-body text-pcm-muted leading-relaxed flex-1 mb-6 space-y-3">
+    <div className="bg-surface border border-border rounded-2xl p-8 flex flex-col shadow-card">
+      <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">{kicker}</p>
+      <h3 className="font-heading text-2xl font-bold text-charcoal mb-4 leading-tight">{title}</h3>
+      <div className="font-body text-muted leading-relaxed flex-1 mb-6 space-y-3">
         {paragraphs.map((p, i) => <p key={i}>{p}</p>)}
       </div>
       <button
         onClick={onClick}
-        className="inline-flex justify-center px-5 py-2.5 bg-pcm-orange text-white text-sm font-semibold rounded-xl hover:bg-pcm-orange-dark transition-colors"
+        className="inline-flex justify-center px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
       >
         {cta}
       </button>

@@ -6,8 +6,9 @@ import { InnerContainer } from '../../components/layout/PageContainer'
  * left = kicker + title + description, right = the price / payment card
  * (or, on the landing page, the primary CTAs). Stacks on mobile.
  *
- * Palette: cream (#FDEFE6) background at the top, everything written in the
- * dark brown (#2A1C15), boxes in the lightest cream (#FFFAF6).
+ * Palette: Culo Village branding — the soft blue/olive radial-gradient
+ * background used on the homepage and /join, then a light background with
+ * white cards below.
  */
 export function MarketingHero({
   kicker,
@@ -21,18 +22,29 @@ export function MarketingHero({
   right?: ReactNode
 }) {
   return (
-    <section className="bg-pcm-cream py-16 md:py-24 border-b border-pcm-linen">
-      <InnerContainer>
+    <section className="relative overflow-hidden bg-background py-16 md:py-24 border-b border-border">
+      {/* Soft radial gradient — same as the homepage / Join hero */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div
+          className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full opacity-20"
+          style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }}
+        />
+      </div>
+      <InnerContainer className="relative">
         <div className={`grid gap-10 lg:gap-16 items-center ${right ? 'lg:grid-cols-2' : ''}`}>
           {/* Left — the pitch */}
           <div>
-            <p className="font-body text-xs font-semibold text-pcm-dark/70 uppercase tracking-widest mb-4">
+            <p className="font-body text-xs font-semibold text-charcoal/70 uppercase tracking-widest mb-4">
               {kicker}
             </p>
-            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-pcm-dark leading-tight mb-6">
+            <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-charcoal leading-tight mb-6">
               {title}
             </h1>
-            <div className="font-body text-base sm:text-lg text-pcm-dark/80 leading-relaxed max-w-xl [&_a]:text-pcm-dark [&_a]:underline">
+            <div className="font-body text-base sm:text-lg text-charcoal/80 leading-relaxed max-w-xl [&_a]:text-charcoal [&_a]:underline">
               {description}
             </div>
           </div>
@@ -62,11 +74,11 @@ export function MarketingPriceCard({
   children: ReactNode
 }) {
   return (
-    <div className="bg-pcm-sand border border-pcm-linen rounded-2xl p-7 shadow-lg">
-      <p className="font-heading text-4xl font-bold text-pcm-dark">{price}</p>
-      <p className="font-body text-sm text-pcm-muted mt-1 mb-5">{cadence}</p>
+    <div className="bg-surface border border-border rounded-2xl p-7 shadow-lg">
+      <p className="font-heading text-4xl font-bold text-charcoal">{price}</p>
+      <p className="font-body text-sm text-muted mt-1 mb-5">{cadence}</p>
       {children}
-      {note && <p className="font-body text-xs text-pcm-muted mt-3">{note}</p>}
+      {note && <p className="font-body text-xs text-muted mt-3">{note}</p>}
     </div>
   )
 }
