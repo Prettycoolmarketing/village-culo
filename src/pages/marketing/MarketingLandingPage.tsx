@@ -64,8 +64,8 @@ export function MarketingLandingPage() {
           </>
         }
         right={
-          <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-lg flex flex-col gap-3">
-            <p className="font-heading text-2xl md:text-3xl font-bold text-charcoal text-center mb-2">Two ways to work with us</p>
+          <div className="bg-surface border border-border rounded-2xl p-8 shadow-lg flex flex-col gap-3">
+            <p className="font-heading text-2xl md:text-3xl font-bold text-charcoal text-center mb-2">Work with us!</p>
             <button
               onClick={() => go(PUBLISHING)}
               className="px-5 py-3 bg-primary text-white text-sm font-semibold rounded-xl text-center hover:bg-[#b05a35] transition-colors"
@@ -172,24 +172,27 @@ export function MarketingLandingPage() {
         </InnerContainer>
       </section>
 
-      {/* ── DIY note — big dark box over the blue, at the very bottom ─────── */}
+      {/* ── Want to do it yourself — join CTA, mirrors Culo Creatives' bottom ── */}
       <section className="pb-16 md:pb-24 bg-[#EBF2F8]">
         <InnerContainer>
           <div className="bg-charcoal rounded-3xl px-8 py-14 md:px-16 md:py-20 text-center">
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
               Want to do it yourself?
+            </p>
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-5 leading-tight max-w-2xl mx-auto">
+              Join The Culo Village for free and publish your first 10 articles on us.
             </h2>
-            <p className="font-body text-lg text-white/80 leading-relaxed mb-4 max-w-2xl mx-auto">
-              You can build and publish your own founder library directly inside CULO Village.
+            <p className="font-body text-lg text-white/70 leading-relaxed mb-8 max-w-2xl mx-auto">
+              Culo Creatives, the must-have editing tool inside Canva, is a separate optional add-on.
+              It is free until 1 January 2027, then early founders can keep the exclusive $19 AUD/month
+              founding rate for as long as they stay subscribed.
             </p>
-            <p className="font-body text-lg mb-4">
-              <a href="https://www.culovillage.com" className="text-white font-semibold underline hover:text-primary">
-                Learn about CULO Village →
-              </a>
-            </p>
-            <p className="font-body text-lg text-white/60 leading-relaxed">
-              Pretty Cool Marketing is simply the done for you version.
-            </p>
+            <a
+              href="https://www.culovillage.com/join"
+              className="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Join The Culo Village →
+            </a>
           </div>
         </InnerContainer>
       </section>
