@@ -39,25 +39,6 @@ export function DashboardArchiveFoundPage() {
   const previewMock = unlocked[0]
   const lockedShown = locked.slice(0, 12)
 
-  const unlockButton = (className: string) =>
-    tier.paymentLink ? (
-      <a
-        href={buildPaymentUrl(tier.paymentLink, founder.id, user?.email)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={className}
-      >
-        Unlock your archive — {tier.priceLabel}
-      </a>
-    ) : (
-      <a
-        href={`mailto:support@prettycoolmarketing.com?subject=${encodeURIComponent(`Archive unlock — ${totalCount} pieces (${founder.name})`)}`}
-        className={className}
-      >
-        Get a quote — {tier.priceLabel}
-      </a>
-    )
-
   return (
     <div className="p-8 sm:pt-14" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <p className="text-sm font-semibold text-[#C86A43] uppercase tracking-widest mb-3">We found your story</p>
@@ -66,12 +47,9 @@ export function DashboardArchiveFoundPage() {
         piece{totalCount === 1 ? '' : 's'} of your story
       </h1>
 
-      <Link
-        to="/dashboard/profile?tab=content&contentSubTab=ready"
-        className="inline-flex items-center px-6 py-3.5 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors mb-4"
-      >
+      <p className="inline-flex items-center px-6 py-3.5 bg-[#C86A43] text-white text-base font-semibold rounded-xl mb-4">
         Your {ARCHIVE_UNLOCK_FREE_COUNT} strongest posts are free, forever
-      </Link>
+      </p>
       <div>
         <button
           onClick={() => setShowWhy(v => !v)}
@@ -103,62 +81,56 @@ export function DashboardArchiveFoundPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start mb-10">
-        {/* Left: the big "how much is waiting" number, then a real preview
-            of what it looks like once it's live. */}
-        <div className="flex flex-col gap-8 min-w-0">
-          <div>
-            <p className="text-xs font-semibold text-[#C86A43] uppercase tracking-wide mb-1.5">Waiting to be unlocked</p>
-            <p className="text-5xl sm:text-6xl font-bold text-[#2D2A26]">{locked.length}</p>
-          </div>
-
-          {/* A real, clickable preview of what one of these looks like once
-              it's a real Village article — always one of the founder's
-              actual free-10 pieces (never a locked one, nothing to preview
-              there yet), grounding the pitch in something concrete. */}
-          {previewMock && (
-            <div className="max-w-xl">
-              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide mb-3">What it looks like published</p>
-              <Link
-                to={`/dashboard/preview/${previewMock.id}`}
-                className="block bg-white rounded-xl border border-[#E8E4DD] overflow-hidden hover:border-[#C86A43]/40 hover:shadow-lg transition-all"
-              >
-                <img src={previewMock.thumbnailUrl} alt="" className="w-full aspect-video object-cover bg-[#F3EDE6]" />
-                <div className="p-5">
-                  <p className="text-[10px] text-[#9CA3AF] uppercase tracking-widest mb-1.5">culovillage.com/founders/{founder.slug}/...</p>
-                  <p className="text-lg font-bold text-[#2D2A26] leading-snug mb-2">{previewMock.title}</p>
-                  <p className="text-sm text-[#6B7280] leading-relaxed line-clamp-3">
-                    {previewMock.description || previewMock.subtitle || 'Structured, searchable, and yours, republished as a real web page.'}
-                  </p>
-                </div>
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Right: one persistent CTA, not repeated three times down the
-            page. Dark charcoal like the site's other primary panels (see
-            Profile > Content's "Create with CULO in Canva" block), so it
-            reads as the one clear next step rather than another white card
-            blending into the rest. */}
-        <div className="lg:sticky lg:top-8 bg-[#2D2A26] rounded-2xl p-7 flex flex-col gap-4">
-          <div>
-            <p className="text-xl font-bold text-white mb-1.5">
-              {locked.length} more piece{locked.length === 1 ? '' : 's'} waiting
-            </p>
-            <p className="text-sm text-white/60 leading-relaxed">
-              Keep your Village free with your {ARCHIVE_UNLOCK_FREE_COUNT} strongest pieces, or bring your complete{' '}
-              {totalCount}-piece archive in for good.
-            </p>
-          </div>
-          {unlockButton('flex items-center justify-center w-full px-5 py-3.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors')}
-          <Link
-            to="/dashboard/profile?tab=content&contentSubTab=ready"
-            className="text-center text-sm font-medium text-white/50 hover:text-white transition-colors"
+      {/* The whole upsell, full width: the unlock stat is itself the
+          button (no separate colored panel repeating the same pitch), next
+          to a real preview of what it looks like once it's live. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch mb-10 pt-6">
+        {tier.paymentLink ? (
+          <a
+            href={buildPaymentUrl(tier.paymentLink, founder.id, user?.email)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col justify-center gap-2 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl p-10 transition-colors"
           >
-            Stay free with {ARCHIVE_UNLOCK_FREE_COUNT}
+            <p className="text-sm font-semibold text-[#C86A43] group-hover:text-white/80 uppercase tracking-wide transition-colors">Waiting to be unlocked</p>
+            <p className="text-6xl sm:text-7xl font-bold text-[#2D2A26] group-hover:text-white transition-colors">{locked.length}</p>
+            <p className="text-base font-semibold text-[#C86A43] group-hover:text-white transition-colors mt-2">
+              Unlock now — {tier.priceLabel} →
+            </p>
+          </a>
+        ) : (
+          <a
+            href={`mailto:support@prettycoolmarketing.com?subject=${encodeURIComponent(`Archive unlock — ${totalCount} pieces (${founder.name})`)}`}
+            className="group flex flex-col justify-center gap-2 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl p-10 transition-colors"
+          >
+            <p className="text-sm font-semibold text-[#C86A43] group-hover:text-white/80 uppercase tracking-wide transition-colors">Waiting to be unlocked</p>
+            <p className="text-6xl sm:text-7xl font-bold text-[#2D2A26] group-hover:text-white transition-colors">{locked.length}</p>
+            <p className="text-base font-semibold text-[#C86A43] group-hover:text-white transition-colors mt-2">
+              Get a quote — {tier.priceLabel} →
+            </p>
+          </a>
+        )}
+
+        {/* A real, clickable preview of what one of these looks like once
+            it's a real Village article — always one of the founder's
+            actual free-10 pieces (never a locked one, nothing to preview
+            there yet), grounding the pitch in something concrete. */}
+        {previewMock && (
+          <Link
+            to={`/dashboard/preview/${previewMock.id}`}
+            className="flex flex-col bg-white rounded-2xl border-2 border-[#E8E4DD] overflow-hidden hover:border-[#C86A43]/40 hover:shadow-lg transition-all"
+          >
+            <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide px-5 pt-5">What it looks like published</p>
+            <img src={previewMock.thumbnailUrl} alt="" className="w-full aspect-video object-cover bg-[#F3EDE6] mt-3" />
+            <div className="p-5">
+              <p className="text-[10px] text-[#9CA3AF] uppercase tracking-widest mb-1.5">culovillage.com/founders/{founder.slug}/...</p>
+              <p className="text-lg font-bold text-[#2D2A26] leading-snug mb-2">{previewMock.title}</p>
+              <p className="text-sm text-[#6B7280] leading-relaxed line-clamp-3">
+                {previewMock.description || previewMock.subtitle || 'Structured, searchable, and yours, republished as a real web page.'}
+              </p>
+            </div>
           </Link>
-        </div>
+        )}
       </div>
 
       {/* The locked pieces themselves, underneath — blurred the same way
