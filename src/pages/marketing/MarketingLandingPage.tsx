@@ -135,28 +135,8 @@ export function MarketingLandingPage() {
         </InnerContainer>
       </section>
 
-      {/* ── DIY note ──────────────────────────────────────────────────────── */}
-      <section className="py-14 bg-surface border-y border-border">
-        <InnerContainer className="max-w-3xl text-center">
-          <h2 className="font-heading text-2xl md:text-3xl font-bold text-charcoal mb-4">
-            Want to do it yourself?
-          </h2>
-          <p className="font-body text-lg text-charcoal leading-relaxed mb-3">
-            You can build and publish your own founder library directly inside CULO Village.
-          </p>
-          <p className="font-body text-lg mb-3">
-            <a href="https://www.culovillage.com" className="text-charcoal font-semibold underline hover:text-primary">
-              Learn about CULO Village →
-            </a>
-          </p>
-          <p className="font-body text-lg text-muted leading-relaxed">
-            Pretty Cool Marketing is simply the done for you version.
-          </p>
-        </InnerContainer>
-      </section>
-
-      {/* ── Ready to start — cream section, orange buttons ───────────────── */}
-      <section className="py-16 md:py-20 bg-surface border-t border-border">
+      {/* ── Ready to start — blue section, orange buttons ────────────────── */}
+      <section className="py-16 md:py-20 bg-[#EBF2F8] border-t border-[#CFE0EE]">
         <InnerContainer>
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
@@ -187,6 +167,28 @@ export function MarketingLandingPage() {
                 Social Media Partnership
               </button>
             </div>
+          </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── DIY note — big dark box over the blue, at the very bottom ─────── */}
+      <section className="pb-16 md:pb-24 bg-[#EBF2F8]">
+        <InnerContainer>
+          <div className="bg-charcoal rounded-3xl px-8 py-14 md:px-16 md:py-20 text-center">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4">
+              Want to do it yourself?
+            </h2>
+            <p className="font-body text-lg text-white/80 leading-relaxed mb-4 max-w-2xl mx-auto">
+              You can build and publish your own founder library directly inside CULO Village.
+            </p>
+            <p className="font-body text-lg mb-4">
+              <a href="https://www.culovillage.com" className="text-white font-semibold underline hover:text-primary">
+                Learn about CULO Village →
+              </a>
+            </p>
+            <p className="font-body text-lg text-white/60 leading-relaxed">
+              Pretty Cool Marketing is simply the done for you version.
+            </p>
           </div>
         </InnerContainer>
       </section>

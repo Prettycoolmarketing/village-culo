@@ -82,7 +82,7 @@ export function MarketingLeadModal({
           {offerLabel}
         </p>
         <h2 className="font-heading text-2xl font-bold text-charcoal mb-2 leading-tight">
-          A few details, then we’ll show you the rates.
+          Connect to see rates and lock in your done for you service
         </h2>
         <p className="font-body text-sm text-muted mb-5">
           So we know who we’re talking to. We’ll be in touch about working together.
