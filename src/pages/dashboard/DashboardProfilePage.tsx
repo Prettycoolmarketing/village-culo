@@ -1835,11 +1835,7 @@ export function DashboardProfilePage() {
 
               return (
                 <div className="flex gap-6 items-start">
-                {/* Hidden (not just squeezed narrow) while the Advanced
-                    edit panel is open below — that panel should get the
-                    majority of the page, not compete with the full list
-                    for space. */}
-                <div className={importedEditDraft ? 'hidden' : 'flex-1 min-w-0'}>
+                <div className="flex-1 min-w-0">
                   {platforms.length > 0 && (
                     <div className="mb-3">
                       <div className="flex flex-wrap gap-1.5 mb-1.5">
@@ -1985,31 +1981,36 @@ export function DashboardProfilePage() {
                   )}
                 </div>
                 {editingImportedId && importedEditDraft && (
-                  // sticky alone doesn't give an element its own scroll — its
-                  // content just gets pinned/clipped once taller than the
-                  // viewport, with no way to reach anything past the fold.
-                  // max-h + overflow-y-auto makes the panel scroll
-                  // independently instead.
-                  <div className="w-full max-w-4xl mx-auto bg-white rounded-xl border border-[#E8E4DD] p-6 max-h-[calc(100vh-2rem)] overflow-y-auto">
-                    <div className="flex items-center justify-between mb-4">
-                      <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
-                      <button
-                        onClick={handleCancelAdvancedEdit}
-                        aria-label="Close"
-                        className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                  // Floating on top of the page, not swapped in in place —
+                  // a big popup with a visible sliver of the list still
+                  // showing behind it (the backdrop dims but doesn't fully
+                  // hide it), rather than either squeezing into a narrow
+                  // sidebar or taking over the whole page.
+                  <div
+                    className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
+                    onClick={e => { if (e.target === e.currentTarget) handleCancelAdvancedEdit() }}
+                  >
+                    <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+                        <button
+                          onClick={handleCancelAdvancedEdit}
+                          aria-label="Close"
+                          className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      {importedSaveError && <p className="text-sm text-red-600 font-medium mb-2">{importedSaveError}</p>}
+                      <EditForm
+                        draft={importedEditDraft}
+                        onChange={setImportedEditDraft}
+                        onSave={() => void handleSaveAdvancedEdit()}
+                        onCancel={handleCancelAdvancedEdit}
+                      />
                     </div>
-                    {importedSaveError && <p className="text-sm text-red-600 font-medium mb-2">{importedSaveError}</p>}
-                    <EditForm
-                      draft={importedEditDraft}
-                      onChange={setImportedEditDraft}
-                      onSave={() => void handleSaveAdvancedEdit()}
-                      onCancel={handleCancelAdvancedEdit}
-                    />
                   </div>
                 )}
                 </div>
