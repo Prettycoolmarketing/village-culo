@@ -34,6 +34,13 @@ interface StoryGridProps {
   // own Featured Video picks, so the same story doesn't show up twice on
   // one profile page (once as the featured video, once again in this grid).
   excludeIds?: string[]
+  // Bubbles blog-type stories to the front, ahead of reels/carousels/etc —
+  // for a founder's own profile grid, the first thing a visitor sees. A
+  // written blog almost always has a real, sharp cover image; a reel's
+  // thumbnail is a video-frame grab that can come out soft or blurry,
+  // especially from an older import. Order within each group (blog vs.
+  // everything else) is otherwise left as fetched.
+  sortBlogsFirst?: boolean
   // Render nothing at all when there's no content, instead of an empty
   // state with a CTA — for profile pages, where an unpublished section
   // reads as "this founder isn't active" rather than an invitation.
@@ -63,12 +70,21 @@ export function StoryGrid({
   emptyMessage,
   hideKey,
   excludeIds,
+  sortBlogsFirst = false,
   hideEmpty = false,
 }: StoryGridProps) {
   const fetched = explicitStories ?? getStories(filter)
-  const stories = fetched
+  let stories = fetched
     .filter(s => !hideKey || !s.hiddenLocations?.includes(hideKey))
     .filter(s => !excludeIds?.includes(s.id))
+
+  if (sortBlogsFirst) {
+    stories = [...stories].sort((a, b) => {
+      const aBlog = a.contentTypes.includes('blog') ? 1 : 0
+      const bBlog = b.contentTypes.includes('blog') ? 1 : 0
+      return bBlog - aBlog
+    })
+  }
 
   if (hideEmpty && stories.length === 0) return null
 

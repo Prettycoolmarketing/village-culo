@@ -607,6 +607,7 @@ export function FounderProfilePage() {
                 subheading={`Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
                 filter={{ founderId: founder.id, publicOnly: true }}
                 excludeIds={featuredVideoStories.map(s => s.id)}
+                sortBlogsFirst
                 hideKey="founder-profile"
                 columns={2}
                 cardVariant="vertical"

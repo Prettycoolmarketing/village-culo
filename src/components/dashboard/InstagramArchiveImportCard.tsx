@@ -143,6 +143,12 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
                 <li>Open that email (or go back to Accounts Centre → Your activity → Download or transfer information) and download the <span className="font-medium text-[#2D2A26]">.zip</span> file to your device.</li>
                 <li>Come back to this page and drag that .zip file into the box below, or click Browse files to select it.</li>
               </ol>
+              <div className="flex justify-end mt-3">
+                <button type="button" onClick={() => setShowInstructions(false)}
+                  className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] transition-colors">
+                  Hide instructions
+                </button>
+              </div>
             </div>
           )}
 

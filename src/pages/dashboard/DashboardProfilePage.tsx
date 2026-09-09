@@ -1443,16 +1443,16 @@ export function DashboardProfilePage() {
                 <div>
                   {contentSubTab === 'ready' && readyItems.length > 0 && (
                     <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-                      <label className="flex items-center gap-2 text-sm font-medium text-[#2D2A26] cursor-pointer">
+                      <label className="flex items-center gap-2.5 text-base font-semibold text-[#2D2A26] cursor-pointer">
                         <input
                           type="checkbox"
                           checked={readyChecked.size > 0 && readyChecked.size === unlockedReadyItems.length}
                           onChange={toggleSelectAllReady}
-                          className="w-4 h-4 accent-[#C86A43]"
+                          className="w-5 h-5 accent-[#C86A43]"
                         />
                         Select all ({unlockedReadyItems.length})
                         {lockedReadyCount > 0 && (
-                          <Link to="/dashboard/archive-found" className="text-xs font-normal text-[#C86A43] hover:underline ml-1">
+                          <Link to="/dashboard/archive-found" className="text-sm font-medium text-[#C86A43] hover:underline ml-1">
                             + {lockedReadyCount} locked
                           </Link>
                         )}
@@ -1460,7 +1460,7 @@ export function DashboardProfilePage() {
                       <button
                         onClick={() => void publishItems(readyItems.filter(i => readyChecked.has(i.id)))}
                         disabled={readyChecked.size === 0 || readyBulkPublishing}
-                        className="shrink-0 px-6 py-3 bg-[#FBF1EB] text-[#C86A43] text-sm font-semibold rounded-xl border border-[#C86A43]/20 hover:bg-[#C86A43]/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="shrink-0 px-7 py-3.5 bg-[#FBF1EB] text-[#C86A43] text-base font-semibold rounded-xl border border-[#C86A43]/20 hover:bg-[#C86A43]/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         {readyBulkPublishing ? 'Publishing…' : `Publish ${readyChecked.size || ''} selected`}
                       </button>

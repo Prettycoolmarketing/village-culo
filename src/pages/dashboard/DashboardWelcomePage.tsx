@@ -68,10 +68,10 @@ export function DashboardWelcomePage() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col sm:items-end gap-3">
+        <div className="flex flex-col sm:items-end gap-4 pt-4">
           <Link
             to="/dashboard/import-content"
-            className="flex justify-center sm:inline-flex text-sm font-semibold px-5 py-4 sm:py-2.5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
+            className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
           >
             Import your content into The Village
           </Link>
@@ -79,7 +79,7 @@ export function DashboardWelcomePage() {
             href={canUseCreatives ? CULO_CANVA_URL : upgradeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex justify-center sm:inline-flex text-sm font-semibold px-5 py-2.5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+            className="flex justify-center sm:inline-flex text-lg font-semibold px-8 py-6 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
           >
             Create with Culo Creatives in Canva
           </a>
