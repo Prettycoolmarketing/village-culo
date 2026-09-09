@@ -20,11 +20,11 @@
 export const ARCHIVE_UNLOCK_TIER_1_LINK = 'https://buy.stripe.com/aFafZi5rP28z2au92T83C0a' // <= 50 pieces — $19 AUD
 export const ARCHIVE_UNLOCK_TIER_2_LINK = 'https://buy.stripe.com/4gMfZi8E16oP4iCbb183C0b' // 51-250 pieces — $39 AUD
 export const ARCHIVE_UNLOCK_TIER_3_LINK = 'https://buy.stripe.com/28EdRadYlaF52au5QH83C0c' // 251-1,000 pieces — $79 AUD
-// TODO: create these four Payment Links in Stripe (AUD, one-time) and paste the URLs:
-export const ARCHIVE_UNLOCK_TIER_4_LINK = '#' // 1,001-2,500 pieces — $175 AUD
-export const ARCHIVE_UNLOCK_TIER_5_LINK = '#' // 2,501-5,000 pieces — $349 AUD
-export const ARCHIVE_UNLOCK_TIER_6_LINK = '#' // 5,001-10,000 pieces — $699 AUD
-export const ARCHIVE_UNLOCK_TIER_7_LINK = '#' // 10,001+ pieces — $2,000 AUD
+// Live-mode Payment Links, created via stripe-setup-2026-tiers (AUD, one-time).
+export const ARCHIVE_UNLOCK_TIER_4_LINK = 'https://buy.stripe.com/5kQbJ25rP7sT6qK1Ar83C0m' // 1,001-2,500 pieces — $175 AUD
+export const ARCHIVE_UNLOCK_TIER_5_LINK = 'https://buy.stripe.com/7sY4gAaM9aF56qKa6X83C0n' // 2,501-5,000 pieces — $349 AUD
+export const ARCHIVE_UNLOCK_TIER_6_LINK = 'https://buy.stripe.com/7sYaEYg6t7sT02m4MD83C0o' // 5,001-10,000 pieces — $699 AUD
+export const ARCHIVE_UNLOCK_TIER_7_LINK = 'https://buy.stripe.com/dRm7sM2fD28z9CW1Ar83C0p' // 10,001+ pieces — $2,000 AUD
 
 // The "cap my cost" option offered only when a founder has more than 10,000
 // pieces: publish the most-ready 5,000 for a flat $699 instead of paying
@@ -32,7 +32,7 @@ export const ARCHIVE_UNLOCK_TIER_7_LINK = '#' // 10,001+ pieces — $2,000 AUD
 // so stripe-archive-unlock-webhook can tell it apart (it sets a 5,000-piece
 // cap rather than a full unlock — match on the link id via the
 // ARCHIVE_SUBSET_LINK_ID env var on that function).
-export const ARCHIVE_UNLOCK_SUBSET_5000_LINK  = '#' // publish most-ready 5,000 — $699 AUD
+export const ARCHIVE_UNLOCK_SUBSET_5000_LINK  = 'https://buy.stripe.com/7sY9AU2fD3cD2au7YP83C0q' // publish most-ready 5,000 — $699 AUD (plink_1UDeZPJ3Xn12tPGFKhP0lyDZ)
 export const ARCHIVE_UNLOCK_SUBSET_5000_COUNT = 5000
 export const ARCHIVE_UNLOCK_SUBSET_5000_PRICE = 699
 

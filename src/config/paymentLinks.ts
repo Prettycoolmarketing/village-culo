@@ -4,9 +4,11 @@
 // between DashboardCreativesPage and JoinOfferPage rather than duplicated —
 // one place to update if these ever need to be recreated.
 export const UPGRADE_PAYMENT_LINK = 'https://buy.stripe.com/bJe14o9I57sT5mGfrh83C09'
-// $19/mo collaborator link — free until Jan 1 2027 (trial_end is fixed up
-// server-side by stripe-creatives-webhook after checkout).
-export const COLLABORATOR_PAYMENT_LINK = 'https://buy.stripe.com/bJe8wQcUh00reXg7YP83C08'
+// $19/mo "Culo Creatives Founding Collaborator" — has a 114-day trial on
+// the link itself so Stripe never charges at signup; stripe-creatives-webhook
+// then pins trial_end to the fixed date 2027-01-01 after checkout. Created
+// via stripe-setup-2026-tiers; replaces the old link that had no trial.
+export const COLLABORATOR_PAYMENT_LINK = 'https://buy.stripe.com/dRmfZibQd5kL5mG0wn83C0r'
 
 // client_reference_id is how stripe-creatives-webhook links the resulting
 // Stripe customer back to a founder (see that function's header comment) —
