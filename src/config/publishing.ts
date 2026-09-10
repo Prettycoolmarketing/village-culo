@@ -45,8 +45,9 @@ export interface PublishingPack {
   paymentLink: string
 }
 
-export const PUBLISHING_PACK_100_LINK = '#' // TODO: Stripe Payment Link — "Village Publishing Pack" $199 AUD / 100
-export const PUBLISHING_PACK_365_LINK = '#' // TODO: Stripe Payment Link — "Annual Publishing Pack" $395 AUD / 365
+// Live-mode Payment Links, created via stripe-setup-publishing-packs (AUD, one-time).
+export const PUBLISHING_PACK_100_LINK = 'https://buy.stripe.com/3cI8wQ6vT14v4iCend83C0v' // "Village Publishing Pack" $199 AUD / 100 (plink_1UDxGrJ3Xn12tPGFyQojL8ts)
+export const PUBLISHING_PACK_365_LINK = 'https://buy.stripe.com/dRmeVef2paF5g1k1Ar83C0w' // "Annual Publishing Pack" $395 AUD / 365 (plink_1UDxGsJ3Xn12tPGFMpZKzlu0)
 
 export const PUBLISHING_PACKS: Record<PublishingPack['id'], PublishingPack> = {
   pack100: {
