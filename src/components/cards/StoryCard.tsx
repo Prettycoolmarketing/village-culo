@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Story, Founder, Business } from '../../types'
 import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
+import { CoverImage } from '../ui/CoverImage'
 import { contentTypeLabel } from '../../utils/slugify'
 
 interface StoryCardProps {
@@ -64,7 +65,7 @@ export function StoryCard({
           style={{ aspectRatio: isLandscapeCover ? '16/9' : '9/16' }}
           tabIndex={0}
         >
-          <img
+          <CoverImage
             src={story.coverImage}
             alt={`Cover image for "${story.title}" by ${founder?.name ?? 'Unknown founder'}`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -178,7 +179,7 @@ export function StoryCard({
           tabIndex={-1}
           aria-hidden="true"
         >
-          <img
+          <CoverImage
             src={story.coverImage}
             alt=""
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -219,7 +220,7 @@ export function StoryCard({
         tabIndex={-1}
         aria-hidden="true"
       >
-        <img
+        <CoverImage
           src={story.coverImage}
           alt=""
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

@@ -61,10 +61,13 @@ type YouTubeSearchItem = {
   snippet: { title: string; description: string; publishedAt: string; thumbnails?: Record<string, { url: string }> }
 }
 
-// YouTube's API returns whatever sizes actually exist for a video — 'high'
-// (480x360) is only middling once stretched to fill a large card, so prefer
-// the sharper sizes when they're available and fall back down the chain.
-function bestThumbnail(thumbnails?: Record<string, { url: string }>): string | undefined {
+// The API's own thumbnails map often caps at 'high' (480x360), which looks
+// soft once a card stretches it. YouTube always hosts a 1280x720
+// maxresdefault at a predictable URL for the same video id — store that,
+// and let CoverImage fall back down the ladder if it 404s for an older
+// upload. Only drop back to the API's map if there's no id somehow.
+function bestThumbnail(videoId: string | undefined, thumbnails?: Record<string, { url: string }>): string | undefined {
+  if (videoId) return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
   return thumbnails?.maxres?.url
     ?? thumbnails?.standard?.url
     ?? thumbnails?.high?.url
@@ -77,7 +80,7 @@ function mapSearchItem(item: YouTubeSearchItem & { id: { videoId: string } }): Y
     videoId: item.id.videoId,
     title: item.snippet.title,
     description: item.snippet.description,
-    thumbnailUrl: bestThumbnail(item.snippet.thumbnails),
+    thumbnailUrl: bestThumbnail(item.id.videoId, item.snippet.thumbnails),
     publishedAt: item.snippet.publishedAt,
   }
 }

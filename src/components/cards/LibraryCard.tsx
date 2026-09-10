@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { LibraryItem } from '../../types'
 import { productTypeLabel, statusLabel } from '../../data/library'
 import { normalizeUrl } from '../../utils/url'
+import { CoverImage } from '../ui/CoverImage'
 
 interface LibraryCardProps {
   item: LibraryItem
@@ -30,7 +31,7 @@ export function LibraryCard({ item, variant = 'default' }: LibraryCardProps) {
         {/* Thumbnail */}
         <Link to={`/library/${item.slug}`} className="flex-shrink-0" aria-hidden="true" tabIndex={-1}>
           <div className="w-14 h-20 rounded-lg overflow-hidden bg-border">
-            <img
+            <CoverImage
               src={item.coverImage}
               alt=""
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -69,7 +70,7 @@ export function LibraryCard({ item, variant = 'default' }: LibraryCardProps) {
     <article className="group flex flex-col bg-surface rounded-2xl border border-border overflow-hidden hover:border-primary hover:shadow-md transition-all duration-200">
       {/* Cover */}
       <Link to={`/library/${item.slug}`} className="block relative overflow-hidden" style={{ aspectRatio: '3/2' }} aria-hidden="true" tabIndex={-1}>
-        <img
+        <CoverImage
           src={item.coverImage}
           alt=""
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

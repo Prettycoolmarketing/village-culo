@@ -17,6 +17,7 @@ import { ReelContent } from '../components/ui/ReelContent'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
 import { StoryCard }        from '../components/cards/StoryCard'
+import { CoverImage }       from '../components/ui/CoverImage'
 import { ImportedContentCard } from '../components/cards/ImportedContentCard'
 import { Badge }            from '../components/ui/Badge'
 import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBlock'
@@ -409,7 +410,7 @@ export function StoryDetailPage() {
             lower-quality version of the same shot. */}
         {!isVerticalVideo && (
           <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
-            <img
+            <CoverImage
               src={story.coverImage}
               alt={`Cover image for "${story.title}"`}
               className="w-full h-full object-cover opacity-60"

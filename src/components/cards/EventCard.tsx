@@ -3,6 +3,7 @@ import type { Event } from '../../types'
 import { Badge } from '../ui/Badge'
 import { noticeTypeLabel, formatDate } from '../../utils/slugify'
 import { normalizeUrl } from '../../utils/url'
+import { CoverImage } from '../ui/CoverImage'
 
 interface EventCardProps {
   event: Event
@@ -55,7 +56,7 @@ export function EventCard({ event, variant = 'default', className = '' }: EventC
       >
         {event.coverImage && (
           <div className="relative h-40 overflow-hidden">
-            <img
+            <CoverImage
               src={event.coverImage}
               alt={`Cover image for ${event.title}`}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

@@ -4,6 +4,7 @@ import { getFounders, getFounder } from '../services/founders'
 import { getBusinesses, getBusiness } from '../services/businesses'
 import { getIdeas } from '../services/ideas'
 import { getEvents } from '../services/events'
+import { CoverImage } from '../components/ui/CoverImage'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { BizLogo } from '../components/ui/BizLogo'
@@ -66,7 +67,7 @@ export function FeaturedWidget({
               }`}
               aria-label={`Read ${featuredStory.title}`}
             >
-              <img
+              <CoverImage
                 src={featuredStory.coverImage}
                 alt={`Cover for "${featuredStory.title}"`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

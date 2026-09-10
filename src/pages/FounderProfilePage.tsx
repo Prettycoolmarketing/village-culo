@@ -17,6 +17,7 @@ import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { ReelContent } from '../components/ui/ReelContent'
 import { BizLogo } from '../components/ui/BizLogo'
 import { StoryGrid } from '../widgets/StoryGrid'
+import { CoverImage } from '../components/ui/CoverImage'
 import { IdeaGrid } from '../widgets/IdeaGrid'
 import { LibraryGrid } from '../widgets/LibraryGrid'
 import { EventGrid } from '../widgets/EventGrid'
@@ -421,7 +422,7 @@ export function FounderProfilePage() {
       <section aria-labelledby="founder-name">
         {founder.coverImage ? (
           <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
-            <img src={founder.coverImage} alt={`${founder.name}'s cover photo`} className="w-full h-full object-cover opacity-70" loading="eager" />
+            <CoverImage src={founder.coverImage} alt={`${founder.name}'s cover photo`} className="w-full h-full object-cover opacity-70" loading="eager" />
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
           </div>
         ) : (
