@@ -13,6 +13,7 @@ import { AppearsOnPanel } from './AppearsOnPanel'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { topics as allTopics } from '../../data/topics'
 import { normalizeUrl } from '../../utils/url'
+import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { contentTypeLabel } from '../../utils/slugify'
 import type { Story, ContentType, Topic } from '../../types'
 
@@ -336,6 +337,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
             <textarea
               value={draft.blog ?? ''}
               onChange={e => set('blog', e.target.value || undefined)}
+              onBlur={() => draft.blog && set('blog', normalizeBlogSpacing(draft.blog))}
               rows={8}
               placeholder="Paste or write full blog content here…"
               className={inputClass + ' resize-y'}

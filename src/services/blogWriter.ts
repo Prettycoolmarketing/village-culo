@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { normalizeBlogSpacing } from '../utils/blogFormatting'
 
 export interface GeneratedBlog {
   status: 'ready' | 'insufficient_source'
@@ -57,7 +58,8 @@ export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Prom
   if (error) return { error: error.message }
   if (data?.error) return { error: data.error }
   if (!data?.blog) return { error: 'AI returned nothing usable' }
-  return { blog: data.blog }
+  const blog = data.blog.blog ? { ...data.blog, blog: normalizeBlogSpacing(data.blog.blog) } : data.blog
+  return { blog }
 }
 
 export interface GeneratedBio {
