@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder, getFounder } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
@@ -732,7 +733,11 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 
 export function DashboardProfilePage() {
   const { user } = useAuth()
-  const canUseVoiceRewrite = VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
+  // "Rewrite with AI" for a whole blog is real per-call spend, so it's a
+  // CAPO-staff tool now — founders dictate (free) or use the auto-drafted
+  // Bio instead. (The old email allowlist still opens it for named testers.)
+  const canUseVoiceRewrite = hasAnyCapoAccess(user?.role)
+    || VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const [bioGenerating, setBioGenerating] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -863,7 +868,7 @@ export function DashboardProfilePage() {
   // Bio field). Runs once per founder.
   const [bioAutoDrafted, setBioAutoDrafted] = useState(false)
   useEffect(() => {
-    if (!draft || !canUseVoiceRewrite) return
+    if (!draft) return
     const live = getFounder(draft.id)
     const brief = live?.voiceBrief?.trim()
     if (!brief || draft.bio.trim().length > 0) return
@@ -886,7 +891,7 @@ export function DashboardProfilePage() {
       .finally(() => { if (!cancelled) setBioGenerating(false) })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft?.id, canUseVoiceRewrite])
+  }, [draft?.id])
 
   if (!draft) {
     return (
@@ -2109,6 +2114,7 @@ export function DashboardProfilePage() {
                   <StoryEditor
                     key={editingStory.id}
                     story={editingStory}
+                    canRewrite={canUseVoiceRewrite}
                     onSave={() => setImportedTick(t => t + 1)}
                     onDelete={() => { setEditingStoryId(null); setImportedTick(t => t + 1) }}
                     onClose={() => setEditingStoryId(null)}

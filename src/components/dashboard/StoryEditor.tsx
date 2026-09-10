@@ -59,7 +59,8 @@ declare global {
   }
 }
 
-export function StoryEditor({ story, onSave, onDelete, onClose }: {
+export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = false }: {
+  canRewrite?: boolean
   story: Story
   onSave: (s: Story) => void
   onDelete: (s: Story) => void
@@ -309,14 +310,16 @@ export function StoryEditor({ story, onSave, onDelete, onClose }: {
                   <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
                 </svg>
               </button>
-              <button
-                type="button"
-                onClick={() => void handleRewriteBlog()}
-                disabled={rewriting}
-                className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FBF1EB] text-[#C86A43] hover:bg-[#C86A43]/10 disabled:opacity-50 transition-colors"
-              >
-                {rewriting ? 'Rewriting…' : '✨ Rewrite with AI'}
-              </button>
+              {canRewrite && (
+                <button
+                  type="button"
+                  onClick={() => void handleRewriteBlog()}
+                  disabled={rewriting}
+                  className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FBF1EB] text-[#C86A43] hover:bg-[#C86A43]/10 disabled:opacity-50 transition-colors"
+                >
+                  {rewriting ? 'Rewriting…' : '✨ Rewrite with AI'}
+                </button>
+              )}
               {blogBeforeRewrite !== null && (
                 <button
                   type="button"

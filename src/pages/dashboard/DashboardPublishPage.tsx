@@ -336,12 +336,18 @@ function FormatStep({ draft, onChange, onNext }: {
 
       {/* Bring in your Culo Creatives designs from Canva right here — same
           browser and flow as Import Content, just at the top of Publish. */}
-      <div className="mb-8">
+      <div className="mb-3">
         <CanvaImportCard
           founderId={draft.founderId}
           onImported={item => onChange(importedContentPatch(item, draft))}
         />
       </div>
+      <a
+        href="https://www.culovillage.com/join"
+        className="block w-full text-center px-4 py-3 mb-8 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
+      >
+        Edit with CULO
+      </a>
 
       <div>
         <p className="text-sm font-semibold text-[#2D2A26] mb-1">Choose a format</p>
@@ -478,13 +484,6 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
               >
                 + Add another reel
               </button>
-              <MediaUpload
-                onChange={v => onChange({ additionalReelUrls: [...draft.additionalReelUrls.filter(Boolean), v] })}
-                accept="video"
-                label="Upload a video to add as another reel"
-                aspect="auto"
-                uploadOptions={{ ...uploadOpts, usageType: 'reel-preview' }}
-              />
               <p className="text-[11px] text-[#9CA3AF]">One reel is fine to publish with — add as many more as you like.</p>
             </div>
           </div>
