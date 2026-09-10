@@ -1263,6 +1263,21 @@ export function DashboardProfilePage() {
               </Link>
             </div>
 
+            {/* Culo Creatives — same dark banner as the top of Content. */}
+            <Link
+              to="/dashboard/creatives"
+              className="block bg-[#2D2A26] rounded-2xl px-8 py-8 hover:bg-[#1a1815] transition-colors"
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+                <p className="font-heading text-2xl font-semibold text-white leading-snug">
+                  CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
+                </p>
+                <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+                  Create with CULO in Canva
+                </span>
+              </div>
+            </Link>
+
           </div>
         )}
 

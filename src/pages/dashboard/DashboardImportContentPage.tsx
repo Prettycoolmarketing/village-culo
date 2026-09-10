@@ -357,7 +357,11 @@ function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: {
         <SourceIcon platform="website" size="lg" />
         <p className="text-base font-semibold text-[#2D2A26]">Connect your blogs</p>
       </div>
-      <p className="text-sm text-[#9CA3AF] mb-4">Paste your website or blog link and CULO will find your feed and bring your existing posts into the Village.</p>
+      <p className="text-sm text-[#9CA3AF] mb-4">
+        Paste your website or blog link and CULO will find your feed and bring your existing posts into
+        the Village. Perfect if you've ever been featured in another company's article and want that
+        work traced back to you.
+      </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
@@ -1493,7 +1497,6 @@ export function DashboardImportContentPage() {
   // in a "go review it" prompt instead of also duplicating the full list of
   // everything ever imported here (that list lives in Profile → Content now).
   const [justImportedCount, setJustImportedCount] = useState<number | null>(null)
-  const canvaCardRef = useRef<HTMLDivElement>(null)
   const [instagramExpanded, setInstagramExpanded] = useState(false)
   const instagramCardRef = useRef<HTMLDivElement>(null)
 
@@ -1720,18 +1723,6 @@ export function DashboardImportContentPage() {
                 sources={sources.filter(s => s.sourceType === 'website-rss')}
                 onConnected={() => { loadSources(); reportImported(1) }}
               />
-            </div>
-
-            <div ref={canvaCardRef} className="lg:col-start-2 lg:row-start-3">
-              {/* Canva design import moved into Publish (above "Choose a
-                  format") — one place for it now. */}
-              <Link
-                to="/dashboard/publish"
-                className="block rounded-2xl border border-[#E8E4DD] bg-white px-5 py-4 hover:border-[#C86A43]/40 transition-colors"
-              >
-                <p className="text-sm font-semibold text-[#2D2A26]">Culo Creatives designs in Canva</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Bring your Canva designs in from the Publish page →</p>
-              </Link>
             </div>
           </div>
 

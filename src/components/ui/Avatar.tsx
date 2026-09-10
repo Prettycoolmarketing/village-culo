@@ -15,13 +15,6 @@ const sizeClasses = {
 }
 
 export function Avatar({ src, alt, size = 'md', className = '' }: AvatarProps) {
-  const initials = alt
-    .split(' ')
-    .slice(0, 2)
-    .map(word => word[0])
-    .join('')
-    .toUpperCase()
-
   return (
     <div
       className={`
@@ -41,7 +34,15 @@ export function Avatar({ src, alt, size = 'md', className = '' }: AvatarProps) {
           loading="lazy"
         />
       ) : (
-        <span className="font-heading select-none">{initials}</span>
+        // No photo yet — the Culo mark stands in, so a fresh/curated
+        // founder profile reads as "in the Village" rather than a bare
+        // initials circle.
+        <img
+          src="/culo_fav.png"
+          alt={alt}
+          className="w-3/5 h-3/5 object-contain opacity-80"
+          loading="lazy"
+        />
       )}
     </div>
   )
