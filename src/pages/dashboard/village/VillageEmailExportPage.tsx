@@ -298,7 +298,6 @@ function CampaignsPanel() {
   const [sendError, setSendError] = useState<string | null>(null)
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [stats, setStats] = useState<Record<string, CampaignSendStats>>({})
-  const subscriberCount = emailSubscribersService.getAll().length
 
   useEffect(() => {
     void emailCampaignsService.refresh().then(() => setCampaigns(emailCampaignsService.getAll()))
@@ -355,7 +354,7 @@ function CampaignsPanel() {
           className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] resize-y focus:outline-none focus:border-[#C86A43]"
         />
         <div className="flex items-center justify-between mt-3">
-          <p className="text-xs text-[#9CA3AF]">{loading ? '…' : `Will send to ${subscriberCount} subscriber${subscriberCount === 1 ? '' : 's'}.`}</p>
+          <p className="text-xs text-[#9CA3AF]">{loading ? '…' : 'Sends to everyone on every list — subscribers, the waitlist, and all Village + Canva members. Deduplicated.'}</p>
           <button
             onClick={() => void handleSaveDraft()}
             disabled={!subject.trim() || !body.trim()}
@@ -385,7 +384,7 @@ function CampaignsPanel() {
               {c.status === 'draft' && (
                 <button
                   onClick={() => void handleSend(c.id)}
-                  disabled={sendingId === c.id || subscriberCount === 0}
+                  disabled={sendingId === c.id}
                   className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 transition-colors shrink-0"
                 >
                   {sendingId === c.id ? 'Sending…' : 'Send now'}

@@ -66,10 +66,26 @@ serve(async (req) => {
     if (campaignRow.status === 'sent') throw new Error('This campaign has already been sent.')
 
     const campaign = campaignRow.data as { subject: string; bodyHtml: string }
-    const { data: subscriberRows, error: subError } = await admin.from('email_subscribers').select('email')
-    if (subError) throw new Error(subError.message)
 
-    const subscribers = (subscriberRows ?? []).map(r => r.email as string)
+    // "All lists" — every address we hold, across every section of Email
+    // Lists: explicit subscribers, the CULO Creatives waitlist, and every
+    // founder account's signup email (Village + Canva members). Deduped,
+    // lowercased.
+    const [subs, waitlist, founders] = await Promise.all([
+      admin.from('email_subscribers').select('email'),
+      admin.from('canva_waitlist').select('email'),
+      admin.from('founders').select('data'),
+    ])
+    if (subs.error) throw new Error(subs.error.message)
+
+    const emailSet = new Set<string>()
+    for (const r of subs.data ?? []) if (r.email) emailSet.add((r.email as string).trim().toLowerCase())
+    for (const r of waitlist.data ?? []) if (r.email) emailSet.add((r.email as string).trim().toLowerCase())
+    for (const r of founders.data ?? []) {
+      const e = (r.data as { signupEmail?: string })?.signupEmail
+      if (e) emailSet.add(e.trim().toLowerCase())
+    }
+    const subscribers = [...emailSet].filter(e => e.includes('@'))
     let sent = 0
     const failures: string[] = []
 
