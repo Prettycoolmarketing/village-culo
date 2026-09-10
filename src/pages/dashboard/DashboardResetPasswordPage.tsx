@@ -32,6 +32,10 @@ export function DashboardResetPasswordPage() {
     setLoading(false)
     if (err) { setError(err); return }
     setDone(true)
+    // The recovery link already established a session, so they're signed in
+    // now — no reason to send them back to /login to type the password a
+    // third time. Straight to the dashboard.
+    setTimeout(() => navigate('/dashboard/profile?tab=content'), 1200)
   }
 
   return (
@@ -57,15 +61,15 @@ export function DashboardResetPasswordPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-[#2D2A26] mb-2">Password updated</h1>
+              <h1 className="text-xl font-bold text-[#2D2A26] mb-2">You're all set</h1>
               <p className="text-sm text-[#6B7280] mb-6 leading-relaxed">
-                Your password has been changed. Sign in with your new password.
+                Password saved and you're signed in. Taking you to your dashboard…
               </p>
               <button
-                onClick={() => navigate('/dashboard/login')}
+                onClick={() => navigate('/dashboard/profile?tab=content')}
                 className="w-full py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
               >
-                Back to sign in
+                Go to dashboard →
               </button>
             </div>
           ) : (

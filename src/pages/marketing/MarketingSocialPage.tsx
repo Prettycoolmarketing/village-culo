@@ -91,6 +91,12 @@ export function MarketingSocialPage() {
             >
               Or book a call first →
             </a>
+            <a
+              href="#smm"
+              className="block w-full text-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Start your social media package →
+            </a>
           </div>
         }
       />

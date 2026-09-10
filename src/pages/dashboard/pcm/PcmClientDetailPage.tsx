@@ -204,9 +204,43 @@ export function PcmClientDetailPage() {
         <span className="ml-3 text-xs text-[#9CA3AF]">Opens their dashboard's "being built" banner and emails them.</span>
       </section>
 
+      {/* Payment */}
+      <section className="bg-white rounded-2xl border border-[#E8E4DD] p-6">
+        <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">Payment</h2>
+        {(() => {
+          const monthly = client.offer === 'publishing' ? 900
+            : client.offer === 'social' ? 3000
+            : client.offer === 'content' ? 3888
+            : client.offer === 'full' ? 4788
+            : null
+          const start = client.startDate ? new Date(client.startDate) : null
+          let nextDue: Date | null = null
+          if (start) {
+            nextDue = new Date(start)
+            while (nextDue < new Date()) nextDue.setMonth(nextDue.getMonth() + 1)
+          }
+          return (
+            <div className="text-sm text-[#2D2A26] flex flex-col gap-1.5">
+              <p>{monthly ? `$${monthly.toLocaleString()} AUD / month` : 'Custom pricing'} · {PCM_OFFER_LABELS[client.offer]}</p>
+              <p className="text-[#6B7280]">Started {client.startDate || '—'} · 3-month minimum term</p>
+              {nextDue && (
+                <p className="text-[#6B7280]">
+                  Next payment due <span className="font-semibold text-[#2D2A26]">{nextDue.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  <span className="text-[#B8B2A8]"> (estimated from the start date — Stripe is the source of truth)</span>
+                </p>
+              )}
+            </div>
+          )
+        })()}
+      </section>
+
       {/* Notes */}
       <section className="bg-white rounded-2xl border border-[#E8E4DD] p-6">
-        <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">Notes</h2>
+        <h2 className="text-lg font-semibold text-[#2D2A26] mb-1">Notes</h2>
+        <p className="text-xs text-[#9CA3AF] mb-3">
+          Internal team notes — these are <strong>not</strong> sent to the client. Client communication
+          goes by email from {PCM_SUPPORT_EMAIL}.
+        </p>
         <textarea
           className={`${inputClass} min-h-[120px]`}
           value={notes}
