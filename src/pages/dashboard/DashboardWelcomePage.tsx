@@ -30,6 +30,25 @@ const HOW_IT_WORKS_STEPS = [
   },
 ]
 
+const CREATIVES_STEPS = [
+  {
+    title: 'Add your raw footage',
+    desc: 'Drop your B-roll, talking-head clips, voice-overs and photos into the right Media Library section in the Canva app.',
+  },
+  {
+    title: 'CULO shapes it into content',
+    desc: 'The Canva app turns your raw material and messy thoughts into structured blogs, carousels and reels built around the real idea inside each piece.',
+  },
+  {
+    title: 'Edit and brand it in Canva',
+    desc: 'Everything opens in Canva as fully editable designs — your fonts, your colours, your style. Tweak anything before it goes anywhere.',
+  },
+  {
+    title: 'Check it, then publish',
+    desc: "Same as the Village — you're always in control. Review it, make changes, and publish it across your platforms and into your Culo Village library.",
+  },
+]
+
 export function DashboardWelcomePage() {
   const { user } = useAuth()
   const founder = getCurrentFounder(user)
@@ -49,23 +68,27 @@ export function DashboardWelcomePage() {
 
       {/* ── How The Culo Village Works ───────────────────────────────────── */}
       <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
-        <h2 className="text-lg font-semibold text-[#2D2A26] mb-3">How The Culo Village Works</h2>
-        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
-          The Culo Village structures your previously posted content from disconnected channels and accounts
-          across platforms like YouTube, podcasts, Instagram and blogs, and republishes them as individual web
-          articles for AI search-ability and to position you as an authority in your field.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {HOW_IT_WORKS_STEPS.map((s, i) => (
-            <div key={s.title}>
-              <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
-                {i + 1}
+        <Link to="/dashboard/import-content" className="group block">
+          <h2 className="text-lg font-semibold text-[#2D2A26] mb-3 group-hover:text-[#C86A43] transition-colors">
+            How The Culo Village Works <span className="text-[#C86A43] text-sm font-normal">→</span>
+          </h2>
+          <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
+            The Culo Village structures your previously posted content from disconnected channels and accounts
+            across platforms like YouTube, podcasts, Instagram and blogs, and republishes them as individual web
+            articles for AI search-ability and to position you as an authority in your field.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+            {HOW_IT_WORKS_STEPS.map((s, i) => (
+              <div key={s.title}>
+                <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
+                  {i + 1}
+                </div>
+                <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+                <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
               </div>
-              <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
-              <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Link>
         <div className="flex flex-col sm:items-end gap-4 pt-4">
           <Link
             to="/dashboard/import-content"
@@ -73,6 +96,33 @@ export function DashboardWelcomePage() {
           >
             Import your content into The Village
           </Link>
+        </div>
+      </section>
+
+      {/* ── How Culo Creatives Works ─────────────────────────────────────── */}
+      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
+        <Link to="/dashboard/creatives" className="group block">
+          <h2 className="text-lg font-semibold text-[#2D2A26] mb-3 group-hover:text-[#C86A43] transition-colors">
+            How Culo Creatives Works <span className="text-[#C86A43] text-sm font-normal">→</span>
+          </h2>
+          <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
+            Culo Creatives is the Canva app that turns your raw footage and messy thoughts into finished
+            blogs, carousels and reels — exclusively in Canva, in your own brand. Once it's made, you check
+            it and publish it the same way you publish anything in the Village.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+            {CREATIVES_STEPS.map((s, i) => (
+              <div key={s.title}>
+                <div className="w-11 h-11 rounded-full bg-[#EBF2F8] text-[#3E6E92] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
+                  {i + 5}
+                </div>
+                <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+                <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </Link>
+        <div className="flex flex-col sm:items-end gap-4 pt-4">
           {canUseCreatives ? (
             <a
               href={CULO_CANVA_URL}
@@ -83,11 +133,6 @@ export function DashboardWelcomePage() {
               Create with Culo Creatives in Canva
             </a>
           ) : (
-            // Not subscribed yet — send them to the Culo Creatives page's
-            // lock-in flow (submit feedback to keep the $19/mo founding
-            // rate, billing set up but not charged until 1 Jan 2027) rather
-            // than straight to the $25/mo Stripe checkout, which skips the
-            // founding rate entirely.
             <Link
               to="/dashboard/creatives"
               className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"

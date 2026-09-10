@@ -66,7 +66,7 @@ export function JoinConfirmPage() {
     }
 
     setSubmitting(false)
-    navigate('/join/offer', { replace: true })
+    navigate('/dashboard/welcome', { replace: true })
   }
 
   if (!ready) {

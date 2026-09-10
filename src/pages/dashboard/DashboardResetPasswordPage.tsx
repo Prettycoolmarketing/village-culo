@@ -34,8 +34,8 @@ export function DashboardResetPasswordPage() {
     setDone(true)
     // The recovery link already established a session, so they're signed in
     // now — no reason to send them back to /login to type the password a
-    // third time. Straight to the dashboard.
-    setTimeout(() => navigate('/dashboard/profile?tab=content'), 1200)
+    // third time. Straight to the Welcome dashboard.
+    setTimeout(() => navigate('/dashboard/welcome'), 1200)
   }
 
   return (
@@ -66,7 +66,7 @@ export function DashboardResetPasswordPage() {
                 Password saved and you're signed in. Taking you to your dashboard…
               </p>
               <button
-                onClick={() => navigate('/dashboard/profile?tab=content')}
+                onClick={() => navigate('/dashboard/welcome')}
                 className="w-full py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
               >
                 Go to dashboard →
