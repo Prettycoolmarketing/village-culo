@@ -856,6 +856,38 @@ export function DashboardProfilePage() {
     return () => clearTimeout(t)
   }, [draft])
 
+  // Once the founder has added their MD file / Voice & Brand Brief, fill the
+  // Bio from it automatically the first time — so by the time they import,
+  // publish and land on their profile it's already written. They review and
+  // edit from there (see the "CULO drafted from your MD file" note under the
+  // Bio field). Runs once per founder.
+  const [bioAutoDrafted, setBioAutoDrafted] = useState(false)
+  useEffect(() => {
+    if (!draft || !canUseVoiceRewrite) return
+    const live = getFounder(draft.id)
+    const brief = live?.voiceBrief?.trim()
+    if (!brief || draft.bio.trim().length > 0) return
+    const flagKey = `culo_v1_bio_autodraft_${draft.id}`
+    try { if (localStorage.getItem(flagKey) === '1') return } catch { /* ignore */ }
+
+    let cancelled = false
+    setBioGenerating(true)
+    void generateBioFromVoiceBrief({ voiceBrief: brief, founderName: draft.name, insightBrief: live?.insightBrief, existingBio: '' })
+      .then(({ bio }) => {
+        try { localStorage.setItem(flagKey, '1') } catch { /* ignore */ }
+        if (cancelled || !bio || bio.status === 'insufficient_source' || !bio.bio) return
+        setDraft(prev => prev ? {
+          ...prev,
+          bio: bio.bio!,
+          seoTitle: prev.seoTitle || bio.seoTitle || prev.seoTitle,
+        } : prev)
+        setBioAutoDrafted(true)
+      })
+      .finally(() => { if (!cancelled) setBioGenerating(false) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.id, canUseVoiceRewrite])
+
   if (!draft) {
     return (
       <div className="p-8">
@@ -950,7 +982,10 @@ export function DashboardProfilePage() {
               {bioGenerating ? 'Writing from your Voice Brief…' : 'Fill in from Voice Brief'}
             </button>
           )}
-          <textarea id="bio" value={draft.bio} onChange={e => set('bio', e.target.value)} rows={6} className={inputClass + ' resize-y'} />
+          {bioAutoDrafted && (
+            <p className="text-xs text-[#C86A43] font-medium mb-1.5">CULO drafted this from your MD file — review please.</p>
+          )}
+          <textarea id="bio" value={draft.bio} onChange={e => { set('bio', e.target.value); setBioAutoDrafted(false) }} rows={6} className={inputClass + ' resize-y'} />
           <p className="text-xs text-right text-[#9CA3AF] mt-1">{draft.bio.length} chars</p>
         </Field>
 
