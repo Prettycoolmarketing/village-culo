@@ -52,6 +52,12 @@ export interface PcmClient {
   notes: string
   activity: PcmActivityEntry[]
   createdAt: string
+  // The Village founder PCM is fulfilling for. Once linked and marked
+  // managed, that founder's self-serve publishing limits/meters are turned
+  // off (founder.pcmManaged) and their monthly publish volume shows here
+  // as a service deliverable instead.
+  founderId?: string
+  monthlyTarget?: number       // blogs/posts to publish per month (default 30)
 }
 
 export const PCM_OFFER_LABELS: Record<PcmOfferId, string> = {
