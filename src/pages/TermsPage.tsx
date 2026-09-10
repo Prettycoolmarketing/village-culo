@@ -14,7 +14,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'services', label: 'Pretty Cool Marketing' },
 ]
 
-const LAST_UPDATED = '10 September 2026'
+const LAST_UPDATED = '11 September 2026'
 
 function Clause({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
   return (
@@ -165,7 +165,14 @@ export function TermsPage() {
                   term they continue month to month until cancelled with notice.</p>
                 <p>The <strong className="text-charcoal">Archive Transfer</strong> is a one-off setup fee for PCM
                   to bring your existing body of work into the Culo Village. It is separate from any monthly
-                  service and is quoted from the size of your archive.</p>
+                  service and is quoted from the size of your archive at the time you start. It covers the
+                  <strong className="text-charcoal"> initial import of that archive only</strong> — content you
+                  create or accumulate after the transfer is handled by your monthly service, not a further
+                  transfer fee. If your archive size moves you into a higher pricing band before work begins,
+                  the quote is adjusted to the correct band before payment.</p>
+                <p>Where an archive is very large, PCM may offer a <strong className="text-charcoal">partial
+                  transfer</strong> (for example, your most search-ready 5,000 pieces) at a fixed price, with
+                  the remainder able to be transferred later at the then-current rate.</p>
               </Clause>
 
               <Clause n="2" title="What each service covers">
