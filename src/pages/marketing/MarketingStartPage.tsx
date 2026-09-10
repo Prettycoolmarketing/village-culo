@@ -1,21 +1,30 @@
+import { useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
 import { PCM_SUPPORT_EMAIL, PCM_OFFERS, type PcmOffer } from '../../config/pcmPaymentLinks'
+import { VOICE_BRIEF_INTERVIEW_PROMPT } from '../../services/blogWriter'
 
 const CHECKLIST = [
-  'Your MD (.md) files exported from AI — anything you have generated about your business, your story, your expertise or your content.',
   'Your OneDrive links to previously posted content, raw footage and documents.',
   'Your Google Drive links to the same.',
   'Links to your existing content: YouTube channel, podcast, website and Instagram.',
   'Your website URL and the social accounts you want your published work linked from.',
-  'A short note on how you want to be positioned — business, speaker, authority, whatever your dream is.',
+  'A short note on how you want to be positioned, whether that is business, speaker or authority in your field.',
 ]
 
 export function MarketingStartPage() {
   const [params] = useSearchParams()
   const offerId = params.get('offer') as PcmOffer['id'] | null
   const offer = offerId && PCM_OFFERS[offerId] ? PCM_OFFERS[offerId] : null
+  const [copied, setCopied] = useState(false)
+  const [showPrompt, setShowPrompt] = useState(false)
+
+  function copyPrompt() {
+    void navigator.clipboard.writeText(VOICE_BRIEF_INTERVIEW_PROMPT)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   usePageMeta({
     title: 'You’re in — send us your material | Pretty Cool Marketing',
@@ -59,6 +68,38 @@ export function MarketingStartPage() {
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight">
             Email us your information
           </h2>
+
+          <div className="bg-charcoal rounded-2xl p-8 mb-10">
+            <p className="font-heading text-xl font-bold text-white mb-2">Your brand story file (the important one)</p>
+            <p className="font-body text-white/70 leading-relaxed mb-4">
+              This is a document about your business, your story, your expertise and your voice. It is
+              what lets us write your articles so they sound like you, not generic AI. If you have ever
+              generated something like this with ChatGPT, Claude or another AI, send us the file. If
+              not, copy the prompt below into any AI you use, answer what it asks, and send us the
+              result as a .md or .txt file.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={copyPrompt}
+                className="px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+              >
+                {copied ? 'Copied ✓' : 'Copy the prompt'}
+              </button>
+              <button
+                onClick={() => setShowPrompt(s => !s)}
+                className="px-5 py-2.5 border border-white/25 text-white text-sm font-semibold rounded-xl hover:border-white transition-colors"
+              >
+                {showPrompt ? 'Hide it' : 'Read it first'}
+              </button>
+            </div>
+            {showPrompt && (
+              <pre className="mt-4 max-h-80 overflow-y-auto whitespace-pre-wrap text-xs text-white/60 bg-black/20 rounded-lg p-4 font-mono">
+                {VOICE_BRIEF_INTERVIEW_PROMPT}
+              </pre>
+            )}
+          </div>
+
+          <p className="font-body text-sm font-semibold text-charcoal uppercase tracking-widest mb-3">And these links</p>
           <ul className="space-y-4 mb-10">
             {CHECKLIST.map(item => (
               <li key={item} className="flex gap-3 font-body text-lg text-muted leading-relaxed">

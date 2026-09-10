@@ -11,8 +11,6 @@ type Dest = { label: string; source: string; to: string }
 const PUBLISHING: Dest = { label: 'Publishing Service', source: 'marketing-publishing', to: '/marketing/publishing' }
 const SOCIAL: Dest = { label: 'Social Media Partnership', source: 'marketing-social', to: '/marketing/social' }
 
-const WHO_LIST = ['Your ideas.', 'Your experience.', 'Your business.', 'Your authority.']
-
 const PUBLISHING_BODY = [
   'We go through the content you have already published across YouTube, podcasts, Instagram and your website and turn each piece into a structured Village article.',
   'Each article is built around the real idea, story or lesson inside the original content and connected back to your founder profile.',
@@ -32,9 +30,9 @@ export function MarketingLandingPage() {
   const [dest, setDest] = useState<Dest | null>(null)
 
   usePageMeta({
-    title: 'Done for you inside the Village — Pretty Cool Marketing',
+    title: 'Done for you digital marketing — Pretty Cool Marketing',
     description:
-      'We take the videos, podcasts, blogs, website pages and Instagram posts you already have, turn them into structured founder content, and publish them into CULO Village so your work is easier to find through search and AI. Or we run your social content end to end.',
+      'You have been posting for years but it is not bringing leads. Pretty Cool Marketing turns your existing content into structured founder articles in CULO Village, and runs your social content end to end. A full content agency, Australia wide.',
     keywords: [
       'Pretty Cool Marketing', 'done for you services', 'founder content', 'content republishing',
       'CULO Village', 'AI search', 'social media partnership', 'founder library',
@@ -51,16 +49,22 @@ export function MarketingLandingPage() {
     <main className="min-h-screen bg-surface">
       <MarketingHero
         kicker="Pretty Cool Marketing"
-        title="Done for you inside the Village"
+        title="Done for you digital marketing"
         description={
           <>
-            <p className="mb-4">You have probably already created the content.</p>
+            <p className="mb-4">
+              You have been posting content on social media for years, but it hasn't been working to
+              bring you leads?
+            </p>
             <p className="mb-4">
               We take the videos, podcasts, blogs, website pages and Instagram posts you already have,
               turn them into structured founder content, and publish them into CULO Village so your
               work is easier to find through search and AI.
             </p>
-            <p>Or, if you want the whole thing handled, we run your social content end to end.</p>
+            <p>
+              We are a full content agency operating Australia wide, with content creators who can
+              shoot, edit and distribute your content on all platforms.
+            </p>
           </>
         }
         right={
@@ -88,28 +92,9 @@ export function MarketingLandingPage() {
           <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             Who this is for
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-6 leading-tight">
-            Founders who have already said the valuable things
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
+            Founders who have value to add and customers to help
           </h2>
-          <p className="font-body text-lg text-muted leading-relaxed mb-4">
-            Your best thinking is often buried in old podcast episodes, captions, talking head videos,
-            interviews and website pages.
-          </p>
-          <p className="font-body text-lg text-muted leading-relaxed mb-8">
-            Pretty Cool Marketing pulls that work back out, gives it structure and republishes it
-            inside CULO Village so it starts building a clear body of work around you.
-          </p>
-          <ul className="space-y-2">
-            {WHO_LIST.map(item => (
-              <li key={item} className="flex gap-3 font-body text-lg text-charcoal leading-relaxed">
-                <span className="text-primary font-bold shrink-0">—</span>
-                {item}
-              </li>
-            ))}
-          </ul>
-          <p className="font-body text-lg text-charcoal leading-relaxed mt-6 font-semibold">
-            All connected in one place.
-          </p>
         </InnerContainer>
       </section>
 
