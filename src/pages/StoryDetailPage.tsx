@@ -508,6 +508,25 @@ export function StoryDetailPage() {
                 </time>
               </div>
 
+              {/* Discovery CTAs — connect with the founder, or get your own
+                  work published here. */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                {founder && (
+                  <Link
+                    to={`/founders/${founder.slug}`}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border bg-surface text-sm font-semibold text-charcoal hover:border-primary hover:text-primary transition-colors"
+                  >
+                    Connect with {founder.name.split(' ')[0]} →
+                  </Link>
+                )}
+                <Link
+                  to="/marketing/publishing"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-[#b05a35] transition-colors"
+                >
+                  Feature in The Culo Village →
+                </Link>
+              </div>
+
               {/* Topic badges */}
               <div className="flex flex-wrap gap-2 mb-6" aria-label="Topics">
                 {story.topics.map(t => (
