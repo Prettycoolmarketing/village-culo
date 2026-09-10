@@ -7,6 +7,8 @@ import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '
 import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './DashboardImportContentPage'
 import { getUnlockedImportedIds } from '../../utils/archiveUnlock'
 import { getArchiveTier } from '../../config/archiveUnlock'
+import { PublishLimitModal } from '../../components/dashboard/PublishLimitModal'
+import { PublicationMeter } from '../../components/dashboard/PublicationMeter'
 import { SeriesDetail } from './DashboardSeriesPage'
 import { getSeriesList, getSeriesEpisodes, createSeries, saveSeries } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
@@ -781,6 +783,7 @@ export function DashboardProfilePage() {
   )
   const [readyChecked, setReadyChecked] = useState<Set<string>>(new Set())
   const [readyBulkPublishing, setReadyBulkPublishing] = useState(false)
+  const [limitModal, setLimitModal] = useState<null | 'imported' | 'self'>(null)
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
   const [editingImportedId, setEditingImportedId] = useState<string | null>(null)
   const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
@@ -1067,6 +1070,17 @@ export function DashboardProfilePage() {
 
   return (
     <div className="flex flex-col h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      {limitModal && currentFounder && (
+        <PublishLimitModal
+          open
+          onClose={() => setLimitModal(null)}
+          kind={limitModal}
+          founder={currentFounder}
+          founderEmail={user?.email}
+          archiveDetectedCount={importedContentService.getAll({ founderId: currentFounder.id }).length}
+        />
+      )}
 
       {welcomeBack && (
         <div className="mx-8 mt-6 px-4 py-3 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 text-[#5E6B4A] text-sm rounded-lg">
@@ -1421,8 +1435,9 @@ export function DashboardProfilePage() {
                 for (const item of publishable) {
                   const story = buildStoryFromImport(item, draft)
                   const result = await publishStoryCore(story)
-                  if (result.success) await importedContentService.updateStatus(item.id, 'published')
-                  else setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                  if (result.success) { await importedContentService.updateStatus(item.id, 'published'); continue }
+                  if (result.limitKind) { setLimitModal(result.limitKind); break }
+                  setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
                 }
                 setReadyChecked(new Set())
                 setReadyBulkPublishing(false)
@@ -1442,6 +1457,7 @@ export function DashboardProfilePage() {
                 <div>
                   {contentSubTab === 'ready' && readyItems.length > 0 && (
                     <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                      <PublicationMeter founder={currentFounder} kind="imported" className="w-full sm:w-auto order-last sm:order-none" />
                       <label className="flex items-center gap-2.5 text-base font-semibold text-[#2D2A26] cursor-pointer">
                         <input
                           type="checkbox"
@@ -1616,7 +1632,8 @@ export function DashboardProfilePage() {
                     story.status = status
                     const result = await publishStoryCore(story)
                     if (!result.success) {
-                      setSaveError(result.error ?? 'Could not publish. Please try again.')
+                      if (result.limitKind) setLimitModal(result.limitKind)
+                      else setSaveError(result.error ?? 'Could not publish. Please try again.')
                     } else {
                       // Only now is there a real, live Story behind this
                       // status — flipping the badge before this succeeded
@@ -1660,8 +1677,9 @@ export function DashboardProfilePage() {
                   // it — otherwise the row keeps saying Draft here forever
                   // even though a story went live, because nothing else ever
                   // wrote the status back onto the import record.
-                  if (result.success) await importedContentService.updateStatus(item.id, 'published')
-                  else setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                  if (result.success) { await importedContentService.updateStatus(item.id, 'published'); continue }
+                  if (result.limitKind) { setLimitModal(result.limitKind); break }
+                  setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
                 }
                 setImportedChecked(new Set())
                 setImportedBulkPublishing(false)
