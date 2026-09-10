@@ -108,7 +108,7 @@ export function MarketingPublishingPage() {
       {quoteOpen && <PublishingQuoteModal onClose={() => setQuoteOpen(false)} />}
       <MarketingHero
         kicker="Pretty Cool Marketing"
-        title="The valuable stuff is already in your archive. We publish it properly."
+        title="Publish your body of work for AI discovery"
         description={
           <>
             <p className="mb-4">

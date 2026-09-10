@@ -846,17 +846,33 @@ export function FounderProfilePage() {
                 </section>
               )}
 
-              {/* Imported content */}
+              {/* Imported content — only the first few show by default; the
+                  rest stay rendered in the DOM (just visually collapsed via
+                  a native <details>) so search and AI crawlers still see the
+                  whole list. */}
               {publicImports.length > 0 && (
                 <section aria-labelledby="founder-imports-heading">
                   <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-3">
                     From Around the Web
                   </h2>
                   <div className="flex flex-col gap-3">
-                    {publicImports.map(item => (
+                    {publicImports.slice(0, 5).map(item => (
                       <ImportedContentCard key={item.id} content={item} compact />
                     ))}
                   </div>
+                  {publicImports.length > 5 && (
+                    <details className="group mt-3">
+                      <summary className="cursor-pointer list-none text-sm font-semibold text-primary hover:underline">
+                        <span className="group-open:hidden">View all {publicImports.length} →</span>
+                        <span className="hidden group-open:inline">Show fewer</span>
+                      </summary>
+                      <div className="flex flex-col gap-3 mt-3">
+                        {publicImports.slice(5).map(item => (
+                          <ImportedContentCard key={item.id} content={item} compact />
+                        ))}
+                      </div>
+                    </details>
+                  )}
                 </section>
               )}
 

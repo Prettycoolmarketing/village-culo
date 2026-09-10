@@ -298,6 +298,8 @@ export function DashboardLayout() {
                 </>
               )}
 
+              {canAccessCapoSection(user?.role, 'overview') && <SectionLabel label="ADMIN" large />}
+
               {(canAccessCapoSection(user?.role, 'usage') || canAccessCapoSection(user?.role, 'creativeFeedback')) && (
                 <>
                   <SectionLabel label="CULO Creatives" />

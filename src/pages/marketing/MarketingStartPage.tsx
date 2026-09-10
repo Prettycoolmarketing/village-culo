@@ -71,12 +71,16 @@ export function MarketingStartPage() {
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 bg-gradient-to-br from-[#7CA9CC] to-[#4A7A9E]">
-        <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-white/80 uppercase tracking-widest mb-3">
+      <section className="relative overflow-hidden py-16 md:py-20 bg-surface">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }} />
+          <div className="absolute -bottom-24 -right-24 w-[400px] h-[400px] rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }} />
+        </div>
+        <InnerContainer className="max-w-3xl relative">
+          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
             What to send
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-8 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight">
             Email us your information
           </h2>
 
@@ -110,11 +114,11 @@ export function MarketingStartPage() {
             )}
           </div>
 
-          <p className="font-body text-sm font-semibold text-white uppercase tracking-widest mb-3">And these links</p>
+          <p className="font-body text-sm font-semibold text-charcoal uppercase tracking-widest mb-3">And these links</p>
           <ul className="space-y-4 mb-10">
             {CHECKLIST.map(item => (
-              <li key={item} className="flex gap-3 font-body text-lg text-white/90 leading-relaxed">
-                <span className="text-white font-bold shrink-0">—</span>
+              <li key={item} className="flex gap-3 font-body text-lg text-muted leading-relaxed">
+                <span className="text-charcoal font-bold shrink-0">—</span>
                 {item}
               </li>
             ))}
@@ -148,7 +152,7 @@ export function MarketingStartPage() {
             />
           </div>
 
-          <p className="mt-10 font-body text-white/90 leading-relaxed">
+          <p className="mt-10 font-body text-muted leading-relaxed">
             Once we have your material:{' '}
             {offer?.id === 'publishing' ? (
               <>we restructure and republish each piece, then send you your founder profile link and every article.</>
@@ -160,7 +164,7 @@ export function MarketingStartPage() {
           </p>
 
           <p className="mt-8 font-body text-sm">
-            <Link to="/marketing" className="text-white underline hover:no-underline">← Back to Pretty Cool Marketing</Link>
+            <Link to="/marketing" className="text-charcoal hover:underline">← Back to Pretty Cool Marketing</Link>
           </p>
         </InnerContainer>
       </section>

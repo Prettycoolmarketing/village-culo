@@ -58,7 +58,7 @@ export function MarketingSocialPage() {
     <main className="min-h-screen bg-surface">
       <MarketingHero
         kicker="Pretty Cool Marketing"
-        title="Social media without running a content department"
+        title="Your social media, captured, made and posted for you"
         description={
           <>
             <p className="mb-4">You have got a business to run.</p>
