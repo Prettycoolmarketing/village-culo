@@ -69,9 +69,9 @@ export function MarketingStartPage() {
             Email us your information
           </h2>
 
-          <div className="bg-charcoal rounded-2xl p-8 mb-10">
+          <div className="bg-[#3E6E92] rounded-2xl p-8 mb-10">
             <p className="font-heading text-xl font-bold text-white mb-2">Your brand story file (the important one)</p>
-            <p className="font-body text-white/70 leading-relaxed mb-4">
+            <p className="font-body text-white/80 leading-relaxed mb-4">
               This is a document about your business, your story, your expertise and your voice. It is
               what lets us write your articles so they sound like you, not generic AI. If you have ever
               generated something like this with ChatGPT, Claude or another AI, send us the file. If
@@ -109,16 +109,16 @@ export function MarketingStartPage() {
             ))}
           </ul>
 
-          <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-10 shadow-card">
-            <p className="font-body text-sm text-muted mb-1">Send to</p>
-            <p className="font-heading text-xl font-bold text-charcoal mb-5">{PCM_SUPPORT_EMAIL}</p>
+          <div className="bg-charcoal rounded-2xl p-10 shadow-card">
+            <p className="font-body text-sm text-white/60 mb-1">Send to</p>
+            <p className="font-heading text-xl font-bold text-white mb-5">{PCM_SUPPORT_EMAIL}</p>
             <a
               href={mailto}
               className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
             >
               Open a pre-filled email →
             </a>
-            <p className="mt-3 font-body text-xs text-muted">
+            <p className="mt-3 font-body text-xs text-white/60">
               Opens your mail app with the checklist ready to fill in. Attach your MD files before
               sending.
             </p>

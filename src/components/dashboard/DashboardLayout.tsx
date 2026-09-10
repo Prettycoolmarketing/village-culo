@@ -274,14 +274,10 @@ export function DashboardLayout() {
                   all sub-tabs of one Opportunities hub now (matching the
                   Email Lists pattern) instead of six separate nav items. */}
               <SectionLabel label="CAPO" large />
-              <NavItem to="/dashboard/village/opportunities" label="Opportunities" icon={<Icon path={icons.partnership} />} hint="Matches, revenue, claims, spotlight, sources and partners" />
-
-              <SectionLabel label="Village Staff" />
-              <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
 
               {/* Analytics is no longer its own nav item — it's the default
-                  tab on Village Overview above now (still gated to
-                  admin/owner within that page, same bar as before). */}
+                  tab on Village Overview (now under "Coming soon" at the
+                  bottom), still gated to admin/owner within that page. */}
               {(canAccessCapoSection(user?.role, 'founders')
                 || canAccessCapoSection(user?.role, 'emails')) && (
                 <>
@@ -310,11 +306,17 @@ export function DashboardLayout() {
                 </>
               )}
 
-              {/* Bulk Import lives as a tab on the Founders page now —
-                  importing founders is a founders operation, not a system
-                  one. Staff (who has CAPO access) moved here too — managing
-                  team/roles is a system-administration concern, not a
-                  People one. */}
+              {canAccessCapoSection(user?.role, 'pcm') && (
+                <>
+                  <SectionLabel label="Pretty Cool Marketing" />
+                  <NavItem to="/dashboard/pcm" label="Client Tracker" icon={<Icon path={icons.services} />} />
+                  <NavItem to="/dashboard/pcm/leads" label="Leads" icon={<Icon path={icons.email} />} />
+                </>
+              )}
+
+              {/* System sits right after PCM's Leads now. Bulk Import lives
+                  as a tab on the Founders page; Staff (managing team/roles)
+                  is a system-administration concern. */}
               {(canAccessCapoSection(user?.role, 'team') || canAccessCapoSection(user?.role, 'settings')) && (
                 <>
                   <SectionLabel label="System" />
@@ -327,13 +329,11 @@ export function DashboardLayout() {
                 </>
               )}
 
-              {canAccessCapoSection(user?.role, 'pcm') && (
-                <>
-                  <SectionLabel label="Pretty Cool Marketing" />
-                  <NavItem to="/dashboard/pcm" label="Client Tracker" icon={<Icon path={icons.services} />} />
-                  <NavItem to="/dashboard/pcm/leads" label="Leads" icon={<Icon path={icons.email} />} />
-                </>
-              )}
+              {/* Not built out yet — kept in CAPO but parked at the bottom
+                  so they don't sit above the tools that are in daily use. */}
+              <SectionLabel label="Coming soon" />
+              <NavItem to="/dashboard/village/opportunities" label="Opportunities" icon={<Icon path={icons.partnership} />} hint="Matches, revenue, claims, spotlight, sources and partners" />
+              <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
             </>
           )}
         </nav>
