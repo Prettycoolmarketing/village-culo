@@ -135,10 +135,9 @@ function FeedbackTab({
 
       {alreadySubmitted ? (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">
-          <p className="text-sm font-semibold text-[#5E6B4A] mb-2">Thanks — you're locked in at $19/month ✓</p>
+          <p className="text-sm font-semibold text-[#5E6B4A] mb-2">Thanks for the feedback ✓</p>
           <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-            Your feedback has been received. Your CULO Creatives rate is locked at $19/month, regardless of
-            what it costs new members later.
+            It's been received — it genuinely helps shape where CULO Creatives goes next.
           </p>
           {!hasBilling && (
             <>
@@ -159,10 +158,8 @@ function FeedbackTab({
       ) : (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">
           <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
-            Submitting this locks your CULO Creatives rate at <strong className="text-[#2D2A26] font-semibold">$19/month</strong>,
-            even as the price goes up for new members later. You'll need to submit it before{' '}
-            <strong className="text-[#2D2A26] font-semibold">January 1, 2027</strong> to keep using CULO
-            Creatives past that date.
+            Tell us what you loved and what you didn't about CULO Creatives. Nothing changes for you either
+            way — it just helps us make it better.
           </p>
           {/* Question stays put in its own column on desktop instead of
               scrolling away above a tall box — full dashboard width, with
@@ -191,7 +188,7 @@ function FeedbackTab({
                 disabled={!answer.trim() || submitting}
                 className="mt-4 px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                {submitting ? 'Submitting…' : 'Submit feedback and lock in $19/month'}
+                {submitting ? 'Submitting…' : 'Submit feedback'}
               </button>
             </div>
           </div>

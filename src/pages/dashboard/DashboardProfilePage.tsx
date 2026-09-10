@@ -1208,24 +1208,9 @@ export function DashboardProfilePage() {
               href={`/founders/${draft.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="block bg-white rounded-xl border border-[#E8E4DD] overflow-hidden hover:border-[#C86A43]/40 transition-colors"
+              className="self-start text-sm font-semibold text-[#C86A43] hover:underline"
             >
-              <div className="px-5 py-4 border-b border-[#F3EDE6] flex items-center justify-between">
-                <p className="text-sm font-semibold text-[#2D2A26]">Explore Your Life's Work</p>
-                <span className="text-xs text-[#C86A43] font-medium">View public profile ↗</span>
-              </div>
-              <div className="px-5 py-4 flex gap-4">
-                <img src={draft.avatar} alt="" className="w-16 h-16 rounded-full object-cover bg-[#F3EDE6] shrink-0" />
-                <div>
-                  <p className="font-semibold text-[#2D2A26]">{draft.name}</p>
-                  {(draft.location.name || draft.industry.name) && (
-                    <p className="text-sm text-[#6B7280] mt-1">
-                      {[draft.location.name, draft.industry.name].filter(Boolean).join(' · ')}
-                    </p>
-                  )}
-                  <p className="text-sm text-[#6B7280] mt-2 line-clamp-2">{draft.bio}</p>
-                </div>
-              </div>
+              View public profile ↗
             </a>
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
@@ -1306,7 +1291,7 @@ export function DashboardProfilePage() {
             {/* Culo Creatives — same dark banner as the top of Content. */}
             <Link
               to="/dashboard/creatives"
-              className="block bg-[#2D2A26] rounded-2xl px-8 py-8 hover:bg-[#1a1815] transition-colors"
+              className="block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
                 <p className="font-heading text-2xl font-semibold text-white leading-snug">
@@ -1340,7 +1325,7 @@ export function DashboardProfilePage() {
           <div className="flex flex-col gap-5">
             <Link
               to="/creatives"
-              className="block bg-[#2D2A26] rounded-2xl px-8 py-8 hover:bg-[#1a1815] transition-colors"
+              className="block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
                 <div>
