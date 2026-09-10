@@ -831,7 +831,7 @@ export function FounderProfilePage() {
               {founderOwnedBusinesses.length > 0 && (
                 <section aria-labelledby="founder-business-heading">
                   <h2 id="founder-business-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-                    {founderOwnedBusinesses.length === 1 ? 'Business' : 'Businesses'}
+                    Connect with {founder.name.split(' ')[0]}
                   </h2>
                   <div className="flex flex-col gap-4">
                     {founderOwnedBusinesses.map(biz => (

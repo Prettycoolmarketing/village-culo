@@ -2,6 +2,40 @@ import { Link } from 'react-router-dom'
 import type { Founder, Business } from '../../types'
 import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
+import { normalizeUrl } from '../../utils/url'
+import { publisherPartnerProfileService } from '../../services/partnership'
+
+// Compact discoverability row — a story page is often the only page an AI
+// crawler or a reader ever lands on for this founder, so it needs a real
+// way out to book a call, visit the website, or follow the founder
+// directly, not just a link back into the Village.
+function ConnectLinks({ founder }: { founder: Founder }) {
+  const bookingUrl = publisherPartnerProfileService.get(founder.id)?.bookingUrl
+  const links = [
+    bookingUrl && { label: 'Book a call', url: bookingUrl },
+    founder.website && { label: 'Website', url: founder.website },
+    founder.instagram && { label: 'Instagram', url: founder.instagram },
+    founder.linkedin && { label: 'LinkedIn', url: founder.linkedin },
+  ].filter((l): l is { label: string; url: string } => !!l)
+
+  if (links.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-4" aria-label={`Connect with ${founder.name}`}>
+      {links.map(link => (
+        <a
+          key={link.label}
+          href={normalizeUrl(link.url)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-2.5 py-1 rounded-lg border border-border text-xs font-medium text-charcoal hover:border-primary hover:text-primary transition-colors"
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
+  )
+}
 
 interface FounderCardProps {
   founder: Founder
@@ -176,6 +210,8 @@ export function FounderCard({ founder, business, variant = 'default', className 
             <Badge key={topic.id} label={topic.name} variant="secondary" />
           ))}
         </div>
+
+        <ConnectLinks founder={founder} />
 
         <Link
           to={founderUrl}
