@@ -32,9 +32,9 @@ const topicOptions = [
     .map(t => ({ value: t.id, label: t.name })),
 ]
 
-// ─── Mercato Page ──────────────────────────────────────────────────────────────
+// ─── Businesses Page ──────────────────────────────────────────────────────────────
 
-export function MercatoPage() {
+export function BusinessesPage() {
   usePageTitle('Businesses')
   const [activeLocation, setActiveLocation] = useState('all')
   const [activeIndustry, setActiveIndustry] = useState('all')
@@ -63,7 +63,7 @@ export function MercatoPage() {
       {/* ── Page hero ───────────────────────────────────────────────────────── */}
       <section
         className="bg-surface border-b border-border pt-24 pb-12"
-        aria-labelledby="mercato-heading"
+        aria-labelledby="businesses-heading"
       >
         <InnerContainer>
           <div className="max-w-2xl">
@@ -71,13 +71,12 @@ export function MercatoPage() {
               CULO Village
             </p>
             <h1
-              id="mercato-heading"
+              id="businesses-heading"
               className="font-heading text-4xl sm:text-5xl font-bold text-charcoal mb-4 leading-tight"
             >
               Businesses
             </h1>
             <p className="font-body text-lg text-muted leading-relaxed">
-              The Village business directory — but businesses here are not just listings.
               Every business is connected to the founder behind it, the stories they've shared, and
               the ideas they've contributed to the Village. Discover businesses
               through their knowledge, not just their category.
@@ -97,7 +96,7 @@ export function MercatoPage() {
               <button
                 onClick={() => setFiltersOpen(o => !o)}
                 aria-expanded={filtersOpen}
-                aria-controls="mercato-filter-panel"
+                aria-controls="businesses-filter-panel"
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   filtersOpen || hasActiveFilter
                     ? 'border-primary text-primary bg-primary/5'
@@ -118,7 +117,7 @@ export function MercatoPage() {
             </div>
 
             {filtersOpen && (
-              <div id="mercato-filter-panel" className="flex flex-col gap-3">
+              <div id="businesses-filter-panel" className="flex flex-col gap-3">
                 <FilterBar options={industryOptions} active={activeIndustry} onChange={setActiveIndustry} label="Filter by industry" />
                 <div className="flex flex-wrap gap-3">
                   <FilterBar options={locationOptions} active={activeLocation} onChange={setActiveLocation} label="Filter by location" />

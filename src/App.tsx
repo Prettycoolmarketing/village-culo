@@ -27,7 +27,7 @@ import { SeriesDetailPage }   from './pages/SeriesDetailPage'
 import { AllSeriesPage }      from './pages/AllSeriesPage'
 import { IdeasPage }          from './pages/IdeasPage'
 import { IdeaDetailPage }     from './pages/IdeaDetailPage'
-import { MercatoPage }        from './pages/MercatoPage'
+import { BusinessesPage }     from './pages/BusinessesPage'
 import { BusinessProfilePage }from './pages/BusinessProfilePage'
 import { MapPage }            from './pages/MapPage'
 import { NoticeboardPage }    from './pages/NoticeboardPage'
@@ -274,7 +274,8 @@ export default function App() {
             <Route path="/series/:slug"       element={<SeriesDetailPage />}     />
             <Route path="/ideas"              element={<IdeasPage />}            />
             <Route path="/ideas/:slug"        element={<IdeaDetailPage />}       />
-            <Route path="/mercato"            element={<MercatoPage />}          />
+            <Route path="/businesses"         element={<BusinessesPage />}       />
+            <Route path="/mercato"            element={<Navigate to="/businesses" replace />} />
             <Route path="/businesses/:slug"   element={<BusinessProfilePage />}  />
             <Route path="/map"                element={<MapPage />}              />
             <Route path="/noticeboard"        element={<NoticeboardPage />}      />

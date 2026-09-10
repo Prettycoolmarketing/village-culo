@@ -162,7 +162,7 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
           {[
             { count: '8', label: 'Stories', href: '/stories' },
             { count: '6', label: 'Founders', href: '/founders' },
-            { count: '5', label: 'Businesses', href: '/mercato' },
+            { count: '5', label: 'Businesses', href: '/businesses' },
             { count: '6', label: 'Ideas', href: '/ideas' },
             { count: '6', label: 'Locations', href: '/map' },
           ].map(stat => (

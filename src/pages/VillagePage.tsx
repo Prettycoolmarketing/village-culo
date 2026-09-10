@@ -195,7 +195,7 @@ export function VillagePage() {
           <BusinessGrid
             heading="Businesses"
             subheading="Discover businesses through the stories and ideas behind them."
-            action={{ label: 'Browse Businesses', href: '/mercato' }}
+            action={{ label: 'Browse Businesses', href: '/businesses' }}
             filter={{ publicOnly: true, featured: true, limit: 4 }}
             fallbackToPublic
             columns={2}

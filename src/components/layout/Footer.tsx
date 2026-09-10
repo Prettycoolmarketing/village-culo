@@ -9,7 +9,7 @@ const sections = [
     links: [
       { to: '/creatives', label: 'Creatives'  },
       { to: '/founders',  label: 'Founders'   },
-      { to: '/mercato',   label: 'Businesses' },
+      { to: '/businesses',   label: 'Businesses' },
       { to: '/stories',   label: 'Stories'    },
     ],
   },

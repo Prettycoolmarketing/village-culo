@@ -181,7 +181,7 @@ export default async function middleware(request) {
 <ul>
 <li><a href="/stories">Stories</a> — founder stories, behind-the-scenes and lessons learned</li>
 <li><a href="/founders">Founders</a> — every founder publishing through the Village</li>
-<li><a href="/mercato">Businesses</a> — the businesses founders have built</li>
+<li><a href="/businesses">Businesses</a> — the businesses founders have built</li>
 <li><a href="/ideas">Ideas</a> — extracted knowledge and insights that span many founders and stories</li>
 <li><a href="/library">Library</a> — courses, guides and resources founders have published</li>
 </ul>

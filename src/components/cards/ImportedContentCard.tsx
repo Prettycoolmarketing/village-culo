@@ -33,7 +33,14 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
     : undefined
 
   return (
-    <article className="bg-surface rounded-2xl border border-border overflow-hidden">
+    <article className={`relative bg-surface rounded-2xl border border-border overflow-hidden ${articleLink ? 'hover:border-primary/50 transition-colors' : ''}`}>
+
+      {/* Whole-card link to the article — a stretched overlay so a click
+          anywhere on the card opens it, while the "view at source" link and
+          any embed stay clickable via a higher z-index. */}
+      {articleLink && (
+        <Link to={articleLink} className="absolute inset-0 z-10" aria-label={`Read the article: ${content.title}`} />
+      )}
 
       {/* Embed / placeholder */}
       {canEmbed ? (
@@ -73,7 +80,7 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
             href={normalizeUrl(content.originalUrl)}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-body text-[10px] text-muted hover:text-primary transition-colors"
+            className="relative z-20 font-body text-[10px] text-muted hover:text-primary transition-colors"
             aria-label={articleLink ? `Watch/listen on ${platformLabel}` : `View on ${platformLabel}`}
           >
             {articleLink ? `${platformLabel} ↗` : `View on ${platformLabel} ↗`}
@@ -84,19 +91,13 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
             readers (and crawlers) land on real context instead of a bare
             embed; falls back to the external platform when there's no
             article yet. */}
-        {articleLink ? (
-          <Link to={articleLink} className="group/title">
-            <h3 className={`font-heading font-semibold text-charcoal leading-snug group-hover/title:text-primary transition-colors ${compact ? 'text-sm' : 'text-base'}`}>
-              {content.title}
-            </h3>
-            <span className="font-body text-[10px] font-semibold text-primary mt-1 inline-block">
-              Read the article →
-            </span>
-          </Link>
-        ) : (
-          <h3 className={`font-heading font-semibold text-charcoal leading-snug ${compact ? 'text-sm' : 'text-base'}`}>
-            {content.title}
-          </h3>
+        <h3 className={`font-heading font-semibold text-charcoal leading-snug ${compact ? 'text-sm' : 'text-base'}`}>
+          {content.title}
+        </h3>
+        {articleLink && (
+          <span className="font-body text-[10px] font-semibold text-primary mt-1 inline-block">
+            Read the article →
+          </span>
         )}
 
         {/* Description */}
@@ -129,7 +130,7 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
 
         {/* Create with CULO CTA */}
         {!compact && (
-          <div className="mt-3 pt-3 border-t border-border">
+          <div className="relative z-20 mt-3 pt-3 border-t border-border">
             <Link
               to="/dashboard/publish"
               className="font-body text-[10px] font-semibold text-primary hover:text-[#b05a35] transition-colors flex items-center gap-1"
