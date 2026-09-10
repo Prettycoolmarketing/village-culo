@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
-import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
 import { InsightBriefEditor } from '../../components/dashboard/InsightBriefEditor'
@@ -1494,7 +1493,6 @@ export function DashboardImportContentPage() {
   // in a "go review it" prompt instead of also duplicating the full list of
   // everything ever imported here (that list lives in Profile → Content now).
   const [justImportedCount, setJustImportedCount] = useState<number | null>(null)
-  const [canvaExpanded, setCanvaExpanded] = useState(false)
   const canvaCardRef = useRef<HTMLDivElement>(null)
   const [instagramExpanded, setInstagramExpanded] = useState(false)
   const instagramCardRef = useRef<HTMLDivElement>(null)
@@ -1520,15 +1518,6 @@ export function DashboardImportContentPage() {
     setDraft(item)
   }, [searchParams])
 
-  // Coming back from Canva OAuth (DashboardCanvaCallbackPage redirects here
-  // with ?canvaConnected=1) — auto-expand the card and scroll it into view
-  // so connecting only ever costs the one click that started it, instead of
-  // landing on a fresh page mount that forgot it was mid-import.
-  useEffect(() => {
-    if (searchParams.get('canvaConnected') !== '1') return
-    setCanvaExpanded(true)
-    canvaCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [searchParams])
 
   async function handleSave() {
     if (!draft) return
@@ -1734,12 +1723,15 @@ export function DashboardImportContentPage() {
             </div>
 
             <div ref={canvaCardRef} className="lg:col-start-2 lg:row-start-3">
-              <CanvaImportCard
-                founderId={founderId}
-                expanded={canvaExpanded}
-                onExpandedChange={setCanvaExpanded}
-                onImported={() => reportImported(1)}
-              />
+              {/* Canva design import moved into Publish (above "Choose a
+                  format") — one place for it now. */}
+              <Link
+                to="/dashboard/publish"
+                className="block rounded-2xl border border-[#E8E4DD] bg-white px-5 py-4 hover:border-[#C86A43]/40 transition-colors"
+              >
+                <p className="text-sm font-semibold text-[#2D2A26]">Culo Creatives designs in Canva</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Bring your Canva designs in from the Publish page →</p>
+              </Link>
             </div>
           </div>
 

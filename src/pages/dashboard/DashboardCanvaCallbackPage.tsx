@@ -32,7 +32,7 @@ export function DashboardCanvaCallbackPage() {
         // ?canvaConnected=1 tells that page to auto-expand the Canva card
         // and load designs immediately, so connecting only ever costs the
         // one click that started it.
-        setTimeout(() => navigate('/dashboard/import-content?canvaConnected=1', { replace: true }), 600)
+        setTimeout(() => navigate('/dashboard/publish?canvaConnected=1', { replace: true }), 600)
       })
       .catch(err => { setStatus('error'); setError(err instanceof Error ? err.message : 'Could not connect Canva.') })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -49,7 +49,7 @@ export function DashboardCanvaCallbackPage() {
           <>
             <p className="text-sm font-semibold text-red-600 mb-2">Couldn't connect Canva</p>
             <p className="text-xs text-[#9CA3AF] mb-4">{error}</p>
-            <Link to="/dashboard/import-content" className="text-sm text-[#C86A43] font-semibold hover:underline">
+            <Link to="/dashboard/publish" className="text-sm text-[#C86A43] font-semibold hover:underline">
               Back to Import Content →
             </Link>
           </>

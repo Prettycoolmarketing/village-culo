@@ -9,6 +9,7 @@ import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { publishStoryCore } from '../../services/publishStory'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { previewIdeaImpact } from '../../services/ideaSync'
 import { computeReadability } from '../../utils/readability'
@@ -321,11 +322,18 @@ function FormatStep({ draft, onChange, onNext }: {
         subtitle="Update The Village or edit with CULO in Canva to continue curating your life's work."
       />
 
-      {/* New here? See "How it works" and everything about CULO in Canva
-          on the Welcome tab — this page stays focused on the one task. */}
+      {/* Bring in your Culo Creatives designs from Canva right here — same
+          browser and flow as Import Content, just at the top of Publish. */}
+      <div className="mb-8">
+        <CanvaImportCard
+          founderId={draft.founderId}
+          onImported={item => onChange(importedContentPatch(item, draft))}
+        />
+      </div>
+
       <div>
         <p className="text-sm font-semibold text-[#2D2A26] mb-1">Choose a format</p>
-        <p className="text-xs text-[#9CA3AF] mb-3">Bringing in Canva slides? Do that from Import Content instead — pick a format here to write it yourself.</p>
+        <p className="text-xs text-[#9CA3AF] mb-3">Or pick a format below and write it yourself.</p>
         <div className="grid grid-cols-2 gap-3 mb-8">
           {FORMATS.map(f => {
             const active = draft.contentTypes.includes(f.type)
