@@ -344,9 +344,16 @@ function FormatStep({ draft, onChange, onNext }: {
       </div>
       <a
         href="https://www.culovillage.com/join"
-        className="block w-full text-center px-4 py-3 mb-8 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
+        className="block bg-[#2D2A26] rounded-2xl px-5 py-4 mb-8 hover:bg-[#1a1815] transition-colors"
       >
-        Edit with CULO
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="font-heading text-base font-semibold text-white leading-snug">
+            Turn your raw footage into content, exclusively in Canva.
+          </p>
+          <span className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg">
+            Edit with CULO in Canva
+          </span>
+        </div>
       </a>
 
       <div>

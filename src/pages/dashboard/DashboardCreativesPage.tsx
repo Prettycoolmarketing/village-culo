@@ -157,7 +157,7 @@ function FeedbackTab({
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">
-          <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
+          <p className="text-sm sm:text-lg text-[#6B7280] leading-relaxed mb-6">
             Tell us what you loved and what you didn't about CULO Creatives. Nothing changes for you either
             way — it just helps us make it better.
           </p>
@@ -166,10 +166,10 @@ function FeedbackTab({
               the question visible the whole time a founder is writing. */}
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,20rem)_1fr] gap-6">
             <div>
-              <label className="block text-sm font-semibold text-[#2D2A26] mb-2">
+              <label className="block text-base sm:text-xl font-semibold text-[#2D2A26] mb-2">
                 What did you love and dislike about CULO Creatives?
               </label>
-              <p className="text-xs text-[#9CA3AF]">
+              <p className="text-xs sm:text-sm text-[#9CA3AF]">
                 Your feedback helps us improve, and we value your time and effort to explain your suggestions and
                 feedback.
               </p>
