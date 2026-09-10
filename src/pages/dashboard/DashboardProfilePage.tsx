@@ -25,7 +25,7 @@ import { publisherPartnerProfileService, affiliateLinkService } from '../../serv
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
-import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief } from '../../services/blogWriter'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
 import { getMedia } from '../../services/media'
@@ -867,6 +867,7 @@ export function DashboardProfilePage() {
   // edit from there (see the "CULO drafted from your MD file" note under the
   // Bio field). Runs once per founder.
   const [bioAutoDrafted, setBioAutoDrafted] = useState(false)
+  const [businessAutoDrafted, setBusinessAutoDrafted] = useState(false)
   useEffect(() => {
     if (!draft) return
     const live = getFounder(draft.id)
@@ -889,6 +890,41 @@ export function DashboardProfilePage() {
         setBioAutoDrafted(true)
       })
       .finally(() => { if (!cancelled) setBioGenerating(false) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.id])
+
+  // Same trigger — pull the founder's business fields (name / tagline /
+  // description / target audience) out of the brief and fill any that are
+  // still blank. Once per founder; never overwrites what they've set.
+  useEffect(() => {
+    if (!draft) return
+    const live = getFounder(draft.id)
+    const brief = live?.voiceBrief?.trim()
+    if (!brief) return
+    const flagKey = `culo_v1_profile_extract_${draft.id}`
+    try { if (localStorage.getItem(flagKey) === '1') return } catch { /* ignore */ }
+
+    const biz = getBusinesses({ founderId: draft.id })[0]
+    if (!biz) return
+    const needsAnything = !biz.tagline?.trim() || !biz.description?.trim() || !biz.targetAudience?.trim()
+    if (!needsAnything) return
+
+    let cancelled = false
+    void extractProfileFromVoiceBrief({
+      voiceBrief: brief,
+      founderName: draft.name,
+      current: { businessName: biz.name, businessTagline: biz.tagline, businessDescription: biz.description, targetAudience: biz.targetAudience },
+    }).then(({ fields }) => {
+      try { localStorage.setItem(flagKey, '1') } catch { /* ignore */ }
+      if (cancelled || !fields) return
+      const patched = { ...biz }
+      let changed = false
+      if (!patched.tagline?.trim() && fields.businessTagline) { patched.tagline = fields.businessTagline; changed = true }
+      if (!patched.description?.trim() && fields.businessDescription) { patched.description = fields.businessDescription; changed = true }
+      if (!patched.targetAudience?.trim() && fields.targetAudience) { patched.targetAudience = fields.targetAudience; changed = true }
+      if (changed) { void updateBusiness(patched); setBusinessAutoDrafted(true) }
+    })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft?.id])
@@ -1212,6 +1248,12 @@ export function DashboardProfilePage() {
             >
               View public profile ↗
             </a>
+
+            {businessAutoDrafted && (
+              <p className="text-xs text-[#C86A43] font-medium -mt-2">
+                CULO drafted some of your business details from your MD file — check the Businesses tab and edit anything that's off.
+              </p>
+            )}
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
               <p className="text-sm font-semibold text-[#2D2A26]">Identity</p>

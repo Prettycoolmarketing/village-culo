@@ -88,6 +88,31 @@ export async function generateBioFromVoiceBrief(input: GenerateBioInput): Promis
   return { bio: data.bio }
 }
 
+// Pulls the plain-text profile fields a founder's Voice & Brand Brief can
+// answer (business name/tagline/description, target audience, city, topics)
+// — same honesty rule as generate-bio. Fields it can't answer are omitted.
+export interface ExtractedProfileFields {
+  businessName?: string
+  businessTagline?: string
+  businessDescription?: string
+  targetAudience?: string
+  city?: string
+  topics?: string[]
+}
+export async function extractProfileFromVoiceBrief(input: {
+  voiceBrief: string
+  founderName?: string
+  current?: Record<string, unknown>
+}): Promise<{ fields?: ExtractedProfileFields; note?: string; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
+  const { data, error } = await supabase.functions.invoke<{ fields?: ExtractedProfileFields; note?: string; error?: string }>(
+    'extract-profile', { body: input },
+  )
+  if (error) return { error: error.message }
+  if (data?.error) return { error: data.error }
+  return { fields: data?.fields, note: data?.note }
+}
+
 export interface VoiceBriefInterviewMessage {
   role: 'user' | 'assistant'
   content: string
