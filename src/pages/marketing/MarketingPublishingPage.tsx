@@ -1,11 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
 import { MarketingHero } from './MarketingHero'
-import { PCM_SUPPORT_EMAIL } from '../../config/pcmPaymentLinks'
+import { PublishingQuoteModal } from './PublishingQuoteModal'
 
 const CALENDLY = 'https://calendly.com/prettycoolmarketing_/30min'
-const QUOTE_MAILTO = `mailto:${PCM_SUPPORT_EMAIL}?subject=${encodeURIComponent('Village Service quote')}&body=${encodeURIComponent('My business:\nMy website:\nMy YouTube:\nMy podcast:\nMy Instagram (roughly how many posts):\nAnything else I have been featured in:\n')}`
 
 const INCLUDED = [
   'We bring your whole archive into The Culo Village. YouTube videos, podcast episodes, Instagram posts, blogs and articles you have been featured in.',
@@ -34,8 +34,11 @@ export function MarketingPublishingPage() {
     ],
   })
 
+  const [quoteOpen, setQuoteOpen] = useState(false)
+
   return (
     <main className="min-h-screen bg-surface">
+      {quoteOpen && <PublishingQuoteModal onClose={() => setQuoteOpen(false)} />}
       <MarketingHero
         kicker="Pretty Cool Marketing"
         title="Your archive, published and managed for you"
@@ -57,16 +60,14 @@ export function MarketingPublishingPage() {
             <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-1">Village Service</p>
             <p className="font-heading text-3xl font-bold text-charcoal">from $900 AUD <span className="text-base font-normal text-muted">/ month</span></p>
             <p className="font-body text-sm text-muted mt-1 mb-5">plus a one-off archive transfer, quoted from the size of your archive</p>
-            <a
-              href={CALENDLY}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setQuoteOpen(true)}
               className="block w-full text-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
             >
-              Book a call for a quote →
-            </a>
-            <a href={QUOTE_MAILTO} className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
-              Or email us your links
+              Get your quote →
+            </button>
+            <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
+              Or book a call first
             </a>
           </div>
         }
@@ -137,16 +138,17 @@ export function MarketingPublishingPage() {
             Ready to be found?
           </h2>
           <p className="font-body text-lg text-charcoal/80 leading-relaxed mb-8">
-            Book a 30-minute call and we will quote your archive transfer and get you started.
+            Paste in your channels, see your archive transfer price, and start straight away.
           </p>
-          <a
-            href={CALENDLY}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => setQuoteOpen(true)}
             className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
           >
-            Book a call for a quote →
-          </a>
+            Get your quote →
+          </button>
+          <p className="mt-4 font-body text-sm text-muted">
+            Or <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="underline">book a call first</a>.
+          </p>
           <p className="mt-6 font-body text-sm text-muted">
             Monthly management has a 3-month minimum. By starting you agree to our{' '}
             <Link to="/terms" className="underline">Terms</Link>.

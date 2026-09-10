@@ -38,6 +38,7 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@17?target=deno'
+import { sendEmail, emailLayout, emailButton } from '../_shared/resend.ts'
 
 const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -47,6 +48,11 @@ const SUBSET_LINK_ID        = Deno.env.get('ARCHIVE_SUBSET_LINK_ID')  // plink_�
 const PACK_100_LINK_ID     = Deno.env.get('PUBLISHING_PACK_100_LINK_ID')
 const PACK_365_LINK_ID     = Deno.env.get('PUBLISHING_PACK_365_LINK_ID')
 const SUBSET_CAP            = 5000
+const SITE_URL             = Deno.env.get('SITE_URL') ?? 'https://www.culovillage.com'
+
+const DEFAULT_LOCATION = { id: 'brisbane', slug: 'brisbane', name: 'Brisbane', state: 'QLD', country: 'Australia', description: '', image: '/placeholders/village-location.svg' }
+const DEFAULT_INDUSTRY = { id: 'marketing', slug: 'marketing', name: 'Marketing & Advertising' }
+const slugify = (t: string) => t.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'client'
 
 // Amount actually charged (AUD cents) → the archive publishing limit that
 // tier grants. −1 = unlimited. The $699 subset link is disambiguated by id
@@ -138,6 +144,96 @@ serve(async (req) => {
           }
 
           await admin.from('founders').update({ data: { ...d, ...patch } }).eq('id', founderId)
+        }
+      }
+
+      // New prospect from the /marketing/publishing quote modal — no founder
+      // exists yet, but there's a paid session with an email. Create the
+      // account + founder + business + pcm_clients row from scratch (same
+      // shape as stripe-pcm-webhook), grant the archive unlock on the new
+      // founder, and email them a "set your password" link.
+      const email = session.customer_details?.email?.trim().toLowerCase()
+      if (!founderId && email && session.payment_status === 'paid') {
+        const { error: claimErr } = await admin.from('stripe_processed_sessions').insert({
+          session_id: session.id, handler: 'archive-unlock-new', founder_id: null,
+        })
+        if (claimErr) {
+          return new Response(JSON.stringify({ received: true, duplicate: true }), {
+            headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          })
+        }
+
+        const cents = typeof session.amount_total === 'number' ? session.amount_total : 0
+        const linkId = typeof session.payment_link === 'string' ? session.payment_link : session.payment_link?.id
+        const name = session.customer_details?.name?.trim() || email.split('@')[0]
+
+        let userId: string
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({ email, email_confirm: true })
+        if (created?.user) {
+          userId = created.user.id
+        } else if (createErr?.message?.toLowerCase().includes('already')) {
+          const { data: list } = await admin.auth.admin.listUsers()
+          const existing = list?.users.find(u => u.email?.toLowerCase() === email)
+          if (!existing) throw new Error('Could not find or create a user for this email')
+          userId = existing.id
+        } else {
+          throw new Error(createErr?.message ?? 'Could not create a user for this email')
+        }
+
+        const founderIdNew = crypto.randomUUID()
+        const businessId = crypto.randomUUID()
+        const now = new Date().toISOString()
+        const baseSlug = slugify(name)
+        const businessSlug = `${baseSlug}-biz-${businessId.slice(0, 6)}`
+        const slug = `${baseSlug}-${founderIdNew.slice(0, 6)}`
+
+        const archivePatch = (!!SUBSET_LINK_ID && linkId === SUBSET_LINK_ID)
+          ? { archiveUnlockCap: SUBSET_CAP, archivePublishLimit: SUBSET_CAP }
+          : { archivePublishLimit: AMOUNT_TO_ARCHIVE_LIMIT[cents] ?? -1 }
+
+        await admin.from('businesses').insert({
+          id: businessId, slug: businessSlug, founder_id: founderIdNew, status: 'draft', visibility: 'private',
+          data: {
+            id: businessId, slug: businessSlug, name, tagline: '', description: '', logo: '', coverImage: '',
+            founderId: founderIdNew, location: DEFAULT_LOCATION, industry: DEFAULT_INDUSTRY, topics: [],
+            offers: [], status: 'draft', featured: false, createdAt: now,
+          },
+        })
+        await admin.from('founders').insert({
+          id: founderIdNew, user_id: userId, status: 'draft', featured: false, slug, visibility: 'private',
+          data: {
+            id: founderIdNew, slug, name, bio: '', avatar: '', location: DEFAULT_LOCATION, industry: DEFAULT_INDUSTRY,
+            businessId, topics: [], status: 'draft', featured: false, createdAt: now, userId,
+            pcmManaged: true, pcmManagedAt: now, pcmService: 'publishing', pcmGateOpen: false,
+            archiveUnlocked: true, archiveUnlockedAt: now, archiveUnlockAmount: cents / 100,
+            archiveUnlockCurrency: session.currency ?? undefined, ...archivePatch,
+          },
+        })
+        const pcmClientId = crypto.randomUUID()
+        await admin.from('pcm_clients').upsert({
+          id: pcmClientId, founder_id: founderIdNew, email,
+          data: {
+            id: pcmClientId, name, email, offer: 'publishing',
+            startDate: now.slice(0, 10), nextShootDate: '',
+            stages: { raw: null, editing: null, approvals: null, live: null },
+            notes: '', createdAt: now, founderId: founderIdNew, monthlyTarget: 30,
+            activity: [{ at: now, text: `Paid archive transfer ($${cents / 100} AUD) via the publishing quote — account created automatically.` }],
+          },
+        })
+
+        const { data: linkData } = await admin.auth.admin.generateLink({
+          type: 'recovery', email, options: { redirectTo: `${SITE_URL}/dashboard/reset-password` },
+        })
+        const actionLink = linkData?.properties?.action_link
+        if (actionLink) {
+          await sendEmail(
+            email,
+            "You're in — set your password",
+            emailLayout(
+              'Set your Culo Village dashboard password',
+              `<p>Hi ${name.split(' ')[0]},</p><p>Your archive transfer is paid and your designated writer is getting started. Set your password to get into your dashboard.</p>${emailButton('Set your password', actionLink)}`,
+            ),
+          )
         }
       }
     }
