@@ -1381,10 +1381,10 @@ export function DashboardProfilePage() {
               ))}
             </div>
 
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {(['ready', 'review', 'published', 'series'] as const).map(t => (
                 <button key={t} onClick={() => setContentSubTab(t)}
-                  className={`px-4 py-2 rounded-lg text-base font-semibold border transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-sm sm:text-base font-semibold border text-center transition-colors ${
                     contentSubTab === t ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'
                   }`}>
                   {t === 'ready' ? 'Ready to Publish' : t === 'review' ? 'Needs More Value' : t === 'published' ? 'Published Content' : 'Series'}
@@ -1515,9 +1515,17 @@ export function DashboardProfilePage() {
 
                   {shownReady.length === 0 ? (
                     <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
-                      <p className="text-sm font-semibold text-[#2D2A26]">
+                      <p className="text-sm font-semibold text-[#2D2A26] mb-4">
                         {contentSubTab === 'ready' ? 'Nothing ready to publish yet.' : 'Nothing needs more value — everything imported is ready to go.'}
                       </p>
+                      {contentSubTab === 'ready' && (
+                        <Link
+                          to="/dashboard/import-content"
+                          className="inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                        >
+                          Import your content
+                        </Link>
+                      )}
                     </div>
                   ) : (() => {
                     const visibleReady = shownReady.filter(item => unlockedIds.has(item.id))
@@ -1525,6 +1533,15 @@ export function DashboardProfilePage() {
                     const archiveTier = getArchiveTier(allImported.length)
                     return (
                       <>
+                        {visibleReady.length > 0 && contentSubTab === 'ready' && (
+                          <button
+                            onClick={() => void publishItems(visibleReady)}
+                            disabled={readyBulkPublishing}
+                            className="w-full mb-3 px-6 py-3.5 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-40 transition-colors"
+                          >
+                            {readyBulkPublishing ? 'Publishing…' : `Publish ${visibleReady.length} in the Village`}
+                          </button>
+                        )}
                         {visibleReady.length > 0 && (
                           <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
                             {visibleReady.map(item => (
@@ -2444,11 +2461,10 @@ export function DashboardProfilePage() {
 
       </div>
 
-      {/* Bottom save bar — same founder-fields-only scope as the top one.
-          Left-aligned to match the Save button pattern used on the
-          Businesses tab, instead of tucked away on the right. */}
+      {/* Bottom save bar — mobile only; on desktop the top Save button is
+          always in view, so this second one is just noise. */}
       {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
-        <div className="flex items-center gap-3 px-8 py-4 border-t border-[#E8E4DD] bg-white shrink-0">
+        <div className="lg:hidden flex items-center gap-3 px-8 py-4 border-t border-[#E8E4DD] bg-white shrink-0">
           <button onClick={handleSave} disabled={saving} className="px-5 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
