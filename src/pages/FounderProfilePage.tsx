@@ -609,7 +609,7 @@ export function FounderProfilePage() {
               <StoryGrid
                 heading={hasFeaturedPicks ? `Featured by ${founder.name}` : `Stories by ${founder.name}`}
                 subheading={hasFeaturedPicks
-                  ? `${founder.name}'s pick — the work they most want you to see.`
+                  ? undefined
                   : `Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
                 filter={hasFeaturedPicks
                   ? { ids: featuredVideoStories.map(s => s.id), publicOnly: true }

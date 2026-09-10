@@ -1,10 +1,6 @@
 import { useState } from 'react'
 import { supabase, isSupabaseConfigured } from '../../lib/supabase'
-import {
-  getArchiveTier,
-  ARCHIVE_UNLOCK_SUBSET_5000_LINK, ARCHIVE_UNLOCK_SUBSET_5000_PRICE,
-  ARCHIVE_UNLOCK_SUBSET_5000_COUNT, ARCHIVE_UNLOCK_SUBSET_THRESHOLD,
-} from '../../config/archiveUnlock'
+import { getArchiveTier } from '../../config/archiveUnlock'
 
 interface ArchiveResult {
   total: number
@@ -30,6 +26,7 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
   const [instagramCount, setInstagramCount] = useState('')
   const [result, setResult] = useState<ArchiveResult | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [checkingOut, setCheckingOut] = useState<'upfront' | 'installment' | null>(null)
 
   async function runQuote() {
     if (!email.includes('@')) { setErrorMsg('Enter the email you want your dashboard under.'); return }
@@ -55,8 +52,26 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
   }
 
   const tier = result ? getArchiveTier(result.total) : null
-  const showSubset = result ? result.total > ARCHIVE_UNLOCK_SUBSET_THRESHOLD : false
-  const payUrl = (link: string) => `${link}?prefilled_email=${encodeURIComponent(email)}`
+
+  async function checkout(plan: 'upfront' | 'installment') {
+    if (!result) return
+    setCheckingOut(plan)
+    setErrorMsg('')
+    try {
+      if (!isSupabaseConfigured || !supabase) throw new Error('Not available right now — email us instead.')
+      const { data, error } = await supabase.functions.invoke<{ url?: string; error?: string }>('create-pcm-publishing-checkout', {
+        body: { email, archiveTotal: result.total, plan },
+      })
+      if (error || data?.error || !data?.url) throw new Error(data?.error || error?.message || 'Could not start checkout.')
+      window.location.href = data.url
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Something went wrong.')
+      setCheckingOut(null)
+    }
+  }
+
+  const upfrontTotal = tier ? tier.price + 2700 : 0
+  const firstInstalment = tier ? Math.ceil(tier.price / 3) : 0
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -135,36 +150,46 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
               </div>
             )}
 
-            <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-xl p-5 mb-4">
-              <p className="font-body text-sm text-muted mb-1">One-off archive transfer</p>
-              <p className="font-heading text-2xl font-bold text-charcoal">{tier.priceLabel}</p>
-              <p className="font-body text-xs text-muted mt-1">
-                {tier.label}. This one-off price covers your initial archive import only. Then management
-                from $900 AUD a month, 3-month minimum.
+            <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-xl p-5 mb-5">
+              <p className="font-body text-sm text-muted mb-1">Your quote</p>
+              <p className="font-body text-sm text-charcoal">
+                One-off Archive Transfer <span className="font-semibold">{tier.priceLabel.replace(' once', '')}</span>
+                <span className="text-muted"> · {tier.label}, covers the initial import only</span>
+              </p>
+              <p className="font-body text-sm text-charcoal mt-1">
+                Blog Management <span className="font-semibold">$900 AUD / month</span>
+                <span className="text-muted"> · 30 articles a month, 3-month minimum</span>
               </p>
             </div>
 
-            <a href={payUrl(tier.paymentLink)}
-              className="block w-full text-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
-              Pay {tier.priceLabel.replace(' once', '')} and start →
-            </a>
-            <p className="font-body text-xs text-muted mt-2 text-center">
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => void checkout('upfront')}
+                disabled={!!checkingOut}
+                className="w-full px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+              >
+                {checkingOut === 'upfront' ? 'Starting…' : `Pay upfront — $${upfrontTotal.toLocaleString()} AUD →`}
+              </button>
+              <p className="font-body text-xs text-muted -mt-1">
+                Archive Transfer plus your first 3 months. $900 a month then bills automatically from month 4.
+              </p>
+
+              <button
+                onClick={() => void checkout('installment')}
+                disabled={!!checkingOut}
+                className="w-full px-6 py-3 border border-primary text-primary text-sm font-semibold rounded-xl hover:bg-primary/5 disabled:opacity-50 transition-colors"
+              >
+                {checkingOut === 'installment' ? 'Starting…' : 'Pay monthly instead →'}
+              </button>
+              <p className="font-body text-xs text-muted -mt-1">
+                $900 a month from today, with the Archive Transfer split across your first 3 invoices
+                (first payment ${(900 + firstInstalment).toLocaleString()} AUD).
+              </p>
+            </div>
+
+            <p className="font-body text-xs text-muted mt-4 text-center">
               You set your dashboard password straight after payment.
             </p>
-
-            {showSubset && (
-              <div className="mt-5 pt-5 border-t border-border">
-                <p className="font-body text-sm font-semibold text-charcoal mb-1">Or start smaller</p>
-                <p className="font-body text-xs text-muted mb-3">
-                  Publish your {ARCHIVE_UNLOCK_SUBSET_5000_COUNT.toLocaleString()} most-ready pieces now for
-                  ${ARCHIVE_UNLOCK_SUBSET_5000_PRICE} AUD, add the rest later.
-                </p>
-                <a href={payUrl(ARCHIVE_UNLOCK_SUBSET_5000_LINK)}
-                  className="block w-full text-center px-6 py-3 border border-primary text-primary text-sm font-semibold rounded-xl hover:bg-primary/5 transition-colors">
-                  Start with {ARCHIVE_UNLOCK_SUBSET_5000_COUNT.toLocaleString()} for ${ARCHIVE_UNLOCK_SUBSET_5000_PRICE} →
-                </a>
-              </div>
-            )}
           </>
         )}
 

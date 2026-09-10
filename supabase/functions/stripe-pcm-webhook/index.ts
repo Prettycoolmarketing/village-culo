@@ -89,6 +89,35 @@ serve(async (req) => {
   }
 
   try {
+    // Blog Management "pay monthly" plan — the Archive Transfer is split
+    // across the first 3 invoices. Invoice 1 (billing_reason
+    // subscription_create) carried instalment 1 as a checkout line item;
+    // here we drop instalments 2 and 3 onto the next invoices as the
+    // subscription pays them.
+    if (event.type === 'invoice.paid') {
+      const invoice = event.data.object as Stripe.Invoice
+      const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id
+      if (!subId) return new Response(JSON.stringify({ received: true }), { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } })
+
+      const sub = await stripe.subscriptions.retrieve(subId)
+      const remaining = Number(sub.metadata?.transfer_instalments_remaining ?? 0)
+      const cents = Number(sub.metadata?.transfer_instalment_cents ?? 0)
+      const isFirstOrCycle = invoice.billing_reason === 'subscription_create' || invoice.billing_reason === 'subscription_cycle'
+      if (remaining > 0 && cents > 0 && isFirstOrCycle && typeof sub.customer === 'string') {
+        await stripe.invoiceItems.create({
+          customer: sub.customer,
+          subscription: subId,
+          amount: cents,
+          currency: 'aud',
+          description: `Archive Transfer — instalment ${4 - remaining} of 3`,
+        })
+        await stripe.subscriptions.update(subId, {
+          metadata: { ...sub.metadata, transfer_instalments_remaining: String(remaining - 1) },
+        })
+      }
+      return new Response(JSON.stringify({ received: true }), { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } })
+    }
+
     if (event.type !== 'checkout.session.completed') {
       return new Response(JSON.stringify({ received: true }), { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } })
     }
@@ -113,7 +142,18 @@ serve(async (req) => {
     }
 
     const linkId = typeof session.payment_link === 'string' ? session.payment_link : session.payment_link?.id
-    const pcmService: 'social' | 'full' = linkId === TIER3_LINK_ID ? 'full' : 'social'
+    const pcmService: 'social' | 'full' | 'publishing' =
+      session.metadata?.pcm_service === 'publishing' ? 'publishing'
+        : linkId === TIER3_LINK_ID ? 'full'
+        : 'social'
+    const serviceLabel = pcmService === 'publishing' ? 'Blog Management'
+      : pcmService === 'full' ? 'Content Creator Full Service'
+      : 'Social Media Service'
+    // Blog Management is a managed publishing service — the whole archive
+    // is theirs to publish, so unlock it fully on the new account.
+    const publishingGrant = pcmService === 'publishing'
+      ? { archiveUnlocked: true, archiveUnlockedAt: new Date().toISOString(), archivePublishLimit: -1 }
+      : {}
     const name = session.customer_details?.name?.trim() || email.split('@')[0]
 
     // Reuse an existing auth user if this email already has one (a client
@@ -143,7 +183,7 @@ serve(async (req) => {
       const { data: founderRow } = await admin.from('founders').select('data').eq('id', founderId).maybeSingle()
       if (founderRow) {
         await admin.from('founders').update({
-          data: { ...founderRow.data, pcmManaged: true, pcmManagedAt: new Date().toISOString(), pcmService },
+          data: { ...founderRow.data, pcmManaged: true, pcmManagedAt: new Date().toISOString(), pcmService, ...publishingGrant },
         }).eq('id', founderId)
       }
     } else {
@@ -169,7 +209,7 @@ serve(async (req) => {
         data: {
           id: founderId, slug, name, bio: '', avatar: '', location: DEFAULT_LOCATION, industry: DEFAULT_INDUSTRY,
           businessId, topics: [], status: 'draft', featured: false, createdAt: now,
-          userId, pcmManaged: true, pcmManagedAt: now, pcmService, pcmGateOpen: false,
+          userId, pcmManaged: true, pcmManagedAt: now, pcmService, pcmGateOpen: false, ...publishingGrant,
         },
       })
     }
@@ -183,7 +223,7 @@ serve(async (req) => {
       stages: existingClientRow?.data?.stages ?? { raw: null, editing: null, approvals: null, live: null },
       notes: existingClientRow?.data?.notes ?? '',
       activity: [
-        { at: new Date().toISOString(), text: `Paid via Stripe checkout — ${pcmService === 'full' ? 'Content Creator Full Service' : 'Social Media Service'}.` },
+        { at: new Date().toISOString(), text: `Paid via Stripe checkout — ${serviceLabel}${session.metadata?.plan ? ` (${session.metadata.plan})` : ''}.` },
         ...(existingClientRow?.data?.activity ?? []),
       ],
       createdAt: existingClientRow?.data?.createdAt ?? new Date().toISOString(),
