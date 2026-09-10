@@ -13,10 +13,12 @@ export function MarketingCheckoutButton({
   offerId,
   className = '',
   tone = 'orange',
+  label = 'Secure your spot →',
 }: {
   offerId: PcmOffer['id']
   className?: string
   tone?: 'orange' | 'light'
+  label?: string
 }) {
   const offer = PCM_OFFERS[offerId]
   const live = isLive(offer.paymentLink)
@@ -38,7 +40,7 @@ export function MarketingCheckoutButton({
         href={href}
         className={`inline-flex w-full items-center justify-center px-7 py-3.5 text-base font-semibold rounded-xl transition-colors ${btn}`}
       >
-        {live ? `Pay ${offer.priceLabel} ${offer.cadence} →` : 'Email us to start'}
+        {live ? label : 'Email us to start'}
       </a>
       {!live && (
         <p className={`mt-2 font-body text-xs ${noteText}`}>

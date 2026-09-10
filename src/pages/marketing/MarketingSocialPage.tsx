@@ -3,175 +3,246 @@ import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
 import { MarketingHero } from './MarketingHero'
 import { MarketingCheckoutButton } from './MarketingCheckoutButton'
-import { PCM_SUPPORT_EMAIL } from '../../config/pcmPaymentLinks'
 
-const TIER2_POINTS = [
-  '30 posts a month, edited in Culo Creatives in a mix of Quick Rhythm, voice over and talking head.',
-  'Scheduled to all platforms and into the Village, with curated captions and hooks on each one.',
-  'Approval is done through a Canva edit link. Hooks and captions can be altered directly at your request — including adding in any special offers, prices or details into the caption.',
-  'Scheduling is done in Content 360 or Meta Business Suite. Once scheduled, changes are made by the business.',
-  'If a post fails, it is up to you to manage it and contact PCM with any questions.',
-  'If a day is missed due to computer error, that post is scheduled for the next day.',
-  'Scheduling time is 6pm daily. Some posts may auto-post to your Instagram stories.',
+const CALENDLY = 'https://calendly.com/prettycoolmarketing_/30min'
+
+const SMM_INCLUDES: [string, string][] = [
+  ['30 pieces every month', 'Your footage is edited in Culo Creatives into a mix of content formats, rather than posting the same style over and over.'],
+  ['Hooks and captions', 'Every piece comes with a curated hook and caption. Got an offer, price, launch or something specific you need mentioned? Tell us and we will work it in.'],
+  ['Easy approvals in Canva', 'We send you a Canva edit link so you can see what is being created and request changes before anything is scheduled.'],
+  ['Scheduling and distribution', 'Once approved, we schedule your content across your connected platforms using our publishing tools.'],
+  ['Publishing into The Culo Village', 'Your content does not disappear after a few days in a feed. We also publish it into your Village so your growing body of work stays connected to you.'],
 ]
 
-const TIER3_POINTS = [
-  'Everything in Tier 2, plus a half-day shoot every 4 weeks — with you or your team.',
-  'Filmed in the PCM frameworks: B-roll, talking heads and voice overs.',
-  'Edited in line with Tier 2 and scheduled the same way.',
-  'Content is live 2 weeks after joining and transferring all raw footage. Shoots are filmed within that 2-week window.',
-  'Shoots run every 4 weeks so content stays edited, scheduled and live within the following 2 weeks.',
-  'If you don’t want to shoot, you must provide 30 days’ worth of raw footage to be edited — shot as 10-second B-rolls through to 1-minute talking heads.',
+const CREATOR_INCLUDES: [string, string][] = [
+  ['4 hours filming', 'A focused shoot with you or your team.'],
+  ['Built around the PCM frameworks', 'We deliberately capture different kinds of footage so you are not left with 30 versions of the same reel.'],
+  ['Footage backed up and organised', 'Everything is sorted after the shoot and prepared for editing.'],
+  ['Edited in Culo Creatives', 'Your creator turns the footage into the month of content using the same system behind our Social Media Management service.'],
+  ['Then we run the rest', 'Approvals, captions, hooks, scheduling, distribution and Village publishing are handled by the Pretty Cool Marketing team.'],
 ]
 
-const TIMELINE = [
-  ['Day 1', 'Shoot day — filming'],
-  ['Days 2–3', 'Back up all footage'],
-  ['Days 4–6', 'Editing'],
-  ['Days 7–10', 'Approvals'],
-  ['Days 11–14', 'Scheduling'],
+const TIMELINE: [string, string, string][] = [
+  ['Day 1', 'Create', 'We film your content, or you send us the raw footage you already have.'],
+  ['Days 2 to 3', 'Sort', 'Footage is backed up, organised and prepared for editing.'],
+  ['Days 4 to 6', 'Create the content', 'We turn the footage into your monthly content inside Culo Creatives.'],
+  ['Days 7 to 10', 'You approve it', 'You review everything through Canva and let us know what needs changing.'],
+  ['Days 11 to 14', 'We schedule it', 'Approved content is scheduled across your connected platforms and prepared for publishing into The Culo Village.'],
 ]
+
+function IncludeList({ items }: { items: [string, string][] }) {
+  return (
+    <div className="space-y-5">
+      {items.map(([title, body]) => (
+        <div key={title}>
+          <p className="font-body text-charcoal font-semibold">{title}</p>
+          <p className="font-body text-muted leading-relaxed mt-1">{body}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export function MarketingSocialPage() {
   usePageMeta({
-    title: 'Social media content — Tier 2 & Tier 3 | Pretty Cool Marketing',
+    title: 'Social media, run for you | Pretty Cool Marketing',
     description:
-      'Tier 2: 30 posts a month edited in Culo Creatives and scheduled across every platform for $3,000/mo. Tier 3: adds a half-day shoot every 4 weeks in the PCM frameworks for $3,888 per month.',
+      'Pretty Cool Marketing turns your footage into 30 pieces of content a month, gets it approved, schedules it across your platforms and publishes it into The Culo Village. Send us your footage, or add a Content Creator and we make it with you.',
     keywords: [
-      'social media content agency', 'content editing and distribution', 'content creator retainer',
-      'done for you social media', 'talking head reels', 'voice over reels', 'Quick Rhythm reels',
-      'Meta Business Suite scheduling', 'Content 360',
+      'social media management australia', 'done for you social media', 'content creator retainer',
+      'founder content agency', 'Culo Creatives', 'social media scheduling', 'content shoot',
     ],
   })
 
   return (
     <main className="min-h-screen bg-surface">
       <MarketingHero
-        kicker="Offer two · monthly partnership"
-        title="Social media content, edited and distributed for you."
-        description="Two tiers. Tier 2 edits and schedules 30 posts a month across every platform and into the Village. Tier 3 adds a half-day shoot every 4 weeks in the PCM frameworks, on a fast turnaround built on the app and editing process."
+        kicker="Pretty Cool Marketing"
+        title="Social media without running a content department"
+        description={
+          <>
+            <p className="mb-4">You have got a business to run.</p>
+            <p className="mb-4">
+              Pretty Cool Marketing takes care of turning your footage into content, getting it
+              approved, scheduling it across your platforms and publishing it into The Culo Village.
+            </p>
+            <p>
+              You can send us the footage you already have, or add a Content Creator and we will come
+              and make it with you.
+            </p>
+          </>
+        }
         right={
-          <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-10 shadow-lg flex flex-col gap-4">
-            <a href="#tier-2" className="block">
-              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Tier 2</p>
+          <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-lg flex flex-col gap-4">
+            <a href="#smm" className="block">
+              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Social Media Management</p>
               <p className="font-heading text-2xl font-bold text-charcoal">$3,000 AUD <span className="text-sm font-normal text-muted">/ month</span></p>
             </a>
             <div className="border-t border-border" />
-            <a href="#tier-3" className="block">
-              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Tier 3</p>
+            <a href="#creator" className="block">
+              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">+ Content Creator</p>
               <p className="font-heading text-2xl font-bold text-charcoal">$3,888 AUD <span className="text-sm font-normal text-muted">/ month</span></p>
+            </a>
+            <a
+              href={CALENDLY}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 text-center text-sm font-semibold text-primary hover:underline"
+            >
+              Or book a call first →
             </a>
           </div>
         }
       />
 
-      {/* Tiers */}
+      {/* ── Choose how you want to work with us ─────────────────────────── */}
       <section className="py-16 md:py-20 bg-surface">
         <InnerContainer>
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Tier 2 */}
-            <div id="tier-2" className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-10 shadow-card flex flex-col scroll-mt-24">
-              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Tier 2</p>
-              <h2 className="font-heading text-2xl font-bold text-charcoal mb-2">Content Editing &amp; Distribution</h2>
-              <p className="font-body text-charcoal mb-6">
-                <span className="text-3xl font-bold">$3,000 AUD</span>{' '}
-                <span className="text-muted text-sm">per month</span>
-              </p>
-              <ul className="space-y-3 flex-1 mb-6">
-                {TIER2_POINTS.map(p => (
-                  <li key={p} className="flex gap-3 font-body text-muted leading-relaxed">
-                    <span className="text-charcoal font-bold shrink-0">—</span>{p}
-                  </li>
-                ))}
-              </ul>
-              <MarketingCheckoutButton offerId="tier2" />
-            </div>
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-10 leading-tight">
+            Choose how you want to work with us
+          </h2>
 
-            {/* Tier 3 */}
-            <div id="tier-3" className="bg-[#EBF2F8] border-2 border-primary rounded-2xl p-10 shadow-card flex flex-col scroll-mt-24">
-              <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-2">Tier 3</p>
-              <h2 className="font-heading text-2xl font-bold text-charcoal mb-2">Content Creator Full Service</h2>
-              <p className="font-body text-charcoal mb-6">
-                <span className="text-3xl font-bold">$3,888 AUD</span>{' '}
-                <span className="text-muted text-sm">per month</span>
-              </p>
-              <ul className="space-y-3 flex-1 mb-6">
-                {TIER3_POINTS.map(p => (
-                  <li key={p} className="flex gap-3 font-body text-muted leading-relaxed">
-                    <span className="text-charcoal font-bold shrink-0">—</span>{p}
-                  </li>
-                ))}
-              </ul>
-              <MarketingCheckoutButton offerId="tier3" />
+          <div id="smm" className="scroll-mt-24 mb-16">
+            <div className="mb-8">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-2">Social Media Management</p>
+              <p className="font-heading text-2xl font-bold text-charcoal mb-1">$3,000 AUD / month</p>
+              <p className="font-body text-lg font-semibold text-charcoal mb-4">You bring the footage. We run the content.</p>
+              <div className="font-body text-muted leading-relaxed space-y-3 max-w-2xl">
+                <p>We turn your raw footage into 30 pieces of content every month using Culo Creatives,
+                  then take care of the hooks, captions, approvals, scheduling and distribution.</p>
+                <p>Your content is created across a mix of formats including Quick Rhythm, voiceover,
+                  talking head and other formats that suit what you actually give us.</p>
+                <p>Everything is scheduled across your connected social platforms and published into The
+                  Culo Village, so the work you are putting into social is also building your longer
+                  term founder presence.</p>
+              </div>
             </div>
+            <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 md:p-10 mb-6">
+              <p className="font-body text-sm font-semibold text-charcoal uppercase tracking-widest mb-5">What we take care of</p>
+              <IncludeList items={SMM_INCLUDES} />
+            </div>
+            <MarketingCheckoutButton offerId="tier2" label="Start Social Media Management →" className="max-w-sm" />
+          </div>
+
+          <div id="creator" className="scroll-mt-24">
+            <p className="font-body text-lg font-semibold text-charcoal mb-2">Want us to make the footage too?</p>
+            <div className="mb-8">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-2">Social Media Management + Content Creator</p>
+              <p className="font-heading text-2xl font-bold text-charcoal mb-1">$3,888 AUD / month</p>
+              <p className="font-body text-lg font-semibold text-charcoal mb-4">We make the footage. Then we run the content.</p>
+              <div className="font-body text-muted leading-relaxed space-y-3 max-w-2xl">
+                <p>Everything in Social Media Management, plus your own Pretty Cool Marketing content day
+                  each month.</p>
+                <p>We spend 4 hours filming with you or your team, following the PCM content frameworks
+                  so we leave with footage we actually know how to turn into a month of content. That
+                  means B roll, talking heads, voiceovers, behind the scenes footage and the little
+                  pieces that give us enough to work with once we get back into Culo Creatives.</p>
+                <p>After the shoot, your creator backs up and organises the footage and spends the
+                  following working day turning it into the content system for the month. Then our team
+                  takes over approvals, scheduling, distribution and Village publishing.</p>
+              </div>
+            </div>
+            <div className="bg-[#EBF2F8] border-2 border-primary rounded-2xl p-8 md:p-10 mb-6">
+              <p className="font-body text-sm font-semibold text-charcoal uppercase tracking-widest mb-5">Your monthly content day</p>
+              <IncludeList items={CREATOR_INCLUDES} />
+            </div>
+            <MarketingCheckoutButton offerId="tier3" label="Add a Content Creator →" className="max-w-sm" />
           </div>
         </InnerContainer>
       </section>
 
-      {/* Turnaround */}
+      {/* ── What happens after you join ────────────────────────────────── */}
       <section className="py-16 md:py-20 bg-surface border-y border-border">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
-            The turnaround
-          </p>
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-4 leading-tight">
-            From shoot day to scheduled in about two weeks.
+            From raw footage to a month of content
           </h2>
           <p className="font-body text-muted leading-relaxed mb-8">
-            Shoot days take 1 day to film, 2 days to back up and 3 days to edit — 6 days. Then roughly
-            4 days for approvals, and scheduling takes about 4 days. Every 4 weeks, so content is
-            scheduled, edited and live within the next 2 weeks. These are approximate.
+            We aim to have your first month of content edited, approved and scheduled within about two
+            weeks of receiving everything we need from you. If you are on the Content Creator service,
+            your shoot happens during that setup window.
           </p>
           <div className="border border-border rounded-2xl overflow-hidden">
-            {TIMELINE.map(([when, what], i) => (
-              <div key={when} className={`flex gap-4 px-5 py-4 ${i % 2 ? 'bg-surface' : 'bg-background'}`}>
-                <span className="font-body text-sm font-semibold text-charcoal w-24 shrink-0">{when}</span>
-                <span className="font-body text-charcoal">{what}</span>
+            {TIMELINE.map(([when, label, body], i) => (
+              <div key={when} className={`px-6 py-5 ${i % 2 ? 'bg-surface' : 'bg-background'}`}>
+                <div className="flex flex-wrap items-baseline gap-x-3">
+                  <span className="font-body text-sm font-semibold text-primary w-24 shrink-0">{when}</span>
+                  <span className="font-heading text-lg font-bold text-charcoal">{label}</span>
+                </div>
+                <p className="font-body text-muted leading-relaxed mt-1 sm:ml-[calc(6rem+0.75rem)]">{body}</p>
               </div>
             ))}
           </div>
+          <p className="font-body text-xs text-muted mt-4">
+            Timings are approximate and depend on footage, approvals and account access being supplied
+            on time.
+          </p>
         </InnerContainer>
       </section>
 
-      {/* Terms */}
+      {/* ── A few things worth knowing ─────────────────────────────────── */}
       <section className="py-16 md:py-20 bg-surface">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
-            How the partnership works
-          </p>
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight">
-            The details, up front.
+            A few things worth knowing
           </h2>
           <div className="space-y-6 font-body text-muted leading-relaxed">
-            <p><strong className="text-charcoal">Ceasing the partnership.</strong> Clients can cease the partnership at any time. If you do, no content from those shoots or that editing may be used — if you don't like the content that's been processed, it isn't yours to run.</p>
-            <p><strong className="text-charcoal">Between shoots.</strong> Once scheduling is done, clients manage their own community engagement until the next shoot.</p>
-            <p><strong className="text-charcoal">Failed posts and missed days.</strong> If a post fails, it's up to you to manage it and contact PCM with any questions. If a day is missed due to computer error, that post is scheduled for the next day.</p>
-            <p><strong className="text-charcoal">No shoot?</strong> Provide 30 days' worth of raw footage instead — 10-second B-rolls through to 1-minute talking heads — and we edit that in line with Tier 2.</p>
+            <p>
+              <strong className="text-charcoal">We create it. You stay in control.</strong> You approve
+              your content before we schedule it. Once your month of content has been approved and
+              scheduled, your team remains responsible for day to day community management, including
+              comments, messages and conversations with your audience, unless we have agreed otherwise.
+            </p>
+            <p>
+              <strong className="text-charcoal">If a scheduled post does not go out.</strong> Platforms
+              occasionally fail. If we identify a scheduling issue during our management process, we
+              move the affected content to the next appropriate publishing opportunity. Once content
+              has been handed over or changed directly inside your accounts, responsibility for those
+              changes sits with the business.
+            </p>
+            <p>
+              <strong className="text-charcoal">Do not need us to film?</strong> No problem. You can use
+              Social Media Management without the Content Creator add on. Send us enough raw footage to
+              build the month from, ranging from short B roll clips through to longer talking head and
+              voiceover footage. You bring the footage. We do the rest.
+            </p>
+            <p>
+              <strong className="text-charcoal">Three months to build the rhythm.</strong> All Pretty
+              Cool Marketing monthly management services begin with a 3 month minimum partnership. That
+              gives us enough time to learn your business, build the workflow, understand what works,
+              and create something more useful than thirty random posts every month. After your first
+              three months, your partnership continues according to the terms of your service.{' '}
+              <Link to="/terms" className="text-primary underline">Read the Terms</Link>.
+            </p>
           </div>
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 bg-surface border-t border-border">
+      {/* ── Final CTA ──────────────────────────────────────────────────── */}
+      <section className="py-16 md:py-20 bg-[#EBF2F8] border-t border-[#CFE0EE]">
         <InnerContainer>
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
-                Start the partnership
-              </h2>
-              <p className="mt-4 font-body text-sm text-charcoal/80">
-                After payment you'll get instructions to email {PCM_SUPPORT_EMAIL} your raw footage
-                and drive links.{' '}
-                <Link to="/marketing/start?offer=tier2" className="text-charcoal underline">
-                  Preview the instructions →
-                </Link>
-              </p>
-              <p className="mt-2 font-body text-xs text-muted">All monthly services have a 3-month minimum term. By purchasing you agree to our <Link to="/terms" className="underline">Terms</Link>.</p>
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight text-center">
+            Ready to stop managing your own content?
+          </h2>
+          <div className="grid sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            <div className="bg-surface rounded-2xl border border-border p-7 text-center flex flex-col">
+              <p className="font-heading text-xl font-bold text-charcoal">Social Media Management</p>
+              <p className="font-body text-muted text-sm mt-1 mb-2">You bring the footage.</p>
+              <p className="font-heading text-lg font-bold text-charcoal mb-4">$3,000 AUD / month</p>
+              <MarketingCheckoutButton offerId="tier2" label="Start Social Media Management →" className="mt-auto" />
             </div>
-            <div className="md:justify-self-end w-full md:max-w-xs flex flex-col gap-4">
-              <MarketingCheckoutButton offerId="tier2" />
-              <MarketingCheckoutButton offerId="tier3" />
+            <div className="bg-surface rounded-2xl border-2 border-primary p-7 text-center flex flex-col">
+              <p className="font-heading text-xl font-bold text-charcoal">+ Content Creator</p>
+              <p className="font-body text-muted text-sm mt-1 mb-2">We make the footage with you.</p>
+              <p className="font-heading text-lg font-bold text-charcoal mb-4">$3,888 AUD / month</p>
+              <MarketingCheckoutButton offerId="tier3" label="Start with a Content Creator →" className="mt-auto" />
             </div>
           </div>
+          <p className="text-center mt-8 font-body text-sm text-muted">
+            Want to talk it through first?{' '}
+            <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline">Book a 30-minute call</a>.
+            {' '}All monthly services have a 3-month minimum.
+          </p>
         </InnerContainer>
       </section>
     </main>
