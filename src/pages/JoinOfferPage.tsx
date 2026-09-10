@@ -79,7 +79,7 @@ export function JoinOfferPage() {
                   rel="noopener noreferrer"
                   className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
-                  Lock In Culo Creatives in Canva, Forever $19 a Month
+                  Secure the $19/month founding rate
                 </a>
                 {/* Deliberately quieter than the orange CTA — the site's
                     established dark/secondary button, not a co-equal

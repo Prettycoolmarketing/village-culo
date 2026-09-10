@@ -151,6 +151,7 @@ export function Footer() {
             <a href="https://www.prettycoolmarketing.com" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
               Pretty Cool Marketing
             </a>{' '}
+            · <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>{' '}
             · Brisbane, Australia
           </p>
           <p className="text-xs text-white/30">

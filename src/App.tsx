@@ -44,6 +44,7 @@ import { MarketingLandingPage }    from './pages/marketing/MarketingLandingPage'
 import { MarketingPublishingPage } from './pages/marketing/MarketingPublishingPage'
 import { MarketingSocialPage }     from './pages/marketing/MarketingSocialPage'
 import { MarketingStartPage }      from './pages/marketing/MarketingStartPage'
+ import { TermsPage }              from './pages/TermsPage'
 
 // ─── Dashboard pages ────────────────────────────────────────────────────────────
 import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
@@ -287,6 +288,7 @@ export default function App() {
             <Route path="/marketing/publishing"   element={<MarketingPublishingPage />} />
             <Route path="/marketing/social"       element={<MarketingSocialPage />}     />
             <Route path="/marketing/start"        element={<MarketingStartPage />}      />
+            <Route path="/terms"                  element={<TermsPage />}               />
             <Route path="/claim/:slug"        element={<ClaimProfilePage />}     />
             <Route path="*"                   element={<NotFound />}             />
           </Route>

@@ -102,6 +102,17 @@ serve(async (req) => {
       ? body.messages
       : [{ role: 'user' as const, content: `I'm ${body.founderName?.trim() || 'ready'} — let's start.` }]
 
+    // Hard cap on turns — the interview is meant to run ~10 questions, and
+    // each turn is a paid call. Past this, force the finished brief instead
+    // of letting it run unbounded (one founder replaying it forever).
+    const MAX_TURNS = 28
+    if (messages.filter(m => m.role === 'assistant').length >= MAX_TURNS) {
+      messages.push({
+        role: 'user' as const,
+        content: 'That is enough — stop asking questions now and produce the finished Voice & Brand Brief from everything I have told you.',
+      })
+    }
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -110,7 +121,7 @@ serve(async (req) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-8',
+        model: 'claude-sonnet-5',
         max_tokens: 4000,
         thinking: { type: 'adaptive' },
         system: SYSTEM_PROMPT,

@@ -117,6 +117,7 @@ export function MarketingPublishingPage() {
                   Preview those instructions →
                 </Link>
               </p>
+              <p className="mt-2 font-body text-xs text-muted">By purchasing you agree to our <Link to="/terms" className="underline">Terms</Link>.</p>
             </div>
             <div className="md:justify-self-end w-full md:max-w-xs">
               <MarketingCheckoutButton offerId="publishing" />

@@ -165,6 +165,7 @@ export function MarketingSocialPage() {
                   Preview the instructions →
                 </Link>
               </p>
+              <p className="mt-2 font-body text-xs text-muted">All monthly services have a 3-month minimum term. By purchasing you agree to our <Link to="/terms" className="underline">Terms</Link>.</p>
             </div>
             <div className="md:justify-self-end w-full md:max-w-xs flex flex-col gap-4">
               <MarketingCheckoutButton offerId="tier2" />
