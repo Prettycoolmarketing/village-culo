@@ -66,7 +66,7 @@ serve(async (req) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-opus-5',
+        model: 'claude-sonnet-5',
         max_tokens: 1500,
         thinking: { type: 'adaptive' },
         system: SYSTEM_PROMPT,
