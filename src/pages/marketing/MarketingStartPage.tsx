@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
 import { PCM_SUPPORT_EMAIL, PCM_OFFERS, type PcmOffer } from '../../config/pcmPaymentLinks'
 import { VOICE_BRIEF_INTERVIEW_PROMPT } from '../../services/blogWriter'
+
+const CALENDLY_URL = 'https://calendly.com/prettycoolmarketing_/30min'
 
 const CHECKLIST = [
   'Your OneDrive links to previously posted content, raw footage and documents.',
@@ -25,6 +27,15 @@ export function MarketingStartPage() {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  // Calendly inline embed — load their widget script once.
+  useEffect(() => {
+    if (document.querySelector('script[src*="calendly.com/assets/external/widget.js"]')) return
+    const s = document.createElement('script')
+    s.src = 'https://assets.calendly.com/assets/external/widget.js'
+    s.async = true
+    document.body.appendChild(s)
+  }, [])
 
   usePageMeta({
     title: 'You’re in — send us your material | Pretty Cool Marketing',
@@ -122,6 +133,19 @@ export function MarketingStartPage() {
               Opens your mail app with the checklist ready to fill in. Attach your MD files before
               sending.
             </p>
+          </div>
+
+          {/* Lock in your first content shoot */}
+          <div className="mt-10 bg-white rounded-2xl p-6 sm:p-8 shadow-lg">
+            <h3 className="font-heading text-xl font-bold text-charcoal mb-1">Lock in your first content shoot</h3>
+            <p className="font-body text-sm text-muted mb-5">
+              Pick a time below. We shoot on Tuesdays and Thursdays, so choose whichever suits you best.
+            </p>
+            <div
+              className="calendly-inline-widget"
+              data-url={CALENDLY_URL}
+              style={{ minWidth: '320px', height: '650px' }}
+            />
           </div>
 
           <p className="mt-10 font-body text-white/90 leading-relaxed">

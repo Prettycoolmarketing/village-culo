@@ -296,13 +296,15 @@ export function FounderProfilePage() {
     .filter(r => r.disclosureVisible)
   const publicImports   = importedContentService.getAll({ founderId: founder.id, publicOnly: true })
 
-  // Featured videos — stories the founder has chosen to spotlight, always
-  // shown together with the story they belong to (see Profile > Content).
-  // Only ever pulled from real published stories with a real video attached,
-  // never a separate upload — one source of truth, no parallel content type.
+  // Featured picks — stories the founder has chosen to spotlight (see
+  // Profile > Content). When they've picked any, the public profile leads
+  // with just these instead of the full auto-imported story grid, so a
+  // profile built mostly from a bulk archive import doesn't show a wall of
+  // repeated or low-quality cover images.
   const featuredVideoStories = (founder.featuredVideoStoryIds ?? [])
     .map(id => getStories({ publicOnly: true }).find(s => s.id === id))
-    .filter((s): s is NonNullable<typeof s> => !!s && !!s.reelUrl)
+    .filter((s): s is NonNullable<typeof s> => !!s)
+  const hasFeaturedPicks = featuredVideoStories.length > 0
 
   // Series — one shelf per published series this founder runs, each shown
   // with its episodes in order. A series with zero published episodes
@@ -599,17 +601,21 @@ export function FounderProfilePage() {
             {/* ── Left: Primary content ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
 
-              {/* Stories — a story already picked as a Featured Video below is
-                  left out here, so it doesn't show up twice on the same
-                  profile page. */}
+              {/* When the founder has hand-picked featured stories, the
+                  public profile shows only those (in the same arch cards,
+                  each linking to its article). Otherwise it falls back to
+                  the full published grid. */}
               <StoryGrid
-                heading={`Stories by ${founder.name}`}
-                subheading={`Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
-                filter={{ founderId: founder.id, publicOnly: true }}
-                excludeIds={featuredVideoStories.map(s => s.id)}
+                heading={hasFeaturedPicks ? `Featured by ${founder.name}` : `Stories by ${founder.name}`}
+                subheading={hasFeaturedPicks
+                  ? `${founder.name}'s pick — the work they most want you to see.`
+                  : `Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
+                filter={hasFeaturedPicks
+                  ? { ids: featuredVideoStories.map(s => s.id), publicOnly: true }
+                  : { founderId: founder.id, publicOnly: true }}
                 sortBlogsFirst
                 hideKey="founder-profile"
-                limit={6}
+                limit={hasFeaturedPicks ? undefined : 6}
                 columns={2}
                 cardVariant="vertical"
                 showSummary
@@ -797,17 +803,15 @@ export function FounderProfilePage() {
                 </section>
               )}
 
-              {/* Featured Video — the founder's own pick, always shown last */}
-              {featuredVideoStories.length > 0 && (
+              {/* Featured picks with a video play inline here too, under the
+                  arch grid above, so a visitor can watch without leaving. */}
+              {featuredVideoStories.some(s => s.reelUrl) && (
                 <section aria-labelledby="founder-featured-video-heading">
-                  <h2 id="founder-featured-video-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    {featuredVideoStories.length === 1 ? 'Featured Video' : 'Featured Videos'}
+                  <h2 id="founder-featured-video-heading" className="font-heading text-2xl font-semibold text-charcoal mb-6">
+                    Watch
                   </h2>
-                  <p className="font-body text-sm text-muted mb-6">
-                    {founder.name}'s pick — the story they most want you to see.
-                  </p>
                   <div className="flex flex-col gap-8">
-                    {featuredVideoStories.map(story => (
+                    {featuredVideoStories.filter(s => s.reelUrl).map(story => (
                       <div key={story.id}>
                         <ReelContent reelUrl={story.reelUrl} title={story.title} summary={story.summary} landscape />
                         <Link
