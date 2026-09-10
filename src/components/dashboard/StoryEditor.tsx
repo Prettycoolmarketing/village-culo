@@ -74,6 +74,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   const [rewriteError, setRewriteError] = useState<string | null>(null)
   const [blogBeforeRewrite, setBlogBeforeRewrite] = useState<string | null>(null)
   const [listening, setListening] = useState(false)
+  const [showTags, setShowTags] = useState(false)
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
 
   // Rewrite with AI — same real, per-call AI spend as "Rewrite with Voice
@@ -488,35 +489,52 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
           </Field>
         )}
 
-        <Field label="Topics">
-          <div className="flex flex-wrap gap-1.5 mt-1">
-            {allTopics.map(topic => {
-              const active = draft.topics.some(t => t.id === topic.id)
-              return (
-                <button key={topic.id} onClick={() => toggleTopic(topic)}
-                  className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                  {topic.name}
-                </button>
-              )
-            })}
-          </div>
-        </Field>
+        <div className="border-t border-[#E8E4DD] pt-3">
+          <button
+            type="button"
+            onClick={() => setShowTags(s => !s)}
+            className="flex items-center gap-1.5 text-xs font-medium text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+          >
+            <span>{showTags ? '▾' : '▸'}</span>
+            Search tags {(draft.topics.length > 0 || (draft.ideaIds ?? []).length > 0) && `(${draft.topics.length + (draft.ideaIds ?? []).length})`}
+          </button>
+          {showTags && (
+            <div className="mt-3 space-y-4">
+              <p className="text-xs text-[#9CA3AF]">
+                Backend only — helps search and AI connect this story to the right topics. Not shown on the page.
+              </p>
+              <Field label="Topics">
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {allTopics.map(topic => {
+                    const active = draft.topics.some(t => t.id === topic.id)
+                    return (
+                      <button key={topic.id} onClick={() => toggleTopic(topic)}
+                        className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
+                        {topic.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </Field>
 
-        {founderIdeas.length > 0 && (
-          <Field label="Connected ideas" hint="Link an idea this story builds on — strengthens both.">
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {founderIdeas.map(idea => {
-                const active = (draft.ideaIds ?? []).includes(idea.id)
-                return (
-                  <button key={idea.id} onClick={() => toggleIdea(idea.id)}
-                    className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#5E6B4A] text-white border-[#5E6B4A]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#5E6B4A]/50'}`}>
-                    {idea.title}
-                  </button>
-                )
-              })}
+              {founderIdeas.length > 0 && (
+                <Field label="Connected ideas" hint="Link an idea this story builds on — strengthens both.">
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {founderIdeas.map(idea => {
+                      const active = (draft.ideaIds ?? []).includes(idea.id)
+                      return (
+                        <button key={idea.id} onClick={() => toggleIdea(idea.id)}
+                          className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#5E6B4A] text-white border-[#5E6B4A]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#5E6B4A]/50'}`}>
+                          {idea.title}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </Field>
+              )}
             </div>
-          </Field>
-        )}
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="CTA Label">
