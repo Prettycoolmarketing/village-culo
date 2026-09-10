@@ -139,7 +139,8 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
               <p className="font-body text-sm text-muted mb-1">One-off archive transfer</p>
               <p className="font-heading text-2xl font-bold text-charcoal">{tier.priceLabel}</p>
               <p className="font-body text-xs text-muted mt-1">
-                {tier.label}. Then management from $900 AUD a month, 3-month minimum.
+                {tier.label}. This one-off price covers your initial archive import only. Then management
+                from $900 AUD a month, 3-month minimum.
               </p>
             </div>
 

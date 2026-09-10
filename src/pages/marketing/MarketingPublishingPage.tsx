@@ -198,6 +198,32 @@ export function MarketingPublishingPage() {
         </InnerContainer>
       </section>
 
+      {/* Why it's worth it */}
+      <section className="py-16 md:py-20 bg-[#EBF2F8] border-y border-[#CFE0EE]">
+        <InnerContainer className="max-w-3xl">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight">
+            Why publishing your archive here is worth it
+          </h2>
+          <div className="font-body text-lg text-charcoal/80 leading-relaxed space-y-4">
+            <p>Every piece you publish here becomes a real web page of your own.</p>
+            <p>
+              Link it to your website or share it on LinkedIn, and it works as a genuine backlink
+              pointing straight back to you, the kind of credibility a PR agency would normally charge
+              you to build.
+            </p>
+            <p>
+              A page-per-post archive like this is also exactly what AI search actually reads: structured
+              articles, not a caption buried in someone else's feed, so it's how you get found there
+              instead of staying invisible to it.
+            </p>
+            <p>
+              Add the Village badge to your own site, and every one of those links leads straight back to
+              you too.
+            </p>
+          </div>
+        </InnerContainer>
+      </section>
+
       {/* DIY / Village note */}
       <section className="py-14 bg-surface border-y border-border">
         <InnerContainer className="max-w-3xl">
