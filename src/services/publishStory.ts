@@ -1,6 +1,7 @@
-import { getFounders } from './founders'
-import { getStories, updateStory } from './stories'
+import { getFounders, updateFounder } from './founders'
+import { getStories, getStory, updateStory } from './stories'
 import { getIdeas } from './ideas'
+import { canPublish, consumePublish, type PublishKind } from '../utils/publishing'
 import { importedContentService, PLATFORM_LABELS } from './importedContent'
 import { villageContentIntelligenceService, storyToInput } from './villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from './ideaSync'
@@ -36,6 +37,10 @@ export interface PublishResult {
   error?: string
   story?: Story
   summary?: PublishSummary | null
+  // Set when the publish was refused because the founder is out of
+  // publishing allowance — the UI shows the matching upsell (Archive
+  // Unlock for 'imported', a Publishing Pack for 'self').
+  limitKind?: PublishKind
 }
 
 /** Founder-curated edits from the wizard's Village Intelligence step — omitted entirely for a quick-publish. */
@@ -60,6 +65,25 @@ export interface PublishOverrides {
 export async function publishStoryCore(story: Story, overrides: PublishOverrides = {}): Promise<PublishResult> {
   const founder = getFounders().find(f => f.id === story.founderId)
 
+  // ── Publishing entitlement gate ─────────────────────────────────────
+  // Meters a genuine first-time publish only — never a re-publish/edit
+  // (the stored story is already public), and never a PCM-managed founder
+  // (their volume is a service deliverable tracked in Capo). Imported
+  // pieces draw on the archive limit (raised by Archive Unlock); new
+  // pieces draw on the free 10; either falls back to paid pack credits.
+  const kind: PublishKind = story.importedContentId ? 'imported' : 'self'
+  const wasAlreadyPublic = ['published', 'featured'].includes(getStory(story.id)?.status ?? '')
+  const isFirstPublish = story.status === 'published' && !wasAlreadyPublic
+  if (isFirstPublish && founder && !founder.pcmManaged && !canPublish(founder, kind)) {
+    return {
+      success: false,
+      limitKind: kind,
+      error: kind === 'imported'
+        ? "You've reached your archive publishing limit — unlock more to keep publishing your archive."
+        : "You've used your free publications — add a publishing pack to keep going.",
+    }
+  }
+
   const priorStoryCount = story.founderId ? getStories({ founderId: story.founderId, publicOnly: true }).length : 0
   const priorIdeas = story.founderId ? getIdeas({ founderId: story.founderId }) : []
   const priorIdeaCount = priorIdeas.length
@@ -71,6 +95,15 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
   const result = await updateStory(story)
   if (!result.success) {
     return { success: false, error: result.error ?? 'Could not publish. Please try again.' }
+  }
+
+  // Consume one publication now the story is live (awaited so a bulk-publish
+  // loop reads the decremented count on its next iteration).
+  if (isFirstPublish && founder && !founder.pcmManaged) {
+    const patch = consumePublish(founder, kind)
+    if (patch && Object.keys(patch).length > 0) {
+      await updateFounder({ ...founder, ...patch })
+    }
   }
 
   if (story.importedContentId) {

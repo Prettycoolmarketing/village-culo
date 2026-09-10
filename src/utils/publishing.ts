@@ -39,7 +39,15 @@ function n(v: number | undefined, fallback: number): number {
 export function getPublishState(founder: Founder | null | undefined): PublishState {
   const pcmManaged = !!founder?.pcmManaged
 
-  const archiveLimit = n(founder?.archivePublishLimit, FREE_ARCHIVE_PUBLISH)
+  // archivePublishLimit is the source of truth once set. Fall back to the
+  // legacy Archive Unlock fields for founders who paid before this model:
+  // a full unlock = unlimited archive publishing; a 5,000 "subset" unlock
+  // = a 5,000 limit; otherwise the free 10.
+  const archiveLimit = founder?.archivePublishLimit != null
+    ? founder.archivePublishLimit
+    : founder?.archiveUnlocked
+      ? (typeof founder.archiveUnlockCap === 'number' ? founder.archiveUnlockCap : -1)
+      : FREE_ARCHIVE_PUBLISH
   const archivePublished = n(founder?.archivePublishedCount, 0)
   const archiveRemaining = archiveLimit < 0
     ? Number.POSITIVE_INFINITY
