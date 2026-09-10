@@ -809,9 +809,25 @@ function draftTagline(description: string): string {
 export function OnboardingPage() {
   usePageTitle('Get started')
 
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('welcome')
+
+  // Signup now runs entirely through /join. A signed-in founder editing
+  // their profile goes to the dashboard; everyone else goes to /join
+  // rather than a second, parallel account-creation flow (which is how
+  // someone already signed in ended up bounced to another account's
+  // profile with a "welcome back").
+  const redirectTo = loading
+    ? null
+    : !user
+      ? '/join'
+      : getCurrentFounder(user)
+        ? '/dashboard/profile'
+        : '/join/confirm'
+  useEffect(() => {
+    if (redirectTo) navigate(redirectTo, { replace: true })
+  }, [redirectTo, navigate])
   const [draft, setDraft] = useState<Draft>(empty)
   const [publishing, setPublishing] = useState(false)
   const [publishError, setPublishError] = useState('')
@@ -999,6 +1015,10 @@ export function OnboardingPage() {
   const isReview = step === 'review'
   const isDone = step === 'done'
   const totalSteps = STEPS.length - 2 // exclude welcome + done from progress
+
+  if (loading || redirectTo) {
+    return <div className="min-h-screen bg-background" />
+  }
 
   return (
     <div className="min-h-screen bg-background pt-20 pb-20">
