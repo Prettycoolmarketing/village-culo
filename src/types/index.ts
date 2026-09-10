@@ -488,6 +488,21 @@ export interface Founder {
   // anyone unlocked before this was tracked.
   archiveUnlockAmount?: number
   archiveUnlockCurrency?: string
+
+  // ── Village publishing entitlements (see config/publishing.ts + utils/publishing.ts) ──
+  // Two separate free allowances plus a flexible paid credit pool. Free is
+  // always consumed before paid. Undefined = defaults (10 / 10 / 0).
+  archivePublishLimit?: number       // publications allowed from the imported archive; raised by Archive Unlock (−1 = unlimited). Default 10.
+  archivePublishedCount?: number     // imported pieces published so far
+  selfPublishedFreeCount?: number    // new/self-composed pieces published against the free 10
+  paidPublishCreditsGranted?: number // total credits bought via Publishing Packs (never expires)
+  paidPublishCreditsUsed?: number    // credits spent
+  // True while Pretty Cool Marketing is fulfilling this founder's content
+  // as a paid service — all self-serve publish limits, meters and upsells
+  // are bypassed; publishing volume is tracked as a service deliverable in
+  // Capo instead.
+  pcmManaged?: boolean
+  pcmManagedAt?: string
 }
 
 // A founder's status with the paid CULO Creatives product — entirely
