@@ -16,10 +16,10 @@ const INCLUDED = [
 ]
 
 const STEPS: [string, string, string][] = [
-  ['1', 'Tell us what you have', 'Book a call or send us your links. We look at the size of your archive and quote you a one-off transfer fee to bring it all in.'],
-  ['2', 'Pay to begin', 'You pay the one-off archive transfer plus your first month of management. Monthly management has a 3 month minimum.'],
-  ['3', 'Set your password', 'You get your own Culo Village dashboard, ready for your library to be built.'],
-  ['4', 'Your writer builds your library', 'Your designated writer publishes your first articles into your Village from your archive, structured to position you as the authority in your field.'],
+  ['1', 'Get your quote', 'Paste in your channels. We count your back catalogue on the spot and price the one-off transfer from that size.'],
+  ['2', 'Pay and set your password', 'Pay the archive transfer, set a password, and your Culo Village dashboard is ready.'],
+  ['3', 'Send us your material', 'Email your footage, files and drive links. We pass them to your designated writer to work through in Culo Creatives.'],
+  ['4', 'Approve the first batch', 'You get an edit link to review. Once you approve, your library goes live and scheduling begins for the next 30 days.'],
   ['5', 'Review and edit any time', 'Every article appears in your dashboard as it goes live. Change anything you like, and the change flows through to the published page.'],
 ]
 
