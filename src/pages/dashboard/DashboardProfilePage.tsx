@@ -1313,7 +1313,7 @@ export function DashboardProfilePage() {
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Businesses</p>
               </Link>
               <Link to="/dashboard/profile?tab=content&contentSubTab=published" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
-                <p className="text-2xl font-bold text-[#2D2A26]">{founderStories.length}</p>
+                <p className="text-2xl font-bold text-[#2D2A26]">{founderStories.filter(s => s.status !== 'archived').length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Stories</p>
               </Link>
               <Link to="/dashboard/ideas" className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
@@ -2148,11 +2148,12 @@ export function DashboardProfilePage() {
                   />
                 )
               }
-              const sortedStories = [...founderStories].sort((a, b) =>
+              const activeStories = founderStories.filter(s => s.status !== 'archived')
+              const sortedStories = [...activeStories].sort((a, b) =>
                 publishedSort === 'newest' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
               )
 
-              return founderStories.length === 0 ? (
+              return activeStories.length === 0 ? (
                 <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
                   <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
                   <Link to="/dashboard/publish" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
