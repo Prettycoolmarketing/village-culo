@@ -2,7 +2,6 @@ import { useState, useRef, type ReactNode } from 'react'
 import { updateStory, deleteStory, uniqueStorySlug } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
-import { getIdeas } from '../../services/ideas'
 import { getBusinesses } from '../../services/businesses'
 import { getFounder } from '../../services/founders'
 import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
@@ -149,7 +148,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     setListening(true)
   }
 
-  const founderIdeas = getIdeas({ founderId: draft.founderId })
   const founderBusinesses = getBusinesses({ founderId: draft.founderId }).filter(b => b.name.trim().length > 0)
   const appearsOn = getStoryAppearsOn(draft)
 
@@ -178,11 +176,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     if (businessId === draft.businessId) return
     const current = draft.relatedBusinessIds ?? []
     set('relatedBusinessIds', current.includes(businessId) ? current.filter(id => id !== businessId) : [...current, businessId])
-  }
-
-  function toggleIdea(ideaId: string) {
-    const current = draft.ideaIds ?? []
-    set('ideaIds', current.includes(ideaId) ? current.filter(id => id !== ideaId) : [...current, ideaId])
   }
 
   function toggleAppearsOn(key: string, hide: boolean) {
@@ -223,7 +216,12 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   }
 
   const hasReel = draft.contentTypes.includes('reel')
-  const hasBlog = draft.contentTypes.includes('blog')
+  // A story published with real blog text but a contentTypes list that
+  // doesn't include 'blog' (common on older/imported stories) was hiding
+  // the whole Blog field, mic and rewrite button on edit — even though the
+  // text is live on the published page. Existing blog text always earns
+  // the field back, regardless of what contentTypes says.
+  const hasBlog = draft.contentTypes.includes('blog') || !!draft.blog?.trim()
   const isVisible = draft.status === 'published' || draft.status === 'featured'
 
   return (
@@ -498,12 +496,13 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
             className="flex items-center gap-1.5 text-xs font-medium text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
           >
             <span>{showTags ? '▾' : '▸'}</span>
-            Search tags {(draft.topics.length > 0 || (draft.ideaIds ?? []).length > 0) && `(${draft.topics.length + (draft.ideaIds ?? []).length})`}
+            Search tags {draft.topics.length > 0 && `(${draft.topics.length})`}
           </button>
           {showTags && (
             <div className="mt-3 space-y-4">
               <p className="text-xs text-[#9CA3AF]">
                 Backend only — helps search and AI connect this story to the right topics. Not shown on the page.
+                Ideas this story builds on connect automatically when you save.
               </p>
               <Field label="Topics">
                 <div className="flex flex-wrap gap-1.5 mt-1">
@@ -518,22 +517,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
                   })}
                 </div>
               </Field>
-
-              {founderIdeas.length > 0 && (
-                <Field label="Connected ideas" hint="Link an idea this story builds on — strengthens both.">
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {founderIdeas.map(idea => {
-                      const active = (draft.ideaIds ?? []).includes(idea.id)
-                      return (
-                        <button key={idea.id} onClick={() => toggleIdea(idea.id)}
-                          className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#5E6B4A] text-white border-[#5E6B4A]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#5E6B4A]/50'}`}>
-                          {idea.title}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </Field>
-              )}
             </div>
           )}
         </div>
