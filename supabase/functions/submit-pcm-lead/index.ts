@@ -55,6 +55,20 @@ serve(async (req) => {
     })
     if (insertError) throw new Error(insertError.message)
 
+    // Enrol into the "C" nurture sequence (Pretty Cool Marketing leads) —
+    // best-effort, never blocks the lead capture itself.
+    try {
+      await admin.from('email_sequence_enrollments').insert({
+        id: crypto.randomUUID(),
+        sequence_id: 'C',
+        email,
+        data: {
+          sequenceId: 'C', email, name: entry.name, source: entry.source,
+          startedAt: entry.createdAt, sentDays: [], status: 'active',
+        },
+      })
+    } catch { /* best-effort */ }
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })

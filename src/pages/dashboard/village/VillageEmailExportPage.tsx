@@ -5,6 +5,7 @@ import { Tabs } from '../../../components/dashboard/Tabs'
 import { waitlistService, type WaitlistEntry } from '../../../services/waitlist'
 import { emailSubscribersService, type EmailSubscriber } from '../../../services/emailSubscribers'
 import { emailCampaignsService, type EmailCampaign, type CampaignSendStats } from '../../../services/emailCampaigns'
+import { emailSequencesService, emailSequenceEnrollmentsService, type EmailSequence, type EmailSequenceStep, type EmailSequenceEnrollment } from '../../../services/emailSequences'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import { toCSV, downloadCSV } from '../../../utils/emailExport'
 
@@ -30,6 +31,7 @@ export function VillageEmailExportPage() {
           { key: 'waitlist',        label: 'Waitlist' },
           { key: 'subscribers',     label: 'Subscribers' },
           { key: 'campaigns',       label: 'Campaigns' },
+          { key: 'sequences',       label: 'Sequences' },
         ]}
         active={pageTab}
         onChange={setPageTab}
@@ -41,6 +43,7 @@ export function VillageEmailExportPage() {
       {pageTab === 'waitlist' && <WaitlistPanel />}
       {pageTab === 'subscribers' && <SubscribersPanel />}
       {pageTab === 'campaigns' && <CampaignsPanel />}
+      {pageTab === 'sequences' && <SequencesPanel />}
 
     </div>
   )
@@ -391,6 +394,177 @@ function CampaignsPanel() {
             </div>
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Sequences panel — drip email sequences (A/B/C), sent by day since
+// enrollment via the daily send-sequence-emails cron job ──────────────────
+
+function SequencesPanel() {
+  const [sequences, setSequences] = useState<EmailSequence[]>(emailSequencesService.getAll())
+  const [enrollments, setEnrollments] = useState<EmailSequenceEnrollment[]>(emailSequenceEnrollmentsService.getAll())
+  const [loading, setLoading] = useState(true)
+  const [activeSequenceId, setActiveSequenceId] = useState<string | null>(null)
+  const [editingStep, setEditingStep] = useState<EmailSequenceStep | null>(null)
+
+  useEffect(() => {
+    void Promise.all([emailSequencesService.refresh(), emailSequenceEnrollmentsService.refresh()]).then(() => {
+      setSequences(emailSequencesService.getAll())
+      setEnrollments(emailSequenceEnrollmentsService.getAll())
+      setLoading(false)
+      setActiveSequenceId(prev => prev ?? emailSequencesService.getAll()[0]?.id ?? null)
+    })
+  }, [])
+
+  const active = sequences.find(s => s.id === activeSequenceId)
+  const activeEnrollments = enrollments.filter(e => e.sequenceId === activeSequenceId)
+
+  function newSequence() {
+    const id = window.prompt('Sequence letter/id (e.g. A, B):')?.trim().toUpperCase()
+    if (!id) return
+    const name = window.prompt('Sequence name:')?.trim() || id
+    void emailSequencesService.save({ id, name, steps: [] }).then(() => {
+      setSequences(emailSequencesService.getAll())
+      setActiveSequenceId(id)
+    })
+  }
+
+  function saveStep() {
+    if (!active || !editingStep) return
+    const steps = active.steps.some(s => s.day === editingStep.day)
+      ? active.steps.map(s => s.day === editingStep.day ? editingStep : s)
+      : [...active.steps, editingStep]
+    void emailSequencesService.save({ ...active, steps: steps.sort((a, b) => a.day - b.day) }).then(() => {
+      setSequences(emailSequencesService.getAll())
+      setEditingStep(null)
+    })
+  }
+
+  function deleteStep(day: number) {
+    if (!active) return
+    void emailSequencesService.save({ ...active, steps: active.steps.filter(s => s.day !== day) }).then(() => {
+      setSequences(emailSequencesService.getAll())
+    })
+  }
+
+  function stopEnrollment(enrollment: EmailSequenceEnrollment) {
+    void emailSequenceEnrollmentsService.stop(enrollment).then(() => {
+      setEnrollments(emailSequenceEnrollmentsService.getAll())
+    })
+  }
+
+  if (loading) return <p className="text-sm text-[#9CA3AF]">Loading…</p>
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {sequences.map(s => (
+          <button
+            key={s.id}
+            onClick={() => setActiveSequenceId(s.id)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              activeSequenceId === s.id ? 'bg-[#C86A43] text-white' : 'bg-[#F3EDE6] text-[#6B7280] hover:bg-[#E8E4DD]'
+            }`}
+          >
+            Sequence {s.id}
+          </button>
+        ))}
+        <button onClick={newSequence} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-[#C86A43] hover:bg-[#FBF1EB] transition-colors">
+          + New sequence
+        </button>
+      </div>
+
+      {!active ? (
+        <p className="text-sm text-[#9CA3AF]">No sequences yet — create one above.</p>
+      ) : (
+        <>
+          <p className="text-sm font-semibold text-[#2D2A26] mb-1">{active.name}</p>
+          <p className="text-xs text-[#9CA3AF] mb-4">
+            {activeEnrollments.filter(e => e.status === 'active').length} active ·{' '}
+            {activeEnrollments.filter(e => e.status === 'completed').length} completed ·{' '}
+            {activeEnrollments.filter(e => e.status === 'stopped').length} stopped
+          </p>
+
+          <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6] mb-4">
+            {active.steps.length === 0 && (
+              <p className="text-sm text-[#9CA3AF] px-4 py-4">No steps yet — add Day 0 to start.</p>
+            )}
+            {active.steps.map(step => (
+              <div key={step.day} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-[#2D2A26]">Day {step.day} — {step.subject}</p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button onClick={() => setEditingStep(step)} className="text-xs font-semibold text-[#C86A43] hover:underline">Edit</button>
+                  <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => deleteStep(step.day)} className="text-xs text-[#9CA3AF] hover:text-red-500" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {editingStep ? (
+            <div className="bg-white rounded-xl border border-[#E8E4DD] p-4 mb-6">
+              <p className="text-sm font-bold text-[#2D2A26] mb-3">Edit step</p>
+              <div className="flex items-center gap-2 mb-2">
+                <label className="text-xs text-[#6B7280]">Day</label>
+                <input
+                  type="number"
+                  value={editingStep.day}
+                  onChange={e => setEditingStep({ ...editingStep, day: Number(e.target.value) })}
+                  className="w-20 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] focus:outline-none focus:border-[#C86A43]"
+                />
+              </div>
+              <input
+                type="text"
+                value={editingStep.subject}
+                onChange={e => setEditingStep({ ...editingStep, subject: e.target.value })}
+                placeholder="Subject line"
+                className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] mb-2 focus:outline-none focus:border-[#C86A43]"
+              />
+              <textarea
+                value={editingStep.bodyHtml}
+                onChange={e => setEditingStep({ ...editingStep, bodyHtml: e.target.value })}
+                rows={8}
+                placeholder="HTML body — e.g. <p>...</p><p>...</p>"
+                className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] resize-y font-mono focus:outline-none focus:border-[#C86A43]"
+              />
+              <div className="flex items-center gap-2 mt-3">
+                <button onClick={saveStep} className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors">Save step</button>
+                <button onClick={() => setEditingStep(null)} className="text-xs font-semibold px-3 py-2 rounded-lg text-[#6B7280] bg-[#F3EDE6] hover:bg-[#E8E4DD] transition-colors">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setEditingStep({ day: (active.steps[active.steps.length - 1]?.day ?? -1) + 1, subject: '', bodyHtml: '' })}
+              className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FBF1EB] text-[#C86A43] hover:bg-[#C86A43]/10 transition-colors mb-6"
+            >
+              + Add step
+            </button>
+          )}
+
+          <p className="text-sm font-semibold text-[#2D2A26] mb-2">Enrollments</p>
+          {activeEnrollments.length === 0 ? (
+            <p className="text-sm text-[#9CA3AF]">Nobody enrolled in this sequence yet.</p>
+          ) : (
+            <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+              {activeEnrollments.map(e => (
+                <div key={e.id} className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-[#2D2A26]">{e.email}</p>
+                    <p className="text-[10px] text-[#9CA3AF]">
+                      Started {new Date(e.startedAt).toLocaleDateString('en-AU')} · {e.sentDays.length} sent · {e.status}
+                    </p>
+                  </div>
+                  {e.status === 'active' && (
+                    <ConfirmButton label="Stop" confirmLabel="Confirm" onConfirm={() => stopEnrollment(e)} className="text-xs text-[#9CA3AF] hover:text-red-500" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
