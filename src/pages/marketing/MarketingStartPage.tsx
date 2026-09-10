@@ -60,18 +60,18 @@ export function MarketingStartPage() {
         </InnerContainer>
       </section>
 
-      <section className="py-16 md:py-20 bg-surface">
+      <section className="py-16 md:py-20 bg-gradient-to-br from-[#7CA9CC] to-[#4A7A9E]">
         <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
+          <p className="font-body text-xs font-semibold text-white/80 uppercase tracking-widest mb-3">
             What to send
           </p>
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-8 leading-tight">
             Email us your information
           </h2>
 
-          <div className="bg-[#3E6E92] rounded-2xl p-8 mb-10">
-            <p className="font-heading text-xl font-bold text-white mb-2">Your brand story file (the important one)</p>
-            <p className="font-body text-white/80 leading-relaxed mb-4">
+          <div className="bg-white rounded-2xl p-8 mb-10 shadow-lg">
+            <p className="font-heading text-xl font-bold text-charcoal mb-2">Your brand story file (the important one)</p>
+            <p className="font-body text-muted leading-relaxed mb-4">
               This is a document about your business, your story, your expertise and your voice. It is
               what lets us write your articles so they sound like you, not generic AI. If you have ever
               generated something like this with ChatGPT, Claude or another AI, send us the file. If
@@ -87,23 +87,23 @@ export function MarketingStartPage() {
               </button>
               <button
                 onClick={() => setShowPrompt(s => !s)}
-                className="px-5 py-2.5 border border-white/25 text-white text-sm font-semibold rounded-xl hover:border-white transition-colors"
+                className="px-5 py-2.5 border border-border text-charcoal text-sm font-semibold rounded-xl hover:border-primary transition-colors"
               >
                 {showPrompt ? 'Hide it' : 'Read it first'}
               </button>
             </div>
             {showPrompt && (
-              <pre className="mt-4 max-h-80 overflow-y-auto whitespace-pre-wrap text-xs text-white/60 bg-black/20 rounded-lg p-4 font-mono">
+              <pre className="mt-4 max-h-80 overflow-y-auto whitespace-pre-wrap text-xs text-muted bg-[#F8F5F0] rounded-lg p-4 font-mono">
                 {VOICE_BRIEF_INTERVIEW_PROMPT}
               </pre>
             )}
           </div>
 
-          <p className="font-body text-sm font-semibold text-charcoal uppercase tracking-widest mb-3">And these links</p>
+          <p className="font-body text-sm font-semibold text-white uppercase tracking-widest mb-3">And these links</p>
           <ul className="space-y-4 mb-10">
             {CHECKLIST.map(item => (
-              <li key={item} className="flex gap-3 font-body text-lg text-muted leading-relaxed">
-                <span className="text-charcoal font-bold shrink-0">—</span>
+              <li key={item} className="flex gap-3 font-body text-lg text-white/90 leading-relaxed">
+                <span className="text-white font-bold shrink-0">—</span>
                 {item}
               </li>
             ))}
@@ -124,7 +124,7 @@ export function MarketingStartPage() {
             </p>
           </div>
 
-          <p className="mt-10 font-body text-muted leading-relaxed">
+          <p className="mt-10 font-body text-white/90 leading-relaxed">
             Once we have your material:{' '}
             {offer?.id === 'publishing' ? (
               <>we restructure and republish each piece, then send you your founder profile link and every article.</>
@@ -136,7 +136,7 @@ export function MarketingStartPage() {
           </p>
 
           <p className="mt-8 font-body text-sm">
-            <Link to="/marketing" className="text-charcoal hover:underline">← Back to Pretty Cool Marketing</Link>
+            <Link to="/marketing" className="text-white underline hover:no-underline">← Back to Pretty Cool Marketing</Link>
           </p>
         </InnerContainer>
       </section>
