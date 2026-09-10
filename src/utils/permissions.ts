@@ -1,45 +1,43 @@
 import type { UserRole } from '../contexts/AuthContext'
 
 /**
- * The single permission matrix for CAPO (formerly "Village HQ") — every CAPO
- * route reads from this, via RoleProtectedRoute (App.tsx) for enforcement and
- * DashboardLayout for nav visibility. Enforcement lives at the route level;
- * nav filtering is a convenience on top of that, never a substitute for it —
- * hiding a link does not gate the page it points to.
+ * The single permission matrix for CAPO — every CAPO route reads from this,
+ * via RoleProtectedRoute (App.tsx) for enforcement and DashboardLayout for
+ * nav visibility. Enforcement lives at the route level; nav filtering is a
+ * convenience on top of that, never a substitute for it.
  *
- * Mirrors the role responsibilities from the CAPO sprint brief:
- *   Owner     — full system access, roles, settings, developer tools
- *   Admin     — founders, businesses, publishers, claims, featured, analytics
- *   Editor    — curate/feature content, publisher feeds, moderate stories
- *   Moderator — review claims, moderate reports, review imported content
- *   Founder   — their own workspace only, no CAPO access
+ * Two staff roles:
+ *   Admin (owner) — sees and does everything.
+ *   Capo (editor) — Pretty Cool Marketing (Client Tracker + Leads) and
+ *                   People (Founders + Email Lists). Nothing else.
+ *
+ * `admin` and `moderator` are legacy roles kept for existing accounts:
+ * `admin` is treated as full access alongside `owner`; `moderator` has no
+ * CAPO access and should be re-set to Capo or Admin.
  */
 export type CapoSection =
   | 'overview' | 'founders' | 'imports' | 'claims' | 'emails'
   | 'featured' | 'analytics' | 'settings' | 'team' | 'editorial' | 'partners'
   | 'usage' | 'creativeFeedback' | 'pcm'
 
+const ADMIN: UserRole[] = ['admin', 'owner']
+const CAPO_AND_ADMIN: UserRole[] = ['editor', 'admin', 'owner']
+
 export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
-  overview:  ['moderator', 'editor', 'admin', 'owner'],
-  founders:  ['editor', 'admin', 'owner'],
-  imports:   ['moderator', 'admin', 'owner'],
-  claims:    ['moderator', 'admin', 'owner'],
-  emails:    ['admin', 'owner'],
-  featured:  ['editor', 'admin', 'owner'],
-  analytics: ['admin', 'owner'],
-  settings:  ['owner'],
-  team:      ['owner'],
-  editorial: ['editor', 'admin', 'owner'],
-  // Involves real affiliate deals and revenue splits — admin/owner only, not editor/moderator.
-  partners:  ['admin', 'owner'],
-  // Village import volume ties directly to hosting/AI cost, and CULO
-  // Creatives feedback is what locks a founder's real billing rate —
-  // both admin/owner only, same bar as analytics/partners above.
-  usage:            ['admin', 'owner'],
-  creativeFeedback: ['admin', 'owner'],
-  // Pretty Cool Marketing client tracker — done-for-you service delivery.
-  // Open to any staff role for now; roles get split out later.
-  pcm:              ['moderator', 'editor', 'admin', 'owner'],
+  overview:  ADMIN,
+  founders:  CAPO_AND_ADMIN,
+  imports:   ADMIN,
+  claims:    ADMIN,
+  emails:    CAPO_AND_ADMIN,
+  featured:  ADMIN,
+  analytics: ADMIN,
+  settings:  ADMIN,
+  team:      ADMIN,
+  editorial: ADMIN,
+  partners:  ADMIN,
+  usage:            ADMIN,
+  creativeFeedback: ADMIN,
+  pcm:              CAPO_AND_ADMIN,
 }
 
 export function canAccessCapoSection(role: UserRole | undefined, section: CapoSection): boolean {
@@ -56,18 +54,18 @@ export function hasAnyCapoAccess(role: UserRole | undefined): boolean {
 export const ROLE_LABELS: Record<UserRole, string> = {
   founder: 'Founder',
   moderator: 'Moderator',
-  editor: 'Editor',
+  editor: 'Capo',
   admin: 'Admin',
-  owner: 'Owner',
+  owner: 'Admin',
 }
 
 export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   founder: 'Manages their own profile, business and stories only. No CAPO access.',
-  moderator: 'Reviews claims, moderates reports, reviews imported content.',
-  editor: 'Curates and features content, manages publisher feeds, moderates stories.',
-  admin: 'Manages founders, businesses, publishers, claims, featured content and analytics.',
-  owner: 'Full system access — roles, settings, developer tools. Reserved for the platform owner.',
+  moderator: 'Legacy role — no CAPO access. Re-set to Capo or Admin.',
+  editor: 'Pretty Cool Marketing (Client Tracker and Leads) and People (Founders and Email Lists). Nothing else.',
+  admin: 'Sees and does everything across CAPO.',
+  owner: 'Sees and does everything across CAPO.',
 }
 
-/** Assignable by the Team page — every role, though the UI reserves owner-granting for extra confirmation. */
-export const ASSIGNABLE_ROLES: UserRole[] = ['founder', 'moderator', 'editor', 'admin', 'owner']
+/** The two staff roles offered on the Team page. `editor` is shown as "Capo", `owner` as "Admin". */
+export const ASSIGNABLE_ROLES: UserRole[] = ['editor', 'owner']

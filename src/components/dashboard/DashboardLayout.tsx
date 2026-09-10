@@ -275,9 +275,16 @@ export function DashboardLayout() {
                   Email Lists pattern) instead of six separate nav items. */}
               <SectionLabel label="CAPO" large />
 
-              {/* Analytics is no longer its own nav item — it's the default
-                  tab on Village Overview (now under "Coming soon" at the
-                  bottom), still gated to admin/owner within that page. */}
+              {/* Capo staff see PCM first, then People. Everything else is
+                  Admin only. */}
+              {canAccessCapoSection(user?.role, 'pcm') && (
+                <>
+                  <SectionLabel label="Pretty Cool Marketing" />
+                  <NavItem to="/dashboard/pcm" label="Client Tracker" icon={<Icon path={icons.services} />} />
+                  <NavItem to="/dashboard/pcm/leads" label="Leads" icon={<Icon path={icons.email} />} />
+                </>
+              )}
+
               {(canAccessCapoSection(user?.role, 'founders')
                 || canAccessCapoSection(user?.role, 'emails')) && (
                 <>
@@ -291,9 +298,6 @@ export function DashboardLayout() {
                 </>
               )}
 
-              {/* Village Usage moved into Village Overview's Usage tab —
-                  content-transfer volume is a Village-wide concern, not
-                  specific to paying Creatives members. */}
               {(canAccessCapoSection(user?.role, 'usage') || canAccessCapoSection(user?.role, 'creativeFeedback')) && (
                 <>
                   <SectionLabel label="CULO Creatives" />
@@ -306,17 +310,6 @@ export function DashboardLayout() {
                 </>
               )}
 
-              {canAccessCapoSection(user?.role, 'pcm') && (
-                <>
-                  <SectionLabel label="Pretty Cool Marketing" />
-                  <NavItem to="/dashboard/pcm" label="Client Tracker" icon={<Icon path={icons.services} />} />
-                  <NavItem to="/dashboard/pcm/leads" label="Leads" icon={<Icon path={icons.email} />} />
-                </>
-              )}
-
-              {/* System sits right after PCM's Leads now. Bulk Import lives
-                  as a tab on the Founders page; Staff (managing team/roles)
-                  is a system-administration concern. */}
               {(canAccessCapoSection(user?.role, 'team') || canAccessCapoSection(user?.role, 'settings')) && (
                 <>
                   <SectionLabel label="System" />
@@ -329,11 +322,14 @@ export function DashboardLayout() {
                 </>
               )}
 
-              {/* Not built out yet — kept in CAPO but parked at the bottom
-                  so they don't sit above the tools that are in daily use. */}
-              <SectionLabel label="Coming soon" />
-              <NavItem to="/dashboard/village/opportunities" label="Opportunities" icon={<Icon path={icons.partnership} />} hint="Matches, revenue, claims, spotlight, sources and partners" />
-              <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
+              {/* Not built out yet — Admin only, parked at the bottom. */}
+              {canAccessCapoSection(user?.role, 'overview') && (
+                <>
+                  <SectionLabel label="Coming soon" />
+                  <NavItem to="/dashboard/village/opportunities" label="Opportunities" icon={<Icon path={icons.partnership} />} hint="Matches, revenue, claims, spotlight, sources and partners" />
+                  <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
+                </>
+              )}
             </>
           )}
         </nav>

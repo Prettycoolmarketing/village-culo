@@ -101,7 +101,7 @@ export function CapoTeamPage() {
   const [invites, setInvites] = useState<StaffInvite[]>([])
   const [loading, setLoading] = useState(true)
   const [addEmail, setAddEmail] = useState('')
-  const [addRole, setAddRole] = useState<UserRole>('moderator')
+  const [addRole, setAddRole] = useState<UserRole>('editor')
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
   const [addMessage, setAddMessage] = useState<string | null>(null)
