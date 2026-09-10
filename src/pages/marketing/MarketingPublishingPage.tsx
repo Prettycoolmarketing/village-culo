@@ -1,46 +1,74 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
-import { MarketingHero, MarketingPriceCard } from './MarketingHero'
-import { MarketingCheckoutButton } from './MarketingCheckoutButton'
+import { MarketingHero } from './MarketingHero'
 import { PCM_SUPPORT_EMAIL } from '../../config/pcmPaymentLinks'
 
+const CALENDLY = 'https://calendly.com/prettycoolmarketing_/30min'
+const QUOTE_MAILTO = `mailto:${PCM_SUPPORT_EMAIL}?subject=${encodeURIComponent('Village Service quote')}&body=${encodeURIComponent('My business:\nMy website:\nMy YouTube:\nMy podcast:\nMy Instagram (roughly how many posts):\nAnything else I have been featured in:\n')}`
+
 const INCLUDED = [
-  'We collect everything you have previously posted across YouTube, podcasts, websites and Instagram.',
-  'Each piece is restructured and republished as its own individual article — built for searchability.',
-  'Your blogs, articles and stories are rewritten to position you as an authority and a business in your area.',
-  'You are set up with your founder profile link and a link to every published article.',
-  'We show you how to link your published work back to your social accounts and your website.',
+  'We bring your whole archive into The Culo Village. YouTube videos, podcast episodes, Instagram posts, blogs and articles you have been featured in.',
+  'A designated writer restructures and publishes your articles every month, built around the real idea, story or lesson inside each piece and connected back to your founder profile.',
+  'Every article is written for searchability, so search engines and AI find you as an authority in your field.',
+  'You get your own Culo Village dashboard. Every article shows up there as it goes live, and it is yours to edit any time.',
+  'Your founder profile and article links are ready to connect back to your website and your socials.',
 ]
 
-const STEPS = [
-  { n: '1', title: 'Pay for the service', body: 'A single $900 AUD payment. No subscription, no ongoing fee.' },
-  { n: '2', title: 'Send us your material', body: `You get instructions to email ${PCM_SUPPORT_EMAIL} with your information — including your MD files from AI, and your OneDrive / Google Drive links to previously posted content.` },
-  { n: '3', title: 'We restructure and republish', body: 'We transfer each piece into the Culo Village and republish it as a standalone article, structured to position you as a founder and an authority in your field.' },
-  { n: '4', title: 'You get your links', body: 'Your founder profile and every published article, ready to link from your social media and your website.' },
+const STEPS: [string, string, string][] = [
+  ['1', 'Tell us what you have', 'Book a call or send us your links. We look at the size of your archive and quote you a one-off transfer fee to bring it all in.'],
+  ['2', 'Pay to begin', 'You pay the one-off archive transfer plus your first month of management. Monthly management has a 3 month minimum.'],
+  ['3', 'Set your password', 'You get your own Culo Village dashboard, ready for your library to be built.'],
+  ['4', 'Your writer builds your library', 'Your designated writer publishes your first articles into your Village from your archive, structured to position you as the authority in your field.'],
+  ['5', 'Review and edit any time', 'Every article appears in your dashboard as it goes live. Change anything you like, and the change flows through to the published page.'],
 ]
 
 export function MarketingPublishingPage() {
   usePageMeta({
-    title: 'Publishing in the Culo Village — $900 one-off | Pretty Cool Marketing',
+    title: 'Village Service — your archive, published and managed | Pretty Cool Marketing',
     description:
-      'We transfer all your previously posted content across YouTube, podcasts, websites and Instagram and republish each piece as an individual article, structured so AI finds you as an authority. One-off $900 AUD.',
+      'Pretty Cool Marketing brings your whole back catalogue into The Culo Village and publishes it as structured founder articles, month after month, with a designated writer. From $900 AUD a month plus a one-off archive transfer.',
     keywords: [
       'content republishing service', 'AI search authority', 'founder authority positioning',
-      'republish podcast as article', 'Culo Village publishing', 'done for you content transfer',
+      'blog management', 'Culo Village publishing', 'done for you content',
     ],
   })
 
   return (
     <main className="min-h-screen bg-surface">
       <MarketingHero
-        kicker="Offer one · one-off service"
-        title="Publishing in the Culo Village"
-        description="As a service, we transfer all the content you have previously posted across YouTube, podcasts, websites and Instagram, and republish each piece as an individual article. This is what helps AI find you as a founder and positions you as an authority in your field."
+        kicker="Pretty Cool Marketing"
+        title="Your archive, published and managed for you"
+        description={
+          <>
+            <p className="mb-4">
+              You have years of content spread across platforms that nobody can search.
+            </p>
+            <p className="mb-4">
+              We bring your whole archive into The Culo Village and give you a designated writer who
+              publishes it as structured founder articles, month after month, so you are found through
+              search and AI as the authority in your field.
+            </p>
+            <p>You focus on serving your customers. We take care of the library.</p>
+          </>
+        }
         right={
-          <MarketingPriceCard price="$900 AUD" cadence="one-off payment · one-off service">
-            <MarketingCheckoutButton offerId="publishing" />
-          </MarketingPriceCard>
+          <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-lg text-center">
+            <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-1">Village Service</p>
+            <p className="font-heading text-3xl font-bold text-charcoal">from $900 AUD <span className="text-base font-normal text-muted">/ month</span></p>
+            <p className="font-body text-sm text-muted mt-1 mb-5">plus a one-off archive transfer, quoted from the size of your archive</p>
+            <a
+              href={CALENDLY}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Book a call for a quote →
+            </a>
+            <a href={QUOTE_MAILTO} className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">
+              Or email us your links
+            </a>
+          </div>
         }
       />
 
@@ -51,12 +79,12 @@ export function MarketingPublishingPage() {
             What's included
           </p>
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-8 leading-tight">
-            A done-for-you move into a home built for search.
+            A managed move into a home built for search
           </h2>
-          <ul className="space-y-4">
+          <ul className="space-y-5">
             {INCLUDED.map(item => (
               <li key={item} className="flex gap-3 font-body text-lg text-muted leading-relaxed">
-                <span className="text-charcoal font-bold shrink-0">—</span>
+                <span className="text-primary font-bold shrink-0">—</span>
                 {item}
               </li>
             ))}
@@ -66,23 +94,23 @@ export function MarketingPublishingPage() {
 
       {/* How it works */}
       <section className="py-16 md:py-20 bg-surface">
-        <InnerContainer>
-          <div className="max-w-2xl mb-12">
-            <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
-              How it works
-            </p>
-            <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
-              Four steps.
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-8">
-            {STEPS.map(step => (
-              <div key={step.n} className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-card">
-                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                  <span className="font-heading font-bold text-charcoal">{step.n}</span>
+        <InnerContainer className="max-w-3xl">
+          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">
+            How it works
+          </p>
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-10 leading-tight">
+            From your scattered archive to a published library
+          </h2>
+          <div className="space-y-4">
+            {STEPS.map(([n, title, body]) => (
+              <div key={n} className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-7 flex gap-5">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="font-heading font-bold text-primary">{n}</span>
                 </div>
-                <h3 className="font-heading text-xl font-bold text-charcoal mb-2">{step.title}</h3>
-                <p className="font-body text-muted leading-relaxed">{step.body}</p>
+                <div>
+                  <h3 className="font-heading text-xl font-bold text-charcoal mb-1">{title}</h3>
+                  <p className="font-body text-muted leading-relaxed">{body}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -93,36 +121,36 @@ export function MarketingPublishingPage() {
       <section className="py-14 bg-surface border-y border-border">
         <InnerContainer className="max-w-3xl text-center">
           <p className="font-body text-lg text-charcoal leading-relaxed">
-            Clients can also do this themselves by becoming a Culo Village member. The Village is set
-            up for searchability — we are the service that restructures your blogs, articles and
-            stories and takes care of it for you.{' '}
-            <a href="https://www.culovillage.com" className="text-charcoal font-semibold hover:underline">
-              Learn about the Village →
+            You can also do this yourself by becoming a Culo Village member. The Village is built for
+            searchability. This is the service where we bring it all in and keep publishing it for you.{' '}
+            <a href="https://www.culovillage.com/join" className="text-primary font-semibold hover:underline">
+              Join the Village →
             </a>
           </p>
         </InnerContainer>
       </section>
 
-      {/* Final CTA — cream section (like the hero), orange button */}
-      <section className="py-16 md:py-20 bg-surface border-t border-border">
-        <InnerContainer>
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
-                Start your publishing service
-              </h2>
-              <p className="mt-4 font-body text-sm text-charcoal/80">
-                After payment you'll get instructions to email us your material.{' '}
-                <Link to="/marketing/start?offer=publishing" className="text-charcoal underline">
-                  Preview those instructions →
-                </Link>
-              </p>
-              <p className="mt-2 font-body text-xs text-muted">By purchasing you agree to our <Link to="/terms" className="underline">Terms</Link>.</p>
-            </div>
-            <div className="md:justify-self-end w-full md:max-w-xs">
-              <MarketingCheckoutButton offerId="publishing" />
-            </div>
-          </div>
+      {/* Final CTA */}
+      <section className="py-16 md:py-20 bg-[#EBF2F8] border-t border-[#CFE0EE]">
+        <InnerContainer className="max-w-2xl text-center">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight mb-4">
+            Ready to be found?
+          </h2>
+          <p className="font-body text-lg text-charcoal/80 leading-relaxed mb-8">
+            Book a 30-minute call and we will quote your archive transfer and get you started.
+          </p>
+          <a
+            href={CALENDLY}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+          >
+            Book a call for a quote →
+          </a>
+          <p className="mt-6 font-body text-sm text-muted">
+            Monthly management has a 3-month minimum. By starting you agree to our{' '}
+            <Link to="/terms" className="underline">Terms</Link>.
+          </p>
         </InnerContainer>
       </section>
     </main>
