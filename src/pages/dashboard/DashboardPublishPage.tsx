@@ -10,6 +10,8 @@ import { villageContentIntelligenceService, storyToInput } from '../../services/
 import { publishStoryCore } from '../../services/publishStory'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
+import { PublishLimitModal } from '../../components/dashboard/PublishLimitModal'
+import { PublicationMeter } from '../../components/dashboard/PublicationMeter'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { previewIdeaImpact } from '../../services/ideaSync'
 import { computeReadability } from '../../utils/readability'
@@ -321,6 +323,16 @@ function FormatStep({ draft, onChange, onNext }: {
         title="What's Your Story?"
         subtitle="Update The Village or edit with CULO in Canva to continue curating your life's work."
       />
+
+      {(() => {
+        const f = getFounders().find(x => x.id === draft.founderId)
+        return (
+          <div className="flex flex-wrap gap-2 mb-6">
+            <PublicationMeter founder={f} kind="self" />
+            <PublicationMeter founder={f} kind="imported" />
+          </div>
+        )
+      })()}
 
       {/* Bring in your Culo Creatives designs from Canva right here — same
           browser and flow as Import Content, just at the top of Publish. */}
@@ -1688,6 +1700,7 @@ export function DashboardPublishPage() {
     return saved ? { ...base, ...saved } : base
   })
   const [publishing,    setPublishing]    = useState(false)
+  const [limitModal,    setLimitModal]    = useState<null | 'imported' | 'self'>(null)
   const [publishedSlug, setPublishedSlug] = useState('')
   const [publishError,  setPublishError]  = useState('')
   const [lastAction,    setLastAction]    = useState<'publish' | 'draft' | 'archive'>('publish')
@@ -1863,6 +1876,11 @@ export function DashboardPublishPage() {
 
     if (!result.success) {
       setPublishing(false)
+      // Out of publishing allowance — show the matching upsell, not a raw error.
+      if (result.limitKind) {
+        setLimitModal(result.limitKind)
+        return
+      }
       const raw = result.error ?? ''
       // A slug collision here almost always means this exact title was
       // already published (most often a double-click on "Publish to
@@ -1896,8 +1914,20 @@ export function DashboardPublishPage() {
     setStep('done')
   }
 
+  const founderForLimit = getFounders().find(f => f.id === draft.founderId)
+
   return (
     <div className="min-h-full p-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {limitModal && founderForLimit && (
+        <PublishLimitModal
+          open
+          onClose={() => setLimitModal(null)}
+          kind={limitModal}
+          founder={founderForLimit}
+          founderEmail={user?.email}
+          archiveDetectedCount={importedContentService.getAll({ founderId: draft.founderId }).length}
+        />
+      )}
       {step !== 'done' && (
         <div className="flex items-center justify-between mb-2">
           <ProgressBar
