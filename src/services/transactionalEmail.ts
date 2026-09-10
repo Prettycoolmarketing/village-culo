@@ -7,6 +7,7 @@ type EmailBody =
   | { type: 'staff-invite'; to: string; role: string; invitedBy?: string }
   | { type: 'claim-submitted-staff'; founderName: string; founderSlug: string; requesterName: string; requesterEmail: string }
   | { type: 'partner-application-staff'; businessName: string; applicationUrl: string; pitch: string }
+  | { type: 'pcm-content-ready'; to: string; founderName: string }
 
 /**
  * Fire-and-forget call to the send-transactional-email Edge Function.

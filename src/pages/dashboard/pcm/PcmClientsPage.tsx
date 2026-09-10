@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import {
-  getPcmClients, createPcmClient, currentStage,
+  getPcmClients, createPcmClient, currentStage, syncPcmClientsFromServer,
   PCM_OFFER_LABELS, PCM_OFFER_IDS, type PcmOfferId,
 } from '../../../lib/pcmClients'
 
@@ -23,6 +23,8 @@ export function PcmClientsPage() {
   })
 
   function refresh() { setClients(getPcmClients()) }
+
+  useEffect(() => { void syncPcmClientsFromServer().then(refresh) }, [])
 
   function submit(e: React.FormEvent) {
     e.preventDefault()

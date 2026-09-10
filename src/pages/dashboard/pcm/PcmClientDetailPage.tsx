@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
-  getPcmClient, updatePcmClient, deletePcmClient, togglePcmStage, addPcmActivity,
+  getPcmClient, updatePcmClient, deletePcmClient, togglePcmStage, addPcmActivity, syncPcmClientsFromServer,
   PCM_STAGES, PCM_OFFER_LABELS, type PcmStageId,
 } from '../../../lib/pcmClients'
 import { PCM_SUPPORT_EMAIL } from '../../../config/pcmPaymentLinks'
 import { getFounder, getFounderBySlug, updateFounder } from '../../../services/founders'
 import { getStories } from '../../../services/stories'
+import { sendTransactionalEmail } from '../../../services/transactionalEmail'
 
 const font = { fontFamily: "'DM Sans', sans-serif" }
 
@@ -29,6 +30,13 @@ export function PcmClientDetailPage() {
   const [founderRef, setFounderRef] = useState(client?.founderId ?? '')
   const [linkError, setLinkError] = useState<string | null>(null)
 
+  function reload() { setClient(getPcmClient(clientId)) }
+
+  // A client created server-side by stripe-pcm-webhook may not be in this
+  // browser's local cache yet — sync once on mount so opening a direct link
+  // to a brand new client doesn't land on "not found".
+  useEffect(() => { void syncPcmClientsFromServer().then(reload) }, [])
+
   if (!client) {
     return (
       <div className="p-8 sm:pt-12" style={font}>
@@ -36,8 +44,6 @@ export function PcmClientDetailPage() {
       </div>
     )
   }
-
-  function reload() { setClient(getPcmClient(clientId)) }
 
   function toggle(stage: PcmStageId, done: boolean) {
     togglePcmStage(clientId, stage, done)
@@ -50,8 +56,15 @@ export function PcmClientDetailPage() {
     reload()
   }
 
-  function notifyClient() {
-    addPcmActivity(clientId, `Client notified (logged — email not yet automated).`)
+  async function notifyClient() {
+    if (client!.founderId) {
+      const founder = getFounder(client!.founderId)
+      if (founder) {
+        await updateFounder({ ...founder, pcmGateOpen: true })
+        sendTransactionalEmail({ type: 'pcm-content-ready', to: client!.email, founderName: founder.name })
+      }
+    }
+    addPcmActivity(clientId, 'Client notified — content marked ready, dashboard "being built" banner turned off.')
     reload()
   }
 
@@ -183,12 +196,12 @@ export function PcmClientDetailPage() {
           })}
         </div>
         <button
-          onClick={notifyClient}
+          onClick={() => void notifyClient()}
           className="mt-5 text-sm font-semibold px-4 py-2.5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
         >
-          Notify client
+          Notify client — content is ready
         </button>
-        <span className="ml-3 text-xs text-[#9CA3AF]">Logs a note for now — email automation comes later.</span>
+        <span className="ml-3 text-xs text-[#9CA3AF]">Opens their dashboard's "being built" banner and emails them.</span>
       </section>
 
       {/* Notes */}

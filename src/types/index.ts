@@ -503,6 +503,14 @@ export interface Founder {
   // Capo instead.
   pcmManaged?: boolean
   pcmManagedAt?: string
+  // Which PCM package this founder bought — drives which dashboard sections
+  // show as "being built for you" below. Set by stripe-pcm-webhook.
+  pcmService?: 'publishing' | 'social' | 'full'
+  // False from checkout until CAPO staff flip it on (PcmClientDetailPage's
+  // "Notify client" toggle) once their first batch of work is actually
+  // live — the dashboard shows a blurred "being built" banner over the
+  // relevant sections while this is false, instead of an empty Content tab.
+  pcmGateOpen?: boolean
 }
 
 // A founder's status with the paid CULO Creatives product — entirely

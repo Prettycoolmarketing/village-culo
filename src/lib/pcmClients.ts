@@ -1,9 +1,11 @@
 // Pretty Cool Marketing — client tracker ("Capo" staff view).
 //
-// Prototype storage: localStorage only, on the staff member's own browser.
-// This is intentionally NOT wired to Supabase yet — it's a checklist for
-// staff to work through per client. A later pass moves this to a shared
-// table and turns "Notify client" into a real email.
+// Local cache in localStorage, mirrored to the shared `pcm_clients` table
+// (see migration 031) so a client created server-side by stripe-pcm-webhook
+// — no staff data entry involved — shows up here too. Every mutation here
+// pushes to Supabase best-effort (fire-and-forget, same spirit as the rest
+// of this codebase's cache-first services); call syncPcmClientsFromServer()
+// on page load to pull down anything created outside this browser.
 //
 // Pipeline model — the four stages the client's work moves through. Each
 // stage is a toggle staff flip as the work progresses:
@@ -14,6 +16,8 @@
 //   4. Live                      on  = scheduled / published across platforms + the Village
 //
 // The client's "current stage" is the highest stage reached.
+
+import { supabase, isSupabaseConfigured } from './supabase'
 
 const KEY = 'pcm_clients_v1'
 
@@ -84,6 +88,27 @@ function write(clients: PcmClient[]): void {
   localStorage.setItem(KEY, JSON.stringify(clients))
 }
 
+function pushToServer(client: PcmClient): void {
+  if (!isSupabaseConfigured || !supabase) return
+  void supabase.from('pcm_clients').upsert({
+    id: client.id, founder_id: client.founderId ?? null, email: client.email, data: client,
+  }).then(({ error }) => { if (error) console.warn('pcm_clients sync failed', error) })
+}
+
+/** Pulls every row from the shared table and merges it into the local cache
+ *  — server data wins on conflict, since that's the durable copy. Call this
+ *  once when the tracker/detail pages mount. */
+export async function syncPcmClientsFromServer(): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return
+  const { data, error } = await supabase.from('pcm_clients').select('data')
+  if (error || !data) return
+  const serverClients = data.map(row => row.data as PcmClient)
+  const local = read()
+  const byId = new Map(local.map(c => [c.id, c]))
+  for (const c of serverClients) byId.set(c.id, c)
+  write([...byId.values()])
+}
+
 export function getPcmClients(): PcmClient[] {
   return read().sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
@@ -113,6 +138,7 @@ export function createPcmClient(input: {
     createdAt: now,
   }
   write([...read(), client])
+  pushToServer(client)
   return client
 }
 
@@ -122,11 +148,13 @@ export function updatePcmClient(id: string, patch: Partial<PcmClient>): PcmClien
   if (idx < 0) return undefined
   clients[idx] = { ...clients[idx], ...patch }
   write(clients)
+  pushToServer(clients[idx])
   return clients[idx]
 }
 
 export function deletePcmClient(id: string): void {
   write(read().filter(c => c.id !== id))
+  if (isSupabaseConfigured && supabase) void supabase.from('pcm_clients').delete().eq('id', id)
 }
 
 function logActivity(client: PcmClient, text: string): PcmActivityEntry[] {

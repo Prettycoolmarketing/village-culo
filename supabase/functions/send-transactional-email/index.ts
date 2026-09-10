@@ -29,6 +29,7 @@ type EmailBody =
   | { type: 'staff-invite'; to: string; role: string; invitedBy?: string }
   | { type: 'claim-submitted-staff'; founderName: string; founderSlug: string; requesterName: string; requesterEmail: string }
   | { type: 'partner-application-staff'; businessName: string; applicationUrl: string; pitch: string }
+  | { type: 'pcm-content-ready'; to: string; founderName: string }
 
 // Staff-facing notifications (new claim / new partner application) always go
 // to the fixed CAPO inbox, never a caller-supplied address — the caller is
@@ -100,6 +101,16 @@ function render(body: EmailBody): { subject: string; html: string } {
            <p style="margin-top:16px;"><strong>Signup link:</strong> ${body.applicationUrl}</p>
            <p style="margin-top:8px;"><strong>Pitch:</strong> ${body.pitch}</p>
            ${emailButton('Review partners', `${SITE_URL}/dashboard/village/partners`)}`,
+        ),
+      }
+    case 'pcm-content-ready':
+      return {
+        subject: `Your first batch is live, ${body.founderName.split(' ')[0]}`,
+        html: emailLayout(
+          `Your Pretty Cool Marketing content is live`,
+          `<p>Hi ${body.founderName.split(' ')[0]},</p>
+           <p>Your account manager has finished your first batch of content. It's live in your Village dashboard right now.</p>
+           ${emailButton('View your dashboard', `${SITE_URL}/dashboard/profile?tab=content`)}`,
         ),
       }
   }
