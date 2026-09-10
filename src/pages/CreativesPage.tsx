@@ -215,6 +215,43 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
+      {/* ── About joining the Village ────────────────────────────────────────
+        This page is where Canva users land to join. Spell out the whole
+        path so there are no surprises between here and editing in Canva.
+      */}
+      <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="join-village-heading">
+        <InnerContainer className="max-w-3xl">
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+            About joining the Village
+          </p>
+          <h2 id="join-village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
+            Culo Creatives lives inside The Culo Village
+          </h2>
+          <p className="font-body text-lg text-muted leading-relaxed mb-8">
+            The Village is your home base. It is free forever, it is where your founding rate is locked
+            to a real account, and it is where your finished content gets published so people can
+            actually find you through search and AI. Culo Creatives is the Canva app you edit in.
+          </p>
+          <ol className="flex flex-col gap-4">
+            {[
+              ['Join the Village', 'Hit the join button below and enter your email.'],
+              ['Lock in your price', 'Confirm your founding rate. Free until 1 January 2027, then $19 AUD a month for founders who started before then.'],
+              ['Set your password', 'One screen, then you are in.'],
+              ['Land in your dashboard', 'The Culo Creatives section welcomes you with your instructions and the link straight into the Canva app.'],
+              ['Edit in Canva, publish in the Village', 'Turn your footage into blogs, carousels and reels in Canva, then publish them across the Village for discovery.'],
+            ].map(([title, body], i) => (
+              <li key={title} className="flex gap-4">
+                <span className="shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary font-heading font-bold text-sm flex items-center justify-center">{i + 1}</span>
+                <div>
+                  <p className="font-heading font-semibold text-charcoal">{title}</p>
+                  <p className="font-body text-muted leading-relaxed">{body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </InnerContainer>
+      </section>
+
       {/* ── Final CTA ────────────────────────────────────────────────────────
         Held for the bottom of the page so everything above it makes the
         case first. Join the Village first (free, and where the founding
