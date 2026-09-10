@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Story, StoryFilter } from '../types'
 import { getStories } from '../services/stories'
 import { getFounder } from '../services/founders'
@@ -44,6 +45,9 @@ interface StoryGridProps {
   // state with a CTA — for profile pages, where an unpublished section
   // reads as "this founder isn't active" rather than an invitation.
   hideEmpty?: boolean
+  // Show at most this many, with a "View all N" button that expands the
+  // rest in place — keeps long profile pages tight.
+  limit?: number
 }
 
 const columnClasses = {
@@ -71,7 +75,9 @@ export function StoryGrid({
   excludeIds,
   sortBlogsFirst = false,
   hideEmpty = false,
+  limit,
 }: StoryGridProps) {
+  const [expanded, setExpanded] = useState(false)
   const fetched = explicitStories ?? getStories(filter)
   let stories = fetched
     .filter(s => !hideKey || !s.hiddenLocations?.includes(hideKey))
@@ -94,6 +100,10 @@ export function StoryGrid({
 
   if (hideEmpty && stories.length === 0) return null
 
+  const total = stories.length
+  const capped = limit != null && !expanded && total > limit
+  const visible = capped ? stories.slice(0, limit) : stories
+
   return (
     <section aria-label={heading ?? 'Stories'} className={className}>
       {heading && (
@@ -112,7 +122,7 @@ export function StoryGrid({
           role="list"
           aria-label={`${stories.length} ${stories.length === 1 ? 'story' : 'stories'}`}
         >
-          {stories.map(story => {
+          {visible.map(story => {
             const founder = getFounder(story.founderId)
             const business = getBusiness(story.businessId)
             return (
@@ -130,6 +140,17 @@ export function StoryGrid({
               </div>
             )
           })}
+        </div>
+      )}
+
+      {capped && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => setExpanded(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary text-primary text-sm font-semibold rounded-xl hover:bg-primary hover:text-white transition-colors"
+          >
+            View all {total} stories
+          </button>
         </div>
       )}
     </section>

@@ -609,6 +609,7 @@ export function FounderProfilePage() {
                 excludeIds={featuredVideoStories.map(s => s.id)}
                 sortBlogsFirst
                 hideKey="founder-profile"
+                limit={6}
                 columns={2}
                 cardVariant="vertical"
                 showSummary
