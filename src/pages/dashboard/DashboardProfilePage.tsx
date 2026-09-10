@@ -1260,23 +1260,25 @@ export function DashboardProfilePage() {
               {renderIdentityFields(draft)}
             </div>
 
-            {/* Featured Video — pick a published story with a video to spotlight at the bottom of the public profile */}
+            {/* Featured stories — hand-pick what shows on the public profile;
+                when any are picked the profile shows only these, not the
+                full auto-imported grid. */}
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
               <div>
-                <p className="text-sm font-semibold text-[#2D2A26]">Featured Video</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Pick your best story with a video — it'll feature at the bottom of your public profile.</p>
+                <p className="text-sm font-semibold text-[#2D2A26]">Featured stories</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Pick the work you want on your public profile. Once you pick any, your profile shows only these — nothing else from your library.</p>
               </div>
               {(() => {
-                const eligible = founderStories.filter(s => (s.status === 'published' || s.status === 'featured') && s.reelUrl)
+                const eligible = founderStories.filter(s => s.status === 'published' || s.status === 'featured')
                 if (eligible.length === 0) {
-                  return <p className="text-xs text-[#9CA3AF]">Publish a story with a video attached to feature it here.</p>
+                  return <p className="text-xs text-[#9CA3AF]">Publish a story to feature it here.</p>
                 }
                 const selectedIds = draft.featuredVideoStoryIds ?? []
                 const selectedCount = eligible.filter(s => selectedIds.includes(s.id)).length
                 return (
                   <details className="group rounded-lg border border-[#E8E4DD]">
                     <summary className="flex items-center justify-between gap-2.5 px-3 py-2.5 cursor-pointer list-none text-sm text-[#2D2A26]">
-                      <span>{selectedCount === 0 ? 'Choose a video…' : `${selectedCount} video${selectedCount === 1 ? '' : 's'} selected`}</span>
+                      <span>{selectedCount === 0 ? 'Choose stories…' : `${selectedCount} selected`}</span>
                       <svg className="w-4 h-4 text-[#9CA3AF] transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
