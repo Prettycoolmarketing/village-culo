@@ -1,16 +1,19 @@
 import { useRef, useState } from 'react'
 import { VOICE_BRIEF_INTERVIEW_PROMPT } from '../../services/blogWriter'
+import { VoiceBriefInterview } from './VoiceBriefInterview'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
 
-export function VoiceBriefEditor({ value, updatedAt, onChange }: {
+export function VoiceBriefEditor({ value, updatedAt, onChange, founderName }: {
   value: string | undefined
   updatedAt: string | undefined
   onChange: (value: string | undefined) => void
+  founderName?: string
 }) {
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [fileStatus, setFileStatus] = useState<'idle' | 'loading' | 'added'>('idle')
+  const [interviewing, setInterviewing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function handleFile(file: File | undefined) {
@@ -52,6 +55,13 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
         )}
       </div>
 
+      {interviewing ? (
+        <VoiceBriefInterview
+          founderName={founderName}
+          onComplete={brief => { onChange(brief); setInterviewing(false) }}
+          onCancel={() => setInterviewing(false)}
+        />
+      ) : (
       <div className="bg-[#FBF1EB] rounded-lg p-8 flex flex-col gap-4">
         <textarea
           value={value ?? ''}
@@ -60,6 +70,13 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
           className={inputClass + ' resize-none font-mono text-sm flex-1 min-h-48 p-4 bg-white'}
         />
         <div className="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setInterviewing(true)}
+            className="text-sm font-semibold px-4 py-2.5 rounded-lg border border-[#2D2A26] text-[#2D2A26] hover:bg-[#2D2A26] hover:text-white transition-colors"
+          >
+            I don't use AI — answer a few questions instead
+          </button>
           <button
             type="button"
             onClick={handleCopyPrompt}
@@ -95,6 +112,7 @@ export function VoiceBriefEditor({ value, updatedAt, onChange }: {
           />
         </div>
       </div>
+      )}
     </div>
   )
 }

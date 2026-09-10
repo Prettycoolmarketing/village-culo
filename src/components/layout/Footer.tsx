@@ -146,16 +146,18 @@ export function Footer() {
         </div>
 
         <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white/40">
-            © {new Date().getFullYear()} CULO Village ·{' '}
-            <a href="https://www.prettycoolmarketing.com" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">
-              Pretty Cool Marketing
-            </a>{' '}
-            · <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>{' '}
-            · Brisbane, Australia
+          <p className="text-xs text-white/50 leading-relaxed">
+            With love from{' '}
+            <Link to="/founders/shakas-designer" className="text-white/70 hover:text-white transition-colors">Shakas</Link>,
+            founder of{' '}
+            <Link to="/" className="text-white/70 hover:text-white transition-colors">The Culo Village</Link>{' '}
+            <span className="text-white/30">✕</span>{' '}
+            <Link to="/creatives" className="text-white/70 hover:text-white transition-colors">Culo Creatives in Canva</Link>
           </p>
-          <p className="text-xs text-white/30">
-            Create with Culo Creatives in Canva. Publish to The Culo Village.
+          <p className="text-xs text-white/40">
+            © {new Date().getFullYear()} · <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>{' '}
+            · <a href="https://www.prettycoolmarketing.com" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">Pretty Cool Marketing</a>{' '}
+            · Brisbane, Australia
           </p>
         </div>
       </div>
