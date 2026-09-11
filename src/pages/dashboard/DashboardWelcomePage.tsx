@@ -73,8 +73,8 @@ export function DashboardWelcomePage() {
       {/* ── How The Culo Village Works ───────────────────────────────────── */}
       <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
         <Link to="/dashboard/import-content" className="group block">
-          <h2 className="text-lg font-semibold text-[#2D2A26] mb-3 group-hover:text-[#C86A43] transition-colors">
-            How The Culo Village Works <span className="text-[#C86A43] text-sm font-normal">→</span>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4 group-hover:text-[#C86A43] transition-colors">
+            How The Culo Village Works <span className="text-[#C86A43] text-lg font-normal">→</span>
           </h2>
           <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
             The Culo Village structures your previously posted content from disconnected channels and accounts
@@ -103,24 +103,24 @@ export function DashboardWelcomePage() {
         </div>
       </section>
 
-      {/* ── How Culo Creatives Works — the bigger, primary section ────────── */}
-      <section className="w-full bg-white rounded-2xl border-2 border-[#2D2A26]/10 px-8 py-10 sm:px-14 sm:py-14">
+      {/* ── How Culo Creatives Works ──────────────────────────────────────── */}
+      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
         <Link to="/dashboard/creatives" className="group block">
           <h2 className="text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4 group-hover:text-[#C86A43] transition-colors">
             How Culo Creatives Works <span className="text-[#C86A43] text-lg font-normal">→</span>
           </h2>
-          <p className="text-base text-[#6B7280] leading-relaxed max-w-2xl mb-8">
+          <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
             Culo Creatives is the Canva app that turns your raw footage and messy thoughts into finished
             blogs, carousels and reels — exclusively in Canva, in your own brand. Once it's made, you check
             it and publish it the same way you publish anything in the Village.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
             {CREATIVES_STEPS.map((s, i) => (
               <div key={s.title}>
-                <div className="w-14 h-14 rounded-full bg-[#EBF2F8] text-[#3E6E92] flex items-center justify-center shrink-0 mb-4 text-lg font-bold">
+                <div className="w-11 h-11 rounded-full bg-[#EBF2F8] text-[#3E6E92] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
                   {i + 5}
                 </div>
-                <p className="text-lg font-semibold text-[#2D2A26] mb-1.5">{s.title}</p>
+                <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
                 <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
               </div>
             ))}
