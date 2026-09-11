@@ -596,9 +596,9 @@ export function ArchivePage() {
               Publish in CULO Creatives, exclusively in Canva
             </h2>
             <p className="font-body text-sm text-white/60 mb-6 leading-relaxed">
-              Turn your raw footage and messy thoughts into finished content without leaving Canva. You're
-              locked in — we'll notify you the moment it opens. Start with The Culo Village now and your
-              account is ready the day it launches.
+              Turn your raw footage and messy thoughts into finished content without leaving Canva. Start
+              with The Culo Village now and we'll notify you — with the chance to lock in the founding
+              rate — the moment it opens.
             </p>
             <Link
               to="/join"

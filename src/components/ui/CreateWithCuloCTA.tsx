@@ -39,10 +39,13 @@ export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
         {/* Canva approval is still pending, but "Create with CULO in Canva"
             above already leads to the real Village signup — this used to
             be a separate bare email-capture waitlist for something that
-            doesn't exist yet; now it's just reassurance that starting
-            above locks them in for launch. */}
+            doesn't exist yet. "Locked in" is a specific, real claim that
+            only becomes true once billing is actually set up on the
+            founding rate inside the dashboard (DashboardCreativesPage) —
+            starting here just gets a founder in line for that. */}
         <p className="font-body text-xs text-white/50 border-t border-white/10 pt-4">
-          You're locked in — start above and we'll notify you the moment Culo Creatives is live.
+          Start above and we'll notify you — with the chance to lock in the founding rate — the moment
+          Culo Creatives is live.
         </p>
       </div>
     )

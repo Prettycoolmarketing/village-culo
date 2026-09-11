@@ -139,7 +139,21 @@ function FeedbackTab({
           <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
             It's been received — it genuinely helps shape where CULO Creatives goes next.
           </p>
-          {!hasBilling && (
+          {hasBilling ? (
+            // The actual "pre-order" confirmation — billing is set up, the
+            // rate is locked, and nothing happens or gets charged until
+            // Canva ships. Founders were landing here with no confirmation
+            // at all once they'd already paid/committed, which read as
+            // "did that actually work?" rather than a clear yes.
+            <div className="bg-[#5E6B4A]/10 border border-[#5E6B4A]/30 rounded-xl px-5 py-4">
+              <p className="text-sm font-semibold text-[#5E6B4A] mb-1">You're locked in ✓</p>
+              <p className="text-sm text-[#6B7280] leading-relaxed">
+                Think of this like a pre-order: your $19/month founding rate is secured now, and you won't
+                be charged a cent until January 1, 2027. We'll email you the moment CULO Creatives goes
+                live in Canva.
+              </p>
+            </div>
+          ) : (
             <>
               <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
                 Add your payment details now to keep this rate — you won't be charged until January 1, 2027.
