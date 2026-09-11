@@ -324,6 +324,12 @@ function FormatStep({ draft, onChange, onNext }: {
         subtitle="Update The Village or edit with CULO in Canva to continue curating your life's work."
       />
 
+      <div className="mb-6">
+        <Link to="/dashboard/creatives" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#3E6E92] hover:text-[#2D5573] transition-colors">
+          Edit with Culo Creatives in Canva →
+        </Link>
+      </div>
+
       {(() => {
         const f = getFounders().find(x => x.id === draft.founderId)
         return (
@@ -336,16 +342,11 @@ function FormatStep({ draft, onChange, onNext }: {
 
       {/* Bring in your Culo Creatives designs from Canva right here — same
           browser and flow as Import Content, just at the top of Publish. */}
-      <div className="mb-3">
+      <div className="mb-8">
         <CanvaImportCard
           founderId={draft.founderId}
           onImported={item => onChange(importedContentPatch(item, draft))}
         />
-      </div>
-      <div className="text-right mb-8">
-        <Link to="/dashboard/creatives" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors">
-          Edit with Culo Creatives in Canva →
-        </Link>
       </div>
 
       <div>

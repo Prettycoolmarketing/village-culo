@@ -15,11 +15,11 @@ import {
 } from '../../services/importedContent'
 import { syncImportEditsToStory } from '../../services/publishStory'
 import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
-import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
+import { enrichImportedContent, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { canUseRewrite } from '../../utils/permissions'
-import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, extractFaqsAI } from '../../services/blogWriter'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { MediaUpload, inferKindFromUrl } from '../../components/ui/MediaUpload'
 import {
@@ -585,11 +585,14 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.id])
 
+  const [shapingQa, setShapingQa] = useState(false)
+
   // "Shape these as Q&As" (under the Blog field) re-analyses the founder's
   // current Blog text, auto-adds every detected topic (founder un-ticks any
   // that don't fit rather than having to hunt for and click each one), and
-  // extracts real Q&A pairs straight from the Blog/transcript text itself —
-  // never a topic-templated question, never a fabricated answer.
+  // asks the AI for real Q&A pairs inferred from the Blog/transcript text —
+  // genuine reader questions the content implies, not a keyword-templated
+  // question with a sentence bolted on as the "answer."
   useEffect(() => {
     if (shapeTrigger === 0) return
     const result = villageContentIntelligenceService.analyse(importedContentToInput(draft))
@@ -598,12 +601,16 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
     setOpen(true)
     for (const t of [...result.primaryTopics, ...result.secondaryTopics]) onAddTopic(t)
     const combinedText = [draft.description, draft.transcriptText].filter(Boolean).join(' ')
-    const pairs = extractQaFromBlog(draft.title, combinedText)
-    setBlogQaPairs(pairs)
-    setAnswerDrafts(prev => {
-      const next = { ...prev }
-      pairs.forEach(p => { if (!savedFAQs.has(p.question)) next[p.question] = p.answer })
-      return next
+    setShapingQa(true)
+    void extractFaqsAI({ title: draft.title, text: combinedText }).then(({ pairs }) => {
+      setShapingQa(false)
+      if (!pairs) return
+      setBlogQaPairs(pairs)
+      setAnswerDrafts(prev => {
+        const next = { ...prev }
+        pairs.forEach(p => { if (!savedFAQs.has(p.question)) next[p.question] = p.answer })
+        return next
+      })
     })
     requestAnimationFrame(() => containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -757,6 +764,13 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
             </div>
           )}
 
+          {shapingQa && (
+            <p className="text-[10px] text-[#9CA3AF] mb-3 flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full border-2 border-[#E8E4DD] border-t-[#C86A43] animate-spin shrink-0" aria-hidden="true" />
+              Working out what your audience would actually ask…
+            </p>
+          )}
+
           {blogQaPairs.length > 0 && (
             <div className="mb-3">
               <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide mb-1.5">
@@ -835,15 +849,6 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
             </div>
           )}
 
-          {intel.relatedContentIds.length > 0 && (
-            <p className="text-[10px] text-[#9CA3AF]">
-              {intel.relatedContentIds.length} related piece{intel.relatedContentIds.length !== 1 ? 's' : ''} found in Village
-            </p>
-          )}
-
-          <p className="text-[9px] text-[#C4BDB4] pt-1">
-            Analysed {new Date(intel.generatedAt).toLocaleDateString('en-AU')}
-          </p>
         </div>
       )}
 
