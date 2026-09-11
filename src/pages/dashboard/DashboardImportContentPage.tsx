@@ -18,7 +18,9 @@ import { syncImportEditsToStory } from '../../services/publishStory'
 import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
 import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
+import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { canUseRewrite } from '../../utils/permissions'
+import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { MediaUpload, inferKindFromUrl } from '../../components/ui/MediaUpload'
 import {
@@ -860,11 +862,54 @@ interface EditFormProps {
   onChange: (updated: ImportedContent) => void
   onSave: () => void
   onCancel: () => void
+  canRewrite?: boolean
 }
 
-export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
+export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false }: EditFormProps) {
   const [listening, setListening] = useState(false)
   const recognitionRef = useRef<{ stop: () => void } | null>(null)
+  const [rewriting, setRewriting] = useState(false)
+  const [rewriteError, setRewriteError] = useState<string | null>(null)
+  const [blogBeforeRewrite, setBlogBeforeRewrite] = useState<string | null>(null)
+
+  // Same idea as StoryEditor's Rewrite with AI — draws on this piece's own
+  // real source (its caption/description, thumbnail, when it was posted,
+  // which platform) rather than just rephrasing the current text back at
+  // itself.
+  async function handleRewriteBlog() {
+    const founder = getFounder(draft.founderId)
+    if (!founder?.voiceBrief?.trim()) {
+      setRewriteError('Add a Voice & Brand Brief in your profile first — Rewrite with AI needs it to write in your voice.')
+      return
+    }
+    if (!draft.description?.trim()) {
+      setRewriteError('Nothing to rewrite yet — write or dictate something first.')
+      return
+    }
+    setRewriting(true)
+    setRewriteError(null)
+    const result = await generateBlogFromVoiceBrief({
+      voiceBrief: founder.voiceBrief,
+      founderName: founder.name,
+      caption: draft.description,
+      imageUrls: draft.thumbnailUrl ? [draft.thumbnailUrl] : undefined,
+      postedAt: draft.publishedAt,
+      platform: draft.sourcePlatform,
+    })
+    setRewriting(false)
+    if (result.error || !result.blog?.blog) {
+      setRewriteError(result.error ?? 'Could not rewrite this. Please try again.')
+      return
+    }
+    setBlogBeforeRewrite(draft.description ?? '')
+    field('description', normalizeBlogSpacing(result.blog.blog))
+  }
+
+  function handleUndoRewrite() {
+    if (blogBeforeRewrite === null) return
+    field('description', blogBeforeRewrite)
+    setBlogBeforeRewrite(null)
+  }
 
   // Dictation — the browser's own free, local speech-to-text (Web Speech
   // API), no server call and no AI spend. Talk through the story and it
@@ -1026,19 +1071,41 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
           not before. */}
       <div className="mb-4 flex flex-col items-center gap-3 py-2">
         <p className="text-xs font-semibold text-[#6B7280]">Say your story to be shaped as your blog</p>
-        <button
-          type="button"
-          onClick={toggleDictation}
-          title={listening ? 'Stop dictating' : 'Dictate your story — speaks straight into the Blog field'}
-          className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
-            listening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#2D2A26] text-white hover:bg-[#1a1815]'
-          }`}
-        >
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
-            <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleDictation}
+            title={listening ? 'Stop dictating' : 'Dictate your story — speaks straight into the Blog field'}
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
+              listening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#2D2A26] text-white hover:bg-[#1a1815]'
+            }`}
+          >
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+              <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
+            </svg>
+          </button>
+          {canRewrite && (
+            <button
+              type="button"
+              onClick={() => void handleRewriteBlog()}
+              disabled={rewriting}
+              className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FBF1EB] text-[#C86A43] hover:bg-[#C86A43]/10 disabled:opacity-50 transition-colors"
+            >
+              {rewriting ? 'Rewriting…' : '✨ Rewrite with AI'}
+            </button>
+          )}
+          {blogBeforeRewrite !== null && (
+            <button
+              type="button"
+              onClick={handleUndoRewrite}
+              className="text-xs font-semibold px-3 py-2 rounded-lg text-[#6B7280] bg-[#F3EDE6] hover:bg-[#E8E4DD] transition-colors"
+            >
+              ↺ Undo rewrite
+            </button>
+          )}
+        </div>
+        {rewriteError && <p className="text-xs text-red-600">{rewriteError}</p>}
         {listening && <span className="text-xs text-red-500 font-medium">Listening…</span>}
         {(draft.description ?? '').trim().length > 0 && (
           <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
@@ -1688,6 +1755,7 @@ export function DashboardImportContentPage() {
             onChange={setDraft}
             onSave={() => void handleSave()}
             onCancel={handleCancel}
+            canRewrite={canUseVoiceRewrite}
           />
         </div>
       )}
