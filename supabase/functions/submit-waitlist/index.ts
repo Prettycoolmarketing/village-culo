@@ -52,6 +52,16 @@ serve(async (req) => {
     })
     if (insertError) throw new Error(insertError.message)
 
+    // Waitlist is specifically for CULO Creatives in Canva — enroll into
+    // sequence B (Canva Creatives joiners). Best-effort, never blocks the
+    // waitlist signup itself.
+    try {
+      await admin.from('email_sequence_enrollments').insert({
+        id: crypto.randomUUID(), sequence_id: 'B', email,
+        data: { sequenceId: 'B', email, name: entry.name, source: entry.source, startedAt: entry.createdAt, sentDays: [], status: 'active' },
+      })
+    } catch { /* best-effort */ }
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })

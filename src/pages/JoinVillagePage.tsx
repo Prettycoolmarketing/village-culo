@@ -17,6 +17,15 @@ const HERO_IMAGE = '/join/join-hero.jpg'
 const GRID_ROW_1 = ['/join/grid-1.jpg', '/join/grid-2.jpg', '/join/grid-3.jpg']
 const GRID_ROW_2 = ['/join/grid-4.jpg', '/join/grid-5.jpg', '/join/grid-6.jpg']
 
+const OUTPUT_FORMATS = [
+  { emoji: '📖', label: 'Blogs', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
+  { emoji: '✍️', label: 'Carousels', desc: 'Pulls the strongest ideas from your footage and turns them into swipeable slides ready to design and publish.' },
+  { emoji: '🗣️', label: 'Talking Head Reels', desc: 'Your talking-head footage cleaned up with subtitles, hooks and captions so it is ready to post.' },
+  { emoji: '🎙️', label: 'Voice Over Reels', desc: 'Your words layered over your own footage and shaped into a short-form story.' },
+  { emoji: '🎥', label: 'Vlog Behind The Scenes Reels', desc: 'The in-between moments, the process and the stuff you probably filmed without knowing what to do with it yet.' },
+  { emoji: '⚡', label: 'Quick Rhythm Reels', desc: 'Short, fast-paced edits with strong opening hooks and tighter cuts built for attention.' },
+]
+
 // Same "How it works" steps as CreativesPage's "Tell your story" section —
 // reused verbatim (same images/copy) rather than re-described, so a founder
 // gets the identical walkthrough whichever page they land on first.
@@ -465,6 +474,66 @@ export function JoinVillagePage() {
           >
             Join The Culo Village
           </a>
+        </InnerContainer>
+      </section>
+
+      {/* ── What Culo Creatives turns your footage into — moved here from
+          the standalone Creatives page, which will point straight at this
+          /join funnel soon (keeping its "Creatives" label in the nav). */}
+      <section className="py-16 md:py-20" aria-labelledby="output-heading">
+        <InnerContainer>
+          <h2 id="output-heading" className="sr-only">What Culo Creatives turns your footage into</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {OUTPUT_FORMATS.map(f => (
+              <div key={f.label} className="bg-surface border border-border rounded-2xl p-6">
+                <span className="text-3xl mb-3 block">{f.emoji}</span>
+                <p className="font-heading text-lg font-semibold text-charcoal mb-1.5">{f.label}</p>
+                <p className="font-body text-sm text-muted leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── Founder note ──────────────────────────────────────────────────── */}
+      <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="founder-note-heading">
+        <InnerContainer>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+            <div>
+              <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+                <iframe
+                  src="https://www.youtube.com/embed/Mv40KqkNwM8?start=250"
+                  title="Shakas presenting CULO Creatives in Canva for World Digital Accessibility Day with A11yBytes"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 w-full h-full"
+                />
+              </div>
+              <p className="font-body text-xs text-muted mt-3">
+                Shakas presenting CULO Creatives in Canva for World Digital Accessibility Day with{' '}
+                <a
+                  href="https://a11ybytes.org/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  A11yBytes
+                </a>
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+                From the founder
+              </p>
+              <p id="founder-note-heading" className="font-heading italic text-base sm:text-lg text-charcoal leading-relaxed mb-6">
+                "Business owners don't have time to learn another course or wrestle with AI prompts to get
+                strong storytelling content. I took Pretty Cool Marketing's proven workflow and made it
+                accessible inside Canva — for the billions of users who struggle to tell their story and show
+                up in all formats online."
+              </p>
+              <p className="font-body text-sm text-muted">Shakas — CEO / Founder of Pretty Cool Marketing x CULO</p>
+            </div>
+          </div>
         </InnerContainer>
       </section>
 

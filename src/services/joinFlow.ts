@@ -69,5 +69,16 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
   const result = await updateFounder(founder)
   if (!result.success) return null
   void linkOwnFounder(founderId)
+
+  // Sequence A = Village joiners, Sequence B = Canva Creatives joiners.
+  // Fire-and-forget — a nurture enrollment failing must never block signup.
+  // Safe even before either sequence has content: it just enrolls now, and
+  // the daily sender picks everyone up automatically once steps exist.
+  if (isSupabaseConfigured && supabase) {
+    void supabase.functions.invoke('enroll-email-sequence', {
+      body: { sequenceId: source === 'canva' ? 'B' : 'A', email, name: founder.name, source },
+    }).catch(() => { /* best-effort */ })
+  }
+
   return founderId
 }
