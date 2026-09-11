@@ -79,6 +79,12 @@ export function JoinVillagePage() {
   const [searchParams] = useSearchParams()
   const source = searchParams.get('source') === 'canva' ? 'canva' : 'village'
   const isCanva = source === 'canva'
+  // Present when this visitor arrived via the "Continue in The Culo Village"
+  // link inside the Canva app itself (not just /joincanva generally) — lets
+  // village-culo's Stripe webhook notify the Canva app's own backend once
+  // this founder actually starts paying, so CULO Creatives can gate premium
+  // actions behind subscription status. See ensureJoinedFounder.
+  const canvaUserId = searchParams.get('canvaUserId')?.trim() || undefined
 
   // isCanva now only changes framing/emphasis (this visitor came in wanting
   // to create vs. wanting to market) — every self-serve signup, /join or
@@ -111,7 +117,8 @@ export function JoinVillagePage() {
     // establishes their session; the very next step (JoinConfirmPage) has
     // them replace it with a real one.
     const throwawayPassword = crypto.randomUUID()
-    const signUpResult = await signUp(trimmed, throwawayPassword, `/join/confirm?source=${source}`)
+    const confirmRedirect = `/join/confirm?source=${source}${canvaUserId ? `&canvaUserId=${encodeURIComponent(canvaUserId)}` : ''}`
+    const signUpResult = await signUp(trimmed, throwawayPassword, confirmRedirect)
 
     if (signUpResult.alreadyRegistered) {
       // Email is already a member. Don't say "check your email" — send them
@@ -144,7 +151,7 @@ export function JoinVillagePage() {
       setError('Could not create your account. Please try again.')
       return
     }
-    await ensureJoinedFounder(userId, trimmed, source)
+    await ensureJoinedFounder(userId, trimmed, source, canvaUserId)
     navigate('/join/confirm', { replace: true })
   }
 

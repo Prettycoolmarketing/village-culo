@@ -24,15 +24,24 @@ const STANDARD_TRIAL_DAYS = 14
  * for "click the link in Gmail") — checks Supabase directly rather than
  * trusting the local cache, since that cache is empty on a fresh device.
  */
-export async function ensureJoinedFounder(userId: string, email: string, source: 'village' | 'canva'): Promise<string | null> {
+export async function ensureJoinedFounder(userId: string, email: string, source: 'village' | 'canva', canvaUserId?: string): Promise<string | null> {
   if (isSupabaseConfigured && supabase) {
     const { data: existing } = await supabase.from('founders').select('data').eq('user_id', userId).maybeSingle()
     if (existing?.data) {
+      let founder = existing.data as Founder
+      // A founder who joined before without a canvaUserId (e.g. plain /join)
+      // and is now landing here via the Canva app's own link — link the two
+      // up so village-culo's Stripe webhook can notify CULO Creatives once
+      // they start paying, same as a brand-new signup would get.
+      if (canvaUserId && founder.canvaUserId !== canvaUserId) {
+        const result = await updateFounder({ ...founder, canvaUserId })
+        if (result.success) founder = { ...founder, canvaUserId }
+      }
       // Found on a device/browser whose local cache doesn't know about it yet
       // (e.g. they signed up on desktop, confirmed on their phone) — hydrate
       // the cache now so getCurrentFounder() resolves it on this device too.
-      store.update<Founder>('founders', existing.data as Founder)
-      return (existing.data as Founder).id
+      store.update<Founder>('founders', founder)
+      return founder.id
     }
   }
 
@@ -59,6 +68,7 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
     signupProduct: source,
     signupEmail: email,
     passwordSet: false,
+    canvaUserId,
     // Every new self-serve signup — /join or /joincanva alike — gets the
     // same Standard $25/mo, 14-day-trial offer now. The old "free until
     // 2027-01-01" collaborator cohort is no longer granted at signup; it's

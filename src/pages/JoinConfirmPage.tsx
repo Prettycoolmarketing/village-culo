@@ -22,6 +22,7 @@ export function JoinConfirmPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const source = searchParams.get('source') === 'canva' ? 'canva' : 'village'
+  const canvaUserId = searchParams.get('canvaUserId')?.trim() || undefined
 
   const [ready, setReady] = useState(false)
   const [email, setEmail] = useState('')
@@ -40,7 +41,7 @@ export function JoinConfirmPage() {
       if (settled) return
       settled = true
       setEmail(user.email ?? '')
-      const id = await ensureJoinedFounder(user.id, user.email ?? '', source)
+      const id = await ensureJoinedFounder(user.id, user.email ?? '', source, canvaUserId)
       setFounderId(id)
       setReady(true)
     }

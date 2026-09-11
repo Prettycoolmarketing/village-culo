@@ -32,6 +32,24 @@ const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const STRIPE_SECRET_KEY     = Deno.env.get('STRIPE_SECRET_KEY')
 const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+// CULO Creatives' own backend (Railway) — notified whenever a founder who
+// arrived via the Canva app (has canvaUserId set) starts or stops paying,
+// so that app can gate premium actions without querying this project's
+// Supabase directly. Fire-and-forget: a sync failure here must never break
+// this webhook's own job of keeping founders.creativeSubscription correct.
+const CULO_BACKEND_URL  = 'https://modest-flexibility-production.up.railway.app'
+const CULO_SYNC_SECRET  = Deno.env.get('CULO_SYNC_SECRET')
+
+async function syncCanvaSubscription(canvaUserId: string | undefined, isPaying: boolean) {
+  if (!canvaUserId || !CULO_SYNC_SECRET) return
+  try {
+    await fetch(`${CULO_BACKEND_URL}/api/culo/sync-subscription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-sync-secret': CULO_SYNC_SECRET },
+      body: JSON.stringify({ userId: canvaUserId, isPaying }),
+    })
+  } catch { /* best-effort — founders.creativeSubscription above is the source of truth */ }
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -122,6 +140,7 @@ serve(async (req) => {
           stripeCustomerId: session.customer,
           stripeSubscriptionId: subscriptionId,
         })
+        void syncCanvaSubscription(founderData.canvaUserId as string | undefined, true)
         break
       }
 
@@ -141,6 +160,7 @@ serve(async (req) => {
               ? 'expired'
               : 'cancelled'
         await patchSubscription(founderRow.id, founderRow.data, { status })
+        void syncCanvaSubscription(founderRow.data.canvaUserId as string | undefined, status === 'active' || status === 'trial')
         break
       }
 

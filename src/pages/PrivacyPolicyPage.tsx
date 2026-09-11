@@ -92,7 +92,7 @@ export function PrivacyPolicyPage() {
           <Clause n="1" title="Information We Collect">
             <p>Depending on how you use our services, we may collect:</p>
             <Bullets items={[
-              'Canva user ID (to identify your account and persist your media library between sessions)',
+              'Canva user ID (to identify your account, persist your media library between sessions, and — if you connect a subscription via The Culo Village — recognise whether your account currently has an active subscription)',
               'Name and contact information',
               'Email address',
               'Business or brand information (name, industry, offers, voice style)',
@@ -243,11 +243,12 @@ export function PrivacyPolicyPage() {
             <p>Canva Privacy Policy:{' '}
               <a href="https://www.canva.com/policies/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-primary underline">canva.com/policies/privacy-policy</a>
             </p>
-            <p>CULO Creatives in Canva includes an optional link to The Culo Village, our companion website.
-              This link does not send any Canva account data with it — it's a plain navigation link. If you
-              choose to follow it and then connect your Canva account within The Culo Village, that is a
-              separate authorisation you grant directly to Canva's own sign-in screen at that time, and is
-              not something CULO Creatives does on your behalf.</p>
+            <p>CULO Creatives in Canva includes an optional "Continue in The Culo Village" link. Clicking it
+              sends your Canva user ID along with the link, so that once you start (or stop) a paid
+              subscription in The Culo Village, CULO Creatives can recognise your account and unlock (or
+              lock) the features that require a subscription — the same purpose described in Clause 1 for
+              your Canva user ID generally. No other Canva account data is sent, and nothing about your
+              Canva design content is shared with The Culo Village.</p>
           </Clause>
 
           <Clause n="11" title="Third-Party Services">

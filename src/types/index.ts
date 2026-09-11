@@ -458,6 +458,14 @@ export interface Founder {
   // you hear about us" answer collected later in Onboarding, not a signup
   // funnel tag captured at account-creation time.
   signupProduct?: 'village' | 'canva'
+  // The Canva user's own stable id (decoded client-side from their Canva
+  // JWT in culo-starter's app.tsx) — present only when this founder arrived
+  // via the "Continue in The Culo Village" link inside the Canva app
+  // itself. Lets stripe-creatives-webhook notify CULO Creatives' own
+  // backend (POST /api/culo/sync-subscription) once this founder starts or
+  // stops paying, so the Canva app can gate premium actions on its own
+  // without needing to query village-culo's Supabase directly.
+  canvaUserId?: string
   // True once this founder has actually set a real password via the
   // post-signup "set your password" modal — accounts created through the
   // email-only join flow start with a throwaway random password and a
