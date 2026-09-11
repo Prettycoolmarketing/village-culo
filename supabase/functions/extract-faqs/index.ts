@@ -24,6 +24,10 @@ const CORS_HEADERS = {
 interface RequestBody {
   title?: string
   text: string
+  // Used so answers refer to the founder by name instead of a vague "they"/
+  // "the founder" — clearer for a reader and better for AI/search discovery
+  // (the founder's own name appearing next to the topic they're known for).
+  founderName?: string
 }
 
 interface FaqPair {
@@ -41,6 +45,7 @@ Rules:
 - Prefer questions a real person would type into Google or ask an AI assistant — specific, practical, curious — over questions that just restate the content back as a question.
 - 3 to 6 pairs. Fewer good pairs beats padding with weak ones.
 - Keep answers short — 1 to 2 sentences, in the founder's own voice/words where possible.
+- When the founder's name is supplied and a question/answer needs to refer to them in the third person, use their actual name (e.g. "What editing app does Shakas use?" / "Shakas edits on CULO.") instead of a vague "they," "the founder," or "the creator" — it reads more specifically and gives search engines/AI assistants a real name to connect to the topic. Don't force the name into every single sentence if it reads awkwardly repeated; once naturally per pair is enough.
 
 If the text is too thin to honestly support any real FAQ (a single generic sentence, nothing specific), return an empty pairs array rather than inventing filler.
 
@@ -58,6 +63,7 @@ serve(async (req) => {
     if (!apiKey) throw new Error('AI writing is not configured yet')
 
     const userContent = [
+      body.founderName ? `FOUNDER NAME: ${body.founderName}` : '',
       body.title ? `TITLE: ${body.title}` : '',
       `CONTENT:\n${body.text}`,
     ].filter(Boolean).join('\n\n')

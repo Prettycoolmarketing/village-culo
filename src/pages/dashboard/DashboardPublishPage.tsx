@@ -1861,6 +1861,10 @@ export function DashboardPublishPage() {
                           : 'manual-dashboard',
       createdAt:      existingStory?.createdAt ?? nowIso,
       updatedAt:      nowIso,
+      // Set once, the first time this story actually goes live — never
+      // overwritten by a later edit/re-save, so "Newest first" reflects
+      // when it was published, not when it was last tweaked.
+      publishedAt:    existingStory?.publishedAt ?? (status === 'published' ? nowIso : undefined),
     }
 
     const result = await publishStoryCore(story, {

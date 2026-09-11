@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { useDictation } from '../../hooks/useDictation'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { BrandBriefEditor } from '../../components/dashboard/BrandBriefEditor'
 import { SourceIcon } from '../../components/ui/SourceIcon'
+import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getFounder, updateFounder } from '../../services/founders'
@@ -602,7 +604,8 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
     for (const t of [...result.primaryTopics, ...result.secondaryTopics]) onAddTopic(t)
     const combinedText = [draft.description, draft.transcriptText].filter(Boolean).join(' ')
     setShapingQa(true)
-    void extractFaqsAI({ title: draft.title, text: combinedText }).then(({ pairs }) => {
+    const founderName = getFounder(draft.founderId)?.name
+    void extractFaqsAI({ title: draft.title, text: combinedText, founderName }).then(({ pairs }) => {
       setShapingQa(false)
       if (!pairs) return
       setBlogQaPairs(pairs)
@@ -806,11 +809,18 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
                       </div>
                       {!isSaved && (
                         <div className="flex flex-col gap-1.5">
-                          <textarea rows={2}
-                            value={answerDrafts[pair.question] ?? pair.answer}
-                            onChange={e => setAnswerDrafts(prev => ({ ...prev, [pair.question]: e.target.value }))}
-                            placeholder="Write the answer…"
-                            className="w-full px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                          <div className="flex items-start gap-1.5">
+                            <textarea rows={2}
+                              value={answerDrafts[pair.question] ?? pair.answer}
+                              onChange={e => setAnswerDrafts(prev => ({ ...prev, [pair.question]: e.target.value }))}
+                              placeholder="Write the answer…"
+                              className="flex-1 px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                            <DictationMicButton
+                              size="sm"
+                              value={answerDrafts[pair.question] ?? pair.answer}
+                              onChange={v => setAnswerDrafts(prev => ({ ...prev, [pair.question]: v }))}
+                            />
+                          </div>
                           <button type="button"
                             disabled={!(answerDrafts[pair.question] ?? pair.answer).trim()}
                             onClick={() => { onAddFAQ(pair.question, (answerDrafts[pair.question] ?? pair.answer).trim()); setSavedFAQs(prev => new Set(prev).add(pair.question)) }}
@@ -831,9 +841,12 @@ function VillageIntelligencePreview({ draft, onAddTopic, onRemoveTopic, onAddLoc
                 <input type="text" value={customQuestion} onChange={e => setCustomQuestion(e.target.value)}
                   placeholder="A question you want to answer…"
                   className="w-full mb-1.5 px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md focus:outline-none focus:border-[#C86A43]" />
-                <textarea rows={2} value={customAnswer} onChange={e => setCustomAnswer(e.target.value)}
-                  placeholder="Your answer…"
-                  className="w-full mb-1.5 px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                <div className="flex items-start gap-1.5 mb-1.5">
+                  <textarea rows={2} value={customAnswer} onChange={e => setCustomAnswer(e.target.value)}
+                    placeholder="Your answer…"
+                    className="flex-1 px-2 py-1.5 text-[11px] border border-[#E8E4DD] rounded-md resize-none focus:outline-none focus:border-[#C86A43]" />
+                  <DictationMicButton size="sm" value={customAnswer} onChange={setCustomAnswer} />
+                </div>
                 <button type="button"
                   disabled={!customQuestion.trim() || !customAnswer.trim()}
                   onClick={() => {
@@ -867,11 +880,14 @@ interface EditFormProps {
   onSave: () => void
   onCancel: () => void
   canRewrite?: boolean
+  // Shown right next to Save — on a long form the "Saved ✓" flash up near
+  // the title (still there too) scrolls out of view the moment someone
+  // hits Save down here, so it looked like nothing happened.
+  savedFlash?: boolean
 }
 
-export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false }: EditFormProps) {
-  const [listening, setListening] = useState(false)
-  const recognitionRef = useRef<{ stop: () => void } | null>(null)
+export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false, savedFlash = false }: EditFormProps) {
+  const { listening, toggle: toggleDictationBase } = useDictation()
   const [rewriting, setRewriting] = useState(false)
   const [rewriteError, setRewriteError] = useState<string | null>(null)
   const [blogBeforeRewrite, setBlogBeforeRewrite] = useState<string | null>(null)
@@ -934,30 +950,11 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
   // transcribes straight into Blog; a founder can clean it up or run it
   // through Rewrite/Shape afterward.
   function toggleDictation() {
-    const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition
-    if (!Ctor) {
-      alert("Dictation isn't supported in this browser — try Chrome, Edge or Safari.")
-      return
-    }
-    if (listening) {
-      recognitionRef.current?.stop()
-      return
-    }
-    const recognition = new Ctor()
-    recognition.continuous = true
-    recognition.interimResults = false
-    recognition.lang = navigator.language || 'en-US'
-    recognition.onresult = e => {
-      let transcript = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i]![0]!.transcript
-      if (!transcript.trim()) return
-      onChange({ ...draft, description: `${draft.description ?? ''} ${transcript}`.trim() })
-    }
-    recognition.onerror = () => setListening(false)
-    recognition.onend = () => setListening(false)
-    recognitionRef.current = recognition
-    recognition.start()
-    setListening(true)
+    toggleDictationBase(
+      () => draft.description ?? '',
+      text => onChange({ ...draft, description: text }),
+      () => alert("Dictation isn't supported in this browser — try Chrome, Edge or Safari.")
+    )
   }
   // Content imported with a real blog/caption already written (a blog import,
   // or Canva text pulled off a slide) has enough to shape into Q&A straight
@@ -1048,6 +1045,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
           className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
           Save Changes
         </button>
+        {savedFlash && <span className="shrink-0 text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>}
       </div>
 
       {/* Only ever landscape in this view now — one less decision to make
@@ -1312,6 +1310,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
             className="px-4 py-2.5 text-sm text-[#6B7280] hover:text-[#2D2A26] transition-colors">
             Cancel
           </button>
+          {savedFlash && <span className="text-sm font-semibold text-[#5E6B4A]">Saved ✓</span>}
         </div>
       </div>
     </div>
@@ -1777,6 +1776,7 @@ export function DashboardImportContentPage() {
             onSave={() => void handleSave()}
             onCancel={handleCancel}
             canRewrite={canUseVoiceRewrite}
+            savedFlash={savedFlash}
           />
         </div>
       )}

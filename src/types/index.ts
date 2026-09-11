@@ -670,6 +670,13 @@ export interface Story {
   publishingSource?: PublishingSource
   createdAt: string
   updatedAt: string
+  // When this story first actually went live (status became published/
+  // featured) — separate from createdAt, which for a story drafted earlier
+  // and only published later still reflects the old draft date. "Newest
+  // first" on the Published tab sorts by this so a story published today
+  // shows first even if its draft record is old; falls back to createdAt
+  // for stories from before this field existed.
+  publishedAt?: string
   seoTitle?: string
   seoDescription?: string
   // Locations this story is otherwise eligible to appear in (per

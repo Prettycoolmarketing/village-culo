@@ -249,6 +249,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     publishingSource: item.sourcePlatform === 'canva' ? 'canva-api' : 'website-import',
     createdAt: nowIso,
     updatedAt: nowIso,
+    publishedAt: nowIso,
   }
 
   // The full written description — whatever's in the Blog field, or a

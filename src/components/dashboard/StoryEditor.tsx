@@ -1,4 +1,5 @@
-import { useState, useRef, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useDictation } from '../../hooks/useDictation'
 import { updateStory, deleteStory, uniqueStorySlug } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
@@ -38,27 +39,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 const CONTENT_TYPES: ContentType[] = ['blog', 'reel', 'carousel']
 
-// Minimal Web Speech API surface — not in every TS DOM lib version, and
-// only the handful of members dictation actually uses.
-interface SpeechRecognitionResultLike { [index: number]: { transcript: string }; length: number }
-interface SpeechRecognitionEventLike { resultIndex: number; results: { [index: number]: SpeechRecognitionResultLike; length: number } }
-interface SpeechRecognitionLike {
-  continuous: boolean
-  interimResults: boolean
-  lang: string
-  onresult: ((e: SpeechRecognitionEventLike) => void) | null
-  onerror: (() => void) | null
-  onend: (() => void) | null
-  start(): void
-  stop(): void
-}
-declare global {
-  interface Window {
-    SpeechRecognition?: new () => SpeechRecognitionLike
-    webkitSpeechRecognition?: new () => SpeechRecognitionLike
-  }
-}
-
 export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = false }: {
   canRewrite?: boolean
   story: Story
@@ -73,9 +53,8 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   const [rewriting, setRewriting] = useState(false)
   const [rewriteError, setRewriteError] = useState<string | null>(null)
   const [blogBeforeRewrite, setBlogBeforeRewrite] = useState<string | null>(null)
-  const [listening, setListening] = useState(false)
+  const { listening, toggle: toggleDictationBase } = useDictation()
   const [showTags, setShowTags] = useState(false)
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
 
   // Rewrite with AI — same real, per-call AI spend as "Rewrite with Voice
   // Brief" on Imported Content, just aimed at a Story's own Blog field
@@ -147,31 +126,11 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   // it's recognised; a founder can then hit Rewrite with AI on top of
   // whatever it transcribed to turn it into a real blog.
   function toggleDictation() {
-    const SpeechRecognitionCtor = window.SpeechRecognition ?? window.webkitSpeechRecognition
-    if (!SpeechRecognitionCtor) {
-      setRewriteError("Dictation isn't supported in this browser — try Chrome, Edge or Safari.")
-      return
-    }
-    if (listening) {
-      recognitionRef.current?.stop()
-      return
-    }
-    const recognition = new SpeechRecognitionCtor()
-    recognition.continuous = true
-    recognition.interimResults = false
-    recognition.lang = navigator.language || 'en-US'
-    recognition.onresult = (e: SpeechRecognitionEventLike) => {
-      let transcript = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i]![0]!.transcript
-      if (!transcript.trim()) return
-      setDraft(prev => ({ ...prev, blog: `${prev.blog ?? ''} ${transcript}`.trim() }))
-      setSaved(false)
-    }
-    recognition.onerror = () => setListening(false)
-    recognition.onend = () => setListening(false)
-    recognitionRef.current = recognition
-    recognition.start()
-    setListening(true)
+    toggleDictationBase(
+      () => draft.blog ?? '',
+      text => { setDraft(prev => ({ ...prev, blog: text })); setSaved(false) },
+      () => setRewriteError("Dictation isn't supported in this browser — try Chrome, Edge or Safari.")
+    )
   }
 
   const founderBusinesses = getBusinesses({ founderId: draft.founderId }).filter(b => b.name.trim().length > 0)
@@ -218,7 +177,15 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     // first-publish). Recomputes from the current title on every save;
     // a no-op when the title hasn't changed since the slug already matches.
     const desiredSlug = uniqueStorySlug(draft.title, draft.id)
-    const toSave = desiredSlug === draft.slug ? draft : { ...draft, slug: desiredSlug }
+    let toSave = desiredSlug === draft.slug ? draft : { ...draft, slug: desiredSlug }
+    // First time this one actually goes live (was draft/archived, now
+    // published/featured) — stamp publishedAt so "Newest first" reflects
+    // when it was published, not the original draft's createdAt. Never
+    // overwritten on later re-saves once set.
+    const isNowLive = toSave.status === 'published' || toSave.status === 'featured'
+    if (isNowLive && !toSave.publishedAt) {
+      toSave = { ...toSave, publishedAt: new Date().toISOString() }
+    }
     const result = await updateStory(toSave)
     setSaving(false)
     if (result.success) {
@@ -228,7 +195,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
         void syncIdeasFromStory(toSave, intel)
         void refreshAuthorityScores(toSave)
       }
-      if (toSave.slug !== draft.slug) setDraft(toSave)
+      if (toSave.slug !== draft.slug || toSave.publishedAt !== draft.publishedAt) setDraft(toSave)
       setSaved(true)
       onSave(toSave)
     } else {

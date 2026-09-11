@@ -2183,6 +2183,7 @@ export function DashboardProfilePage() {
                         onSave={() => void handleSaveAdvancedEdit()}
                         onCancel={handleCancelAdvancedEdit}
                         canRewrite={canUseVoiceRewrite}
+                        savedFlash={importedSavedFlash}
                       />
                     </div>
                   </div>
@@ -2206,8 +2207,14 @@ export function DashboardProfilePage() {
                 )
               }
               const activeStories = founderStories.filter(s => s.status !== 'archived')
+              // publishedAt (when it actually went live) beats createdAt (when
+              // the draft record was first made) — a story drafted long ago
+              // and only published today should show as newest, not get
+              // buried under its original draft date. Falls back to createdAt
+              // for stories saved before publishedAt existed.
+              const sortKey = (s: typeof activeStories[number]) => s.publishedAt ?? s.createdAt
               const sortedStories = [...activeStories].sort((a, b) =>
-                publishedSort === 'newest' ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
+                publishedSort === 'newest' ? sortKey(b).localeCompare(sortKey(a)) : sortKey(a).localeCompare(sortKey(b))
               )
 
               return activeStories.length === 0 ? (

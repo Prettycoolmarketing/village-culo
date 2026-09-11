@@ -1133,7 +1133,7 @@ export interface FaqPair {
 // category matching) — see extract-faqs's own notes for why: a keyword
 // matcher can never infer "what editing app do founders use?" from a
 // caption that only ever says "I'm editing this on CULO."
-export async function extractFaqsAI(input: { title?: string; text: string }): Promise<{ pairs?: FaqPair[]; error?: string }> {
+export async function extractFaqsAI(input: { title?: string; text: string; founderName?: string }): Promise<{ pairs?: FaqPair[]; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
   const { data, error } = await supabase.functions.invoke<{ pairs?: FaqPair[]; error?: string }>('extract-faqs', { body: input })
   if (error) return { error: error.message }
