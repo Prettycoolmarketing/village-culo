@@ -21,13 +21,13 @@ import { supabase, isSupabaseConfigured } from './supabase'
 
 const KEY = 'pcm_clients_v1'
 
-export type PcmOfferId = 'publishing' | 'social' | 'content' | 'full'
+export type PcmOfferId = 'publishing' | 'social' | 'content' | 'creatives' | 'full'
 
 // Old records used tier2/tier3 before the packages were split out — map
 // them on read so nothing breaks.
-const LEGACY_OFFERS: Record<string, PcmOfferId> = { tier2: 'social', tier3: 'full' }
+const LEGACY_OFFERS: Record<string, PcmOfferId> = { tier2: 'social', tier3: 'content' }
 function normalizeOffer(o: string): PcmOfferId {
-  if (o === 'publishing' || o === 'social' || o === 'content' || o === 'full') return o
+  if (o === 'publishing' || o === 'social' || o === 'content' || o === 'creatives' || o === 'full') return o
   return LEGACY_OFFERS[o] ?? 'publishing'
 }
 
@@ -65,14 +65,15 @@ export interface PcmClient {
 }
 
 export const PCM_OFFER_LABELS: Record<PcmOfferId, string> = {
-  publishing: 'Publishing',
-  social:     'Social Media',
-  content:    'Content',
+  publishing: 'Blog Management',
+  social:     'Social Media Management',
+  content:    'Content Creator',
+  creatives:  'Village Creatives',
   full:       'Full Service',
 }
 
 /** Order for package tabs in Capo. */
-export const PCM_OFFER_IDS: PcmOfferId[] = ['publishing', 'social', 'content', 'full']
+export const PCM_OFFER_IDS: PcmOfferId[] = ['publishing', 'social', 'content', 'creatives', 'full']
 
 function read(): PcmClient[] {
   try {

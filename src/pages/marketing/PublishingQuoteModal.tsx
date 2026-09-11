@@ -17,7 +17,13 @@ type Step = 'form' | 'loading' | 'result' | 'error'
 // prices the one-off transfer from that count, and hands them straight to
 // Stripe. Account + password happen after payment (stripe-archive-unlock
 // webhook), not before.
-export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?: string; onClose: () => void }) {
+export function PublishingQuoteModal({ email: initialEmail, onClose, service = 'publishing', serviceName = 'Blog Management', monthlyPrice = 900 }: {
+  email?: string
+  onClose: () => void
+  service?: 'publishing' | 'creatives' | 'full'
+  serviceName?: string
+  monthlyPrice?: number
+}) {
   const [step, setStep] = useState<Step>('form')
   const [email, setEmail] = useState(initialEmail ?? '')
   const [youtube, setYoutube] = useState('')
@@ -59,8 +65,8 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
     setErrorMsg('')
     try {
       if (!isSupabaseConfigured || !supabase) throw new Error('Not available right now — email us instead.')
-      const { data, error } = await supabase.functions.invoke<{ url?: string; error?: string }>('create-pcm-publishing-checkout', {
-        body: { email, archiveTotal: result.total, plan },
+      const { data, error } = await supabase.functions.invoke<{ url?: string; error?: string }>('create-pcm-checkout', {
+        body: { email, service, archiveTotal: result.total, plan },
       })
       if (error || data?.error || !data?.url) throw new Error(data?.error || error?.message || 'Could not start checkout.')
       window.location.href = data.url
@@ -70,7 +76,7 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
     }
   }
 
-  const upfrontTotal = tier ? tier.price + 2700 : 0
+  const upfrontTotal = tier ? tier.price + monthlyPrice * 3 : 0
   const firstInstalment = tier ? Math.ceil(tier.price / 3) : 0
 
   return (
@@ -88,7 +94,7 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
           <>
             <p className="font-body text-sm text-muted mb-5">
               Paste in what you have. We do a quick count of your back catalogue and price the one-off
-              transfer from that, then monthly management starts from $900 AUD a month (3-month minimum).
+              transfer from that, then {serviceName} is ${monthlyPrice.toLocaleString()} AUD a month (3-month minimum).
             </p>
             <div className="flex flex-col gap-3">
               <Field label="Your email">
@@ -157,8 +163,8 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
                 <span className="text-muted"> · {tier.label}, covers the initial import only</span>
               </p>
               <p className="font-body text-sm text-charcoal mt-1">
-                Blog Management <span className="font-semibold">$900 AUD / month</span>
-                <span className="text-muted"> · 30 articles a month, 3-month minimum</span>
+                {serviceName} <span className="font-semibold">${monthlyPrice.toLocaleString()} AUD / month</span>
+                <span className="text-muted"> · 3-month minimum</span>
               </p>
             </div>
 
@@ -171,7 +177,7 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
                 {checkingOut === 'upfront' ? 'Starting…' : `Pay upfront — $${upfrontTotal.toLocaleString()} AUD →`}
               </button>
               <p className="font-body text-xs text-muted -mt-1">
-                Archive Transfer plus your first 3 months. $900 a month then bills automatically from month 4.
+                Archive Transfer plus your first 3 months. ${monthlyPrice.toLocaleString()} a month then bills automatically from month 4.
               </p>
 
               <button
@@ -182,8 +188,8 @@ export function PublishingQuoteModal({ email: initialEmail, onClose }: { email?:
                 {checkingOut === 'installment' ? 'Starting…' : 'Pay monthly instead →'}
               </button>
               <p className="font-body text-xs text-muted -mt-1">
-                $900 a month from today, with the Archive Transfer split across your first 3 invoices
-                (first payment ${(900 + firstInstalment).toLocaleString()} AUD).
+                ${monthlyPrice.toLocaleString()} a month from today, with the Archive Transfer split across your first 3 invoices
+                (first payment ${(monthlyPrice + firstInstalment).toLocaleString()} AUD).
               </p>
             </div>
 

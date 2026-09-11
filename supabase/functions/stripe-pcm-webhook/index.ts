@@ -142,16 +142,23 @@ serve(async (req) => {
     }
 
     const linkId = typeof session.payment_link === 'string' ? session.payment_link : session.payment_link?.id
-    const pcmService: 'social' | 'full' | 'publishing' =
-      session.metadata?.pcm_service === 'publishing' ? 'publishing'
-        : linkId === TIER3_LINK_ID ? 'full'
+    const META_SERVICES = ['publishing', 'creatives', 'full'] as const
+    type PcmSvc = 'publishing' | 'social' | 'content' | 'creatives' | 'full'
+    const metaSvc = session.metadata?.pcm_service
+    const pcmService: PcmSvc =
+      metaSvc && (META_SERVICES as readonly string[]).includes(metaSvc) ? metaSvc as PcmSvc
+        : linkId === TIER3_LINK_ID ? 'content'
         : 'social'
-    const serviceLabel = pcmService === 'publishing' ? 'Blog Management'
-      : pcmService === 'full' ? 'Content Creator Full Service'
-      : 'Social Media Service'
-    // Blog Management is a managed publishing service — the whole archive
-    // is theirs to publish, so unlock it fully on the new account.
-    const publishingGrant = pcmService === 'publishing'
+    const SERVICE_LABELS: Record<PcmSvc, string> = {
+      publishing: 'Blog Management', social: 'Social Media Management', content: 'Content Creator',
+      creatives: 'Village Creatives', full: 'Full Service',
+    }
+    const serviceLabel = SERVICE_LABELS[pcmService]
+    // Any tier that includes publishing (publishing, creatives, full) is a
+    // managed publishing service — the whole archive is theirs, so unlock
+    // it fully on the new account.
+    const includesPublishing = pcmService === 'publishing' || pcmService === 'creatives' || pcmService === 'full'
+    const publishingGrant = includesPublishing
       ? { archiveUnlocked: true, archiveUnlockedAt: new Date().toISOString(), archivePublishLimit: -1 }
       : {}
     const name = session.customer_details?.name?.trim() || email.split('@')[0]

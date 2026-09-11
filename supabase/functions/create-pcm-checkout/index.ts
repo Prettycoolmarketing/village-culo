@@ -1,20 +1,21 @@
-// CULO Village — create-pcm-publishing-checkout Edge Function
+// CULO Village — create-pcm-checkout Edge Function
 //
-// The Blog Management price is a one-off Archive Transfer (quoted from the
-// prospect's archive size) plus $900 AUD / month, and the archive figure
-// makes the total different for every customer — so it can't be a static
-// Payment Link. This builds a Stripe Checkout Session on the fly from the
-// archive count the quote modal detected.
+// Builds a Stripe Checkout Session on the fly for any PCM service that
+// carries a one-off Archive Transfer (Blog Management, Village Creatives,
+// Full Service) — the transfer is quoted from the prospect's archive size,
+// so the total is different for every customer and can't be a static
+// Payment Link. Social Media Management and Content Creator have no
+// transfer and keep their static links.
 //
-// Two plans:
-//   upfront     — pay the transfer + 3 months ($2,700) now; the $900/mo
+// Two plans per service:
+//   upfront     — transfer + 3 months of the monthly fee now; the monthly
 //                 subscription then auto-bills from month 4.
-//   installment — the $900/mo subscription starts now; the transfer fee is
-//                 split across the first 3 monthly invoices (this first
-//                 invoice carries 1/3, and stripe-pcm-webhook adds the
-//                 other two thirds to invoices 2 and 3 on invoice.paid).
+//   installment — the monthly subscription starts now; the transfer is
+//                 split across the first 3 invoices (this first invoice
+//                 carries 1/3, stripe-pcm-webhook adds the rest on
+//                 invoice.paid).
 //
-// Deploy: supabase functions deploy create-pcm-publishing-checkout --no-verify-jwt
+// Deploy: supabase functions deploy create-pcm-checkout --no-verify-jwt
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@17?target=deno'
@@ -28,10 +29,20 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const MONTHLY_CENTS = 90_000 // $900 AUD
+// Mirror of src/config/pcmServices.ts — monthly price (AUD cents) per
+// service that goes through this dynamic checkout.
+const MONTHLY_CENTS: Record<string, number> = {
+  publishing: 90_000,
+  creatives: 390_000,
+  full: 478_800,
+}
+const SERVICE_NAME: Record<string, string> = {
+  publishing: 'Blog Management',
+  creatives: 'Village Creatives',
+  full: 'Full Service',
+}
 
-// Mirror of getArchiveTier in src/config/archiveUnlock.ts — the one-off
-// transfer price (AUD) for a detected archive size.
+// Mirror of getArchiveTier in src/config/archiveUnlock.ts.
 function transferPriceCents(total: number): number {
   if (total <= 50) return 1_900
   if (total <= 250) return 3_900
@@ -44,7 +55,6 @@ function transferPriceCents(total: number): number {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
-
   if (!STRIPE_SECRET_KEY) {
     return new Response(JSON.stringify({ error: 'Checkout is not configured on this deployment.' }), {
       status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
@@ -52,41 +62,35 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json() as { email?: string; name?: string; archiveTotal?: number; plan?: 'upfront' | 'installment' }
+    const body = await req.json() as { email?: string; service?: string; archiveTotal?: number; plan?: 'upfront' | 'installment' }
     const email = body.email?.trim().toLowerCase()
+    const service = body.service && MONTHLY_CENTS[body.service] ? body.service : 'publishing'
     const archiveTotal = Math.max(0, Math.round(body.archiveTotal ?? 0))
     const plan = body.plan === 'installment' ? 'installment' : 'upfront'
     if (!email || !email.includes('@')) throw new Error('A real email address is required')
 
     const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' })
+    const monthly = MONTHLY_CENTS[service]
     const transfer = transferPriceCents(archiveTotal)
 
     const recurringLine: Stripe.Checkout.SessionCreateParams.LineItem = {
       quantity: 1,
       price_data: {
         currency: 'aud',
-        unit_amount: MONTHLY_CENTS,
+        unit_amount: monthly,
         recurring: { interval: 'month' },
-        product_data: { name: 'Blog Management' },
+        product_data: { name: SERVICE_NAME[service] },
       },
     }
-
     const oneTime = (name: string, cents: number): Stripe.Checkout.SessionCreateParams.LineItem => ({
       quantity: 1,
       price_data: { currency: 'aud', unit_amount: cents, product_data: { name } },
     })
 
-    const commonMetadata = {
-      pcm_service: 'publishing',
-      plan,
-      archive_total: String(archiveTotal),
-    }
-
+    const metadata = { pcm_service: service, plan, archive_total: String(archiveTotal) }
     let params: Stripe.Checkout.SessionCreateParams
 
     if (plan === 'upfront') {
-      // Recurring billing starts 3 months out; the first payment is the
-      // transfer + 3 months, taken as one-time line items now.
       const anchor = Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60
       params = {
         mode: 'subscription',
@@ -94,38 +98,25 @@ serve(async (req) => {
         line_items: [
           recurringLine,
           oneTime('Archive Transfer (one-off, initial import)', transfer),
-          oneTime('Blog Management — 3 months upfront', MONTHLY_CENTS * 3),
+          oneTime(`${SERVICE_NAME[service]} — 3 months upfront`, monthly * 3),
         ],
-        subscription_data: {
-          billing_cycle_anchor: anchor,
-          proration_behavior: 'none',
-          metadata: commonMetadata,
-        },
-        metadata: commonMetadata,
-        success_url: `${SITE_URL}/marketing/publishing?paid=1`,
-        cancel_url: `${SITE_URL}/marketing/publishing`,
+        subscription_data: { billing_cycle_anchor: anchor, proration_behavior: 'none', metadata },
+        metadata,
+        success_url: `${SITE_URL}/marketing/start?offer=${service}&paid=1`,
+        cancel_url: `${SITE_URL}/marketing`,
       }
     } else {
-      // Subscription bills $900/mo from today; a third of the transfer
-      // rides on this first invoice, the rest is added by the webhook.
       const perInstalment = Math.ceil(transfer / 3)
       params = {
         mode: 'subscription',
         customer_email: email,
-        line_items: [
-          recurringLine,
-          oneTime('Archive Transfer — instalment 1 of 3', perInstalment),
-        ],
+        line_items: [recurringLine, oneTime('Archive Transfer — instalment 1 of 3', perInstalment)],
         subscription_data: {
-          metadata: {
-            ...commonMetadata,
-            transfer_instalments_remaining: '2',
-            transfer_instalment_cents: String(perInstalment),
-          },
+          metadata: { ...metadata, transfer_instalments_remaining: '2', transfer_instalment_cents: String(perInstalment) },
         },
-        metadata: commonMetadata,
-        success_url: `${SITE_URL}/marketing/publishing?paid=1`,
-        cancel_url: `${SITE_URL}/marketing/publishing`,
+        metadata,
+        success_url: `${SITE_URL}/marketing/start?offer=${service}&paid=1`,
+        cancel_url: `${SITE_URL}/marketing`,
       }
     }
 

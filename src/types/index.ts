@@ -505,7 +505,7 @@ export interface Founder {
   pcmManagedAt?: string
   // Which PCM package this founder bought — drives which dashboard sections
   // show as "being built for you" below. Set by stripe-pcm-webhook.
-  pcmService?: 'publishing' | 'social' | 'full'
+  pcmService?: 'publishing' | 'social' | 'content' | 'creatives' | 'full'
   // False from checkout until CAPO staff flip it on (PcmClientDetailPage's
   // "Notify client" toggle) once their first batch of work is actually
   // live — the dashboard shows a blurred "being built" banner over the

@@ -2,8 +2,18 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
-import { PCM_SUPPORT_EMAIL, PCM_OFFERS, type PcmOffer } from '../../config/pcmPaymentLinks'
+import { PCM_SUPPORT_EMAIL } from '../../config/pcmPaymentLinks'
+import { PCM_SERVICES, type PcmServiceId } from '../../config/pcmServices'
 import { VOICE_BRIEF_INTERVIEW_PROMPT } from '../../services/blogWriter'
+
+// Accept both the new service ids and the old tier2/tier3 aliases that
+// live Payment Links still redirect with.
+function resolveService(raw: string | null): PcmServiceId | null {
+  if (!raw) return null
+  const alias: Record<string, PcmServiceId> = { tier2: 'social', tier3: 'content' }
+  const id = (alias[raw] ?? raw) as PcmServiceId
+  return PCM_SERVICES[id] ? id : null
+}
 
 const CALENDLY_URL = 'https://calendly.com/prettycoolmarketing_/30min'
 
@@ -17,8 +27,8 @@ const CHECKLIST = [
 
 export function MarketingStartPage() {
   const [params] = useSearchParams()
-  const offerId = params.get('offer') as PcmOffer['id'] | null
-  const offer = offerId && PCM_OFFERS[offerId] ? PCM_OFFERS[offerId] : null
+  const serviceId = resolveService(params.get('offer'))
+  const service = serviceId ? PCM_SERVICES[serviceId] : null
   const [copied, setCopied] = useState(false)
   const [showPrompt, setShowPrompt] = useState(false)
 
@@ -42,9 +52,9 @@ export function MarketingStartPage() {
     description: 'Next step after payment: email Pretty Cool Marketing your MD files, OneDrive and Google Drive links, and your existing content so we can get to work.',
   })
 
-  const subject = offer ? `New client — ${offer.name}` : 'New client — Pretty Cool Marketing'
+  const subject = service ? `New client — ${service.name}` : 'New client — Pretty Cool Marketing'
   const mailto = `mailto:${PCM_SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
-    `Name:\nBusiness:\nOffer: ${offer?.name ?? ''}\n\nMD files attached: \nOneDrive link(s): \nGoogle Drive link(s): \nYouTube: \nPodcast: \nWebsite: \nInstagram: \n\nHow I want to be positioned: \n`,
+    `Name:\nBusiness:\nOffer: ${service?.name ?? ''}\n\nMD files attached: \nOneDrive link(s): \nGoogle Drive link(s): \nYouTube: \nPodcast: \nWebsite: \nInstagram: \n\nHow I want to be positioned: \n`,
   )}`
 
   return (
@@ -56,7 +66,7 @@ export function MarketingStartPage() {
         </div>
         <InnerContainer className="max-w-2xl relative">
           <p className="font-body text-xs font-semibold text-charcoal/70 uppercase tracking-widest mb-4">
-            {offer ? offer.name : 'Pretty Cool Marketing'}
+            {service ? service.name : "Pretty Cool Marketing"}
           </p>
           <h1 className="font-heading text-4xl sm:text-5xl font-bold text-charcoal leading-tight mb-6">
             You’re in. Here’s the one thing we need from you.
@@ -139,25 +149,30 @@ export function MarketingStartPage() {
             </p>
           </div>
 
-          {/* Lock in your first content shoot */}
-          <div className="mt-10 bg-white rounded-2xl p-6 sm:p-8 shadow-lg">
-            <h3 className="font-heading text-xl font-bold text-charcoal mb-1">Lock in your first content shoot</h3>
-            <p className="font-body text-sm text-muted mb-5">
-              Pick a time below. We shoot on Tuesdays and Thursdays, so choose whichever suits you best.
-            </p>
-            <div
-              className="calendly-inline-widget"
-              data-url={CALENDLY_URL}
-              style={{ minWidth: '320px', height: '650px' }}
-            />
-          </div>
+          {/* Lock in your first content shoot — only for packages that
+              actually include a shoot (Content Creator, Full Service). */}
+          {service?.hasShoots && (
+            <div className="mt-10 bg-white rounded-2xl p-6 sm:p-8 shadow-lg">
+              <h3 className="font-heading text-xl font-bold text-charcoal mb-1">Lock in your first content shoot</h3>
+              <p className="font-body text-sm text-muted mb-5">
+                Pick a time below. We shoot on Tuesdays and Thursdays, so choose whichever suits you best.
+              </p>
+              <div
+                className="calendly-inline-widget"
+                data-url={CALENDLY_URL}
+                style={{ minWidth: '320px', height: '650px' }}
+              />
+            </div>
+          )}
 
           <p className="mt-10 font-body text-muted leading-relaxed">
             Once we have your material:{' '}
-            {offer?.id === 'publishing' ? (
+            {serviceId === 'publishing' ? (
               <>we restructure and republish each piece, then send you your founder profile link and every article.</>
-            ) : offer?.id === 'tier3' ? (
+            ) : service?.hasShoots ? (
               <>your first shoot is booked within 2 weeks and content is live 2 weeks after we have all your raw footage.</>
+            ) : serviceId === 'creatives' || serviceId === 'full' ? (
+              <>your archive publishing begins, and your first month of social posts is scheduled across every platform and into the Village.</>
             ) : (
               <>editing begins, and your first month of posts is scheduled across every platform and into the Village.</>
             )}
