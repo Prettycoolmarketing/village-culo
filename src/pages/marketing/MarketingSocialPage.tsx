@@ -74,7 +74,7 @@ export function MarketingSocialPage() {
         title="Your socials, captured, made and posted for you"
         description={
           <>
-            <p className="mb-4">You have got a business to run.</p>
+            <p className="mb-4">Your business depends on you.</p>
             <p className="mb-4">
               Pretty Cool Marketing takes care of turning your footage into content, getting it
               approved, scheduling it across your platforms and publishing it into The Culo Village.
