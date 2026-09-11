@@ -59,14 +59,14 @@ const STEPS = [
   },
 ]
 
-// The real, account-creating join flow — staged at /join rather than
-// replacing the homepage's "coming soon" waitlist (see WaitlistForm), which
-// stays live and untouched until the Canva app is actually approved. Once
-// it's ready to go live, point culovillage.com's main flow here (or move
-// this page to the root route). Creates a real account, not a waitlist row:
-// email only, no password up front (better conversion — the founder sets a
-// real password once inside the dashboard, via the "set your password"
-// prompt in DashboardLayout).
+// The real, account-creating join flow, staged at /join. Every "coming
+// soon" spot that used to be a bare email-capture waitlist (homepage hero,
+// Archive page, the Canva CTA banner) now points here directly instead —
+// joining the Village itself is real and live, only Culo Creatives in
+// Canva is still pending approval. Creates a real account, not a waitlist
+// row: email only, no password up front (better conversion — the founder
+// sets a real password once inside the dashboard, via the "set your
+// password" prompt in DashboardLayout).
 //
 // ?source=canva vs the default 'village' tags which funnel actually created
 // the account, so CAPO can tell a Canva Marketplace deep-link apart from a

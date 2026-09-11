@@ -10,7 +10,6 @@ import { BusinessGrid }              from '../widgets/BusinessGrid'
 import { MapPreviewWidget }          from '../widgets/MapPreviewWidget'
 import { NoticeboardPreviewWidget }  from '../widgets/NoticeboardPreviewWidget'
 import { filterEvents }              from '../utils/filters'
-import { WaitlistForm }              from '../components/ui/WaitlistForm'
 import { InnerContainer }            from '../components/layout/PageContainer'
 
 // ─── Section wrapper ───────────────────────────────────────────────────────────
@@ -91,19 +90,29 @@ export function VillagePage() {
           </div>
         </InnerContainer>
 
-        {/* Full-width email capture — big and legible for a QR code at a conference */}
+        {/* Joining the Village itself is real and live now, so this is no
+            longer a bare email-capture waitlist for something that doesn't
+            exist yet — signing up locks a founder in for Culo Creatives'
+            launch AND gets them an actual, usable Village account today,
+            big and legible for a QR code at a conference. */}
         <div>
-          <InnerContainer className="py-10 md:py-14">
+          <InnerContainer className="py-10 md:py-14 text-center">
             <p
               id="creatives-cta-heading"
-              className="font-heading text-2xl md:text-3xl font-semibold text-white text-center mb-6"
+              className="font-heading text-2xl md:text-3xl font-semibold text-white mb-3"
             >
-              Join the waitlist
+              You're locked in.
             </p>
-            <WaitlistForm source="village-homepage" dark size="lg" />
-            <p className="font-body text-sm text-white/40 mt-5 text-center">
-              We hate spam. Your email stays private — we'll only email you when it's ready.
+            <p className="font-body text-white/70 mb-6 max-w-md mx-auto">
+              We'll notify you the moment Culo Creatives is live. Start with The Culo Village now and your
+              account is ready the day it launches.
             </p>
+            <Link
+              to="/join"
+              className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-lg font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Start with The Culo Village →
+            </Link>
           </InnerContainer>
         </div>
       </section>

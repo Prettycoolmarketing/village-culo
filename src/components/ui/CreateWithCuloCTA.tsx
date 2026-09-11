@@ -1,11 +1,6 @@
-import { WaitlistForm } from './WaitlistForm'
-
 interface Props {
   variant?: 'banner' | 'button' | 'inline'
   label?: string
-  // Tags where this waitlist signup came from — only meaningful for
-  // variant="banner", which is the one with a capture form attached.
-  waitlistSource?: string
 }
 
 // Every "Create/Continue with CULO in Canva" button across the app points
@@ -14,7 +9,7 @@ interface Props {
 // once CULO in Canva ships.
 const CULO_CANVA_URL = 'https://www.culovillage.com/join'
 
-export function CreateWithCuloCTA({ variant = 'button', label, waitlistSource }: Props) {
+export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
   const href = CULO_CANVA_URL
 
   if (variant === 'banner') {
@@ -41,12 +36,14 @@ export function CreateWithCuloCTA({ variant = 'button', label, waitlistSource }:
             Create with CULO in Canva
           </a>
         </div>
-        {/* Canva approval is still pending — a real waitlist to join while
-            it's not yet live, instead of only a link to a placeholder page. */}
-        <div className="border-t border-white/10 pt-4">
-          <p className="font-body text-xs text-white/50 mb-2">Not live yet — join the waitlist to be first in:</p>
-          <WaitlistForm source={waitlistSource ?? 'canva-banner'} dark />
-        </div>
+        {/* Canva approval is still pending, but "Create with CULO in Canva"
+            above already leads to the real Village signup — this used to
+            be a separate bare email-capture waitlist for something that
+            doesn't exist yet; now it's just reassurance that starting
+            above locks them in for launch. */}
+        <p className="font-body text-xs text-white/50 border-t border-white/10 pt-4">
+          You're locked in — start above and we'll notify you the moment Culo Creatives is live.
+        </p>
       </div>
     )
   }

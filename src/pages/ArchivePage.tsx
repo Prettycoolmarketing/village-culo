@@ -14,7 +14,6 @@ import { BusinessCard }                from '../components/cards/BusinessCard'
 import { EventCard }                   from '../components/cards/EventCard'
 import { LibraryCard }                 from '../components/cards/LibraryCard'
 import { InnerContainer }              from '../components/layout/PageContainer'
-import { WaitlistForm }                from '../components/ui/WaitlistForm'
 
 // ─── Types ───────────────────────────────────────────────────────────────────────
 
@@ -588,8 +587,8 @@ export function ArchivePage() {
         </section>
       )}
 
-      {/* ── Publish exclusively in Canva — waitlist ─────────────────────────── */}
-      <section className="bg-charcoal py-14" aria-label="CULO Creatives in Canva waitlist">
+      {/* ── Publish exclusively in Canva — join, not a bare waitlist ────────── */}
+      <section className="bg-charcoal py-14" aria-label="CULO Creatives in Canva">
         <InnerContainer>
           <div className="max-w-xl mx-auto text-center">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Coming soon</p>
@@ -597,12 +596,17 @@ export function ArchivePage() {
               Publish in CULO Creatives, exclusively in Canva
             </h2>
             <p className="font-body text-sm text-white/60 mb-6 leading-relaxed">
-              Turn your raw footage and messy thoughts into finished content without leaving Canva. We're finishing up approval — join the waitlist to be first in when it opens.
+              Turn your raw footage and messy thoughts into finished content without leaving Canva. You're
+              locked in — we'll notify you the moment it opens. Start with The Culo Village now and your
+              account is ready the day it launches.
             </p>
-            <div className="max-w-sm mx-auto">
-              <WaitlistForm source="archive-page" dark />
-            </div>
-            <Link to="/creatives" className="inline-block mt-4 text-xs font-medium text-white/50 hover:text-white/80 transition-colors">
+            <Link
+              to="/join"
+              className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Start with The Culo Village →
+            </Link>
+            <Link to="/creatives" className="block mt-4 text-xs font-medium text-white/50 hover:text-white/80 transition-colors">
               Learn more about CULO Creatives →
             </Link>
           </div>
