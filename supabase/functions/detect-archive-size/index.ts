@@ -9,7 +9,14 @@
 //   RSS/Atom — fetch the feed once, count <item>/<entry>, sample the first few
 //   Sitemap  — fetch once, count <loc>
 //   Instagram — no API; the caller passes an approximate count from the
-//               founder's own data export
+//               founder's own data export. Padded by INSTAGRAM_SAFETY_MARGIN
+//               before pricing — a self-reported feed-post count reliably
+//               undercounts the real archive (Stories saved to archive
+//               don't show in a normal post count, and people round down
+//               when guessing), so pricing off the raw number quotes low
+//               and the real import then comes in bigger than what was
+//               charged for. Better to lean the estimate up and land in
+//               the next tier than under-quote.
 //
 // Body: { youtube?: string, feeds?: string[], sitemap?: string, instagramCount?: number }
 // Returns: { total, sources: [{ type, label, count }], sample: [{ title, thumbnailUrl, source }] }
@@ -19,6 +26,9 @@
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 
 const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY')
+
+// See the note above the Instagram section of the header comment.
+const INSTAGRAM_SAFETY_MARGIN = 1.4
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -130,7 +140,8 @@ serve(async (req) => {
       if (c > 0) sources.push({ type: 'sitemap', label: 'Website', count: c })
     }
     if (typeof body.instagramCount === 'number' && body.instagramCount > 0) {
-      sources.push({ type: 'instagram', label: 'Instagram', count: Math.round(body.instagramCount) })
+      const padded = Math.round(body.instagramCount * INSTAGRAM_SAFETY_MARGIN)
+      sources.push({ type: 'instagram', label: 'Instagram (padded for Stories)', count: padded })
     }
 
     const total = sources.reduce((s, x) => s + x.count, 0)

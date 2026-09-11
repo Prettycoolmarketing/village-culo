@@ -118,6 +118,10 @@ export function PublishingQuoteModal({ email: initialEmail, onClose, service = '
                   placeholder="e.g. 400" className={inputClass} />
               </Field>
             </div>
+            <p className="font-body text-xs text-muted mt-2">
+              No need to be exact — we build in headroom for Stories saved to your archive, which don't show
+              up in a normal post count.
+            </p>
             {errorMsg && <p className="text-sm text-red-600 mt-3">{errorMsg}</p>}
             <button onClick={() => void runQuote()}
               className="mt-5 w-full px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">

@@ -108,7 +108,7 @@ export function MarketingPublishingPage() {
       {quoteOpen && <PublishingQuoteModal onClose={() => setQuoteOpen(false)} />}
       <MarketingHero
         kicker="Pretty Cool Marketing"
-        title="Publish your body of work for AI discovery"
+        title="We republish your body of work for AI discovery"
         description={
           <>
             <p className="mb-4">
@@ -224,27 +224,11 @@ export function MarketingPublishingPage() {
         </InnerContainer>
       </section>
 
-      {/* DIY / Village note */}
-      <section className="py-14 bg-surface border-y border-border">
-        <InnerContainer className="max-w-3xl">
-          <h3 className="font-heading text-2xl font-bold text-charcoal mb-3">Already happy to do the publishing yourself?</h3>
-          <p className="font-body text-lg text-charcoal leading-relaxed mb-2">
-            You don't need Pretty Cool Marketing to be part of The Culo Village.
-          </p>
-          <p className="font-body text-lg text-charcoal leading-relaxed mb-2">
-            You can join for free, bring in your own content and publish your first articles yourself.
-          </p>
-          <p className="font-body text-lg text-charcoal leading-relaxed mb-5">
-            Blog Management is for the founder who looks at their archive and thinks, I know there's value
-            in there. I just don't have time to deal with it.
-          </p>
-          <a href="https://www.culovillage.com/join" className="text-primary font-semibold hover:underline">
-            Join The Culo Village →
-          </a>
-        </InnerContainer>
-      </section>
-
-      {/* Final CTA */}
+      {/* Final CTA — the DIY/Village note used to be its own separate
+          section right before this one, repeating the same "join, publish
+          it yourself" ground the hero and "What we take care of" already
+          cover. Folded in here as a smaller aside instead, so there's one
+          strong close on the blue background rather than two back to back. */}
       <section className="py-16 md:py-20 bg-[#EBF2F8] border-t border-[#CFE0EE]">
         <InnerContainer className="max-w-2xl text-center">
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight mb-6">
@@ -257,22 +241,37 @@ export function MarketingPublishingPage() {
             <p>You talked about it.</p>
             <p>Now we turn it into a body of work people can actually find.</p>
           </div>
-          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-1">Blog Management</p>
-          <p className="font-heading text-2xl font-bold text-charcoal">$900 AUD <span className="text-base font-normal text-muted">/ month</span></p>
-          <p className="font-body text-sm text-muted mt-1 mb-6">Plus your one-off Archive Transfer.</p>
-          <button
-            onClick={() => setQuoteOpen(true)}
-            className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-          >
-            Get your quote →
-          </button>
-          <p className="mt-4 font-body text-sm text-muted">
-            Or <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="underline">book a 30-minute call</a>.
-          </p>
-          <p className="mt-6 font-body text-sm text-muted">
-            Monthly management has a 3-month minimum. By starting a service with Pretty Cool Marketing, you
-            agree to our <Link to="/terms" className="underline">Terms</Link>.
-          </p>
+
+          <div className="bg-white border border-[#CFE0EE] rounded-2xl p-8 shadow-sm mb-8">
+            <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-1">Blog Management</p>
+            <p className="font-heading text-2xl font-bold text-charcoal">$900 AUD <span className="text-base font-normal text-muted">/ month</span></p>
+            <p className="font-body text-sm text-muted mt-1 mb-6">Plus your one-off Archive Transfer.</p>
+            <button
+              onClick={() => setQuoteOpen(true)}
+              className="w-full inline-flex justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Get your quote →
+            </button>
+            <p className="mt-4 font-body text-sm text-muted">
+              Or <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="underline">book a 30-minute call</a>.
+            </p>
+            <p className="mt-6 font-body text-xs text-muted">
+              Monthly management has a 3-month minimum. By starting a service with Pretty Cool Marketing, you
+              agree to our <Link to="/terms" className="underline">Terms</Link>.
+            </p>
+          </div>
+
+          <div className="border-t border-[#CFE0EE] pt-8">
+            <p className="font-body text-sm font-semibold text-charcoal mb-2">Already happy to do the publishing yourself?</p>
+            <p className="font-body text-sm text-charcoal/80 leading-relaxed mb-3 max-w-md mx-auto">
+              You don't need Pretty Cool Marketing to be part of The Culo Village. Join for free, bring in
+              your own content, and publish your first articles yourself, no charge. Blog Management is for
+              when you'd rather someone else deal with the archive you know is worth something.
+            </p>
+            <a href="https://www.culovillage.com/join" className="text-primary text-sm font-semibold hover:underline">
+              Join The Culo Village free →
+            </a>
+          </div>
         </InnerContainer>
       </section>
     </main>
