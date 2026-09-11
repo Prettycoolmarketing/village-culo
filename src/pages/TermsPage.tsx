@@ -173,6 +173,11 @@ export function TermsPage() {
                 <p>Where an archive is very large, PCM may offer a <strong className="text-charcoal">partial
                   transfer</strong> (for example, your most search-ready 5,000 pieces) at a fixed price, with
                   the remainder able to be transferred later at the then-current rate.</p>
+                <p>Where the Archive Transfer is paid under the <strong className="text-charcoal">monthly
+                  instalment option</strong> rather than upfront, the transfer fee is still owed in full
+                  regardless of what happens to the monthly service. If the monthly service is cancelled
+                  before all instalments are paid, the remaining Archive Transfer balance becomes due
+                  immediately — cancelling the service does not cancel or reduce the transfer fee.</p>
               </Clause>
 
               <Clause n="2" title="What each service covers">

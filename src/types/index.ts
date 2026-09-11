@@ -409,7 +409,10 @@ export interface Founder {
   // is "curated", tracked via profileStatus instead.
   joinSource?: string
   claimedAt?: string
-  claimedByUserId?: string // TODO: wire to Supabase auth transfer in future sprint
+  // Set at claim approval (if the requester was already signed in) or by
+  // finalizeClaimOwnership() the first time they sign up/in afterward —
+  // see currentFounder.ts and migration 032.
+  claimedByUserId?: string
   claimEmail?: string
   claimNotes?: string
   isClaimable?: boolean

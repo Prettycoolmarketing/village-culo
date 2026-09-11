@@ -1,4 +1,4 @@
-import { getFounders, getFounder } from './founders'
+import { getFounders, getFounder, updateFounder } from './founders'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import type { AuthUser } from '../contexts/AuthContext'
 import type { Founder } from '../types'
@@ -38,7 +38,17 @@ export function getCurrentFounder(user: AuthUser | null): Founder | null {
 
   if (user.email) {
     const byClaimEmail = all.find(f => f.claimEmail === user.email)
-    if (byClaimEmail) return byClaimEmail
+    if (byClaimEmail) {
+      // This was the actual gap behind "claims don't transfer account
+      // access" — resolution worked (the requester could see/edit the
+      // profile the moment they signed in with the matching email), but
+      // nothing ever converged it onto the real, permanent ownership
+      // fields, so it silently relied on this email match forever. First
+      // time it resolves this way, upgrade it to a real transfer: fast
+      // path (steps 1-3) from here on, not a string comparison every load.
+      void finalizeClaimOwnership(byClaimEmail, user.id)
+      return byClaimEmail
+    }
   }
 
   if (!isSupabaseConfigured) {
@@ -51,6 +61,33 @@ export function getCurrentFounder(user: AuthUser | null): Founder | null {
 /** Convenience variant for call sites that only need the id, with the same resolution order. */
 export function getCurrentFounderId(user: AuthUser | null): string | null {
   return getCurrentFounder(user)?.id ?? null
+}
+
+// getCurrentFounder() runs on effectively every render across the app —
+// without this, a claim-email match would fire the upgrade repeatedly all
+// session. Once per founder per session is plenty; the RPC itself is also
+// safe to call repeatedly (idempotent), this just avoids the noise.
+const claimFinalizeAttempted = new Set<string>()
+
+/**
+ * The other half of the claim flow. getCurrentFounder() resolving ownership
+ * via claimEmail (step 4) proves the current user really is the claimant —
+ * this converges that onto real, permanent ownership: sets
+ * Founder.claimedByUserId (both locally and via the link_claimed_founder RPC,
+ * migration 032) and populates profiles.founder_id, so every future load
+ * resolves through the fast path (steps 1-3) instead of an email comparison.
+ */
+async function finalizeClaimOwnership(founder: Founder, userId: string): Promise<void> {
+  if (founder.claimedByUserId === userId) return
+  if (claimFinalizeAttempted.has(founder.id)) return
+  claimFinalizeAttempted.add(founder.id)
+  void updateFounder({ ...founder, claimedByUserId: userId })
+  if (!isSupabaseConfigured || !supabase) return
+  try {
+    await supabase.rpc('link_claimed_founder', { p_founder_id: founder.id })
+  } catch {
+    // non-fatal — claimEmail resolution (step 4) keeps working regardless
+  }
 }
 
 /**

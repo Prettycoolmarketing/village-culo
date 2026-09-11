@@ -96,12 +96,13 @@ export const founderClaimService = {
         claimedAt: new Date().toISOString(),
         claimEmail: claim.requesterEmail,
         isClaimable: false,
-        // Ownership transfer is only fully wired up if the requester was already signed
-        // in when they filed the claim (rare — claims are usually filed anonymously).
-        // Otherwise claimedByUserId stays unset; getCurrentFounder() still resolves
-        // ownership for the requester once they sign up/in with the same email, via
-        // the claimEmail match. There is no invite/notification email sent yet — that
-        // is intentionally out of scope here (see Sprint 19A).
+        // Set immediately if the requester was already signed in when they
+        // filed the claim; otherwise left unset here — getCurrentFounder()
+        // resolves ownership for them via the claimEmail match the first
+        // time they sign up/in with the same email, and finalizeClaimOwnership()
+        // converges that onto this same field for good at that point (see
+        // currentFounder.ts + migration 032), so this never stays a bare
+        // string comparison forever either way.
         claimedByUserId: claim.requesterUserId ?? founder.claimedByUserId,
       })
     }

@@ -18,8 +18,10 @@
 //      sent through Resend rather than Supabase's own default template).
 //
 // This needs its own webhook endpoint in the Stripe Dashboard (Developers →
-// Webhooks → Add endpoint → this function's URL, listening for
-// checkout.session.completed) and its own signing secret —
+// Webhooks → Add endpoint → this function's URL), listening for
+// checkout.session.completed, invoice.paid, and customer.subscription.deleted
+// (the last one bills any remaining Archive Transfer instalments immediately
+// on cancellation — see below) — and its own signing secret —
 // STRIPE_PCM_WEBHOOK_SECRET. STRIPE_SECRET_KEY is shared with the other
 // Stripe functions.
 //
@@ -132,6 +134,36 @@ serve(async (req) => {
         await stripe.subscriptions.update(subId, {
           metadata: { ...sub.metadata, transfer_instalments_remaining: String(remaining - 1) },
         })
+      }
+      return new Response(JSON.stringify({ received: true }), { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } })
+    }
+
+    // The Archive Transfer is owed in full regardless of what happens to
+    // the monthly service (see Terms) — a client on the instalment plan
+    // who cancels before all 3 instalments are billed used to just never
+    // get billed the rest; the remaining scheduled instalments lived only
+    // as future invoice items that a cancelled subscription never
+    // generates. Bill the full remaining balance immediately instead of
+    // letting it quietly disappear.
+    if (event.type === 'customer.subscription.deleted') {
+      const sub = event.data.object as Stripe.Subscription
+      const remaining = Number(sub.metadata?.transfer_instalments_remaining ?? 0)
+      const cents = Number(sub.metadata?.transfer_instalment_cents ?? 0)
+      if (remaining > 0 && cents > 0 && typeof sub.customer === 'string') {
+        const owedCents = cents * remaining
+        await stripe.invoiceItems.create({
+          customer: sub.customer,
+          amount: owedCents,
+          currency: 'aud',
+          description: `Archive Transfer — remaining balance (${remaining} instalment${remaining === 1 ? '' : 's'}) after service cancellation`,
+        })
+        const invoice = await stripe.invoices.create({
+          customer: sub.customer,
+          collection_method: 'charge_automatically',
+          auto_advance: true,
+          description: 'Your Archive Transfer is a one-off fee owed in full regardless of your monthly service — the remaining balance is billed here now that the service has ended.',
+        })
+        if (invoice.id) await stripe.invoices.finalizeInvoice(invoice.id)
       }
       return new Response(JSON.stringify({ received: true }), { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } })
     }
@@ -273,6 +305,24 @@ serve(async (req) => {
           `<p>Hi ${name.split(' ')[0]},</p><p>Thanks for joining Pretty Cool Marketing. Set your password to get into your dashboard — your account manager is already getting started on your first batch of content.</p>${emailButton('Set your password', actionLink)}`,
         ),
       )
+    }
+
+    // Staff notification — every Capo and Admin, not just one hardcoded
+    // inbox. A real sale used to be silent on the staff side entirely; the
+    // only way to notice one happened was to go check the Capo tracker.
+    const { data: staff } = await admin.from('profiles').select('email').neq('role', 'founder')
+    const staffEmails = (staff ?? []).map(s => s.email).filter((e): e is string => !!e)
+    if (staffEmails.length > 0) {
+      const amount = typeof session.amount_total === 'number' ? (session.amount_total / 100).toFixed(2) : null
+      const planLabel = session.metadata?.plan ? ` (${session.metadata.plan})` : ''
+      await Promise.all(staffEmails.map(staffEmail => sendEmail(
+        staffEmail,
+        `New sale — ${name} · ${serviceLabel}`,
+        emailLayout(
+          'New Pretty Cool Marketing sale',
+          `<p><strong>${name}</strong> (${email}) just paid for <strong>${serviceLabel}</strong>${planLabel}${amount ? ` — $${amount} AUD today` : ''}.</p>${emailButton('Open in Capo', `${SITE_URL}/dashboard/pcm/${clientData.id}`)}`,
+        ),
+      )))
     }
 
     return new Response(JSON.stringify({ received: true, founderId }), {
