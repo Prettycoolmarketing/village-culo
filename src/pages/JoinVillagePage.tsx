@@ -74,16 +74,26 @@ const STEPS = [
 // "Join the Village" button should deep-link to: /join?source=canva
 
 export function JoinVillagePage() {
-  usePageMeta({
-    title: 'Culo In Canva',
-    description: 'Join the CULO Village for free access to Culo Creatives, exclusively in Canva, till January 1st 2027.',
-    ogType: 'website',
-  })
-
   const { signUp } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const source = searchParams.get('source') === 'canva' ? 'canva' : 'village'
+  const isCanva = source === 'canva'
+
+  // Canva-sourced visitors (from /joincanva) are on the $25/mo, 14-day-trial
+  // Standard tier, not the Village's Collaborator cohort — every mention of
+  // "free until January 1, 2027" or the "$19/month founding rate" below is
+  // simply wrong for them, not just off-message, so it's branched rather
+  // than left as shared copy.
+  usePageMeta(isCanva ? {
+    title: 'Culo Creatives in Canva',
+    description: 'Try Culo Creatives in Canva free for 14 days — turn your raw footage into finished blogs, carousels and reels.',
+    ogType: 'website',
+  } : {
+    title: 'Culo In Canva',
+    description: 'Join the CULO Village for free access to Culo Creatives, exclusively in Canva, till January 1st 2027.',
+    ogType: 'website',
+  })
 
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -196,14 +206,16 @@ export function JoinVillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Join The Culo Village
+                {isCanva ? 'Culo Creatives in Canva' : 'Join The Culo Village'}
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
                 Access Culo Creatives<br />
                 Exclusively In Canva
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
-                It's time to share your messy thoughts and raw footage into structured social media posts, join the Culo Village to republish your previously posted content across platforms structured for discovery as web articles.
+                {isCanva
+                  ? "Turn your messy thoughts and raw footage into structured blogs, carousels and reels — try it free for 14 days, right inside Canva."
+                  : "It's time to share your messy thoughts and raw footage into structured social media posts, join the Culo Village to republish your previously posted content across platforms structured for discovery as web articles."}
               </p>
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
                 <input
@@ -225,7 +237,9 @@ export function JoinVillagePage() {
               </form>
               {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
               <p className="font-body text-xs text-white/40 mt-4">
-                The Culo Village helps you be found by ai, Culo Creatives in Canva is free until January 1, 2027 · No spam emails
+                {isCanva
+                  ? '14-day free trial, then $25 AUD/month · Cancel anytime · No spam emails'
+                  : 'The Culo Village helps you be found by ai, Culo Creatives in Canva is free until January 1, 2027 · No spam emails'}
               </p>
             </div>
             <img
@@ -285,9 +299,10 @@ export function JoinVillagePage() {
                 search can find you.
               </p>
               <p className="font-body text-base text-muted leading-relaxed mb-8">
-                Membership is free, forever, and your first 10 articles are on us. Culo Creatives, the editing
-                tool inside Canva covered next, is a separate optional add-on — free until 1 January 2027, then
-                early founders keep the $19 AUD/month founding rate for as long as they stay subscribed.
+                Membership is free, forever, and your first 10 articles are on us.{' '}
+                {isCanva
+                  ? "Culo Creatives, the editing tool inside Canva covered next, comes with a 14-day free trial, then $25 AUD/month."
+                  : 'Culo Creatives, the editing tool inside Canva covered next, is a separate optional add-on — free until 1 January 2027, then early founders keep the $19 AUD/month founding rate for as long as they stay subscribed.'}
               </p>
               <a href="#join-heading" className="inline-flex items-center gap-2 text-primary font-body text-sm font-semibold hover:text-[#b05a35] transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">

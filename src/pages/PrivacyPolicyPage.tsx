@@ -243,6 +243,11 @@ export function PrivacyPolicyPage() {
             <p>Canva Privacy Policy:{' '}
               <a href="https://www.canva.com/policies/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-primary underline">canva.com/policies/privacy-policy</a>
             </p>
+            <p>CULO Creatives in Canva includes an optional link to The Culo Village, our companion website.
+              This link does not send any Canva account data with it — it's a plain navigation link. If you
+              choose to follow it and then connect your Canva account within The Culo Village, that is a
+              separate authorisation you grant directly to Canva's own sign-in screen at that time, and is
+              not something CULO Creatives does on your behalf.</p>
           </Clause>
 
           <Clause n="11" title="Third-Party Services">

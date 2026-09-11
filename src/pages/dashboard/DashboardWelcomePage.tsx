@@ -2,6 +2,13 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { hasCreativeAccess } from '../../utils/creativeAccess'
+import { STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
+
+// TODO: swap for the real "open CULO Creatives in Canva" URL once the app
+// clears Canva review (the app's own listing/deep-link URL from the Canva
+// Developer Portal) — placeholder for now, same as CreateWithCuloCTA and
+// DashboardCreativesPage's own CULO_CANVA_URL before this.
+const REAL_CANVA_APP_URL = 'https://www.culovillage.com/creatives'
 
 // Landing spot for orientation and promotion — everything that used to be
 // bolted onto Publish or Import Content (How it works, what the Voice Brief
@@ -52,6 +59,53 @@ export function DashboardWelcomePage() {
   const { user } = useAuth()
   const founder = getCurrentFounder(user)
   const canUseCreatives = hasCreativeAccess(founder?.creativeSubscription)
+
+  // Canva-sourced founders (joined via /joincanva) skip the Village-first
+  // "how it works" welcome entirely — they came here wanting Canva, not to
+  // learn about republishing old content. Their whole point of landing here
+  // is one decision: enter payment details to start the 14-day trial, then
+  // go straight into the Canva app. Village/waitlist founders keep today's
+  // unchanged two-section layout below.
+  const isCanvaFounder = founder?.signupProduct === 'canva'
+  const hasBilling = !!founder?.creativeSubscription?.stripeSubscriptionId
+  if (isCanvaFounder) {
+    const trialUrl = buildPaymentUrl(STANDARD_PAYMENT_LINK, founder?.id ?? '', user?.email)
+    return (
+      <div className="p-8 sm:pt-12 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="px-8 sm:px-12">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Welcome to Culo Creatives in Canva</h1>
+          <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl">
+            {hasBilling
+              ? "You're all set — jump back into Canva to keep creating."
+              : 'Start your 14-day free trial to turn your raw footage into finished blogs, carousels and reels, right inside Canva.'}
+          </p>
+        </div>
+        <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {CREATIVES_STEPS.map((s, i) => (
+              <div key={s.title}>
+                <div className="w-11 h-11 rounded-full bg-[#EBF2F8] text-[#3E6E92] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
+                  {i + 1}
+                </div>
+                <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+                <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col sm:items-end gap-4 pt-4">
+            <a
+              href={hasBilling ? REAL_CANVA_APP_URL : trialUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+            >
+              {hasBilling ? 'Open Culo Creatives in Canva' : 'Start my 14-day free trial'}
+            </a>
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 sm:pt-12 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>

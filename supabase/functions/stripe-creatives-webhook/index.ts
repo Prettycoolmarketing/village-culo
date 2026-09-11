@@ -101,8 +101,16 @@ serve(async (req) => {
         // founder record is the source of truth here: push it onto the real
         // Stripe subscription right after checkout, overriding whatever
         // trial the link itself started.
+        //
+        // Standard-tier founders (source=canva) are deliberately excluded —
+        // their trialEnd on the founder record was fixed at /join/confirm
+        // time (now + 14 days), which would be shorter than a true 14 days
+        // by however long they took to reach checkout. The Standard Payment
+        // Link already carries its own rolling trial_period_days: 14, set at
+        // actual checkout time, so it's left alone here.
         const storedTrialEnd = existingSub.trialEnd as string | undefined
-        if (subscriptionId && storedTrialEnd && new Date(storedTrialEnd) > new Date()) {
+        const isStandardTier = existingSub.tier === 'standard'
+        if (!isStandardTier && subscriptionId && storedTrialEnd && new Date(storedTrialEnd) > new Date()) {
           await stripe.subscriptions.update(subscriptionId, {
             trial_end: Math.floor(new Date(storedTrialEnd).getTime() / 1000),
             proration_behavior: 'none',

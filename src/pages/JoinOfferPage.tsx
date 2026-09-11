@@ -2,7 +2,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { getCurrentFounder } from '../services/currentFounder'
-import { COLLABORATOR_PAYMENT_LINK, buildPaymentUrl } from '../config/paymentLinks'
+import { COLLABORATOR_PAYMENT_LINK, STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../config/paymentLinks'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
@@ -34,7 +34,12 @@ export function JoinOfferPage() {
   }
   if (!founder) return <Navigate to="/join" replace />
 
-  const paymentUrl = buildPaymentUrl(COLLABORATOR_PAYMENT_LINK, founder.id, user?.email)
+  // Canva-sourced founders (source=canva, i.e. /joincanva) are on the
+  // Standard $25/mo tier with Stripe's own rolling 14-day trial, not the
+  // Village's Collaborator pre-launch cohort (free until 2027-01-01) —
+  // see ensureJoinedFounder. Same page, different offer/copy/link.
+  const isCanvaFounder = founder.signupProduct === 'canva'
+  const paymentUrl = buildPaymentUrl(isCanvaFounder ? STANDARD_PAYMENT_LINK : COLLABORATOR_PAYMENT_LINK, founder.id, user?.email)
   const alreadyLockedIn = !!founder.creativeSubscription?.stripeSubscriptionId
 
   return (
@@ -56,21 +61,40 @@ export function JoinOfferPage() {
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
               Welcome to The Culo Village
             </p>
-            <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
-              Free access to Culo Creatives in Canva until January 1, 2027
-            </h1>
-            <p className="font-body text-base font-semibold text-charcoal max-w-xl mx-auto mb-3">
-              Founding rate, locked in
-            </p>
-            <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
-              Start using Culo Creatives in Canva free now and secure the <strong className="text-charcoal">$19 AUD/month</strong> founding
-              rate before the standard price moves to $25.
-              <br /><br />
-              You won't be charged until 1 January 2027. After that, your $19 rate stays in place for as long
-              as you keep your subscription active.
-            </p>
+            {isCanvaFounder ? (
+              <>
+                <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
+                  Try Culo Creatives in Canva free for 14 days
+                </h1>
+                <p className="font-body text-base font-semibold text-charcoal max-w-xl mx-auto mb-3">
+                  $25 AUD/month after your trial
+                </p>
+                <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
+                  Start your 14-day free trial now — no charge today. After your trial ends, continue for
+                  <strong className="text-charcoal"> $25 AUD/month</strong>, cancel anytime.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
+                  Free access to Culo Creatives in Canva until January 1, 2027
+                </h1>
+                <p className="font-body text-base font-semibold text-charcoal max-w-xl mx-auto mb-3">
+                  Founding rate, locked in
+                </p>
+                <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
+                  Start using Culo Creatives in Canva free now and secure the <strong className="text-charcoal">$19 AUD/month</strong> founding
+                  rate before the standard price moves to $25.
+                  <br /><br />
+                  You won't be charged until 1 January 2027. After that, your $19 rate stays in place for as long
+                  as you keep your subscription active.
+                </p>
+              </>
+            )}
             {alreadyLockedIn ? (
-              <p className="font-heading text-lg font-semibold text-charcoal">You're locked in at $19/month AUD ✓</p>
+              <p className="font-heading text-lg font-semibold text-charcoal">
+                {isCanvaFounder ? "You're on the $25/month plan ✓" : "You're locked in at $19/month AUD ✓"}
+              </p>
             ) : (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
@@ -79,7 +103,7 @@ export function JoinOfferPage() {
                   rel="noopener noreferrer"
                   className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
-                  Secure the $19/month founding rate
+                  {isCanvaFounder ? 'Start my 14-day free trial' : 'Secure the $19/month founding rate'}
                 </a>
                 {/* Deliberately quieter than the orange CTA — the site's
                     established dark/secondary button, not a co-equal

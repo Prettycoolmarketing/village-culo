@@ -9,6 +9,14 @@ export const UPGRADE_PAYMENT_LINK = 'https://buy.stripe.com/bJe14o9I57sT5mGfrh83
 // then pins trial_end to the fixed date 2027-01-01 after checkout. Created
 // via stripe-setup-2026-tiers; replaces the old link that had no trial.
 export const COLLABORATOR_PAYMENT_LINK = 'https://buy.stripe.com/dRmfZibQd5kL5mG0wn83C0r'
+// $25/mo "Culo Creatives — Standard" — Stripe's own rolling 14-day trial
+// (subscription_data.trial_period_days on the link itself), not the fixed
+// 2027-01-01 date the Collaborator cohort shares. stripe-creatives-webhook
+// deliberately skips its trial_end override for this tier so Stripe's
+// native 14-day trial stands. Created via stripe-setup-standard-only, for
+// founders who join through /joincanva (source=canva) after the
+// Collaborator pre-launch cohort's free-until-Jan-2027 window.
+export const STANDARD_PAYMENT_LINK = 'https://buy.stripe.com/cNi00k5rPeVleXg6UL83C0x'
 
 // client_reference_id is how stripe-creatives-webhook links the resulting
 // Stripe customer back to a founder (see that function's header comment) —

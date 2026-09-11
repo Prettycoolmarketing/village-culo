@@ -38,7 +38,11 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
   }
 
   const now = new Date()
-  const isPreLaunchCohort = now.toISOString() < COLLABORATOR_CUTOFF
+  // Collaborator (free until 2027-01-01) is the Village's own pre-launch
+  // cohort offer — canva-sourced founders (from /joincanva) always go on
+  // the Standard $25/mo, 14-day-trial tier instead, regardless of today's
+  // date relative to that cutoff.
+  const isPreLaunchCohort = source === 'village' && now.toISOString() < COLLABORATOR_CUTOFF
   const founderId = crypto.randomUUID()
   const founder: Founder = {
     id: founderId,

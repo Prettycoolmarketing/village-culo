@@ -4,10 +4,12 @@ interface Props {
 }
 
 // Every "Create/Continue with CULO in Canva" button across the app points
-// here — one link to update, not a dozen. Currently the Join the Village
-// page, where visitors enter their email; swap for the real Canva app link
-// once CULO in Canva ships.
-const CULO_CANVA_URL = 'https://www.culovillage.com/join'
+// here — one link to update, not a dozen. Tags every visitor arriving this
+// way as source=canva (the $25/mo, 14-day-trial tier, not the Village's
+// Collaborator cohort) — see joinFlow.ts. Swap for the real Canva app deep
+// link once CULO in Canva ships, so this becomes "open the app" instead of
+// "join and pay first" for founders who already have billing set up.
+const CULO_CANVA_URL = 'https://www.culovillage.com/joincanva'
 
 export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
   const href = CULO_CANVA_URL

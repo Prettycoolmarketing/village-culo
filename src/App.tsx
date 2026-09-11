@@ -170,6 +170,10 @@ export default function App() {
               Deep-linked from the Canva Marketplace app via ?source=canva
               once it's live. */}
           <Route path="/join" element={<JoinVillagePage />} />
+          {/* Easier to remember/spell than /join?source=canva for anyone
+              typing it manually or reading it off a screen — same page,
+              same query param, just a shorter door in. */}
+          <Route path="/joincanva" element={<Navigate to="/join?source=canva" replace />} />
           {/* Where Supabase's confirmation email link actually lands (see
               AuthContext.signUp's redirectPath) — set password first, before
               ever reaching the dashboard. */}
