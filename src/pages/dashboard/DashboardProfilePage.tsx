@@ -1558,12 +1558,23 @@ export function DashboardProfilePage() {
                 const publishable = items.filter(i => unlockedIds.has(i.id))
                 if (!draft || publishable.length === 0) return
                 setReadyBulkPublishing(true)
+                setSaveError(null)
                 for (const item of publishable) {
-                  const story = buildStoryFromImport(item, draft)
-                  const result = await publishStoryCore(story)
-                  if (result.success) { await importedContentService.updateStatus(item.id, 'published'); continue }
-                  if (result.limitKind) { setLimitModal(result.limitKind); break }
-                  setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                  // A thrown exception here (a network hiccup, anything
+                  // unexpected inside publishStoryCore) used to escape this
+                  // whole function uncaught — the loop just stopped dead,
+                  // "Publishing…" never cleared, and nothing published from
+                  // that point on ever moved to Published. One item failing
+                  // now just reports an error and moves on to the rest.
+                  try {
+                    const story = buildStoryFromImport(item, draft)
+                    const result = await publishStoryCore(story)
+                    if (result.success) { await importedContentService.updateStatus(item.id, 'published'); continue }
+                    if (result.limitKind) { setLimitModal(result.limitKind); break }
+                    setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                  } catch (err) {
+                    setSaveError(err instanceof Error ? err.message : `Could not publish "${item.title}". Please try again.`)
+                  }
                 }
                 setReadyChecked(new Set())
                 setReadyBulkPublishing(false)
@@ -1581,6 +1592,14 @@ export function DashboardProfilePage() {
 
               return (
                 <div>
+                  {/* Bulk publish (both this tab and the raw imported list
+                      below) writes into this same saveError — it was being
+                      set but never actually rendered anywhere in this tab,
+                      so a real failure looked exactly like nothing happening
+                      at all. */}
+                  {contentSubTab === 'ready' && saveError && (
+                    <p className="text-sm text-red-600 font-medium mb-3">{saveError}</p>
+                  )}
                   {contentSubTab === 'ready' && readyItems.length > 0 && (
                     <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
                       <PublicationMeter founder={currentFounder} kind="imported" className="w-full sm:w-auto order-last sm:order-none" />
@@ -1811,18 +1830,27 @@ export function DashboardProfilePage() {
               async function handleImportedBulkPublish() {
                 if (!draft) return
                 setImportedBulkPublishing(true)
+                setSaveError(null)
                 const targets = readyItems.filter(i => importedChecked.has(i.id) && unlockedIdsImported.has(i.id))
                 for (const item of targets) {
-                  const story = buildStoryFromImport(item, draft)
-                  const result = await publishStoryCore(story)
-                  // Same rule as the single-item publish path: only mark the
-                  // import Published once a real Story actually exists behind
-                  // it — otherwise the row keeps saying Draft here forever
-                  // even though a story went live, because nothing else ever
-                  // wrote the status back onto the import record.
-                  if (result.success) { await importedContentService.updateStatus(item.id, 'published'); continue }
-                  if (result.limitKind) { setLimitModal(result.limitKind); break }
-                  setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                  // See the same try/catch on the Ready-to-Publish bulk
+                  // publish above — an uncaught exception here used to leave
+                  // "Publishing…" stuck forever with nothing actually moving
+                  // to Published, and no error shown to explain why.
+                  try {
+                    const story = buildStoryFromImport(item, draft)
+                    const result = await publishStoryCore(story)
+                    // Same rule as the single-item publish path: only mark the
+                    // import Published once a real Story actually exists behind
+                    // it — otherwise the row keeps saying Draft here forever
+                    // even though a story went live, because nothing else ever
+                    // wrote the status back onto the import record.
+                    if (result.success) { await importedContentService.updateStatus(item.id, 'published'); continue }
+                    if (result.limitKind) { setLimitModal(result.limitKind); break }
+                    setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
+                  } catch (err) {
+                    setSaveError(err instanceof Error ? err.message : `Could not publish "${item.title}". Please try again.`)
+                  }
                 }
                 setImportedChecked(new Set())
                 setImportedBulkPublishing(false)
