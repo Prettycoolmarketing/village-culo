@@ -9,7 +9,6 @@ import { hasCreativeAccess } from '../../utils/creativeAccess'
 // thing they're for. The CULO Creatives pitch + walkthrough itself moved to
 // its own Welcome tab on the Culo Creatives in Canva page.
 
-const CULO_CANVA_URL = 'https://www.culovillage.com/creatives'
 
 const HOW_IT_WORKS_STEPS = [
   {
@@ -129,14 +128,12 @@ export function DashboardWelcomePage() {
         </Link>
         <div className="flex flex-col sm:items-end gap-4 pt-4">
           {canUseCreatives ? (
-            <a
-              href={CULO_CANVA_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/dashboard/creatives"
               className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
             >
               Create with Culo Creatives in Canva
-            </a>
+            </Link>
           ) : (
             <Link
               to="/dashboard/creatives"

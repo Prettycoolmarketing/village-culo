@@ -1060,15 +1060,12 @@ export function DashboardProfilePage() {
         <div className="grid grid-cols-2 gap-4">
           <Field label="Profile Photo" hint="Square, min 400×400px.">
             <MediaUpload
-              value={draft.avatar}
+              value={draft.avatar.includes('/placeholders/') ? undefined : draft.avatar}
               onChange={v => set('avatar', v)}
               label="Upload photo"
               aspect="wide"
               uploadOptions={{ founderId: draft.id, usageType: 'profile-photo' }}
             />
-            {draft.avatar.includes('/placeholders/') && (
-              <p className="text-xs text-red-600 mt-1.5">Using a placeholder. Upload a real photo.</p>
-            )}
           </Field>
           <Field label="Cover Image" hint="16:9 recommended.">
             <MediaUpload

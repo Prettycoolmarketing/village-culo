@@ -117,8 +117,20 @@ export function DashboardLayout() {
   const location = useLocation()
   const showCapoNav = hasAnyCapoAccess(user?.role)
   const founder = getCurrentFounder(user)
-  const [passwordModalDismissed, setPasswordModalDismissed] = useState(false)
-  const showSetPasswordModal = !!founder && founder.passwordSet === false && !passwordModalDismissed
+  // Persisted per-tab, not just React state — otherwise "Later" only lasted
+  // until the next navigation remounted this layout and the popup came
+  // straight back. Also gated to signupProduct (only ever set by the /join
+  // throwaway-password flow this modal exists for) so a legacy/curated or
+  // PCM-webhook-created founder with no passwordSet field at all can never
+  // trip the loose `=== false` check some other way.
+  const [passwordModalDismissed, setPasswordModalDismissed] = useState(
+    () => sessionStorage.getItem('culo_password_modal_dismissed') === 'true',
+  )
+  function dismissPasswordModal() {
+    sessionStorage.setItem('culo_password_modal_dismissed', 'true')
+    setPasswordModalDismissed(true)
+  }
+  const showSetPasswordModal = !!founder && !!founder.signupProduct && founder.passwordSet === false && !passwordModalDismissed
   // Closed by default on mobile — the sidebar only becomes an overlay drawer
   // below the md breakpoint; on desktop the responsive classes below make it
   // static and always visible regardless of this state.
@@ -150,7 +162,7 @@ export function DashboardLayout() {
 
   return (
     <div className="flex h-screen bg-[#F3F7FA] overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      {showSetPasswordModal && <SetPasswordModal onClose={() => setPasswordModalDismissed(true)} />}
+      {showSetPasswordModal && <SetPasswordModal onClose={dismissPasswordModal} />}
 
       {/* Mobile top bar — hamburger + brand mark, hidden on desktop where the
           sidebar is already always visible. */}
