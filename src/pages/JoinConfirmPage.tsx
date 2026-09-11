@@ -33,16 +33,39 @@ export function JoinConfirmPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    void (async () => {
-      if (!supabase) { navigate('/join', { replace: true }); return }
-      const { data } = await supabase.auth.getUser()
-      const user = data.user
-      if (!user) { navigate('/join', { replace: true }); return }
+    if (!supabase) { navigate('/join', { replace: true }); return }
+    let settled = false
+
+    async function proceed(user: { id: string; email?: string }) {
+      if (settled) return
+      settled = true
       setEmail(user.email ?? '')
       const id = await ensureJoinedFounder(user.id, user.email ?? '', source)
       setFounderId(id)
       setReady(true)
+    }
+
+    // The confirmation link's session comes back in the URL hash, which
+    // supabase-js parses asynchronously on load — an immediate getUser()
+    // call here can race ahead of that and see no session yet, bouncing a
+    // genuinely-confirmed founder back to /join. Listen for the auth event
+    // it fires once that parsing finishes, with a short-poll fallback in
+    // case the event already fired before this listener was attached.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) void proceed(session.user)
+    })
+
+    void (async () => {
+      const { data } = await supabase.auth.getSession()
+      if (data.session?.user) { void proceed(data.session.user); return }
+      await new Promise(r => setTimeout(r, 800))
+      if (settled) return
+      const retry = await supabase.auth.getUser()
+      if (retry.data.user) { void proceed(retry.data.user); return }
+      if (!settled) navigate('/join', { replace: true })
     })()
+
+    return () => sub.subscription.unsubscribe()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
