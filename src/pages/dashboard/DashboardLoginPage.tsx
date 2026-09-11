@@ -53,7 +53,7 @@ export function DashboardLoginPage() {
       if (needsConfirmation) {
         setCheckEmail(true)
       } else {
-        navigate('/onboarding')
+        navigate('/dashboard/welcome')
       }
     }
   }

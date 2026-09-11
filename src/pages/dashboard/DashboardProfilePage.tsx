@@ -1367,16 +1367,24 @@ export function DashboardProfilePage() {
           const liveInsightBrief = getFounder(draft.id)?.insightBrief
           return (
           <div className="flex flex-col gap-5">
-            {draft.pcmManaged && !draft.pcmGateOpen && (
-              <div className="relative rounded-2xl overflow-hidden border border-[#E8E4DD]">
-                <div className="absolute inset-0 bg-[#F8F5F0]" style={{ filter: 'blur(6px)' }} aria-hidden="true" />
-                <div className="relative px-8 py-10 text-center">
-                  <p className="text-xs font-semibold text-[#C86A43] uppercase tracking-widest mb-2">Pretty Cool Marketing</p>
-                  <p className="font-heading text-xl font-semibold text-[#2D2A26] mb-1">Your account manager is building your first batch of content.</p>
-                  <p className="text-sm text-[#6B7280]">We'll email you the moment it's live — no need to do anything here in the meantime.</p>
+            {draft.pcmManaged && !draft.pcmGateOpen && (() => {
+              const svc = draft.pcmService
+              const line = svc === 'social' ? 'Your account manager is setting up your social media.'
+                : svc === 'content' ? 'Your account manager is setting up your socials and booking your first shoot.'
+                : svc === 'creatives' ? 'Your account manager is building your article library and setting up your socials.'
+                : svc === 'full' ? 'Your account manager is building your library, setting up your socials and booking your first shoot.'
+                : 'Your account manager is building your first batch of articles.'
+              return (
+                <div className="relative rounded-2xl overflow-hidden border border-[#E8E4DD]">
+                  <div className="absolute inset-0 bg-[#F8F5F0]" style={{ filter: 'blur(6px)' }} aria-hidden="true" />
+                  <div className="relative px-8 py-10 text-center">
+                    <p className="text-xs font-semibold text-[#C86A43] uppercase tracking-widest mb-2">Pretty Cool Marketing</p>
+                    <p className="font-heading text-xl font-semibold text-[#2D2A26] mb-1">{line}</p>
+                    <p className="text-sm text-[#6B7280]">We'll email you the moment it's live — no need to do anything here in the meantime.</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
             <Link
               to="/creatives"
               className="block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"

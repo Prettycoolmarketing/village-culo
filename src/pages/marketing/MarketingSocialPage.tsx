@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
 import { MarketingHero } from './MarketingHero'
 import { MarketingCheckoutButton } from './MarketingCheckoutButton'
+import { PublishingQuoteModal } from './PublishingQuoteModal'
+import { PCM_SERVICES } from '../../config/pcmServices'
 
 const CALENDLY = 'https://calendly.com/prettycoolmarketing_/30min'
 
@@ -54,8 +57,18 @@ export function MarketingSocialPage() {
     ],
   })
 
+  const [quote, setQuote] = useState<'creatives' | 'full' | null>(null)
+
   return (
     <main className="min-h-screen bg-surface">
+      {quote && (
+        <PublishingQuoteModal
+          onClose={() => setQuote(null)}
+          service={quote}
+          serviceName={PCM_SERVICES[quote].name}
+          monthlyPrice={PCM_SERVICES[quote].monthlyPrice}
+        />
+      )}
       <MarketingHero
         kicker="Pretty Cool Marketing"
         title="Your social media, captured, made and posted for you"
@@ -220,6 +233,37 @@ export function MarketingSocialPage() {
               three months, your partnership continues according to the terms of your service.{' '}
               <Link to="/terms" className="text-primary underline">Read the Terms</Link>.
             </p>
+          </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── Want your archive published too? ───────────────────────────── */}
+      <section className="py-16 md:py-20 bg-surface border-t border-border">
+        <InnerContainer className="max-w-3xl">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-3 leading-tight">
+            Want your back catalogue published too?
+          </h2>
+          <p className="font-body text-lg text-muted mb-8">
+            Add Blog Management and we run both — your archive published as founder articles and your
+            socials managed. These have a one-off Archive Transfer, quoted from your archive size.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl border border-border p-7 flex flex-col">
+              <p className="font-heading text-xl font-bold text-charcoal">Village Creatives</p>
+              <p className="font-body text-muted text-sm mt-1 mb-2">Archive published + socials run.</p>
+              <p className="font-heading text-lg font-bold text-charcoal mb-4">$3,900 AUD / month</p>
+              <button onClick={() => setQuote('creatives')} className="mt-auto inline-flex w-full items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
+                Get your quote →
+              </button>
+            </div>
+            <div className="bg-white rounded-2xl border-2 border-primary p-7 flex flex-col">
+              <p className="font-heading text-xl font-bold text-charcoal">Full Service</p>
+              <p className="font-body text-muted text-sm mt-1 mb-2">Everything, plus a shoot every 4 weeks.</p>
+              <p className="font-heading text-lg font-bold text-charcoal mb-4">$4,788 AUD / month</p>
+              <button onClick={() => setQuote('full')} className="mt-auto inline-flex w-full items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
+                Get your quote →
+              </button>
+            </div>
           </div>
         </InnerContainer>
       </section>
