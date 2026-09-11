@@ -45,27 +45,6 @@ function SectionCard({ title, description, children }: { title: string; descript
   )
 }
 
-function DiscoveryToggle({ label, description, enabled, onChange, disabled }: {
-  label: string; description: string; enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean
-}) {
-  return (
-    <div className={`flex items-center justify-between gap-4 ${disabled ? 'opacity-40' : ''}`}>
-      <div>
-        <p className="text-sm font-medium text-[#2D2A26]">{label}</p>
-        <p className="text-xs text-[#9CA3AF] mt-0.5">{description}</p>
-      </div>
-      <button
-        onClick={() => !disabled && onChange(!enabled)}
-        disabled={disabled}
-        className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${enabled ? 'bg-[#C86A43]' : 'bg-[#E8E4DD]'}`}
-        aria-label={`Toggle ${label}`}
-      >
-        <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-      </button>
-    </div>
-  )
-}
-
 // ─── Become a Partner ─────────────────────────────────────────────────────────
 
 function BecomePartnerCard({ businessId, business }: { businessId: string; business: Business }) {
@@ -174,14 +153,9 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
   onBusinessUpdate: (b: Business) => void
 }) {
   const profile = businessPartnerProfileService.getOrCreate(businessId)
-  const [localBiz, setLocalBiz] = useState<Business>(business)
+  const [localBiz] = useState<Business>(business)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-
-  function setBizBool(key: 'partnerEnabled' | 'villageProActive', value: boolean) {
-    setLocalBiz(prev => ({ ...prev, [key]: value }))
-    setSaved(false)
-  }
 
   async function handleSave() {
     setSaveError(null)
@@ -201,19 +175,6 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
   return (
     <div className="flex flex-col gap-5">
 
-      {/* Status */}
-      <SectionCard
-        title="Discovery Status"
-        description="Control whether publishers can find and recommend this business through the Opportunities engine"
-      >
-        <DiscoveryToggle
-          label="Enable Business Discovery Profile"
-          description="Allow CULO publishers to find, match with, and recommend this business"
-          enabled={localBiz.partnerEnabled ?? false}
-          onChange={v => setBizBool('partnerEnabled', v)}
-        />
-      </SectionCard>
-
       <BecomePartnerCard businessId={businessId} business={localBiz} />
 
       {/* Save */}
@@ -222,7 +183,7 @@ export function BusinessDiscoveryProfile({ businessId, business, onBusinessUpdat
           onClick={() => void handleSave()}
           className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
         >
-          Save Discovery Profile
+          Save
         </button>
         {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
         {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
