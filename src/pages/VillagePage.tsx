@@ -90,30 +90,16 @@ export function VillagePage() {
           </div>
         </InnerContainer>
 
-        {/* Joining the Village itself is real and live now, so this is no
-            longer a bare email-capture waitlist for something that doesn't
-            exist yet — but "locked in" is a real, specific claim that only
-            becomes true once a founder actually sets up billing on the $19
-            founding rate inside the dashboard (see DashboardCreativesPage).
-            This just gets them started; big and legible for a QR code at a
+        {/* Just a join link — no separate pitch here, the hero copy above
+            already makes the case. Big and legible for a QR code at a
             conference. */}
         <div>
           <InnerContainer className="py-10 md:py-14 text-center">
-            <p
-              id="creatives-cta-heading"
-              className="font-heading text-2xl md:text-3xl font-semibold text-white mb-3"
-            >
-              Be first in.
-            </p>
-            <p className="font-body text-white/70 mb-6 max-w-md mx-auto">
-              Start with The Culo Village now and you'll be notified — and able to lock in the founding
-              rate — the moment Culo Creatives is live.
-            </p>
             <Link
               to="/join"
               className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-lg font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
             >
-              Start with The Culo Village →
+              Join The Culo Village →
             </Link>
           </InnerContainer>
         </div>
