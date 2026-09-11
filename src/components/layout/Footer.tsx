@@ -156,6 +156,7 @@ export function Footer() {
           </p>
           <p className="text-xs text-white/40">
             © {new Date().getFullYear()} · <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>{' '}
+            · <Link to="/privacy" className="hover:text-white/70 transition-colors">Privacy</Link>{' '}
             · <a href="https://www.prettycoolmarketing.com" target="_blank" rel="noopener noreferrer" className="hover:text-white/70 transition-colors">Pretty Cool Marketing</a>{' '}
             · Brisbane, Australia
           </p>
