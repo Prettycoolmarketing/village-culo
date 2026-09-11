@@ -76,12 +76,13 @@ export function MarketingSocialPage() {
           <>
             <p className="mb-4">Your business depends on you.</p>
             <p className="mb-4">
-              Pretty Cool Marketing takes care of turning your footage into content, getting it
-              approved, scheduling it across your platforms and publishing it into The Culo Village.
+              Pretty Cool Marketing turns your raw footage into a full month of content, then takes care
+              of the approvals, captions, scheduling, distribution and publishing into The Culo Village.
             </p>
             <p>
-              You can send us the footage you already have, or add a Content Creator and we will come
-              and make it with you.
+              You can send us the footage you already have, or add a Content Creator and we will come and
+              document with you. Think interviews, events, your team, your customers captured and ready
+              to be seen.
             </p>
           </>
         }
