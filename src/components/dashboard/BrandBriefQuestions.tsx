@@ -5,19 +5,23 @@ import { useRef, useState } from 'react'
 // Web Speech API, same as story dictation elsewhere) so someone who'd
 // rather talk than type can answer out loud. Everything happens inline in
 // this one box — no popup, no page jump, nothing to lose on mobile.
-// Covers both HOW a founder sounds and WHAT they actually know, since this
-// now feeds both the Voice Brief and Insight Brief in one pass.
-
+//
+// This is the lightweight, quick-answer fallback for someone with no
+// existing AI/document — not the deep story extraction the full copy-paste
+// Brain Transfer prompt does. That one prompt stays comprehensive and
+// identical for everyone (new self-serve users, PCM clients, whoever they
+// become later) since it's meant to gather everything, once, regardless of
+// funnel. This shorter set only needs to cover what a self-serve founder's
+// own Profile (bio, tone) and their imports (subtitles, topic tagging)
+// actually draw on day to day — not full blog/authority-positioning depth.
 const QUESTIONS = [
   "What's your business or brand called, and what do you actually do, in plain words?",
   'Who do you help, and what result do they get from working with you?',
+  'What topics or subjects do you usually talk about in your content?',
   "What's a phrase or saying you use a lot that sounds like you?",
   'How would a friend describe the way you talk — casual, direct, warm, blunt?',
-  "What's something in your field that you believe most people get wrong?",
-  "What's a story from your own experience that shaped how you work?",
-  'What do people usually thank you for, specifically?',
   'Are there any words or phrases you never want used to describe you or your brand?',
-  "What's the one thing you want someone to understand after reading something you wrote?",
+  "What's the one thing you want someone to understand after reading your profile?",
   "What's a real result or transformation you've helped create for someone?",
 ]
 
