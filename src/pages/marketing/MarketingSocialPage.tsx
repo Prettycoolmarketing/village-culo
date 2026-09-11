@@ -132,7 +132,9 @@ export function MarketingSocialPage() {
                 <p>We turn your raw footage into 30 pieces of content every month using Culo Creatives,
                   then take care of the hooks, captions, approvals, scheduling and distribution.</p>
                 <p>Your content is created across a mix of formats including Quick Rhythm, voiceover,
-                  talking head and other formats that suit what you actually give us.</p>
+                  talking head, vlogs, floating heads and carousels, all with your own footage. If you
+                  don't have an archive of raw footage to draw from,{' '}
+                  <a href="#creator" className="text-primary font-semibold hover:underline">add a Content Creator</a> and we'll come film with you.</p>
                 <p>Everything is scheduled across your connected social platforms and published into The
                   Culo Village, so the work you are putting into your socials is also building your longer
                   term founder presence.</p>
