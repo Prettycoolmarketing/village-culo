@@ -63,6 +63,24 @@ function slugify(text: string): string {
   return text.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'client'
 }
 
+// admin.auth.admin.listUsers() with no args only returns its first page
+// (50 users) — a repeat client (buying a second package) whose account
+// isn't in that first page used to fail with "Could not find or create a
+// user for this email" even though their account genuinely exists. Pages
+// through properly instead; capped at 5,000 users as a sanity limit, not
+// an expected ceiling.
+async function findUserByEmail(admin: ReturnType<typeof createClient>, email: string) {
+  const perPage = 200
+  for (let page = 1; page <= 25; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
+    if (error || !data?.users?.length) return null
+    const found = data.users.find(u => u.email?.toLowerCase() === email)
+    if (found) return found
+    if (data.users.length < perPage) return null // last page
+  }
+  return null
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
 
@@ -171,8 +189,7 @@ serve(async (req) => {
     if (created?.user) {
       userId = created.user.id
     } else if (createErr?.message?.toLowerCase().includes('already')) {
-      const { data: list } = await admin.auth.admin.listUsers()
-      const existing = list?.users.find(u => u.email?.toLowerCase() === email)
+      const existing = await findUserByEmail(admin, email)
       if (!existing) throw new Error('Could not find or create a user for this email')
       userId = existing.id
     } else {
