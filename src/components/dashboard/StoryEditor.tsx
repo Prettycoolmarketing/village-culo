@@ -102,6 +102,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     const sourceImport = draft.importedContentId ? importedContentService.get(draft.importedContentId) : undefined
     const result = await generateBlogFromVoiceBrief({
       voiceBrief: founder.voiceBrief,
+      insightBrief: founder.insightBrief,
       founderName: founder.name,
       caption: sourceImport?.description,
       transcript: draft.blog,

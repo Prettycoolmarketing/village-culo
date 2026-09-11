@@ -890,6 +890,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     setRewriteError(null)
     const result = await generateBlogFromVoiceBrief({
       voiceBrief: founder.voiceBrief,
+      insightBrief: founder.insightBrief,
       founderName: founder.name,
       caption: draft.description,
       imageUrls: draft.thumbnailUrl ? [draft.thumbnailUrl] : undefined,
