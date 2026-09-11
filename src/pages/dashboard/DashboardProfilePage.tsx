@@ -2152,6 +2152,7 @@ export function DashboardProfilePage() {
                         onChange={setImportedEditDraft}
                         onSave={() => void handleSaveAdvancedEdit()}
                         onCancel={handleCancelAdvancedEdit}
+                        canRewrite={canUseVoiceRewrite}
                       />
                     </div>
                   </div>
