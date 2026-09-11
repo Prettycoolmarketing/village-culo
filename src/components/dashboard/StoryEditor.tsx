@@ -115,8 +115,21 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
       platform: sourceImport?.sourcePlatform ?? draft.contentTypes[0] ?? 'blog',
     })
     setRewriting(false)
-    if (result.error || !result.blog?.blog) {
-      setRewriteError(result.error ?? 'Could not rewrite this. Please try again.')
+    if (result.error) {
+      setRewriteError(result.error)
+      return
+    }
+    // insufficient_source means the AI correctly declined to invent detail
+    // that isn't actually there — an honest outcome, not a glitch. It used
+    // to collapse into the same generic "Could not rewrite this" message as
+    // a real failure, which reads as "broken" when the real fix is giving
+    // it more to work with.
+    if (result.blog?.status === 'insufficient_source' || !result.blog?.blog) {
+      setRewriteError(
+        result.blog?.note
+          ? `Not enough to go on yet — ${result.blog.note} Add more detail to the caption, or fill in more of your Brand Brief.`
+          : 'Not enough here yet to write something true and specific — add more detail to the caption, or fill in more of your Brand Brief.'
+      )
       return
     }
     setBlogBeforeRewrite(draft.blog)

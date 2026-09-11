@@ -902,8 +902,21 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       platform: draft.sourcePlatform,
     })
     setRewriting(false)
-    if (result.error || !result.blog?.blog) {
-      setRewriteError(result.error ?? 'Could not rewrite this. Please try again.')
+    if (result.error) {
+      setRewriteError(result.error)
+      return
+    }
+    // insufficient_source is the AI correctly declining to invent detail
+    // that isn't actually there — a real, honest outcome, not a glitch. It
+    // used to fall through to the same generic "Could not rewrite this"
+    // message as an actual failure, which reads as "broken, try again" when
+    // the real fix is to give it more to work with.
+    if (result.blog?.status === 'insufficient_source' || !result.blog?.blog) {
+      setRewriteError(
+        result.blog?.note
+          ? `Not enough to go on yet — ${result.blog.note} Add more detail to the caption, or fill in more of your Brand Brief.`
+          : 'Not enough here yet to write something true and specific — add more detail to the caption, or fill in more of your Brand Brief.'
+      )
       return
     }
     setBlogBeforeRewrite(draft.description ?? '')
