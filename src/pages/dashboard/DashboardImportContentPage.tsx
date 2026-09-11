@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
-import { VoiceBriefEditor } from '../../components/dashboard/VoiceBriefEditor'
-import { InsightBriefEditor } from '../../components/dashboard/InsightBriefEditor'
+import { BrandBriefEditor } from '../../components/dashboard/BrandBriefEditor'
 import { SourceIcon } from '../../components/ui/SourceIcon'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
@@ -1476,7 +1475,6 @@ export function DashboardImportContentPage() {
   // Keeping it local (not synced to a slow network round-trip on every
   // keystroke) also means typing itself never lags waiting on the backend.
   const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => founder?.voiceBrief)
-  const [insightBriefDraft, setInsightBriefDraft] = useState(() => founder?.insightBrief)
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [sources, setSources]   = useState<ConnectedSource[]>([])
@@ -1645,25 +1643,20 @@ export function DashboardImportContentPage() {
                 Optional, but it's what turns a raw caption into a real blog written in your own voice — add it now
                 and every import from here on benefits from it.
               </p>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <VoiceBriefEditor
-                  value={voiceBriefDraft}
-                  updatedAt={founder.voiceBriefUpdatedAt}
-                  founderName={founder.name}
-                  onChange={v => {
-                    setVoiceBriefDraft(v)
-                    void updateFounder({ ...founder, voiceBrief: v, voiceBriefUpdatedAt: new Date().toISOString() })
-                  }}
-                />
-                <InsightBriefEditor
-                  value={insightBriefDraft}
-                  updatedAt={founder.insightBriefUpdatedAt}
-                  onChange={v => {
-                    setInsightBriefDraft(v)
-                    void updateFounder({ ...founder, insightBrief: v, insightBriefUpdatedAt: new Date().toISOString() })
-                  }}
-                />
-              </div>
+              <BrandBriefEditor
+                value={voiceBriefDraft}
+                updatedAt={founder.voiceBriefUpdatedAt}
+                founderName={founder.name}
+                onChange={v => {
+                  setVoiceBriefDraft(v)
+                  const now = new Date().toISOString()
+                  void updateFounder({
+                    ...founder,
+                    voiceBrief: v, voiceBriefUpdatedAt: now,
+                    insightBrief: v, insightBriefUpdatedAt: now,
+                  })
+                }}
+              />
             </div>
           )}
 

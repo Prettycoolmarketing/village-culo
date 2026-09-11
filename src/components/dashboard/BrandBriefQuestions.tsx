@@ -1,0 +1,131 @@
+import { useRef, useState } from 'react'
+
+// Replaces the old back-and-forth chat interview — a fixed set of
+// questions, each with its own answer box and a microphone (free, local
+// Web Speech API, same as story dictation elsewhere) so someone who'd
+// rather talk than type can answer out loud. Everything happens inline in
+// this one box — no popup, no page jump, nothing to lose on mobile.
+// Covers both HOW a founder sounds and WHAT they actually know, since this
+// now feeds both the Voice Brief and Insight Brief in one pass.
+
+const QUESTIONS = [
+  "What's your business or brand called, and what do you actually do, in plain words?",
+  'Who do you help, and what result do they get from working with you?',
+  "What's a phrase or saying you use a lot that sounds like you?",
+  'How would a friend describe the way you talk — casual, direct, warm, blunt?',
+  "What's something in your field that you believe most people get wrong?",
+  "What's a story from your own experience that shaped how you work?",
+  'What do people usually thank you for, specifically?',
+  'Are there any words or phrases you never want used to describe you or your brand?',
+  "What's the one thing you want someone to understand after reading something you wrote?",
+  "What's a real result or transformation you've helped create for someone?",
+]
+
+function QuestionField({ index, question, value, onChange }: {
+  index: number
+  question: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  const [listening, setListening] = useState(false)
+  const recognitionRef = useRef<{ stop: () => void } | null>(null)
+
+  function toggleDictation() {
+    const Ctor = window.SpeechRecognition ?? window.webkitSpeechRecognition
+    if (!Ctor) { alert("Dictation isn't supported in this browser — try Chrome, Edge or Safari."); return }
+    if (listening) { recognitionRef.current?.stop(); return }
+    const recognition = new Ctor()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.lang = navigator.language || 'en-US'
+    recognition.onresult = e => {
+      let transcript = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) transcript += e.results[i]![0]!.transcript
+      if (!transcript.trim()) return
+      onChange(`${value} ${transcript}`.trim())
+    }
+    recognition.onerror = () => setListening(false)
+    recognition.onend = () => setListening(false)
+    recognitionRef.current = recognition
+    recognition.start()
+    setListening(true)
+  }
+
+  return (
+    <div>
+      <p className="text-sm font-semibold text-[#2D2A26] mb-2">{index + 1}. {question}</p>
+      <div className="flex items-start gap-2">
+        <textarea
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          rows={2}
+          placeholder="Type or talk — click the mic to answer out loud…"
+          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] resize-none transition-colors"
+        />
+        <button
+          type="button"
+          onClick={toggleDictation}
+          title={listening ? 'Stop dictating' : 'Answer out loud'}
+          className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+            listening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#2D2A26] text-white hover:bg-[#1a1815]'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+            <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function BrandBriefQuestions({ onComplete, onCancel }: {
+  onComplete: (brief: string) => void
+  onCancel: () => void
+}) {
+  const [answers, setAnswers] = useState<string[]>(() => QUESTIONS.map(() => ''))
+  const answeredCount = answers.filter(a => a.trim()).length
+
+  function finish() {
+    const brief = QUESTIONS.map((q, i) => `**${q}**\n${answers[i]?.trim() || '(not answered)'}`).join('\n\n')
+    onComplete(brief)
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] p-6 flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-base font-semibold text-[#2D2A26]">Answer a few questions</p>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">Answer as many as you like, in any order. Type or tap the mic to talk.</p>
+        </div>
+        <button type="button" onClick={onCancel} className="text-xs text-[#9CA3AF] hover:text-[#C86A43] shrink-0">
+          Cancel
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-5 max-h-[28rem] overflow-y-auto pr-1">
+        {QUESTIONS.map((q, i) => (
+          <QuestionField
+            key={q}
+            index={i}
+            question={q}
+            value={answers[i] ?? ''}
+            onChange={v => setAnswers(prev => prev.map((a, j) => j === i ? v : a))}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={finish}
+          disabled={answeredCount === 0}
+          className="px-5 py-2.5 rounded-lg bg-[#2D2A26] text-white text-sm font-semibold hover:bg-[#1a1815] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Build my brief ({answeredCount}/{QUESTIONS.length} answered)
+        </button>
+      </div>
+    </div>
+  )
+}

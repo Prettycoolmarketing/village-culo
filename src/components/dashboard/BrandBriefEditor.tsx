@@ -1,29 +1,26 @@
 import { useRef, useState } from 'react'
-import { INSIGHT_BRIEF_INTERVIEW_PROMPT } from '../../services/blogWriter'
+import { VOICE_BRIEF_INTERVIEW_PROMPT } from '../../services/blogWriter'
+import { BrandBriefQuestions } from './BrandBriefQuestions'
 
 const inputClass =
   'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
 
-// Deliberately separate from VoiceBriefEditor — the Voice Brief is HOW a
-// founder sounds; this is WHAT they already believe/know/can teach (their
-// own source-checked insight bank). generate-blog treats the two very
-// differently: the Voice Brief shapes tone and structure, this one is only
-// ever allowed to supply a lesson the founder has genuinely already stated,
-// never to fill in a fact a thin caption/video doesn't actually give.
-export function InsightBriefEditor({ value, updatedAt, onChange }: {
+// One box, not two — the Voice Brief (how you sound) and Insight Brief
+// (what you know/believe) used to be separate cards asking for almost the
+// same thing twice. Both founder fields still exist underneath (generate-
+// blog treats them differently: one shapes tone, the other only ever
+// supplies a lesson, never a fact) but there is no real reason a founder
+// should do this twice — one document, saved to both.
+export function BrandBriefEditor({ value, updatedAt, onChange, founderName: _founderName }: {
   value: string | undefined
   updatedAt: string | undefined
   onChange: (value: string | undefined) => void
+  founderName?: string
 }) {
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [fileStatus, setFileStatus] = useState<'idle' | 'loading' | 'added'>('idle')
+  const [answering, setAnswering] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  function handleCopyPrompt() {
-    void navigator.clipboard.writeText(INSIGHT_BRIEF_INTERVIEW_PROMPT)
-    setCopiedPrompt(true)
-    setTimeout(() => setCopiedPrompt(false), 2000)
-  }
 
   function handleFile(file: File | undefined) {
     if (!file) return
@@ -42,14 +39,20 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
     reader.readAsText(file)
   }
 
+  function handleCopyPrompt() {
+    void navigator.clipboard.writeText(VOICE_BRIEF_INTERVIEW_PROMPT)
+    setCopiedPrompt(true)
+    setTimeout(() => setCopiedPrompt(false), 2000)
+  }
+
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] px-8 py-7">
       <div className="mb-6">
-        <p className="text-lg font-semibold text-[#2D2A26]">What you already know</p>
+        <p className="text-lg font-semibold text-[#2D2A26]">Tell us who you are and what you know</p>
         <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed">
-          Your <strong className="text-[#6B7280] font-semibold">Insight Brain</strong> is what you actually
-          know, believe and can teach — separate from how you sound. Paste or upload one below, or copy our
-          prompt into any AI you already use and bring the answers back here.
+          Your <strong className="text-[#6B7280] font-semibold">Brand Brief</strong> helps CULO sound like
+          you and draw on what you actually know — not generic AI. Paste or upload one below, or copy our
+          prompt into any AI you already use, answer what it asks, then bring the result back here.
         </p>
         {updatedAt && (
           <p className="text-xs text-[#9CA3AF] mt-1.5">
@@ -58,20 +61,33 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
         )}
       </div>
 
+      {answering ? (
+        <BrandBriefQuestions
+          onComplete={brief => { onChange(brief); setAnswering(false) }}
+          onCancel={() => setAnswering(false)}
+        />
+      ) : (
       <div className="bg-[#FBF1EB] rounded-lg p-8 flex flex-col gap-4">
         <textarea
           value={value ?? ''}
           onChange={e => onChange(e.target.value || undefined)}
-          placeholder="Paste your Insight Brain here, or upload a file below…"
+          placeholder="Paste your Brand Brief here, or upload a file below…"
           className={inputClass + ' resize-none font-mono text-sm flex-1 min-h-48 p-4 bg-white'}
         />
         <div className="flex items-center gap-3 flex-wrap">
           <button
             type="button"
+            onClick={() => setAnswering(true)}
+            className="text-sm font-semibold px-4 py-2.5 rounded-lg border border-[#3E6E92] text-[#3E6E92] hover:bg-[#3E6E92] hover:text-white transition-colors"
+          >
+            I don't use AI — answer a few questions instead
+          </button>
+          <button
+            type="button"
             onClick={handleCopyPrompt}
             className="text-sm font-semibold px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
           >
-            {copiedPrompt ? 'Copied ✓' : 'Copy Insight Brain prompt'}
+            {copiedPrompt ? 'Copied ✓' : 'Copy Brain Transfer prompt'}
           </button>
           <button
             type="button"
@@ -101,6 +117,7 @@ export function InsightBriefEditor({ value, updatedAt, onChange }: {
           />
         </div>
       </div>
+      )}
     </div>
   )
 }

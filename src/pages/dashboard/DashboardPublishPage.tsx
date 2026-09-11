@@ -342,19 +342,11 @@ function FormatStep({ draft, onChange, onNext }: {
           onImported={item => onChange(importedContentPatch(item, draft))}
         />
       </div>
-      <a
-        href="https://www.culovillage.com/join"
-        className="block bg-[#2D2A26] rounded-2xl p-6 mb-8 hover:bg-[#1a1815] transition-colors"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <p className="font-heading text-base font-semibold text-white leading-snug">
-            Turn your raw footage into content, exclusively in Canva.
-          </p>
-          <span className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg">
-            Edit with CULO in Canva
-          </span>
-        </div>
-      </a>
+      <div className="text-right mb-8">
+        <Link to="/dashboard/creatives" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors">
+          Edit with Culo Creatives in Canva →
+        </Link>
+      </div>
 
       <div>
         <p className="text-sm font-semibold text-[#2D2A26] mb-1">Choose a format</p>
