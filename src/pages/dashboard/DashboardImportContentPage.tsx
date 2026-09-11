@@ -1484,6 +1484,7 @@ export function DashboardImportContentPage() {
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [sources, setSources]   = useState<ConnectedSource[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [savedFlash, setSavedFlash] = useState(false)
   // Set the moment any connector below reports a successful import — swaps
   // in a "go review it" prompt instead of also duplicating the full list of
   // everything ever imported here (that list lives in Profile → Content now).
@@ -1513,6 +1514,10 @@ export function DashboardImportContentPage() {
   }, [searchParams])
 
 
+  // Save keeps the editor open — it used to close it and navigate away, so
+  // a founder shaping Q&As or fixing up a caption had to reopen the deep
+  // link and re-find their place after every single save. It now only
+  // closes on an explicit Cancel/X, which sends them back to the list.
   async function handleSave() {
     if (!draft) return
     setSaveError(null)
@@ -1530,14 +1535,15 @@ export function DashboardImportContentPage() {
     // story too — otherwise "Edit your story" silently only touches the
     // import record and the founder's edit never actually shows up.
     if (draft.relatedStoryId) await syncImportEditsToStory(draft)
-    setDraft(null)
-    // Saving an edit is a mid-task action, not an end state — send them back
-    // to where they'd actually continue publishing this piece, instead of
-    // leaving them stranded on the now-empty Import page.
-    navigate('/dashboard/profile?tab=content')
+    setSavedFlash(true)
+    setTimeout(() => setSavedFlash(false), 2000)
   }
 
-  function handleCancel() { setDraft(null) }
+  function handleCancel() {
+    setDraft(null)
+    setSavedFlash(false)
+    navigate('/dashboard/profile?tab=content')
+  }
 
   return (
     <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-[1600px]'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -1735,7 +1741,10 @@ export function DashboardImportContentPage() {
       {draft && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+              {savedFlash && <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>}
+            </div>
             <button
               onClick={handleCancel}
               aria-label="Close"

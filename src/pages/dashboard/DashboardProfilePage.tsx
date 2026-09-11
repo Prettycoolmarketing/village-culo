@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { canUseRewrite } from '../../utils/permissions'
@@ -800,8 +800,26 @@ export function DashboardProfilePage() {
   const [limitModal, setLimitModal] = useState<null | 'imported' | 'self'>(null)
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
   const [editingImportedId, setEditingImportedId] = useState<string | null>(null)
+  // Opening "Edit this story" swaps the whole Published list out for the
+  // editor (it's shorter than the list), which used to leave the page
+  // scrolled somewhere that no longer lined up with anything once the list
+  // came back — founder had to hunt for whichever story they were up to.
+  // Remember exactly where they were, restore it the instant the editor
+  // closes (save, delete or the X), so they land back on the same row.
+  const preEditScrollY = useRef<number | null>(null)
+  function openStoryEditor(id: string) {
+    preEditScrollY.current = window.scrollY
+    setEditingStoryId(id)
+  }
+  function closeStoryEditor() {
+    setEditingStoryId(null)
+    const y = preEditScrollY.current
+    preEditScrollY.current = null
+    if (y != null) requestAnimationFrame(() => window.scrollTo({ top: y }))
+  }
   const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
   const [importedSaveError, setImportedSaveError] = useState<string | null>(null)
+  const [importedSavedFlash, setImportedSavedFlash] = useState(false)
   const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>(
     () => (searchParams.get('platform') as ImportedContentPlatform | null) ?? 'all'
   )
@@ -1958,8 +1976,14 @@ export function DashboardProfilePage() {
               function handleCancelAdvancedEdit() {
                 setEditingImportedId(null)
                 setImportedEditDraft(null)
+                setImportedSavedFlash(false)
               }
 
+              // Saving used to close the panel outright — founder working
+              // through "Ready to Publish" one Q&A/edit at a time had to
+              // reopen it and re-find their place after every single save.
+              // Now Save just saves; the panel only closes on an explicit
+              // Cancel, the X, or clicking outside it.
               async function handleSaveAdvancedEdit() {
                 if (!importedEditDraft) return
                 setImportedSaveError(null)
@@ -1972,7 +1996,8 @@ export function DashboardProfilePage() {
                 const intel = villageContentIntelligenceService.analyse(input)
                 void villageContentIntelligenceService.upsert(intel)
                 if (importedEditDraft.relatedStoryId) await syncImportEditsToStory(importedEditDraft)
-                handleCancelAdvancedEdit()
+                setImportedSavedFlash(true)
+                setTimeout(() => setImportedSavedFlash(false), 2000)
                 refreshImported()
               }
 
@@ -2135,7 +2160,12 @@ export function DashboardProfilePage() {
                   >
                     <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4">
                       <div className="flex items-center justify-between mb-4">
-                        <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+                          {importedSavedFlash && (
+                            <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>
+                          )}
+                        </div>
                         <button
                           onClick={handleCancelAdvancedEdit}
                           aria-label="Close"
@@ -2170,8 +2200,8 @@ export function DashboardProfilePage() {
                     story={editingStory}
                     canRewrite={canUseVoiceRewrite}
                     onSave={() => setImportedTick(t => t + 1)}
-                    onDelete={() => { setEditingStoryId(null); setImportedTick(t => t + 1) }}
-                    onClose={() => setEditingStoryId(null)}
+                    onDelete={() => { closeStoryEditor(); setImportedTick(t => t + 1) }}
+                    onClose={closeStoryEditor}
                   />
                 )
               }
@@ -2249,7 +2279,7 @@ export function DashboardProfilePage() {
                             </Link>
                           )}
                           <button
-                            onClick={() => setEditingStoryId(story.id)}
+                            onClick={() => openStoryEditor(story.id)}
                             className="text-sm font-medium text-[#6B7280] bg-[#F3EDE6] px-4 py-2.5 rounded-lg hover:text-[#C86A43] hover:bg-[#FBF1EB] transition-colors"
                           >
                             Edit this story
