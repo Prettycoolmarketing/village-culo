@@ -479,6 +479,15 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-5">
+          <div className="flex justify-end -mb-2">
+            <ConfirmButton
+              label="Delete"
+              confirmLabel="Yes, delete"
+              message={`Delete ${draft.name || 'this business'}? This can't be undone.`}
+              onConfirm={() => void handleDelete()}
+              className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
+            />
+          </div>
           <Field label="Business Name">
             <input type="text" value={draft.name} onChange={e => set('name', e.target.value)} className={inputClass} />
           </Field>
