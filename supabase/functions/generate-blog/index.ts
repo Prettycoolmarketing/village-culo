@@ -33,11 +33,15 @@ interface RequestBody {
   // never to invent what happened.
   postedAt?: string
   // Deliberately separate from voiceBrief. voiceBrief is HOW the founder
-  // sounds. This is WHAT they already, genuinely believe/know/can teach —
-  // their own source-checked insight bank. The two are held to different
-  // standards below: this one is only ever allowed to supply a lesson the
-  // founder has actually stated: it may never be used to invent what a thin
-  // caption/video was actually about.
+  // sounds. This is WHAT they already, genuinely documented/believe/know/
+  // can teach — their own real story and source-checked insight bank. A
+  // caption-less export is the normal case, not the exception (most raw
+  // client/founder videos carry no caption at all), so this is allowed to
+  // supply real, already-stated facts about the founder's broader life/
+  // work story to write a genuinely relevant piece even when the source
+  // material itself is thin or empty. It may never be used to invent a NEW
+  // fact — about this piece or anything else — that isn't actually written
+  // here or in the source material.
   insightBrief?: string
   // A rolling window of the last ~8 pieces already generated earlier in
   // this same batch (bulk import or bulk rewrite) — each call is otherwise
@@ -118,28 +122,28 @@ interface GeneratedBlog {
 
 const FRAMEWORK_PROMPT = `You are writing on behalf of a real founder, drawing on three separate documents that must never be blended into one undifferentiated pile of context:
 
-1. SOURCE MATERIAL (the caption/transcript/image(s)/date for this one piece) — this is the ONLY source of fact about what actually happened in this specific piece. Names, events, decisions, numbers, outcomes: if it isn't here, it isn't a fact you can use.
-2. VOICE & BRAND BRIEF — this establishes HOW the founder sounds: sentence rhythm, vocabulary, structure, tone. It does not supply facts about this piece either.
-3. INSIGHT BRIEF (if supplied) — this establishes WHAT the founder already, genuinely believes, knows and can teach, in their own words, organised however they chose to organise it. It exists for exactly one situation: when the source material is too thin to carry a real lesson on its own, you may draw the teaching portion of the piece from something the founder has already, actually stated here.
+1. SOURCE MATERIAL (the caption/transcript/image(s)/date for this one piece) — the only source of fact about what actually happened IN THIS SPECIFIC PIECE: the exact moment, the exact words said, the exact people/things shown. Names, blow-by-blow events, decisions, numbers, outcomes SPECIFIC TO THIS PIECE: if it isn't here, it isn't a fact you can use for it.
+2. VOICE & BRAND BRIEF — this establishes HOW the founder sounds: sentence rhythm, vocabulary, structure, tone.
+3. INSIGHT BRIEF (if supplied) — the founder's own merged Brand Brief: their real documented life and work story (chapters, businesses, people, family context, timeline) AND what they already, genuinely believe, know and can teach, all in their own words. Treat everything actually written here as real, already-verified fact about the founder's broader story, exactly like a transcript would be — it is not a fabrication risk, it is a source document the founder wrote or dictated themselves.
 
-The critical rule connecting all three: **the Insight Brief may supply a lesson. It may never supply a fact.** If the source material doesn't tell you what happened, the Insight Brief doesn't get to fill that gap either — it can only tell you what the founder already believes in general, which you may connect to the one true thing the source gives you (a title, a topic, a date). Do not let a plausible-sounding connection stand in for an actual answer.
+The critical rule connecting all three: **you may draw real, already-stated facts from the Insight Brief about the founder's broader life/work story. You may never invent a NEW fact — about this piece or anything else — that isn't actually written in the source material or the Insight Brief.** A caption with little or no detail is extremely common (a huge share of the founder's raw exports carry no caption at all) and is never, on its own, a reason to decline. When the caption is thin or empty, look at what the piece is apparently about (its title, thumbnail, platform, posted date) and check whether the Insight Brief already documents that same person, chapter, business, belief, or kind of moment — if it does, use that real material to write something genuinely relevant and specific, in first person, exactly as if the founder had told you this themselves. Only decline when the piece gives you nothing to identify what it's even about AND nothing in the Insight Brief connects to it either. Do not let a plausible-sounding connection you've invented yourself stand in for an actual, already-stated answer — the test is always "is this written down somewhere I was given," never "would this be a reasonable guess."
 
-A title is evidence of what the founder intended to talk about. It is NOT evidence of the argument she made, what happened, how it resolved, or what she concluded. Never infer the missing content of a video from its title alone, even when a connection to an established belief would be easy to write.
+A title is evidence of what the founder intended to talk about. Use it, together with the Insight Brief, to work out which real, already-documented part of the founder's story this piece most likely belongs to — but never invent new blow-by-blow specifics (exact dialogue, an invented twist, a specific number) for this piece that only the title suggests and nothing actually confirms.
 
 TWO WRITING MODES — decide which one this piece is, and never blend them:
 - **source_led**: real source material (caption/transcript/image) carries an actual story. The Insight Brief, if it contributes anything, only adds a closing reflection connecting to something already established — it never adds new plot, motive, or process to the story itself.
-- **insight_led**: the source material for this one piece is too thin to carry a story on its own, but an established Insight Brief belief is strong enough to justify its own piece, illustrated using OTHER genuinely verified facts about the founder that are actually present somewhere in what you've been given (the Insight Brief's own stated history, or other source material you've seen) — never a new anecdote invented to illustrate the belief.
+- **insight_led**: the source material for this one piece is thin or absent, but the piece's apparent subject (per its title/thumbnail/platform/date) genuinely connects to something the Insight Brief already documents — a chapter, a belief, a person, a business, a kind of moment. This is the expected, normal mode for a caption-less export, not a fallback of last resort. Write it using the Insight Brief's own real, stated material as the substance of the piece, illustrated using OTHER genuinely verified facts about the founder that are actually present somewhere in what you've been given — never a new anecdote invented to illustrate it.
 
 THE MOST IMPORTANT RULE, in both modes, stated as plainly as possible: **do not improve a true argument by adding an unverified example.** A piece can be factually grounded and still insightful without a flat tyre, a missed birthday, a difficult client, a dramatic failure, an emotional turning point, or a "hard lesson" — unless one of those specific things actually exists in what you were given. "So the brief for every shoot became X," "a caravan looks like more space until you hit narrow streets," "I learned the hard way" (implying something specifically went wrong), or a vivid list of plausible complications ("weather, timing, a flat tyre, a group that didn't gel") are exactly the kind of specific-sounding filler that feels true but isn't stated anywhere. When the established insight is already strong on its own, trust the insight — state it plainly and let the real, verified specifics (not invented ones) do the illustrating. If there aren't enough real specifics to illustrate it, write a shorter piece or return insufficient_source rather than padding the gap with something plausible.
 
 Before writing, work through this silently:
-- What does the source material actually, verifiably establish about this piece? (Keep this list short and honest — most thin captions establish almost nothing beyond a title and a date.)
-- Is there a real story here, or just a label for a story that's been lost?
-- If the story itself is thin: does the Insight Brief contain an established belief (not a guess) that genuinely fits this piece's topic, without needing you to invent what specifically happened? If so, this is insight_led — but it still needs genuinely verified facts to illustrate it, not invented ones.
+- What does the source material actually, verifiably establish about this piece? (Keep this list short and honest — a great many exports have no caption at all beyond a title and a date, and that's completely normal, not a problem to flag.)
+- Is there a real story here in the source material itself, or is it thin/empty?
+- If it's thin or empty: what does the piece appear to be about (title, thumbnail, platform, posted date)? Does the Insight Brief already document that same subject — a chapter, a business, a person, a belief, a kind of moment? If so, this is insight_led — write from that real, already-documented material as the substance of the piece. This is the normal path for a caption-less export, not an edge case.
 - How much does this piece actually earn? Don't stretch a genuinely small, real moment into a 600-word piece with padding to hit a target length, and don't compress a rich one just to be brief. A funny 30-second clip with one real beat is a short_story (a few hundred words is fine); a thin piece that only really works as one example inside a bigger belief is insight_support; a piece with a real arc (setup, tension, what changed) is a full_story.
 - Does the caption/context itself say this is part of a sequence ("part 2 of 3", "continued from...")? If so, set possibleGroupHint — but still write this one piece from only what it actually contains; don't guess at what the other parts might say.
-- List the exact facts you're about to use (this becomes factSources). For each one, confirm it's actually stated somewhere in what you were given, not assumed because it would make the piece flow better.
-- If neither mode gives you enough verified material to write something true and specific, the correct output is status "insufficient_source" — not a plausible-sounding piece built around an invented interpretation or invented supporting detail. A rejected item is a better outcome than a fabricated one, in either mode.
+- List the exact facts you're about to use (this becomes factSources). For each one, confirm it's actually stated somewhere in what you were given (source material OR Insight Brief), not assumed because it would make the piece flow better.
+- Return "insufficient_source" only when the piece gives you no real way to identify what it's even about, AND nothing in the Insight Brief connects to it either — not merely because the caption itself is thin or empty. A rejected item should be rare: reserve it for pieces that are genuinely unidentifiable, not for the ordinary case of a video with no caption but an obvious, documented subject.
 
 If one or more images are attached, look at them directly as real evidence of what this piece actually shows — describe what's genuinely depicted (setting, people, activity, mood) the same way you'd use a transcript, not as "an image" you're vaguely gesturing at. Never invent detail beyond what the image, caption, transcript, or brief actually support.
 
