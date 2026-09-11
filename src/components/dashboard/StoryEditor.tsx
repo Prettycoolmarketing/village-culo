@@ -106,7 +106,11 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
       founderName: founder.name,
       caption: sourceImport?.description,
       transcript: draft.blog,
-      imageUrls: sourceImport?.thumbnailUrl ? [sourceImport.thumbnailUrl] : undefined,
+      imageUrls: [
+        ...(draft.carouselImages ?? []),
+        ...(sourceImport?.imageUrls ?? []),
+        ...(sourceImport?.thumbnailUrl ? [sourceImport.thumbnailUrl] : []),
+      ],
       postedAt: sourceImport?.publishedAt,
       platform: sourceImport?.sourcePlatform ?? draft.contentTypes[0] ?? 'blog',
     })

@@ -893,7 +893,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       insightBrief: founder.insightBrief,
       founderName: founder.name,
       caption: draft.description,
-      imageUrls: draft.thumbnailUrl ? [draft.thumbnailUrl] : undefined,
+      imageUrls: [...(draft.imageUrls ?? []), ...(draft.thumbnailUrl ? [draft.thumbnailUrl] : [])],
       postedAt: draft.publishedAt,
       platform: draft.sourcePlatform,
     })
