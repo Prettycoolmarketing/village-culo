@@ -51,6 +51,13 @@ export function hasAnyCapoAccess(role: UserRole | undefined): boolean {
   return Object.values(CAPO_PERMISSIONS).some(roles => roles.includes(role))
 }
 
+/** Capo (editor) and Admin (admin/owner) staff — "Rewrite with AI" is a
+ *  staff tool, explicit and independent of whatever CAPO_PERMISSIONS looks
+ *  like later, rather than piggybacking on hasAnyCapoAccess. */
+export function canUseRewrite(role: UserRole | undefined): boolean {
+  return role === 'editor' || role === 'admin' || role === 'owner'
+}
+
 export const ROLE_LABELS: Record<UserRole, string> = {
   founder: 'Founder',
   moderator: 'Moderator',

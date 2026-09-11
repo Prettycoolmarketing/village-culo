@@ -7,7 +7,6 @@ import { SourceIcon } from '../../components/ui/SourceIcon'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getFounder, updateFounder } from '../../services/founders'
-import { partnerService } from '../../services/partner'
 import { getStory } from '../../services/stories'
 import {
   importedContentService,
@@ -19,7 +18,7 @@ import { syncImportEditsToStory } from '../../services/publishStory'
 import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
 import { enrichImportedContent, extractQaFromBlog, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
-import { hasAnyCapoAccess } from '../../utils/permissions'
+import { canUseRewrite } from '../../utils/permissions'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { MediaUpload, inferKindFromUrl } from '../../components/ui/MediaUpload'
 import {
@@ -864,7 +863,6 @@ interface EditFormProps {
 }
 
 export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
-  const activePartners = partnerService.getAll({ status: 'active' })
   const [listening, setListening] = useState(false)
   const recognitionRef = useRef<{ stop: () => void } | null>(null)
 
@@ -1178,85 +1176,6 @@ export function EditForm({ draft, onChange, onSave, onCancel }: EditFormProps) {
         </div>
       </div>
 
-      {/* ── Affiliate / Partner link ───────────────────────────────────────── */}
-      <div className="border-t border-[#E8E4DD] pt-4 mt-1 mb-4">
-        <p className="text-sm font-semibold text-[#2D2A26] mb-1">Affiliate Link</p>
-        <p className="text-xs text-[#9CA3AF] mb-3 leading-relaxed">
-          Attach a partner from your Partnership Program to turn this into a tracked affiliate story, or set a custom link.
-        </p>
-        <div className="mb-3">
-          <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Partner</label>
-          <select value={draft.partnerId ?? ''}
-            onChange={e => {
-              const partnerId = e.target.value || undefined
-              if (!partnerId) { onChange({ ...draft, partnerId: undefined }); return }
-              const partner = partnerService.get(partnerId)
-              onChange({
-                ...draft,
-                partnerId,
-                ctaLabel: draft.ctaLabel || (partner ? `Visit ${partner.name}` : draft.ctaLabel),
-                ctaUrl: partner?.affiliateUrl || partner?.website || draft.ctaUrl,
-              })
-            }}
-            className={SELECT}>
-            <option value="">None — custom link</option>
-            {activePartners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          {activePartners.length === 0 && (
-            <p className="text-[10px] text-[#9CA3AF] mt-1">No active partners yet — add one in the Partnership Program tab.</p>
-          )}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Link Label</label>
-            <input type="text" value={draft.ctaLabel ?? ''}
-              onChange={e => field('ctaLabel', e.target.value || undefined)}
-              className={INPUT} placeholder="e.g. Visit Partner Co" />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Link URL</label>
-            <input type="url" value={draft.ctaUrl ?? ''}
-              onChange={e => field('ctaUrl', e.target.value || undefined)}
-              className={INPUT} placeholder="https://..." />
-          </div>
-        </div>
-
-        {/* Additional links — beyond the one primary CTA above, for a piece
-            that genuinely mentions more than one partner/product. */}
-        {(draft.additionalLinks ?? []).length > 0 && (
-          <div className="flex flex-col gap-2 mt-3">
-            {(draft.additionalLinks ?? []).map((link, i) => (
-              <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-center bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
-                <input type="text" value={link.label}
-                  onChange={e => {
-                    const next = [...(draft.additionalLinks ?? [])]
-                    next[i] = { ...next[i]!, label: e.target.value }
-                    field('additionalLinks', next)
-                  }}
-                  className={INPUT} placeholder="Link label" />
-                <input type="url" value={link.url}
-                  onChange={e => {
-                    const next = [...(draft.additionalLinks ?? [])]
-                    next[i] = { ...next[i]!, url: e.target.value }
-                    field('additionalLinks', next)
-                  }}
-                  className={INPUT} placeholder="https://..." />
-                <button
-                  onClick={() => field('additionalLinks', (draft.additionalLinks ?? []).filter((_, j) => j !== i))}
-                  className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-2">✕</button>
-              </div>
-            ))}
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => field('additionalLinks', [...(draft.additionalLinks ?? []), { label: '', url: '' }])}
-          className="text-xs text-[#C86A43] hover:underline text-left w-fit mt-3">
-          + Add another affiliate link
-        </button>
-      </div>
-
-
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
       {shapeTrigger > 0 && (
         <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onRemoveTopic={removeTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} shapeTrigger={shapeTrigger} />
@@ -1479,7 +1398,7 @@ export function DashboardImportContentPage() {
   const navigate = useNavigate()
   const founderId = getCurrentFounderId(user) ?? 'dev-user'
   const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
-  const canUseVoiceRewrite = hasAnyCapoAccess(user?.role) || VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
+  const canUseVoiceRewrite = canUseRewrite(user?.role) || VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const founder = getFounder(founderId)
   // Local, instant copy of the brief — getFounder() is a plain synchronous
   // store read, not React state, so without this the textarea's value prop

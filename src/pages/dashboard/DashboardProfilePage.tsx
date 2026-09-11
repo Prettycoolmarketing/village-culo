@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { hasAnyCapoAccess } from '../../utils/permissions'
+import { canUseRewrite } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder, getFounder } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
@@ -745,7 +745,7 @@ export function DashboardProfilePage() {
   // "Rewrite with AI" for a whole blog is real per-call spend, so it's a
   // CAPO-staff tool now — founders dictate (free) or use the auto-drafted
   // Bio instead. (The old email allowlist still opens it for named testers.)
-  const canUseVoiceRewrite = hasAnyCapoAccess(user?.role)
+  const canUseVoiceRewrite = canUseRewrite(user?.role)
     || VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const [bioGenerating, setBioGenerating] = useState(false)
   const navigate = useNavigate()

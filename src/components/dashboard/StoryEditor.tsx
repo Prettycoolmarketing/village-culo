@@ -5,13 +5,13 @@ import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaS
 import { getBusinesses } from '../../services/businesses'
 import { getFounder } from '../../services/founders'
 import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
+import { importedContentService } from '../../services/importedContent'
 import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
 import { ReelContent } from '../ui/ReelContent'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { AppearsOnPanel } from './AppearsOnPanel'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { topics as allTopics } from '../../data/topics'
-import { normalizeUrl } from '../../utils/url'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { contentTypeLabel } from '../../utils/slugify'
 import type { Story, ContentType, Topic } from '../../types'
@@ -95,11 +95,19 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     }
     setRewriting(true)
     setRewriteError(null)
+    // Pull in the real source this story came from (caption/description,
+    // thumbnail, when it was posted) so a rewrite draws on what was
+    // actually said in the post/video, not just rephrases the current
+    // draft text back at itself.
+    const sourceImport = draft.importedContentId ? importedContentService.get(draft.importedContentId) : undefined
     const result = await generateBlogFromVoiceBrief({
       voiceBrief: founder.voiceBrief,
       founderName: founder.name,
+      caption: sourceImport?.description,
       transcript: draft.blog,
-      platform: draft.contentTypes[0] ?? 'blog',
+      imageUrls: sourceImport?.thumbnailUrl ? [sourceImport.thumbnailUrl] : undefined,
+      postedAt: sourceImport?.publishedAt,
+      platform: sourceImport?.sourcePlatform ?? draft.contentTypes[0] ?? 'blog',
     })
     setRewriting(false)
     if (result.error || !result.blog?.blog) {
@@ -521,17 +529,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="CTA Label">
-            <input type="text" value={draft.ctaLabel} onChange={e => set('ctaLabel', e.target.value)} className={inputClass} placeholder="Read more" />
-          </Field>
-          <Field label="CTA URL">
-            <input type="url" value={draft.ctaUrl} onChange={e => set('ctaUrl', e.target.value)} className={inputClass} placeholder="https://" />
-            {draft.ctaUrl && (
-              <a href={normalizeUrl(draft.ctaUrl)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#C86A43] hover:underline mt-1 inline-block">Preview ↗</a>
-            )}
-          </Field>
-        </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-[#E8E4DD]">
           <div>
