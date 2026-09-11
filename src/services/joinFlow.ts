@@ -16,7 +16,6 @@ import type { Founder } from '../types'
 // old code created it inline right after signUp(), which only ever ran on
 // the no-confirmation-needed branch.
 
-const COLLABORATOR_CUTOFF = '2027-01-01T00:00:00.000Z'
 const STANDARD_TRIAL_DAYS = 14
 
 /**
@@ -38,11 +37,6 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
   }
 
   const now = new Date()
-  // Collaborator (free until 2027-01-01) is the Village's own pre-launch
-  // cohort offer — canva-sourced founders (from /joincanva) always go on
-  // the Standard $25/mo, 14-day-trial tier instead, regardless of today's
-  // date relative to that cutoff.
-  const isPreLaunchCohort = source === 'village' && now.toISOString() < COLLABORATOR_CUTOFF
   const founderId = crypto.randomUUID()
   const founder: Founder = {
     id: founderId,
@@ -65,9 +59,15 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
     signupProduct: source,
     signupEmail: email,
     passwordSet: false,
-    creativeSubscription: isPreLaunchCohort
-      ? { status: 'trial', trialEnd: COLLABORATOR_CUTOFF }
-      : { status: 'trial', tier: 'standard', trialEnd: new Date(now.getTime() + STANDARD_TRIAL_DAYS * 86400000).toISOString() },
+    // Every new self-serve signup — /join or /joincanva alike — gets the
+    // same Standard $25/mo, 14-day-trial offer now. The old "free until
+    // 2027-01-01" collaborator cohort is no longer granted at signup; it's
+    // now a $19/mo-forever Stripe promotion code handed out individually to
+    // the curated waitlist, applied at Standard checkout (see
+    // stripe-setup-waitlist-coupon). Founders who already signed up under
+    // the old collaborator terms keep whatever their stored
+    // creativeSubscription already says — this only affects new records.
+    creativeSubscription: { status: 'trial', tier: 'standard', trialEnd: new Date(now.getTime() + STANDARD_TRIAL_DAYS * 86400000).toISOString() },
   }
 
   const result = await updateFounder(founder)

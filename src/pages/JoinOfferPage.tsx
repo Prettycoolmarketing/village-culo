@@ -34,12 +34,14 @@ export function JoinOfferPage() {
   }
   if (!founder) return <Navigate to="/join" replace />
 
-  // Canva-sourced founders (source=canva, i.e. /joincanva) are on the
-  // Standard $25/mo tier with Stripe's own rolling 14-day trial, not the
-  // Village's Collaborator pre-launch cohort (free until 2027-01-01) —
-  // see ensureJoinedFounder. Same page, different offer/copy/link.
-  const isCanvaFounder = founder.signupProduct === 'canva'
-  const paymentUrl = buildPaymentUrl(isCanvaFounder ? STANDARD_PAYMENT_LINK : COLLABORATOR_PAYMENT_LINK, founder.id, user?.email)
+  // Keyed off what the founder's record actually says they got at signup
+  // (tier), not which door they came through (signupProduct) — every new
+  // signup gets the Standard $25/mo, 14-day-trial tier now regardless of
+  // /join vs /joincanva, but founders who signed up earlier under the old
+  // Collaborator cohort (free until 2027-01-01) keep that deal. See
+  // ensureJoinedFounder.
+  const isStandardTier = founder.creativeSubscription?.tier === 'standard'
+  const paymentUrl = buildPaymentUrl(isStandardTier ? STANDARD_PAYMENT_LINK : COLLABORATOR_PAYMENT_LINK, founder.id, user?.email)
   const alreadyLockedIn = !!founder.creativeSubscription?.stripeSubscriptionId
 
   return (
@@ -61,7 +63,7 @@ export function JoinOfferPage() {
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
               Welcome to The Culo Village
             </p>
-            {isCanvaFounder ? (
+            {isStandardTier ? (
               <>
                 <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
                   Try Culo Creatives in Canva free for 14 days
@@ -93,7 +95,7 @@ export function JoinOfferPage() {
             )}
             {alreadyLockedIn ? (
               <p className="font-heading text-lg font-semibold text-charcoal">
-                {isCanvaFounder ? "You're on the $25/month plan ✓" : "You're locked in at $19/month AUD ✓"}
+                {isStandardTier ? "You're on the $25/month plan ✓" : "You're locked in at $19/month AUD ✓"}
               </p>
             ) : (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -103,7 +105,7 @@ export function JoinOfferPage() {
                   rel="noopener noreferrer"
                   className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
-                  {isCanvaFounder ? 'Start my 14-day free trial' : 'Secure the $19/month founding rate'}
+                  {isStandardTier ? 'Start my 14-day free trial' : 'Secure the $19/month founding rate'}
                 </a>
                 {/* Deliberately quieter than the orange CTA — the site's
                     established dark/secondary button, not a co-equal

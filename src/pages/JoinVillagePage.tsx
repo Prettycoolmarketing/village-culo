@@ -80,18 +80,17 @@ export function JoinVillagePage() {
   const source = searchParams.get('source') === 'canva' ? 'canva' : 'village'
   const isCanva = source === 'canva'
 
-  // Canva-sourced visitors (from /joincanva) are on the $25/mo, 14-day-trial
-  // Standard tier, not the Village's Collaborator cohort — every mention of
-  // "free until January 1, 2027" or the "$19/month founding rate" below is
-  // simply wrong for them, not just off-message, so it's branched rather
-  // than left as shared copy.
+  // isCanva now only changes framing/emphasis (this visitor came in wanting
+  // to create vs. wanting to market) — every self-serve signup, /join or
+  // /joincanva alike, gets the same $25/mo, 14-day-trial Standard tier (see
+  // ensureJoinedFounder), so pricing copy below is unified, not branched.
   usePageMeta(isCanva ? {
     title: 'Culo Creatives in Canva',
     description: 'Try Culo Creatives in Canva free for 14 days — turn your raw footage into finished blogs, carousels and reels.',
     ogType: 'website',
   } : {
     title: 'Culo In Canva',
-    description: 'Join the CULO Village for free access to Culo Creatives, exclusively in Canva, till January 1st 2027.',
+    description: 'Join the CULO Village — republish your content, and try Culo Creatives in Canva free for 14 days.',
     ogType: 'website',
   })
 
@@ -237,9 +236,7 @@ export function JoinVillagePage() {
               </form>
               {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
               <p className="font-body text-xs text-white/40 mt-4">
-                {isCanva
-                  ? '14-day free trial, then $25 AUD/month · Cancel anytime · No spam emails'
-                  : 'The Culo Village helps you be found by ai, Culo Creatives in Canva is free until January 1, 2027 · No spam emails'}
+                The Culo Village is free, forever · Culo Creatives in Canva: 14-day free trial, then $25 AUD/month · No spam emails
               </p>
             </div>
             <img
@@ -299,10 +296,9 @@ export function JoinVillagePage() {
                 search can find you.
               </p>
               <p className="font-body text-base text-muted leading-relaxed mb-8">
-                Membership is free, forever, and your first 10 articles are on us.{' '}
-                {isCanva
-                  ? "Culo Creatives, the editing tool inside Canva covered next, comes with a 14-day free trial, then $25 AUD/month."
-                  : 'Culo Creatives, the editing tool inside Canva covered next, is a separate optional add-on — free until 1 January 2027, then early founders keep the $19 AUD/month founding rate for as long as they stay subscribed.'}
+                Membership is free, forever, and your first 10 articles are on us. Culo Creatives, the editing
+                tool inside Canva covered next, is a separate optional add-on — a 14-day free trial, then
+                $25 AUD/month.
               </p>
               <a href="#join-heading" className="inline-flex items-center gap-2 text-primary font-body text-sm font-semibold hover:text-[#b05a35] transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
