@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { ensureJoinedFounder } from '../services/joinFlow'
@@ -80,6 +80,7 @@ export function JoinVillagePage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [checkEmail, setCheckEmail] = useState(false)
+  const [alreadyMember, setAlreadyMember] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -94,6 +95,13 @@ export function JoinVillagePage() {
     const throwawayPassword = crypto.randomUUID()
     const signUpResult = await signUp(trimmed, throwawayPassword, `/join/confirm?source=${source}`)
 
+    if (signUpResult.alreadyRegistered) {
+      // Email is already a member. Don't say "check your email" — send them
+      // to sign in (or reset a password they may never have set).
+      setSubmitting(false)
+      setAlreadyMember(true)
+      return
+    }
     if (signUpResult.error) {
       setSubmitting(false)
       setError(signUpResult.error)
@@ -120,6 +128,31 @@ export function JoinVillagePage() {
     }
     await ensureJoinedFounder(userId, trimmed, source)
     navigate('/join/confirm', { replace: true })
+  }
+
+  if (alreadyMember) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen bg-background flex items-center justify-center px-6">
+          <div className="max-w-md w-full text-center">
+            <h1 className="font-heading text-2xl font-bold text-charcoal mb-3">You're already a member</h1>
+            <p className="font-body text-sm text-muted leading-relaxed mb-6">
+              <span className="font-medium text-charcoal">{email}</span> already has a Culo Village account.
+              Sign in to pick up where you left off.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Link to="/dashboard/login" className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-[#b05a35] transition-colors">
+                Sign in
+              </Link>
+              <Link to="/dashboard/forgot-password" className="text-sm font-semibold text-primary hover:underline">
+                Forgot or never set a password? Reset it →
+              </Link>
+            </div>
+          </div>
+        </main>
+      </>
+    )
   }
 
   if (checkEmail) {

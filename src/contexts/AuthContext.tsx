@@ -29,7 +29,7 @@ interface AuthContextValue {
   loading: boolean
   isConfigured: boolean
   signIn:  (email: string, password: string) => Promise<{ error: string | null }>
-  signUp:  (email: string, password: string, redirectPath?: string) => Promise<{ error: string | null; needsConfirmation: boolean }>
+  signUp:  (email: string, password: string, redirectPath?: string) => Promise<{ error: string | null; needsConfirmation: boolean; alreadyRegistered: boolean }>
   signOut: () => Promise<void>
   resetPasswordForEmail: (email: string) => Promise<{ error: string | null }>
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>
@@ -127,18 +127,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }
 
-  async function signUp(email: string, password: string, redirectPath = '/dashboard/home'): Promise<{ error: string | null; needsConfirmation: boolean }> {
+  async function signUp(email: string, password: string, redirectPath = '/dashboard/home'): Promise<{ error: string | null; needsConfirmation: boolean; alreadyRegistered: boolean }> {
     if (!isSupabaseConfigured || !supabase) {
-      return { error: 'Supabase not configured. Sign up is unavailable in dev mode.', needsConfirmation: false }
+      return { error: 'Supabase not configured. Sign up is unavailable in dev mode.', needsConfirmation: false, alreadyRegistered: false }
     }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: `${window.location.origin}${redirectPath}` },
     })
+    // With "Confirm email" on, Supabase deliberately fakes a success when the
+    // email already exists (anti-enumeration) — the tell is an empty
+    // identities array on the returned user. Surface that so the join flow
+    // can send them to sign in / reset instead of "check your email".
+    const alreadyRegistered = !error && !data.session && Array.isArray(data.user?.identities) && data.user!.identities!.length === 0
+    const rawMsg = error?.message?.trim()
+    const friendly = rawMsg && (rawMsg === '{}' || rawMsg.startsWith('{') || /non-2xx/i.test(rawMsg))
+      ? 'Something went wrong creating your account. If you already have one, sign in instead.'
+      : rawMsg ?? null
     return {
-      error:              error?.message ?? null,
-      needsConfirmation:  !error && !data.session,
+      error:              friendly,
+      needsConfirmation:  !error && !data.session && !alreadyRegistered,
+      alreadyRegistered,
     }
   }
 

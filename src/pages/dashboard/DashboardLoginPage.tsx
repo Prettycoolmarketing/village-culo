@@ -47,8 +47,13 @@ export function DashboardLoginPage() {
       // Welcome page again — straight to Content (Ready to Publish).
       navigate('/dashboard/profile?tab=content')
     } else {
-      const { error: err, needsConfirmation } = await signUp(email, password)
+      const { error: err, needsConfirmation, alreadyRegistered } = await signUp(email, password)
       setLoading(false)
+      if (alreadyRegistered) {
+        setMode('signin')
+        setError('That email already has an account. Sign in below, or use "Forgot password?" if you never set one.')
+        return
+      }
       if (err) { setError(err); return }
       if (needsConfirmation) {
         setCheckEmail(true)
