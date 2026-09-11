@@ -1,6 +1,5 @@
 import { usePageMeta } from '../utils/usePageMeta'
 import { InnerContainer } from '../components/layout/PageContainer'
-import { COLLABORATOR_PAYMENT_LINK } from '../config/paymentLinks'
 
 const JOIN_URL = 'https://www.culovillage.com/join'
 
@@ -273,17 +272,11 @@ export function CreativesPage() {
                   href={JOIN_URL}
                   className="inline-flex items-center justify-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
-                  Join The Culo Village free
-                </a>
-                <a
-                  href={COLLABORATOR_PAYMENT_LINK}
-                  className="inline-flex items-center justify-center px-6 py-3.5 border border-white/25 text-white text-base font-semibold rounded-xl hover:border-white transition-colors"
-                >
-                  Start Culo Creatives — $19 AUD/month
+                  Join The Culo Village →
                 </a>
                 <p className="font-body text-xs text-white/40 mt-1">
-                  The Village is free forever. Culo Creatives is free until 1 January 2027, then $19 AUD/month
-                  for founders who start before then.
+                  Everyone joins through the Village first — it's free forever. From there you choose Culo
+                  Creatives (free until 1 January 2027, then $19 AUD/month for founders who start before then).
                 </p>
               </div>
             </div>

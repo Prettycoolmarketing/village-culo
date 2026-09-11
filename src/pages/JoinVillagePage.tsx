@@ -282,6 +282,32 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
+      {/* ── Moving "Culo Creatives in Canva" banner — blue, mirrors the
+          dark "The Culo Village" strip above, sitting right before the
+          Creatives walkthrough video. */}
+      <section className="bg-gradient-to-r from-[#7CA9CC] to-[#4A7A9E] py-6 overflow-hidden" aria-hidden="true">
+        <style>{`
+          @keyframes culo-creatives-marquee {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+          }
+        `}</style>
+        <div className="flex w-max" style={{ animation: 'culo-creatives-marquee 24s linear infinite' }}>
+          {[0, 1].map(group => (
+            <div key={group} className="flex items-center shrink-0">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <span key={i} className="flex items-center shrink-0">
+                  <span className="font-heading text-2xl sm:text-3xl font-bold text-white mx-6 whitespace-nowrap">
+                    Culo Creatives in Canva
+                  </span>
+                  <span className="text-white/70 text-2xl" aria-hidden="true">•</span>
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── What is CULO Creatives — on the Village's signature pale-blue
           gradient background (same soft radial circles as the homepage's
           HeroWidget). Copy sits next to the video, same side-by-side
