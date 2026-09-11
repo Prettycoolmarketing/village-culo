@@ -344,7 +344,7 @@ function FormatStep({ draft, onChange, onNext }: {
       </div>
       <a
         href="https://www.culovillage.com/join"
-        className="block bg-[#2D2A26] rounded-2xl px-5 py-4 mb-8 hover:bg-[#1a1815] transition-colors"
+        className="block bg-[#2D2A26] rounded-2xl p-6 mb-8 hover:bg-[#1a1815] transition-colors"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p className="font-heading text-base font-semibold text-white leading-snug">
