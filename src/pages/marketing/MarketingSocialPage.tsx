@@ -71,7 +71,7 @@ export function MarketingSocialPage() {
       )}
       <MarketingHero
         kicker="Pretty Cool Marketing"
-        title="Your social media, captured, made and posted for you"
+        title="Your socials, captured, made and posted for you"
         description={
           <>
             <p className="mb-4">You have got a business to run.</p>
@@ -86,15 +86,22 @@ export function MarketingSocialPage() {
           </>
         }
         right={
+          // No single "start" button here — which package fits depends on
+          // whether you're sending your own footage or want us to film it
+          // too, so the two real starting points (with their own Stripe
+          // checkout buttons) live below at #smm and #creator, not here.
           <div className="bg-[#EBF2F8] border border-[#CFE0EE] rounded-2xl p-8 shadow-lg flex flex-col gap-4">
+            <p className="font-body text-sm font-semibold text-charcoal">Choose your package below:</p>
             <a href="#smm" className="block">
               <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">Social Media Management</p>
               <p className="font-heading text-2xl font-bold text-charcoal">$3,000 AUD <span className="text-sm font-normal text-muted">/ month</span></p>
+              <p className="font-body text-xs text-muted">You bring the footage.</p>
             </a>
             <div className="border-t border-border" />
             <a href="#creator" className="block">
               <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest">+ Content Creator</p>
               <p className="font-heading text-2xl font-bold text-charcoal">$3,888 AUD <span className="text-sm font-normal text-muted">/ month</span></p>
+              <p className="font-body text-xs text-muted">We make the footage with you.</p>
             </a>
             <a
               href={CALENDLY}
@@ -103,12 +110,6 @@ export function MarketingSocialPage() {
               className="mt-1 text-center text-sm font-semibold text-primary hover:underline"
             >
               Or book a call first →
-            </a>
-            <a
-              href="#smm"
-              className="block w-full text-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-            >
-              Start your social media package →
             </a>
           </div>
         }
@@ -132,7 +133,7 @@ export function MarketingSocialPage() {
                 <p>Your content is created across a mix of formats including Quick Rhythm, voiceover,
                   talking head and other formats that suit what you actually give us.</p>
                 <p>Everything is scheduled across your connected social platforms and published into The
-                  Culo Village, so the work you are putting into social is also building your longer
+                  Culo Village, so the work you are putting into your socials is also building your longer
                   term founder presence.</p>
               </div>
             </div>
