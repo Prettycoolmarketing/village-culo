@@ -338,6 +338,28 @@ Keep the unfinished parts, unusual decisions, changes of direction and contradic
 
 ---
 
+## Stage Two-and-a-Half: Business, Offer and Audience Profile
+
+For each real business, product or service I currently run (not past ones already covered as chapters), extract the concrete commercial details a content strategist would actually need. This is separate from my personal story and voice: it's the factual reference for what I sell, who I sell it to, and why they'd choose it.
+
+For each one, record:
+
+* Business/product name
+* What it actually is, in one plain sentence (not a tagline)
+* What it sells or offers, including specific packages, tiers or price points where I've stated them
+* Who it's for: the real target audience or ideal customer, described concretely (not "everyone" or "business owners") — their situation, what stage they're at, what they're trying to achieve
+* What problem or pain point brings someone to it
+* What makes it different from the obvious alternative (a genuine differentiator I've actually stated, not an assumed one)
+* Where/how it's delivered (location, online, industry, geographic market) when relevant
+* Any named competitors or comparisons I've actually mentioned
+* Proof points I can genuinely point to (results, reviews, repeat clients) — only if actually stated, otherwise note as a gap
+
+If I run more than one business, keep each one separate rather than merging their offers or audiences together.
+
+Mark anything genuinely unclear or unstated as a gap for the High-Value Gaps section rather than guessing at a plausible-sounding target audience or price.
+
+---
+
 ## Stage Three: Extract My Story Bank
 
 Find individual moments that could become standalone pieces of content.
@@ -851,6 +873,10 @@ A factual overview of who I am, what I do and what connects my work.
 ## 2. Confirmed Identity and Business Details
 
 A plain list of confirmed names, roles, businesses, products, projects, locations and relevant dates.
+
+## 2b. Business, Offer and Audience Profile
+
+Per Stage Two-and-a-Half above: for each current business/product, what it sells (including packages/pricing where stated), who its real target audience is, the problem it solves for them, and genuine differentiators — kept separate per business, gaps marked rather than guessed.
 
 ## 3. My Story in Chronological Chapters
 

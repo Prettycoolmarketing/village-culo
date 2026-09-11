@@ -21,8 +21,7 @@ const QUESTIONS = [
   "What's a real result or transformation you've helped create for someone?",
 ]
 
-function QuestionField({ index, question, value, onChange }: {
-  index: number
+function QuestionField({ question, value, onChange }: {
   question: string
   value: string
   onChange: (v: string) => void
@@ -53,13 +52,12 @@ function QuestionField({ index, question, value, onChange }: {
 
   return (
     <div>
-      <p className="text-sm font-semibold text-[#2D2A26] mb-2">{index + 1}. {question}</p>
       <div className="flex items-start gap-2">
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           rows={2}
-          placeholder="Type or talk — click the mic to answer out loud…"
+          placeholder={question}
           className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] resize-none transition-colors"
         />
         <button
@@ -104,11 +102,10 @@ export function BrandBriefQuestions({ onComplete, onCancel }: {
         </button>
       </div>
 
-      <div className="flex flex-col gap-5 max-h-[28rem] overflow-y-auto pr-1">
+      <div className="flex flex-col gap-3 max-h-[28rem] overflow-y-auto pr-1">
         {QUESTIONS.map((q, i) => (
           <QuestionField
             key={q}
-            index={i}
             question={q}
             value={answers[i] ?? ''}
             onChange={v => setAnswers(prev => prev.map((a, j) => j === i ? v : a))}
