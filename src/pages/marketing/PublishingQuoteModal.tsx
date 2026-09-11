@@ -139,17 +139,6 @@ export function PublishingQuoteModal({ email: initialEmail, onClose, service = '
 
         {step === 'result' && result && tier && (
           <>
-            <p className="font-body text-sm text-muted mb-1">We found</p>
-            <p className="font-heading text-4xl font-bold text-charcoal mb-3">
-              ~{result.total.toLocaleString()} <span className="text-lg font-normal text-muted">pieces</span>
-            </p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {result.sources.filter(s => s.count > 0).map(s => (
-                <span key={s.type} className="text-xs px-2.5 py-1 rounded-lg bg-[#EBF2F8] text-charcoal">
-                  {s.label}: {s.count.toLocaleString()}
-                </span>
-              ))}
-            </div>
             {result.sample.length > 0 && (
               <div className="grid grid-cols-4 gap-1.5 mb-5">
                 {result.sample.slice(0, 8).map((s, i) => (
@@ -164,7 +153,7 @@ export function PublishingQuoteModal({ email: initialEmail, onClose, service = '
               <p className="font-body text-sm text-muted mb-1">Your quote</p>
               <p className="font-body text-sm text-charcoal">
                 One-off Archive Transfer <span className="font-semibold">{tier.priceLabel.replace(' once', '')}</span>
-                <span className="text-muted"> · {tier.label}, covers the initial import only</span>
+                <span className="text-muted"> · covers the initial import only</span>
               </p>
               <p className="font-body text-sm text-charcoal mt-1">
                 {serviceName} <span className="font-semibold">${monthlyPrice.toLocaleString()} AUD / month</span>

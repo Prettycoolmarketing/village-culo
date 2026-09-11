@@ -241,11 +241,11 @@ export function MarketingSocialPage() {
       <section className="py-16 md:py-20 bg-surface border-t border-border">
         <InnerContainer className="max-w-3xl">
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-3 leading-tight">
-            Want your back catalogue published too?
+            We can run your archive too.
           </h2>
           <p className="font-body text-lg text-muted mb-8">
-            Add Blog Management and we run both — your archive published as founder articles and your
-            socials managed. These have a one-off Archive Transfer, quoted from your archive size.
+            Add Blog Management and we handle both — your archive published as founder articles, your
+            socials managed end to end. Just the one-off Archive Transfer, quoted from your archive size.
           </p>
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl border border-border p-7 flex flex-col">

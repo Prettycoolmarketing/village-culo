@@ -1086,12 +1086,19 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
           it — only once there's actually something in Blog worth shaping,
           not before. */}
       <div className="mb-4 flex flex-col items-center gap-3 py-2">
-        <p className="text-xs font-semibold text-[#6B7280]">Say your story to be shaped as your blog</p>
+        <p className="text-xs font-semibold text-[#6B7280]">
+          {listening ? (
+            <span className="inline-flex items-center gap-1.5 text-red-600">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
+              Recording…
+            </span>
+          ) : 'Say your story to be shaped as your blog'}
+        </p>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={toggleDictation}
-            title={listening ? 'Stop dictating' : 'Dictate your story — speaks straight into the Blog field'}
+            title={listening ? 'Recording — click to stop' : 'Dictate your story — speaks straight into the Blog field'}
             className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
               listening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#2D2A26] text-white hover:bg-[#1a1815]'
             }`}

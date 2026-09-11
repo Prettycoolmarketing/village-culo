@@ -262,12 +262,7 @@ export function MarketingPublishingPage() {
           </div>
 
           <div className="border-t border-[#CFE0EE] pt-8">
-            <p className="font-body text-sm font-semibold text-charcoal mb-2">Already happy to do the publishing yourself?</p>
-            <p className="font-body text-sm text-charcoal/80 leading-relaxed mb-3 max-w-md mx-auto">
-              You don't need Pretty Cool Marketing to be part of The Culo Village. Join for free, bring in
-              your own content, and publish your first articles yourself, no charge. Blog Management is for
-              when you'd rather someone else deal with the archive you know is worth something.
-            </p>
+            <p className="font-body text-sm font-semibold text-charcoal mb-3">Already happy to do the publishing yourself?</p>
             <a href="https://www.culovillage.com/join" className="text-primary text-sm font-semibold hover:underline">
               Join The Culo Village free →
             </a>

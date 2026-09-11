@@ -303,6 +303,12 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
                   <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
                 </svg>
               </button>
+              {listening && (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
+                  Recording…
+                </span>
+              )}
               {canRewrite && (
                 <button
                   type="button"

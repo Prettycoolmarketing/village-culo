@@ -138,38 +138,42 @@ export function MarketingLandingPage() {
         />
       )}
 
-      {/* ── All five services ───────────────────────────────────────────── */}
+      {/* ── All five services — arch cards, same doorway shape as a Village
+          Story card, so this still reads as the Village rather than a
+          generic pricing table. No prices here on purpose — get your
+          quote/get started is the CTA everywhere on this page; the actual
+          number comes once we know what's involved. */}
       <section className="py-16 md:py-20 bg-surface border-t border-border">
-        <InnerContainer className="max-w-4xl">
-          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-3 leading-tight">
+        <InnerContainer>
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-3 leading-tight text-center">
             Five ways we can run your content
           </h2>
-          <p className="font-body text-lg text-muted mb-10">
+          <p className="font-body text-lg text-muted mb-10 text-center max-w-2xl mx-auto">
             Pick the one that fits. Anything with a founder library also has a one-off Archive Transfer,
             quoted from the size of your back catalogue.
           </p>
-          <div className="flex flex-col gap-3">
-            {PCM_SERVICE_IDS.map(id => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-4">
+            {PCM_SERVICE_IDS.map((id, i) => {
               const s = PCM_SERVICES[id]
               return (
                 <button
                   key={id}
                   onClick={() => goToService(id)}
-                  className="text-left bg-white border border-border rounded-2xl p-6 hover:border-primary transition-colors flex flex-col sm:flex-row sm:items-center gap-3"
+                  className="group text-left flex flex-col bg-white shadow-card hover:shadow-md transition-all duration-300 overflow-hidden"
+                  style={{ borderTopLeftRadius: '50% 40px', borderTopRightRadius: '50% 40px', borderBottomLeftRadius: '1rem', borderBottomRightRadius: '1rem' }}
                 >
-                  <div className="flex-1">
-                    <p className="font-heading text-lg font-bold text-charcoal">{s.name}</p>
-                    <p className="font-body text-sm text-muted leading-relaxed">{s.blurb}</p>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {s.includes.publishing && <span className="text-[11px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Archive published</span>}
-                      {s.includes.social && <span className="text-[11px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Socials run</span>}
-                      {s.includes.shoots && <span className="text-[11px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Shoot every 4 weeks</span>}
-                      {s.hasTransfer && <span className="text-[11px] px-2 py-0.5 rounded bg-[#FBF1EB] text-primary">+ Archive Transfer</span>}
-                    </div>
+                  <div className={`flex items-center justify-center pt-7 pb-5 ${i % 2 === 0 ? 'bg-[#EBF2F8]' : 'bg-[#FBF1EB]'}`}>
+                    <span className={`font-heading text-2xl font-bold ${i % 2 === 0 ? 'text-[#3E6E92]' : 'text-primary'}`}>{i + 1}</span>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-heading text-xl font-bold text-charcoal">{s.monthlyLabel}</p>
-                    <span className="font-body text-sm font-semibold text-primary">Get started →</span>
+                  <div className="flex-1 flex flex-col px-5 py-5">
+                    <p className="font-heading text-base font-bold text-charcoal mb-1.5">{s.name}</p>
+                    <p className="font-body text-sm text-muted leading-relaxed flex-1">{s.blurb}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {s.includes.publishing && <span className="text-[10px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Archive published</span>}
+                      {s.includes.social && <span className="text-[10px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Socials run</span>}
+                      {s.includes.shoots && <span className="text-[10px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Shoot every 4 weeks</span>}
+                    </div>
+                    <span className="font-body text-sm font-semibold text-primary mt-4 group-hover:underline">Get started →</span>
                   </div>
                 </button>
               )
@@ -225,9 +229,8 @@ export function MarketingLandingPage() {
               Join The Culo Village for free and publish your first 10 articles on us.
             </h2>
             <p className="font-body text-lg text-white/70 leading-relaxed mb-8 max-w-2xl mx-auto">
-              Culo Creatives, the must-have editing tool inside Canva, is a separate optional add-on.
-              It is free until 1 January 2027, then early founders can keep the exclusive $19 AUD/month
-              founding rate for as long as they stay subscribed.
+              Culo Creatives, the must-have editing tool inside Canva, is a separate optional add-on with an
+              exclusive early-founder rate for as long as they stay subscribed.
             </p>
             <a
               href="https://www.culovillage.com/join"
