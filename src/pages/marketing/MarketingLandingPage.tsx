@@ -4,7 +4,9 @@ import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
 import { MarketingHero } from './MarketingHero'
 import { MarketingLeadModal, hasCapturedLead } from './MarketingLeadModal'
+import { PublishingQuoteModal } from './PublishingQuoteModal'
 import { PCM_SUPPORT_EMAIL } from '../../config/pcmPaymentLinks'
+import { PCM_SERVICES, PCM_SERVICE_IDS, type PcmServiceId } from '../../config/pcmServices'
 
 type Dest = { label: string; source: string; to: string }
 
@@ -28,6 +30,12 @@ const SOCIAL_BODY = [
 export function MarketingLandingPage() {
   const navigate = useNavigate()
   const [dest, setDest] = useState<Dest | null>(null)
+  const [quoteService, setQuoteService] = useState<'publishing' | 'creatives' | 'full' | null>(null)
+
+  function goToService(id: PcmServiceId) {
+    if (id === 'social' || id === 'content') { navigate('/marketing/social'); return }
+    setQuoteService(id as 'publishing' | 'creatives' | 'full')
+  }
 
   usePageMeta({
     title: 'Done for you digital marketing — Pretty Cool Marketing',
@@ -117,6 +125,55 @@ export function MarketingLandingPage() {
               onClick={() => go(SOCIAL)}
               dark
             />
+          </div>
+        </InnerContainer>
+      </section>
+
+      {quoteService && (
+        <PublishingQuoteModal
+          onClose={() => setQuoteService(null)}
+          service={quoteService}
+          serviceName={PCM_SERVICES[quoteService].name}
+          monthlyPrice={PCM_SERVICES[quoteService].monthlyPrice}
+        />
+      )}
+
+      {/* ── All five services ───────────────────────────────────────────── */}
+      <section className="py-16 md:py-20 bg-surface border-t border-border">
+        <InnerContainer className="max-w-4xl">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-3 leading-tight">
+            Five ways we can run your content
+          </h2>
+          <p className="font-body text-lg text-muted mb-10">
+            Pick the one that fits. Anything with a founder library also has a one-off Archive Transfer,
+            quoted from the size of your back catalogue.
+          </p>
+          <div className="flex flex-col gap-3">
+            {PCM_SERVICE_IDS.map(id => {
+              const s = PCM_SERVICES[id]
+              return (
+                <button
+                  key={id}
+                  onClick={() => goToService(id)}
+                  className="text-left bg-white border border-border rounded-2xl p-6 hover:border-primary transition-colors flex flex-col sm:flex-row sm:items-center gap-3"
+                >
+                  <div className="flex-1">
+                    <p className="font-heading text-lg font-bold text-charcoal">{s.name}</p>
+                    <p className="font-body text-sm text-muted leading-relaxed">{s.blurb}</p>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {s.includes.publishing && <span className="text-[11px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Archive published</span>}
+                      {s.includes.social && <span className="text-[11px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Socials run</span>}
+                      {s.includes.shoots && <span className="text-[11px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Shoot every 4 weeks</span>}
+                      {s.hasTransfer && <span className="text-[11px] px-2 py-0.5 rounded bg-[#FBF1EB] text-primary">+ Archive Transfer</span>}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-heading text-xl font-bold text-charcoal">{s.monthlyLabel}</p>
+                    <span className="font-body text-sm font-semibold text-primary">Get started →</span>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </InnerContainer>
       </section>

@@ -11,6 +11,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 import { JOIN_SOURCE_LABELS } from '../../../constants/joinSource'
 import { VillageUsagePage } from './VillageUsagePage'
+import { getPcmClients, PCM_OFFER_LABELS, PCM_OFFER_IDS, currentStage } from '../../../lib/pcmClients'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
@@ -128,9 +129,14 @@ export function VillageHQOverviewPage() {
   const maxLoc = topLocations[0]?.count ?? 1
   const maxTop = topTopics[0]?.count ?? 1
 
-  const [tab, setTab] = useState('analytics')
+  const pcmClients = getPcmClients()
+  const canvaMembers = joinedViaJoinFlow.filter(f => f.signupProduct === 'canva').length
+
+  const [tab, setTab] = useState('village')
   const TABS: DashTab[] = [
-    { key: 'analytics', label: 'Analytics' },
+    { key: 'village', label: 'Village' },
+    { key: 'pcm', label: 'Pretty Cool Marketing' },
+    { key: 'creatives', label: 'Culo Creatives' },
     { key: 'usage', label: 'Usage' },
   ]
 
@@ -146,7 +152,53 @@ export function VillageHQOverviewPage() {
 
       <Tabs tabs={TABS} active={tab} onChange={setTab} className="mb-8" />
 
-      {tab === 'analytics' && (
+      {tab === 'pcm' && (
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <StatCard label="Clients" value={pcmClients.length} />
+            <StatCard label="Live" value={pcmClients.filter(c => c.stages.live).length} />
+            <StatCard label="In production" value={pcmClients.filter(c => c.stages.editing && !c.stages.live).length} />
+            <StatCard label="Waiting on material" value={pcmClients.filter(c => !c.stages.raw).length} />
+          </div>
+          <section className="bg-white rounded-xl border border-[#E8E4DD] p-5">
+            <p className="text-sm font-bold text-[#2D2A26] mb-3">By service</p>
+            <div className="flex flex-col gap-2">
+              {PCM_OFFER_IDS.map(id => {
+                const n = pcmClients.filter(c => c.offer === id).length
+                return (
+                  <div key={id} className="flex items-center justify-between text-sm">
+                    <span className="text-[#4B4845]">{PCM_OFFER_LABELS[id]}</span>
+                    <span className="font-semibold text-[#2D2A26]">{n}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+          <section className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+            {pcmClients.length === 0 && <p className="text-sm text-[#9CA3AF] px-5 py-4">No PCM clients yet.</p>}
+            {pcmClients.map(c => (
+              <Link key={c.id} to={`/dashboard/pcm/${c.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-[#FBF8F4] transition-colors">
+                <div>
+                  <p className="text-sm font-medium text-[#2D2A26]">{c.name}</p>
+                  <p className="text-xs text-[#9CA3AF]">{PCM_OFFER_LABELS[c.offer]} · {currentStage(c).label}</p>
+                </div>
+                <span className="text-xs text-[#C86A43]">Open →</span>
+              </Link>
+            ))}
+          </section>
+        </div>
+      )}
+
+      {tab === 'creatives' && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <StatCard label="Canva members" value={canvaMembers} />
+          <StatCard label="Locked-in collaborators" value={lockedInCollaborators} />
+          <StatCard label="From Canva Marketplace" value={fromCanva.length} />
+          <StatCard label="From the Village" value={fromVillage.length} />
+        </div>
+      )}
+
+      {tab === 'village' && (
       <>
       {/* Founder stats live on the Founders page itself now (Total/Curated/
           Claimed/Filtered) — this used to duplicate them here with slightly
