@@ -117,17 +117,19 @@ export function DashboardLayout() {
   const location = useLocation()
   const showCapoNav = hasAnyCapoAccess(user?.role)
   const founder = getCurrentFounder(user)
-  // Persisted per-tab, not just React state — otherwise "Later" only lasted
-  // until the next navigation remounted this layout and the popup came
-  // straight back. Also gated to signupProduct (only ever set by the /join
+  // Persisted (localStorage, not sessionStorage — mobile browsers routinely
+  // clear session storage when a backgrounded tab gets reloaded, which was
+  // making "Later" not stick at all on mobile and re-showing this on every
+  // visit) so "Later" survives across visits, not just the current tab.
+  // Also gated to signupProduct (only ever set by the /join
   // throwaway-password flow this modal exists for) so a legacy/curated or
   // PCM-webhook-created founder with no passwordSet field at all can never
   // trip the loose `=== false` check some other way.
   const [passwordModalDismissed, setPasswordModalDismissed] = useState(
-    () => sessionStorage.getItem('culo_password_modal_dismissed') === 'true',
+    () => localStorage.getItem('culo_password_modal_dismissed') === 'true',
   )
   function dismissPasswordModal() {
-    sessionStorage.setItem('culo_password_modal_dismissed', 'true')
+    localStorage.setItem('culo_password_modal_dismissed', 'true')
     setPasswordModalDismissed(true)
   }
   const showSetPasswordModal = !!founder && !!founder.signupProduct && founder.passwordSet === false && !passwordModalDismissed

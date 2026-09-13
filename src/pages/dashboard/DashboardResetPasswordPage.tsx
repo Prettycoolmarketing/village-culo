@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
+import { updateFounder } from '../../services/founders'
 
 export function DashboardResetPasswordPage() {
-  const { updatePassword, isConfigured } = useAuth()
+  const { user, updatePassword, isConfigured } = useAuth()
   const navigate = useNavigate()
 
   const [password,        setPassword]        = useState('')
@@ -29,8 +31,18 @@ export function DashboardResetPasswordPage() {
 
     setLoading(true)
     const { error: err } = await updatePassword(password)
+    if (err) { setLoading(false); setError(err); return }
+
+    // A founder who signed up through /join starts with passwordSet:false
+    // (a throwaway random password) and only the SetPasswordModal/
+    // JoinConfirmPage paths flip it to true — using "Forgot password" to
+    // set a real one here never did, so the modal kept nagging forever
+    // even after they'd genuinely set a working password. Same fix as
+    // those two call sites.
+    const founder = getCurrentFounder(user)
+    if (founder && founder.passwordSet === false) await updateFounder({ ...founder, passwordSet: true })
+
     setLoading(false)
-    if (err) { setError(err); return }
     setDone(true)
     // The recovery link already established a session, so they're signed in
     // now — no reason to send them back to /login to type the password a
