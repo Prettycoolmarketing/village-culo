@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { getFounders, deleteFounderAccount } from '../../../services/founders'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
-import { waitlistService, type WaitlistEntry } from '../../../services/waitlist'
+import { waitlistService } from '../../../services/waitlist'
 import { emailSubscribersService, type EmailSubscriber } from '../../../services/emailSubscribers'
 import { emailCampaignsService, type EmailCampaign, type CampaignSendStats } from '../../../services/emailCampaigns'
 import { emailSequencesService, emailSequenceEnrollmentsService, type EmailSequence, type EmailSequenceStep, type EmailSequenceEnrollment } from '../../../services/emailSequences'
@@ -12,6 +12,17 @@ import { toCSV, downloadCSV } from '../../../utils/emailExport'
 export function VillageEmailExportPage() {
   const [pageTab, setPageTab] = useState('village-members')
 
+  // Waitlist signups still fold into Subscribers automatically — no longer
+  // running a public waitlist tab/flow (people get added manually now), but
+  // any entries already sitting in the waitlist table (past signups) still
+  // need to land in Subscribers rather than being silently orphaned once
+  // that tab — and the effect that used to live inside it — is gone.
+  useEffect(() => {
+    void waitlistService.refresh().then(async () => {
+      await emailSubscribersService.importFromWaitlist(waitlistService.getAll())
+    })
+  }, [])
+
   return (
     <div className="p-8 max-w-4xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <CapoBackLink />
@@ -20,7 +31,7 @@ export function VillageEmailExportPage() {
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Email Lists</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">
-          Export CSVs for outreach, manage the CULO Creatives waitlist, and send campaigns to your subscriber list.
+          Export CSVs for outreach and send campaigns to your subscriber list.
         </p>
       </div>
 
@@ -28,7 +39,6 @@ export function VillageEmailExportPage() {
         tabs={[
           { key: 'village-members', label: 'Village Members' },
           { key: 'canva-members',   label: 'Canva Members' },
-          { key: 'waitlist',        label: 'Waitlist' },
           { key: 'subscribers',     label: 'Subscribers' },
           { key: 'campaigns',       label: 'Campaigns' },
           { key: 'sequences',       label: 'Sequences' },
@@ -40,7 +50,6 @@ export function VillageEmailExportPage() {
 
       {pageTab === 'village-members' && <MembersPanel source="village" />}
       {pageTab === 'canva-members' && <MembersPanel source="canva" />}
-      {pageTab === 'waitlist' && <WaitlistPanel />}
       {pageTab === 'subscribers' && <SubscribersPanel />}
       {pageTab === 'campaigns' && <CampaignsPanel />}
       {pageTab === 'sequences' && <SequencesPanel />}
@@ -132,69 +141,6 @@ function MembersPanel({ source }: { source: 'village' | 'canva' }) {
                   className="text-[10px] text-red-500 hover:text-red-600 transition-colors"
                 />
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Waitlist panel ─────────────────────────────────────────────────────────────
-
-function WaitlistPanel() {
-  const [entries, setEntries] = useState<WaitlistEntry[]>(waitlistService.getAll())
-  const [loading, setLoading] = useState(true)
-  const [importedMsg, setImportedMsg] = useState<string | null>(null)
-
-  useEffect(() => {
-    void waitlistService.refresh().then(async () => {
-      const fresh = waitlistService.getAll()
-      setEntries(fresh)
-      setLoading(false)
-      // Waitlist signups count toward the Subscribers total automatically —
-      // no more manual "Import all" click needed for the count on the
-      // Subscribers tab to actually reflect everyone who's opted in.
-      await emailSubscribersService.importFromWaitlist(fresh)
-    })
-  }, [])
-
-  async function handleImportAll() {
-    const { added } = await emailSubscribersService.importFromWaitlist(entries)
-    setImportedMsg(`Added ${added} new subscriber${added === 1 ? '' : 's'} from the waitlist.`)
-  }
-
-  function handleDelete(id: string) {
-    void waitlistService.delete(id)
-    setEntries(prev => prev.filter(e => e.id !== id))
-  }
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-[#6B7280]">
-          {loading ? 'Loading…' : `${entries.length} signup${entries.length === 1 ? '' : 's'} for CULO Creatives in Canva.`}
-        </p>
-        <button
-          onClick={() => void handleImportAll()}
-          disabled={entries.length === 0}
-          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 transition-colors"
-        >
-          Import all into Subscribers
-        </button>
-      </div>
-      {importedMsg && <p className="text-xs text-[#5E6B4A] font-medium mb-3">{importedMsg}</p>}
-      {entries.length === 0 && !loading ? (
-        <p className="text-sm text-[#9CA3AF]">No waitlist signups yet.</p>
-      ) : (
-        <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-          {entries.map(e => (
-            <div key={e.id} className="flex items-center justify-between px-4 py-3">
-              <div>
-                <p className="text-sm font-medium text-[#2D2A26]">{e.email}</p>
-                <p className="text-xs text-[#9CA3AF]">{e.source} · {new Date(e.createdAt).toLocaleDateString('en-AU')}</p>
-              </div>
-              <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => handleDelete(e.id)} className="text-xs text-[#9CA3AF] hover:text-red-500" />
             </div>
           ))}
         </div>
