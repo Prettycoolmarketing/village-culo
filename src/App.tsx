@@ -194,8 +194,8 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="profile" replace />} />
-            <Route path="home"           element={<Navigate to="/dashboard/profile" replace />} />
+            <Route index element={<Navigate to="welcome" replace />} />
+            <Route path="home"           element={<Navigate to="/dashboard/welcome" replace />} />
             <Route path="profile"        element={<DashboardProfilePage />}      />
             <Route path="preview/:importId" element={<StoryPreviewPage />}       />
             {/* Advanced business editing (Services, Discovery, Partnerships) moved into Profile's Businesses tab */}

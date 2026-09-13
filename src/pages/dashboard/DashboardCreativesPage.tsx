@@ -215,7 +215,7 @@ function FeedbackTab({
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export function DashboardCreativesPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const founder = getCurrentFounder(user)
   const [tab, setTab] = useState('welcome')
 
@@ -227,6 +227,18 @@ export function DashboardCreativesPage() {
   const upgradeUrl = buildPaymentUrl(UPGRADE_PAYMENT_LINK, founder?.id ?? '', user?.email)
   const collaboratorUrl = buildPaymentUrl(COLLABORATOR_PAYMENT_LINK, founder?.id ?? '', user?.email)
 
+  // AuthContext's session restore is async — user/founder are briefly null
+  // on a fresh page load (direct URL visit, refresh, redeploy) before that
+  // resolves. Returning null immediately during that window rendered this
+  // page as a permanent-looking blank page instead of a brief loading
+  // flash — same class of bug already fixed on JoinOfferPage.
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#C86A43] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
   if (!founder) return null
 
   const TABS: DashTab[] = [
