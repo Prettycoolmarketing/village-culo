@@ -8,8 +8,13 @@
 //   EMAIL_FROM      — a verified sender, e.g. "CULO Village <hello@culovillage.com>"
 // Silently no-ops (logs a warning, returns ok:false) when either is missing,
 // so a claim/invite flow never fails just because email isn't configured yet.
+//
+// replyTo is optional — EMAIL_FROM is a noreply address (no monitored inbox
+// behind it), so anything a recipient might reasonably reply to (campaigns,
+// nurture sequences) should pass a real monitored address here instead of
+// leaving replies to bounce.
 
-export async function sendEmail(to: string, subject: string, html: string): Promise<{ ok: boolean; error?: string }> {
+export async function sendEmail(to: string, subject: string, html: string, replyTo?: string): Promise<{ ok: boolean; error?: string }> {
   const apiKey = Deno.env.get('RESEND_API_KEY')
   const from = Deno.env.get('EMAIL_FROM')
 
@@ -24,7 +29,7 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ from, to, subject, html }),
+    body: JSON.stringify({ from, to, subject, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
   })
 
   if (!res.ok) {

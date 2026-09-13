@@ -57,7 +57,9 @@ serve(async (req) => {
       const dueSteps = sequence.steps.filter(s => s.day <= daysElapsed && !sentDays.has(s.day)).sort((a, b) => a.day - b.day)
 
       for (const step of dueSteps) {
-        const result = await sendEmail(enrollment.email, step.subject, step.bodyHtml)
+        // EMAIL_FROM is a noreply address with no monitored inbox — reply_to
+        // gives recipients a real address to write back to instead of a bounce.
+        const result = await sendEmail(enrollment.email, step.subject, step.bodyHtml, 'support@prettycoolmarketing.com')
         if (result.ok) { sentDays.add(step.day); sent++ }
       }
 

@@ -93,7 +93,9 @@ serve(async (req) => {
       const sendId = crypto.randomUUID()
       const pixel = `<img src="${SUPABASE_URL}/functions/v1/track-open?s=${sendId}" width="1" height="1" alt="" style="display:none" />`
       const trackedHtml = rewriteLinksForTracking(campaign.bodyHtml, campaignId, sendId)
-      const result = await sendEmail(email, campaign.subject, `${trackedHtml}${pixel}`)
+      // EMAIL_FROM is a noreply address with no monitored inbox — reply_to
+      // gives recipients a real address to write back to instead of a bounce.
+      const result = await sendEmail(email, campaign.subject, `${trackedHtml}${pixel}`, 'support@prettycoolmarketing.com')
       await admin.from('email_campaign_sends').insert({
         id: sendId, campaign_id: campaignId, email,
       })
