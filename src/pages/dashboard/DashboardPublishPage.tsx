@@ -325,7 +325,7 @@ function FormatStep({ draft, onChange, onNext }: {
       />
 
       <div className="mb-6">
-        <Link to="/dashboard/creatives" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#3E6E92] hover:text-[#2D5573] transition-colors">
+        <Link to="/dashboard/creatives" className="inline-flex items-center gap-1.5 text-base font-semibold text-[#2D2A26] hover:text-[#C86A43] transition-colors">
           Edit with Culo Creatives in Canva →
         </Link>
       </div>

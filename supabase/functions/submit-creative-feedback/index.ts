@@ -5,10 +5,14 @@
 // a direct anon insert: Supabase's API gateway rejects direct anon REST
 // inserts in production even when the RLS policy would allow it.
 //
-// This also does the thing the insert alone can't: locks the founder into
-// the $19/mo collaborator rate by writing creativeSubscription onto their
-// founder record, atomically with the feedback row — a founder should never
-// end up with one written and not the other.
+// Used to also lock the founder into the $19/mo collaborator rate as a
+// side effect of giving feedback — that was a pre-launch pre-order
+// mechanic that predates the pricing unification (every new signup now
+// gets the same Standard $25/mo, 14-day-trial tier regardless of source;
+// the legacy $19/mo deal is only for founders who already had it, plus a
+// hand-keyed FOUNDER19 coupon for the curated waitlist). Left in, this
+// would have let anyone get the legacy rate for free just by answering one
+// question — removed. This just records the feedback now.
 //
 // Deploy: supabase functions deploy submit-creative-feedback --no-verify-jwt
 
@@ -23,11 +27,6 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
-
-// The collaborator cohort's trial runs to this fixed calendar date for
-// everyone, regardless of when they actually signed up — not a rolling
-// window per founder. Billing on the $19/mo Stripe Price starts here.
-const COLLABORATOR_TRIAL_END = '2027-01-01T00:00:00.000Z'
 
 interface FeedbackBody {
   founderId: string
@@ -73,9 +72,6 @@ serve(async (req) => {
 
     const updatedSubscription = {
       ...existingSub,
-      status: existingSub.status ?? 'trial',
-      tier: 'collaborator',
-      trialEnd: existingSub.trialEnd ?? COLLABORATOR_TRIAL_END,
       feedbackSubmittedAt: nowIso,
     }
     const { error: updateError } = await admin.from('founders')

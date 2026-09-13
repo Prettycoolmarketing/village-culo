@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { creativeFeedbackService } from '../../services/creativeFeedback'
-import { UPGRADE_PAYMENT_LINK, COLLABORATOR_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
+import { STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
 import { hasCreativeAccess } from '../../utils/creativeAccess'
 import { Tabs, type DashTab } from '../../components/dashboard/Tabs'
 
+// TODO: swap for the real "open CULO Creatives in Canva" URL once the app
+// clears Canva review — placeholder for now, same as CreateWithCuloCTA and
+// DashboardWelcomePage's REAL_CANVA_APP_URL.
 const CULO_CANVA_URL = 'https://www.culovillage.com/creatives'
 
 const HOW_IT_WORKS_STEPS = [
@@ -68,7 +71,7 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
           rel="noopener noreferrer"
           className="flex justify-center sm:inline-flex items-center gap-2 px-6 py-4 sm:py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors w-full sm:w-auto sm:shrink-0"
         >
-          {hasAccess ? 'Create with CULO in Canva' : 'Join Culo Creatives'}
+          {hasAccess ? 'Create with CULO in Canva' : 'Resubscribe — $25/month'}
         </a>
       </div>
     </div>
@@ -76,11 +79,13 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
 }
 
 // ─── Submit Feedback tab ────────────────────────────────────────────────────
-// Where a founder gives their one piece of CULO Creatives feedback — doing
-// so locks them into the $19/mo collaborator rate (see
-// submit-creative-feedback Edge Function) rather than the $25/mo rate new
-// members pay from launch onward. One open question, not a survey — see
-// the plan this was built from: asking more than one thing here just adds
+// Where a founder gives their one piece of CULO Creatives feedback. Used to
+// also lock the founder into the $19/mo collaborator rate as a side effect
+// of answering — that was a pre-launch pre-order mechanic that predates the
+// pricing unification (every new signup gets the same Standard $25/mo,
+// 14-day-trial tier now; the legacy rate only applies to founders who
+// already had it). Removed — see submit-creative-feedback. One open
+// question, not a survey — asking more than one thing here just adds
 // friction to something that's meant to feel like a quick, genuine check-in.
 
 function FeedbackTab({
@@ -88,15 +93,11 @@ function FeedbackTab({
   hasAccess,
   upgradeUrl,
   alreadySubmitted,
-  hasBilling,
-  collaboratorUrl,
 }: {
   founderId: string
   hasAccess: boolean
   upgradeUrl: string
   alreadySubmitted: boolean
-  hasBilling: boolean
-  collaboratorUrl: string
 }) {
   const [answer, setAnswer] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -136,38 +137,9 @@ function FeedbackTab({
       {alreadySubmitted ? (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">
           <p className="text-sm font-semibold text-[#5E6B4A] mb-2">Thanks for the feedback ✓</p>
-          <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+          <p className="text-sm text-[#6B7280] leading-relaxed">
             It's been received — it genuinely helps shape where CULO Creatives goes next.
           </p>
-          {hasBilling ? (
-            // The actual "pre-order" confirmation — billing is set up, the
-            // rate is locked, and nothing happens or gets charged until
-            // Canva ships. Founders were landing here with no confirmation
-            // at all once they'd already paid/committed, which read as
-            // "did that actually work?" rather than a clear yes.
-            <div className="bg-[#5E6B4A]/10 border border-[#5E6B4A]/30 rounded-xl px-5 py-4">
-              <p className="text-sm font-semibold text-[#5E6B4A] mb-1">You're locked in ✓</p>
-              <p className="text-sm text-[#6B7280] leading-relaxed">
-                Think of this like a pre-order: your $19/month founding rate is secured now, and you won't
-                be charged a cent until January 1, 2027. We'll email you the moment CULO Creatives goes
-                live in Canva.
-              </p>
-            </div>
-          ) : (
-            <>
-              <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                Add your payment details now to keep this rate — you won't be charged until January 1, 2027.
-              </p>
-              <a
-                href={collaboratorUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
-              >
-                Set up billing — $19/month from Jan 1, 2027
-              </a>
-            </>
-          )}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">
@@ -222,10 +194,8 @@ export function DashboardCreativesPage() {
   const subscription = founder?.creativeSubscription
   const alreadySubmitted = !!subscription?.feedbackSubmittedAt
   const hasAccess = hasCreativeAccess(subscription)
-  const hasBilling = !!subscription?.stripeSubscriptionId
 
-  const upgradeUrl = buildPaymentUrl(UPGRADE_PAYMENT_LINK, founder?.id ?? '', user?.email)
-  const collaboratorUrl = buildPaymentUrl(COLLABORATOR_PAYMENT_LINK, founder?.id ?? '', user?.email)
+  const upgradeUrl = buildPaymentUrl(STANDARD_PAYMENT_LINK, founder?.id ?? '', user?.email)
 
   // AuthContext's session restore is async — user/founder are briefly null
   // on a fresh page load (direct URL visit, refresh, redeploy) before that
@@ -259,8 +229,6 @@ export function DashboardCreativesPage() {
           hasAccess={hasAccess}
           upgradeUrl={upgradeUrl}
           alreadySubmitted={alreadySubmitted}
-          hasBilling={hasBilling}
-          collaboratorUrl={collaboratorUrl}
         />
       )}
     </div>
