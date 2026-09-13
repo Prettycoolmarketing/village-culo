@@ -96,3 +96,62 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
 
   return founderId
 }
+
+/**
+ * Used only by /join/canva-paid — the "10 free tries used up, straight to
+ * Stripe" upsell inside the Canva app. Unlike ensureJoinedFounder, payment
+ * already happened *before* this account exists (Stripe collected the
+ * email at checkout, not a signup form), so the founder record is created
+ * with the real subscription details from that completed checkout instead
+ * of a fresh local trial. stripe-creatives-webhook's ongoing lifecycle
+ * handling (customer.subscription.updated/deleted) finds this founder the
+ * same way it finds any other, by stripeCustomerId — no special-casing
+ * needed there once this record exists with that field set.
+ */
+export async function createFounderFromCanvaCheckout(
+  userId: string,
+  email: string,
+  canvaUserId: string | undefined,
+  stripeCustomerId: string | undefined,
+  stripeSubscriptionId: string | undefined,
+): Promise<string | null> {
+  const now = new Date()
+  const founderId = crypto.randomUUID()
+  const founder: Founder = {
+    id: founderId,
+    slug: slugify(email.split('@')[0] || 'founder') + '-' + Math.random().toString(36).slice(2, 6),
+    name: email.split('@')[0] || 'New Founder',
+    bio: '',
+    avatar: '/placeholders/village-founder.svg',
+    location: UNSET_LOCATION,
+    industry: UNSET_INDUSTRY,
+    businessId: '',
+    topics: [],
+    status: 'draft',
+    featured: false,
+    createdAt: now.toISOString(),
+    userId,
+    signupProduct: 'canva',
+    signupEmail: email,
+    passwordSet: true, // they just set a real one, on this page, not a throwaway
+    canvaUserId,
+    creativeSubscription: {
+      status: 'trial',
+      tier: 'standard',
+      stripeCustomerId,
+      stripeSubscriptionId,
+    },
+  }
+
+  const result = await updateFounder(founder)
+  if (!result.success) return null
+  void linkOwnFounder(founderId)
+
+  if (isSupabaseConfigured && supabase) {
+    void supabase.functions.invoke('enroll-email-sequence', {
+      body: { sequenceId: 'B', email, name: founder.name, source: 'canva' },
+    }).catch(() => { /* best-effort */ })
+  }
+
+  return founderId
+}

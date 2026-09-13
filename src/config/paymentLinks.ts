@@ -17,6 +17,15 @@ export const COLLABORATOR_PAYMENT_LINK = 'https://buy.stripe.com/dRmfZibQd5kL5mG
 // founders who join through /joincanva (source=canva) after the
 // Collaborator pre-launch cohort's free-until-Jan-2027 window.
 export const STANDARD_PAYMENT_LINK = 'https://buy.stripe.com/cNi00k5rPeVleXg6UL83C0x'
+// Same $25/mo Standard price as STANDARD_PAYMENT_LINK, but a separate
+// Payment Link — its after_completion.redirect.url points at
+// /join/canva-paid instead of /dashboard/creatives. Used specifically by
+// the in-app "10 free tries used up" upsell inside the Canva app, where no
+// founder record exists yet (client_reference_id carries the Canva user's
+// own id, not a founder id) — /join/canva-paid reads the completed
+// checkout session and creates the founder record from it. Created via
+// stripe-setup-canva-upsell-link.
+export const CANVA_UPSELL_PAYMENT_LINK = 'https://buy.stripe.com/28E5kE5rPeVl9CW6UL83C0y'
 
 // client_reference_id is how stripe-creatives-webhook links the resulting
 // Stripe customer back to a founder (see that function's header comment) —

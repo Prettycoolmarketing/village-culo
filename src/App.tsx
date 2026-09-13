@@ -40,6 +40,7 @@ import { OnboardingPage }    from './pages/OnboardingPage'
 import { JoinVillagePage }   from './pages/JoinVillagePage'
 import { JoinConfirmPage }   from './pages/JoinConfirmPage'
 import { JoinOfferPage }     from './pages/JoinOfferPage'
+import { JoinCanvaPaidPage } from './pages/JoinCanvaPaidPage'
 import { MarketingLandingPage }    from './pages/marketing/MarketingLandingPage'
 import { MarketingPublishingPage } from './pages/marketing/MarketingPublishingPage'
 import { MarketingSocialPage }     from './pages/marketing/MarketingSocialPage'
@@ -181,6 +182,10 @@ export default function App() {
           {/* The pricing lock-in + simplified profile step, styled like the
               founder profile they're building. */}
           <Route path="/join/offer" element={<JoinOfferPage />} />
+          {/* Where CANVA_UPSELL_PAYMENT_LINK redirects after a completed
+              checkout — the in-app "10 free tries used up" upsell inside
+              the Canva app itself, where no founder record exists yet. */}
+          <Route path="/join/canva-paid" element={<JoinCanvaPaidPage />} />
 
           {/* ── Dashboard (no public nav) ──────────────────────────────────── */}
           <Route path="/dashboard/login" element={<DashboardLoginPage />} />
