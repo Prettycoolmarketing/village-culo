@@ -45,12 +45,13 @@ Rules:
 - Prefer questions a real person would type into Google or ask an AI assistant — specific, practical, curious — over questions that just restate the content back as a question.
 - 3 to 6 pairs. Fewer good pairs beats padding with weak ones.
 - Keep answers short — 1 to 2 sentences, in the founder's own voice/words where possible.
+- Exactly one pair is the exception to that: pick the single question this piece's target audience is most likely to actually search for or ask an AI assistant, and answer it in 3 to 5 sentences that synthesize the founder's fuller thinking from across the whole piece, not just one line of it. This is the pair a reader (or an AI answer engine) should come away from actually understanding, not just a quick fact — it also has to read as a complete, standalone answer with no reference to "this piece"/"this post," since these FAQs also surface unscoped on the founder's own profile page, not only next to the content they came from. Mark this one pair with "cornerstone": true.
 - When the founder's name is supplied and a question/answer needs to refer to them in the third person, use their actual name (e.g. "What editing app does Shakas use?" / "Shakas edits on CULO.") instead of a vague "they," "the founder," or "the creator" — it reads more specifically and gives search engines/AI assistants a real name to connect to the topic. Don't force the name into every single sentence if it reads awkwardly repeated; once naturally per pair is enough.
 
 If the text is too thin to honestly support any real FAQ (a single generic sentence, nothing specific), return an empty pairs array rather than inventing filler.
 
 Respond with ONLY a JSON object, no markdown fences, no commentary:
-{ "pairs": [{ "question": "...", "answer": "..." }] }`
+{ "pairs": [{ "question": "...", "answer": "...", "cornerstone": false }] }`
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
