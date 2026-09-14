@@ -310,30 +310,37 @@ export function LibraryDetailPage() {
                     The journey that led to this being created.
                   </p>
                   <ol className="relative border-l border-border space-y-8 pl-6" role="list">
-                    {[...item.createdFrom]
-                      .sort((a, b) => a.date.localeCompare(b.date))
-                      .map(entry => (
-                        <li key={entry.id} className="relative" role="listitem">
-                          <div className="absolute -left-[1.625rem] top-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-surface border-2 border-primary" aria-hidden="true">
-                            <span className="text-xs">{createdFromIcon[entry.type] ?? '○'}</span>
+                    {/* "Published to the Village" joins the same sort instead of
+                        always rendering last — an item with a later-dated
+                        entry (a future launch, say) would otherwise show this
+                        earlier "published" node out of chronological order. */}
+                    {[
+                      ...item.createdFrom.map(entry => ({ kind: 'entry' as const, entry })),
+                      { kind: 'published' as const, date: item.createdAt },
+                    ]
+                      .sort((a, b) => (a.kind === 'entry' ? a.entry.date : a.date).localeCompare(b.kind === 'entry' ? b.entry.date : b.date))
+                      .map(node => node.kind === 'published' ? (
+                        <li key="published" className="relative" role="listitem">
+                          <div className="absolute -left-[1.625rem] top-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-primary border-2 border-primary" aria-hidden="true">
+                            <span className="text-xs">📚</span>
                           </div>
-                          <time className="font-body text-xs text-muted font-medium block mb-1" dateTime={entry.date}>
-                            {new Date(entry.date).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+                          <time className="font-body text-xs text-muted font-medium block mb-1" dateTime={item.createdAt}>
+                            {new Date(item.createdAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
                           </time>
-                          <h3 className="font-heading text-base font-semibold text-charcoal mb-1">{entry.title}</h3>
-                          <p className="font-body text-sm text-muted leading-relaxed">{entry.description}</p>
+                          <h3 className="font-heading text-base font-semibold text-primary mb-1">Published to the Village</h3>
+                        </li>
+                      ) : (
+                        <li key={node.entry.id} className="relative" role="listitem">
+                          <div className="absolute -left-[1.625rem] top-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-surface border-2 border-primary" aria-hidden="true">
+                            <span className="text-xs">{createdFromIcon[node.entry.type] ?? '○'}</span>
+                          </div>
+                          <time className="font-body text-xs text-muted font-medium block mb-1" dateTime={node.entry.date}>
+                            {new Date(node.entry.date).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+                          </time>
+                          <h3 className="font-heading text-base font-semibold text-charcoal mb-1">{node.entry.title}</h3>
+                          <p className="font-body text-sm text-muted leading-relaxed">{node.entry.description}</p>
                         </li>
                       ))}
-                    {/* Final node: published */}
-                    <li className="relative" role="listitem">
-                      <div className="absolute -left-[1.625rem] top-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-primary border-2 border-primary" aria-hidden="true">
-                        <span className="text-xs">📚</span>
-                      </div>
-                      <time className="font-body text-xs text-muted font-medium block mb-1" dateTime={item.createdAt}>
-                        {new Date(item.createdAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
-                      </time>
-                      <h3 className="font-heading text-base font-semibold text-primary mb-1">Published to the Village</h3>
-                    </li>
                   </ol>
                 </section>
               )}
