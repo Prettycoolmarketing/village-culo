@@ -41,7 +41,7 @@ export function JoinConfirmPage() {
       if (settled) return
       settled = true
       setEmail(user.email ?? '')
-      const id = await ensureJoinedFounder(user.id, user.email ?? '', source, canvaUserId)
+      const id = await ensureJoinedFounder(user.id, user.email ?? '', source, { canvaUserId })
       setFounderId(id)
       setReady(true)
     }

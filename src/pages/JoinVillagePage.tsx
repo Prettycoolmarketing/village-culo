@@ -151,7 +151,7 @@ export function JoinVillagePage() {
       setError('Could not create your account. Please try again.')
       return
     }
-    await ensureJoinedFounder(userId, trimmed, source, canvaUserId)
+    await ensureJoinedFounder(userId, trimmed, source, { canvaUserId })
     navigate('/join/confirm', { replace: true })
   }
 

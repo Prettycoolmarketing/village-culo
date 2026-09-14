@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { createFounderFromCanvaCheckout } from '../services/joinFlow'
+import { ensureJoinedFounder } from '../services/joinFlow'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
@@ -66,9 +66,11 @@ export function JoinCanvaPaidPage() {
 
   async function finish(userId: string) {
     if (!checkoutInfo) return
-    const founderId = await createFounderFromCanvaCheckout(
-      userId, checkoutInfo.email, checkoutInfo.canvaUserId, checkoutInfo.customerId, checkoutInfo.subscriptionId,
-    )
+    const founderId = await ensureJoinedFounder(userId, checkoutInfo.email, 'canva', {
+      canvaUserId: checkoutInfo.canvaUserId,
+      passwordAlreadySet: true,
+      stripeSeed: { customerId: checkoutInfo.customerId, subscriptionId: checkoutInfo.subscriptionId },
+    })
     if (!founderId) { setError('Could not finish setting up your account. Please contact support.'); return }
     navigate('/dashboard/welcome', { replace: true })
   }
