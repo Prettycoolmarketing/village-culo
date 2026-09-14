@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useDictation } from '../../hooks/useDictation'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounders } from '../../services/founders'
 import { getBusinesses, getBusiness } from '../../services/businesses'
@@ -312,6 +313,13 @@ function FormatStep({ draft, onChange, onNext }: {
   onChange: (patch: Partial<PublishDraft>) => void
   onNext: () => void
 }) {
+  // Was auto-filling this draft's title/blog straight from whatever Canva
+  // design got picked here — including its raw filename and any junk text
+  // extracted off a template/mockup slide, regardless of what format the
+  // founder ends up choosing next. Every Canva import now lands in Content
+  // for review like any other import; nothing here touches the draft.
+  const [justImportedCount, setJustImportedCount] = useState<number | null>(null)
+
   function toggle(type: ContentType) {
     const has = draft.contentTypes.includes(type)
     onChange({ contentTypes: has ? draft.contentTypes.filter(t => t !== type) : [...draft.contentTypes, type] })
@@ -339,8 +347,18 @@ function FormatStep({ draft, onChange, onNext }: {
       <div className="mb-8">
         <CanvaImportCard
           founderId={draft.founderId}
-          onImported={item => onChange(importedContentPatch(item, draft))}
+          onImported={() => setJustImportedCount(n => (n ?? 0) + 1)}
         />
+        {justImportedCount !== null && (
+          <div className="mt-3 flex items-center justify-between gap-4 bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-xl px-5 py-4">
+            <p className="text-sm text-[#5E6B4A] font-medium">
+              {justImportedCount} {justImportedCount === 1 ? 'item' : 'items'} imported. Review and publish it from Content.
+            </p>
+            <Link to="/dashboard/profile?tab=content" className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+              Go to Content →
+            </Link>
+          </div>
+        )}
       </div>
 
       <div>
@@ -413,6 +431,14 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
   onNext: () => void
   onBack: () => void
 }) {
+  const { listening, toggle: toggleDictationBase } = useDictation()
+  function toggleDictation() {
+    toggleDictationBase(
+      () => draft.blog ?? '',
+      text => onChange({ blog: text }),
+      () => alert("Dictation isn't supported in this browser — try Chrome, Edge or Safari.")
+    )
+  }
   const types = draft.contentTypes
   const hasVideo    = types.some(t => ['reel', 'talking-head', 'youtube-video'].includes(t))
   const hasAudio    = types.some(t => ['podcast', 'voice-over'].includes(t))
@@ -640,6 +666,29 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
                   className={inp + ' resize-y'}
                 />
               </Field>
+              <div className="flex flex-col items-center gap-3 py-2">
+                <p className="text-xs font-semibold text-[#6B7280]">
+                  {listening ? (
+                    <span className="inline-flex items-center gap-1.5 text-red-600">
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
+                      Recording…
+                    </span>
+                  ) : 'Say your story to be shaped as your blog'}
+                </p>
+                <button
+                  type="button"
+                  onClick={toggleDictation}
+                  title={listening ? 'Recording — click to stop' : 'Dictate your story — speaks straight into Content'}
+                  className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${
+                    listening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#2D2A26] text-white hover:bg-[#1a1815]'
+                  }`}
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+                    <path d="M19 11a1 1 0 10-2 0 5 5 0 01-10 0 1 1 0 10-2 0 7 7 0 006 6.93V20H9a1 1 0 100 2h6a1 1 0 100-2h-2v-2.07A7 7 0 0019 11z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         )}
