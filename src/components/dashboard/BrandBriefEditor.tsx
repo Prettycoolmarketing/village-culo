@@ -78,7 +78,7 @@ export function BrandBriefEditor({ value, updatedAt, onChange, founderName: _fou
           <button
             type="button"
             onClick={() => setAnswering(true)}
-            className="text-sm font-semibold px-4 py-2.5 rounded-lg border border-[#3E6E92] text-[#3E6E92] hover:bg-[#3E6E92] hover:text-white transition-colors"
+            className="text-sm font-semibold px-4 py-2.5 rounded-lg border border-[#3E6E92] text-[#3E6E92] bg-white hover:bg-[#3E6E92] hover:text-white transition-colors"
           >
             I don't use AI — answer a few questions instead
           </button>
