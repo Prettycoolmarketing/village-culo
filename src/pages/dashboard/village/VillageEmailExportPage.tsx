@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { getFounders, deleteFounderAccount } from '../../../services/founders'
+import { getFounders, deleteFounderAccount, getFounder } from '../../../services/founders'
+import { getStories, getStory } from '../../../services/stories'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import { waitlistService } from '../../../services/waitlist'
@@ -237,6 +238,28 @@ function SubscribersPanel() {
 
 // ─── Campaigns panel ────────────────────────────────────────────────────────────
 
+// A founder card matching the site's own story card look — thumbnail,
+// title, one-line summary, clickable straight through to the real story —
+// plus a "Publish in the Village" CTA underneath. Dropped into the body
+// wherever the founder types the {{article}} token (see handleSaveDraft),
+// rather than always sitting in a fixed spot, since the weekly digest
+// wants copy both before and after it.
+function buildArticleCardHtml(story: { slug: string; title: string; summary?: string; coverImage: string }, founderName?: string): string {
+  const url = `https://www.culovillage.com/stories/${story.slug}`
+  return `
+    <a href="${url}" style="display:block;text-decoration:none;border:1px solid #E8E4DD;border-radius:12px;overflow:hidden;margin:4px 0 20px;">
+      <img src="${story.coverImage}" width="480" style="width:100%;height:auto;display:block;" alt="${story.title}" />
+      <div style="padding:16px 20px;background:#FFFFFF;">
+        ${founderName ? `<p style="margin:0 0 4px;font-size:11px;font-weight:bold;letter-spacing:0.5px;text-transform:uppercase;color:#C86A43;">${founderName}</p>` : ''}
+        <p style="margin:0 0 4px;font-weight:bold;font-size:16px;color:#2D2A26;">${story.title}</p>
+        ${story.summary ? `<p style="margin:0;font-size:13px;color:#6B7280;">${story.summary}</p>` : ''}
+      </div>
+    </a>
+    <div style="text-align:center;margin:0 0 20px;">
+      <a href="https://www.culovillage.com/join" style="display:inline-block;padding:12px 22px;background:#C86A43;color:#FFFFFF;text-decoration:none;border-radius:10px;font-weight:bold;font-family:Arial,sans-serif;font-size:14px;">Publish in the Village to be discovered</a>
+    </div>`
+}
+
 function CampaignsPanel() {
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>(emailCampaignsService.getAll())
   const [loading, setLoading] = useState(true)
@@ -247,6 +270,11 @@ function CampaignsPanel() {
   const [stats, setStats] = useState<Record<string, CampaignSendStats>>({})
   // Click a sent newsletter to expand it and see exactly what went out.
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  // Weekly digest: pick a published story, drop {{article}} where it
+  // should appear in the plain-text body, and it's swapped for a real
+  // article card + "Publish in the Village" button on save.
+  const [featuredStoryId, setFeaturedStoryId] = useState('')
+  const publishedStories = getStories({ publicOnly: true })
 
   const [recipientCount, setRecipientCount] = useState<number | null>(null)
 
@@ -278,7 +306,14 @@ function CampaignsPanel() {
 
   async function handleSaveDraft() {
     if (!subject.trim() || !body.trim()) return
-    const bodyHtml = bodyTextToHtml(body)
+    let bodyHtml = bodyTextToHtml(body)
+    if (featuredStoryId) {
+      const story = getStory(featuredStoryId)
+      if (story) {
+        const founderName = getFounder(story.founderId)?.name
+        bodyHtml = bodyHtml.replace('<p>{{article}}</p>', buildArticleCardHtml(story, founderName))
+      }
+    }
     const campaign: EmailCampaign = {
       id: crypto.randomUUID(), subject: subject.trim(), bodyHtml, status: 'draft',
       createdAt: new Date().toISOString(),
@@ -287,6 +322,7 @@ function CampaignsPanel() {
     setCampaigns(emailCampaignsService.getAll())
     setSubject('')
     setBody('')
+    setFeaturedStoryId('')
   }
 
   async function handleSend(id: string) {
@@ -316,6 +352,26 @@ function CampaignsPanel() {
           placeholder="Write it exactly like a normal email — separate paragraphs with a blank line. It's automatically turned into a properly formatted, branded email when you send it."
           className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] resize-y focus:outline-none focus:border-[#C86A43]"
         />
+
+        <div className="mt-3 p-3 rounded-lg bg-[#F8F5F0] border border-[#E8E4DD]">
+          <label className="block text-xs font-semibold text-[#2D2A26] mb-1.5">Feature an article (optional)</label>
+          <select
+            value={featuredStoryId}
+            onChange={e => setFeaturedStoryId(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white focus:outline-none focus:border-[#C86A43]"
+          >
+            <option value="">None</option>
+            {publishedStories.map(s => (
+              <option key={s.id} value={s.id}>{s.title}</option>
+            ))}
+          </select>
+          {featuredStoryId && (
+            <p className="text-[11px] text-[#9CA3AF] mt-2 leading-relaxed">
+              Type <code className="px-1 py-0.5 bg-white rounded border border-[#E8E4DD]">{'{{article}}'}</code> on its own line in the text above, wherever you want the article card and "Publish in the Village" button to appear.
+            </p>
+          )}
+        </div>
+
         <div className="flex items-center justify-between mt-3">
           <p className="text-xs text-[#9CA3AF]">{loading ? '…' : 'Sends to your whole list — subscribers, the waitlist, and all Village + Canva members. Deduplicated, and anyone who\'s unsubscribed is automatically excluded.'}</p>
           <button

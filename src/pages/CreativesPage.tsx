@@ -69,7 +69,7 @@ export function CreativesPage() {
                 Edit your raw footage in one workspace
               </h1>
               <p className="font-body text-base sm:text-lg text-white/70 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                Only in Canva! Culo Creatives helps founders turn their messy thoughts and raw footage into
+                Culo Creatives helps founders turn their messy thoughts and raw footage into
                 social media content. CULO helps you create blogs, carousels and multiple reel formats from
                 the stories, experiences and insights you already have.
               </p>

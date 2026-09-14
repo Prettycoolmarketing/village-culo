@@ -123,7 +123,7 @@ export function VillagePage() {
                 CULO Creatives is coming to Canva.
               </h2>
               <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
-                Only in Canva! Culo Creatives helps founders turn their messy thoughts and raw footage into
+                Culo Creatives helps founders turn their messy thoughts and raw footage into
                 social media content. CULO helps you create blogs, carousels and multiple reel formats from
                 the stories, experiences and insights you already have.
               </p>
