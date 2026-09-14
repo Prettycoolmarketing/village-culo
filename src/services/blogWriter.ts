@@ -1,6 +1,30 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { normalizeBlogSpacing } from '../utils/blogFormatting'
 
+// supabase-js's own FunctionsHttpError.message is a useless, generic "Edge
+// Function returned a non-2xx status code" — it never reads the actual
+// response body, which is where the real reason (a thrown Error's message,
+// or a platform-level failure like a compute timeout) actually lives. Same
+// fix already applied to services/canva.ts's canvaFunctionError; every AI
+// call in this file had the same generic-message problem.
+async function functionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  if (error && typeof error === 'object' && 'context' in error) {
+    const ctx = (error as { context?: Response }).context
+    if (ctx && typeof ctx.text === 'function') {
+      try {
+        const raw = (await ctx.text()).slice(0, 400)
+        try {
+          const parsed = JSON.parse(raw) as { message?: string; error?: string }
+          return parsed.message || parsed.error || raw
+        } catch {
+          return raw
+        }
+      } catch { /* ignore, fall through */ }
+    }
+  }
+  return error instanceof Error ? error.message : fallback
+}
+
 export interface GeneratedBlog {
   status: 'ready' | 'insufficient_source'
   note?: string
@@ -55,7 +79,7 @@ interface GenerateBlogInput {
 export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Promise<{ blog?: GeneratedBlog; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
   const { data, error } = await supabase.functions.invoke<{ blog?: GeneratedBlog; error?: string }>('generate-blog', { body: input })
-  if (error) return { error: error.message }
+  if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
   if (data?.error) return { error: data.error }
   if (!data?.blog) return { error: 'AI returned nothing usable' }
   const blog = data.blog.blog ? { ...data.blog, blog: normalizeBlogSpacing(data.blog.blog) } : data.blog
@@ -84,7 +108,7 @@ interface GenerateBioInput {
 export async function generateBioFromVoiceBrief(input: GenerateBioInput): Promise<{ bio?: GeneratedBio; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
   const { data, error } = await supabase.functions.invoke<{ bio?: GeneratedBio; error?: string }>('generate-bio', { body: input })
-  if (error) return { error: error.message }
+  if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
   if (data?.error) return { error: data.error }
   if (!data?.bio) return { error: 'AI returned nothing usable' }
   return { bio: data.bio }
@@ -110,7 +134,7 @@ export async function extractProfileFromVoiceBrief(input: {
   const { data, error } = await supabase.functions.invoke<{ fields?: ExtractedProfileFields; note?: string; error?: string }>(
     'extract-profile', { body: input },
   )
-  if (error) return { error: error.message }
+  if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
   if (data?.error) return { error: data.error }
   return { fields: data?.fields, note: data?.note }
 }
@@ -136,7 +160,7 @@ export async function runVoiceBriefInterviewTurn(input: {
 }): Promise<{ turn?: VoiceBriefInterviewTurn; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
   const { data, error } = await supabase.functions.invoke<VoiceBriefInterviewTurn & { error?: string }>('voice-brief-interview', { body: input })
-  if (error) return { error: error.message }
+  if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
   if (data?.error) return { error: data.error }
   if (!data?.message) return { error: 'AI returned nothing usable' }
   return { turn: data }
@@ -1256,7 +1280,7 @@ export interface FaqPair {
 export async function extractFaqsAI(input: { title?: string; text: string; founderName?: string }): Promise<{ pairs?: FaqPair[]; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
   const { data, error } = await supabase.functions.invoke<{ pairs?: FaqPair[]; error?: string }>('extract-faqs', { body: input })
-  if (error) return { error: error.message }
+  if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
   if (data?.error) return { error: data.error }
   return { pairs: data?.pairs ?? [] }
 }
