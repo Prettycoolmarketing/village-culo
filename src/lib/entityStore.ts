@@ -47,7 +47,28 @@ export async function writeEntity<T extends { id: string }>(opts: {
     const uid = await currentUserId()
     if (!uid) return { success: false, error: 'You must be signed in to save changes.' }
     const { error } = await supabase.from(table).upsert(toRow(item, uid), { onConflict: 'id' })
-    if (error) return { success: false, error: friendlyWriteError(error.message) }
+    if (error) {
+      // A flow that sits open for a while before its final save (e.g.
+      // Canva import — pick designs, wait through per-slide text
+      // extraction, then save) can outlast the access token's background
+      // auto-refresh, especially if the tab was backgrounded meanwhile.
+      // The RLS failure that produces is real, but the fix is usually just
+      // a fresh token — retry once after forcing a refresh before making a
+      // founder re-do the whole import over a confusing "session expired".
+      if (/row-level security policy/i.test(error.message)) {
+        const { data: refreshed } = await supabase.auth.refreshSession()
+        if (refreshed.session) {
+          const retryUid = refreshed.session.user.id
+          const { error: retryError } = await supabase.from(table).upsert(toRow(item, retryUid), { onConflict: 'id' })
+          if (!retryError) {
+            store.update<T>(cacheKey, item)
+            return { success: true }
+          }
+          return { success: false, error: friendlyWriteError(retryError.message) }
+        }
+      }
+      return { success: false, error: friendlyWriteError(error.message) }
+    }
   }
 
   store.update<T>(cacheKey, item)

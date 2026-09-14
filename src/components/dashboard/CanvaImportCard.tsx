@@ -256,6 +256,8 @@ export function CanvaImportCard({
     // so this fetches per-design (the export API is scoped that way) and
     // stitches the answers back together in the founder's selection order.
     const slideTexts: string[] = []
+    setBusy(true)
+    setStage('Reading the text off your slides…')
     for (const designId of [...new Set(indices.map(i => result.designIds[i]))]) {
       const pagesForDesign = indices
         .filter(i => result.designIds[i] === designId)
@@ -292,9 +294,11 @@ export function CanvaImportCard({
       locations: [],
       visibility: 'private',
     }
+    setStage('Saving…')
     setBusy(true)
     const saveResult = await importedContentService.upsert(item)
     setBusy(false)
+    setStage(null)
     if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
     if (videoExportError) setError(`Saved your slide${indices.length === 1 ? '' : 's'} as images — the video didn't export (${videoExportError}). You can try again or attach it manually in Advanced Edit.`)
     if (reelVideoUrl) onReelVideoReady?.(reelVideoUrl)
@@ -358,7 +362,7 @@ export function CanvaImportCard({
                 {pickedDesignIds.size > 0 && (
                   <button type="button" onClick={() => void handleImportPicked()} disabled={busy}
                     className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
-                    {busy ? 'Importing…' : `Import ${pickedDesignIds.size} design${pickedDesignIds.size === 1 ? '' : 's'}`}
+                    {busy ? 'Opening…' : `Open project${pickedDesignIds.size === 1 ? '' : 's'} (${pickedDesignIds.size})`}
                   </button>
                 )}
               </div>
