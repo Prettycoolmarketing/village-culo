@@ -76,11 +76,11 @@ export function Footer() {
               <span className="font-heading text-3xl font-bold text-primary">CULO</span>
               <span className="block font-body text-sm text-white/50 mt-1">Village</span>
             </Link>
-            <p className="mt-4 text-sm text-white/60 leading-relaxed">
+            <Link to="/how-culo-canva" className="mt-4 block text-sm text-white/60 leading-relaxed hover:text-white transition-colors">
               Create with Culo Creatives in Canva<br />
               Publish to The Culo Village<br />
               Be discovered for your creatives across platforms
-            </p>
+            </Link>
             <Link to="/" aria-label="CULO Village — Home" className="inline-block mt-5 -ml-3 sm:-ml-4">
               <img src="/culo_logo.png" alt="CULO Village" className="w-40 h-40 sm:w-56 sm:h-56 opacity-80 hover:opacity-100 transition-opacity" />
             </Link>
