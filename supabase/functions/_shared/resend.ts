@@ -53,7 +53,7 @@ export function emailLayout(preheader: string, bodyHtml: string, unsubscribeUrl?
   return `
   <div style="font-family:Georgia,'Times New Roman',serif;background:#F8F5F0;padding:32px 16px;">
     <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #E8E4DD;">
-      <div style="background:#2D2A26;padding:18px 28px;">
+      <div style="background:#2D2A26;padding:18px 28px;text-align:center;">
         <span style="color:#F9E4C0;font-size:12px;letter-spacing:1.5px;">THE CULO VILLAGE &times; CULO CREATIVES IN CANVA</span>
       </div>
       <div style="padding:28px;color:#2D2A26;font-size:15px;line-height:1.6;">
@@ -62,7 +62,13 @@ export function emailLayout(preheader: string, bodyHtml: string, unsubscribeUrl?
       ${unsubscribeUrl ? `
       <a href="https://www.culovillage.com" style="display:block;line-height:0;">
         <img src="${FOOTER_IMAGE_URL}" alt="The Culo Village" width="480" style="width:100%;height:auto;display:block;" />
-      </a>` : ''}
+      </a>
+      <div style="padding:24px 28px;border-top:1px solid #E8E4DD;font-family:Arial,sans-serif;">
+        <p style="margin:0 0 4px;font-weight:bold;font-size:13px;color:#2D2A26;">The Culo Village</p>
+        <p style="margin:0 0 16px;font-size:12px;line-height:1.6;color:#6B7280;">A joint publishing house for founders. We restructure your previously posted content from across platforms and republish each piece as its own webpage, structured for AI and search to actually find you.</p>
+        <p style="margin:0 0 4px;font-weight:bold;font-size:13px;color:#2D2A26;">Culo Creatives in Canva</p>
+        <p style="margin:0;font-size:12px;line-height:1.6;color:#6B7280;">A design platform, exclusively in Canva, that helps founders turn messy thoughts and raw footage into finished blogs, carousels and reels — in your own brand, ready to publish.</p>
+      </div>` : ''}
     </div>
     <p style="max-width:480px;margin:16px auto 0;color:#9CA3AF;font-size:11px;text-align:center;font-family:Arial,sans-serif;">${preheader}</p>
     ${unsubscribeUrl ? `<p style="max-width:480px;margin:8px auto 0;text-align:center;font-family:Arial,sans-serif;"><a href="${unsubscribeUrl}" style="color:#9CA3AF;font-size:11px;">Unsubscribe</a></p>` : ''}
