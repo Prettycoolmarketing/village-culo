@@ -11,6 +11,7 @@ import {
   type CanvaDesignSummary,
 } from '../../services/canva'
 import { importedContentService } from '../../services/importedContent'
+import { supabase } from '../../lib/supabase'
 import { SourceIcon } from '../ui/SourceIcon'
 import type { ImportedContent } from '../../types/importedContent'
 import type { ContentType } from '../../types'
@@ -90,6 +91,28 @@ export function CanvaImportCard({
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // The RLS-check-failed message from writeEntity ("session may have
+  // expired...") is a dead end as plain text — nothing on screen actually
+  // does the thing it tells you to do. Detected here so the retry can be a
+  // real button instead of "go find the refresh icon yourself."
+  const [sessionIssue, setSessionIssue] = useState(false)
+  const [reconnecting, setReconnecting] = useState(false)
+
+  async function handleReconnectSession() {
+    if (!supabase) return
+    setReconnecting(true)
+    const { data } = await supabase.auth.refreshSession()
+    setReconnecting(false)
+    if (data.session) {
+      setSessionIssue(false)
+      setError(null)
+    } else {
+      // No session left to refresh — a real sign-out happened somewhere
+      // (another tab, a revoked refresh token), not just staleness. Only
+      // real fix left is signing back in.
+      window.location.href = '/dashboard/login'
+    }
+  }
   const [stage, setStage] = useState<string | null>(null)
   // Grouping — one Canva design's slides often become more than one piece
   // (a Reel from slide 3, a Carousel from slides 1-2-4). usedIndices tracks
@@ -299,7 +322,14 @@ export function CanvaImportCard({
     const saveResult = await importedContentService.upsert(item)
     setBusy(false)
     setStage(null)
-    if (!saveResult.success) { setError(saveResult.error ?? 'Could not save. Please try again.'); return }
+    if (!saveResult.success) {
+      if (saveResult.error && /session may have expired/i.test(saveResult.error)) {
+        setSessionIssue(true)
+      } else {
+        setError(saveResult.error ?? 'Could not save. Please try again.')
+      }
+      return
+    }
     if (videoExportError) setError(`Saved your slide${indices.length === 1 ? '' : 's'} as images — the video didn't export (${videoExportError}). You can try again or attach it manually in Advanced Edit.`)
     if (reelVideoUrl) onReelVideoReady?.(reelVideoUrl)
     onImported(item)
@@ -337,6 +367,16 @@ export function CanvaImportCard({
       {expanded && (
         <div className="mt-3">
           {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+
+          {sessionIssue && (
+            <div className="flex items-center gap-3 mb-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-xs text-amber-800 flex-1">Your login session needs refreshing before this can save.</p>
+              <button type="button" onClick={() => void handleReconnectSession()} disabled={reconnecting}
+                className="shrink-0 px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#B15C38] disabled:opacity-50 transition-colors">
+                {reconnecting ? 'Reconnecting…' : 'Reconnect'}
+              </button>
+            </div>
+          )}
 
           {checkingConnection && (
             <p className="text-xs text-[#9CA3AF]">Checking your Canva connection…</p>
