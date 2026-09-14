@@ -30,7 +30,13 @@ export interface EmailSequenceEnrollment {
 
 export const emailSequencesService = {
   getAll(): EmailSequence[] {
-    return [...readCache<EmailSequence>(SEQ_KEY)].sort((a, b) => a.id.localeCompare(b.id))
+    // A row whose `data` blob is missing its own id (it happened once from
+    // a raw SQL seed that set name/steps but not id inside the JSON) used
+    // to crash this sort outright — Cannot read properties of undefined
+    // (reading 'localeCompare') — which took the whole page blank with it,
+    // no error boundary catching it. Falling back to '' keeps a genuinely
+    // malformed row from taking down everything else.
+    return [...readCache<EmailSequence>(SEQ_KEY)].sort((a, b) => (a.id ?? '').localeCompare(b.id ?? ''))
   },
 
   async refresh(): Promise<void> {
@@ -49,7 +55,7 @@ export const emailSequencesService = {
 
 export const emailSequenceEnrollmentsService = {
   getAll(): EmailSequenceEnrollment[] {
-    return [...readCache<EmailSequenceEnrollment>(ENROLL_KEY)].sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+    return [...readCache<EmailSequenceEnrollment>(ENROLL_KEY)].sort((a, b) => (b.startedAt ?? '').localeCompare(a.startedAt ?? ''))
   },
 
   async refresh(): Promise<void> {
