@@ -42,7 +42,7 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
         {HOW_IT_WORKS_STEPS.map((s, i) => (
           <div key={s.title}>
-            <div className="w-8 h-8 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-xs font-bold shrink-0 mb-3">
+            <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-sm font-bold shrink-0 mb-3">
               {i + 1}
             </div>
             <p className="text-sm font-semibold text-[#2D2A26] mb-1">{s.title}</p>
@@ -144,8 +144,7 @@ function FeedbackTab({
       ) : (
         <div className="bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8">
           <p className="text-sm sm:text-lg text-[#6B7280] leading-relaxed mb-6">
-            Tell us what you loved and what you didn't about CULO Creatives. Nothing changes for you either
-            way — it just helps us make it better.
+            Tell us what you loved and what you didn't about CULO Creatives.
           </p>
           {/* Question stays put in its own column on desktop instead of
               scrolling away above a tall box — full dashboard width, with

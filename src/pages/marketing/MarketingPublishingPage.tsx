@@ -4,6 +4,7 @@ import { usePageMeta } from '../../utils/usePageMeta'
 import { InnerContainer } from '../../components/layout/PageContainer'
 import { MarketingHero } from './MarketingHero'
 import { PublishingQuoteModal } from './PublishingQuoteModal'
+import { MarketingLeadModal, hasCapturedLead } from './MarketingLeadModal'
 
 const CALENDLY = 'https://calendly.com/prettycoolmarketing_/30min'
 
@@ -102,10 +103,26 @@ export function MarketingPublishingPage() {
   })
 
   const [quoteOpen, setQuoteOpen] = useState(false)
+  const [leadOpen, setLeadOpen] = useState(false)
+
+  // Rates only show once we know who's asking — a visitor landing straight
+  // on this page (an ad, a shared link) sees the lead form first, same gate
+  // the landing page's service cards already use.
+  function openQuote() {
+    if (hasCapturedLead()) setQuoteOpen(true)
+    else setLeadOpen(true)
+  }
 
   return (
     <main className="min-h-screen bg-surface">
       {quoteOpen && <PublishingQuoteModal onClose={() => setQuoteOpen(false)} />}
+      <MarketingLeadModal
+        open={leadOpen}
+        onClose={() => setLeadOpen(false)}
+        onSuccess={() => { setLeadOpen(false); setQuoteOpen(true) }}
+        offerLabel="Blog Management"
+        source="marketing-publishing"
+      />
       <MarketingHero
         kicker="Pretty Cool Marketing"
         title="We republish your body of work for AI discovery"
@@ -137,7 +154,7 @@ export function MarketingPublishingPage() {
               Plus a one-off Archive Transfer based on the size of your existing content library.
             </p>
             <button
-              onClick={() => setQuoteOpen(true)}
+              onClick={openQuote}
               className="block w-full text-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
             >
               Get your quote →
@@ -247,7 +264,7 @@ export function MarketingPublishingPage() {
             <p className="font-heading text-2xl font-bold text-charcoal">$900 AUD <span className="text-base font-normal text-muted">/ month</span></p>
             <p className="font-body text-sm text-muted mt-1 mb-6">Plus your one-off Archive Transfer.</p>
             <button
-              onClick={() => setQuoteOpen(true)}
+              onClick={openQuote}
               className="w-full inline-flex justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
             >
               Get your quote →

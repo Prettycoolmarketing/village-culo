@@ -31,10 +31,17 @@ export function MarketingLandingPage() {
   const navigate = useNavigate()
   const [dest, setDest] = useState<Dest | null>(null)
   const [quoteService, setQuoteService] = useState<'publishing' | 'creatives' | 'full' | null>(null)
+  const [pendingService, setPendingService] = useState<'publishing' | 'creatives' | 'full' | null>(null)
 
+  // Same lead-capture gate as go() below — the 5-card grid's "Get started"
+  // used to open the quote/rates straight away, skipping the lead form
+  // entirely for anyone who reached this page without clicking through the
+  // hero or offer cards first.
   function goToService(id: PcmServiceId) {
     if (id === 'social' || id === 'content') { navigate('/marketing/social'); return }
-    setQuoteService(id as 'publishing' | 'creatives' | 'full')
+    const serviceId = id as 'publishing' | 'creatives' | 'full'
+    if (hasCapturedLead()) setQuoteService(serviceId)
+    else setPendingService(serviceId)
   }
 
   usePageMeta({
@@ -248,6 +255,14 @@ export function MarketingLandingPage() {
         onSuccess={() => { const d = dest; setDest(null); if (d) navigate(d.to) }}
         offerLabel={dest?.label ?? ''}
         source={dest?.source ?? 'marketing'}
+      />
+
+      <MarketingLeadModal
+        open={pendingService !== null}
+        onClose={() => setPendingService(null)}
+        onSuccess={() => { const s = pendingService; setPendingService(null); if (s) setQuoteService(s) }}
+        offerLabel={pendingService ? PCM_SERVICES[pendingService].name : ''}
+        source={pendingService ? `marketing-grid-${pendingService}` : 'marketing-grid'}
       />
     </main>
   )

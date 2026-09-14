@@ -159,12 +159,8 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
           {/* Desktop CTA */}
           {!loading && (
             <div className="hidden lg:flex items-center gap-4">
-              {/* Points straight to /join, not /creatives — /join already
-                  has its own full Culo Creatives explainer section, so
-                  routing through /creatives first was just an extra click
-                  to the same place with nothing gained from it. */}
               <Link
-                to="/join"
+                to="/joincanva"
                 className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
               >
                 CULO in Canva
@@ -242,7 +238,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
             ))}
             <div className="pt-3 border-t border-border mt-3 flex flex-col gap-2">
               <Link
-                to="/join"
+                to="/joincanva"
                 onClick={() => setMobileOpen(false)}
                 className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
               >

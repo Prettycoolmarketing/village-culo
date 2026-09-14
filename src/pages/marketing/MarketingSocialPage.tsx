@@ -291,6 +291,14 @@ export function MarketingSocialPage() {
             <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="text-primary font-semibold underline">Book a 30-minute call</a>.
             {' '}All monthly services have a 3-month minimum.
           </p>
+          <div className="flex justify-center mt-8">
+            <a
+              href="https://www.culovillage.com/joincanva"
+              className="inline-flex items-center justify-center px-6 py-3 bg-white border border-border text-charcoal text-sm font-semibold rounded-xl hover:border-primary hover:text-primary transition-colors"
+            >
+              Do it yourself with Culo Creatives in Canva →
+            </a>
+          </div>
         </InnerContainer>
       </section>
     </main>

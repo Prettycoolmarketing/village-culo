@@ -1595,8 +1595,11 @@ export function DashboardImportContentPage() {
       </div>
 
       {/* Real numbers only, straight from this founder's own sources/imports —
-          no invented storage quota or "of N available" ceiling. */}
-      {!draft && (() => {
+          no invented storage quota or "of N available" ceiling. Hidden
+          entirely until there's at least one connected source — a fresh
+          founder with nothing imported yet doesn't need three boxes of
+          zeroes/"Never" before they've done anything. */}
+      {!draft && sources.length > 0 && (() => {
         const itemsImported = importedContentService.getAll({ founderId }).length
         const lastScan = sources.reduce<string | undefined>((latest, s) => {
           if (!s.lastScannedAt) return latest
