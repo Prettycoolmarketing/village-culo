@@ -323,6 +323,20 @@ export const libraryItems: LibraryItem[] = [
         type: 'experience',
       },
       {
+        id: 'cf3',
+        date: '2022-01-01',
+        title: 'Pretty Cool Marketing',
+        description: 'Founding Pretty Cool Marketing turned that same instinct for character and story into an actual practice — pulling real experience out of founders and turning it into something structured. The same instinct that would later shape how Robyn\'s own fractured story gets told.',
+        type: 'milestone',
+      },
+      {
+        id: 'cf4',
+        date: '2023-06-01',
+        title: 'Life on the road',
+        description: "Shakas travels Australia in a MAN truck with her partner Mitch and their two children — building businesses, raising a family and writing in fragments between everything else. Where's Robyn was drafted this way: in motion, between stops, whenever there was a moment.",
+        type: 'experience',
+      },
+      {
         id: 'cf2',
         date: '2024-01-01',
         title: "Where's Robyn begins",

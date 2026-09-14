@@ -41,7 +41,7 @@ const statusColour: Record<string, string> = {
   'available':     'bg-secondary/15 text-secondary',
   'free-download': 'bg-secondary/15 text-secondary',
   'coming-soon':   'bg-muted/20 text-muted',
-  'pre-order':     'bg-accent/15 text-[#8a6a1e]',
+  'pre-order':     'bg-amber-100 text-amber-700',
   'sold-out':      'bg-border text-muted',
   'early-access':  'bg-primary/15 text-primary',
   'members-only':  'bg-primary/15 text-primary',
