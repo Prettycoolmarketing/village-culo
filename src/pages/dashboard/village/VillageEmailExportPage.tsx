@@ -366,9 +366,19 @@ function CampaignsPanel() {
             ))}
           </select>
           {featuredStoryId && (
-            <p className="text-[11px] text-[#9CA3AF] mt-2 leading-relaxed">
-              Type <code className="px-1 py-0.5 bg-white rounded border border-[#E8E4DD]">{'{{article}}'}</code> on its own line in the text above, wherever you want the article card and "Publish in the Village" button to appear.
-            </p>
+            <>
+              <a
+                href={`https://www.culovillage.com/stories/${getStory(featuredStoryId)?.slug ?? ''}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-[#C86A43] hover:underline"
+              >
+                Review the article →
+              </a>
+              <p className="text-[11px] text-[#9CA3AF] mt-2 leading-relaxed">
+                Type <code className="px-1 py-0.5 bg-white rounded border border-[#E8E4DD]">{'{{article}}'}</code> on its own line in the text above, wherever you want the article card and "Publish in the Village" button to appear.
+              </p>
+            </>
           )}
         </div>
 
