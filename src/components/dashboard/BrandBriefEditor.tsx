@@ -50,9 +50,9 @@ export function BrandBriefEditor({ value, updatedAt, onChange, founderName: _fou
       <div className="mb-6">
         <p className="text-lg font-semibold text-[#2D2A26]">Tell us who you are and what you know</p>
         <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed">
-          Your <strong className="text-[#6B7280] font-semibold">Brand Brief</strong> helps CULO sound like
-          you and draw on what you actually know — not generic AI. Paste or upload one below, or copy our
-          prompt into any AI you already use, answer what it asks, then bring the result back here.
+          Your <strong className="text-[#6B7280] font-semibold">Brand Brief</strong> helps CULO save you
+          time by learning your story. Copy the Brain Transfer Prompt, paste or upload it — or if you don't
+          use AI, answer the questions before importing your content.
         </p>
         {updatedAt && (
           <p className="text-xs text-[#9CA3AF] mt-1.5">
