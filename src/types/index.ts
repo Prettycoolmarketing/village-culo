@@ -95,6 +95,14 @@ export interface LibraryItem {
   // background and primary CTA button instead of the site default, so a
   // page they're linking out to (Amazon, their own site) feels like theirs.
   brandColor?: string
+  // Freeform additional content sections (character profiles, world-
+  // building, extra chapters of the pitch, etc.) rendered below the main
+  // description — kept generic rather than novel-specific so any Library
+  // item can use it for a genuinely long-form landing page.
+  extraSections?: { heading: string; body: string }[]
+  // Freeform additional Details sidebar rows (Genre, Setting, Key
+  // Characters, etc.) alongside the fixed Type/Status/Delivery fields.
+  extraDetails?: { label: string; value: string }[]
 }
 
 // ─── Location ──────────────────────────────────────────────────────────────────

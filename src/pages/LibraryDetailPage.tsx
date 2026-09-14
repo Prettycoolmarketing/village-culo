@@ -268,6 +268,19 @@ export function LibraryDetailPage() {
                 <p className="font-body text-base text-charcoal/80 leading-relaxed whitespace-pre-line">{item.description}</p>
               </section>
 
+              {/* Extra sections — character profiles, world-building, extra
+                  chapters of the pitch, etc. Generic rather than novel-
+                  specific, so any Library item can use this for a genuinely
+                  long-form page. */}
+              {item.extraSections?.map((section, i) => (
+                <section key={i} aria-labelledby={`extra-section-${i}-heading`}>
+                  <h2 id={`extra-section-${i}-heading`} className="font-heading text-2xl font-semibold text-charcoal mb-4">
+                    {section.heading}
+                  </h2>
+                  <p className="font-body text-base text-charcoal/80 leading-relaxed whitespace-pre-line">{section.body}</p>
+                </section>
+              ))}
+
               {/* Why this exists */}
               {item.why && (
                 <section aria-labelledby="why-heading">
@@ -421,6 +434,12 @@ export function LibraryDetailPage() {
                         {new Date(item.createdAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
                       </dd>
                     </div>
+                    {item.extraDetails?.map((d, i) => (
+                      <div key={i}>
+                        <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">{d.label}</dt>
+                        <dd className="text-charcoal">{d.value}</dd>
+                      </div>
+                    ))}
                   </dl>
                 </div>
               </section>
