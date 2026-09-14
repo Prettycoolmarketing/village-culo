@@ -51,7 +51,7 @@ export interface LibraryCreatedFromEntry {
   date: string
   title: string
   description: string
-  type: 'idea' | 'story' | 'milestone' | 'talk' | 'experience' | 'decision'
+  type: 'idea' | 'story' | 'milestone' | 'talk' | 'experience' | 'decision' | 'writing'
   linkSlug?: string   // slug of related story or idea
   linkType?: 'story' | 'idea'
 }

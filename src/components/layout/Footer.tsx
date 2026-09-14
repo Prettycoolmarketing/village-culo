@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
 
-// Discover mirrors the navbar's primaryLinks (src/components/layout/Navbar.tsx)
-// exactly, same order — the footer had drifted to a different, older set of
-// links than what's actually in the top nav.
+// Discover mostly mirrors the navbar's primaryLinks (src/components/layout/
+// Navbar.tsx), same order — the footer had drifted to a different, older
+// set of links than what's actually in the top nav. Library sits right
+// after Stories here even though the navbar itself doesn't have room for
+// it, since the two read as the same kind of "browse what's published" step.
 const sections = [
   {
     heading: 'Discover',
@@ -11,6 +13,7 @@ const sections = [
       { to: '/founders',  label: 'Founders'   },
       { to: '/businesses',   label: 'Businesses' },
       { to: '/stories',   label: 'Stories'    },
+      { to: '/library',   label: 'Library'    },
     ],
   },
   {
@@ -29,7 +32,6 @@ const sections = [
       { to: '/map',         label: 'Map'         },
       { to: '/archive',     label: 'Archive'     },
       { to: '/expertise',   label: 'Expertise'   },
-      { to: '/library',     label: 'Library'     },
       { to: '/noticeboard', label: 'Noticeboard' },
     ],
   },

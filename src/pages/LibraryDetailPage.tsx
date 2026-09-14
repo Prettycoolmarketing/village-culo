@@ -32,6 +32,7 @@ const createdFromIcon: Record<string, string> = {
   talk:       '🎤',
   experience: '🌀',
   decision:   '✅',
+  writing:    '✍️',
 }
 
 // ─── Status colour ──────────────────────────────────────────────────────────────
@@ -264,7 +265,7 @@ export function LibraryDetailPage() {
                 <h2 id="description-heading" className="font-heading text-2xl font-semibold text-charcoal mb-4">
                   About this {typeLabel}
                 </h2>
-                <p className="font-body text-base text-charcoal/80 leading-relaxed">{item.description}</p>
+                <p className="font-body text-base text-charcoal/80 leading-relaxed whitespace-pre-line">{item.description}</p>
               </section>
 
               {/* Why this exists */}
