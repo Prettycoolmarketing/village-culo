@@ -350,8 +350,14 @@ export async function buildImportedContentFromArchive(
     // caption still goes into description/blog untouched.
     const lines = firstLines(post.caption, 2)
     const publishedAtIso = new Date(post.timestamp * 1000).toISOString()
-    const dateLabel = new Date(post.timestamp * 1000).toLocaleDateString('en-AU')
-    const title = lines[0] || `Instagram post${fallbackWho ? ` by ${fallbackWho}` : ''} — ${dateLabel}`
+    // No caption at all means no real keyword material to build a title
+    // (and eventually a slug — see buildStoryFromImport) from. Leading with
+    // the founder's own name is real signal a generic "Instagram post by X"
+    // phrasing buries — people search names, not the word "Instagram" — and
+    // a spelled-out date reads better in a URL than raw DD/MM/YYYY digits.
+    const readableDate = new Date(post.timestamp * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+    const kindLabel = post.kind === 'reel' ? 'Reel' : post.kind === 'story' ? 'Story' : 'Post'
+    const title = lines[0] || (fallbackWho ? `${fallbackWho} — ${kindLabel}, ${readableDate}` : `${kindLabel} from ${readableDate}`)
     const subtitle = lines[1]
     const hashtags = extractHashtags(post.caption)
 
