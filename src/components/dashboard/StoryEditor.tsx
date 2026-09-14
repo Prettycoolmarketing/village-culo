@@ -217,6 +217,17 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   const hasBlog = draft.contentTypes.includes('blog') || !!draft.blog?.trim()
   const isVisible = draft.status === 'published' || draft.status === 'featured'
 
+  // A stray click on the dimmed backdrop used to close this and silently
+  // discard everything typed — no autosave, no warning, just gone. Now it
+  // only closes immediately when there's nothing to lose; otherwise it
+  // asks first, same window.confirm pattern already used for other
+  // discard/delete actions elsewhere in the dashboard.
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(story)
+  function requestClose() {
+    if (isDirty && !window.confirm("You have unsaved changes — close without saving?")) return
+    onClose()
+  }
+
   return (
     // Floating popup over a dimmed backdrop, same shell as Advanced edit
     // (Imported Content's editor) — a founder gets one consistent editing
@@ -224,7 +235,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     // instead of a popup for one and an inline page-swap for the other.
     <div
       className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      onClick={e => { if (e.target === e.currentTarget) requestClose() }}
     >
     <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4 flex flex-col">
       <div className="flex items-center justify-between mb-4">
@@ -248,7 +259,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
             className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
           />
           <button
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="Close"
             className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
           >
