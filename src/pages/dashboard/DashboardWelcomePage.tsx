@@ -8,7 +8,7 @@ import { STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLink
 // clears Canva review (the app's own listing/deep-link URL from the Canva
 // Developer Portal) — placeholder for now, same as CreateWithCuloCTA and
 // DashboardCreativesPage's own CULO_CANVA_URL before this.
-const REAL_CANVA_APP_URL = 'https://www.culovillage.com/creatives'
+const REAL_CANVA_APP_URL = 'https://www.culovillage.com/how-culo-canva'
 
 // Landing spot for orientation and promotion — everything that used to be
 // bolted onto Publish or Import Content (How it works, what the Voice Brief

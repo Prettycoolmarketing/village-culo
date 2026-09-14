@@ -271,7 +271,12 @@ export default function App() {
           {/* ── Public site (with Navbar + Footer) ────────────────────────── */}
           <Route element={<PublicLayout />}>
             <Route path="/"                   element={<VillagePage />}          />
-            <Route path="/creatives"          element={<CreativesPage />}        />
+            <Route path="/how-culo-canva"     element={<CreativesPage />}        />
+            {/* Kept working, not removed — this exact URL is on file as the
+                Canva app's own submitted Support URL in the Developer
+                Portal. Update it there to /how-culo-canva when convenient;
+                this redirect means nothing breaks in the meantime either way. */}
+            <Route path="/creatives"          element={<Navigate to="/how-culo-canva" replace />} />
             <Route path="/piazza"             element={<Navigate to="/" replace />}      />
             <Route path="/founders"           element={<FoundersPage />}         />
             <Route path="/founders/:slug"     element={<FounderProfilePage />}   />

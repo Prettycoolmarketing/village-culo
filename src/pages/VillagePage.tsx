@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
+import { useInstantJoin } from '../hooks/useInstantJoin'
 import { HeroWidget }                from '../widgets/HeroWidget'
 import { FeaturedWidget }            from '../widgets/FeaturedWidget'
 import { StoryGrid }                 from '../widgets/StoryGrid'
@@ -11,6 +12,53 @@ import { MapPreviewWidget }          from '../widgets/MapPreviewWidget'
 import { NoticeboardPreviewWidget }  from '../widgets/NoticeboardPreviewWidget'
 import { filterEvents }              from '../utils/filters'
 import { InnerContainer }            from '../components/layout/PageContainer'
+
+// Compact inline variant of the same signup mechanic JoinVillagePage uses —
+// no full-page takeover here, just inline feedback within this section's
+// own space, since this is embedded partway down the homepage, not a
+// dedicated page. Tagged source=canva — see the section comment above.
+function HomeInstantJoin() {
+  const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit } = useInstantJoin('canva')
+
+  if (alreadyMember) {
+    return (
+      <p className="font-body text-sm text-white/70 max-w-xl mx-auto lg:mx-0">
+        <span className="font-medium text-white">{email}</span> already has a Culo Village account —{' '}
+        <Link to="/dashboard/login" className="text-primary underline hover:text-white transition-colors">sign in</Link> to pick up where you left off.
+      </p>
+    )
+  }
+
+  if (checkEmail) {
+    return (
+      <p className="font-body text-sm text-white/70 max-w-xl mx-auto lg:mx-0">
+        Check your email — we sent a confirmation link to <span className="font-medium text-white">{email}</span>.
+      </p>
+    )
+  }
+
+  return (
+    <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
+      <input
+        type="email"
+        required
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="you@email.com"
+        aria-label="Email address"
+        className="flex-1 min-w-0 rounded-xl px-5 py-4 text-base bg-white/10 text-white placeholder:text-white/50 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors"
+      />
+      <button
+        type="submit"
+        disabled={submitting}
+        className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+      >
+        {submitting ? 'Joining…' : 'Join the Village'}
+      </button>
+      {error && <p className="font-body text-sm text-red-400 w-full">{error}</p>}
+    </form>
+  )
+}
 
 // ─── Section wrapper ───────────────────────────────────────────────────────────
 // Alternates between surface white and warm background to create visual rhythm.
@@ -57,9 +105,12 @@ export function VillagePage() {
       </a>
 
       {/* ── 1. CULO Creatives ────────────────────────────────────────────────
-        Full-bleed and hero-scale (matching /creatives), with a full-width
-        email bar for conference QR-code sign-ups. First thing visible on
-        load — no scrolling required to find the signup.
+        Full-bleed and hero-scale (matching /how-culo-canva). Instant email
+        capture right here — no click-through to /join needed first — so
+        anyone landing on culovillage.com can start immediately. Tagged
+        source=canva, since this whole section is specifically the Creatives
+        pitch: it's the funnel into the Canva-first Welcome experience, same
+        as the in-app "Continue in The Culo Village" button.
       */}
       <section className="bg-charcoal relative overflow-hidden" aria-labelledby="creatives-heading">
         <InnerContainer className="pt-20 pb-16 md:pt-28 md:pb-20">
@@ -72,12 +123,13 @@ export function VillagePage() {
                 CULO Creatives is coming to Canva.
               </h2>
               <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
-                The Canva editing app that turns your raw footage and messy thoughts into blogs, carousels and
-                reels — without ever leaving Canva. Built for founders who aren't short on ideas, just short
-                on time.
+                Only in Canva! Culo Creatives helps founders turn their messy thoughts and raw footage into
+                social media content. CULO helps you create blogs, carousels and multiple reel formats from
+                the stories, experiences and insights you already have.
               </p>
-              <Link to="/creatives" className="inline-block text-sm font-medium text-white/50 hover:text-white transition-colors">
-                Learn more about CULO Creatives →
+              <HomeInstantJoin />
+              <Link to="/how-culo-canva" className="inline-block text-sm font-medium text-white/50 hover:text-white transition-colors mt-4">
+                Learn more about CULO Creatives in Canva →
               </Link>
             </div>
             <div className="relative hidden lg:block">
@@ -89,20 +141,6 @@ export function VillagePage() {
             </div>
           </div>
         </InnerContainer>
-
-        {/* Just a join link — no separate pitch here, the hero copy above
-            already makes the case. Big and legible for a QR code at a
-            conference. */}
-        <div>
-          <InnerContainer className="py-10 md:py-14 text-center">
-            <Link
-              to="/join"
-              className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-lg font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-            >
-              Join The Culo Village →
-            </Link>
-          </InnerContainer>
-        </div>
       </section>
 
       {/* ── 2. Hero ─────────────────────────────────────────────────────────── */}

@@ -3,8 +3,6 @@ import { usePageMeta } from '../utils/usePageMeta'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { submitSupportRequest } from '../services/supportRequest'
 
-const JOIN_URL = 'https://www.culovillage.com/join'
-
 const FORMATS = [
   { emoji: '📖', label: 'Blogs', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
   { emoji: '✍️', label: 'Carousels', desc: 'Pulls the strongest ideas from your footage and turns them into swipeable slides ready to design and publish.' },
@@ -47,7 +45,7 @@ const STEPS = [
 export function CreativesPage() {
   usePageMeta({
     title: 'CULO Creatives — Exclusively in Canva',
-    description: 'CULO Creatives turns your raw footage into blogs, carousels and reels — exclusively in Canva. The Canva editing app built for founders who are short on time, not ideas. Join the waitlist.',
+    description: 'CULO Creatives turns your raw footage into blogs, carousels and reels — exclusively in Canva. The Canva editing app built for founders who are short on time, not ideas.',
     keywords: [
       'CULO Creatives', 'Canva app', 'Canva editing app', 'Canva integration', 'exclusively in Canva',
       'content creation app', 'video editing for founders', 'AI content creation', 'social media content from video',
@@ -60,19 +58,28 @@ export function CreativesPage() {
     <main className="min-h-screen bg-background">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="bg-charcoal py-24 md:py-28 relative overflow-hidden text-center">
+      <section className="bg-charcoal py-20 md:py-28 relative overflow-hidden" aria-labelledby="creatives-hero-heading">
         <InnerContainer>
-          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-            What CULO Creatives makes
-          </p>
-          <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl mx-auto mb-6">
-            Edit your raw footage in one workspace
-          </h1>
-          <p className="font-body text-base sm:text-lg text-white/70 leading-relaxed max-w-2xl mx-auto">
-            CULO is a Canva integrated app that turns your thoughts and raw footage into social media content.
-            Designed for founders and creators, CULO helps you create blogs, carousels and multiple reel
-            formats from the stories, experiences and insights you already have.
-          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="text-center lg:text-left">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+                What CULO Creatives makes
+              </p>
+              <h1 id="creatives-hero-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
+                Edit your raw footage in one workspace
+              </h1>
+              <p className="font-body text-base sm:text-lg text-white/70 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                Only in Canva! Culo Creatives helps founders turn their messy thoughts and raw footage into
+                social media content. CULO helps you create blogs, carousels and multiple reel formats from
+                the stories, experiences and insights you already have.
+              </p>
+            </div>
+            <img
+              src="/creatives/culo-media-2.png"
+              alt="CULO Creatives inside Canva — raw footage turned into structured reels and carousels"
+              className="w-full h-auto rounded-3xl"
+            />
+          </div>
         </InnerContainer>
       </section>
 
@@ -253,34 +260,29 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Final CTA ────────────────────────────────────────────────────────
+      {/* ── Final CTA / Support ─────────────────────────────────────────────
         Held for the bottom of the page so everything above it makes the
-        case first. Join the Village first (free, and where the founding
-        rate is locked to a real account), or go straight to checkout.
+        case first. This page's URL doubles as the official Support URL on
+        the Culo Creatives Canva app listing, so it needs a real working way
+        to reach us here, not just a mailto link — the support form used to
+        live in its own separate white section below this one; folded in
+        here instead, next to the photo, so there's one clear final section
+        rather than two.
       */}
       <section className="bg-charcoal pt-20 pb-24 relative overflow-hidden">
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Culo Creatives · Exclusively in Canva
+                Support
               </p>
-              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-8 leading-tight">
-                CULO is a Canva integrated app that turns your thoughts and raw footage into social media
-                content.
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight">
+                Need a hand with Culo Creatives?
               </h2>
-              <div className="max-w-md flex flex-col gap-3">
-                <a
-                  href={JOIN_URL}
-                  className="inline-flex items-center justify-center px-6 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-                >
-                  Join The Culo Village →
-                </a>
-                <p className="font-body text-xs text-white/40 mt-1">
-                  Everyone joins through the Village first — it's free forever. From there you choose Culo
-                  Creatives (free until 1 January 2027, then $19 AUD/month for founders who start before then).
-                </p>
-              </div>
+              <p className="font-body text-white/60 mb-6">
+                Send us a message and we'll get back to you — usually within a business day.
+              </p>
+              <SupportForm />
             </div>
             <div className="relative">
               <img
@@ -290,22 +292,6 @@ export function CreativesPage() {
               />
             </div>
           </div>
-        </InnerContainer>
-      </section>
-
-      {/* Support — this page's URL doubles as the official Support URL on
-          the Culo Creatives Canva app listing, so it needs a real working
-          way to reach us, not just a mailto link. */}
-      <section className="bg-surface py-16 md:py-20 border-t border-border">
-        <InnerContainer className="max-w-xl">
-          <p className="font-body text-xs font-semibold text-charcoal uppercase tracking-widest mb-3">Support</p>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-2 leading-tight">
-            Need a hand with Culo Creatives?
-          </h2>
-          <p className="font-body text-muted mb-6">
-            Send us a message and we'll get back to you — usually within a business day.
-          </p>
-          <SupportForm />
         </InnerContainer>
       </section>
 

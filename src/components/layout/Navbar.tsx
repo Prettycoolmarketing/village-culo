@@ -7,7 +7,7 @@ import { SearchInput } from '../ui/SearchInput'
 // reached through search, widgets and internal links rather than the navbar,
 // same as any large content site.
 const primaryLinks = [
-  { to: '/creatives',  label: 'Creatives',  exact: false },
+  { to: '/how-culo-canva',  label: 'Creatives in Canva',  exact: false },
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/businesses',    label: 'Businesses', exact: false },
   { to: '/stories',    label: 'Stories',    exact: false },

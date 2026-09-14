@@ -1,9 +1,6 @@
-import { useState } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
-import { useAuth } from '../contexts/AuthContext'
-import { ensureJoinedFounder } from '../services/joinFlow'
-import { supabase } from '../lib/supabase'
+import { useInstantJoin } from '../hooks/useInstantJoin'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
@@ -13,6 +10,7 @@ import { InnerContainer } from '../components/layout/PageContainer'
 // 1200px-wide JPEG (~100KB) — the raw screenshot was slow to load in the
 // hero, which is above the fold on first paint.
 const HERO_IMAGE = '/join/join-hero.jpg'
+const HERO_IMAGE_CANVA = '/join/join-hero-canva.png'
 
 const GRID_ROW_1 = ['/join/grid-1.jpg', '/join/grid-2.jpg', '/join/grid-3.jpg']
 const GRID_ROW_2 = ['/join/grid-4.jpg', '/join/grid-5.jpg', '/join/grid-6.jpg']
@@ -74,8 +72,6 @@ const STEPS = [
 // "Join the Village" button should deep-link to: /join?source=canva
 
 export function JoinVillagePage() {
-  const { signUp } = useAuth()
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const source = searchParams.get('source') === 'canva' ? 'canva' : 'village'
   const isCanva = source === 'canva'
@@ -100,60 +96,7 @@ export function JoinVillagePage() {
     ogType: 'website',
   })
 
-  const [email, setEmail] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [checkEmail, setCheckEmail] = useState(false)
-  const [alreadyMember, setAlreadyMember] = useState(false)
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const trimmed = email.trim()
-    if (!trimmed) return
-    setSubmitting(true)
-    setError(null)
-
-    // Founder never sees or needs this — it's a throwaway credential that
-    // establishes their session; the very next step (JoinConfirmPage) has
-    // them replace it with a real one.
-    const throwawayPassword = crypto.randomUUID()
-    const confirmRedirect = `/join/confirm?source=${source}${canvaUserId ? `&canvaUserId=${encodeURIComponent(canvaUserId)}` : ''}`
-    const signUpResult = await signUp(trimmed, throwawayPassword, confirmRedirect)
-
-    if (signUpResult.alreadyRegistered) {
-      // Email is already a member. Don't say "check your email" — send them
-      // to sign in (or reset a password they may never have set).
-      setSubmitting(false)
-      setAlreadyMember(true)
-      return
-    }
-    if (signUpResult.error) {
-      setSubmitting(false)
-      setError(signUpResult.error)
-      return
-    }
-    if (signUpResult.needsConfirmation) {
-      // The overwhelmingly common case (Supabase's "Confirm email" is on) —
-      // no session exists yet, so there's no userId to attach a founder
-      // record to. JoinConfirmPage creates it once they click the email
-      // link and land back here with a real session — see ensureJoinedFounder.
-      setSubmitting(false)
-      setCheckEmail(true)
-      return
-    }
-
-    // Only reached when email confirmation is off and a session exists
-    // immediately — same ensureJoinedFounder() call JoinConfirmPage makes,
-    // so both paths converge on one function rather than duplicating it.
-    const userId = (await supabase?.auth.getUser())?.data.user?.id
-    setSubmitting(false)
-    if (!userId) {
-      setError('Could not create your account. Please try again.')
-      return
-    }
-    await ensureJoinedFounder(userId, trimmed, source, { canvaUserId })
-    navigate('/join/confirm', { replace: true })
-  }
+  const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit } = useInstantJoin(source, canvaUserId)
 
   if (alreadyMember) {
     return (
@@ -247,7 +190,7 @@ export function JoinVillagePage() {
               </p>
             </div>
             <img
-              src={HERO_IMAGE}
+              src={isCanva ? HERO_IMAGE_CANVA : HERO_IMAGE}
               alt="A Canva project full of finished CULO Creatives content — vlog style reels, talking head reels, quick rhythm reels, voice over reels and captions, all generated from one founder's raw footage"
               className="w-full h-auto rounded-3xl"
             />

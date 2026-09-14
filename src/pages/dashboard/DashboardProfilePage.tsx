@@ -1410,7 +1410,7 @@ export function DashboardProfilePage() {
               )
             })()}
             <Link
-              to="/creatives"
+              to="/how-culo-canva"
               className="block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">

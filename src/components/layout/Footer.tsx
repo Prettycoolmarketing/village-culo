@@ -7,7 +7,7 @@ const sections = [
   {
     heading: 'Discover',
     links: [
-      { to: '/creatives', label: 'Creatives'  },
+      { to: '/how-culo-canva', label: 'Creatives in Canva'  },
       { to: '/founders',  label: 'Founders'   },
       { to: '/businesses',   label: 'Businesses' },
       { to: '/stories',   label: 'Stories'    },
@@ -152,7 +152,7 @@ export function Footer() {
             founder of{' '}
             <Link to="/" className="text-white/70 hover:text-white transition-colors">The Culo Village</Link>{' '}
             <span className="text-white/30">✕</span>{' '}
-            <Link to="/creatives" className="text-white/70 hover:text-white transition-colors">Culo Creatives in Canva</Link>
+            <Link to="/how-culo-canva" className="text-white/70 hover:text-white transition-colors">Culo Creatives in Canva</Link>
           </p>
           <p className="text-xs text-white/40">
             © {new Date().getFullYear()} · <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>{' '}
