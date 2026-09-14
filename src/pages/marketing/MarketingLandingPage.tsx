@@ -101,7 +101,7 @@ export function MarketingLandingPage() {
             Who this is for
           </p>
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight">
-            Founders who have value to add and customers to help
+            Founders with real expertise, ready to be seen by the people who need it
           </h2>
         </InnerContainer>
       </section>
@@ -162,8 +162,8 @@ export function MarketingLandingPage() {
                   className="group text-left flex flex-col bg-white shadow-card hover:shadow-md transition-all duration-300 overflow-hidden"
                   style={{ borderTopLeftRadius: '50% 40px', borderTopRightRadius: '50% 40px', borderBottomLeftRadius: '1rem', borderBottomRightRadius: '1rem' }}
                 >
-                  <div className={`flex items-center justify-center pt-7 pb-5 ${i % 2 === 0 ? 'bg-[#EBF2F8]' : 'bg-[#FBF1EB]'}`}>
-                    <span className={`font-heading text-2xl font-bold ${i % 2 === 0 ? 'text-[#3E6E92]' : 'text-primary'}`}>{i + 1}</span>
+                  <div className={`flex items-center justify-center pt-8 pb-6 ${i % 2 === 0 ? 'bg-[#EBF2F8]' : 'bg-[#FBF1EB]'}`}>
+                    <span className={`font-heading text-3xl font-bold ${i % 2 === 0 ? 'text-[#3E6E92]' : 'text-primary'}`}>{i + 1}</span>
                   </div>
                   <div className="flex-1 flex flex-col px-5 py-5">
                     <p className="font-heading text-base font-bold text-charcoal mb-1.5">{s.name}</p>

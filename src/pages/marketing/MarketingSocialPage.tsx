@@ -217,13 +217,6 @@ export function MarketingSocialPage() {
               comments, messages and conversations with your audience, unless we have agreed otherwise.
             </p>
             <p>
-              <strong className="text-charcoal">If a scheduled post does not go out.</strong> Platforms
-              occasionally fail. If we identify a scheduling issue during our management process, we
-              move the affected content to the next appropriate publishing opportunity. Once content
-              has been handed over or changed directly inside your accounts, responsibility for those
-              changes sits with the business.
-            </p>
-            <p>
               <strong className="text-charcoal">Do not need us to film?</strong> No problem. You can use
               Social Media Management without the Content Creator add on. Send us enough raw footage to
               build the month from, ranging from short B roll clips through to longer talking head and
@@ -248,8 +241,9 @@ export function MarketingSocialPage() {
             We can run your archive too.
           </h2>
           <p className="font-body text-lg text-muted mb-8">
-            Add Blog Management and we handle both — your archive published as founder articles, your
-            socials managed end to end. Just the one-off Archive Transfer, quoted from your archive size.
+            Add Blog Management and get both handled together — your archive published as founder articles,
+            your socials managed end to end. The only extra cost is a one-off Archive Transfer, quoted from
+            the size of your back catalogue.
           </p>
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl border border-border p-7 flex flex-col">
