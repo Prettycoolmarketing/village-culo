@@ -31,8 +31,8 @@ export function ContactPage() {
             </div>
             <div className="relative">
               <img
-                src="/creatives/culo-canva-hero.png"
-                alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
+                src="/contact/culo-icon-graphic.png"
+                alt="CULO — format picker showing Carousel, Reel and Blog options above the Creatives button"
                 className="w-full h-auto rounded-3xl"
               />
             </div>
