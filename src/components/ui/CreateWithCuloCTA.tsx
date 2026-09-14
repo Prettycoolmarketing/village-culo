@@ -1,18 +1,30 @@
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
+
 interface Props {
   variant?: 'banner' | 'button' | 'inline'
   label?: string
 }
 
 // Every "Create/Continue with CULO in Canva" button across the app points
-// here — one link to update, not a dozen. Tags every visitor arriving this
-// way as source=canva (the $25/mo, 14-day-trial tier, not the Village's
-// Collaborator cohort) — see joinFlow.ts. Swap for the real Canva app deep
-// link once CULO in Canva ships, so this becomes "open the app" instead of
-// "join and pay first" for founders who already have billing set up.
+// here — one link to update, not a dozen. A visitor who isn't signed in
+// yet gets sent to /joincanva (tagged source=canva, the $25/mo,
+// 14-day-trial tier — see joinFlow.ts); a founder who's already a member
+// doesn't need to join again, so they go straight to their own Content
+// tab instead. Swap CULO_CANVA_URL for the real Canva app deep link once
+// CULO in Canva ships, so this becomes "open the app" instead of "join
+// and pay first" for founders who already have billing set up.
 const CULO_CANVA_URL = 'https://www.culovillage.com/joincanva'
+const MEMBER_CONTENT_URL = '/dashboard/profile?tab=content'
 
 export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
-  const href = CULO_CANVA_URL
+  const { user } = useAuth()
+  const founder = getCurrentFounder(user)
+  const isMember = !!founder
+  const href = isMember ? MEMBER_CONTENT_URL : CULO_CANVA_URL
+  // External join funnel opens in a new tab (don't lose the page a visitor
+  // was reading); an existing member's own dashboard navigates in place.
+  const linkProps = isMember ? {} : { target: '_blank', rel: 'noopener noreferrer' }
 
   if (variant === 'banner') {
     return (
@@ -28,8 +40,7 @@ export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
           </div>
           <a
             href={href}
-            target="_blank"
-            rel="noopener noreferrer"
+            {...linkProps}
             className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -46,8 +57,7 @@ export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
     return (
       <a
         href={href}
-        target="_blank"
-        rel="noopener noreferrer"
+        {...linkProps}
         className="inline-flex items-center gap-1.5 font-body text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors"
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -61,8 +71,7 @@ export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...linkProps}
       className="inline-flex items-center gap-2 px-4 py-2 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
     >
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">

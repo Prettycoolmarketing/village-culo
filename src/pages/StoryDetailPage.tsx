@@ -5,6 +5,8 @@ import { deriveSeoTitle, deriveSeoDescription } from '../utils/seo'
 import { getStories, getStoryBySlug, getStory } from '../services/stories'
 import { getSeries, getSeriesEpisodes } from '../services/series'
 import { getFounder, getFounders } from '../services/founders'
+import { useAuth } from '../contexts/AuthContext'
+import { getCurrentFounder } from '../services/currentFounder'
 import { getBusiness } from '../services/businesses'
 import { recommendationService, publisherPartnerProfileService, trackingService } from '../services/partnership'
 import { partnerService } from '../services/partner'
@@ -181,6 +183,9 @@ export function StoryDetailPage() {
   const story = getStoryBySlug(slug ?? '')
 
   // Pre-guard lookups — hooks must be called unconditionally before any early return
+  const { user } = useAuth()
+  const currentFounder = getCurrentFounder(user)
+  const isOwner = !!story && currentFounder?.id === story.founderId
   const founder = story ? getFounder(story.founderId) : undefined
   const intel   = story ? (villageContentIntelligenceService.getByContent('story', story.id) ?? null) : null
   const jsonLdSource = story?.importedContentId ? importedContentService.get(story.importedContentId) : undefined
@@ -380,7 +385,7 @@ export function StoryDetailPage() {
         className="bg-surface border-b border-border pt-20 pb-4"
         aria-label="Breadcrumb"
       >
-        <InnerContainer>
+        <InnerContainer className="flex items-center justify-between gap-4 flex-wrap">
           <ol className="flex items-center gap-2 text-sm font-body text-muted flex-wrap" role="list">
             <li><Link to="/" className="hover:text-primary transition-colors">Village</Link></li>
             <li aria-hidden="true" className="text-border">›</li>
@@ -400,6 +405,14 @@ export function StoryDetailPage() {
               </>
             )}
           </ol>
+          {isOwner && (
+            <Link
+              to={`/dashboard/profile?tab=content&contentSubTab=published&storyId=${story.id}`}
+              className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors"
+            >
+              ✎ Edit this story
+            </Link>
+          )}
         </InnerContainer>
       </nav>
 

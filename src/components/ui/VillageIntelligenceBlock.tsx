@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
+import { CreateWithCuloCTA } from './CreateWithCuloCTA'
 
 interface Props {
   intel: VillageContentIntelligence
@@ -136,15 +136,7 @@ export function VillageIntelligenceBlock({ intel, variant = 'full' }: Props) {
         <p className="font-body text-[9px] text-muted/50">
           Village Intelligence · Engine v{intel.engineVersion}
         </p>
-        <Link
-          to="/dashboard/publish"
-          className="font-body text-[10px] font-semibold text-primary hover:text-[#b05a35] transition-colors flex items-center gap-1"
-        >
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          Create with CULO in Canva
-        </Link>
+        <CreateWithCuloCTA variant="inline" />
       </div>
     </section>
   )
