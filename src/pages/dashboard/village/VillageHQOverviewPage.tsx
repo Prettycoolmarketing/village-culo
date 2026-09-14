@@ -137,8 +137,8 @@ export function VillageHQOverviewPage() {
   const canSeeEmails = canAccessCapoSection(user?.role, 'emails')
   const TABS: DashTab[] = [
     { key: 'village', label: 'Village' },
-    { key: 'pcm', label: 'Pretty Cool Marketing' },
     { key: 'creatives', label: 'Culo Creatives' },
+    { key: 'pcm', label: 'Pretty Cool Marketing' },
     { key: 'usage', label: 'Usage' },
     ...(canSeeEmails ? [{ key: 'export', label: 'Export' }] : []),
   ]
@@ -193,12 +193,25 @@ export function VillageHQOverviewPage() {
       )}
 
       {tab === 'creatives' && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <StatCard label="Canva members" value={canvaMembers} />
           <StatCard label="Locked-in collaborators" value={lockedInCollaborators} />
           <StatCard label="From Canva Marketplace" value={fromCanva.length} />
           <StatCard label="From the Village" value={fromVillage.length} />
         </div>
+        {canSeeAnalytics && (
+          <section className="mb-8">
+            <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">CULO Creatives Join Funnel</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatCard label="Joined via /join"  value={joinedViaJoinFlow.length}   color="text-[#2D2A26]" to="/dashboard/village/founders" />
+              <StatCard label="Password Set"      value={passwordSetCount}           color="text-[#2D2A26]" sub={`of ${joinedViaJoinFlow.length} joined`} />
+              <StatCard label="Locked In $19/mo"  value={lockedInCollaborators}      color="text-[#5E6B4A]" to="/dashboard/village/creative-feedback" />
+              <StatCard label="From Canva"        value={fromCanva.length}          color="text-[#2D2A26]" sub={`vs ${fromVillage.length} from Village`} />
+            </div>
+          </section>
+        )}
+        </>
       )}
 
       {tab === 'village' && (
@@ -245,16 +258,6 @@ export function VillageHQOverviewPage() {
           permission the standalone page always required. */}
       {canSeeAnalytics && (
       <>
-      <section className="mb-8">
-        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">CULO Creatives Join Funnel</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Joined via /join"  value={joinedViaJoinFlow.length}   color="text-[#2D2A26]" to="/dashboard/village/founders" />
-          <StatCard label="Password Set"      value={passwordSetCount}           color="text-[#2D2A26]" sub={`of ${joinedViaJoinFlow.length} joined`} />
-          <StatCard label="Locked In $19/mo"  value={lockedInCollaborators}      color="text-[#5E6B4A]" to="/dashboard/village/creative-feedback" />
-          <StatCard label="From Canva"        value={fromCanva.length}          color="text-[#2D2A26]" sub={`vs ${fromVillage.length} from Village`} />
-        </div>
-      </section>
-
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Founder Health</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

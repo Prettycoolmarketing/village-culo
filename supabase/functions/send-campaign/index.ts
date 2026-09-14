@@ -6,9 +6,12 @@
 // address) and every link rewritten through track-click (a real, deliberate
 // action — a much more trustworthy signal than the open pixel, which mail
 // clients increasingly pre-fetch automatically regardless of whether anyone
-// actually read the email). Deliberately simple — no scheduling, no
-// batching/rate-limit backoff, no unsubscribe link yet — a real
-// send-and-track loop, not a full ESP. Staff-only: verifies the caller is a
+// actually read the email). Every send goes through the shared branded
+// layout with a real, working unsubscribe link (unsubscribe-email records
+// it in email_unsubscribes, checked here against every recipient list
+// before sending). Deliberately simple otherwise — no scheduling, no
+// batching/rate-limit backoff — a real send-and-track loop, not a full ESP.
+// Staff-only: verifies the caller is a
 // village admin via is_village_admin() before sending anything, using their
 // own JWT (this function keeps JWT verification on, unlike the
 // anonymous-submission functions elsewhere in this codebase).
@@ -17,7 +20,7 @@
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { sendEmail } from '../_shared/resend.ts'
+import { sendEmail, emailLayout } from '../_shared/resend.ts'
 
 const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -71,10 +74,11 @@ serve(async (req) => {
     // Lists: explicit subscribers, the CULO Creatives waitlist, and every
     // founder account's signup email (Village + Canva members). Deduped,
     // lowercased.
-    const [subs, waitlist, founders] = await Promise.all([
+    const [subs, waitlist, founders, unsubs] = await Promise.all([
       admin.from('email_subscribers').select('email'),
       admin.from('canva_waitlist').select('email'),
       admin.from('founders').select('data'),
+      admin.from('email_unsubscribes').select('email'),
     ])
     if (subs.error) throw new Error(subs.error.message)
 
@@ -85,6 +89,8 @@ serve(async (req) => {
       const e = (r.data as { signupEmail?: string })?.signupEmail
       if (e) emailSet.add(e.trim().toLowerCase())
     }
+    const unsubscribed = new Set((unsubs.data ?? []).map(r => (r.email as string).trim().toLowerCase()))
+    for (const e of unsubscribed) emailSet.delete(e)
     const subscribers = [...emailSet].filter(e => e.includes('@'))
     let sent = 0
     const failures: string[] = []
@@ -93,9 +99,11 @@ serve(async (req) => {
       const sendId = crypto.randomUUID()
       const pixel = `<img src="${SUPABASE_URL}/functions/v1/track-open?s=${sendId}" width="1" height="1" alt="" style="display:none" />`
       const trackedHtml = rewriteLinksForTracking(campaign.bodyHtml, campaignId, sendId)
+      const unsubscribeUrl = `${SUPABASE_URL}/functions/v1/unsubscribe-email?email=${encodeURIComponent(email)}`
+      const branded = emailLayout('The Culo Village', `${trackedHtml}${pixel}`, unsubscribeUrl)
       // EMAIL_FROM is a noreply address with no monitored inbox — reply_to
       // gives recipients a real address to write back to instead of a bounce.
-      const result = await sendEmail(email, campaign.subject, `${trackedHtml}${pixel}`, 'support@prettycoolmarketing.com')
+      const result = await sendEmail(email, campaign.subject, branded, 'support@prettycoolmarketing.com')
       await admin.from('email_campaign_sends').insert({
         id: sendId, campaign_id: campaignId, email,
       })

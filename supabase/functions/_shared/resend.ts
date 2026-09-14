@@ -42,8 +42,11 @@ export async function sendEmail(to: string, subject: string, html: string, reply
 }
 
 // Shared visual wrapper — plain, readable, matches the warm/terracotta brand
-// without depending on any images (inbox-safe).
-export function emailLayout(preheader: string, bodyHtml: string): string {
+// without depending on any images (inbox-safe). unsubscribeUrl is optional
+// and only meant for real bulk mail (newsletters) — a transactional email
+// (claim approved, staff invite) has no business offering to unsubscribe
+// someone from it, so callers that don't pass it get the layout unchanged.
+export function emailLayout(preheader: string, bodyHtml: string, unsubscribeUrl?: string): string {
   return `
   <div style="font-family:Georgia,'Times New Roman',serif;background:#F8F5F0;padding:32px 16px;">
     <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #E8E4DD;">
@@ -55,6 +58,7 @@ export function emailLayout(preheader: string, bodyHtml: string): string {
       </div>
     </div>
     <p style="max-width:480px;margin:16px auto 0;color:#9CA3AF;font-size:11px;text-align:center;font-family:Arial,sans-serif;">${preheader}</p>
+    ${unsubscribeUrl ? `<p style="max-width:480px;margin:8px auto 0;text-align:center;font-family:Arial,sans-serif;"><a href="${unsubscribeUrl}" style="color:#9CA3AF;font-size:11px;">Unsubscribe</a></p>` : ''}
   </div>`
 }
 

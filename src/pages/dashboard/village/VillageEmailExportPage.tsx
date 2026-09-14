@@ -8,6 +8,7 @@ import { emailCampaignsService, type EmailCampaign, type CampaignSendStats } fro
 import { emailSequencesService, emailSequenceEnrollmentsService, type EmailSequence, type EmailSequenceStep, type EmailSequenceEnrollment } from '../../../services/emailSequences'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import { toCSV, downloadCSV } from '../../../utils/emailExport'
+import { bodyTextToHtml, bodyHtmlToText } from '../../../utils/emailBody'
 
 export function VillageEmailExportPage() {
   const [pageTab, setPageTab] = useState('village-members')
@@ -40,7 +41,7 @@ export function VillageEmailExportPage() {
           { key: 'village-members', label: 'Village Members' },
           { key: 'canva-members',   label: 'Canva Members' },
           { key: 'subscribers',     label: 'Subscribers' },
-          { key: 'campaigns',       label: 'Campaigns' },
+          { key: 'campaigns',       label: 'Newsletter' },
           { key: 'sequences',       label: 'Sequences' },
         ]}
         active={pageTab}
@@ -244,6 +245,8 @@ function CampaignsPanel() {
   const [sendError, setSendError] = useState<string | null>(null)
   const [sendingId, setSendingId] = useState<string | null>(null)
   const [stats, setStats] = useState<Record<string, CampaignSendStats>>({})
+  // Click a sent newsletter to expand it and see exactly what went out.
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   useEffect(() => {
     void emailCampaignsService.refresh().then(() => setCampaigns(emailCampaignsService.getAll()))
@@ -261,7 +264,7 @@ function CampaignsPanel() {
 
   async function handleSaveDraft() {
     if (!subject.trim() || !body.trim()) return
-    const bodyHtml = body.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`).join('')
+    const bodyHtml = bodyTextToHtml(body)
     const campaign: EmailCampaign = {
       id: crypto.randomUUID(), subject: subject.trim(), bodyHtml, status: 'draft',
       createdAt: new Date().toISOString(),
@@ -277,14 +280,14 @@ function CampaignsPanel() {
     setSendError(null)
     const result = await emailCampaignsService.send(id)
     setSendingId(null)
-    if (!result.success) setSendError(result.error ?? 'Could not send this campaign.')
+    if (!result.success) setSendError(result.error ?? 'Could not send this newsletter.')
     else setCampaigns(emailCampaignsService.getAll())
   }
 
   return (
     <div>
       <div className="bg-white rounded-xl border border-[#E8E4DD] p-4 mb-6">
-        <p className="text-sm font-bold text-[#2D2A26] mb-3">New campaign</p>
+        <p className="text-sm font-bold text-[#2D2A26] mb-3">New newsletter</p>
         <input
           type="text"
           value={subject}
@@ -295,16 +298,16 @@ function CampaignsPanel() {
         <textarea
           value={body}
           onChange={e => setBody(e.target.value)}
-          rows={6}
-          placeholder="Write your update — separate paragraphs with a blank line."
+          rows={8}
+          placeholder="Write it exactly like a normal email — separate paragraphs with a blank line. It's automatically turned into a properly formatted, branded email when you send it."
           className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] resize-y focus:outline-none focus:border-[#C86A43]"
         />
         <div className="flex items-center justify-between mt-3">
-          <p className="text-xs text-[#9CA3AF]">{loading ? '…' : 'Sends to everyone on every list — subscribers, the waitlist, and all Village + Canva members. Deduplicated.'}</p>
+          <p className="text-xs text-[#9CA3AF]">{loading ? '…' : 'Sends to your whole list — subscribers, the waitlist, and all Village + Canva members. Deduplicated, and anyone who\'s unsubscribed is automatically excluded.'}</p>
           <button
             onClick={() => void handleSaveDraft()}
             disabled={!subject.trim() || !body.trim()}
-            className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 transition-colors"
+            className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 transition-colors shrink-0"
           >
             Save draft
           </button>
@@ -314,30 +317,48 @@ function CampaignsPanel() {
       {sendError && <p className="text-xs text-red-600 font-medium mb-3">{sendError}</p>}
 
       {campaigns.length === 0 ? (
-        <p className="text-sm text-[#9CA3AF]">No campaigns yet — write one above.</p>
+        <p className="text-sm text-[#9CA3AF]">No newsletters sent yet — write one above.</p>
       ) : (
         <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-          {campaigns.map(c => (
-            <div key={c.id} className="flex items-center justify-between px-4 py-3 gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#2D2A26] truncate">{c.subject}</p>
-                <p className="text-xs text-[#9CA3AF]">
-                  {c.status === 'sent'
-                    ? `Sent ${c.sentAt ? new Date(c.sentAt).toLocaleDateString('en-AU') : ''} to ${c.recipientCount ?? 0} · ${stats[c.id]?.opened ?? 0} opened · ${stats[c.id]?.clicked ?? 0} clicked`
-                    : 'Draft'}
-                </p>
-              </div>
-              {c.status === 'draft' && (
+          {campaigns.map(c => {
+            const isExpanded = expandedId === c.id
+            return (
+              <div key={c.id}>
                 <button
-                  onClick={() => void handleSend(c.id)}
-                  disabled={sendingId === c.id}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 transition-colors shrink-0"
+                  type="button"
+                  onClick={() => setExpandedId(isExpanded ? null : c.id)}
+                  className="w-full flex items-center justify-between px-4 py-3 gap-3 text-left hover:bg-[#F8F5F0] transition-colors"
                 >
-                  {sendingId === c.id ? 'Sending…' : 'Send now'}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[#2D2A26] truncate">{c.subject}</p>
+                    <p className="text-xs text-[#9CA3AF]">
+                      {c.status === 'sent'
+                        ? `Sent ${c.sentAt ? new Date(c.sentAt).toLocaleDateString('en-AU') : ''} · ${c.recipientCount ?? 0} received · ${stats[c.id]?.opened ?? 0} opened · ${stats[c.id]?.clicked ?? 0} clicked`
+                        : 'Draft'}
+                    </p>
+                  </div>
+                  {c.status === 'draft' ? (
+                    <span
+                      role="button"
+                      onClick={e => { e.stopPropagation(); void handleSend(c.id) }}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shrink-0"
+                    >
+                      {sendingId === c.id ? 'Sending…' : 'Send now'}
+                    </span>
+                  ) : (
+                    <svg className={`w-4 h-4 text-[#9CA3AF] shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
                 </button>
-              )}
-            </div>
-          ))}
+                {isExpanded && (
+                  <div className="px-4 pb-4">
+                    <div className="bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-4 text-sm text-[#2D2A26] leading-relaxed" dangerouslySetInnerHTML={{ __html: c.bodyHtml }} />
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -353,6 +374,9 @@ function SequencesPanel() {
   const [loading, setLoading] = useState(true)
   const [activeSequenceId, setActiveSequenceId] = useState<string | null>(null)
   const [editingStep, setEditingStep] = useState<EmailSequenceStep | null>(null)
+  // Plain-text draft of editingStep's body — write normally, converted to
+  // HTML on save (see saveStep), instead of hand-editing raw <p> tags.
+  const [bodyDraft, setBodyDraft] = useState('')
 
   useEffect(() => {
     void Promise.all([emailSequencesService.refresh(), emailSequenceEnrollmentsService.refresh()]).then(() => {
@@ -378,9 +402,10 @@ function SequencesPanel() {
 
   function saveStep() {
     if (!active || !editingStep) return
-    const steps = active.steps.some(s => s.day === editingStep.day)
-      ? active.steps.map(s => s.day === editingStep.day ? editingStep : s)
-      : [...active.steps, editingStep]
+    const finalStep = { ...editingStep, bodyHtml: bodyTextToHtml(bodyDraft) }
+    const steps = active.steps.some(s => s.day === finalStep.day)
+      ? active.steps.map(s => s.day === finalStep.day ? finalStep : s)
+      : [...active.steps, finalStep]
     void emailSequencesService.save({ ...active, steps: steps.sort((a, b) => a.day - b.day) }).then(() => {
       setSequences(emailSequencesService.getAll())
       setEditingStep(null)
@@ -442,7 +467,7 @@ function SequencesPanel() {
                   <p className="text-sm font-medium text-[#2D2A26]">Day {step.day} — {step.subject}</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <button onClick={() => setEditingStep(step)} className="text-xs font-semibold text-[#C86A43] hover:underline">Edit</button>
+                  <button onClick={() => { setEditingStep(step); setBodyDraft(bodyHtmlToText(step.bodyHtml)) }} className="text-xs font-semibold text-[#C86A43] hover:underline">Edit</button>
                   <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => deleteStep(step.day)} className="text-xs text-[#9CA3AF] hover:text-red-500" />
                 </div>
               </div>
@@ -469,11 +494,11 @@ function SequencesPanel() {
                 className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] mb-2 focus:outline-none focus:border-[#C86A43]"
               />
               <textarea
-                value={editingStep.bodyHtml}
-                onChange={e => setEditingStep({ ...editingStep, bodyHtml: e.target.value })}
+                value={bodyDraft}
+                onChange={e => setBodyDraft(e.target.value)}
                 rows={8}
-                placeholder="HTML body — e.g. <p>...</p><p>...</p>"
-                className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] resize-y font-mono focus:outline-none focus:border-[#C86A43]"
+                placeholder="Write it exactly like a normal email — separate paragraphs with a blank line. It's automatically turned into a properly formatted email when you save."
+                className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] resize-y focus:outline-none focus:border-[#C86A43]"
               />
               <div className="flex items-center gap-2 mt-3">
                 <button onClick={saveStep} className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors">Save step</button>
@@ -482,7 +507,7 @@ function SequencesPanel() {
             </div>
           ) : (
             <button
-              onClick={() => setEditingStep({ day: (active.steps[active.steps.length - 1]?.day ?? -1) + 1, subject: '', bodyHtml: '' })}
+              onClick={() => { setEditingStep({ day: (active.steps[active.steps.length - 1]?.day ?? -1) + 1, subject: '', bodyHtml: '' }); setBodyDraft('') }}
               className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FBF1EB] text-[#C86A43] hover:bg-[#C86A43]/10 transition-colors mb-6"
             >
               + Add step
