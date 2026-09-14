@@ -1,11 +1,16 @@
 import { useState } from 'react'
 import { DictationMicButton } from '../ui/DictationMicButton'
 
-// Replaces the old back-and-forth chat interview — a fixed set of
-// questions, each with its own answer box and a microphone (free, local
-// Web Speech API, same as story dictation elsewhere) so someone who'd
-// rather talk than type can answer out loud. Everything happens inline in
-// this one box — no popup, no page jump, nothing to lose on mobile.
+// Replaces the old back-and-forth chat interview — a fixed set of prompts
+// to read through and answer in one go, either typed or talked out loud
+// (free, local Web Speech API, same as story dictation elsewhere) into a
+// single box. Everything happens inline in this one box — no popup, no
+// page jump, nothing to lose on mobile.
+//
+// One box rather than one per question: switching fields mid-thought broke
+// up a natural, talked-through answer — someone dictating tends to run
+// several of these together in one breath anyway, so the questions are
+// just a numbered list to read down while they talk, not separate inputs.
 //
 // This is the lightweight, quick-answer fallback for someone with no
 // existing AI/document — not the deep story extraction the full copy-paste
@@ -23,76 +28,49 @@ const QUESTIONS = [
   "What's the one thing you want someone to understand after reading your profile?",
 ]
 
-function QuestionField({ question, value, onChange }: {
-  question: string
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <div>
-      {/* The question used to only live in the textarea's placeholder,
-          which disappears the moment you start answering — exactly the
-          wrong time to lose it if you're talking through the mic and want
-          to keep glancing at what you're actually answering. Shown as a
-          persistent label above the box instead. */}
-      <p className="text-sm font-medium text-[#2D2A26] mb-1.5">{question}</p>
-      <div className="flex items-start gap-2">
-        <textarea
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          rows={2}
-          placeholder="Type or talk your answer…"
-          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] resize-none transition-colors"
-        />
-        <DictationMicButton value={value} onChange={onChange} />
-      </div>
-    </div>
-  )
-}
-
 export function BrandBriefQuestions({ onComplete, onCancel }: {
   onComplete: (brief: string) => void
   onCancel: () => void
 }) {
-  const [answers, setAnswers] = useState<string[]>(() => QUESTIONS.map(() => ''))
-  const answeredCount = answers.filter(a => a.trim()).length
-
-  function finish() {
-    const brief = QUESTIONS.map((q, i) => `**${q}**\n${answers[i]?.trim() || '(not answered)'}`).join('\n\n')
-    onComplete(brief)
-  }
+  const [answer, setAnswer] = useState('')
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] p-6 flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-base font-semibold text-[#2D2A26]">Answer a few questions</p>
-          <p className="text-xs text-[#9CA3AF] mt-0.5">Answer as many as you like, in any order. Type or tap the mic to talk.</p>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">Read through the prompts below, then type or talk your answers into the box in any order.</p>
         </div>
         <button type="button" onClick={onCancel} className="text-xs text-[#9CA3AF] hover:text-[#C86A43] shrink-0">
           Cancel
         </button>
       </div>
 
-      <div className="flex flex-col gap-3 max-h-[28rem] overflow-y-auto pr-1">
-        {QUESTIONS.map((q, i) => (
-          <QuestionField
-            key={q}
-            question={q}
-            value={answers[i] ?? ''}
-            onChange={v => setAnswers(prev => prev.map((a, j) => j === i ? v : a))}
-          />
+      <ol className="flex flex-col gap-2 list-decimal list-inside">
+        {QUESTIONS.map(q => (
+          <li key={q} className="text-sm text-[#2D2A26] leading-relaxed">{q}</li>
         ))}
+      </ol>
+
+      <div className="flex items-start gap-2">
+        <textarea
+          value={answer}
+          onChange={e => setAnswer(e.target.value)}
+          rows={10}
+          placeholder="Type or talk your answers here — cover as many of the prompts above as you like, in any order…"
+          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] resize-y transition-colors"
+        />
+        <DictationMicButton value={answer} onChange={setAnswer} />
       </div>
 
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={finish}
-          disabled={answeredCount === 0}
+          onClick={() => onComplete(answer.trim())}
+          disabled={!answer.trim()}
           className="px-5 py-2.5 rounded-lg bg-[#2D2A26] text-white text-sm font-semibold hover:bg-[#1a1815] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Build my brief ({answeredCount}/{QUESTIONS.length} answered)
+          Build my brief
         </button>
       </div>
     </div>
