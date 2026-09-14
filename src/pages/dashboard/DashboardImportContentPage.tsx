@@ -1585,7 +1585,7 @@ export function DashboardImportContentPage() {
             { title: 'Publish for discovery', desc: 'Being in the Village means your expertise positions you and your business as an authority.' },
           ].map((s, i) => (
             <div key={s.title} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4">
-              <div className="w-7 h-7 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-xs font-bold shrink-0 mb-2">
+              <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-sm font-bold shrink-0 mb-2">
                 {i + 1}
               </div>
               <p className="text-sm font-semibold text-[#2D2A26] mb-0.5">{s.title}</p>

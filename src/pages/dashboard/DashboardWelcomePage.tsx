@@ -118,7 +118,7 @@ export function DashboardWelcomePage() {
           the heading text lines up with the box content instead of sitting
           flush with the outer page edge. */}
       <div className="px-8 sm:px-12">
-        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Welcome to The Culo Village x Culo Creatives in Canva</h1>
+        <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#2D2A26]">Welcome to The Culo Village x Culo Creatives in Canva</h1>
         <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl">
           Follow the steps to be celebrated for your content and edit simply in one repeatable marketing workflow.
         </p>
