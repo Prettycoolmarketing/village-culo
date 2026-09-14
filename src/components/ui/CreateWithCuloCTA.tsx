@@ -37,6 +37,7 @@ export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
             </svg>
             Create with CULO in Canva
           </a>
+        </div>
       </div>
     )
   }
