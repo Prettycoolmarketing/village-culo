@@ -144,12 +144,10 @@ export function CreativesPage() {
                 Every reel includes subtitles, an on-screen hook and a caption, ready to publish.
               </p>
               <a
-                href="https://canva.link/gh6qvlru340vrnt"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="https://www.culovillage.com/joincanva"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
               >
-                Try the CULO Creatives template in Canva ↗
+                Try Culo Creatives in Canva →
               </a>
             </div>
             <div>
@@ -233,17 +231,17 @@ export function CreativesPage() {
             About joining the Village
           </p>
           <h2 id="join-village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
-            Culo Creatives lives inside The Culo Village
+            Culo Creatives is the editing platform in Canva for founders in the Culo Village
           </h2>
           <p className="font-body text-lg text-muted leading-relaxed mb-8">
-            The Village is your home base. It is free forever, it is where your founding rate is locked
-            to a real account, and it is where your finished content gets published so people can
-            actually find you through search and AI. Culo Creatives is the Canva app you edit in.
+            The Village is your home base. It is free forever, and it is where your finished content gets
+            published so people can actually find you through search and AI. Culo Creatives is the Canva
+            app you edit in.
           </p>
-          <ol className="flex flex-col gap-4">
+          <ol className="flex flex-col gap-4 mb-8">
             {[
-              ['Join the Village', 'Hit the join button below and enter your email.'],
-              ['Lock in your price', 'Confirm your founding rate. Free until 1 January 2027, then $19 AUD a month for founders who started before then.'],
+              ['Join Culo Creatives', 'Hit the join button below and enter your email.'],
+              ['Start your free trial', '14 days free, then $25 AUD a month.'],
               ['Set your password', 'One screen, then you are in.'],
               ['Land in your dashboard', 'The Culo Creatives section welcomes you with your instructions and the link straight into the Canva app.'],
               ['Edit in Canva, publish in the Village', 'Turn your footage into blogs, carousels and reels in Canva, then publish them across the Village for discovery.'],
@@ -257,6 +255,12 @@ export function CreativesPage() {
               </li>
             ))}
           </ol>
+          <a
+            href="https://www.culovillage.com/joincanva"
+            className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+          >
+            Join Culo Creatives →
+          </a>
         </InnerContainer>
       </section>
 

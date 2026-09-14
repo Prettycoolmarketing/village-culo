@@ -81,7 +81,7 @@ export function DashboardWelcomePage() {
           </p>
         </div>
         <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-6">
             {CREATIVES_STEPS.map((s, i) => (
               <div key={s.title}>
                 <div className="w-11 h-11 rounded-full bg-[#EBF2F8] text-[#3E6E92] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
@@ -135,7 +135,7 @@ export function DashboardWelcomePage() {
             across platforms like YouTube, podcasts, Instagram and blogs, and republishes them as individual web
             articles for AI search-ability and to position you as an authority in your field.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-4">
             {HOW_IT_WORKS_STEPS.map((s, i) => (
               <div key={s.title}>
                 <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
@@ -168,7 +168,7 @@ export function DashboardWelcomePage() {
             blogs, carousels and reels — exclusively in Canva, in your own brand. Once it's made, you check
             it and publish it the same way you publish anything in the Village.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-4">
             {CREATIVES_STEPS.map((s, i) => (
               <div key={s.title}>
                 <div className="w-11 h-11 rounded-full bg-[#EBF2F8] text-[#3E6E92] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">

@@ -13,7 +13,6 @@ import { PublicationMeter } from '../../components/dashboard/PublicationMeter'
 import { SeriesDetail } from './DashboardSeriesPage'
 import { getSeriesList, getSeriesEpisodes, createSeries, saveSeries } from '../../services/series'
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
-import { PartnershipSettingsPanel } from '../../components/dashboard/PartnershipSettingsPanel'
 import type { ImportedContent } from '../../types/importedContent'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -444,7 +443,8 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
   return (
     <div className="flex flex-col gap-5">
       <TabIntro>
-        Every business you run — logo, description, where you work, what you're about.
+        Every business you run — logo, description, where you work and what you offer, so your target
+        audience can find you.
       </TabIntro>
 
       <div className="flex flex-wrap gap-2">
@@ -577,8 +577,8 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
           <div className="flex items-center justify-between pt-2 border-t border-[#E8E4DD]">
             <div className="flex items-center gap-3">
               <button onClick={() => void handleSave()} disabled={saving}
-                className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
-                {saving ? 'Saving…' : 'Save'}
+                className="px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
+                {saving ? 'Saving…' : 'Save Changes'}
               </button>
               {saved && <p className="text-sm text-[#5E6B4A] font-medium">Saved ✓</p>}
             </div>
@@ -613,14 +613,14 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
         ) : null
       })()}
 
-      {/* Discovery & Partnerships now live under the Partners tab, alongside
-          the founder's own discovery settings, instead of being buried here. */}
+      {/* Discovery lives under the Discovery tab, alongside the founder's
+          own discovery settings, instead of being buried here. */}
       {draft && (
         <Link
           to="/dashboard/profile?tab=discovery"
           className="text-sm font-semibold text-[#C86A43] hover:underline"
         >
-          Manage Discovery &amp; Partnerships for this business →
+          Manage Discovery for this business →
         </Link>
       )}
 
@@ -992,7 +992,7 @@ export function DashboardProfilePage() {
     { key: 'overview',      label: 'Profile'       },
     { key: 'businesses',    label: 'Businesses'    },
     { key: 'expertise',     label: 'FAQ'           },
-    { key: 'discovery',     label: 'Partners' },
+    { key: 'discovery',     label: 'Discovery' },
     { key: 'settings',      label: 'Settings'      },
   ]
 
@@ -1193,25 +1193,11 @@ export function DashboardProfilePage() {
       {tab !== 'content' && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-8 pt-8 pb-5 shrink-0">
           <div className="flex items-center gap-4">
-            <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover bg-[#F3EDE6]" />
+            {draft.avatar && draft.avatar !== '/placeholders/village-founder.svg' && (
+              <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover bg-[#F3EDE6]" />
+            )}
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-[#2D2A26]">{draft.name}</h1>
-              {/* Moved here from Settings — "am I featured" belongs right
-                  next to who's asking, not buried a tab away. */}
-              <button
-                onClick={() => set('featured', !draft.featured)}
-                title="Featured on Village Homepage — surfaces you in the Village homepage feed"
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors shrink-0 ${
-                  draft.featured
-                    ? 'bg-[#C86A43]/10 border-[#C86A43]/40 text-[#C86A43]'
-                    : 'bg-white border-[#E8E4DD] text-[#9CA3AF] hover:border-[#C86A43]/30 hover:text-[#C86A43]'
-                }`}
-              >
-                <svg className="w-3.5 h-3.5" fill={draft.featured ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-                Featured
-              </button>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -2516,12 +2502,10 @@ export function DashboardProfilePage() {
         {/* ── Discovery: SEO, GEO, search preview, visibility ─────────────── */}
         {tab === 'discovery' && (
           <div className="flex flex-col gap-5">
-            <TabIntro>
-              Join the Village Partner program, link the brands you genuinely use, and set up your own
-              affiliate program and pitch so other founders can promote you.
-            </TabIntro>
-
-            <PartnershipSettingsPanel />
+            {/* Partner program section removed for now — picking this back
+                up later. PublisherDiscoveryProfile and the business-scoped
+                discovery section below are unrelated to it (SEO/GEO/search
+                preview), left in place. */}
 
             <PublisherDiscoveryProfile founderId={draft.id} />
 

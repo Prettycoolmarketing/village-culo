@@ -1569,7 +1569,7 @@ export function DashboardImportContentPage() {
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Transfer your work into the Village</h1>
+        <h1 className="text-2xl font-bold text-[#2D2A26]">Transfer your work into the village for visibility</h1>
         <p className="text-sm text-[#6B7280] mt-1.5 leading-relaxed">
           Your best ideas are probably already out there. Connect your YouTube, podcast or blog and CULO will
           bring your existing posted content into one place, embedded from the original source, never

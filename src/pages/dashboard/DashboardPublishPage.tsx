@@ -324,12 +324,6 @@ function FormatStep({ draft, onChange, onNext }: {
         subtitle="Update The Village or edit with CULO in Canva to continue curating your life's work."
       />
 
-      <div className="mb-6">
-        <Link to="/dashboard/creatives" className="inline-flex items-center gap-1.5 text-base font-semibold text-[#2D2A26] hover:text-[#C86A43] transition-colors">
-          Edit with Culo Creatives in Canva →
-        </Link>
-      </div>
-
       {(() => {
         const f = getFounders().find(x => x.id === draft.founderId)
         return (
@@ -389,6 +383,18 @@ function FormatStep({ draft, onChange, onNext }: {
         >
           {draft.contentTypes.length === 0 ? 'Select at least one format' : 'Continue'}
         </button>
+
+        <div className="mt-6 bg-[#2D2A26] rounded-2xl px-6 py-5 flex items-center justify-between gap-4">
+          <p className="font-body text-sm text-white/70">
+            Editing new content? Head into Culo Creatives in Canva.
+          </p>
+          <Link
+            to="/dashboard/creatives"
+            className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-white hover:text-[#C86A43] transition-colors"
+          >
+            Edit with Culo Creatives in Canva →
+          </Link>
+        </div>
       </div>
     </div>
   )

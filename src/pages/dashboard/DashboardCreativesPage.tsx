@@ -39,9 +39,9 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
         Village.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
         {HOW_IT_WORKS_STEPS.map((s, i) => (
-          <div key={s.title} className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5">
+          <div key={s.title}>
             <div className="w-8 h-8 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-xs font-bold shrink-0 mb-3">
               {i + 1}
             </div>
