@@ -38,6 +38,23 @@ function firstLines(text: string, n: number): string[] {
   return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).slice(0, n)
 }
 
+// Meta's "Download your information" export covers both Instagram and
+// Facebook, and reads the same either way here — a founder who cross-posts
+// (the same Reel/Story to both) and imports both archives would otherwise
+// get every cross-posted piece twice, with no way to tell they're the same
+// thing once re-uploaded to a fresh Storage URL each time. Media can't be
+// compared directly (it's re-hosted, not the same file), so identity is the
+// title (the caption's first line — what actually gets persisted and never
+// gets rewritten by later enrichment, unlike description) plus the calendar
+// day it was originally posted — tight enough to catch a real cross-post,
+// loose enough to survive the few-second/minute gap Meta's own
+// cross-posting introduces between the two platforms.
+function archiveDedupeKey(titleLine: string, timestamp: number): string {
+  const normalized = titleLine.trim().toLowerCase().replace(/\s+/g, ' ')
+  const day = new Date(timestamp * 1000).toISOString().slice(0, 10)
+  return `${normalized}|${day}`
+}
+
 function normalizeEntries(raw: unknown, kind: InstagramEntryKind): ParsedInstagramPost[] {
   if (!Array.isArray(raw)) return []
   const out: ParsedInstagramPost[] = []
@@ -247,9 +264,20 @@ export async function buildImportedContentFromArchive(
   zip: JSZip,
   onProgress?: (message: string) => void,
   businessId?: string,
-): Promise<{ built: BuiltArchiveItem[]; uploadErrors: string[] }> {
+): Promise<{ built: BuiltArchiveItem[]; uploadErrors: string[]; duplicates: number }> {
   const results: BuiltArchiveItem[] = []
   const uploadErrors: string[] = []
+  let duplicates = 0
+
+  // Seeded from every archive-imported piece this founder already has (a
+  // prior Instagram import, or a Facebook one that came in through this
+  // same importer), plus every item built during this pass — catches a
+  // cross-posted duplicate against past imports and within this one batch.
+  const seenKeys = new Set(
+    importedContentService.getAll({ founderId })
+      .filter(i => i.sourcePlatform === 'instagram' && i.publishedAt)
+      .map(i => archiveDedupeKey(i.title, new Date(i.publishedAt!).getTime() / 1000))
+  )
 
   // Used only as a fallback title when Instagram's export had no caption to
   // pull from (the raw-media-file path) — real captions always win.
@@ -260,6 +288,15 @@ export async function buildImportedContentFromArchive(
   for (let i = 0; i < posts.length; i++) {
     const post = posts[i]!
     onProgress?.(`Uploading media ${i + 1} of ${posts.length}…`)
+
+    // Checked before spending any upload calls on this post's media —
+    // the title/date pair is known straight from the parsed post.
+    const candidateTitle = firstLines(post.caption, 1)[0] || ''
+    const dedupeKey = candidateTitle ? archiveDedupeKey(candidateTitle, post.timestamp) : null
+    if (dedupeKey && seenKeys.has(dedupeKey)) {
+      duplicates++
+      continue
+    }
 
     const uploadedUrls: string[] = []
     const videoUrls: string[] = []
@@ -354,10 +391,11 @@ export async function buildImportedContentFromArchive(
       contentTypeHint,
     }
 
+    if (dedupeKey) seenKeys.add(dedupeKey)
     results.push({ item, dayKey: publishedAtIso.slice(0, 10) })
   }
 
-  return { built: results, uploadErrors }
+  return { built: results, uploadErrors, duplicates }
 }
 
 const VIDEO_EXT_RE = /\.(mp4|mov|m4v)(\?|$)/i

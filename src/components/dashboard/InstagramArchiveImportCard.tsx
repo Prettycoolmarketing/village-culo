@@ -33,7 +33,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
   const [dragOver, setDragOver] = useState(false)
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<{ imported: number; skipped: number } | null>(null)
+  const [result, setResult] = useState<{ imported: number; skipped: number; duplicates: number } | null>(null)
 
   async function handleFile(file: File | undefined) {
     if (!file) return
@@ -58,7 +58,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
       // Not tied to a specific business — during the join funnel a founder
       // may not have added business details yet, and every imported piece
       // already links back to them as the founder regardless.
-      const { built, uploadErrors } = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), undefined)
+      const { built, uploadErrors, duplicates } = await buildImportedContentFromArchive(founderId, posts, zip, msg => setStage(msg), undefined)
 
       setStage('Saving to your Village…')
       let imported = 0
@@ -68,7 +68,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
       }
 
       setStage(null)
-      setResult({ imported, skipped: posts.length - imported })
+      setResult({ imported, skipped: posts.length - imported - duplicates, duplicates })
       if (uploadErrors.length > 0) {
         setError(
           `${uploadErrors.length} file${uploadErrors.length === 1 ? '' : 's'} couldn't upload (likely too large for the current storage limit) — ` +
@@ -171,17 +171,25 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
               <p className="text-xs text-[#9CA3AF] text-center">{stage}</p>
             </div>
           ) : result ? (
-            <div className="px-4 py-3 bg-[#5E6B4A]/10 rounded-lg flex items-center justify-between gap-3 flex-wrap">
-              <p className="text-xs text-[#5E6B4A] font-medium">
-                Imported {result.imported} piece{result.imported === 1 ? '' : 's'}
-                {result.skipped > 0 ? ` — ${result.skipped} skipped (no usable media)` : ''}. Nothing is published yet.
-              </p>
-              <Link
-                to="/dashboard/profile?tab=content&contentSubTab=imported&platform=instagram"
-                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A] text-white hover:bg-[#4a5539] transition-colors"
-              >
-                Review Instagram imports →
-              </Link>
+            <div className="flex flex-col gap-2">
+              <div className="px-4 py-3 bg-[#5E6B4A]/10 rounded-lg flex items-center justify-between gap-3 flex-wrap">
+                <p className="text-xs text-[#5E6B4A] font-medium">
+                  Imported {result.imported} piece{result.imported === 1 ? '' : 's'}
+                  {result.skipped > 0 ? ` — ${result.skipped} skipped (no usable media)` : ''}. Nothing is published yet.
+                </p>
+                <Link
+                  to="/dashboard/profile?tab=content&contentSubTab=imported&platform=instagram"
+                  className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A] text-white hover:bg-[#4a5539] transition-colors"
+                >
+                  Review Instagram imports →
+                </Link>
+              </div>
+              {result.duplicates > 0 && (
+                <p className="text-xs text-[#9CA3AF] px-1">
+                  We found {result.duplicates} duplicate{result.duplicates === 1 ? '' : 's'} for Facebook and
+                  Instagram — {result.duplicates === 1 ? 'this has' : 'these have'} been skipped.
+                </p>
+              )}
             </div>
           ) : (
             <div
