@@ -25,15 +25,6 @@ const PRODUCT_TYPES: { value: ProductType | ''; label: string }[] = [
   { value: 'bundle',         label: 'Bundle'       },
 ]
 
-const STATUSES: { value: LibraryStatus | ''; label: string }[] = [
-  { value: '',              label: 'All'           },
-  { value: 'available',     label: 'Available'     },
-  { value: 'free-download', label: 'Free'          },
-  { value: 'coming-soon',   label: 'Coming Soon'   },
-  { value: 'pre-order',     label: 'Pre-order'     },
-  { value: 'early-access',  label: 'Early Access'  },
-]
-
 // ─── Library Page ───────────────────────────────────────────────────────────────
 
 export function LibraryPage() {
@@ -134,24 +125,6 @@ export function LibraryPage() {
               <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-            </div>
-
-            {/* Status filter — pill buttons */}
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by availability">
-              {STATUSES.map(s => (
-                <button
-                  key={s.value}
-                  onClick={() => setStatus(s.value as LibraryStatus | '')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium font-body transition-all ${
-                    status === s.value
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'border border-border text-muted hover:text-charcoal hover:border-primary'
-                  }`}
-                  aria-pressed={status === s.value}
-                >
-                  {s.label}
-                </button>
-              ))}
             </div>
 
             {/* Result count */}
