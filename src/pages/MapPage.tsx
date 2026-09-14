@@ -274,35 +274,35 @@ export function MapPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Village reach strip ─────────────────────────────────────────────── */}
+      {/* ── Village reach strip — same bottom-CTA treatment as the rest of
+          the site (Publishing/Social marketing pages, Join): centered,
+          bg-[#EBF2F8], larger heading. */}
       <section
-        className="bg-surface border-t border-border py-10"
+        className="py-16 md:py-20 bg-[#EBF2F8] border-t border-[#CFE0EE] text-center"
         aria-label="Village reach summary"
       >
-        <InnerContainer>
-          <div className="max-w-2xl">
-            <h2 className="font-heading text-lg font-semibold text-charcoal mb-2">
-              The Village is growing across Australia
-            </h2>
-            <p className="font-body text-sm text-muted leading-relaxed mb-5">
-              Every founder who publishes a story adds to the Village's presence in their city. As the
-              Village grows, each location becomes richer — more stories, more ideas, more
-              connections between the people building real things in real places.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/onboarding"
-                className="px-5 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
-              >
-                Become a Publisher
-              </Link>
-              <Link
-                to="/archive"
-                className="px-5 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
-              >
-                Search the Archive
-              </Link>
-            </div>
+        <InnerContainer className="max-w-2xl">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal leading-tight mb-4">
+            The Village is growing across Australia
+          </h2>
+          <p className="font-body text-lg text-charcoal/80 leading-relaxed mb-8">
+            Every founder who publishes a story adds to the Village's presence in their city. As the
+            Village grows, each location becomes richer — more stories, more ideas, more
+            connections between the people building real things in real places.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link
+              to="/onboarding"
+              className="px-6 py-3 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Become a Publisher
+            </Link>
+            <Link
+              to="/archive"
+              className="px-6 py-3 bg-white border border-[#CFE0EE] text-charcoal text-base font-semibold rounded-xl hover:border-primary hover:text-primary transition-colors"
+            >
+              Search the Archive
+            </Link>
           </div>
         </InnerContainer>
       </section>
