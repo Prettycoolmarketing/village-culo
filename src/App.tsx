@@ -175,6 +175,13 @@ export default function App() {
               typing it manually or reading it off a screen — same page,
               same query param, just a shorter door in. */}
           <Route path="/joincanva" element={<Navigate to="/join?source=canva" replace />} />
+          {/* The link to paste into the actual Canva Marketplace listing —
+              same page/copy as /joincanva, but the Canva app itself isn't
+              live yet, so this variant captures the email to the waitlist
+              instead of creating a real paying account. Distinct from
+              /joincanva so CAPO can tell "clicked from the Marketplace
+              listing" apart from "clicked the button on culovillage.com". */}
+          <Route path="/canvamarketplace" element={<Navigate to="/join?source=canva&via=marketplace" replace />} />
           {/* Where Supabase's confirmation email link actually lands (see
               AuthContext.signUp's redirectPath) — set password first, before
               ever reaching the dashboard. */}

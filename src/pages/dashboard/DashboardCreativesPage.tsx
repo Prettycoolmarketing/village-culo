@@ -45,8 +45,8 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
             <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-sm font-bold shrink-0 mb-3">
               {i + 1}
             </div>
-            <p className="text-sm font-semibold text-[#2D2A26] mb-1">{s.title}</p>
-            <p className="text-xs text-[#9CA3AF] leading-relaxed">{s.desc}</p>
+            <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+            <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
           </div>
         ))}
       </div>
