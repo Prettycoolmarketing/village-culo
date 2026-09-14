@@ -160,14 +160,14 @@ This document will become the source of truth for writing content in my real voi
 
 It should allow another AI to turn my existing social media posts, videos, photographs, transcripts, notes and memories into:
 
-* Founder-led captions
+* Person-led, founder-led or practitioner-led captions, depending on who I actually am
 * Personal storytelling captions
 * Educational captions
 * Reflective captions
 * Blog posts
 * CULO Village stories
-* Founder profile content
-* Business origin stories
+* Member profile content
+* Business or practice origin stories
 * Lessons and practical advice
 * Searchable questions and answers
 * Long-term authority content
@@ -209,12 +209,14 @@ Extract the strongest available information from these sources before asking me 
 Act as a combination of:
 
 * Story archivist
-* Founder biographer
+* Personal/professional biographer
 * Brand voice analyst
 * Content strategist
 * Knowledge extractor
 * Editorial researcher
 * Educational content planner
+
+Before anything else, identify what kind of person I actually am from the evidence — founder, author, artist, photographer, doctor, tradesperson, educator, athlete, creator, consultant, community leader, or an employee with specialist expertise, among others. This document is not exclusively a founder profile. Do not force founder language, framing or assumptions (a "business," a "launch," an "offer") onto someone who is not a founder — structure and word the whole profile around what this person actually is and does.
 
 Your job is not to make me sound more polished, corporate or impressive.
 
@@ -338,6 +340,51 @@ Keep the unfinished parts, unusual decisions, changes of direction and contradic
 
 ---
 
+## Stage Two-and-One-Quarter: People, Businesses, Projects and Relationship Map
+
+Identify important entities connected to my story. Do not include only my current business.
+
+Extract:
+
+### People
+Co-founders, partners, collaborators, mentors, customers, family members, team members or other people who materially influenced my story.
+
+### Businesses
+Current businesses, former businesses, businesses I worked for, businesses I founded, businesses I helped build and significant client businesses where publication is appropriate.
+
+### Products
+Physical products, digital products, services, apps, books, programs or other creations.
+
+### Projects
+Named projects, experiments, campaigns, creative projects, community projects, research, events and side projects.
+
+### Communities and organisations
+Industry groups, associations, universities, accelerator programs, professional communities, charities and relevant organisations.
+
+### Places
+Locations that materially affected my work, life or story.
+
+### Events and milestones
+Talks, launches, programs, travel periods, competitions, exhibitions, major projects and other meaningful events.
+
+For each entity, record:
+
+* Name
+* Entity type
+* My relationship to it
+* Current or past
+* Approximate period
+* Why it matters
+* Stories connected to it
+* Knowledge gained through it
+* Other entities it connects to
+* Publication sensitivity
+* Facts requiring confirmation
+
+Do not assume something is unimportant because it is no longer active. Former businesses and completed projects may contain important evidence of my experience and should remain connected to my current body of work.
+
+---
+
 ## Stage Two-and-a-Half: Business, Offer and Audience Profile
 
 For each real business, product or service I currently run (not past ones already covered as chapters), extract the concrete commercial details a content strategist would actually need. This is separate from my personal story and voice: it's the factual reference for what I sell, who I sell it to, and why they'd choose it.
@@ -360,11 +407,64 @@ Mark anything genuinely unclear or unstated as a gap for the High-Value Gaps sec
 
 ---
 
+## Stage Two-and-Three-Quarters: Mission, Vision, Goals and Future Direction
+
+Extract what I am trying to create, change, achieve or become over time. Do not limit this to things that have already happened.
+
+Identify:
+
+### Mission
+The larger problem, change or contribution I care about.
+
+### Current priorities
+What I am actively working on now.
+
+### Near-term goals
+Specific outcomes I am trying to achieve over approximately the next 3–12 months.
+
+### Long-term goals
+What I hope to build, change, become known for or contribute over multiple years.
+
+### Future projects
+Businesses, products, programs, events, collaborations, travel, research, creative work or experiments I have discussed but have not yet completed.
+
+### Aspirations
+Ideas or ambitions that matter to me but are not yet committed plans.
+
+### Measures of progress
+Any real milestones, targets or evidence I have said would indicate progress.
+
+For every item, label it as:
+
+* Current mission
+* Active work
+* Planned
+* Exploring
+* Aspirational
+* Completed
+* Paused
+* Abandoned
+* Status unclear
+
+Never present a mission, target, intention, application, planned collaboration or future project as an existing achievement.
+
+Also identify story opportunities around:
+
+* Why this goal matters to me
+* Where the idea came from
+* What I am doing to move toward it
+* What is making it difficult
+* What has changed in the plan
+* What I am learning while pursuing it
+* How earlier experiences explain the future direction
+
+---
+
 ## Stage Three: Extract My Story Bank
 
 Find individual moments that could become standalone pieces of content.
 
-These may be major events or small moments.
+These may be major events or small moments — and, per Stage Two-and-Three-Quarters above, they may also be future-facing: a goal I'm working toward, a plan that's changed, or something I'm learning while pursuing it, not only things that have already happened.
 
 Examples include:
 
@@ -430,7 +530,7 @@ What would need to be clarified before publishing.
 For example:
 
 * Short caption
-* Long founder caption
+* Long personal/professional caption
 * Educational caption
 * CULO Village story
 * Blog post
@@ -438,7 +538,7 @@ For example:
 * Talking-head video
 * Voice-over
 * Frequently asked question
-* Founder profile section
+* Member profile section
 
 Do not discard a story because it does not directly promote a current product.
 
@@ -581,7 +681,7 @@ Create practical rules for writing captions in my voice.
 
 Include guidance for:
 
-## Founder storytelling captions
+## Person-led / founder-led / practitioner-led storytelling captions
 
 These should generally move through:
 
@@ -725,7 +825,7 @@ These might include themes such as:
 
 * Building from lived problems
 * Creating while travelling
-* Founder-led storytelling
+* Person-led storytelling
 * Turning scattered content into permanent knowledge
 * Family and business
 * Technology and human experience
@@ -759,9 +859,9 @@ Create:
 
 Questions people may type into Google, ChatGPT or another discovery system.
 
-## Founder questions
+## Practitioner questions
 
-Questions another founder would ask after hearing my story.
+Questions another person in my field would ask after hearing my story.
 
 ## Practical questions
 
@@ -878,6 +978,10 @@ A plain list of confirmed names, roles, businesses, products, projects, location
 
 Per Stage Two-and-a-Half above: for each current business/product, what it sells (including packages/pricing where stated), who its real target audience is, the problem it solves for them, and genuine differentiators — kept separate per business, gaps marked rather than guessed.
 
+## 2c. Connected People, Businesses, Projects and Entities
+
+Per Stage Two-and-One-Quarter above: every person, business, product, project, community/organisation, place and event connected to my story, with my relationship to each, current or past, why it matters, and what it connects to. Nothing is dropped just because it's no longer active.
+
 ## 3. My Story in Chronological Chapters
 
 For each chapter include:
@@ -896,6 +1000,14 @@ For each chapter include:
 
 The moments that significantly changed my work, direction or beliefs.
 
+## 4b. Mission, Vision and Current Direction
+
+Per Stage Two-and-Three-Quarters above: my mission, current priorities and near-term goals, each labelled by status — never presented as an already-achieved fact.
+
+## 4c. Goals, Plans and Future Projects
+
+Per Stage Two-and-Three-Quarters above: my long-term goals, future projects and aspirations, each labelled by status, along with the story opportunities behind why they matter and what's changed along the way.
+
 ## 5. Founding Stories
 
 A separate founding story for each genuine business, product, platform or significant project.
@@ -907,8 +1019,8 @@ Create a structured collection of publishable story opportunities.
 Organise them by:
 
 * Personal
-* Founder journey
-* Business building
+* Founder/practitioner journey
+* Business or practice building
 * Products
 * Customers
 * Travel and place
@@ -958,6 +1070,10 @@ Separate:
 
 Explain the ideas that connect my businesses, experiences and life chapters.
 
+## 10b. Relationship Map
+
+How the people, businesses, projects, places and stories from section 2c connect to each other and back to my own chapters and threads — not just a flat list, but how they relate.
+
 ## 11. Voice Analysis
 
 Include:
@@ -981,7 +1097,7 @@ Include:
 Include specific guidance for:
 
 * Personal story captions
-* Founder story captions
+* Founder/practitioner story captions
 * Educational captions
 * Business captions
 * Product captions
@@ -1066,6 +1182,10 @@ Include:
 * What I want to become known for
 * What proof I still need to build
 * How my content can gradually establish this position
+
+## 18b. Future Direction
+
+What my body of work appears to be building toward, drawn from sections 4b/4c — without presenting anything not yet achieved as already done. This is where content can genuinely look forward, not just recap the past.
 
 ## 19. Facts That Must Remain Accurate
 
