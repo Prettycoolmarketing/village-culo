@@ -11,6 +11,7 @@ const primaryLinks = [
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/businesses',    label: 'Businesses', exact: false },
   { to: '/stories',    label: 'Stories',    exact: false },
+  { to: '/library',    label: 'Library',    exact: false },
   { to: '/marketing',  label: 'Services',   exact: false },
 ]
 

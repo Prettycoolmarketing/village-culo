@@ -157,6 +157,35 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
               />
             </div>
             <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1">Photos (Carousel)</label>
+              <p className="text-[11px] text-[#9CA3AF] mb-2 leading-relaxed">
+                Extra photos shown alongside the cover on this item's public page — a preview strip, a
+                mini carousel, whatever gives visitors more to look at than the cover alone.
+              </p>
+              {(draft.previewImages ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {(draft.previewImages ?? []).map((url, i) => (
+                    <div key={i} className="relative w-16 h-20 rounded-lg overflow-hidden border border-[#E8E4DD] shrink-0">
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => set('previewImages', (draft.previewImages ?? []).filter((_, j) => j !== i))}
+                        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center hover:bg-black/80"
+                      >✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <MediaUpload
+                onChange={v => set('previewImages', [...(draft.previewImages ?? []), v])}
+                onChangeMultiple={urls => set('previewImages', [...(draft.previewImages ?? []), ...urls])}
+                multiple
+                label="Add photos"
+                aspect="auto"
+                uploadOptions={{ founderId: draft.authorFounderId, businessId: draft.businessId, usageType: 'library-cover' }}
+              />
+            </div>
+            <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1">Title</label>
               <input id="title" type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
             </div>
