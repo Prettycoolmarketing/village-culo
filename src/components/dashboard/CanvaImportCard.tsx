@@ -98,15 +98,27 @@ export function CanvaImportCard({
   const [sessionIssue, setSessionIssue] = useState(false)
   const [reconnecting, setReconnecting] = useState(false)
 
+  // This refreshes the founder's own Village login (Supabase Auth session)
+  // — it has nothing to do with the separate Canva OAuth connection. Named
+  // "Retry save" rather than "Reconnect" in the UI specifically so it
+  // doesn't read as a Canva reconnect prompt.
   async function handleReconnectSession() {
     if (!supabase) return
     setReconnecting(true)
     const { data } = await supabase.auth.refreshSession()
-    setReconnecting(false)
-    if (data.session) {
+    if (data.session && pendingSaveRef.current) {
+      const { item, indices, videoExportError } = pendingSaveRef.current
+      pendingSaveRef.current = null
+      setSessionIssue(false)
+      setError(null)
+      await saveItem(item, indices, videoExportError)
+      setReconnecting(false)
+    } else if (data.session) {
+      setReconnecting(false)
       setSessionIssue(false)
       setError(null)
     } else {
+      setReconnecting(false)
       // No session left to refresh — a real sign-out happened somewhere
       // (another tab, a revoked refresh token), not just staleness. Only
       // real fix left is signing back in.
@@ -317,6 +329,16 @@ export function CanvaImportCard({
       locations: [],
       visibility: 'private',
     }
+    await saveItem(item, indices, videoExportError)
+  }
+
+  // Split out from handleUse so Reconnect can retry the exact same save
+  // after refreshing the session, instead of making the founder redo the
+  // whole slide-text extraction just because the final write hit a stale
+  // token.
+  const pendingSaveRef = useRef<{ item: ImportedContent; indices: number[]; videoExportError: string | null } | null>(null)
+
+  async function saveItem(item: ImportedContent, indices: number[], videoExportError: string | null) {
     setStage('Saving…')
     setBusy(true)
     const saveResult = await importedContentService.upsert(item)
@@ -324,6 +346,7 @@ export function CanvaImportCard({
     setStage(null)
     if (!saveResult.success) {
       if (saveResult.error && /session may have expired/i.test(saveResult.error)) {
+        pendingSaveRef.current = { item, indices, videoExportError }
         setSessionIssue(true)
       } else {
         setError(saveResult.error ?? 'Could not save. Please try again.')
@@ -331,7 +354,7 @@ export function CanvaImportCard({
       return
     }
     if (videoExportError) setError(`Saved your slide${indices.length === 1 ? '' : 's'} as images — the video didn't export (${videoExportError}). You can try again or attach it manually in Advanced Edit.`)
-    if (reelVideoUrl) onReelVideoReady?.(reelVideoUrl)
+    if (item.reelVideoUrl) onReelVideoReady?.(item.reelVideoUrl)
     onImported(item)
 
     // Grouping mode (no forced contentTypeHint) — mark these slides used and
@@ -370,10 +393,10 @@ export function CanvaImportCard({
 
           {sessionIssue && (
             <div className="flex items-center gap-3 mb-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-xs text-amber-800 flex-1">Your login session needs refreshing before this can save.</p>
+              <p className="text-xs text-amber-800 flex-1">Your Village login needs refreshing — this isn't your Canva connection.</p>
               <button type="button" onClick={() => void handleReconnectSession()} disabled={reconnecting}
                 className="shrink-0 px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#B15C38] disabled:opacity-50 transition-colors">
-                {reconnecting ? 'Reconnecting…' : 'Reconnect'}
+                {reconnecting ? 'Retrying…' : 'Retry save'}
               </button>
             </div>
           )}
