@@ -1191,9 +1191,9 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         {(draft.imageUrls ?? []).length > 0 && (
           <div className="flex flex-col gap-1.5 mb-2">
             {(draft.imageUrls ?? []).map((url, i) => (
-              <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
+              <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2 min-w-0">
                 <img src={url} alt="" className="w-9 h-9 rounded object-cover shrink-0 bg-[#F3EDE6]" />
-                <span className="text-xs text-[#9CA3AF] truncate flex-1">{url}</span>
+                <span title={url} className="text-xs text-[#9CA3AF] truncate min-w-0 flex-1">{url}</span>
                 <button
                   onClick={() => field('imageUrls', (draft.imageUrls ?? []).filter((_, j) => j !== i))}
                   className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-1">✕</button>
@@ -1206,7 +1206,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
             {(draft.additionalVideoUrls ?? []).map((url, i) => {
               const thumb = youtubeThumbnailUrl(url)
               return (
-                <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2">
+                <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2 min-w-0">
                   {thumb ? (
                     <img src={thumb} alt="" className="w-9 h-9 rounded object-cover shrink-0 bg-[#F3EDE6]" />
                   ) : (
@@ -1218,12 +1218,13 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
                   <input
                     type="url"
                     value={url}
+                    title={url}
                     onChange={e => {
                       const next = [...(draft.additionalVideoUrls ?? [])]
                       next[i] = e.target.value
                       field('additionalVideoUrls', next)
                     }}
-                    className={INPUT + ' flex-1'}
+                    className={INPUT + ' flex-1 min-w-0 truncate'}
                     placeholder={`Video ${i + 1} URL`}
                   />
                   <button
