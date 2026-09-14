@@ -1,8 +1,6 @@
-import { useState, type FormEvent } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useInstantJoin } from '../hooks/useInstantJoin'
-import { waitlistService } from '../services/waitlist'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
@@ -83,10 +81,12 @@ export function JoinVillagePage() {
   // this founder actually starts paying, so CULO Creatives can gate premium
   // actions behind subscription status. See ensureJoinedFounder.
   const canvaUserId = searchParams.get('canvaUserId')?.trim() || undefined
-  // The link pasted into the actual Canva Marketplace listing — the app
-  // isn't live there yet, so this variant doesn't create a real account.
-  // Same page, same copy, the form just captures to the waitlist instead.
-  const isMarketplace = searchParams.get('via') === 'marketplace'
+  // The link pasted into the actual Canva Marketplace app listing (what a
+  // user clicking "Culo Creatives" inside Canva's own app directory lands
+  // on) — a real account, same as /joincanva. Kept as its own URL (rather
+  // than reusing /joincanva) purely so CAPO can tell "came from the
+  // Marketplace listing" apart from "clicked the button on
+  // culovillage.com" later, via the ?via= tag — no behavior difference yet.
 
   // isCanva now only changes framing/emphasis (this visitor came in wanting
   // to create vs. wanting to market) — every self-serve signup, /join or
@@ -103,21 +103,6 @@ export function JoinVillagePage() {
   })
 
   const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit } = useInstantJoin(source, canvaUserId)
-
-  const [wlSubmitting, setWlSubmitting] = useState(false)
-  const [wlError, setWlError] = useState<string | null>(null)
-  const [waitlisted, setWaitlisted] = useState(false)
-
-  async function handleWaitlistSubmit(e: FormEvent) {
-    e.preventDefault()
-    if (!email.trim()) return
-    setWlSubmitting(true)
-    setWlError(null)
-    const result = await waitlistService.join({ email: email.trim(), source: 'canva-marketplace' })
-    setWlSubmitting(false)
-    if (!result.success) { setWlError(result.error ?? 'Could not join the waitlist. Please try again.'); return }
-    setWaitlisted(true)
-  }
 
   if (alreadyMember) {
     return (
@@ -187,7 +172,7 @@ export function JoinVillagePage() {
                   ? "Turn your messy thoughts and raw footage into structured blogs, carousels and reels — try it free for 14 days, right inside Canva."
                   : "It's time to share your messy thoughts and raw footage into structured social media posts, join the Culo Village to republish your previously posted content across platforms structured for discovery as web articles."}
               </p>
-              <form onSubmit={e => void (isMarketplace ? handleWaitlistSubmit(e) : handleSubmit(e))} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
+              <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
                 <input
                   type="email"
                   required
@@ -195,22 +180,17 @@ export function JoinVillagePage() {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="you@email.com"
                   aria-label="Email address"
-                  disabled={isMarketplace && waitlisted}
-                  className="flex-1 min-w-0 rounded-xl px-5 py-4 text-base bg-white/10 text-white placeholder:text-white/50 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors disabled:opacity-60"
+                  className="flex-1 min-w-0 rounded-xl px-5 py-4 text-base bg-white/10 text-white placeholder:text-white/50 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors"
                 />
                 <button
                   type="submit"
-                  disabled={isMarketplace ? (wlSubmitting || waitlisted) : submitting}
+                  disabled={submitting}
                   className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
                 >
-                  {isMarketplace
-                    ? (waitlisted ? "You're on the list" : wlSubmitting ? 'Joining…' : 'Join the waitlist')
-                    : (submitting ? 'Joining…' : 'Join the Village')}
+                  {submitting ? 'Joining…' : 'Join the Village'}
                 </button>
               </form>
-              {isMarketplace
-                ? wlError && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{wlError}</p>
-                : error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
+              {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
               <p className="font-body text-xs text-white/40 mt-4">
                 The Culo Village is free, forever · Culo Creatives in Canva: 14-day free trial, then $25 AUD/month · No spam emails
               </p>

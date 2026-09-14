@@ -89,8 +89,8 @@ async function canvaFunctionError(data: { error?: string } | null, error: unknow
       try {
         const raw = (await ctx.text()).slice(0, 300)
         try {
-          const parsed = JSON.parse(raw) as { code?: string; message?: string }
-          detail = (parsed.code && PLATFORM_ERROR_MESSAGES[parsed.code]) || parsed.message || raw
+          const parsed = JSON.parse(raw) as { code?: string; message?: string; error?: string }
+          detail = (parsed.code && PLATFORM_ERROR_MESSAGES[parsed.code]) || parsed.message || parsed.error || raw
         } catch {
           detail = raw
         }
@@ -106,6 +106,18 @@ export async function exchangeCanvaCode(founderId: string, code: string, codeVer
     body: { founderId, code, codeVerifier, redirectUri: canvaRedirectUri() },
   })
   if (error || data?.error) throw await canvaFunctionError(data ?? null, error, 'Could not connect your Canva account.')
+}
+
+// Canva revokes a founder's stored refresh token (e.g. they disconnected
+// the app from their Canva account, or it expired) independently of what
+// our own canva_connections row still says — canva-status only reflects
+// the last known state, so the first real API call after that is what
+// actually surfaces it. Callers use this to fall back to "not connected"
+// (prompt reconnect) instead of showing a scary raw error with nothing to
+// do about it.
+export function isCanvaAuthRevoked(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err)
+  return /token lineage|invalid_grant|revoked|reauthenticate|reconnect/i.test(message)
 }
 
 export async function getCanvaStatus(founderId: string): Promise<boolean> {

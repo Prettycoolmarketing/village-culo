@@ -384,9 +384,22 @@ function FormatStep({ draft, onChange, onNext }: {
           {draft.contentTypes.length === 0 ? 'Select at least one format' : 'Continue'}
         </button>
 
-        <div className="mt-6">
-          <CreateWithCuloCTA variant="banner" label="Editing new content? Head into Culo Creatives in Canva." />
-        </div>
+        {/* Same dark banner as the top of Content — exact copy, so a
+            founder sees one consistent Culo Creatives pitch everywhere,
+            not a different line per page. */}
+        <Link
+          to="/how-culo-canva"
+          className="mt-6 block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+            <p className="font-heading text-2xl font-semibold text-white leading-snug">
+              CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
+            </p>
+            <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+              Create with CULO in Canva
+            </span>
+          </div>
+        </Link>
       </div>
     </div>
   )

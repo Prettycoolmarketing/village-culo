@@ -7,6 +7,7 @@ import {
   importCanvaDesign,
   exportCanvaReelVideo,
   fetchCanvaSlideTexts,
+  isCanvaAuthRevoked,
   type CanvaDesignSummary,
 } from '../../services/canva'
 import { importedContentService } from '../../services/importedContent'
@@ -76,6 +77,7 @@ export function CanvaImportCard({
   const setExpanded = onExpandedChange ?? setUncontrolledExpanded
 
   const [connected, setConnected] = useState<boolean | null>(null)
+  const [checkingConnection, setCheckingConnection] = useState(false)
   const [designs, setDesigns] = useState<CanvaDesignSummary[]>([])
   const [designsLoaded, setDesignsLoaded] = useState(false)
   // A founder doing a real content batch has many designs to get through in
@@ -107,14 +109,25 @@ export function CanvaImportCard({
     setError(null)
     let isConnected = connected
     if (isConnected === null) {
+      setCheckingConnection(true)
       isConnected = await getCanvaStatus(founderId)
+      setCheckingConnection(false)
       setConnected(isConnected)
     }
     if (isConnected) {
       try {
         setDesigns(await listCanvaDesigns(founderId))
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not load your Canva designs.')
+        // canva-status can say "connected" from our own last-known record
+        // while Canva has actually revoked the token since (disconnected
+        // from their end, expired, etc.) — the first real API call is what
+        // surfaces that. Fall back to the reconnect prompt instead of
+        // showing a dead-end error with nothing to do about it.
+        if (isCanvaAuthRevoked(err)) {
+          setConnected(false)
+        } else {
+          setError(err instanceof Error ? err.message : 'Could not load your Canva designs.')
+        }
       } finally {
         setDesignsLoaded(true)
       }
@@ -320,6 +333,10 @@ export function CanvaImportCard({
       {expanded && (
         <div className="mt-3">
           {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+
+          {checkingConnection && (
+            <p className="text-xs text-[#9CA3AF]">Checking your Canva connection…</p>
+          )}
 
           {connected === false && (
             <button type="button" onClick={() => void startCanvaConnect(founderId)}
