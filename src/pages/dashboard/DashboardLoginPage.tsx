@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { WebmailButtons } from '../../components/ui/WebmailButtons'
@@ -6,8 +6,22 @@ import { WebmailButtons } from '../../components/ui/WebmailButtons'
 type Mode = 'signin' | 'signup'
 
 export function DashboardLoginPage() {
-  const { signIn, signUp, isConfigured } = useAuth()
+  const { user, signIn, signUp, isConfigured } = useAuth()
   const navigate = useNavigate()
+
+  // signIn/signUp resolving successfully doesn't mean the auth context's
+  // own `user` has caught up yet — that comes from a separate
+  // onAuthStateChange listener firing asynchronously. Navigating straight
+  // to /dashboard/welcome right after signIn() resolved used to race that:
+  // ProtectedRoute would render with user still null and bounce straight
+  // back to this login page, which read as "I typed my password, it
+  // reloaded, and I had to type it again" — the second attempt only
+  // "worked" because the first attempt's listener had caught up by then.
+  // Waiting for `user` itself to become truthy before navigating removes
+  // the race entirely.
+  useEffect(() => {
+    if (user) navigate('/dashboard/welcome')
+  }, [user, navigate])
 
   const [mode,            setMode]            = useState<Mode>('signin')
   const [email,           setEmail]           = useState('')
@@ -43,7 +57,7 @@ export function DashboardLoginPage() {
       const { error: err } = await signIn(email, password)
       setLoading(false)
       if (err) { setError(err); return }
-      navigate('/dashboard/welcome')
+      // Navigation happens once `user` actually updates — see the effect above.
     } else {
       const { error: err, needsConfirmation, alreadyRegistered } = await signUp(email, password)
       setLoading(false)
@@ -55,9 +69,8 @@ export function DashboardLoginPage() {
       if (err) { setError(err); return }
       if (needsConfirmation) {
         setCheckEmail(true)
-      } else {
-        navigate('/dashboard/welcome')
       }
+      // Otherwise navigation happens once `user` actually updates — see the effect above.
     }
   }
 
