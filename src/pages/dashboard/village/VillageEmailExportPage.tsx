@@ -394,14 +394,14 @@ function CampaignsPanel() {
                 href={`https://www.culovillage.com/stories/${getStory(featuredStoryId)?.slug ?? ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs font-semibold text-[#C86A43] hover:underline"
+                className="text-sm font-semibold px-3 py-2 rounded-lg border border-[#C86A43] text-[#C86A43] hover:bg-[#C86A43]/10 transition-colors"
               >
                 Review the article →
               </a>
               <button
                 type="button"
                 onClick={insertArticleToken}
-                className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+                className="text-sm font-semibold px-3 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
               >
                 Insert into email here
               </button>
