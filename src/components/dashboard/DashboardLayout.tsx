@@ -289,51 +289,48 @@ export function DashboardLayout() {
                   Email Lists pattern) instead of six separate nav items. */}
               <SectionLabel label="CAPO" large />
 
-              {/* Capo staff see PCM first, then People. Everything else is
-                  Admin only. */}
-              {canAccessCapoSection(user?.role, 'pcm') && (
-                <>
-                  <SectionLabel label="Pretty Cool Marketing" />
-                  <NavItem to="/dashboard/pcm" label="Client Tracker" icon={<Icon path={icons.services} />} />
-                  <NavItem to="/dashboard/pcm/leads" label="Leads" icon={<Icon path={icons.email} />} />
-                </>
-              )}
-
+              {/* Capo staff see CULO Village first, then Pretty Cool
+                  Marketing. Everything else is Admin only. */}
               {(canAccessCapoSection(user?.role, 'founders')
                 || canAccessCapoSection(user?.role, 'emails')) && (
                 <>
-                  <SectionLabel label="People" />
-                  {canAccessCapoSection(user?.role, 'founders') && (
-                    <NavItem to="/dashboard/village/founders" label="Founders" icon={<Icon path={icons.curated} />} />
-                  )}
+                  <SectionLabel label="CULO Village" />
                   {canAccessCapoSection(user?.role, 'emails') && (
-                    <NavItem to="/dashboard/village/emails" label="Email Lists" icon={<Icon path={icons.email} />} />
+                    <NavItem to="/dashboard/village/emails" label="Email management" icon={<Icon path={icons.email} />} />
                   )}
+                  {canAccessCapoSection(user?.role, 'founders') && (
+                    <NavItem to="/dashboard/village/founders" label="Founder Management" icon={<Icon path={icons.curated} />} />
+                  )}
+                </>
+              )}
+
+              {canAccessCapoSection(user?.role, 'pcm') && (
+                <>
+                  <SectionLabel label="Pretty Cool Marketing" />
+                  <NavItem to="/dashboard/pcm/leads" label="Leads" icon={<Icon path={icons.email} />} />
+                  <NavItem to="/dashboard/pcm" label="Client Tracker" icon={<Icon path={icons.services} />} />
                 </>
               )}
 
               {canAccessCapoSection(user?.role, 'overview') && <SectionLabel label="ADMIN" large />}
 
-              {(canAccessCapoSection(user?.role, 'usage') || canAccessCapoSection(user?.role, 'creativeFeedback')) && (
+              {(canAccessCapoSection(user?.role, 'overview')
+                || canAccessCapoSection(user?.role, 'usage')
+                || canAccessCapoSection(user?.role, 'creativeFeedback')) && (
                 <>
-                  <SectionLabel label="CULO Creatives" />
+                  {/* Village Overview now also holds Culo Creatives'
+                      Members/Feedback rather than those living in their own
+                      separate section — one place for "how's the Village
+                      doing", not three. */}
+                  <SectionLabel label="Village Overview" />
+                  {canAccessCapoSection(user?.role, 'overview') && (
+                    <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
+                  )}
                   {canAccessCapoSection(user?.role, 'usage') && (
-                    <NavItem to="/dashboard/village/creative-members" label="Members" icon={<Icon path={icons.curated} />} />
+                    <NavItem to="/dashboard/village/creative-members" label="Members" icon={<Icon path={icons.curated} />} hint="Culo Creatives" />
                   )}
                   {canAccessCapoSection(user?.role, 'creativeFeedback') && (
-                    <NavItem to="/dashboard/village/creative-feedback" label="Feedback" icon={<Icon path={icons.email} />} />
-                  )}
-                </>
-              )}
-
-              {(canAccessCapoSection(user?.role, 'team') || canAccessCapoSection(user?.role, 'settings')) && (
-                <>
-                  <SectionLabel label="System" />
-                  {canAccessCapoSection(user?.role, 'team') && (
-                    <NavItem to="/dashboard/village/team" label="Staff" icon={<Icon path={icons.profile} />} />
-                  )}
-                  {canAccessCapoSection(user?.role, 'settings') && (
-                    <NavItem to="/dashboard/village/settings" label="Settings" icon={<Icon path={icons.settings} />} />
+                    <NavItem to="/dashboard/village/creative-feedback" label="Feedback" icon={<Icon path={icons.email} />} hint="Culo Creatives" />
                   )}
                 </>
               )}
@@ -343,7 +340,18 @@ export function DashboardLayout() {
                 <>
                   <SectionLabel label="Coming soon" />
                   <NavItem to="/dashboard/village/opportunities" label="Opportunities" icon={<Icon path={icons.partnership} />} hint="Matches, revenue, claims, spotlight, sources and partners" />
-                  <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
+                </>
+              )}
+
+              {(canAccessCapoSection(user?.role, 'team') || canAccessCapoSection(user?.role, 'settings')) && (
+                <>
+                  <SectionLabel label="Management" />
+                  {canAccessCapoSection(user?.role, 'team') && (
+                    <NavItem to="/dashboard/village/team" label="Staff" icon={<Icon path={icons.profile} />} />
+                  )}
+                  {canAccessCapoSection(user?.role, 'settings') && (
+                    <NavItem to="/dashboard/village/settings" label="Systems" icon={<Icon path={icons.settings} />} />
+                  )}
                 </>
               )}
             </>

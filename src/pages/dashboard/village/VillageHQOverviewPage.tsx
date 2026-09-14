@@ -11,6 +11,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 import { JOIN_SOURCE_LABELS } from '../../../constants/joinSource'
 import { VillageUsagePage } from './VillageUsagePage'
+import { EmailExportPanel } from '../../../components/dashboard/EmailExportPanel'
 import { getPcmClients, PCM_OFFER_LABELS, PCM_OFFER_IDS, currentStage } from '../../../lib/pcmClients'
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -133,11 +134,13 @@ export function VillageHQOverviewPage() {
   const canvaMembers = joinedViaJoinFlow.filter(f => f.signupProduct === 'canva').length
 
   const [tab, setTab] = useState('village')
+  const canSeeEmails = canAccessCapoSection(user?.role, 'emails')
   const TABS: DashTab[] = [
     { key: 'village', label: 'Village' },
     { key: 'pcm', label: 'Pretty Cool Marketing' },
     { key: 'creatives', label: 'Culo Creatives' },
     { key: 'usage', label: 'Usage' },
+    ...(canSeeEmails ? [{ key: 'export', label: 'Export' }] : []),
   ]
 
   return (
@@ -318,6 +321,7 @@ export function VillageHQOverviewPage() {
       )}
 
       {tab === 'usage' && <VillageUsagePage embedded />}
+      {tab === 'export' && canSeeEmails && <EmailExportPanel />}
     </div>
   )
 }
