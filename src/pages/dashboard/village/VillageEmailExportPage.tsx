@@ -248,9 +248,23 @@ function CampaignsPanel() {
   // Click a sent newsletter to expand it and see exactly what went out.
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  const [recipientCount, setRecipientCount] = useState<number | null>(null)
+
   useEffect(() => {
     void emailCampaignsService.refresh().then(() => setCampaigns(emailCampaignsService.getAll()))
-    void emailSubscribersService.refresh().then(() => setLoading(false))
+    void Promise.all([emailSubscribersService.refresh(), waitlistService.refresh()]).then(() => {
+      setLoading(false)
+      // Rough estimate for the send confirmation below — same three
+      // sources send-campaign itself sends to, deduplicated the same way.
+      // Doesn't subtract unsubscribes (not loaded client-side), so the
+      // real send may be a little lower than this — close enough for a
+      // "you're about to email this many people" gut check.
+      const emails = new Set<string>()
+      for (const s of emailSubscribersService.getAll()) emails.add(s.email.trim().toLowerCase())
+      for (const w of waitlistService.getAll()) emails.add(w.email.trim().toLowerCase())
+      for (const f of getFounders()) if (f.signupEmail) emails.add(f.signupEmail.trim().toLowerCase())
+      setRecipientCount(emails.size)
+    })
   }, [])
 
   useEffect(() => {
@@ -338,12 +352,15 @@ function CampaignsPanel() {
                     </p>
                   </div>
                   {c.status === 'draft' ? (
-                    <span
-                      role="button"
-                      onClick={e => { e.stopPropagation(); void handleSend(c.id) }}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shrink-0"
-                    >
-                      {sendingId === c.id ? 'Sending…' : 'Send now'}
+                    <span onClick={e => e.stopPropagation()} className="shrink-0">
+                      <ConfirmButton
+                        label={sendingId === c.id ? 'Sending…' : 'Send now'}
+                        confirmLabel="Yes, send"
+                        message={`Send to ${recipientCount ?? 'your entire list of'} people now?`}
+                        disabled={sendingId === c.id}
+                        onConfirm={() => void handleSend(c.id)}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+                      />
                     </span>
                   ) : (
                     <svg className={`w-4 h-4 text-[#9CA3AF] shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
