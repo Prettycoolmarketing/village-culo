@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getFounders, deleteFounderAccount, getFounder } from '../../../services/founders'
 import { getStories, getStory } from '../../../services/stories'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
@@ -274,6 +274,28 @@ function CampaignsPanel() {
   // should appear in the plain-text body, and it's swapped for a real
   // article card + "Publish in the Village" button on save.
   const [featuredStoryId, setFeaturedStoryId] = useState('')
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
+
+  // Drops the {{article}} token wherever the cursor last was in the
+  // textarea, instead of asking a founder to type it themselves — pick the
+  // story, click here, keep writing.
+  function insertArticleToken() {
+    const el = bodyRef.current
+    if (!el) { setBody(b => `${b}${b.trim() ? '\n\n' : ''}{{article}}\n\n`); return }
+    const start = el.selectionStart ?? body.length
+    const end = el.selectionEnd ?? body.length
+    const before = body.slice(0, start)
+    const after = body.slice(end)
+    const needsLeadingBreak = before.length > 0 && !before.endsWith('\n\n')
+    const insert = `${needsLeadingBreak ? '\n\n' : ''}{{article}}\n\n`
+    const next = `${before}${insert}${after}`
+    setBody(next)
+    requestAnimationFrame(() => {
+      const pos = before.length + insert.length
+      el.focus()
+      el.setSelectionRange(pos, pos)
+    })
+  }
   const publishedStories = getStories({ publicOnly: true })
 
   const [recipientCount, setRecipientCount] = useState<number | null>(null)
@@ -346,6 +368,7 @@ function CampaignsPanel() {
           className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] mb-2 focus:outline-none focus:border-[#C86A43]"
         />
         <textarea
+          ref={bodyRef}
           value={body}
           onChange={e => setBody(e.target.value)}
           rows={8}
@@ -366,19 +389,26 @@ function CampaignsPanel() {
             ))}
           </select>
           {featuredStoryId && (
-            <>
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
               <a
                 href={`https://www.culovillage.com/stories/${getStory(featuredStoryId)?.slug ?? ''}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-[#C86A43] hover:underline"
+                className="text-xs font-semibold text-[#C86A43] hover:underline"
               >
                 Review the article →
               </a>
-              <p className="text-[11px] text-[#9CA3AF] mt-2 leading-relaxed">
-                Type <code className="px-1 py-0.5 bg-white rounded border border-[#E8E4DD]">{'{{article}}'}</code> on its own line in the text above, wherever you want the article card and "Publish in the Village" button to appear.
+              <button
+                type="button"
+                onClick={insertArticleToken}
+                className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+              >
+                Insert into email here
+              </button>
+              <p className="text-[11px] text-[#9CA3AF] basis-full">
+                Click into the text above where you want the article to appear, then click "Insert into email here."
               </p>
-            </>
+            </div>
           )}
         </div>
 
