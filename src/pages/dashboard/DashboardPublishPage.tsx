@@ -1707,7 +1707,18 @@ export function DashboardPublishPage() {
     // video format (Reel/Talking Head/YouTube) tried to read
     // draft.additionalReelUrls.length on an undefined array.
     const saved = loadAutoSavedDraft()
-    return saved ? { ...base, ...saved } : base
+    if (!saved) return base
+    // founderId/businessId are the two identity fields RLS actually checks
+    // on save — always trust the live founder over whatever got autosaved,
+    // never the other way round. A stale saved founderId (from before a
+    // founder record was recreated, or an old test account on this browser)
+    // silently surviving this merge produced a permanent, unrecoverable
+    // "row-level security policy" failure on every save — the founder
+    // genuinely didn't own the founder_id being written — which the
+    // generic error message wrongly reported as an expired session.
+    return currentFounder
+      ? { ...base, ...saved, founderId: currentFounder.id, businessId: saved.businessId || currentFounder.businessId || '' }
+      : { ...base, ...saved }
   })
   const [publishing,    setPublishing]    = useState(false)
   const [limitModal,    setLimitModal]    = useState<null | 'imported' | 'self'>(null)
@@ -1779,13 +1790,16 @@ export function DashboardPublishPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Self-heal a draft whose founderId never got set — e.g. an auto-saved
+  // Self-heal a draft whose founderId never got set (e.g. an auto-saved
   // localStorage draft from before the founder profile had finished loading
-  // on a prior visit. Never overwrites an already-set founderId, and never
-  // touches anything else the founder has typed.
+  // on a prior visit), or whose founderId belongs to someone else entirely
+  // (a stale autosave from before this founder record was recreated, or a
+  // different test account that once used this browser) — either way, this
+  // founder is the only one who can legitimately publish here, so their own
+  // id always wins. Never touches anything else the founder has typed.
   useEffect(() => {
-    if (draft.founderId || !currentFounder) return
-    setDraft(prev => prev.founderId ? prev : ({
+    if (!currentFounder || draft.founderId === currentFounder.id) return
+    setDraft(prev => prev.founderId === currentFounder.id ? prev : ({
       ...prev,
       founderId: currentFounder.id,
       businessId: prev.businessId || currentFounder.businessId || '',
