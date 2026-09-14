@@ -63,7 +63,7 @@ serve(async (req) => {
 
       for (const step of dueSteps) {
         const unsubscribeUrl = `${SUPABASE_URL}/functions/v1/unsubscribe-email?email=${encodeURIComponent(enrollment.email)}`
-        const branded = emailLayout(sequence.name, step.bodyHtml, unsubscribeUrl)
+        const branded = emailLayout('The Culo Village: Brisbane, Australia', step.bodyHtml, unsubscribeUrl)
         // EMAIL_FROM is a noreply address with no monitored inbox — reply_to
         // gives recipients a real address to write back to instead of a bounce.
         const result = await sendEmail(enrollment.email, step.subject, branded, 'support@prettycoolmarketing.com')

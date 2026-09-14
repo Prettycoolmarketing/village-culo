@@ -100,7 +100,7 @@ serve(async (req) => {
       const pixel = `<img src="${SUPABASE_URL}/functions/v1/track-open?s=${sendId}" width="1" height="1" alt="" style="display:none" />`
       const trackedHtml = rewriteLinksForTracking(campaign.bodyHtml, campaignId, sendId)
       const unsubscribeUrl = `${SUPABASE_URL}/functions/v1/unsubscribe-email?email=${encodeURIComponent(email)}`
-      const branded = emailLayout('The Culo Village', `${trackedHtml}${pixel}`, unsubscribeUrl)
+      const branded = emailLayout('The Culo Village: Brisbane, Australia', `${trackedHtml}${pixel}`, unsubscribeUrl)
       // EMAIL_FROM is a noreply address with no monitored inbox — reply_to
       // gives recipients a real address to write back to instead of a bounce.
       const result = await sendEmail(email, campaign.subject, branded, 'support@prettycoolmarketing.com')
