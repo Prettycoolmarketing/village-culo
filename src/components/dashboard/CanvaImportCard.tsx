@@ -322,7 +322,7 @@ export function CanvaImportCard({
           <div>
             <p className="text-base font-semibold text-[#2D2A26]">Publish your Canva designs</p>
             <p className="text-sm text-[#9CA3AF] mt-0.5">
-              {canProceed ? 'Turn your Canva designs into content you can build on in the Village, including blogs, reels and carousels.' : (gateMessage ?? 'Select a format above first.')}
+              {canProceed ? 'Choose your project and import your slides as carousels or reels.' : (gateMessage ?? 'Select a format above first.')}
             </p>
           </div>
         </div>
@@ -358,7 +358,7 @@ export function CanvaImportCard({
           {connected === true && !result && designs.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Tick every design you want to work through — then import them all at once</p>
+                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Choose your project and import your slides as carousels or reels</p>
                 {pickedDesignIds.size > 0 && (
                   <button type="button" onClick={() => void handleImportPicked()} disabled={busy}
                     className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
@@ -406,7 +406,11 @@ export function CanvaImportCard({
                         isUsed ? 'border-transparent opacity-30 cursor-not-allowed' : isSelected ? 'border-[#C86A43]' : 'border-transparent hover:border-[#E8E4DD]'
                       }`}>
                       <img src={url} alt="" className="w-full aspect-square object-cover bg-[#F3EDE6]" />
-                      {isSelected && !isUsed && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#C86A43] text-white text-[9px] flex items-center justify-center">✓</span>}
+                      {isSelected && !isUsed && (
+                        <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <span className="w-8 h-8 rounded-full bg-[#C86A43] text-white text-lg font-bold flex items-center justify-center shadow-lg">✓</span>
+                        </span>
+                      )}
                       {isUsed && <span className="absolute inset-0 flex items-center justify-center text-[9px] font-semibold text-white bg-black/40">Used</span>}
                     </button>
                   )
