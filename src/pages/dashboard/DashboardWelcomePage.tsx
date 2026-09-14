@@ -59,6 +59,10 @@ export function DashboardWelcomePage() {
   const { user } = useAuth()
   const founder = getCurrentFounder(user)
   const canUseCreatives = hasCreativeAccess(founder?.creativeSubscription)
+  // Same tier check as JoinOfferPage — every new signup is the Standard
+  // $25/mo tier now; only founders who signed up under the old Collaborator
+  // cohort still see $19/month.
+  const isStandardTier = founder?.creativeSubscription?.tier === 'standard'
 
   // Canva-sourced founders (joined via /joincanva) skip the Village-first
   // "how it works" welcome entirely — they came here wanting Canva, not to
@@ -193,7 +197,7 @@ export function DashboardWelcomePage() {
               to="/dashboard/creatives"
               className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
             >
-              Get Culo Creatives in Canva — lock in $19/month
+              Get Culo Creatives in Canva — {isStandardTier ? '$25/month' : 'lock in $19/month'}
             </Link>
           )}
         </div>
