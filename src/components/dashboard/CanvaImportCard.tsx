@@ -10,6 +10,7 @@ import {
   isCanvaAuthRevoked,
   type CanvaDesignSummary,
 } from '../../services/canva'
+import { Link } from 'react-router-dom'
 import { importedContentService } from '../../services/importedContent'
 import { supabase } from '../../lib/supabase'
 import { SourceIcon } from '../ui/SourceIcon'
@@ -328,6 +329,12 @@ export function CanvaImportCard({
       topics: [],
       locations: [],
       visibility: 'private',
+      // No real text came off the slides themselves — Content's "Ready to
+      // Publish" would otherwise still count this as ready once the
+      // auto-generated diary note fills the (then non-empty) description on
+      // first open, even though nothing real was actually added. Flag it
+      // into "Needs More Value" instead so it isn't mistaken for done.
+      flaggedForReview: !slideText,
     }
     await saveItem(item, indices, videoExportError)
   }
@@ -486,21 +493,29 @@ export function CanvaImportCard({
                   Use {selected.size > 0 ? selected.size : ''} slide{selected.size === 1 ? '' : 's'}
                 </button>
               ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <button type="button" onClick={() => void handleUse('carousel')} disabled={selected.size === 0 || busy}
-                    className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
-                    Save {selected.size > 0 ? selected.size : ''} as Carousel
-                  </button>
-                  <button type="button" onClick={() => void handleUse('reel')} disabled={selected.size !== 1 || busy}
-                    title={selected.size !== 1 ? 'Select exactly one slide to save it as a Reel' : undefined}
-                    className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors">
-                    Save as Reel
-                  </button>
-                  {(usedIndices.size > 0 || groupsCreated > 0) && (
-                    <button type="button" onClick={() => { setResult(null); setPickedDesignIds(new Set()) }}
-                      className="ml-auto text-xs font-semibold text-[#5E6B4A] hover:underline">
-                      Done — pick more designs
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={() => void handleUse('carousel')} disabled={selected.size === 0 || busy}
+                      className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
+                      Save {selected.size > 0 ? selected.size : ''} as Carousel
                     </button>
+                    <button type="button" onClick={() => void handleUse('reel')} disabled={selected.size !== 1 || busy}
+                      title={selected.size !== 1 ? 'Select exactly one slide to save it as a Reel' : undefined}
+                      className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors">
+                      Save as Reel
+                    </button>
+                  </div>
+                  {(usedIndices.size > 0 || groupsCreated > 0) && (
+                    <div className="flex flex-col gap-2 mt-4">
+                      <button type="button" onClick={() => { setResult(null); setPickedDesignIds(new Set()) }}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
+                        Done — pick more designs
+                      </button>
+                      <Link to="/dashboard/profile?tab=content"
+                        className="w-full sm:w-auto text-center px-5 py-2.5 bg-white border border-[#E8E4DD] text-[#2D2A26] text-sm font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors">
+                        Go to Content →
+                      </Link>
+                    </div>
                   )}
                 </div>
               )}

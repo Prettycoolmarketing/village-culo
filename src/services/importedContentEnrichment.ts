@@ -262,7 +262,9 @@ function buildDiaryNote(
   // itself.
   const aboutSentences: string[] = []
   if (founder) {
-    const locationPart = founder.location ? `, based in ${founder.location.name}${founder.location.state ? `, ${founder.location.state}` : ''}` : ''
+    const locationPart = founder.location && founder.location.id !== 'unset'
+      ? `, based in ${founder.location.name}${founder.location.state ? `, ${founder.location.state}` : ''}`
+      : ''
     aboutSentences.push(`${founder.name}${biz ? ` runs ${biz.name}` : ''}${locationPart}.`)
     const bioLead = founder.bio ? splitSentences(founder.bio)[0] : undefined
     if (bioLead) aboutSentences.push(bioLead)
@@ -271,9 +273,12 @@ function buildDiaryNote(
     const bizFacts = [biz.tagline, biz.industry ? `working in ${biz.industry.name}` : undefined].filter((s): s is string => !!s)
     if (bizFacts.length > 0) aboutSentences.push(`${biz.name} — ${bizFacts.join(', ')}.`)
   }
-  const about = aboutSentences.length > 0 ? `\n\n${aboutSentences.join(' ')}` : ''
+  const about = aboutSentences.length > 0 ? `\n\n${aboutSentences.join('\n\n')}` : ''
 
-  return `${lead}${/[.!?]$/.test(lead) ? '' : '.'} ${context}${about}`
+  // Each fact on its own line with a blank line under it, not one dense
+  // paragraph — matches how the rest of the Blog field reads once a founder
+  // adds their own paragraphs, rather than reading like a single run-on note.
+  return `${lead}${/[.!?]$/.test(lead) ? '' : '.'}\n\n${context}${about}`
 }
 
 // ─── Auto summary builder ─────────────────────────────────────────────────────
