@@ -64,7 +64,10 @@ export function DashboardLoginPage() {
   const inp = 'w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors'
 
   return (
-    <div className="min-h-screen bg-[#F8F5F0] flex items-center justify-center px-4" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{ fontFamily: "'DM Sans', sans-serif", background: 'linear-gradient(160deg, #EBF2F8 0%, #CFE0EE 50%, #B8D2E8 100%)' }}
+    >
       <div className="w-full max-w-sm">
 
         <div className="flex items-center gap-3 mb-8 justify-center">

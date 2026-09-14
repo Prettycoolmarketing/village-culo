@@ -90,6 +90,11 @@ export interface LibraryItem {
   createdFrom?: LibraryCreatedFromEntry[]
   seoTitle?: string
   seoDescription?: string
+  // Lets a founder's Library item page (novel, book, product, etc.) read
+  // as their own branded landing page — a hex colour used for the hero
+  // background and primary CTA button instead of the site default, so a
+  // page they're linking out to (Amazon, their own site) feels like theirs.
+  brandColor?: string
 }
 
 // ─── Location ──────────────────────────────────────────────────────────────────

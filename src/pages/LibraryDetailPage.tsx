@@ -108,7 +108,11 @@ export function LibraryDetailPage() {
       </nav>
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="bg-charcoal" aria-labelledby="library-item-title">
+      <section
+        className={item.brandColor ? '' : 'bg-charcoal'}
+        style={item.brandColor ? { backgroundColor: item.brandColor } : undefined}
+        aria-labelledby="library-item-title"
+      >
         <InnerContainer>
           <div className="py-14 grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-14 items-start">
 
@@ -201,9 +205,10 @@ export function LibraryDetailPage() {
                         href={normalizeUrl(link.url)}
                         target="_blank"
                         rel="noopener noreferrer"
+                        style={i === 0 && item.brandColor ? { backgroundColor: item.brandColor } : undefined}
                         className={`flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-colors ${
                           i === 0
-                            ? 'bg-primary text-white hover:bg-[#b05a35]'
+                            ? `text-white ${item.brandColor ? 'hover:opacity-90' : 'bg-primary hover:bg-[#b05a35]'}`
                             : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
                         }`}
                         aria-label={`${link.label} — ${item.title}`}

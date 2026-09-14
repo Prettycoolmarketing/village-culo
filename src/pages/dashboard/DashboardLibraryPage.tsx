@@ -189,6 +189,36 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
                  'Shown publicly with this status.'}
               </p>
             </div>
+            <div>
+              <label className="block text-xs font-medium text-[#6B7280] mb-1">Background / Brand Colour</label>
+              <p className="text-[11px] text-[#9CA3AF] mb-2 leading-relaxed">
+                Optional. Colours the hero background and main button on this item's public page, so it reads
+                like your own branded landing page instead of the site default — handy if it links out to
+                somewhere like Amazon or your own site.
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={draft.brandColor ?? '#2D2A26'}
+                  onChange={e => set('brandColor', e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-[#E8E4DD] cursor-pointer bg-white p-0.5"
+                  aria-label="Pick a brand colour"
+                />
+                <input
+                  type="text"
+                  value={draft.brandColor ?? ''}
+                  onChange={e => set('brandColor', e.target.value || undefined)}
+                  placeholder="Default (charcoal)"
+                  className={inputClass + ' flex-1'}
+                />
+                {draft.brandColor && (
+                  <button type="button" onClick={() => set('brandColor', undefined)}
+                    className="text-xs font-semibold text-[#9CA3AF] hover:text-red-500 shrink-0">
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex flex-col gap-2 text-xs">
               {[
                 ['Type',  draft.productType],
