@@ -76,7 +76,7 @@ export function Footer() {
               <span className="font-heading text-3xl font-bold text-primary">CULO</span>
               <span className="block font-body text-sm text-white/50 mt-1">Village</span>
             </Link>
-            <Link to="/how-culo-canva" className="mt-4 block text-sm text-white/60 leading-relaxed hover:text-white transition-colors">
+            <Link to="/how-culo-canva" target="_blank" rel="noopener noreferrer" className="mt-4 block text-sm text-white/60 leading-relaxed hover:text-white transition-colors">
               Create with Culo Creatives in Canva<br />
               Publish to The Culo Village<br />
               Be discovered for your creatives across platforms
