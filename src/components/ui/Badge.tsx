@@ -9,7 +9,11 @@ interface BadgeProps {
 
 const variantClasses: Record<BadgeVariant, string> = {
   primary:     'bg-primary/10 text-primary',
-  secondary:   'bg-secondary/10 text-secondary',
+  // "secondary" is used sitewide specifically for Topic badges (cards,
+  // detail pages, widgets) — recoloured from green to the same light blue
+  // used elsewhere for informational tags, rather than the secondary brand
+  // green, which reads as more of a "success/active" colour than a plain tag.
+  secondary:   'bg-[#EBF2F8] text-[#3E6E92]',
   accent:      'bg-accent/10 text-accent',
   stories:     'bg-primary/10 text-primary',
   ideas:       'bg-secondary/10 text-secondary',
