@@ -41,21 +41,28 @@ export async function sendEmail(to: string, subject: string, html: string, reply
   return { ok: true }
 }
 
-// Shared visual wrapper — plain, readable, matches the warm/terracotta brand
-// without depending on any images (inbox-safe). unsubscribeUrl is optional
-// and only meant for real bulk mail (newsletters) — a transactional email
-// (claim approved, staff invite) has no business offering to unsubscribe
-// someone from it, so callers that don't pass it get the layout unchanged.
+// Shared visual wrapper matching the warm/terracotta brand. unsubscribeUrl
+// is optional and only meant for real bulk mail (newsletters) — a
+// transactional email (claim approved, staff invite) has no business
+// offering to unsubscribe someone from it, so callers that don't pass it
+// get the layout unchanged, with no footer image either (that's a
+// newsletter-branding touch, not something a receipt-style email needs).
+const FOOTER_IMAGE_URL = 'https://www.culovillage.com/creatives/culo-media-2.png'
+
 export function emailLayout(preheader: string, bodyHtml: string, unsubscribeUrl?: string): string {
   return `
   <div style="font-family:Georgia,'Times New Roman',serif;background:#F8F5F0;padding:32px 16px;">
     <div style="max-width:480px;margin:0 auto;background:#FFFFFF;border-radius:16px;overflow:hidden;border:1px solid #E8E4DD;">
-      <div style="background:#2D2A26;padding:20px 28px;">
-        <span style="color:#F9E4C0;font-size:14px;letter-spacing:3px;">CULO VILLAGE</span>
+      <div style="background:#2D2A26;padding:18px 28px;">
+        <span style="color:#F9E4C0;font-size:12px;letter-spacing:1.5px;">THE CULO VILLAGE &times; CULO CREATIVES IN CANVA</span>
       </div>
       <div style="padding:28px;color:#2D2A26;font-size:15px;line-height:1.6;">
         ${bodyHtml}
       </div>
+      ${unsubscribeUrl ? `
+      <a href="https://www.culovillage.com" style="display:block;line-height:0;">
+        <img src="${FOOTER_IMAGE_URL}" alt="The Culo Village" width="480" style="width:100%;height:auto;display:block;" />
+      </a>` : ''}
     </div>
     <p style="max-width:480px;margin:16px auto 0;color:#9CA3AF;font-size:11px;text-align:center;font-family:Arial,sans-serif;">${preheader}</p>
     ${unsubscribeUrl ? `<p style="max-width:480px;margin:8px auto 0;text-align:center;font-family:Arial,sans-serif;"><a href="${unsubscribeUrl}" style="color:#9CA3AF;font-size:11px;">Unsubscribe</a></p>` : ''}
