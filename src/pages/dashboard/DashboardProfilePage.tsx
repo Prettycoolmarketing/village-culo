@@ -24,7 +24,7 @@ import { publisherPartnerProfileService, affiliateLinkService } from '../../serv
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
-import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI } from '../../services/blogWriter'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
 import { getMedia } from '../../services/media'
@@ -42,7 +42,7 @@ import { getFounderAppearsOn, getBusinessAppearsOn } from '../../utils/appearsOn
 import { loadDraft, saveDraft, clearDraft } from '../../utils/draftAutosave'
 import { suggestFaqsFromFounder } from '../../services/founderEnrichment'
 import type { BlogQaPair } from '../../services/importedContentEnrichment'
-import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry } from '../../types'
+import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry, FAQ } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
 // AI rewriting (via the founder's own Voice & Brand Brief) costs real
@@ -955,6 +955,40 @@ export function DashboardProfilePage() {
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft?.id])
+
+  // Same trigger again — shape the Brand Brief itself into FAQs. It's
+  // denser and more comprehensive than any single imported piece, so these
+  // tend to be a founder's strongest, most authoritative Q&As, and they
+  // read fine standing alone on the founder profile (unlike a piece-scoped
+  // FAQ) since the source is about the founder generally, not one post.
+  // Keyed off voiceBriefFaqsSourceText rather than a one-time flag — a real
+  // edit to the Brief re-runs this and replaces just the brand-brief set,
+  // not every save (including saves where nothing changed).
+  useEffect(() => {
+    if (!draft) return
+    const live = getFounder(draft.id)
+    const brief = live?.voiceBrief?.trim()
+    if (!brief || brief === live?.voiceBriefFaqsSourceText) return
+
+    let cancelled = false
+    void extractFaqsAI({ title: 'Brand Brief', text: brief, founderName: draft.name }).then(({ pairs }) => {
+      if (cancelled) return
+      const current = getFounder(draft.id)
+      if (!current) return
+      const newFaqs: FAQ[] = (pairs ?? []).map(p => ({
+        id: crypto.randomUUID(), question: p.question, answer: p.answer,
+        topicIds: [], expertiseIds: [], relatedStoryIds: [], relatedIdeaIds: [],
+        source: 'brand-brief',
+      }))
+      void updateFounder({
+        ...current,
+        faqs: [...(current.faqs ?? []).filter(f => f.source !== 'brand-brief'), ...newFaqs],
+        voiceBriefFaqsSourceText: brief,
+      })
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.id, getFounder(draft?.id ?? '')?.voiceBrief])
 
   if (!draft) {
     return (

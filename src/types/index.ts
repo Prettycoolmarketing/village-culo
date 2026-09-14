@@ -143,6 +143,11 @@ export interface FAQ {
   expertiseIds: string[]
   relatedStoryIds: string[]
   relatedIdeaIds: string[]
+  // Unset for FAQs shaped from a specific piece of content (the normal
+  // path). 'brand-brief' marks the set generated from the founder's whole
+  // Brand Brief rather than one piece — lets a Brief update cleanly replace
+  // just that set instead of piling up a new copy every time it changes.
+  source?: 'brand-brief'
 }
 
 // ─── Resource ──────────────────────────────────────────────────────────────────
@@ -424,6 +429,11 @@ export interface Founder {
   // duplicate text across every imported piece (bad for SEO/GEO).
   voiceBrief?: string
   voiceBriefUpdatedAt?: string
+  // The exact voiceBrief text FAQs were last generated from — lets a save
+  // trigger extraction exactly once per real change instead of on every
+  // save (including saves where nothing meaningful changed), and without a
+  // separate DB round-trip just to check.
+  voiceBriefFaqsSourceText?: string
   // Separate from voiceBrief on purpose: the Voice Brief establishes HOW the
   // founder sounds; this establishes WHAT they already believe/know/can
   // teach (their own documented, source-checked insight bank, organised
