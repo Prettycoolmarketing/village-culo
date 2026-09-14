@@ -17,13 +17,10 @@ import { DictationMicButton } from '../ui/DictationMicButton'
 // actually draw on day to day — not full blog/authority-positioning depth.
 const QUESTIONS = [
   "What's your business or brand called, and what do you actually do, in plain words?",
-  'Who do you help, and what result do they get from working with you?',
+  "Who do you help, what result do they get from working with you, and do you have a real example or transformation you can share?",
   'What topics or subjects do you usually talk about in your content?',
-  "What's a phrase or saying you use a lot that sounds like you?",
-  'How would a friend describe the way you talk — casual, direct, warm, blunt?',
-  'Are there any words or phrases you never want used to describe you or your brand?',
+  "How would you describe the way you talk — a phrase you use a lot, your general tone (casual, direct, warm, blunt), and any words you never want used to describe you?",
   "What's the one thing you want someone to understand after reading your profile?",
-  "What's a real result or transformation you've helped create for someone?",
 ]
 
 function QuestionField({ question, value, onChange }: {
@@ -33,12 +30,18 @@ function QuestionField({ question, value, onChange }: {
 }) {
   return (
     <div>
+      {/* The question used to only live in the textarea's placeholder,
+          which disappears the moment you start answering — exactly the
+          wrong time to lose it if you're talking through the mic and want
+          to keep glancing at what you're actually answering. Shown as a
+          persistent label above the box instead. */}
+      <p className="text-sm font-medium text-[#2D2A26] mb-1.5">{question}</p>
       <div className="flex items-start gap-2">
         <textarea
           value={value}
           onChange={e => onChange(e.target.value)}
           rows={2}
-          placeholder={question}
+          placeholder="Type or talk your answer…"
           className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] resize-none transition-colors"
         />
         <DictationMicButton value={value} onChange={onChange} />
