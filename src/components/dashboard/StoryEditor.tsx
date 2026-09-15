@@ -302,11 +302,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     if (result.success) onDelete(draft)
   }
 
-  // Was gated on the literal 'reel' type only, which meant a video story
-  // imported as 'youtube-video'/'talking-head'/'social-post' never showed
-  // its own Reel URL field here — reelUrl being set (or any reel-alias type
-  // already on the story) earns it back, same fix as hasBlog got.
-  const hasReel = draft.contentTypes.some(ct => REEL_ALIAS_TYPES.includes(ct)) || !!draft.reelUrl?.trim()
   // A story published with real blog text but a contentTypes list that
   // doesn't include 'blog' (common on older/imported stories) was hiding
   // the whole Blog field, mic and rewrite button on edit — even though the
@@ -460,42 +455,40 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
           </Field>
         )}
 
-        {/* One video view, always visible — no click-to-reveal, same
-            declutter as Advanced edit. ReelContent (not MediaUpload's own
-            preview) is the one shown here since reelUrl is often an
-            external platform link (Instagram/YouTube), not just an
-            uploaded file, and ReelContent is the component that already
-            handles both correctly. */}
-        {hasReel && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Field label="Reel URL">
-              <input type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
-              {draft.reelUrl && (
-                <div className="mt-2">
-                  <ReelContent reelUrl={draft.reelUrl} title={draft.title} summary={draft.summary} landscape />
-                </div>
-              )}
+        {/* Always visible, whether or not the story has a video yet — this
+            used to only appear once hasReel was already true, which was
+            only ever set by the Content Types toggle. Removing that manual
+            toggle (Content Types now just registers itself) left no way
+            left to add a first video to a story that didn't already have
+            one: the one input for it was hidden until a video existed. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <Field label="Reel URL">
+            <input type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
+            {draft.reelUrl && (
               <div className="mt-2">
-                <MediaUpload
-                  onChange={v => set('reelUrl', v || undefined)}
-                  accept="video"
-                  label="Upload a video for the reel"
-                  aspect="auto"
-                  uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
-                />
+                <ReelContent reelUrl={draft.reelUrl} title={draft.title} summary={draft.summary} landscape />
               </div>
-            </Field>
-            <Field label="Cover Image">
+            )}
+            <div className="mt-2">
               <MediaUpload
-                value={draft.coverImage}
-                onChange={v => set('coverImage', v)}
-                label="Upload cover"
-                aspect="wide-contain"
-                uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
+                onChange={v => set('reelUrl', v || undefined)}
+                accept="video"
+                label="Upload a video for the reel"
+                aspect="auto"
+                uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'reel-preview' }}
               />
-            </Field>
-          </div>
-        )}
+            </div>
+          </Field>
+          <Field label="Cover Image">
+            <MediaUpload
+              value={draft.coverImage}
+              onChange={v => set('coverImage', v)}
+              label="Upload cover"
+              aspect="wide-contain"
+              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
+            />
+          </Field>
+        </div>
 
         <Field label="Extra photos / video" hint="Add extra photos, a carousel, or another reel/video clip — works alongside the primary content above.">
           {(draft.carouselImages ?? []).length > 0 && (
@@ -562,20 +555,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
             />
           </div>
         </Field>
-
-        {/* Only shown alone when there's no reel — otherwise it already
-            sits next to the video above. */}
-        {!hasReel && (
-          <Field label="Cover Image">
-            <MediaUpload
-              value={draft.coverImage}
-              onChange={v => set('coverImage', v)}
-              label="Upload cover"
-              aspect="wide-contain"
-              uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
-            />
-          </Field>
-        )}
 
         {founderBusinesses.length > 0 && (
           <Field label="Business" hint="Which businesses this story is about — click to select. The first one you pick drives uploads and the main 'Founded by' credit.">
