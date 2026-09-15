@@ -628,6 +628,23 @@ export function StoryDetailPage() {
                   </div>
                 )}
 
+                {/* A blog with no video/carousel of its own only ever shows
+                    its cover photo as the hero banner up top — same as a
+                    video story gets its video repeated down here, a blog
+                    with a real cover photo gets that photo shown again
+                    alongside the writing, not just as a banner. */}
+                {story.blog && !effectiveReelUrl && (!story.carouselImages || story.carouselImages.length === 0)
+                  && story.coverImage && !story.coverImage.includes('/placeholders/') && (
+                  <div>
+                    <img
+                      src={story.coverImage}
+                      alt={story.title}
+                      className="w-full h-auto rounded-2xl"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+
                 {effectiveReelUrl && (
                   <div>
                     <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Video</h2>
