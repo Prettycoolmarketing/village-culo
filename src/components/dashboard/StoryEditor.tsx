@@ -16,7 +16,6 @@ import { FAQEditor } from './FAQEditor'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { topics as allTopics } from '../../data/topics'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
-import { contentTypeLabel } from '../../utils/slugify'
 import type { Story, ContentType, Topic, FAQ } from '../../types'
 
 // A deliberately simple story editor — title, summary, the content itself,
@@ -39,7 +38,22 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   )
 }
 
-const CONTENT_TYPES: ContentType[] = ['blog', 'reel', 'carousel']
+// Content types this editor can actually detect on its own from what's
+// filled in — anything else already on a story (youtube-video, podcast,
+// talking-head, social-post…) came from how it was imported and is left
+// untouched; this editor never offered a way to set those manually anyway.
+const AUTO_CONTENT_TYPES: ContentType[] = ['blog', 'reel', 'carousel']
+const REEL_ALIAS_TYPES: ContentType[] = ['reel', 'youtube-video', 'talking-head', 'social-post']
+
+function deriveContentTypes(d: Story): ContentType[] {
+  const preserved = d.contentTypes.filter(ct => !AUTO_CONTENT_TYPES.includes(ct))
+  const hasReelAlias = preserved.some(ct => REEL_ALIAS_TYPES.includes(ct))
+  const auto: ContentType[] = []
+  if (d.blog?.trim()) auto.push('blog')
+  if (!hasReelAlias && d.reelUrl?.trim()) auto.push('reel')
+  if ((d.carouselImages?.filter(Boolean).length ?? 0) > 0) auto.push('carousel')
+  return [...new Set([...preserved, ...auto])]
+}
 
 export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = false }: {
   canRewrite?: boolean
@@ -201,14 +215,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     setSaved(false)
   }
 
-  function toggleContentType(ct: ContentType) {
-    setDraft(prev => {
-      const has = prev.contentTypes.includes(ct)
-      setSaved(false)
-      return { ...prev, contentTypes: has ? prev.contentTypes.filter(x => x !== ct) : [...prev.contentTypes, ct] }
-    })
-  }
-
   function toggleTopic(topic: Topic) {
     setDraft(prev => {
       const has = prev.topics.some(t => t.id === topic.id)
@@ -255,6 +261,10 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     // a no-op when the title hasn't changed since the slug already matches.
     const desiredSlug = uniqueStorySlug(draft.title, draft.id)
     let toSave = desiredSlug === draft.slug ? draft : { ...draft, slug: desiredSlug }
+    // Content Types has no manual picker anymore either — it just registers
+    // itself from what's actually filled in (Blog text, a Reel URL, extra
+    // photos), the same "stop asking, just detect it" treatment as Topics.
+    toSave = { ...toSave, contentTypes: deriveContentTypes(toSave) }
     // Summary has no editable field of its own anymore — the Blog text is
     // the one place a founder writes, so the card/SEO summary is always
     // kept in sync with it on save instead of drifting from whatever was
@@ -292,7 +302,11 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     if (result.success) onDelete(draft)
   }
 
-  const hasReel = draft.contentTypes.includes('reel')
+  // Was gated on the literal 'reel' type only, which meant a video story
+  // imported as 'youtube-video'/'talking-head'/'social-post' never showed
+  // its own Reel URL field here — reelUrl being set (or any reel-alias type
+  // already on the story) earns it back, same fix as hasBlog got.
+  const hasReel = draft.contentTypes.some(ct => REEL_ALIAS_TYPES.includes(ct)) || !!draft.reelUrl?.trim()
   // A story published with real blog text but a contentTypes list that
   // doesn't include 'blog' (common on older/imported stories) was hiding
   // the whole Blog field, mic and rewrite button on edit — even though the
@@ -366,25 +380,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
       <div className="flex flex-col gap-5">
         <Field label="Title">
           <input type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
-        </Field>
-
-        <Field label="Content Types" hint="Select all formats this story is published in — shown as badges on the story's page">
-          <div className="flex gap-1.5 flex-wrap mt-1">
-            {CONTENT_TYPES.map(ct => {
-              const active = draft.contentTypes.includes(ct)
-              return (
-                <button key={ct} onClick={() => toggleContentType(ct)}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${active ? 'bg-charcoal text-white' : 'bg-[#F3EDE6] text-[#9CA3AF] hover:text-[#6B7280]'}`}>
-                  {active && (
-                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                  {contentTypeLabel(ct)}
-                </button>
-              )
-            })}
-          </div>
         </Field>
 
         {hasBlog && (

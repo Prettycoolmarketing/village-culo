@@ -751,6 +751,10 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
           <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
             placeholder="What is this story about?" className={inp + ' text-lg font-semibold py-3'} autoFocus />
         </Field>
+        <Field label="Summary" hint="Optional — a short paragraph, 1-3 sentences. Village will write one from your Blog if you leave this blank.">
+          <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={2}
+            placeholder="The honest story of…" className={inp + ' resize-y'} />
+        </Field>
         <Field label="Blog" hint="Optional. Paste a transcript above, or just write freely. Village will find the structure.">
           <textarea
             value={draft.blog}
