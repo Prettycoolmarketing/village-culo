@@ -4,6 +4,8 @@ import { usePageMeta }               from '../utils/usePageMeta'
 import { normalizeUrl }              from '../utils/url'
 import { getBusinesses, getBusinessBySlug } from '../services/businesses'
 import { getFounder }                      from '../services/founders'
+import { getCurrentFounder }               from '../services/currentFounder'
+import { useAuth }                         from '../contexts/AuthContext'
 import { programService, recommendationService } from '../services/partnership'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
 import { getFeaturedIn, relationshipService, getConnectedTo } from '../services/relationships'
@@ -103,6 +105,9 @@ function SocialLink({ href, label, icon }: { href: string; label: string; icon: 
 export function BusinessProfilePage() {
   const { slug } = useParams<{ slug: string }>()
   const business = getBusinessBySlug(slug ?? '')
+  const { user } = useAuth()
+  const currentFounder = getCurrentFounder(user)
+  const isOwner = !!business && currentFounder?.id === business.founderId
 
   // Pre-guard lookups — hooks must be called unconditionally before any early return
   const founder              = business ? getFounder(business.founderId) : undefined
@@ -251,7 +256,7 @@ export function BusinessProfilePage() {
 
       {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
       <nav className="bg-surface border-b border-border pt-20 pb-4" aria-label="Breadcrumb">
-        <InnerContainer>
+        <InnerContainer className="flex items-center justify-between gap-4 flex-wrap">
           <ol className="flex items-center gap-2 text-sm font-body text-muted flex-wrap" role="list">
             <li><Link to="/" className="hover:text-primary transition-colors">Village</Link></li>
             <li aria-hidden="true" className="text-border">›</li>
@@ -259,6 +264,14 @@ export function BusinessProfilePage() {
             <li aria-hidden="true" className="text-border">›</li>
             <li className="text-charcoal font-medium line-clamp-1" aria-current="page">{business.name}</li>
           </ol>
+          {isOwner && (
+            <Link
+              to={`/dashboard/profile?tab=businesses&businessId=${business.id}`}
+              className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors"
+            >
+              ✎ Edit this business
+            </Link>
+          )}
         </InnerContainer>
       </nav>
 

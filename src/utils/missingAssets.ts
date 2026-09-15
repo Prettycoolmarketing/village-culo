@@ -66,8 +66,6 @@ export function getStoryMissingItems(story: Story): MissingItem[] {
   const m: MissingItem[] = []
   if (isPlaceholder(story.coverImage))
     m.push({ field: 'coverImage',      label: 'Choose a cover image for this story',                action: 'Choose Cover',    severity: 'critical'      })
-  if (!story.summary || story.summary.length < 80)
-    m.push({ field: 'summary',         label: 'Write a summary so readers know what this is about', action: 'Write Summary',   severity: 'critical'      })
   if (story.contentTypes.includes('blog') && !story.blog)
     m.push({ field: 'blog',            label: 'Add your blog content',                              action: 'Write Blog',      severity: 'critical'      })
   if (story.contentTypes.includes('carousel') && (!story.carouselImages || story.carouselImages.length === 0))

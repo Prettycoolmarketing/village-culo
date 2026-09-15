@@ -751,10 +751,6 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
           <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
             placeholder="What is this story about?" className={inp + ' text-lg font-semibold py-3'} autoFocus />
         </Field>
-        <Field label="Summary" hint="Optional. One or two sentences, the reader's takeaway.">
-          <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={3}
-            placeholder="The honest story of…" className={inp + ' resize-y'} />
-        </Field>
         <Field label="Blog" hint="Optional. Paste a transcript above, or just write freely. Village will find the structure.">
           <textarea
             value={draft.blog}
@@ -1523,7 +1519,7 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
           {draft.coverImage && <img src={draft.coverImage} alt="" className="w-full h-40 object-cover bg-[#F3EDE6]" />}
           <div className="p-4">
             <p className="text-lg font-bold text-[#2D2A26] leading-snug">{draft.title || 'Untitled publication'}</p>
-            {draft.summary && <p className="text-sm text-[#6B7280] mt-1">{draft.summary}</p>}
+            {draft.blog && <p className="text-sm text-[#6B7280] mt-1">{fallbackSummary(draft.blog)}</p>}
             <div className="flex flex-wrap gap-1.5 mt-3">
               {draft.topics.slice(0, 4).map(t => <span key={t.id} className="text-[10px] px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#C86A43]">{t.name}</span>)}
             </div>
@@ -1535,12 +1531,11 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
 
       {/* ── Finishing touches ────────────────────────────────────────────── */}
       {/* Same recommendations the Stories dashboard nags about after the fact
-          (Write Summary / Add CTA Link / Add Page Title / Add Description) —
-          surfaced here, editable inline, so a founder fills them in as one
-          pass while publishing instead of discovering a checklist later. */}
+          (Add CTA Link etc.) — surfaced here, editable inline, so a founder
+          fills them in as one pass while publishing instead of discovering
+          a checklist later. */}
       {(() => {
         const touches: { key: string; label: string }[] = []
-        if (!draft.summary || draft.summary.length < 80) touches.push({ key: 'summary', label: 'Write a summary so readers know what this is about' })
         if (!draft.ctaUrl) touches.push({ key: 'cta', label: 'Add a call-to-action link' })
         if (touches.length === 0) return null
 
@@ -1549,11 +1544,6 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
             <p className="text-sm font-bold text-[#2D2A26] mb-1">A few finishing touches</p>
             <p className="text-xs text-[#9CA3AF] mb-4">Optional, but they help readers. Fill them in now — no need to come back later.</p>
             <div className="flex flex-col gap-4">
-              {touches.some(t => t.key === 'summary') && (
-                <Field label="Summary" hint="One or two sentences, the reader's takeaway.">
-                  <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={2} className={inp} placeholder="What's this story about, in a sentence or two?" />
-                </Field>
-              )}
               {touches.some(t => t.key === 'cta') && (
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Button label">
@@ -1574,7 +1564,7 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
       <div className="bg-white rounded-2xl border border-[#E8E4DD] px-6 py-5">
         <p className="text-sm font-bold text-[#2D2A26] mb-1">What search engines and AI will show</p>
         <p className="text-xs text-[#C86A43] font-medium truncate mt-2">{deriveSeoTitle(draft.title)}</p>
-        <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.summary, draft.blog)}</p>
+        <p className="text-xs text-[#6B7280] mt-1 leading-relaxed">{deriveSeoDescription(draft.summary || fallbackSummary(draft.blog), draft.blog)}</p>
       </div>
 
       {/* ── Publish ───────────────────────────────────────────────────────── */}
@@ -1905,7 +1895,7 @@ export function DashboardPublishPage() {
       slug:           titleSlug,
       title:          draft.title   || 'Untitled',
       subtitle:       draft.subtitle || undefined,
-      summary:        draft.summary || '',
+      summary:        draft.summary || (draft.blog ? fallbackSummary(draft.blog) : ''),
       coverImage:     draft.coverImage || (draft.carouselSlides.filter(Boolean)[0] ?? '/placeholders/village-story.svg'),
       founderId:      draft.founderId,
       businessId:     draft.businessId,

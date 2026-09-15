@@ -4,19 +4,20 @@ import { updateStory, deleteStory, uniqueStorySlug } from '../../services/storie
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { getBusinesses } from '../../services/businesses'
-import { getFounder } from '../../services/founders'
-import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
+import { getFounder, updateFounder } from '../../services/founders'
+import { generateBlogFromVoiceBrief, extractFaqsAI } from '../../services/blogWriter'
 import { importedContentService } from '../../services/importedContent'
 import { fallbackSummary } from '../../services/publishStory'
 import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
 import { ReelContent } from '../ui/ReelContent'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { AppearsOnPanel } from './AppearsOnPanel'
+import { FAQEditor } from './FAQEditor'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { topics as allTopics } from '../../data/topics'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { contentTypeLabel } from '../../utils/slugify'
-import type { Story, ContentType, Topic } from '../../types'
+import type { Story, ContentType, Topic, FAQ } from '../../types'
 
 // A deliberately simple story editor — title, summary, the content itself,
 // topics, ideas, CTA, and whether it's visible. Everything else the old
@@ -56,6 +57,58 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   const [blogBeforeRewrite, setBlogBeforeRewrite] = useState<string | null>(null)
   const { listening, toggle: toggleDictationBase } = useDictation()
   const [showTags, setShowTags] = useState(false)
+
+  // FAQs live on the Founder record (shared across everything they publish),
+  // scoped to this story via relatedStoryIds — Detect Q&A pulls real
+  // question/answer pairs straight out of the Blog text instead of a founder
+  // having to write them from scratch, since a founder rewriting a story
+  // couldn't previously see (or generate) its Q&A at all from this popup.
+  const [storyFaqs, setStoryFaqs] = useState<FAQ[]>(
+    () => (getFounder(story.founderId)?.faqs ?? []).filter(f => f.relatedStoryIds.includes(story.id)),
+  )
+  const [detectingQa, setDetectingQa] = useState(false)
+
+  async function persistFaqs(next: FAQ[]) {
+    setStoryFaqs(next)
+    const founder = getFounder(draft.founderId)
+    if (!founder) return
+    const others = (founder.faqs ?? []).filter(f => !f.relatedStoryIds.includes(draft.id))
+    const stamped = next.map(f => f.relatedStoryIds.includes(draft.id) ? f : { ...f, relatedStoryIds: [...f.relatedStoryIds, draft.id] })
+    await updateFounder({ ...founder, faqs: [...others, ...stamped] })
+  }
+
+  // Auto-adds newly detected topics rather than just suggesting them — a
+  // founder who already wrote a real, specific Blog shouldn't also have to
+  // hunt through and click every relevant tag by hand.
+  function detectTopics(text: string) {
+    if (!text.trim()) return
+    const intel = villageContentIntelligenceService.analyse(storyToInput({ ...draft, blog: text }))
+    const names = new Set([...intel.primaryTopics, ...intel.secondaryTopics].map(n => n.toLowerCase()))
+    const toAdd = allTopics.filter(t => names.has(t.name.toLowerCase()) && !draft.topics.some(dt => dt.id === t.id))
+    if (toAdd.length > 0) setDraft(prev => ({ ...prev, topics: [...prev.topics, ...toAdd] }))
+  }
+
+  async function detectQa(text: string) {
+    if (!text.trim()) return
+    setDetectingQa(true)
+    const founderName = getFounder(draft.founderId)?.name
+    const { pairs } = await extractFaqsAI({ title: draft.title, text, founderName })
+    setDetectingQa(false)
+    if (!pairs || pairs.length === 0) return
+    const existingQuestions = new Set(storyFaqs.map(f => f.question.toLowerCase().trim()))
+    const fresh: FAQ[] = pairs
+      .filter(p => !existingQuestions.has(p.question.toLowerCase().trim()))
+      .map(p => ({
+        id: `faq-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        question: p.question,
+        answer: p.answer,
+        topicIds: draft.topics.map(t => t.id),
+        expertiseIds: [],
+        relatedStoryIds: [draft.id],
+        relatedIdeaIds: [],
+      }))
+    if (fresh.length > 0) void persistFaqs([...storyFaqs, ...fresh])
+  }
 
   // Rewrite with AI — same real, per-call AI spend as "Rewrite with Voice
   // Brief" on Imported Content, just aimed at a Story's own Blog field
@@ -114,6 +167,12 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     }
     setBlogBeforeRewrite(draft.blog)
     set('blog', result.blog.blog)
+    // Detecting topics/Q&A off the freshly rewritten text (not the old
+    // draft.blog, which hasn't updated yet) — this is what makes "Rewrite,
+    // then Save" also pick up the story's tags and questions automatically,
+    // instead of a founder having to separately hunt for and click each one.
+    detectTopics(result.blog.blog)
+    void detectQa(result.blog.blog)
   }
 
   function handleUndoRewrite() {
@@ -375,6 +434,14 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
                   ↺ Undo rewrite
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => { detectTopics(draft.blog ?? ''); void detectQa(draft.blog ?? '') }}
+                disabled={detectingQa || !draft.blog?.trim()}
+                className="text-xs font-semibold px-3 py-2 rounded-lg text-[#6B7280] bg-[#F3EDE6] hover:bg-[#E8E4DD] disabled:opacity-50 transition-colors"
+              >
+                {detectingQa ? 'Detecting…' : '🔎 Detect topics & Q&A'}
+              </button>
               {listening && <span className="text-xs text-red-500 font-medium">Listening…</span>}
             </div>
             {rewriteError && <p className="text-xs text-red-600 mb-2">{rewriteError}</p>}
@@ -386,6 +453,15 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
               placeholder="Paste or write full blog content here…"
               className={inputClass + ' resize-y'}
             />
+          </Field>
+        )}
+
+        {hasBlog && (
+          <Field label="Questions & Answers" hint="Detected from this story's Blog text — shown on the page and used by search engines and AI. Rewrite with AI (or Detect topics & Q&A above) finds these automatically; add or edit any below.">
+            {storyFaqs.length === 0 && !detectingQa && (
+              <p className="text-xs text-[#9CA3AF] mb-2">None detected yet — rewrite the Blog, or use "Detect topics & Q&A" above.</p>
+            )}
+            <FAQEditor faqs={storyFaqs} onChange={next => void persistFaqs(next)} />
           </Field>
         )}
 
