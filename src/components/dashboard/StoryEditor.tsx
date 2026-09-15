@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useRef, type ReactNode } from 'react'
 import { useDictation } from '../../hooks/useDictation'
 import { updateStory, deleteStory, uniqueStorySlug } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
@@ -47,6 +47,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   onClose: () => void
 }) {
   const [draft, setDraft] = useState<Story>({ ...story })
+  const backdropMouseDownRef = useRef(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -239,7 +240,18 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     // instead of a popup for one and an inline page-swap for the other.
     <div
       className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
-      onClick={e => { if (e.target === e.currentTarget) requestClose() }}
+      // Selecting text inside the form (dragging to highlight something in
+      // the Blog textarea, say) can end the drag with the mouse slightly
+      // outside the card — that registers as a plain click on this
+      // backdrop even though the interaction genuinely started inside the
+      // popup. Only treat it as a real "click outside" when both the press
+      // AND the release happened on the backdrop itself, not just the
+      // release.
+      onMouseDown={e => { backdropMouseDownRef.current = e.target === e.currentTarget }}
+      onClick={e => {
+        if (e.target === e.currentTarget && backdropMouseDownRef.current) requestClose()
+        backdropMouseDownRef.current = false
+      }}
     >
     <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4 flex flex-col">
       <div className="flex items-center justify-between mb-4">
