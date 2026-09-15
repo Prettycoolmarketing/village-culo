@@ -460,6 +460,14 @@ export function FounderProfilePage() {
                     </svg>
                     {founder.location.name}, {founder.location.state}, Australia
                   </p>
+                  {/* /speaker is a bespoke page authored for Shakas specifically
+                      (not a generic per-founder feature), so this link is
+                      scoped to her profile rather than shown for every founder. */}
+                  {founder.slug === 'shakas-designer' && (
+                    <Link to="/speaker" className="inline-block font-body text-sm font-semibold text-primary hover:underline mt-1.5">
+                      🎤 Speaker &amp; Press →
+                    </Link>
+                  )}
                 </div>
               </div>
               {(bookingUrl || founder.website || founder.instagram || founder.linkedin || founder.youtube || founder.tiktok || founder.podcast || founder.newsletter || (founder.socialLinks && founder.socialLinks.length > 0)) && (
@@ -532,15 +540,6 @@ export function FounderProfilePage() {
                     )
                   })}
                 </div>
-              )}
-              {/* /speaker is a bespoke page authored for Shakas specifically
-                  (not a generic per-founder feature), so this link is
-                  scoped to her profile rather than shown for every founder. */}
-              {founder.slug === 'shakas-designer' && (
-                <Link to="/speaker"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-charcoal text-white text-sm font-medium hover:bg-[#1a1815] transition-colors">
-                  <span>🎤 Speaker &amp; Press</span>
-                </Link>
               )}
             </div>
 
