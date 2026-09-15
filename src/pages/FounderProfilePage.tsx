@@ -526,6 +526,15 @@ export function FounderProfilePage() {
                   })}
                 </div>
               )}
+              {/* /speaker is a bespoke page authored for Shakas specifically
+                  (not a generic per-founder feature), so this link is
+                  scoped to her profile rather than shown for every founder. */}
+              {founder.slug === 'shakas-designer' && (
+                <Link to="/speaker"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-charcoal text-white text-sm font-medium hover:bg-[#1a1815] transition-colors">
+                  <span>🎤 Speaker &amp; Press</span>
+                </Link>
+              )}
             </div>
 
             <div className="mt-8 max-w-3xl">

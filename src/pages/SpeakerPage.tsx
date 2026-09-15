@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState, type FormEvent } from 'react'
 import { usePageMeta } from '../utils/usePageMeta'
 import { normalizeUrl } from '../utils/url'
 import { InnerContainer } from '../components/layout/PageContainer'
@@ -6,6 +6,44 @@ import { getFounderBySlug } from '../services/founders'
 import { getBusinesses } from '../services/businesses'
 import { getStories } from '../services/stories'
 import { importedContentService } from '../services/importedContent'
+import { publisherPartnerProfileService } from '../services/partnership'
+import { submitSupportRequest } from '../services/supportRequest'
+import { FounderCard } from '../components/cards/FounderCard'
+
+function SpeakerContactForm() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<'idle' | 'busy' | 'done' | 'error'>('idle')
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    setStatus('busy')
+    const result = await submitSupportRequest({ name, email, message, source: 'speaker-page' })
+    setStatus(result.success ? 'done' : 'error')
+  }
+
+  if (status === 'done') {
+    return <p className="font-body text-sm text-white/80">Thanks — I'll get back to you soon.</p>
+  }
+
+  return (
+    <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-3">
+      <input required type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Your name"
+        className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-sm focus:outline-none focus:border-primary" />
+      <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Your email"
+        className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-sm focus:outline-none focus:border-primary" />
+      <textarea required value={message} onChange={e => setMessage(e.target.value)} rows={3}
+        placeholder="A few details about the podcast, panel or event"
+        className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-sm resize-y focus:outline-none focus:border-primary" />
+      {status === 'error' && <p className="text-xs text-red-300">Something went wrong — try emailing directly instead.</p>}
+      <button type="submit" disabled={status === 'busy'}
+        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
+        {status === 'busy' ? 'Sending…' : 'Send enquiry'}
+      </button>
+    </form>
+  )
+}
 
 // The one link handed to a podcast booker, journalist or conference
 // organiser — built around the actual bookable ideas (what she'd speak
@@ -147,6 +185,18 @@ export function SpeakerPage() {
   const businesses = founder ? getBusinesses({ founderId: founder.id }) : []
   const publishedStories = getStories({ publicOnly: true })
   const totalImports = importedContentService.getAll().length
+  const bookingUrl = founder ? publisherPartnerProfileService.get(founder.id)?.bookingUrl : undefined
+
+  // Calendly inline embed — same "load their widget script once" pattern
+  // already used on the PCM booking page, reused here rather than
+  // reinvented.
+  useEffect(() => {
+    if (document.querySelector('script[src*="calendly.com/assets/external/widget.js"]')) return
+    const s = document.createElement('script')
+    s.src = 'https://assets.calendly.com/assets/external/widget.js'
+    s.async = true
+    document.body.appendChild(s)
+  }, [])
 
   const sameAs = [
     founder?.linkedin, founder?.instagram, founder?.youtube,
@@ -185,46 +235,54 @@ export function SpeakerPage() {
     <main className="min-h-screen bg-background">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="pt-32 pb-16 bg-surface border-b border-border">
-        <InnerContainer>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-center">
-            <div className="lg:col-span-2">
-              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Speaker &amp; Press
-              </p>
-              <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-charcoal leading-tight mb-4">
-                {founder.name.trim()}
-              </h1>
-              <p className="font-body text-lg text-muted leading-relaxed max-w-2xl mb-6">
-                Australian technology founder, entrepreneur, creator and storyteller building at the
-                intersection of founder knowledge, content, search and AI discovery.
-              </p>
-              <div className="font-body text-muted leading-relaxed max-w-2xl space-y-4 mb-8">
-                <p>I didn't come into tech through a computer science degree or because I decided one day I wanted to build an app.</p>
-                <p>I came into it after more than 15 years behind a camera, building a 4WD tour company, designing a product that didn't exist yet, running a marketing agency and watching the same problem follow founders everywhere I went:</p>
-                <p className="font-semibold text-charcoal">They weren't short of things to say. Their best thinking was already buried inside years of content nobody could find anymore.</p>
-                <p>That problem became CULO.</p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {founder.linkedin && (
-                  <a href={normalizeUrl(founder.linkedin)} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
-                    Connect on LinkedIn ↗
-                  </a>
+      <section aria-labelledby="speaker-title">
+        <div className="relative h-56 sm:h-72 md:h-80 overflow-hidden bg-charcoal">
+          {founder.coverImage && (
+            <img src={founder.coverImage} alt="" className="w-full h-full object-cover opacity-70" loading="eager" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-charcoal/85 via-charcoal/30 to-transparent" aria-hidden="true" />
+        </div>
+
+        <div className="bg-surface border-b border-border pb-12">
+          <InnerContainer>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+              <div className="lg:col-span-2">
+                {founder.avatar && (
+                  <img src={founder.avatar} alt={founder.name}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ring-surface shadow-lg -mt-12 sm:-mt-14 mb-5" />
                 )}
-                <a href="mailto:support@prettycoolmarketing.com?subject=Speaking%20%2F%20Press%20enquiry"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-charcoal text-sm font-semibold rounded-xl hover:border-primary hover:text-primary transition-colors">
-                  Book me for a podcast, panel or event →
-                </a>
+                <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+                  Speaker &amp; Press
+                </p>
+                <h1 id="speaker-title" className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-charcoal leading-tight mb-4">
+                  {founder.name.trim()}
+                </h1>
+                <p className="font-body text-lg text-muted leading-relaxed max-w-2xl mb-6">
+                  Australian technology founder, entrepreneur, creator and storyteller building at the
+                  intersection of founder knowledge, content, search and AI discovery.
+                </p>
+                <div className="font-body text-muted leading-relaxed max-w-2xl space-y-4 mb-8">
+                  <p>I didn't come into tech through a computer science degree or because I decided one day I wanted to build an app.</p>
+                  <p>I came into it after more than 15 years behind a camera, building a 4WD tour company, designing a product that didn't exist yet, running a marketing agency and watching the same problem follow founders everywhere I went:</p>
+                  <p className="font-semibold text-charcoal">They weren't short of things to say. Their best thinking was already buried inside years of content nobody could find anymore.</p>
+                  <p>That problem became CULO.</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {founder.linkedin && (
+                    <a href={normalizeUrl(founder.linkedin)} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
+                      Connect on LinkedIn ↗
+                    </a>
+                  )}
+                  <a href="mailto:support@prettycoolmarketing.com?subject=Speaking%20%2F%20Press%20enquiry"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-charcoal text-sm font-semibold rounded-xl hover:border-primary hover:text-primary transition-colors">
+                    Book me for a podcast, panel or event →
+                  </a>
+                </div>
               </div>
             </div>
-            {founder.avatar && (
-              <div className="lg:col-span-1 flex justify-center lg:justify-end">
-                <img src={founder.avatar} alt={founder.name} className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl object-cover shadow-lg" />
-              </div>
-            )}
-          </div>
-        </InnerContainer>
+          </InnerContainer>
+        </div>
       </section>
 
       {/* ── The thing I keep coming back to ─────────────────────────────── */}
@@ -248,17 +306,29 @@ export function SpeakerPage() {
         </InnerContainer>
       </section>
 
+      {/* ── Photo break ──────────────────────────────────────────────────── */}
+      {founder.coverImage && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <img src={founder.coverImage} alt="" className="w-full h-56 sm:h-72 object-cover rounded-3xl" loading="lazy" />
+        </div>
+      )}
+
       {/* ── What I speak about ──────────────────────────────────────────── */}
       <section className="py-16 bg-surface border-y border-border">
         <InnerContainer>
           <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">What I speak about</p>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-10">Bookable talks</h2>
           <div className="flex flex-col gap-10 max-w-3xl">
-            {TALKS.map(talk => (
-              <div key={talk.title}>
-                <h3 className="font-heading text-xl font-semibold text-charcoal mb-3">{talk.title}</h3>
-                <div className="font-body text-muted leading-relaxed space-y-2.5">
-                  {talk.paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+            {TALKS.map((talk, i) => (
+              <div key={talk.title} className="flex gap-5">
+                <span className="font-heading text-2xl font-bold text-primary/30 shrink-0 w-10 tabular-nums" aria-hidden="true">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div>
+                  <h3 className="font-heading text-xl font-semibold text-charcoal mb-3">{talk.title}</h3>
+                  <div className="font-body text-muted leading-relaxed space-y-2.5">
+                    {talk.paragraphs.map((p, j) => <p key={j}>{p}</p>)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -334,35 +404,47 @@ export function SpeakerPage() {
       {/* ── Press / speaking CTA ─────────────────────────────────────────── */}
       <section className="py-16 bg-charcoal">
         <InnerContainer>
-          <div className="max-w-2xl">
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-3">
-              For podcast hosts, journalists and event organisers
-            </h2>
-            <p className="font-body text-white/70 leading-relaxed mb-4">
-              If you want a polished founder story about somebody who built a startup in a straight
-              line, I am probably not it.
-            </p>
-            <p className="font-body text-white/70 leading-relaxed mb-6">
-              If you want a conversation about what actually happens while you're figuring it out,
-              why founder knowledge is getting lost online, what AI discovery changes, how real
-              experience becomes content, or how somebody with a camera background ended up building
-              technology inside Canva, there is plenty to talk about.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <a href="mailto:support@prettycoolmarketing.com?subject=Speaking%20%2F%20Press%20enquiry"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors">
-                Book me for an interview, panel or event →
-              </a>
-              {founder.linkedin && (
-                <a href={normalizeUrl(founder.linkedin)} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white text-sm font-semibold rounded-xl hover:border-white/40 transition-colors">
-                  Connect on LinkedIn ↗
-                </a>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div>
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-3">
+                For podcast hosts, journalists and event organisers
+              </h2>
+              <p className="font-body text-white/70 leading-relaxed mb-4">
+                If you want a polished founder story about somebody who built a startup in a straight
+                line, I am probably not it.
+              </p>
+              <p className="font-body text-white/70 leading-relaxed mb-6">
+                If you want a conversation about what actually happens while you're figuring it out,
+                why founder knowledge is getting lost online, what AI discovery changes, how real
+                experience becomes content, or how somebody with a camera background ended up building
+                technology inside Canva, there is plenty to talk about.
+              </p>
+              <div className="flex flex-wrap gap-3 mb-10">
+                {founder.linkedin && (
+                  <a href={normalizeUrl(founder.linkedin)} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white text-sm font-semibold rounded-xl hover:border-white/40 transition-colors">
+                    Connect on LinkedIn ↗
+                  </a>
+                )}
+              </div>
+
+              <h3 className="font-heading text-lg font-semibold text-white mb-3">Send an enquiry</h3>
+              <SpeakerContactForm />
+            </div>
+
+            <div>
+              {bookingUrl && (
+                <div className="mb-10">
+                  <h3 className="font-heading text-lg font-semibold text-white mb-1">Or pick a time directly</h3>
+                  <p className="font-body text-sm text-white/60 mb-4">30 minutes — podcast, panel or a quick chat.</p>
+                  <div className="bg-white rounded-2xl overflow-hidden">
+                    <div className="calendly-inline-widget" data-url={bookingUrl} style={{ minWidth: '280px', height: '480px' }} />
+                  </div>
+                </div>
               )}
-              <Link to="/founders/shakas-designer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white text-sm font-semibold rounded-xl hover:border-white/40 transition-colors">
-                Read my full founder profile →
-              </Link>
+
+              <h3 className="font-heading text-lg font-semibold text-white mb-3">The full profile in the Village</h3>
+              <FounderCard founder={founder} variant="featured" />
             </div>
           </div>
         </InnerContainer>

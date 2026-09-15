@@ -219,17 +219,20 @@ ${businesses.length > 0 ? `<section>\n<h2>Businesses</h2>\n${linkList(businesses
     if (url.pathname === '/speaker') {
       const founder = await fetchPublicRow('founders', 'shakas-designer', '&status=in.(published,featured)')
       if (!founder) return
-      const [bizRes, storiesCountRes, importsCountRes] = await Promise.all([
+      const [bizRes, storiesCountRes, importsCountRes, bookingRes] = await Promise.all([
         fetch(`${SUPABASE_URL}/rest/v1/businesses?select=data&founder_id=eq.${founder.id ? encodeURIComponent(founder.id) : ''}`,
           { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }),
         fetch(`${SUPABASE_URL}/rest/v1/stories?select=id&status=in.(published,featured)`,
           { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'count=exact' } }),
         fetch(`${SUPABASE_URL}/rest/v1/imported_content?select=id`,
           { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'count=exact' } }),
+        fetch(`${SUPABASE_URL}/rest/v1/publisher_partner_profiles?select=data&founder_id=eq.${founder.id ? encodeURIComponent(founder.id) : ''}&limit=1`,
+          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }),
       ])
       const businesses: any[] = bizRes.ok ? (await bizRes.json()).map((r: any) => r.data) : []
       const storyCount = Number(storiesCountRes.headers.get('content-range')?.split('/')[1] ?? 0)
       const importCount = Number(importsCountRes.headers.get('content-range')?.split('/')[1] ?? 0)
+      const bookingUrl = bookingRes.ok ? (await bookingRes.json())[0]?.data?.bookingUrl : undefined
 
       const sameAs = [founder.linkedin, founder.instagram, founder.youtube, ...businesses.map((b: any) => b.website)].filter(Boolean)
       // Topic titles only here (not the full authored paragraphs the React
@@ -287,6 +290,7 @@ ${textToParagraphs(bioText)}
 <ul>
 <li><a href="mailto:support@prettycoolmarketing.com?subject=Speaking%20%2F%20Press%20enquiry">Book me for an interview, panel or event</a></li>
 ${founder.linkedin ? `<li><a href="${escapeHtml(founder.linkedin)}">Connect on LinkedIn</a></li>` : ''}
+${bookingUrl ? `<li><a href="${escapeHtml(bookingUrl)}">Book a 30-minute call</a></li>` : ''}
 <li><a href="/founders/shakas-designer">Read my full founder profile</a></li>
 </ul>
 </nav>
