@@ -158,10 +158,27 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     })
   }
 
-  function toggleRelatedBusiness(businessId: string) {
-    if (businessId === draft.businessId) return
-    const current = draft.relatedBusinessIds ?? []
-    set('relatedBusinessIds', current.includes(businessId) ? current.filter(id => id !== businessId) : [...current, businessId])
+  // One click toggles a business on/off — no separate "primary" vs
+  // "related" picker to fill in twice. Whichever one gets clicked first
+  // becomes businessId (drives uploads/"Founded by"); anything clicked
+  // after that is just along for the ride in relatedBusinessIds. Clicking
+  // the primary off promotes the next selected business, if there is one.
+  function toggleBusiness(businessId: string) {
+    setDraft(prev => {
+      const related = prev.relatedBusinessIds ?? []
+      if (prev.businessId === businessId) {
+        const [next, ...rest] = related
+        return { ...prev, businessId: next ?? '', relatedBusinessIds: rest }
+      }
+      if (related.includes(businessId)) {
+        return { ...prev, relatedBusinessIds: related.filter(id => id !== businessId) }
+      }
+      if (!prev.businessId) {
+        return { ...prev, businessId }
+      }
+      return { ...prev, relatedBusinessIds: [...related, businessId] }
+    })
+    setSaved(false)
   }
 
   function toggleAppearsOn(key: string, hide: boolean) {
@@ -490,31 +507,12 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
         )}
 
         {founderBusinesses.length > 0 && (
-          <Field label="Business" hint="Which business this story is primarily about — drives uploads and the main 'Founded by' credit.">
+          <Field label="Business" hint="Which businesses this story is about — click to select. The first one you pick drives uploads and the main 'Founded by' credit.">
             <div className="flex flex-wrap gap-1.5 mt-1">
               {founderBusinesses.map(b => {
-                const active = draft.businessId === b.id
+                const active = draft.businessId === b.id || (draft.relatedBusinessIds ?? []).includes(b.id)
                 return (
-                  <button key={b.id} type="button" onClick={() => {
-                    setDraft(prev => ({ ...prev, businessId: b.id, relatedBusinessIds: (prev.relatedBusinessIds ?? []).filter(id => id !== b.id) }))
-                    setSaved(false)
-                  }}
-                    className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                    {b.name}
-                  </button>
-                )
-              })}
-            </div>
-          </Field>
-        )}
-
-        {founderBusinesses.length > 1 && (
-          <Field label="Also relates to" hint="Other businesses this story connects to, beyond the primary one above — e.g. a story about a joint venture.">
-            <div className="flex flex-wrap gap-1.5 mt-1">
-              {founderBusinesses.filter(b => b.id !== draft.businessId).map(b => {
-                const active = (draft.relatedBusinessIds ?? []).includes(b.id)
-                return (
-                  <button key={b.id} onClick={() => toggleRelatedBusiness(b.id)}
+                  <button key={b.id} type="button" onClick={() => toggleBusiness(b.id)}
                     className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${active ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#4B4845] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
                     {b.name}
                   </button>
