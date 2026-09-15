@@ -419,31 +419,33 @@ export function SpeakerPage() {
       {/* ── Press / speaking CTA ─────────────────────────────────────────── */}
       <Section className="bg-charcoal">
         <InnerContainer>
-          <div className="max-w-2xl mb-12">
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-3">
-              For podcast hosts, journalists and event organisers
-            </h2>
-            <p className="font-body text-white/70 leading-relaxed mb-4">
-              If you want a polished founder story about somebody who built a startup in a straight
-              line, I am probably not it.
-            </p>
-            <p className="font-body text-white/70 leading-relaxed mb-6">
-              If you want a conversation about what actually happens while you're figuring it out,
-              why founder knowledge is getting lost online, what AI discovery changes, how real
-              experience becomes content, or how somebody with a camera background ended up building
-              technology inside Canva, there is plenty to talk about.
-            </p>
-            {founder.linkedin && (
-              <a href={normalizeUrl(founder.linkedin)} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white text-sm font-semibold rounded-xl hover:border-white/40 transition-colors">
-                Connect on LinkedIn ↗
-              </a>
-            )}
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12 items-start">
+            <div>
+              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-3">
+                For podcast hosts, journalists and event organisers
+              </h2>
+              <p className="font-body text-white/70 leading-relaxed mb-4">
+                If you want a polished founder story about somebody who built a startup in a straight
+                line, I am probably not it.
+              </p>
+              <p className="font-body text-white/70 leading-relaxed mb-6">
+                If you want a conversation about what actually happens while you're figuring it out,
+                why founder knowledge is getting lost online, what AI discovery changes, how real
+                experience becomes content, or how somebody with a camera background ended up building
+                technology inside Canva, there is plenty to talk about.
+              </p>
+              {founder.linkedin && (
+                <a href={normalizeUrl(founder.linkedin)} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/20 text-white text-sm font-semibold rounded-xl hover:border-white/40 transition-colors">
+                  Connect on LinkedIn ↗
+                </a>
+              )}
+            </div>
 
-          <div className="mb-12">
-            <h3 className="font-heading text-lg font-semibold text-white mb-3">The full profile in the Village</h3>
-            <FounderCard founder={founder} variant="featured" className="max-w-md" />
+            <div>
+              <h3 className="font-heading text-lg font-semibold text-white mb-3">The full profile in the Village</h3>
+              <FounderCard founder={founder} variant="featured" />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
