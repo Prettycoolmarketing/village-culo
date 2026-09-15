@@ -3,6 +3,8 @@ import { getFounderBySlug, updateFounder } from './founders'
 import { getBusinessBySlug, updateBusiness } from './businesses'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { importedContentToInput, villageContentIntelligenceService } from './villageIntelligence'
+import { buildStoryFromImport } from './publishStory'
+import { updateStory } from './stories'
 import type { WriteResult } from '../lib/entityStore'
 import { locations } from '../data/locations'
 import { industries } from '../data/industries'
@@ -247,6 +249,11 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
   let businessesCreated = 0
   let contentCreated = 0
   let intelGenerated = 0
+  let storiesCreated = 0
+  // Below this, a content entry's description isn't enough to write a real
+  // blog from — it stays an ImportedContent-only embed rather than
+  // becoming a Story page with almost nothing on it.
+  const MIN_AUTO_PUBLISH_DESCRIPTION_LENGTH = 40
 
   const slugsTaken = new Set<string>()
   const bizSlugsTaken = new Set<string>()
@@ -408,6 +415,28 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
               // non-fatal — intelligence generation failing shouldn't fail the import
             }
           }
+
+          // Turn this into a real Story right away — same field mapping
+          // (buildStoryFromImport) the founder's own "Turn into Story"
+          // action uses, just triggered at import time instead of waiting
+          // for them to do it by hand. Skipped for anything too thin to
+          // read as a genuine article — see MIN_AUTO_PUBLISH_DESCRIPTION_LENGTH.
+          if (
+            options.autoPublishAsStories &&
+            (contentStatus === 'published' || contentStatus === 'featured') &&
+            (item.description?.trim().length ?? 0) >= MIN_AUTO_PUBLISH_DESCRIPTION_LENGTH
+          ) {
+            try {
+              const story = buildStoryFromImport(item, founder)
+              const storyResult = await writeWithRetry(() => updateStory(story))
+              if (storyResult.success) {
+                storiesCreated++
+                await writeWithRetry(() => importedContentService.upsert({ ...item, relatedStoryId: story.id }))
+              }
+            } catch {
+              // non-fatal — the ImportedContent record above already saved either way
+            }
+          }
         }
       }
 
@@ -420,5 +449,5 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
     }
   }
 
-  return { created, skipped, errors, businessesCreated, contentCreated, intelGenerated }
+  return { created, skipped, errors, businessesCreated, contentCreated, intelGenerated, storiesCreated }
 }

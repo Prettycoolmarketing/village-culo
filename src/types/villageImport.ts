@@ -134,6 +134,14 @@ export interface VIFImportOptions {
   createBusinesses: boolean
   overwriteDuplicates: boolean
   skipDuplicates: boolean
+  // Turns each piece of published content into a real Story (its own page,
+  // blog, SEO/JSON-LD) at import time, not just a raw embedded card — see
+  // buildStoryFromImport in services/publishStory.ts. Only applies when a
+  // content entry's description has enough real substance to make a
+  // genuine blog from (see MIN_AUTO_PUBLISH_DESCRIPTION_LENGTH); a bare
+  // title-and-URL with nothing else stays an ImportedContent-only embed
+  // rather than becoming a thin, empty-looking article page.
+  autoPublishAsStories: boolean
 }
 
 export const DEFAULT_IMPORT_OPTIONS: VIFImportOptions = {
@@ -142,6 +150,7 @@ export const DEFAULT_IMPORT_OPTIONS: VIFImportOptions = {
   createBusinesses: true,
   overwriteDuplicates: false,
   skipDuplicates: true,
+  autoPublishAsStories: true,
 }
 
 // ─── Import result ────────────────────────────────────────────────────────────
@@ -159,4 +168,5 @@ export interface VIFImportResult {
   businessesCreated: number
   contentCreated: number
   intelGenerated: number
+  storiesCreated: number
 }

@@ -470,6 +470,12 @@ export function DashboardBulkImportPage() {
             checked={options.createBusinesses}
             onChange={v => setOptions(o => ({ ...o, createBusinesses: v }))}
           />
+          <OptionToggle
+            label="Auto-publish content as Stories"
+            description="Turn each published content item into a real article — its own page, blog, SEO — instead of just an embedded card. Only applies to items with a real description (~40+ characters); a bare title and link stays an embed."
+            checked={options.autoPublishAsStories}
+            onChange={v => setOptions(o => ({ ...o, autoPublishAsStories: v }))}
+          />
 
           <div className="bg-white rounded-xl border border-[#E8E4DD] p-4 space-y-3">
             <p className="text-xs font-bold text-[#2D2A26]">Duplicate handling</p>
@@ -506,6 +512,7 @@ export function DashboardBulkImportPage() {
               { label: 'Skipped', value: result.skipped.length, color: 'text-[#9CA3AF]' },
               { label: 'Businesses Created', value: result.businessesCreated, color: 'text-[#5E6B4A]' },
               { label: 'Content Saved', value: result.contentCreated, color: 'text-blue-700' },
+              { label: 'Stories Published', value: result.storiesCreated, color: 'text-[#C86A43]' },
             ].map(s => (
               <div key={s.label} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-3">
                 <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
