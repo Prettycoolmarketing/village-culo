@@ -71,7 +71,6 @@ export function LibraryPage() {
             <p className="font-body text-lg text-white/60 leading-relaxed">
               The permanent home for everything founders in the Village have intentionally published —
               free or paid, digital or physical, template or framework or book.
-              Purchasing is only one possible action. Discovery, learning and authority are the primary goals.
             </p>
 
             {/* Stats */}

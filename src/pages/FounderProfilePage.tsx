@@ -20,6 +20,8 @@ import { StoryGrid } from '../widgets/StoryGrid'
 import { CoverImage } from '../components/ui/CoverImage'
 import { IdeaGrid } from '../widgets/IdeaGrid'
 import { LibraryGrid } from '../widgets/LibraryGrid'
+import { LibraryCard } from '../components/cards/LibraryCard'
+import { getLibraryItems } from '../services/library'
 import { EventGrid } from '../widgets/EventGrid'
 import { BusinessCard } from '../components/cards/BusinessCard'
 import { Badge } from '../components/ui/Badge'
@@ -239,6 +241,11 @@ export function FounderProfilePage() {
   // can accidentally re-introduce a blank card.
   const founderOwnedBusinesses = founder
     ? getBusinesses({ founderId: founder.id }).filter(b => b.name.trim().length > 0)
+    : []
+  // Every status except 'archived' is publicly visible for Library items —
+  // same rule LibraryPage/LibraryDetailPage/the bot middleware already use.
+  const founderDigitalProducts = founder
+    ? getLibraryItems({ founderId: founder.id }).filter(i => i.status !== 'archived')
     : []
   const business           = founder
     ? founderOwnedBusinesses.find(b => b.id === founder.businessId) ?? founderOwnedBusinesses[0]
@@ -850,6 +857,24 @@ export function FounderProfilePage() {
                   <div className="flex flex-col gap-4">
                     {founderOwnedBusinesses.map(biz => (
                       <BusinessCard key={biz.id} business={biz} founder={founder} variant="default" />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Digital products — a quick, sidebar-level way to reach
+                  what this founder sells without scrolling all the way
+                  down to the full Library section below. Each card links
+                  straight to that item's own page, which is where the
+                  real purchase links live. */}
+              {founderDigitalProducts.length > 0 && (
+                <section aria-labelledby="founder-products-heading">
+                  <h2 id="founder-products-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
+                    Digital Products
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {founderDigitalProducts.map(item => (
+                      <LibraryCard key={item.id} item={item} variant="compact" />
                     ))}
                   </div>
                 </section>

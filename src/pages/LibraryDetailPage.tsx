@@ -127,16 +127,6 @@ export function LibraryDetailPage() {
                   loading="eager"
                 />
               </div>
-              {/* Preview images */}
-              {item.previewImages && item.previewImages.length > 0 && (
-                <div className="flex gap-2 mt-3">
-                  {item.previewImages.map((img, i) => (
-                    <div key={i} className="w-16 h-20 rounded-lg overflow-hidden border-2 border-white/20">
-                      <img src={img} alt={`Preview ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Meta */}
@@ -310,38 +300,47 @@ export function LibraryDetailPage() {
                     The journey that led to this being created.
                   </p>
                   <ol className="relative border-l border-border space-y-8 pl-6" role="list">
-                    {/* "Published to the Village" joins the same sort instead of
-                        always rendering last — an item with a later-dated
-                        entry (a future launch, say) would otherwise show this
-                        earlier "published" node out of chronological order. */}
-                    {[
-                      ...item.createdFrom.map(entry => ({ kind: 'entry' as const, entry })),
-                      { kind: 'published' as const, date: item.createdAt },
-                    ]
-                      .sort((a, b) => (a.kind === 'entry' ? a.entry.date : a.date).localeCompare(b.kind === 'entry' ? b.entry.date : b.date))
-                      .map(node => node.kind === 'published' ? (
-                        <li key="published" className="relative" role="listitem">
-                          <div className="absolute -left-[1.625rem] top-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-primary border-2 border-primary" aria-hidden="true">
-                            <span className="text-xs">📚</span>
-                          </div>
-                          <time className="font-body text-xs text-muted font-medium block mb-1" dateTime={item.createdAt}>
-                            {new Date(item.createdAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
-                          </time>
-                          <h3 className="font-heading text-base font-semibold text-primary mb-1">Published to the Village</h3>
-                        </li>
-                      ) : (
-                        <li key={node.entry.id} className="relative" role="listitem">
+                    {[...item.createdFrom]
+                      .sort((a, b) => a.date.localeCompare(b.date))
+                      .map(entry => (
+                        <li key={entry.id} className="relative" role="listitem">
                           <div className="absolute -left-[1.625rem] top-0.5 flex items-center justify-center w-6 h-6 rounded-full bg-surface border-2 border-primary" aria-hidden="true">
-                            <span className="text-xs">{createdFromIcon[node.entry.type] ?? '○'}</span>
+                            <span className="text-xs">{createdFromIcon[entry.type] ?? '○'}</span>
                           </div>
-                          <time className="font-body text-xs text-muted font-medium block mb-1" dateTime={node.entry.date}>
-                            {new Date(node.entry.date).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+                          <time className="font-body text-xs text-muted font-medium block mb-1" dateTime={entry.date}>
+                            {new Date(entry.date).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
                           </time>
-                          <h3 className="font-heading text-base font-semibold text-charcoal mb-1">{node.entry.title}</h3>
-                          <p className="font-body text-sm text-muted leading-relaxed">{node.entry.description}</p>
+                          <h3 className="font-heading text-base font-semibold text-charcoal mb-1">{entry.title}</h3>
+                          <p className="font-body text-sm text-muted leading-relaxed">{entry.description}</p>
                         </li>
                       ))}
                   </ol>
+                </section>
+              )}
+
+              {/* Preview images — a swipeable strip on mobile (native
+                  scroll-snap, no JS/library needed), a plain grid from sm
+                  up where there's room to just show them all at once. */}
+              {item.previewImages && item.previewImages.length > 0 && (
+                <section aria-labelledby="preview-images-heading">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 id="preview-images-heading" className="font-heading text-2xl font-semibold text-charcoal">
+                      Follow on Instagram
+                    </h2>
+                    {founder?.instagram && (
+                      <a href={normalizeUrl(founder.instagram)} target="_blank" rel="noopener noreferrer"
+                        className="font-body text-sm font-semibold text-primary hover:underline shrink-0">
+                        @{normalizeUrl(founder.instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/\/$/, '')} →
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0">
+                    {item.previewImages.map((img, i) => (
+                      <div key={i} className="w-32 sm:w-auto aspect-[4/5] rounded-2xl overflow-hidden shrink-0 snap-center bg-border">
+                        <img src={img} alt={`${item.title} preview ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                      </div>
+                    ))}
+                  </div>
                 </section>
               )}
 
