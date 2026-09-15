@@ -100,6 +100,17 @@ async function fetchPublicRow(table, slug, extraFilter) {
   return rows[0]?.data ?? null
 }
 
+async function fetchRowById(table, id, extraFilter = '') {
+  if (!id) return null
+  const url = `${SUPABASE_URL}/rest/v1/${table}?select=data&id=eq.${encodeURIComponent(id)}${extraFilter}&limit=1`
+  const res = await fetch(url, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+  })
+  if (!res.ok) return null
+  const rows = await res.json()
+  return rows[0]?.data ?? null
+}
+
 function renderDocument({ title, description, path, ogType, jsonLd, bodyHtml }) {
   const canonical = `https://www.culovillage.com${path}`
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME
@@ -203,6 +214,11 @@ ${businesses.length > 0 ? `<section>\n<h2>Businesses</h2>\n${linkList(businesses
     if (section === 'stories' && slug) {
       const story = await fetchPublicRow('stories', slug, '&status=in.(published,featured)')
       if (!story) return
+      // A story with no visible author link is a dead end for the exact
+      // chain that actually matters for AI/answer-engine discovery: story
+      // -> the founder who wrote it -> their LinkedIn (see founders section
+      // below). Fetching the founder row too so that chain exists here.
+      const author = await fetchRowById('founders', story.founderId, '&status=in.(published,featured)')
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Article',
@@ -210,10 +226,12 @@ ${businesses.length > 0 ? `<section>\n<h2>Businesses</h2>\n${linkList(businesses
         description: (story.summary || '').slice(0, 200),
         datePublished: story.createdAt,
         ...(story.coverImage ? { image: story.coverImage } : {}),
+        ...(author ? { author: { '@type': 'Person', name: author.name, url: `https://www.culovillage.com/founders/${author.slug}` } } : {}),
       }
       const bodyHtml = `
 <article>
 <h1>${escapeHtml(story.title)}</h1>
+${author ? `<p>By <a href="/founders/${escapeHtml(author.slug)}">${escapeHtml(author.name)}</a></p>` : ''}
 ${story.subtitle ? `<p><em>${escapeHtml(story.subtitle)}</em></p>` : ''}
 ${story.summary ? `<p>${escapeHtml(story.summary)}</p>` : ''}
 ${textToParagraphs(story.blog)}
@@ -228,6 +246,17 @@ ${textToParagraphs(story.blog)}
     if (section === 'founders' && slug) {
       const founder = await fetchPublicRow('founders', slug, '&status=in.(published,featured)')
       if (!founder) return
+      // sameAs is the field an AI/answer engine actually reads to attach a
+      // real LinkedIn (or other profile) URL to this person — without it,
+      // a bot sees a name and a bio with no way to know a LinkedIn even
+      // exists, let alone link to it. Same links also rendered as real
+      // <a> tags in the body below, since some retrieval pulls from
+      // visible text/links rather than the JSON-LD.
+      const sameAs = [
+        founder.linkedin, founder.website, founder.instagram, founder.youtube,
+        founder.tiktok, founder.podcast, founder.newsletter,
+        ...(Array.isArray(founder.socialLinks) ? founder.socialLinks.map((l: any) => l?.url) : []),
+      ].filter(Boolean)
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Person',
@@ -235,13 +264,27 @@ ${textToParagraphs(story.blog)}
         description: founder.bio,
         ...(founder.avatar ? { image: founder.avatar } : {}),
         ...(founder.location?.name ? { homeLocation: founder.location.name } : {}),
+        ...(founder.industry?.name ? { jobTitle: founder.industry.name } : {}),
+        ...(sameAs.length > 0 ? { sameAs } : {}),
       }
+      const LINK_LABELS: Record<string, string> = {
+        linkedin: 'LinkedIn', website: 'Website', instagram: 'Instagram',
+        youtube: 'YouTube', tiktok: 'TikTok', podcast: 'Podcast', newsletter: 'Newsletter',
+      }
+      const namedLinks = (['linkedin', 'website', 'instagram', 'youtube', 'tiktok', 'podcast', 'newsletter'] as const)
+        .filter(key => founder[key])
+        .map(key => `<li><a href="${escapeHtml(founder[key])}">${LINK_LABELS[key]}</a></li>`)
+      const socialLinks = Array.isArray(founder.socialLinks)
+        ? founder.socialLinks.filter((l: any) => l?.url).map((l: any) => `<li><a href="${escapeHtml(l.url)}">${escapeHtml(l.label || l.platform || 'Link')}</a></li>`)
+        : []
+      const linksHtml = [...namedLinks, ...socialLinks]
       const bodyHtml = `
 <article>
 <h1>${escapeHtml(founder.name)}</h1>
 ${founder.industry?.name ? `<p>${escapeHtml(founder.industry.name)}</p>` : ''}
 ${founder.location?.name ? `<p>${escapeHtml(founder.location.name)}</p>` : ''}
 ${textToParagraphs(founder.bio)}
+${linksHtml.length > 0 ? `<nav><h2>Find ${escapeHtml(founder.name)}</h2><ul>\n${linksHtml.join('\n')}\n</ul></nav>` : ''}
 </article>`
       const html = renderDocument({
         title: founder.name, description: founder.bio, path: url.pathname,
@@ -253,6 +296,10 @@ ${textToParagraphs(founder.bio)}
     if (section === 'businesses' && slug) {
       const biz = await fetchPublicRow('businesses', slug, '&status=in.(published,featured)')
       if (!biz) return
+      const bizSameAs = [
+        biz.instagram, biz.linkedin,
+        ...(Array.isArray(biz.socialLinks) ? biz.socialLinks.map((l: any) => l?.url) : []),
+      ].filter(Boolean)
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
@@ -260,12 +307,22 @@ ${textToParagraphs(founder.bio)}
         description: biz.description,
         ...(biz.logo ? { logo: biz.logo } : {}),
         ...(biz.website ? { url: biz.website } : {}),
+        ...(bizSameAs.length > 0 ? { sameAs: bizSameAs } : {}),
       }
+      const BIZ_LINK_LABELS: Record<string, string> = { website: 'Website', instagram: 'Instagram', linkedin: 'LinkedIn' }
+      const bizNamedLinks = (['website', 'instagram', 'linkedin'] as const)
+        .filter(key => biz[key])
+        .map(key => `<li><a href="${escapeHtml(biz[key])}">${BIZ_LINK_LABELS[key]}</a></li>`)
+      const bizSocialLinks = Array.isArray(biz.socialLinks)
+        ? biz.socialLinks.filter((l: any) => l?.url).map((l: any) => `<li><a href="${escapeHtml(l.url)}">${escapeHtml(l.label || l.platform || 'Link')}</a></li>`)
+        : []
+      const bizLinksHtml = [...bizNamedLinks, ...bizSocialLinks]
       const bodyHtml = `
 <article>
 <h1>${escapeHtml(biz.name)}</h1>
 ${biz.tagline ? `<p><em>${escapeHtml(biz.tagline)}</em></p>` : ''}
 ${textToParagraphs(biz.description)}
+${bizLinksHtml.length > 0 ? `<nav><h2>Find ${escapeHtml(biz.name)}</h2><ul>\n${bizLinksHtml.join('\n')}\n</ul></nav>` : ''}
 </article>`
       const html = renderDocument({
         title: biz.name, description: biz.description || biz.tagline, path: url.pathname,
