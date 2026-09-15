@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { getFounders, updateFounder, deleteFounder } from '../../../services/founders'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../../services/businesses'
 import { getStories, updateStory, deleteStory } from '../../../services/stories'
@@ -43,7 +43,18 @@ function ToggleButton({
 // ─── "Feature toggle" sub-tab — pin existing founders/businesses/stories/imports ──
 
 function FeatureTogglePanel() {
-  const [tab, setTab]   = useState<ContentTab>('founders')
+  const [searchParams] = useSearchParams()
+  // Lets a link jump straight to the right list (e.g. from Overview's
+  // Businesses/Published Stories/Public Imports stat cards, which used to
+  // all point at this same page with no way to land on anything but the
+  // Founders sub-tab) instead of always opening on Founders regardless of
+  // which stat was actually clicked.
+  const [tab, setTab] = useState<ContentTab>(() => {
+    const requested = searchParams.get('contentTab')
+    return requested && ['founders', 'businesses', 'stories', 'imports'].includes(requested)
+      ? requested as ContentTab
+      : 'founders'
+  })
   const [tick, setTick] = useState(0)
   const [toggleError, setToggleError] = useState<string | null>(null)
   const refresh = () => setTick(t => t + 1)

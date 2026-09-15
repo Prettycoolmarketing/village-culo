@@ -227,9 +227,9 @@ export function VillageHQOverviewPage() {
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Content</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Businesses"        value={businesses.length}       color="text-[#2D2A26]" to="/dashboard/village/opportunities?tab=spotlight" />
-          <StatCard label="Published Stories" value={publishedStories.length} color="text-[#2D2A26]" to="/dashboard/village/opportunities?tab=spotlight" />
-          <StatCard label="Public Imports"    value={publicContent.length}    color="text-[#2D2A26]" to="/dashboard/village/opportunities?tab=spotlight" />
+          <StatCard label="Businesses"        value={businesses.length}       color="text-[#2D2A26]" to="/dashboard/village/opportunities?tab=spotlight&contentTab=businesses" />
+          <StatCard label="Published Stories" value={publishedStories.length} color="text-[#2D2A26]" to="/dashboard/village/opportunities?tab=spotlight&contentTab=stories" />
+          <StatCard label="Public Imports"    value={publicContent.length}    color="text-[#2D2A26]" to="/dashboard/village/opportunities?tab=spotlight&contentTab=imports" />
           <StatCard label="Total Imports"     value={allContent.length}       color="text-[#2D2A26]" />
         </div>
       </section>
