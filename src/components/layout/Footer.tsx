@@ -110,14 +110,33 @@ export function Footer() {
           {/* Meet the founder — sits between More and Publish */}
           <div>
             <h3 className="font-heading text-white font-semibold text-base mb-4">Meet the founder</h3>
-            <p className="text-sm text-white/60 leading-relaxed mb-4">
+            <p className="text-sm text-white/60 leading-relaxed">
               Shakas is a serial entrepreneur. She previously owned a tour company, designed a unique 3-in-1
               beach bag, and is proud owner of Pretty Cool Marketing x The Culo Village.
             </p>
-            <Link to="/speaker" className="inline-block text-sm text-primary font-semibold hover:underline mb-4">
-              Speaker &amp; Press →
-            </Link>
-            <div className="flex items-center gap-3">
+          </div>
+
+          {/* Publish — Speaker & Press and social links sit here, under
+              "Join the culo village", rather than in their own column. */}
+          <div>
+            <nav aria-label={`${publishSection.heading} links`}>
+              <h3 className="font-heading text-white font-semibold text-base mb-4">{publishSection.heading}</h3>
+              <ul className="space-y-2.5">
+                {publishSection.links.map(link => (
+                  <li key={link.label}>
+                    <Link to={link.to} className="text-sm text-white/60 hover:text-white transition-colors">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+                <li>
+                  <Link to="/speaker" className="text-sm text-primary font-semibold hover:underline">
+                    Speaker &amp; Press →
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+            <div className="flex items-center gap-3 mt-5">
               {FOUNDER_SOCIALS.map(social => (
                 <a
                   key={social.label}
@@ -134,20 +153,6 @@ export function Footer() {
               ))}
             </div>
           </div>
-
-          {/* Publish */}
-          <nav aria-label={`${publishSection.heading} links`}>
-            <h3 className="font-heading text-white font-semibold text-base mb-4">{publishSection.heading}</h3>
-            <ul className="space-y-2.5">
-              {publishSection.links.map(link => (
-                <li key={link.label}>
-                  <Link to={link.to} className="text-sm text-white/60 hover:text-white transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
         </div>
 
         <div className="mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">

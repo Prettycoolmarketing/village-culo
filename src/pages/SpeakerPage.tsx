@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { normalizeUrl } from '../utils/url'
-import { InnerContainer } from '../components/layout/PageContainer'
+import { InnerContainer, Section } from '../components/layout/PageContainer'
 import { getFounderBySlug } from '../services/founders'
 import { getBusinesses } from '../services/businesses'
 import { getStories } from '../services/stories'
@@ -234,6 +235,17 @@ export function SpeakerPage() {
   return (
     <main className="min-h-screen bg-background">
 
+      {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
+      <nav className="bg-surface border-b border-border pt-20 pb-4" aria-label="Breadcrumb">
+        <InnerContainer>
+          <ol className="flex items-center gap-2 text-sm font-body text-muted flex-wrap" role="list">
+            <li><Link to="/" className="hover:text-primary transition-colors">Village</Link></li>
+            <li aria-hidden="true" className="text-border">›</li>
+            <li className="text-charcoal font-medium" aria-current="page">Speaker &amp; Press</li>
+          </ol>
+        </InnerContainer>
+      </nav>
+
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section aria-labelledby="speaker-title">
         <div className="relative h-56 sm:h-72 md:h-80 overflow-hidden bg-charcoal">
@@ -249,7 +261,7 @@ export function SpeakerPage() {
               <div className="lg:col-span-2">
                 {founder.avatar && (
                   <img src={founder.avatar} alt={founder.name}
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-4 ring-surface shadow-lg -mt-12 sm:-mt-14 mb-5" />
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover ring-4 ring-surface shadow-lg -mt-12 sm:-mt-14 mb-5" />
                 )}
                 <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
                   Speaker &amp; Press
@@ -286,7 +298,7 @@ export function SpeakerPage() {
       </section>
 
       {/* ── The thing I keep coming back to ─────────────────────────────── */}
-      <section className="py-16">
+      <Section>
         <InnerContainer>
           <div className="max-w-3xl">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">The thing I keep coming back to</p>
@@ -304,17 +316,19 @@ export function SpeakerPage() {
             </div>
           </div>
         </InnerContainer>
-      </section>
+      </Section>
 
       {/* ── Photo break ──────────────────────────────────────────────────── */}
       {founder.coverImage && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <img src={founder.coverImage} alt="" className="w-full h-56 sm:h-72 object-cover rounded-3xl" loading="lazy" />
-        </div>
+        <InnerContainer>
+          <div className="max-w-5xl mx-auto">
+            <img src={founder.coverImage} alt="" className="w-full h-56 sm:h-72 object-cover rounded-3xl" loading="lazy" />
+          </div>
+        </InnerContainer>
       )}
 
       {/* ── What I speak about ──────────────────────────────────────────── */}
-      <section className="py-16 bg-surface border-y border-border">
+      <Section className="bg-surface border-y border-border">
         <InnerContainer>
           <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">What I speak about</p>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-10">Bookable talks</h2>
@@ -342,10 +356,10 @@ export function SpeakerPage() {
             </ul>
           </div>
         </InnerContainer>
-      </section>
+      </Section>
 
       {/* ── Built from doing it, not just talking about it ──────────────── */}
-      <section className="py-16">
+      <Section>
         <InnerContainer>
           <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Built from doing it, not just talking about it</p>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-2">Four businesses. Four very different lessons.</h2>
@@ -387,10 +401,10 @@ export function SpeakerPage() {
             </div>
           </div>
         </InnerContainer>
-      </section>
+      </Section>
 
       {/* ── About Shakas ─────────────────────────────────────────────────── */}
-      <section className="py-16 bg-surface border-y border-border">
+      <Section className="bg-surface border-y border-border">
         <InnerContainer>
           <div className="max-w-3xl">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">About Shakas</p>
@@ -399,10 +413,10 @@ export function SpeakerPage() {
             </div>
           </div>
         </InnerContainer>
-      </section>
+      </Section>
 
       {/* ── Press / speaking CTA ─────────────────────────────────────────── */}
-      <section className="py-16 bg-charcoal">
+      <Section className="bg-charcoal">
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div>
@@ -448,7 +462,7 @@ export function SpeakerPage() {
             </div>
           </div>
         </InnerContainer>
-      </section>
+      </Section>
     </main>
   )
 }
