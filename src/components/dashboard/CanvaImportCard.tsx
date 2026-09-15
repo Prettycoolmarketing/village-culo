@@ -339,6 +339,77 @@ export function CanvaImportCard({
     await saveItem(item, indices, videoExportError)
   }
 
+  // Bulk mode — the opposite of handleUse's grouping: instead of merging
+  // every selected slide into one piece, each selected slide becomes its
+  // own separate draft in one go. A founder who just finished a real batch
+  // in Canva (10 different post ideas as 10 slides in one project) gets 10
+  // drafts immediately instead of repeating "select one, Use 1 slide, pick
+  // the next" ten times. No reel video export here — this is specifically
+  // for turning a batch of slides into a batch of blogs.
+  async function handleUseSeparate() {
+    if (!result || selected.size === 0) return
+    const indices = [...selected].sort((a, b) => a - b)
+
+    setBusy(true)
+    setStage(`Reading the text off ${indices.length} slides…`)
+    const textByIndex = new Map<number, string | undefined>()
+    for (const designId of [...new Set(indices.map(i => result.designIds[i]))]) {
+      const pagesForDesign = indices
+        .filter(i => result.designIds[i] === designId)
+        .map(i => result.pageNumbers[i] ?? i + 1)
+      try {
+        const { textsByPage } = await fetchCanvaSlideTexts(founderId, designId!, pagesForDesign)
+        indices
+          .filter(i => result.designIds[i] === designId)
+          .forEach(i => textByIndex.set(i, textsByPage[result.pageNumbers[i] ?? i + 1]))
+      } catch {
+        // Non-fatal — these slides still get created, just without a
+        // pre-filled caption, same as any other extraction failure.
+      }
+    }
+
+    const savedItems: ImportedContent[] = []
+    const savedIndices: number[] = []
+    let attempted = 0
+    for (const i of indices) {
+      attempted++
+      setStage(`Saving ${attempted} of ${indices.length}…`)
+      const slideText = textByIndex.get(i)?.trim() || undefined
+      const item: ImportedContent = {
+        id: `imp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        founderId,
+        sourcePlatform: 'canva',
+        originalUrl: '',
+        thumbnailUrl: result.imageUrls[i],
+        imageUrls: [result.imageUrls[i]!],
+        title: result.designTitles[result.designIds[i]!] ?? 'Canva design',
+        description: slideText,
+        contentTypeHint: contentTypeHint ?? ['blog'],
+        importedAt: new Date().toISOString(),
+        status: 'draft',
+        topics: [],
+        locations: [],
+        visibility: 'private',
+        flaggedForReview: !slideText,
+      }
+      const saveResult = await importedContentService.upsert(item)
+      if (saveResult.success) {
+        savedItems.push(item)
+        savedIndices.push(i)
+      }
+    }
+
+    setBusy(false)
+    setStage(null)
+    if (savedIndices.length < indices.length) {
+      setError(`Created ${savedIndices.length} of ${indices.length} — the rest failed to save. Try selecting the remaining slides again.`)
+    }
+    for (const item of savedItems) onImported(item)
+    setUsedIndices(prev => new Set([...prev, ...savedIndices]))
+    setGroupsCreated(n => n + savedIndices.length)
+    setSelected(new Set())
+  }
+
   // Split out from handleUse so Reconnect can retry the exact same save
   // after refreshing the session, instead of making the founder redo the
   // whole slide-text extraction just because the final write hit a stale
@@ -488,10 +559,19 @@ export function CanvaImportCard({
               </div>
 
               {contentTypeHint ? (
-                <button type="button" onClick={() => void handleUse()} disabled={selected.size === 0 || busy}
-                  className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
-                  Use {selected.size > 0 ? selected.size : ''} slide{selected.size === 1 ? '' : 's'}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => void handleUse()} disabled={selected.size === 0 || busy}
+                    className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-40 transition-colors">
+                    Use {selected.size > 0 ? selected.size : ''} slide{selected.size === 1 ? '' : 's'}
+                  </button>
+                  {selected.size > 1 && (
+                    <button type="button" onClick={() => void handleUseSeparate()} disabled={busy}
+                      title="Instead of merging your selected slides into one piece, each becomes its own separate draft"
+                      className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors">
+                      Create {selected.size} separate drafts
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -504,6 +584,13 @@ export function CanvaImportCard({
                       className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors">
                       Save as Reel
                     </button>
+                    {selected.size > 1 && (
+                      <button type="button" onClick={() => void handleUseSeparate()} disabled={busy}
+                        title="Instead of merging your selected slides into one piece, each becomes its own separate draft"
+                        className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors">
+                        Create {selected.size} separate drafts
+                      </button>
+                    )}
                   </div>
                   {(usedIndices.size > 0 || groupsCreated > 0) && (
                     <div className="flex flex-col gap-2 mt-4">

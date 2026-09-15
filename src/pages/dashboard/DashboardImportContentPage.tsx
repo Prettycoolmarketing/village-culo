@@ -1189,7 +1189,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
             className={INPUT} placeholder="https://..." />
         </div>
 
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-semibold text-[#2D2A26] mb-1">Extra Media</p>
           <p className="text-xs text-[#9CA3AF] mb-3">Add extra photos, a carousel, or another reel/video to go with this piece.</p>
 
@@ -1198,7 +1198,8 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
             {(draft.imageUrls ?? []).map((url, i) => (
               <div key={i} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg border border-[#E8E4DD] p-2 min-w-0">
                 <img src={url} alt="" className="w-9 h-9 rounded object-cover shrink-0 bg-[#F3EDE6]" />
-                <span title={url} className="text-xs text-[#9CA3AF] truncate min-w-0 flex-1">{url}</span>
+                <a href={url} target="_blank" rel="noopener noreferrer" title={url}
+                  className="text-xs text-[#9CA3AF] hover:text-[#C86A43] hover:underline truncate min-w-0 flex-1">{url}</a>
                 <button
                   onClick={() => field('imageUrls', (draft.imageUrls ?? []).filter((_, j) => j !== i))}
                   className="shrink-0 text-xs text-[#9CA3AF] hover:text-red-500 px-1">✕</button>
