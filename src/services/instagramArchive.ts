@@ -19,6 +19,7 @@ import { importedContentService } from './importedContent'
 import type { ImportedContent } from '../types/importedContent'
 import type { ContentType } from '../types'
 import { normalizeBlogSpacing } from '../utils/blogFormatting'
+import { decodeHtmlEntities } from '../utils/htmlEntities'
 
 export type InstagramEntryKind = 'post' | 'reel' | 'story'
 
@@ -64,10 +65,16 @@ function normalizeEntries(raw: unknown, kind: InstagramEntryKind): ParsedInstagr
     const e = entry as Record<string, unknown>
     const mediaList: Record<string, unknown>[] = Array.isArray(e.media) ? e.media as Record<string, unknown>[] : [e]
 
-    const caption =
+    // Instagram's own export JSON HTML-escapes caption text (an apostrophe
+    // comes through as literal "&#39;", "&" as "&amp;") — left undecoded,
+    // that literal markup became the story's title, blog and (via slugify,
+    // which drops the "&" and "#" but keeps the digits) its URL, e.g.
+    // "there&#39;s" turning into the word "there39s" in the slug.
+    const caption = decodeHtmlEntities(
       (typeof e.title === 'string' && e.title) ||
       (typeof mediaList[0]?.title === 'string' ? (mediaList[0]!.title as string) : '') ||
       ''
+    )
 
     const timestamps = mediaList
       .map(m => (typeof m.creation_timestamp === 'number' ? m.creation_timestamp : undefined))
