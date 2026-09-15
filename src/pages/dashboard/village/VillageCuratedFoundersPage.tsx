@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getFounders, updateFoundersBatch, deleteFoundersBatch, deleteFounderAccount } from '../../../services/founders'
+import { ensureClaimTokens } from '../../../services/founderClaimTokens'
 import { getBusinesses } from '../../../services/businesses'
 import { importedContentService } from '../../../services/importedContent'
 import { founderClaimService } from '../../../services/founderClaim'
@@ -215,22 +216,29 @@ export function VillageCuratedFoundersPage() {
     refresh()
   }
 
-  function exportSelected(ids: Set<string>) {
+  async function exportSelected(ids: Set<string>) {
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const rows = getFounders()
-      .filter(f => ids.has(f.id))
+    const targets = getFounders().filter(f => ids.has(f.id))
+    // claimUrl carries a real per-founder secret (?key=) so it's safe to
+    // paste straight into a bulk outreach tool (Sellable AI, a mail-merge
+    // campaign, etc.) as a personalization field — each contact gets a
+    // link that claims *their* profile instantly, and only theirs; the
+    // plain /claim/:slug URL alone (already public on their profile page)
+    // isn't enough on its own. See ensureClaimTokens/claimToken.
+    const tokens = await ensureClaimTokens(targets)
+    const rows = targets
       .map(f => {
         const parts = f.name.split(' ')
         const biz   = businesses.find(b => b.founderId === f.id)
         return [
           claimEmailByFounder.get(f.id) ?? '',
           parts[0] ?? '', parts.length > 1 ? parts[parts.length - 1] : '',
-          f.name, f.profileStatus ?? f.status, f.slug,
-          `${origin}/founders/${f.slug}`, `${origin}/claim/${f.slug}`,
+          f.name, f.linkedin ?? '', f.profileStatus ?? f.status, f.slug,
+          `${origin}/founders/${f.slug}`, `${origin}/claim/${f.slug}?key=${tokens.get(f.id) ?? ''}`,
           biz?.name ?? '', 'selected-export', f.createdAt,
         ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
       })
-    const csv  = ['email,firstName,lastName,fullName,profileStatus,founderSlug,profileUrl,claimUrl,businessName,tags,createdAt', ...rows].join('\n')
+    const csv  = ['email,firstName,lastName,fullName,linkedin,profileStatus,founderSlug,profileUrl,claimUrl,businessName,tags,createdAt', ...rows].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
@@ -534,7 +542,7 @@ export function VillageCuratedFoundersPage() {
         onPublish={() => void bulkUpdate(selected, { status: 'published' })}
         onHide={() => void bulkUpdate(selected, { status: 'archived' })}
         onArchive={() => void archiveSelected(selected)}
-        onExport={() => exportSelected(selected)}
+        onExport={() => void exportSelected(selected)}
       />
       </>
       )}

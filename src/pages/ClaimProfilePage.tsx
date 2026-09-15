@@ -1,15 +1,38 @@
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
-import { getFounders } from '../services/founders'
+import { getFounders, updateFounder } from '../services/founders'
 import { founderClaimService } from '../services/founderClaim'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { InnerContainer } from '../components/layout/PageContainer'
 
 export function ClaimProfilePage() {
   const { slug } = useParams<{ slug: string }>()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const founder = getFounders().find(f => f.slug === slug)
+  const key = searchParams.get('key')
+
+  // A link carrying the founder's own secret (sent to them directly —
+  // curation, not the public profile page) skips the request-and-review
+  // flow entirely and goes straight to creating their account. The real
+  // token never reaches the client directly — it's checked server-side by
+  // verify-claim-token (see that function's own notes for why: founders.data
+  // is publicly readable, so a secret stored there wouldn't be one).
+  // Without a matching key, /claim/:slug falls back to the older request
+  // form below.
+  const [claimKeyState, setClaimKeyState] = useState<'checking' | 'valid' | 'invalid'>(key ? 'checking' : 'invalid')
+  useEffect(() => {
+    if (!key || !founder) { setClaimKeyState('invalid'); return }
+    if (!isSupabaseConfigured || !supabase) { setClaimKeyState('invalid'); return }
+    let cancelled = false
+    supabase.functions.invoke<{ valid?: boolean }>('verify-claim-token', { body: { founderId: founder.id, key } })
+      .then(({ data }) => { if (!cancelled) setClaimKeyState(data?.valid ? 'valid' : 'invalid') })
+      .catch(() => { if (!cancelled) setClaimKeyState('invalid') })
+    return () => { cancelled = true }
+  }, [key, founder?.id])
+
   usePageMeta({
     title:       founder ? `Claim ${founder.name}'s Profile` : 'Claim a Profile',
     description: founder
@@ -40,6 +63,14 @@ export function ClaimProfilePage() {
         </div>
       </main>
     )
+  }
+
+  // Briefly, only when a ?key= is actually present — verifying it server-side
+  // takes one round-trip, and showing the request form for a flash before
+  // swapping to the instant-claim one would be a worse experience than a
+  // beat of nothing.
+  if (claimKeyState === 'checking') {
+    return <main className="min-h-screen bg-background" />
   }
 
   // Already claimed / verified — don't show form. founder.userId is checked
@@ -73,8 +104,9 @@ export function ClaimProfilePage() {
     )
   }
 
-  // Pending
-  if (founder.profileStatus === 'claim-pending') {
+  // Pending — a valid claim key skips this too; the secret link is a
+  // stronger signal than whatever put it in this state earlier.
+  if (founder.profileStatus === 'claim-pending' && claimKeyState !== 'valid') {
     return (
       <main className="min-h-screen bg-background pt-20">
         <InnerContainer>
@@ -100,6 +132,10 @@ export function ClaimProfilePage() {
         </InnerContainer>
       </main>
     )
+  }
+
+  if (claimKeyState === 'valid') {
+    return <InstantClaimForm founder={founder} />
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -334,6 +370,120 @@ export function ClaimProfilePage() {
           </div>
         </InnerContainer>
       </div>
+    </main>
+  )
+}
+
+// Reached only with a valid ?key= — no review queue, no staff step. Creates
+// the real Supabase account right here and marks the founder claimed with
+// this email, so getCurrentFounder()'s existing claimEmail-match (see
+// services/currentFounder.ts) picks it up the moment they land in the
+// dashboard — the exact same resolution a staff-approved claim already
+// relies on, just triggered immediately instead of on their next sign-in.
+function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>[number] }) {
+  const navigate = useNavigate()
+  const { signUp } = useAuth()
+  const [email, setEmail]         = useState('')
+  const [password, setPassword]   = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError]         = useState('')
+  const [needsConfirmation, setNeedsConfirmation] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
+      return
+    }
+    setSubmitting(true)
+    try {
+      await updateFounder({
+        ...founder,
+        profileStatus: 'claimed',
+        claimedAt: new Date().toISOString(),
+        claimEmail: email.trim(),
+        isClaimable: false,
+      })
+      const { error: signUpError, needsConfirmation: needsConf, alreadyRegistered } = await signUp(email.trim(), password, '/dashboard/welcome')
+      if (alreadyRegistered) {
+        setError('An account already exists for this email — sign in instead, and your profile will connect automatically.')
+        return
+      }
+      if (signUpError) {
+        setError(signUpError)
+        return
+      }
+      if (needsConf) {
+        setNeedsConfirmation(true)
+        return
+      }
+      navigate('/dashboard/welcome', { replace: true })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (needsConfirmation) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center px-4 pt-20">
+        <div className="max-w-md text-center">
+          <h1 className="font-heading text-2xl font-semibold text-charcoal mb-3">Almost there</h1>
+          <p className="font-body text-muted leading-relaxed">
+            Check <strong>{email}</strong> for a confirmation link — once you click it, your {founder.name} profile will be waiting for you, fully editable.
+          </p>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-background pt-20">
+      <InnerContainer>
+        <div className="max-w-md mx-auto py-16">
+          <h1 className="font-heading text-2xl font-semibold text-charcoal mb-2">
+            Claim {founder.name}'s profile
+          </h1>
+          <p className="font-body text-sm text-muted mb-8 leading-relaxed">
+            This link is yours — create your account below and everything already on your profile (bio, stories, businesses) will be waiting, fully editable.
+          </p>
+          <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-4">
+            <div>
+              <label className="block font-body text-sm font-medium text-charcoal mb-1.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="w-full px-3.5 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block font-body text-sm font-medium text-charcoal mb-1.5">Set a password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                minLength={8}
+                className="w-full px-3.5 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
+            {error && <p className="font-body text-sm text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+            >
+              {submitting ? 'Creating your account…' : 'Claim my profile'}
+            </button>
+          </form>
+        </div>
+      </InnerContainer>
     </main>
   )
 }
