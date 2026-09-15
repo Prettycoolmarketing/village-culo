@@ -193,6 +193,21 @@ const PLATFORM_CONTENT_TYPE: Record<ImportedContentPlatform, ContentType> = {
   canva:     'carousel',
 }
 
+// A genuinely short summary, never the whole blog dumped in as-is. Used
+// only when there's no real subtitle/autoSummary to fall back on — the
+// old fallback (`item.description || ''`) meant a piece with no subtitle
+// showed its entire blog as the "summary" once description held a full
+// rewritten article rather than a short caption.
+const MAX_FALLBACK_SUMMARY_LENGTH = 200
+export function fallbackSummary(text: string | undefined): string {
+  if (!text) return ''
+  const firstLine = text.split(/\n+/).map(l => l.trim()).find(Boolean) ?? ''
+  if (firstLine.length <= MAX_FALLBACK_SUMMARY_LENGTH) return firstLine
+  const cut = firstLine.slice(0, MAX_FALLBACK_SUMMARY_LENGTH)
+  const lastSpace = cut.lastIndexOf(' ')
+  return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim()}…`
+}
+
 function uniqueSlug(base: string): string {
   const slug = base || `story-${Date.now()}`
   const existingSlugs = new Set(getStories().map(s => s.slug))
@@ -226,7 +241,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     slug,
     title: item.title || `Imported from ${PLATFORM_LABELS[item.sourcePlatform]}`,
     subtitle: item.subtitle,
-    summary: item.subtitle || item.autoSummary || item.description || '',
+    summary: item.subtitle || item.autoSummary || fallbackSummary(item.description),
     coverImage: item.thumbnailUrl || '/placeholders/village-story.svg',
     founderId: founder.id,
     businessId: item.businessId ?? founder.businessId,
@@ -326,7 +341,7 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
     ...story,
     title: item.title || story.title,
     subtitle: item.subtitle || story.subtitle,
-    summary: item.subtitle || item.autoSummary || item.description || story.summary,
+    summary: item.subtitle || item.autoSummary || story.summary || fallbackSummary(item.description),
     coverImage: item.thumbnailUrl || story.coverImage,
     blog: fullDescription || story.blog,
     partnerId: item.partnerId ?? story.partnerId,

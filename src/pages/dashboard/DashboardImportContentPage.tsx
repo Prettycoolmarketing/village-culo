@@ -937,6 +937,11 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     }
     setBlogBeforeRewrite(draft.description ?? '')
     field('description', normalizeBlogSpacing(result.blog.blog))
+    // The AI's own subtitle is a genuine short summary distinct from the
+    // full blog — without saving it too, Summary later falls back to
+    // dumping the entire blog text in as "the summary" (see
+    // buildStoryFromImport). Never overwrites one the founder already wrote.
+    if (result.blog.subtitle && !draft.subtitle?.trim()) field('subtitle', result.blog.subtitle)
   }
 
   function handleUndoRewrite() {
