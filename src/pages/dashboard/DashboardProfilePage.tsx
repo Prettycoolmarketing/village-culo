@@ -472,6 +472,23 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
         </button>
       </div>
 
+      {/* Digital Products — sits right next to Businesses so a founder
+          managing their profile sees both in one place, instead of only
+          discovering Library exists via its own separate sidebar link. */}
+      <div className="flex flex-wrap items-center gap-2 -mt-2">
+        <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide mr-1">Digital Products</span>
+        {getLibraryItems({ founderId }).map(item => (
+          <Link key={item.id} to="/dashboard/library"
+            className="px-3 py-1.5 rounded-lg text-sm font-medium border border-[#E8E4DD] bg-white text-[#6B7280] hover:border-[#C86A43]/50 transition-colors">
+            {item.title}
+          </Link>
+        ))}
+        <Link to="/dashboard/library"
+          className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#C86A43] border border-dashed border-[#C86A43]/50 hover:bg-[#FDF6F3] transition-colors">
+          + Add product
+        </Link>
+      </div>
+
       {!draft ? (
         <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
           <p className="text-sm font-semibold text-[#2D2A26]">No businesses yet.</p>
