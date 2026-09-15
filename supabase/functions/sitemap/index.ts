@@ -20,7 +20,7 @@ const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const SITE_URL              = Deno.env.get('SITE_URL') ?? 'https://village-culo.vercel.app'
 
-const STATIC_ROUTES = ['/', '/founders', '/stories', '/ideas', '/mercato', '/map', '/noticeboard', '/archive', '/expertise', '/library']
+const STATIC_ROUTES = ['/', '/founders', '/stories', '/ideas', '/mercato', '/map', '/noticeboard', '/archive', '/expertise', '/library', '/speaker']
 
 // Keep in sync with MIN_SOURCE_PLATFORM_STORIES in src/pages/SourcePlatformPage.tsx —
 // a Collection page never goes in the sitemap while it's this thin (see Village

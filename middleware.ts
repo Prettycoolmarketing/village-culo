@@ -24,7 +24,7 @@
 
 export const config = {
   matcher: [
-    '/', '/stories/:slug', '/founders/:slug', '/businesses/:slug',
+    '/', '/speaker', '/stories/:slug', '/founders/:slug', '/businesses/:slug',
     '/ideas/:slug', '/series/:slug', '/editorial/:slug', '/library/:slug',
     '/topics/:slug',
   ],
@@ -207,6 +207,72 @@ ${businesses.length > 0 ? `<section>\n<h2>Businesses</h2>\n${linkList(businesses
       // site name, while the H1 above still reads "CULO Village".
       const html = renderDocument({
         title: undefined, description, path: '/', ogType: 'website', jsonLd, bodyHtml,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    // /speaker — the one link handed to a podcast booker, journalist or
+    // conference organiser. Same reasoning as the founder-page sameAs fix
+    // above, at the entity level: an AI reading this page should come away
+    // with the founder's name, her real LinkedIn, and every real business
+    // domain she operates, all corroborating each other as one identity.
+    if (url.pathname === '/speaker') {
+      const founder = await fetchPublicRow('founders', 'shakas-designer', '&status=in.(published,featured)')
+      if (!founder) return
+      const [bizRes, storiesCountRes, importsCountRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/businesses?select=data&founder_id=eq.${founder.id ? encodeURIComponent(founder.id) : ''}`,
+          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }),
+        fetch(`${SUPABASE_URL}/rest/v1/stories?select=id&status=in.(published,featured)`,
+          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'count=exact' } }),
+        fetch(`${SUPABASE_URL}/rest/v1/imported_content?select=id`,
+          { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'count=exact' } }),
+      ])
+      const businesses: any[] = bizRes.ok ? (await bizRes.json()).map((r: any) => r.data) : []
+      const storyCount = Number(storiesCountRes.headers.get('content-range')?.split('/')[1] ?? 0)
+      const importCount = Number(importsCountRes.headers.get('content-range')?.split('/')[1] ?? 0)
+
+      const sameAs = [founder.linkedin, founder.instagram, founder.youtube, ...businesses.map((b: any) => b.website)].filter(Boolean)
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: founder.name,
+        description: founder.bio,
+        jobTitle: 'Founder',
+        ...(founder.avatar ? { image: founder.avatar } : {}),
+        ...(sameAs.length > 0 ? { sameAs } : {}),
+        worksFor: businesses.map((b: any) => ({ '@type': 'Organization', name: b.name, url: b.website })),
+      }
+      const bizListHtml = businesses.map((b: any) =>
+        `<li><a href="${escapeHtml(b.website?.startsWith('http') ? b.website : `https://${b.website}`)}">${escapeHtml(b.name)}</a> — ${escapeHtml(b.tagline || '')}</li>`
+      ).join('\n')
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(founder.name)} — Speaker &amp; Press</h1>
+<p>Founder of ${businesses.length} real, operating businesses — built one after the other, over the last several years.</p>
+<blockquote>A founder posts something real, it performs for a day, then the algorithm moves on — and their whole body of work disappears underneath whatever they posted next.</blockquote>
+<section>
+<h2>Real businesses, run by the same founder</h2>
+<ul>
+${bizListHtml}
+</ul>
+</section>
+<section>
+<h2>Proven on real work, not a pitch deck</h2>
+<p>${storyCount} stories published through the platform. ${importCount} pieces of raw content processed. ${businesses.length} real businesses built and run on it.</p>
+</section>
+${textToParagraphs(founder.bio)}
+<nav>
+<h2>Get in touch</h2>
+<ul>
+<li><a href="mailto:support@prettycoolmarketing.com?subject=Speaking%20%2F%20Press%20enquiry">Email for a booking</a></li>
+${founder.linkedin ? `<li><a href="${escapeHtml(founder.linkedin)}">LinkedIn</a></li>` : ''}
+<li><a href="/founders/shakas-designer">Full profile in the Village</a></li>
+</ul>
+</nav>
+</article>`
+      const html = renderDocument({
+        title: `${founder.name.trim()} — Speaker & Press`, description: `${founder.name.trim()} — founder of ${businesses.map((b: any) => b.name.trim()).join(', ')}.`,
+        path: '/speaker', ogType: 'profile', jsonLd, bodyHtml,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }

@@ -114,6 +114,9 @@ export function Footer() {
               Shakas is a serial entrepreneur. She previously owned a tour company, designed a unique 3-in-1
               beach bag, and is proud owner of Pretty Cool Marketing x The Culo Village.
             </p>
+            <Link to="/speaker" className="inline-block text-sm text-primary font-semibold hover:underline mb-4">
+              Speaker &amp; Press →
+            </Link>
             <div className="flex items-center gap-3">
               {FOUNDER_SOCIALS.map(social => (
                 <a

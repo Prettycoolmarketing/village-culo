@@ -17,6 +17,7 @@ import { usePageTitle }    from './utils/usePageTitle'
 import { VillagePage }        from './pages/VillagePage'
 import { CreativesPage }      from './pages/CreativesPage'
 import { ContactPage }        from './pages/ContactPage'
+import { SpeakerPage }        from './pages/SpeakerPage'
 import { FoundersPage }       from './pages/FoundersPage'
 import { FounderProfilePage } from './pages/FounderProfilePage'
 import { StoriesPage }        from './pages/StoriesPage'
@@ -285,6 +286,7 @@ export default function App() {
                 this redirect means nothing breaks in the meantime either way. */}
             <Route path="/creatives"          element={<Navigate to="/how-culo-canva" replace />} />
             <Route path="/culocontact"        element={<ContactPage />}          />
+            <Route path="/speaker"            element={<SpeakerPage />}          />
             <Route path="/piazza"             element={<Navigate to="/" replace />}      />
             <Route path="/founders"           element={<FoundersPage />}         />
             <Route path="/founders/:slug"     element={<FounderProfilePage />}   />
