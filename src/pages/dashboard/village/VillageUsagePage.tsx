@@ -1,6 +1,5 @@
 import { getFounders } from '../../../services/founders'
 import { importedContentService } from '../../../services/importedContent'
-import { getArchiveUnlockPrice, ARCHIVE_UNLOCK_SUBSET_5000_PRICE } from '../../../config/archiveUnlock'
 
 // Content-transfer volume into the Village, and Archive Unlock revenue
 // specifically — the Village side of the business, distinct from CULO
@@ -52,16 +51,17 @@ export function VillageUsagePage({ embedded = false }: { embedded?: boolean } = 
 
   // Archive Unlock revenue — stripe-archive-unlock-webhook stores the real
   // amount charged (archiveUnlockAmount) straight from the Checkout
-  // Session, so this uses that directly. Only falls back to estimating a
-  // tier from the founder's current archive size for anyone unlocked
-  // before that was tracked (archiveUnlockAmount undefined).
+  // Session's amount_total, so that's the only number counted here. This
+  // used to estimate a tier price from the founder's current archive size
+  // for anyone unlocked before that was tracked — but "unlocked, amount
+  // unknown" also covers a founder who was manually comped a free unlock,
+  // and guessing a paid tier for them inflated revenue with money that was
+  // never actually charged. Better to undercount (shown separately below,
+  // not counted) than report revenue that didn't happen.
   const unlockedFounders = founders.filter(f => f.archiveUnlocked)
-  const estimatedCount = unlockedFounders.filter(f => f.archiveUnlockAmount == null).length
-  const archiveRevenue = unlockedFounders.reduce((sum, f) => {
-    if (f.archiveUnlockAmount != null) return sum + f.archiveUnlockAmount
-    if (f.archiveUnlockCap) return sum + ARCHIVE_UNLOCK_SUBSET_5000_PRICE
-    return sum + getArchiveUnlockPrice(byFounder.get(f.id) ?? 0)
-  }, 0)
+  const trackedFounders = unlockedFounders.filter(f => f.archiveUnlockAmount != null)
+  const estimatedCount = unlockedFounders.length - trackedFounders.length
+  const archiveRevenue = trackedFounders.reduce((sum, f) => sum + (f.archiveUnlockAmount ?? 0), 0)
 
   return (
     <div className={embedded ? '' : 'p-8 max-w-5xl'} style={embedded ? undefined : { fontFamily: "'DM Sans', sans-serif" }}>
@@ -88,7 +88,9 @@ export function VillageUsagePage({ embedded = false }: { embedded?: boolean } = 
         <StatCard
           label="Village Revenue"
           value={`$${archiveRevenue.toLocaleString()}`}
-          sub={estimatedCount > 0 ? `Archive Unlock · ${estimatedCount} pre-tracking, estimated` : 'Archive Unlock, one-time'}
+          sub={estimatedCount > 0
+            ? `+ ${estimatedCount} unlocked before tracking — amount unknown, not counted`
+            : 'Archive Unlock, one-time'}
         />
       </div>
 

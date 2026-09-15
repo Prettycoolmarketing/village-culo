@@ -266,12 +266,12 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     // photos), the same "stop asking, just detect it" treatment as Topics.
     toSave = { ...toSave, contentTypes: deriveContentTypes(toSave) }
     // Summary has no editable field of its own anymore — the Blog text is
-    // the one place a founder writes, so the card/SEO summary is always
-    // kept in sync with it on save instead of drifting from whatever was
-    // typed into a separate box once, long ago.
-    if (toSave.blog?.trim()) {
-      toSave = { ...toSave, summary: fallbackSummary(toSave.blog) }
-    }
+    // the one place a founder writes, so the card/SEO summary always tracks
+    // it exactly, both ways: derived when there's Blog text, and cleared
+    // when Blog is cleared. Only re-deriving on non-empty Blog left a
+    // deleted Blog's old summary stuck behind as the story's only visible
+    // text — this way Summary never outlives the text it came from.
+    toSave = { ...toSave, summary: toSave.blog?.trim() ? fallbackSummary(toSave.blog) : '' }
     // First time this one actually goes live (was draft/archived, now
     // published/featured) — stamp publishedAt so "Newest first" reflects
     // when it was published, not the original draft's createdAt. Never
