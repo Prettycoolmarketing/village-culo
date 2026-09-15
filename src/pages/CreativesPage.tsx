@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { submitSupportRequest } from '../services/supportRequest'
@@ -287,6 +288,9 @@ export function CreativesPage() {
                 Send us a message and we'll get back to you — usually within a business day.
               </p>
               <SupportForm />
+              <Link to="/speaker" className="inline-block mt-6 text-sm text-white/60 hover:text-white transition-colors">
+                Curious who built this? Meet Shakas — Speaker &amp; Press →
+              </Link>
             </div>
             <div className="relative">
               <img

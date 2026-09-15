@@ -232,41 +232,62 @@ ${businesses.length > 0 ? `<section>\n<h2>Businesses</h2>\n${linkList(businesses
       const importCount = Number(importsCountRes.headers.get('content-range')?.split('/')[1] ?? 0)
 
       const sameAs = [founder.linkedin, founder.instagram, founder.youtube, ...businesses.map((b: any) => b.website)].filter(Boolean)
+      // Topic titles only here (not the full authored paragraphs the React
+      // page has) — this is the list an AI/answer engine actually needs to
+      // match "who should I book to speak about X" against; the full essay
+      // copy is what a human reads once they click through.
+      const talkTitles = [
+        'Your content already exists', 'Stop feeding the feed', "Your social audience isn't your only asset",
+        'What happens when AI becomes part of the audience?', "Building technology when you didn't start in tech",
+        'Building in public before you feel ready', 'When your startup looks like it is trying to do too much',
+        'From expertise to education', 'Building businesses around an actual problem',
+        'Building a business without building a conventional life around it',
+      ]
+      const bioText = "Shakas Designer is an Australian technology founder, entrepreneur, photographer, videographer and content creator. After more than 15 years working behind a camera, she went on to co-found a 4WD tourism business, design Billow Beach, build Pretty Cool Marketing and eventually create CULO after repeatedly running into the same problem: founders had valuable stories, ideas and expertise everywhere, but no real system connecting it all together."
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Person',
         name: founder.name,
-        description: founder.bio,
+        description: bioText,
         jobTitle: 'Founder',
         ...(founder.avatar ? { image: founder.avatar } : {}),
         ...(sameAs.length > 0 ? { sameAs } : {}),
+        knowsAbout: talkTitles,
         worksFor: businesses.map((b: any) => ({ '@type': 'Organization', name: b.name, url: b.website })),
       }
       const bizListHtml = businesses.map((b: any) =>
         `<li><a href="${escapeHtml(b.website?.startsWith('http') ? b.website : `https://${b.website}`)}">${escapeHtml(b.name)}</a> — ${escapeHtml(b.tagline || '')}</li>`
       ).join('\n')
+      const talkListHtml = talkTitles.map(t => `<li>${escapeHtml(t)}</li>`).join('\n')
       const bodyHtml = `
 <article>
 <h1>${escapeHtml(founder.name)} — Speaker &amp; Press</h1>
-<p>Founder of ${businesses.length} real, operating businesses — built one after the other, over the last several years.</p>
+<p>Australian technology founder, entrepreneur, creator and storyteller building at the intersection of founder knowledge, content, search and AI discovery. Founder of 4 businesses built, one after the other, over the last several years.</p>
 <blockquote>A founder posts something real, it performs for a day, then the algorithm moves on — and their whole body of work disappears underneath whatever they posted next.</blockquote>
 <section>
-<h2>Real businesses, run by the same founder</h2>
+<h2>What I speak about</h2>
 <ul>
-${bizListHtml}
+${talkListHtml}
 </ul>
 </section>
 <section>
-<h2>Proven on real work, not a pitch deck</h2>
-<p>${storyCount} stories published through the platform. ${importCount} pieces of raw content processed. ${businesses.length} real businesses built and run on it.</p>
-</section>
-${textToParagraphs(founder.bio)}
-<nav>
-<h2>Get in touch</h2>
+<h2>Built from doing it, not just talking about it</h2>
+<p>Four businesses. Four very different lessons.</p>
 <ul>
-<li><a href="mailto:support@prettycoolmarketing.com?subject=Speaking%20%2F%20Press%20enquiry">Email for a booking</a></li>
-${founder.linkedin ? `<li><a href="${escapeHtml(founder.linkedin)}">LinkedIn</a></li>` : ''}
-<li><a href="/founders/shakas-designer">Full profile in the Village</a></li>
+${bizListHtml}
+</ul>
+<p>${storyCount} founder stories published through the platform. ${importCount} pieces of content processed. ${businesses.length} businesses built.</p>
+</section>
+<section>
+<h2>About Shakas</h2>
+${textToParagraphs(bioText)}
+</section>
+<nav>
+<h2>For podcast hosts, journalists and event organisers</h2>
+<ul>
+<li><a href="mailto:support@prettycoolmarketing.com?subject=Speaking%20%2F%20Press%20enquiry">Book me for an interview, panel or event</a></li>
+${founder.linkedin ? `<li><a href="${escapeHtml(founder.linkedin)}">Connect on LinkedIn</a></li>` : ''}
+<li><a href="/founders/shakas-designer">Read my full founder profile</a></li>
 </ul>
 </nav>
 </article>`
