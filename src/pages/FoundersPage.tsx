@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { usePageTitle } from '../utils/usePageTitle'
 import { FounderGrid }       from '../widgets/FounderGrid'
+import { FounderCard }       from '../components/cards/FounderCard'
 import { FilterBar }         from '../components/ui/FilterBar'
 import { SearchInput }       from '../components/ui/SearchInput'
 import { InnerContainer }    from '../components/layout/PageContainer'
@@ -48,6 +49,7 @@ export function FoundersPage() {
 
   const matchCount = getFounders(filter).length
   const hasActiveFilter = activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all'
+  const featuredFounders = getFounders({ featured: true, publicOnly: true })
 
   function clearFilters() {
     setActiveLocation('all')
@@ -83,6 +85,29 @@ export function FoundersPage() {
           </div>
         </InnerContainer>
       </section>
+
+      {/* ── Featured founders ───────────────────────────────────────────────── */}
+      {featuredFounders.length > 0 && (
+        <section className="py-12 md:py-16 border-b border-border" aria-labelledby="featured-founders-heading">
+          <InnerContainer>
+            <h2 id="featured-founders-heading" className="font-heading text-2xl font-bold text-charcoal mb-6">
+              Featured Founders
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {featuredFounders.map(f => (
+                <FounderCard key={f.id} founder={f} variant="featured" />
+              ))}
+              <a
+                href="#founders-directory"
+                className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-charcoal text-white p-6 min-h-[12rem] hover:bg-[#1a1815] transition-colors"
+              >
+                <span className="font-heading text-lg font-semibold">View all founders</span>
+                <span aria-hidden="true" className="text-2xl">→</span>
+              </a>
+            </div>
+          </InnerContainer>
+        </section>
+      )}
 
       {/* ── Filters ─────────────────────────────────────────────────────────── */}
       <section
@@ -171,7 +196,8 @@ export function FoundersPage() {
 
       {/* ── Founder grid ────────────────────────────────────────────────────── */}
       <section
-        className="py-12 md:py-16"
+        id="founders-directory"
+        className="py-12 md:py-16 scroll-mt-32"
         aria-label={hasActiveFilter ? 'Filtered founders' : 'All founders'}
       >
         <InnerContainer>

@@ -31,6 +31,58 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
   const articleLink   = relatedStory && (relatedStory.status === 'published' || relatedStory.status === 'featured')
     ? `/stories/${relatedStory.slug}`
     : undefined
+  const sourceUrl = normalizeUrl(content.originalUrl)
+
+  // Compact — used for sidebar lists like "From Around the Web" — is a
+  // tighter row layout: the thumbnail itself is the link out to the real
+  // source (YouTube, TikTok, etc.), with a clear "See this story" button
+  // for the written article, instead of one full-width card where the
+  // whole thing links to the article and the source is a tiny corner link.
+  if (compact) {
+    return (
+      <article className="flex gap-3 bg-surface rounded-xl border border-border p-3">
+        <a
+          href={sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-[#F3EDE6] group"
+          aria-label={`Watch/listen on ${platformLabel}`}
+        >
+          {content.thumbnailUrl ? (
+            <img src={content.thumbnailUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <PlatformIcon platform={content.sourcePlatform} />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/30 transition-colors flex items-center justify-center">
+            <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+          <span className={`absolute bottom-1 left-1 font-body text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${platformColor}`}>
+            {platformLabel}
+          </span>
+        </a>
+
+        <div className="min-w-0 flex-1 flex flex-col">
+          <h3 className="font-heading text-sm font-semibold text-charcoal leading-snug line-clamp-2">
+            {content.title}
+          </h3>
+          {articleLink ? (
+            <Link to={articleLink} className="font-body text-xs font-semibold text-primary hover:text-[#b05a35] transition-colors mt-auto pt-1">
+              See this story →
+            </Link>
+          ) : (
+            <a href={sourceUrl} target="_blank" rel="noopener noreferrer"
+              className="font-body text-xs text-muted hover:text-primary transition-colors mt-auto pt-1">
+              View on {platformLabel} ↗
+            </a>
+          )}
+        </div>
+      </article>
+    )
+  }
 
   return (
     <article className={`relative bg-surface rounded-2xl border border-border overflow-hidden ${articleLink ? 'hover:border-primary/50 transition-colors' : ''}`}>
