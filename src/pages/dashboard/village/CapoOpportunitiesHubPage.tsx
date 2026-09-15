@@ -30,7 +30,12 @@ export function CapoOpportunitiesHubPage() {
     [
       { key: 'opportunities', label: 'Opportunities', allowed: true },
       { key: 'revenue',       label: 'Revenue',        allowed: true },
-      { key: 'claims',        label: 'Claims',         allowed: canAccessCapoSection(user?.role, 'claims') },
+      // Claims review is no longer part of the day-to-day dashboard — curated
+      // founders are claimed instantly now (see /claim/:slug), not queued
+      // for manual approval. Left wired up (data, service, this component)
+      // rather than deleted, in case a manual-review path is ever needed
+      // again; just not surfaced as a tab to click into.
+      { key: 'claims',        label: 'Claims',         allowed: false },
       { key: 'spotlight',     label: 'Spotlight',      allowed: canAccessCapoSection(user?.role, 'featured') },
       { key: 'sources',       label: 'Sources',        allowed: canAccessCapoSection(user?.role, 'featured') },
       { key: 'partners',      label: 'Partners',       allowed: canAccessCapoSection(user?.role, 'partners') },

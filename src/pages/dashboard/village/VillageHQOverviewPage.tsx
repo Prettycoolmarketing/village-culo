@@ -237,8 +237,8 @@ export function VillageHQOverviewPage() {
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Operations</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Pending Claims"    value={pendingClaims.length}  color={pendingClaims.length > 0 ? 'text-amber-600' : 'text-[#2D2A26]'} to="/dashboard/village/opportunities?tab=claims" />
-          <StatCard label="Claim Pending"     value={claimPending.length}   color="text-amber-600"  to="/dashboard/village/opportunities?tab=claims" />
+          <StatCard label="Pending Claims"    value={pendingClaims.length}  color={pendingClaims.length > 0 ? 'text-amber-600' : 'text-[#2D2A26]'} to="/dashboard/village/founders" />
+          <StatCard label="Claim Pending"     value={claimPending.length}   color="text-amber-600"  to="/dashboard/village/founders" />
           <StatCard label="Import Batches"    value={batches.length}        color="text-[#2D2A26]"  to="/dashboard/village/founders?tab=imports" />
           <StatCard label="Via Bulk Import"   value={totalImported}         color="text-[#2D2A26]"  to="/dashboard/village/founders?tab=imports" />
         </div>
