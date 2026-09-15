@@ -9,6 +9,7 @@ import { getStories, getStory } from '../../services/stories'
 import { importedContentService } from '../../services/importedContent'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
 import { publishStoryCore, fallbackSummary } from '../../services/publishStory'
+import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { PublishLimitModal } from '../../components/dashboard/PublishLimitModal'
@@ -206,7 +207,7 @@ function importedContentPatch(item: ImportedContent, draft: PublishDraft): Parti
     title: draft.title || item.title,
     subtitle: draft.subtitle || item.subtitle || '',
     summary: draft.summary || item.subtitle || item.autoSummary || fallbackSummary(item.description),
-    blog: draft.blog || item.description || item.diaryNote || item.transcriptText || '',
+    blog: draft.blog || (item.description || item.diaryNote || item.transcriptText ? normalizeBlogSpacing(item.description || item.diaryNote || item.transcriptText || '') : ''),
     coverImage: draft.coverImage || item.thumbnailUrl || '',
     // ctaLabel's default is 'Read more' (never falsy), so a plain `||` would
     // never reach the import's own label — only take the import's CTA while

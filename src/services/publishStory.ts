@@ -16,6 +16,7 @@ import { locations } from '../data/locations'
 import { industries } from '../data/industries'
 import { topics as allTopics } from '../data/topics'
 import { slugify } from '../utils/slugify'
+import { normalizeBlogSpacing } from '../utils/blogFormatting'
 import type { Story, ContentType, Founder } from '../types'
 import type { ImportedContent, ImportedContentPlatform } from '../types/importedContent'
 
@@ -277,7 +278,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
   // transcript silently had no effect on the published story.
   const fullDescription = item.description || item.diaryNote || item.transcriptText
     || (contentType === 'blog' ? item.autoSummary : undefined) || ''
-  if (fullDescription) story.blog = fullDescription
+  if (fullDescription) story.blog = normalizeBlogSpacing(fullDescription)
 
   // Independent checks (not else-if) — a multi-format item like a Canva
   // Reel+blog group needs both story.reelUrl AND story.blog set together.
@@ -343,7 +344,7 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
     subtitle: item.subtitle || story.subtitle,
     summary: item.subtitle || item.autoSummary || story.summary || fallbackSummary(item.description),
     coverImage: item.thumbnailUrl || story.coverImage,
-    blog: fullDescription || story.blog,
+    blog: fullDescription ? normalizeBlogSpacing(fullDescription) : story.blog,
     partnerId: item.partnerId ?? story.partnerId,
     ctaLabel: item.ctaLabel || (item.sourcePlatform === 'canva' ? '' : story.ctaLabel),
     ctaUrl: item.ctaUrl || (item.sourcePlatform === 'canva' ? '' : story.ctaUrl),

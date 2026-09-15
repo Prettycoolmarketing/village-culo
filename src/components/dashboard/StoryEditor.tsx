@@ -7,6 +7,7 @@ import { getBusinesses } from '../../services/businesses'
 import { getFounder } from '../../services/founders'
 import { generateBlogFromVoiceBrief } from '../../services/blogWriter'
 import { importedContentService } from '../../services/importedContent'
+import { fallbackSummary } from '../../services/publishStory'
 import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
 import { ReelContent } from '../ui/ReelContent'
 import { ConfirmButton } from '../ui/ConfirmButton'
@@ -178,6 +179,13 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     // a no-op when the title hasn't changed since the slug already matches.
     const desiredSlug = uniqueStorySlug(draft.title, draft.id)
     let toSave = desiredSlug === draft.slug ? draft : { ...draft, slug: desiredSlug }
+    // Summary has no editable field of its own anymore — the Blog text is
+    // the one place a founder writes, so the card/SEO summary is always
+    // kept in sync with it on save instead of drifting from whatever was
+    // typed into a separate box once, long ago.
+    if (toSave.blog?.trim()) {
+      toSave = { ...toSave, summary: fallbackSummary(toSave.blog) }
+    }
     // First time this one actually goes live (was draft/archived, now
     // published/featured) — stamp publishedAt so "Newest first" reflects
     // when it was published, not the original draft's createdAt. Never
@@ -282,10 +290,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
       <div className="flex flex-col gap-5">
         <Field label="Title">
           <input type="text" value={draft.title} onChange={e => set('title', e.target.value)} className={inputClass} />
-        </Field>
-
-        <Field label="Summary">
-          <textarea value={draft.summary} onChange={e => set('summary', e.target.value)} rows={3} className={inputClass + ' resize-y'} />
         </Field>
 
         <Field label="Content Types" hint="Select all formats this story is published in — shown as badges on the story's page">

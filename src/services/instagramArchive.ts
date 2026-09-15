@@ -18,6 +18,7 @@ import { getBusiness } from './businesses'
 import { importedContentService } from './importedContent'
 import type { ImportedContent } from '../types/importedContent'
 import type { ContentType } from '../types'
+import { normalizeBlogSpacing } from '../utils/blogFormatting'
 
 export type InstagramEntryKind = 'post' | 'reel' | 'story'
 
@@ -387,7 +388,11 @@ export async function buildImportedContentFromArchive(
       additionalVideoUrls: extraVideoUrls.length > 0 ? extraVideoUrls : undefined,
       title,
       subtitle,
-      description: post.caption || undefined,
+      // Instagram captions come through as one dense run of text (or single
+      // newlines Instagram doesn't render as paragraph breaks) — normalize
+      // spacing here so it lands in the Blog field already reading as
+      // paragraphs, the same as AI-rewritten or manually-formatted text.
+      description: post.caption ? normalizeBlogSpacing(post.caption) : undefined,
       publishedAt: publishedAtIso,
       importedAt: new Date().toISOString(),
       status: 'draft',
