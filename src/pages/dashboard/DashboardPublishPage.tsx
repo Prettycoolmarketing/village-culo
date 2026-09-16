@@ -1773,7 +1773,16 @@ export function DashboardPublishPage() {
   const [autoSave,      setAutoSave]      = useState<AutoSaveStatus>('idle')
 
   // Debounced auto-save of the in-progress wizard state to localStorage.
+  // Guarded on step !== 'done': publish() marks the story published, calls
+  // localStorage.removeItem(DRAFT_AUTOSAVE_KEY), then patches draft with the
+  // new publishedStoryId — that patch is itself a `draft` change, which
+  // re-armed this exact effect and wrote the old title/blog/cover image
+  // straight back into localStorage ~600ms later, undoing the clear it had
+  // just done. The next time the wizard opened, that resurrected draft was
+  // still there waiting, looking exactly like the previous story's content
+  // "still being there" for a founder starting a genuinely new one.
   useEffect(() => {
+    if (step === 'done') return
     setAutoSave('saving')
     const t = setTimeout(() => {
       try {
@@ -1784,7 +1793,7 @@ export function DashboardPublishPage() {
       }
     }, 600)
     return () => clearTimeout(t)
-  }, [draft])
+  }, [draft, step])
 
   // Arrived via "Turn into Story" on an ImportedContent row — prefill the draft
   // from it and remember the link so publish() can write it both ways.

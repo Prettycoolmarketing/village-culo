@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useDictation } from '../../hooks/useDictation'
 import { updateStory, deleteStory, uniqueStorySlug } from '../../services/stories'
 import { villageContentIntelligenceService, storyToInput } from '../../services/villageIntelligence'
@@ -81,6 +81,13 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     () => (getFounder(story.founderId)?.faqs ?? []).filter(f => f.relatedStoryIds.includes(story.id)),
   )
   const [detectingQa, setDetectingQa] = useState(false)
+  // Running the detection used to leave a founder with no idea whether it
+  // actually did anything — no error if the AI call failed, no confirmation
+  // if it found nothing new, nothing at all if it succeeded but everything
+  // it found already existed. This is what's shown right next to the
+  // button and above Questions & Answers, every time detection runs.
+  const [detectMessage, setDetectMessage] = useState<string | null>(null)
+  const autoDetectedRef = useRef(false)
 
   async function persistFaqs(next: FAQ[]) {
     setStoryFaqs(next)
@@ -93,22 +100,25 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
 
   // Auto-adds newly detected topics rather than just suggesting them — a
   // founder who already wrote a real, specific Blog shouldn't also have to
-  // hunt through and click every relevant tag by hand.
-  function detectTopics(text: string) {
-    if (!text.trim()) return
+  // hunt through and click every relevant tag by hand. Returns how many
+  // were actually new, so the caller can report a real result.
+  function detectTopics(text: string): number {
+    if (!text.trim()) return 0
     const intel = villageContentIntelligenceService.analyse(storyToInput({ ...draft, blog: text }))
     const names = new Set([...intel.primaryTopics, ...intel.secondaryTopics].map(n => n.toLowerCase()))
     const toAdd = allTopics.filter(t => names.has(t.name.toLowerCase()) && !draft.topics.some(dt => dt.id === t.id))
     if (toAdd.length > 0) setDraft(prev => ({ ...prev, topics: [...prev.topics, ...toAdd] }))
+    return toAdd.length
   }
 
-  async function detectQa(text: string) {
-    if (!text.trim()) return
+  async function detectQa(text: string): Promise<{ added: number; error?: string }> {
+    if (!text.trim()) return { added: 0 }
     setDetectingQa(true)
     const founderName = getFounder(draft.founderId)?.name
-    const { pairs } = await extractFaqsAI({ title: draft.title, text, founderName })
+    const { pairs, error } = await extractFaqsAI({ title: draft.title, text, founderName })
     setDetectingQa(false)
-    if (!pairs || pairs.length === 0) return
+    if (error) return { added: 0, error }
+    if (!pairs || pairs.length === 0) return { added: 0 }
     const existingQuestions = new Set(storyFaqs.map(f => f.question.toLowerCase().trim()))
     const fresh: FAQ[] = pairs
       .filter(p => !existingQuestions.has(p.question.toLowerCase().trim()))
@@ -122,7 +132,41 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
         relatedIdeaIds: [],
       }))
     if (fresh.length > 0) void persistFaqs([...storyFaqs, ...fresh])
+    return { added: fresh.length }
   }
+
+  // The one place both the manual button and every automatic trigger
+  // (after Rewrite, and once on opening a story that has a Blog but
+  // nothing detected yet) funnel through, so the result message is always
+  // accurate no matter what triggered it.
+  async function runDetection(text: string) {
+    const topicsAdded = detectTopics(text)
+    const { added: qaAdded, error } = await detectQa(text)
+    if (error) {
+      setDetectMessage(`Couldn't detect Q&A: ${error}`)
+    } else if (topicsAdded === 0 && qaAdded === 0) {
+      setDetectMessage('No new topics or questions found in the Blog text.')
+    } else {
+      const parts = []
+      if (topicsAdded > 0) parts.push(`${topicsAdded} topic${topicsAdded === 1 ? '' : 's'}`)
+      if (qaAdded > 0) parts.push(`${qaAdded} question${qaAdded === 1 ? '' : 's'}`)
+      setDetectMessage(`Found ${parts.join(' and ')}.`)
+    }
+  }
+
+  // Automatic — a story that already has real Blog text but was never run
+  // through detection (most existing published stories, from before this
+  // existed) gets it for free the moment it's opened, instead of a founder
+  // needing to know to click a button at all. Runs once per time the
+  // editor is open, and only when there's actually nothing detected yet.
+  useEffect(() => {
+    if (autoDetectedRef.current) return
+    if (!draft.blog?.trim()) return
+    if (draft.topics.length > 0 || storyFaqs.length > 0) return
+    autoDetectedRef.current = true
+    void runDetection(draft.blog)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Rewrite with AI — same real, per-call AI spend as "Rewrite with Voice
   // Brief" on Imported Content, just aimed at a Story's own Blog field
@@ -185,8 +229,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     // draft.blog, which hasn't updated yet) — this is what makes "Rewrite,
     // then Save" also pick up the story's tags and questions automatically,
     // instead of a founder having to separately hunt for and click each one.
-    detectTopics(result.blog.blog)
-    void detectQa(result.blog.blog)
+    void runDetection(result.blog.blog)
   }
 
   function handleUndoRewrite() {
@@ -424,14 +467,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
                   ↺ Undo rewrite
                 </button>
               )}
-              <button
-                type="button"
-                onClick={() => { detectTopics(draft.blog ?? ''); void detectQa(draft.blog ?? '') }}
-                disabled={detectingQa || !draft.blog?.trim()}
-                className="text-xs font-semibold px-3 py-2 rounded-lg text-[#6B7280] bg-[#F3EDE6] hover:bg-[#E8E4DD] disabled:opacity-50 transition-colors"
-              >
-                {detectingQa ? 'Detecting…' : '🔎 Detect topics & Q&A'}
-              </button>
               {listening && <span className="text-xs text-red-500 font-medium">Listening…</span>}
             </div>
             {rewriteError && <p className="text-xs text-red-600 mb-2">{rewriteError}</p>}
@@ -447,11 +482,24 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
         )}
 
         {hasBlog && (
-          <Field label="Questions & Answers" hint="Detected from this story's Blog text — shown on the page and used by search engines and AI. Rewrite with AI (or Detect topics & Q&A above) finds these automatically; add or edit any below.">
+          <Field label="Questions & Answers" hint="Detected from this story's Blog text — shown on the page and used by search engines and AI. Runs automatically; add or edit any below, or re-run it after changing the Blog.">
             {storyFaqs.length === 0 && !detectingQa && (
-              <p className="text-xs text-[#9CA3AF] mb-2">None detected yet — rewrite the Blog, or use "Detect topics & Q&A" above.</p>
+              <p className="text-xs text-[#9CA3AF] mb-2">None detected yet.</p>
             )}
             <FAQEditor faqs={storyFaqs} onChange={next => void persistFaqs(next)} />
+            <div className="flex items-center gap-2.5 mt-3">
+              <button
+                type="button"
+                onClick={() => void runDetection(draft.blog ?? '')}
+                disabled={detectingQa || !draft.blog?.trim()}
+                className="text-xs font-semibold px-3 py-2 rounded-lg text-[#6B7280] bg-[#F3EDE6] hover:bg-[#E8E4DD] disabled:opacity-50 transition-colors"
+              >
+                {detectingQa ? 'Detecting…' : '🔎 Detect topics & Q&A'}
+              </button>
+              {detectMessage && !detectingQa && (
+                <p className="text-xs text-[#6B7280]">{detectMessage}</p>
+              )}
+            </div>
           </Field>
         )}
 
