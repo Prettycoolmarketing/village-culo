@@ -766,7 +766,7 @@ export function StoryDetailPage() {
                     id="other-stories-heading"
                     className="font-heading text-2xl font-semibold text-charcoal mb-6"
                   >
-                    Other stories by this village member
+                    More from {founder?.name ?? 'this village member'}
                   </h2>
                   <ul
                     className="grid grid-cols-1 sm:grid-cols-2 gap-5"
