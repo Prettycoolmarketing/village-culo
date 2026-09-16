@@ -382,6 +382,13 @@ export interface Founder {
   id: string
   slug: string
   name: string
+  // A former or other public name this founder is also known by (a maiden
+  // name, an earlier professional identity, a stage name) — feeds
+  // schema.org's alternateName on their Person JSON-LD. Structurally
+  // tells search/AI systems "this is the same person," rather than that
+  // connection existing only as a sentence buried in a blog post, which
+  // carries none of the same entity-resolution weight.
+  alternateName?: string
   bio: string
   avatar: string
   coverImage?: string

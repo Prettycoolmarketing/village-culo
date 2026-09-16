@@ -271,6 +271,7 @@ export function FounderProfilePage() {
       '@context':   'https://schema.org',
       '@type':      'Person',
       name:         founder.name,
+      ...(founder.alternateName ? { alternateName: founder.alternateName } : {}),
       description:  founder.bio ?? '',
       url:          `${window.location.origin}/founders/${founder.slug}`,
       ...(founder.avatar ? { image: founder.avatar } : {}),

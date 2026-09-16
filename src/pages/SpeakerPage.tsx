@@ -217,6 +217,7 @@ export function SpeakerPage() {
       '@context': 'https://schema.org',
       '@type': 'Person',
       name: founder.name.trim(),
+      ...(founder.alternateName ? { alternateName: founder.alternateName } : {}),
       description: bioText,
       ...(founder.avatar ? { image: founder.avatar } : {}),
       ...(sameAs.length > 0 ? { sameAs } : {}),
