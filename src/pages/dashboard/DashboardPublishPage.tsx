@@ -746,6 +746,15 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
         subtitle="Paste a transcript to unlock richer diary generation. On YouTube, click ··· below any video, then Show transcript, to copy and paste here. Or just write your story below."
         onBack={onBack}
       />
+      {/* Escape hatch for a stuck/stale draft — if what's showing here isn't
+          what you expected to see, this forces a genuinely blank start
+          instead of needing to know localStorage exists to fix it. */}
+      {(draft.title || draft.blog) && (
+        <Link to="/dashboard/publish?fresh=1" reloadDocument
+          className="inline-block mb-5 text-xs text-[#9CA3AF] hover:text-[#C86A43] underline">
+          Not what you expected? Start a new blog from scratch →
+        </Link>
+      )}
       <div className="flex flex-col gap-5">
         <Field label="Headline" hint="Optional. Village can draft one from your content if you leave this blank.">
           <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
@@ -1743,6 +1752,15 @@ export function DashboardPublishPage() {
     const navState = location.state as { importedContentId?: string; partnerId?: string } | null
     const base = defaultDraft(currentFounder?.id ?? '', currentFounder?.businessId ?? '')
     if (navState?.importedContentId || navState?.partnerId || partnerIdFromQuery || aboutBusinessIdFromQuery) {
+      return base
+    }
+    // ?fresh=1 (from the "Start a new blog from scratch" link below) is the
+    // deliberate escape hatch — a founder stuck looking at an old, already-
+    // published draft (the autosave-race bug this used to have, or any
+    // other reason a stale draft is sitting in this browser) can force a
+    // truly blank start without needing to know localStorage exists.
+    if (searchParams.get('fresh')) {
+      try { localStorage.removeItem(DRAFT_AUTOSAVE_KEY) } catch { /* ignore */ }
       return base
     }
     // Merge over the defaults, not a bare replace — an autosaved draft from
