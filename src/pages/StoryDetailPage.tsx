@@ -656,18 +656,29 @@ export function StoryDetailPage() {
                         ? story.videoOrientation === 'landscape'
                         : story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head')}
                     />
-                    {story.additionalReelUrls && story.additionalReelUrls.length > 0 && (
-                      <div className="mt-6">
-                        <p className="font-heading text-sm font-semibold text-charcoal mb-3">More videos from this story</p>
-                        <div className="flex gap-4 overflow-x-auto pb-1">
-                          {story.additionalReelUrls.map((url, i) => (
-                            <div key={i} className="shrink-0 w-40">
-                              <ReelContent reelUrl={url} title={story.title} summary="" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                  </div>
+                )}
+
+                {/* Was nested inside the primary-video block above, which
+                    meant a blog/carousel story with no primary reel could
+                    never show its own additionalReelUrls at all — adding an
+                    extra video via "Extra photos / video" silently did
+                    nothing on the published page for exactly that case. */}
+                {story.additionalReelUrls && story.additionalReelUrls.length > 0 && (
+                  <div>
+                    {!effectiveReelUrl && (
+                      <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Video</h2>
                     )}
+                    {effectiveReelUrl && (
+                      <p className="font-heading text-sm font-semibold text-charcoal mb-3">More videos from this story</p>
+                    )}
+                    <div className="flex gap-4 overflow-x-auto pb-1">
+                      {story.additionalReelUrls.map((url, i) => (
+                        <div key={i} className={effectiveReelUrl ? 'shrink-0 w-40' : 'shrink-0 w-full max-w-md'}>
+                          <ReelContent reelUrl={url} title={story.title} summary="" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
