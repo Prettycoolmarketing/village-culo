@@ -827,12 +827,33 @@ export function DashboardProfilePage() {
   function openStoryEditor(id: string) {
     preEditScrollY.current = window.scrollY
     setEditingStoryId(id)
+    // Defensive: a stale editImportedId already sitting in the URL (from a
+    // previous imported-content edit whose own close never cleared it)
+    // would otherwise sit there unnoticed until some other action's
+    // setSearchParams merge brought it back into play.
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev)
+      p.delete('editImportedId')
+      return p
+    }, { replace: true })
   }
   function closeStoryEditor() {
     setEditingStoryId(null)
     const y = preEditScrollY.current
     preEditScrollY.current = null
     if (y != null) requestAnimationFrame(() => window.scrollTo({ top: y }))
+    // Without this, storyId stayed in the URL bar after closing — invisible
+    // until the founder later opened a *different* imported-content item via
+    // openInImported, whose setSearchParams merges onto whatever's already
+    // there. That left both storyId and editImportedId in the URL at once,
+    // and the sync effect that reads them back out picks storyId first —
+    // so the editor reopened showing this old story instead of the new
+    // item they'd actually just clicked on.
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev)
+      p.delete('storyId')
+      return p
+    }, { replace: true })
   }
   const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
   const [importedSaveError, setImportedSaveError] = useState<string | null>(null)
@@ -1579,6 +1600,11 @@ export function DashboardProfilePage() {
                   const p = new URLSearchParams(prev)
                   p.set('tab', 'content')
                   p.set('editImportedId', id)
+                  // A stale storyId from an earlier "Edit your story" whose
+                  // close never cleared it otherwise wins over this one in
+                  // the sync effect that reads them back out — see
+                  // closeStoryEditor's note.
+                  p.delete('storyId')
                   return p
                 })
               }
@@ -2042,6 +2068,11 @@ export function DashboardProfilePage() {
                 setEditingImportedId(null)
                 setImportedEditDraft(null)
                 setImportedSavedFlash(false)
+                setSearchParams(prev => {
+                  const p = new URLSearchParams(prev)
+                  p.delete('editImportedId')
+                  return p
+                }, { replace: true })
               }
 
               // Saving used to close the panel outright — founder working
