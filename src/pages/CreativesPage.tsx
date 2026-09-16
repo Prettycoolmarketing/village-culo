@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { submitSupportRequest } from '../services/supportRequest'
+import { StoryGrid } from '../widgets/StoryGrid'
 
 const FORMATS = [
   { emoji: '📖', label: 'Blogs', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
@@ -262,6 +263,27 @@ export function CreativesPage() {
           >
             Join Culo Creatives →
           </a>
+        </InnerContainer>
+      </section>
+
+      {/* ── Real evidence, not just claims ───────────────────────────────────
+          Closes the loop back into the Village: this page made the case for
+          Culo Creatives, now it points at real, published proof that it
+          works, instead of leaving the reader to just take the pitch above
+          on faith. Also the missing link in the intended interlinking
+          chain (founder profile → CULO → Creatives → real articles). */}
+      <section className="py-16 bg-surface border-y border-border">
+        <InnerContainer>
+          <StoryGrid
+            heading="See it in action"
+            subheading="Real stories, published by real founders using Culo Creatives and the Village."
+            filter={{ publicOnly: true }}
+            columns={3}
+            cardVariant="vertical"
+            limit={3}
+            hideEmpty
+            action={{ label: 'See all stories', href: '/stories' }}
+          />
         </InnerContainer>
       </section>
 

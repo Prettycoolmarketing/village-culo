@@ -478,7 +478,7 @@ export function StoryDetailPage() {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    {founder.name}
+                    <span className="text-muted font-normal">By</span> {founder.name}
                   </Link>
                 )}
                 {business && (
