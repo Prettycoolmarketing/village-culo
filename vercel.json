@@ -1,4 +1,8 @@
 {
+  "redirects": [
+    { "source": "/stories/3-in-1-beach-bag-with-a-towel-and-pillow-10", "destination": "/stories/3-in-1-beach-bag-with-a-towel-and-pillow", "permanent": true },
+    { "source": "/stories/3-in-1-beach-bag-with-a-towel-and-pillow-11", "destination": "/stories/3-in-1-beach-bag-with-a-towel-and-pillow", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "https://vptbswxntuycbgqnduab.supabase.co/functions/v1/sitemap" },
     { "source": "/(.*)", "destination": "/index.html" }
