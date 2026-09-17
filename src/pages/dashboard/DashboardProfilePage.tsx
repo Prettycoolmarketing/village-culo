@@ -1088,6 +1088,7 @@ export function DashboardProfilePage() {
   // immediately (not gated on the profile's own Save button) so this stays
   // in sync with story.featured, which already saved instantly.
   function toggleFeaturedStory(story: Story) {
+    if (!draft) return
     const current = draft.featuredVideoStoryIds ?? []
     const nowFeatured = !current.includes(story.id)
     const nextIds = nowFeatured ? [story.id, ...current] : current.filter(id => id !== story.id)
