@@ -3,8 +3,7 @@ import { getFounderBySlug, updateFounder } from './founders'
 import { getBusinessBySlug, updateBusiness } from './businesses'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { importedContentToInput, villageContentIntelligenceService } from './villageIntelligence'
-import { buildStoryFromImport } from './publishStory'
-import { updateStory } from './stories'
+import { buildStoryFromImport, publishStoryCore } from './publishStory'
 import type { WriteResult } from '../lib/entityStore'
 import { locations } from '../data/locations'
 import { industries } from '../data/industries'
@@ -428,7 +427,12 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
           ) {
             try {
               const story = buildStoryFromImport(item, founder)
-              const storyResult = await writeWithRetry(() => updateStory(story))
+              // publishStoryCore, not a raw updateStory — this used to skip
+              // the entire canonical publish pipeline (Ideas, relationship
+              // syncing, authority scores, publish-limit checks) that every
+              // other publish path goes through. A bulk-imported founder's
+              // stories were silently missing all of it.
+              const storyResult = await writeWithRetry(() => publishStoryCore(story))
               if (storyResult.success) {
                 storiesCreated++
                 await writeWithRetry(() => importedContentService.upsert({ ...item, relatedStoryId: story.id }))

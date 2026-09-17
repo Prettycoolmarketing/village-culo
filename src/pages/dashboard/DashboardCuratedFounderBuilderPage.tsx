@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { slugify } from '../../utils/slugify'
 import { getFounders, updateFounder } from '../../services/founders'
 import { getBusinesses, getBusinessBySlug, updateBusiness } from '../../services/businesses'
+import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
 import {
   importedContentService,
   buildDraftImport,
@@ -285,13 +286,27 @@ export function DashboardCuratedFounderBuilderPage() {
 
     for (const link of validLinks) {
       const draft = buildDraftImport(founderId, link.url.trim())
-      const item: ImportedContent = {
+      let item: ImportedContent = {
         ...draft,
         title: link.title.trim() || draft.title,
         businessId: linkedBusinessId || undefined,
         status: link.status,
         visibility: link.status === 'published' ? 'public' : 'private',
       }
+
+      // Setting status here used to only ever label the row "published"
+      // without creating the real Story behind it — the exact bug fixed
+      // in Content's Ready-to-Publish dropdown (DashboardProfilePage),
+      // just a second, independent occurrence of it in this curated-
+      // founder path. A link marked Published here now actually publishes.
+      if (link.status === 'published') {
+        const story = buildStoryFromImport(item, founder)
+        const publishResult = await publishStoryCore(story)
+        if (publishResult.success && publishResult.story) {
+          item = { ...item, relatedStoryId: publishResult.story.id }
+        }
+      }
+
       importedContentService.upsert(item)
       importCount++
 
