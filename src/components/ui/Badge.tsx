@@ -16,7 +16,9 @@ const variantClasses: Record<BadgeVariant, string> = {
   secondary:   'bg-[#EBF2F8] text-[#3E6E92]',
   accent:      'bg-accent/10 text-accent',
   stories:     'bg-primary/10 text-primary',
-  ideas:       'bg-secondary/10 text-secondary',
+  // Recoloured from green to the same light blue as "secondary" — an Idea
+  // tag is informational like a Topic tag, not a "success/active" state.
+  ideas:       'bg-[#EBF2F8] text-[#3E6E92]',
   mercato:     'bg-primary/10 text-primary',
   map:         'bg-[#7A9B76]/10 text-[#4e6b4a]',
   noticeboard: 'bg-[#B85C3A]/10 text-[#B85C3A]',

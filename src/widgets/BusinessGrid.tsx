@@ -4,6 +4,7 @@ import { getFounder } from '../services/founders'
 import { BusinessCard } from '../components/cards/BusinessCard'
 import { EmptyState } from '../components/ui/EmptyState'
 import { SectionHeading } from '../components/layout/PageContainer'
+import { dailyRotatingSlice } from '../utils/rotation'
 
 interface BusinessGridProps {
   filter?: BusinessFilter
@@ -20,6 +21,13 @@ interface BusinessGridProps {
   // real published businesses instead of showing "coming soon" while real,
   // just-not-featured businesses already exist and are live elsewhere.
   fallbackToPublic?: boolean
+  // Pass count via `limit` instead of `filter.limit` when using this — the
+  // grid needs the whole matching pool before it can rotate through it.
+  // Without this, a founder with several featured businesses (Billow Beach,
+  // Pretty Cool Marketing, etc.) always saw the exact same one or two on the
+  // homepage forever instead of the spotlight cycling around.
+  rotate?: boolean
+  limit?: number
 }
 
 const columnClasses = {
@@ -39,10 +47,17 @@ export function BusinessGrid({
   emptyTitle,
   emptyMessage,
   fallbackToPublic = false,
+  rotate = false,
+  limit,
 }: BusinessGridProps) {
   let businesses = getBusinesses(filter)
   if (fallbackToPublic && filter.featured && businesses.length === 0) {
     businesses = getBusinesses({ ...filter, featured: undefined })
+  }
+  if (rotate && limit) {
+    businesses = dailyRotatingSlice(businesses, limit)
+  } else if (limit) {
+    businesses = businesses.slice(0, limit)
   }
 
   return (

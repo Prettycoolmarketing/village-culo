@@ -644,13 +644,16 @@ export function FounderProfilePage() {
                 hideEmpty
               />
 
-              {/* Ideas */}
+              {/* Ideas — capped with the rest one "View all" click away
+                  (kept in the DOM via a native <details>, so this doesn't
+                  cost anything for SEO/GEO discovery — see IdeaGrid). */}
               <IdeaGrid
                 heading={`Ideas ${founder.name} talks about`}
                 subheading={`Knowledge and insights connected to ${founder.name}'s stories and experiences.`}
                 filter={{ founderId: founder.id, publicOnly: true }}
                 columns={2}
                 cardVariant="default"
+                limit={4}
                 hideEmpty
               />
 

@@ -1369,54 +1369,21 @@ export function DashboardProfilePage() {
               {renderIdentityFields(draft)}
             </div>
 
-            {/* Featured stories — hand-pick what shows on the public profile
-                and is eligible to be featured Village-wide (homepage's Story
-                of the Day, Featured Founders, etc — see toggleFeaturedStory).
-                Every published/featured story shows up here automatically,
-                newest first, the moment it goes live — nothing to register
-                separately. */}
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
+            {/* Featured stories now live in one place — the "Feature"
+                button on each story in Content — instead of duplicated here
+                as a second, separate picker writing to the same underlying
+                selection (see toggleFeaturedStory). A quick link there
+                instead of a second control that could drift out of sync
+                with it again. */}
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-[#2D2A26]">Featured stories</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Pick the work you want on your public profile and potentially featured on the main Culo Village.</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Choose what's featured on your public profile — and potentially on the main Culo Village — from the Feature button on each story.</p>
               </div>
-              {(() => {
-                const eligible = founderStories
-                  .filter(s => s.status === 'published' || s.status === 'featured')
-                  .sort((a, b) => (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt))
-                if (eligible.length === 0) {
-                  return <p className="text-xs text-[#9CA3AF]">Publish a story to feature it here.</p>
-                }
-                const selectedIds = draft.featuredVideoStoryIds ?? []
-                const selectedCount = eligible.filter(s => selectedIds.includes(s.id)).length
-                return (
-                  <details className="group rounded-lg border border-[#E8E4DD]">
-                    <summary className="flex items-center justify-between gap-2.5 px-3 py-2.5 cursor-pointer list-none text-sm text-[#2D2A26]">
-                      <span>{selectedCount === 0 ? 'Choose stories…' : `${selectedCount} selected`}</span>
-                      <svg className="w-4 h-4 text-[#9CA3AF] transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </summary>
-                    <div className="flex flex-col gap-1 px-2 pb-2 pt-1 border-t border-[#E8E4DD]">
-                      {eligible.map(story => {
-                        const checked = selectedIds.includes(story.id)
-                        return (
-                          <label key={story.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-[#F8F5F0] transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleFeaturedStory(story)}
-                            />
-                            <span className="text-sm text-[#2D2A26] truncate">{story.title}</span>
-                          </label>
-                        )
-                      })}
-                    </div>
-                  </details>
-                )
-              })()}
+              <Link to="/dashboard/profile?tab=content&contentSubTab=published" className="shrink-0 text-sm font-semibold text-[#C86A43] hover:underline">
+                Go to Content →
+              </Link>
             </div>
-
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {/* Businesses drops out on mobile — 5 across was too cramped

@@ -645,13 +645,18 @@ export function StoryDetailPage() {
                   </div>
                 )}
 
-                {effectiveReelUrl && (
+                {/* A blog story's video is a supplementary "watch this too,"
+                    not the main content — moved into the sidebar (see
+                    below) so it doesn't compete with the writing for the
+                    lead spot. A story with no blog has nothing else to lead
+                    with, so its video stays here as the primary content. */}
+                {effectiveReelUrl && !story.blog && (
                   <div>
                     <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Video</h2>
                     <ReelContent
                       reelUrl={effectiveReelUrl}
                       title={story.title}
-                      summary={story.blog ? '' : story.summary}
+                      summary={story.summary}
                       landscape={story.videoOrientation
                         ? story.videoOrientation === 'landscape'
                         : story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head')}
@@ -1029,6 +1034,25 @@ export function StoryDetailPage() {
                     business={business}
                     founder={founder}
                     variant="default"
+                  />
+                </section>
+              )}
+
+              {/* Video for a blog story — kept out of the main column (see
+                  above) so the writing leads; this is the "watch this too"
+                  companion, placed right after Business in reading order. */}
+              {effectiveReelUrl && story.blog && (
+                <section aria-labelledby="story-video-heading">
+                  <h2 id="story-video-heading" className="font-heading text-base font-semibold text-charcoal mb-4">
+                    Watch
+                  </h2>
+                  <ReelContent
+                    reelUrl={effectiveReelUrl}
+                    title={story.title}
+                    summary=""
+                    landscape={story.videoOrientation
+                      ? story.videoOrientation === 'landscape'
+                      : story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head')}
                   />
                 </section>
               )}

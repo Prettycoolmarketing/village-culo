@@ -17,8 +17,14 @@ export function ReelContent({ reelUrl, title, summary, landscape = false }: { re
           video (YouTube, talking head) stretched into 9:16 is what was
           reading as blurry/cropped. */}
       <div
+        // sm:w-[28rem]/sm:w-56 fixed widths used to force this wider than
+        // whatever container it was actually placed in (e.g. a sidebar
+        // column, or one half of a 2-col grid) — the box either overflowed
+        // its column or squeezed a sibling's text down to one word per
+        // line. max-w instead of a fixed width lets it still reach the
+        // same size in a roomy container, but shrink to fit a narrow one.
         className={`flex-shrink-0 w-full mx-auto bg-charcoal rounded-2xl overflow-hidden relative ${
-          landscape ? 'max-w-md sm:max-w-none sm:mx-0 sm:w-[28rem]' : 'max-w-[260px] sm:max-w-none sm:mx-0 sm:w-56'
+          landscape ? 'max-w-md sm:max-w-none sm:mx-0 sm:w-full sm:max-w-[28rem]' : 'max-w-[260px] sm:max-w-none sm:mx-0 sm:w-full sm:max-w-56'
         }`}
         style={{ aspectRatio: landscape ? '16/9' : '9/16' }}
         aria-label="Video preview"

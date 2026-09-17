@@ -243,7 +243,9 @@ export function VillagePage() {
             heading="Businesses"
             subheading="Discover businesses through the stories and ideas behind them."
             action={{ label: 'Browse Businesses', href: '/businesses' }}
-            filter={{ publicOnly: true, featured: true, limit: 4 }}
+            filter={{ publicOnly: true, featured: true }}
+            limit={4}
+            rotate
             fallbackToPublic
             columns={2}
             cardVariant="default"
