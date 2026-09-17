@@ -454,10 +454,6 @@ function ConnectedSourceRow({ source, isHighVolume, onChanged }: { source: Conne
     ? importedContentService.getAll().filter(i => i.connectedSourceId === source.id && i.status === 'draft').length
     : undefined
 
-  // Matches the platform values ImportedContent uses, so the link can
-  // pre-filter Content down to just what this connector brought in.
-  const contentPlatform = source.sourceType === 'website-rss' ? 'website' : source.sourceType === 'podcast-rss' ? 'podcast' : 'youtube'
-
   return (
     <div className="flex items-center gap-3 py-3">
       {source.podcast?.artworkUrl && (
@@ -484,7 +480,7 @@ function ConnectedSourceRow({ source, isHighVolume, onChanged }: { source: Conne
         </p>
       </div>
       <Link
-        to={`/dashboard/profile?tab=content&contentSubTab=imported&platform=${contentPlatform}`}
+        to="/dashboard/profile?tab=content&contentSubTab=ready"
         className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] shrink-0"
       >
         View content

@@ -97,13 +97,6 @@ export function FoundersPage() {
               {featuredFounders.map(f => (
                 <FounderCard key={f.id} founder={f} variant="featured" />
               ))}
-              <a
-                href="#founders-directory"
-                className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-charcoal text-white p-6 min-h-[12rem] hover:bg-[#1a1815] transition-colors"
-              >
-                <span className="font-heading text-lg font-semibold">View all founders</span>
-                <span aria-hidden="true" className="text-2xl">→</span>
-              </a>
             </div>
           </InnerContainer>
         </section>
@@ -194,7 +187,9 @@ export function FoundersPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Founder grid ────────────────────────────────────────────────────── */}
+      {/* ── Founder grid — "View all founders" lives here now, not as a tile
+          inside Featured Founders above: this section already shows every
+          founder, so it's the actual "view all," not a link pointing at one. */}
       <section
         id="founders-directory"
         className="py-12 md:py-16 scroll-mt-32"
@@ -203,6 +198,13 @@ export function FoundersPage() {
         <InnerContainer>
           <FounderGrid
             filter={filter}
+            // Featured founders already have their own row above — leaving
+            // them out here too avoids showing the same few people twice
+            // on the same page. Only while browsing unfiltered; an active
+            // filter should still surface a matching featured founder.
+            excludeIds={!hasActiveFilter ? featuredFounders.map(f => f.id) : undefined}
+            sortByJoinOrder={!hasActiveFilter}
+            heading="All Founders"
             columns={3}
             cardVariant="featured"
             emptyTitle={hasActiveFilter ? 'No founders match these filters' : 'The first Publisher is almost here.'}

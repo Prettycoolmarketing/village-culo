@@ -26,6 +26,15 @@ interface FounderGridProps {
   // fixed founders forever instead of cycling the spotlight around.
   rotate?: boolean
   limit?: number
+  // Leave out founders already shown elsewhere on the same page — e.g. the
+  // main directory listing below a "Featured Founders" row shouldn't repeat
+  // the same few founders twice.
+  excludeIds?: string[]
+  // Oldest-joined first — the plain directory order for "who's been here
+  // since when," distinct from FeaturedWidget/StoryGrid's newest-first
+  // convention for content. Default fetch order otherwise has no real
+  // meaning (whatever Supabase happened to return).
+  sortByJoinOrder?: boolean
 }
 
 const columnClasses = {
@@ -47,10 +56,18 @@ export function FounderGrid({
   fallbackToPublic = false,
   rotate = false,
   limit,
+  excludeIds,
+  sortByJoinOrder = false,
 }: FounderGridProps) {
   let founders = getFounders(filter)
   if (fallbackToPublic && filter.featured && founders.length === 0) {
     founders = getFounders({ ...filter, featured: undefined })
+  }
+  if (excludeIds) {
+    founders = founders.filter(f => !excludeIds.includes(f.id))
+  }
+  if (sortByJoinOrder) {
+    founders = [...founders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   }
   if (rotate && limit) {
     founders = dailyRotatingSlice(founders, limit)

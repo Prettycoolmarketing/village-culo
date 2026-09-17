@@ -24,7 +24,7 @@ import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
-import type { ImportedContentPlatform, ImportedContentStatus } from '../../types/importedContent'
+import type { ImportedContentStatus } from '../../types/importedContent'
 import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI } from '../../services/blogWriter'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
@@ -805,16 +805,14 @@ export function DashboardProfilePage() {
   // keep working exactly as before. Ready/Needs more take its place as the
   // two tabs a founder actually needs day-to-day: what's good to publish
   // right now, and what still needs work before it can be.
-  const [contentSubTab, setContentSubTab] = useState<'ready' | 'review' | 'imported' | 'published' | 'series'>(() =>
+  const [contentSubTab, setContentSubTab] = useState<'ready' | 'review' | 'published' | 'series'>(() =>
     searchParams.get('contentSubTab') === 'published' || searchParams.get('storyId')
       ? 'published'
       : searchParams.get('contentSubTab') === 'series'
         ? 'series'
-        : searchParams.get('contentSubTab') === 'imported'
-          ? 'imported'
-          : searchParams.get('contentSubTab') === 'review'
-            ? 'review'
-            : 'ready'
+        : searchParams.get('contentSubTab') === 'review'
+          ? 'review'
+          : 'ready'
   )
   const [readyChecked, setReadyChecked] = useState<Set<string>>(new Set())
   const [readyBulkPublishing, setReadyBulkPublishing] = useState(false)
@@ -862,17 +860,6 @@ export function DashboardProfilePage() {
   const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
   const [importedSaveError, setImportedSaveError] = useState<string | null>(null)
   const [importedSavedFlash, setImportedSavedFlash] = useState(false)
-  const [importedPlatformFilter, setImportedPlatformFilter] = useState<ImportedContentPlatform | 'all'>(
-    () => (searchParams.get('platform') as ImportedContentPlatform | null) ?? 'all'
-  )
-  // Instagram brings in both feed Posts (which almost always have a real
-  // caption) and Stories (which structurally never do) as one undifferentiated
-  // pile — this sub-filter, shown only while the Instagram platform pill is
-  // active, splits them so a founder isn't hunting through no-caption Stories
-  // to find the Posts that are actually one click from being publishable.
-  const [instagramCaptionFilter, setInstagramCaptionFilter] = useState<'all' | 'has' | 'none'>('all')
-  const [importedChecked, setImportedChecked] = useState<Set<string>>(new Set())
-  const [importedBulkPublishing, setImportedBulkPublishing] = useState(false)
   const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
   const [importedTick, setImportedTick] = useState(0)
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
@@ -900,7 +887,10 @@ export function DashboardProfilePage() {
       setContentSubTab('published')
       setEditingStoryId(storyId)
     } else if (editImportedId) {
-      setContentSubTab('imported')
+      // Advanced Edit opens over whichever subtab the founder was already
+      // on (Ready, Needs More Value, whatever) — it used to force a
+      // dedicated "imported" tab just to host this popup, which is the
+      // tab this comment used to describe before it was removed.
       const item = importedContentService.get(editImportedId)
       if (item) {
         setImportedEditDraft(item)
@@ -910,15 +900,11 @@ export function DashboardProfilePage() {
       setContentSubTab('published')
     } else if (searchParams.get('contentSubTab') === 'series') {
       setContentSubTab('series')
-    } else if (searchParams.get('contentSubTab') === 'imported') {
-      setContentSubTab('imported')
     } else if (searchParams.get('contentSubTab') === 'review') {
       setContentSubTab('review')
     } else if (searchParams.get('contentSubTab') === 'ready') {
       setContentSubTab('ready')
     }
-    const platform = searchParams.get('platform')
-    if (platform) setImportedPlatformFilter(platform as ImportedContentPlatform)
   }, [searchParams])
 
   // Autosave to localStorage as the founder types — if they navigate away or
@@ -1486,18 +1472,20 @@ export function DashboardProfilePage() {
                 unrelated groups instead of one row of filters; this scrolls
                 horizontally instead of stacking. */}
             <div className="flex gap-4 overflow-x-auto pb-1">
-              <button
-                onClick={() => { setContentSubTab('imported'); setImportedPlatformFilter('all') }}
-                className={`shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
-                  contentSubTab === 'imported' && importedPlatformFilter === 'all' ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
-                }`}
-              >
+              {/* Plain counts, not filters — browsing by platform used to
+                  live behind these as a separate "Canva/YouTube/etc" tab
+                  that quietly kept showing already-published items forever
+                  (nothing here ever left it once published), which is
+                  exactly what made a stuck import look "not really fixed."
+                  Everything actionable now lives in Ready / Needs More
+                  Value / Published below — these are read-only totals. */}
+              <div className="shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border border-[#E8E4DD] bg-white">
                 <div className="text-left">
                   <p className="text-sm text-[#9CA3AF]">All content</p>
                   <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{allImportedForStats.length}</p>
                 </div>
                 <SourceIcon platform="all" size="lg" />
-              </button>
+              </div>
               <button
                 onClick={() => setContentSubTab('published')}
                 className={`shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
@@ -1531,19 +1519,16 @@ export function DashboardProfilePage() {
                 </span>
               </button>
               {statsPlatforms.map(p => (
-                <button
+                <div
                   key={p}
-                  onClick={() => { setContentSubTab('imported'); setImportedPlatformFilter(p) }}
-                  className={`shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border bg-white transition-colors ${
-                    contentSubTab === 'imported' && importedPlatformFilter === p ? 'border-[#C86A43] ring-1 ring-[#C86A43]/30' : 'border-[#E8E4DD] hover:border-[#C86A43]/40'
-                  }`}
+                  className="shrink-0 min-w-[9rem] flex items-center justify-between gap-3 px-6 py-5 rounded-2xl border border-[#E8E4DD] bg-white"
                 >
                   <div className="text-left">
                     <p className="text-sm text-[#9CA3AF]">{IMPORT_PLATFORM_LABELS[p]}</p>
                     <p className="text-3xl font-bold text-[#2D2A26] mt-0.5">{allImportedForStats.filter(i => i.sourcePlatform === p).length}</p>
                   </div>
                   <SourceIcon platform={p} size="lg" />
-                </button>
+                </div>
               ))}
             </div>
 
@@ -1686,6 +1671,129 @@ export function DashboardProfilePage() {
                 )
               }
 
+              function toggleSelectAllShown() {
+                const unlockedShown = shownReady.filter(i => unlockedIds.has(i.id))
+                setReadyChecked(prev => prev.size === unlockedShown.length ? new Set() : new Set(unlockedShown.map(i => i.id)))
+              }
+
+              // Merge/series/delete/rewrite used to only exist in a separate
+              // per-platform "browse everything" tab — folded in here since
+              // that tab is gone and this is now the one place unpublished
+              // content actually lives, across both Ready and Needs More
+              // Value.
+              const founderSeries = getSeriesList({ founderId: draft.id })
+
+              async function handleMergeSelected() {
+                // Draft-only — merging a published item would leave its live
+                // Story pointing at nothing, or wrongly combine two published
+                // pieces. Checked published rows can't reach here anyway
+                // (shownReady never contains published items).
+                const ids = shownReady.filter(i => readyChecked.has(i.id)).map(i => i.id)
+                if (ids.length < 2) return
+                if (!window.confirm(`Merge these ${ids.length} items into one? The others will be deleted — this can't be undone.`)) return
+                const result = await importedContentService.merge(ids)
+                if (!result.success) setSaveError(result.error ?? 'Could not merge those items.')
+                setReadyChecked(new Set())
+                setImportedTick(t => t + 1)
+              }
+
+              // Tags the selected drafts with a series — no publishing
+              // involved. Series is an unpublished sorting/grouping layer;
+              // episode order only comes into play once something publishes.
+              async function handleAddToSeries(seriesId: string) {
+                if (!seriesId) return
+                const targets = shownReady.filter(i => readyChecked.has(i.id))
+                if (targets.length === 0) return
+                for (const item of targets) {
+                  await importedContentService.upsert({ ...item, seriesId })
+                }
+                setReadyChecked(new Set())
+                setImportedTick(t => t + 1)
+              }
+
+              async function handleDeleteSelected() {
+                const ids = Array.from(readyChecked)
+                if (ids.length === 0) return
+                if (!window.confirm(`Delete ${ids.length} selected item${ids.length === 1 ? '' : 's'}? This can't be undone.`)) return
+                for (const id of ids) await importedContentService.delete(id)
+                setReadyChecked(new Set())
+                setImportedTick(t => t + 1)
+              }
+
+              // Rewrites the selected drafts with the founder's Voice & Brand
+              // Brief, the same real per-item AI call the Instagram archive
+              // importer uses. Sequential with visible progress; one failure
+              // doesn't stop the rest, it just leaves that item as it was.
+              async function handleRegenerateSelected() {
+                if (!canUseVoiceRewrite || !draft || !liveVoiceBrief?.trim()) return
+                // Real AI spend per item — never run it on a piece that's
+                // still locked behind Archive Unlock.
+                const ids = Array.from(readyChecked).filter(id => unlockedIds.has(id))
+                if (ids.length === 0) return
+                setImportedRegenProgress({ done: 0, total: ids.length })
+                let held = 0
+                // Rolling memory of recent rewrites so a batch doesn't read
+                // as repetitive — each call is otherwise unaware of what any
+                // other item in the same batch just became.
+                const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
+                for (let i = 0; i < ids.length; i++) {
+                  // A gap between calls — firing them back-to-back trips
+                  // Anthropic's token-throughput rate limits reproducibly for
+                  // founders with a large Voice Brief.
+                  if (i > 0) await new Promise(r => setTimeout(r, 1500))
+                  const item = importedContentService.get(ids[i]!)
+                  if (item) {
+                    const { blog } = await generateBlogFromVoiceBrief({
+                      voiceBrief: liveVoiceBrief,
+                      founderName: draft.name ?? '',
+                      caption: item.description,
+                      transcript: item.transcriptText,
+                      platform: IMPORT_PLATFORM_LABELS[item.sourcePlatform] ?? item.sourcePlatform,
+                      kind: item.contentTypeHint?.[0],
+                      imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
+                      postedAt: item.publishedAt ?? item.importedAt,
+                      insightBrief: liveInsightBrief,
+                      recentAngles: recentAngles.slice(-8),
+                    })
+                    if (blog?.status === 'ready') {
+                      await importedContentService.upsert({
+                        ...item,
+                        title: blog.title ?? item.title,
+                        description: blog.blog ?? item.description,
+                        subtitle: blog.subtitle ?? item.subtitle,
+                        topics: Array.from(new Set([...item.topics, ...(blog.topics ?? [])])),
+                        generationType: blog.generationType,
+                        insightConfidence: blog.insightConfidence,
+                        insightSource: blog.insightSource,
+                        factSources: blog.factSources,
+                        primaryQuestion: blog.primaryQuestion,
+                        decision: blog.decision,
+                        possibleGroupHint: blog.possibleGroupHint,
+                        articleShape: blog.articleShape,
+                      })
+                      recentAngles.push({
+                        title: blog.title, articleShape: blog.articleShape, generationType: blog.generationType,
+                        insightSource: blog.insightSource, primaryQuestion: blog.primaryQuestion,
+                      })
+                    } else if (blog?.status === 'insufficient_source') {
+                      // Held, not failed — the model correctly declined to
+                      // invent a story the source material doesn't support.
+                      held++
+                      await importedContentService.upsert({
+                        ...item,
+                        flaggedForReview: true,
+                        flagReason: blog.note ?? 'Not enough source material to rewrite without inventing detail.',
+                      })
+                    }
+                  }
+                  setImportedRegenProgress({ done: i + 1, total: ids.length })
+                }
+                setReadyChecked(new Set())
+                setImportedRegenProgress(null)
+                setSaveError(held > 0 ? `${held} item${held === 1 ? '' : 's'} had too little to go on and ${held === 1 ? 'was' : 'were'} held for review instead of guessed at.` : null)
+                setImportedTick(t => t + 1)
+              }
+
               return (
                 <div>
                   {/* Bulk publish (both this tab and the raw imported list
@@ -1736,6 +1844,63 @@ export function DashboardProfilePage() {
                       >
                         Publish your full archive
                       </Link>
+                    </div>
+                  )}
+
+                  {contentSubTab === 'review' && shownReady.length > 0 && (
+                    <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer mb-3">
+                      <input
+                        type="checkbox"
+                        checked={readyChecked.size > 0 && readyChecked.size === shownReady.filter(i => unlockedIds.has(i.id)).length}
+                        onChange={toggleSelectAllShown}
+                        className="w-4 h-4 accent-[#C86A43]"
+                      />
+                      Select all shown ({shownReady.filter(i => unlockedIds.has(i.id)).length})
+                    </label>
+                  )}
+
+                  {readyChecked.size > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg">
+                      {readyChecked.size >= 2 && (
+                        <button
+                          onClick={() => void handleMergeSelected()}
+                          title="Combine the selected items into one — for clips posted the same day that didn't group automatically"
+                          className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0"
+                        >
+                          Merge {readyChecked.size} selected
+                        </button>
+                      )}
+                      {founderSeries.length > 0 && (
+                        <select
+                          value=""
+                          onChange={e => { if (e.target.value) void handleAddToSeries(e.target.value) }}
+                          title="Moves the selected drafts into a series — nothing gets published"
+                          className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0 cursor-pointer"
+                        >
+                          <option value="" disabled>Move {readyChecked.size} to series…</option>
+                          {founderSeries.map(s => (
+                            <option key={s.id} value={s.id}>{s.title || 'Untitled series'}</option>
+                          ))}
+                        </select>
+                      )}
+                      <button
+                        onClick={() => void handleDeleteSelected()}
+                        className="px-3 py-2 bg-white border border-[#E8E4DD] text-red-600 text-xs font-semibold rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors shrink-0"
+                      >
+                        Delete {readyChecked.size} selected
+                      </button>
+                      {canUseVoiceRewrite && (
+                        <button
+                          onClick={() => void handleRegenerateSelected()}
+                          disabled={!liveVoiceBrief?.trim() || !!importedRegenProgress}
+                          title={!liveVoiceBrief?.trim() ? 'Add your Voice & Brand Brief from Import Content first' : 'Rewrite the selected drafts using your Voice & Brand Brief'}
+                          className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                        >
+                          {importedRegenProgress
+                            ? `Rewriting ${importedRegenProgress.done}/${importedRegenProgress.total}…`
+                            : `Rewrite ${readyChecked.size} with Voice Brief`}
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -1822,281 +1987,11 @@ export function DashboardProfilePage() {
               )
             })()}
 
-            {contentSubTab === 'imported' && (() => {
-              void importedTick
-              const allImported = importedContentService.getAll({ founderId: draft.id })
-              // Not shown as locked rows here (this is a browsing/editing
-              // view, not the sell surface) — but publishing from here must
-              // still be blocked for a locked piece, or the Archive Unlock
-              // paywall could just be skipped entirely from this tab.
-              const unlockedIdsImported = getUnlockedImportedIds(allImported, getFounder(draft.id))
-              const platforms = Array.from(new Set(allImported.map(i => i.sourcePlatform)))
-              const shownByPlatform = importedPlatformFilter === 'all'
-                ? allImported
-                // Once something's been moved into a series, it drops out of
-                // its platform tab — the tab is "what's still unsorted from
-                // this platform," not a permanent record of where it came
-                // from. "All" is the only view that always shows everything.
-                : allImported.filter(i => i.sourcePlatform === importedPlatformFilter && !i.seriesId)
-              // Only meaningful (and only shown) while filtering to Instagram
-              // specifically — Posts vs Stories is an Instagram-shaped
-              // distinction, not a general one.
-              const isInstagramView = importedPlatformFilter === 'instagram'
-              const shown = isInstagramView && instagramCaptionFilter !== 'all'
-                ? shownByPlatform.filter(i => instagramCaptionFilter === 'has' ? hasRealCaption(i) : !hasRealCaption(i))
-                : shownByPlatform
-              const instagramHasCaptionCount = isInstagramView ? shownByPlatform.filter(hasRealCaption).length : 0
-              const instagramNoCaptionCount  = isInstagramView ? shownByPlatform.filter(i => !hasRealCaption(i)).length : 0
-              // Flagged items (title/caption mismatch etc.) are excluded from
-              // every "select all" pool below — still individually
-              // selectable via their own row checkbox, just never swept into
-              // a bulk rewrite/publish without a human actually looking.
-              const readyItems = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview && isReadyToPublish(i))
-              // Superset of readyItems — includes drafts that still just carry
-              // their original caption/title and haven't been touched yet.
-              // "Select all ready to publish" only grabs items already fit to
-              // publish; rewriting with the Voice Brief is exactly for the
-              // ones that aren't yet, so it needs its own, wider selection.
-              const unpublishedItems = shown.filter(i => !i.relatedStoryId && !i.flaggedForReview)
-              const founderSeries = getSeriesList({ founderId: draft.id })
-
-              function refreshImported() { setImportedTick(t => t + 1) }
-
-              function toggleImportedChecked(id: string) {
-                setImportedChecked(prev => {
-                  const next = new Set(prev)
-                  if (next.has(id)) next.delete(id); else next.add(id)
-                  return next
-                })
-              }
-
-              function toggleSelectAllReady() {
-                setImportedChecked(prev => prev.size === readyItems.length ? new Set() : new Set(readyItems.map(i => i.id)))
-              }
-
-              function toggleSelectAllUnpublished() {
-                setImportedChecked(prev => prev.size === unpublishedItems.length ? new Set() : new Set(unpublishedItems.map(i => i.id)))
-              }
-
-              async function handleImportedStatusChange(id: string, status: ImportedContentStatus) {
-                const item = importedContentService.get(id)
-                if ((status === 'published' || status === 'featured') && item && !unlockedIdsImported.has(id)) {
-                  setSaveError('This piece is part of your locked archive — unlock it before publishing.')
-                  return
-                }
-                if (status === 'published' || status === 'featured') {
-                  if (item && draft && !item.relatedStoryId && isReadyToPublish(item)) {
-                    const story = buildStoryFromImport(item, draft)
-                    story.status = status
-                    const result = await publishStoryCore(story)
-                    if (!result.success) {
-                      if (result.limitKind) setLimitModal(result.limitKind)
-                      else setSaveError(result.error ?? 'Could not publish. Please try again.')
-                    } else {
-                      // Only now is there a real, live Story behind this
-                      // status — flipping the badge before this succeeded
-                      // used to leave the import saying "Published" with no
-                      // story to show for it (View button had nowhere real
-                      // to point).
-                      await importedContentService.updateStatus(id, status)
-                    }
-                  } else if (item && item.relatedStoryId) {
-                    // Already published once before — flipping back to
-                    // Published/Featured here should re-show the existing
-                    // story, not silently do nothing.
-                    const existing = getStory(item.relatedStoryId)
-                    if (existing) await updateStory({ ...existing, status })
-                    await importedContentService.updateStatus(id, status)
-                  } else if (item && !isReadyToPublish(item)) {
-                    setSaveError('Give this a real title before publishing it.')
-                  }
-                } else {
-                  await importedContentService.updateStatus(id, status)
-                }
-                if (item?.relatedStoryId && status !== 'published' && status !== 'featured') {
-                  // Switched back to Draft/Archived after having been
-                  // published — the live story must stop being publicly
-                  // visible too, not just this import record.
-                  const existing = getStory(item.relatedStoryId)
-                  if (existing) await updateStory({ ...existing, status })
-                }
-                refreshImported()
-              }
-
-              async function handleImportedBulkPublish() {
-                if (!draft) return
-                setImportedBulkPublishing(true)
-                setSaveError(null)
-                const targets = readyItems.filter(i => importedChecked.has(i.id) && unlockedIdsImported.has(i.id))
-                for (const item of targets) {
-                  // See the same try/catch on the Ready-to-Publish bulk
-                  // publish above — an uncaught exception here used to leave
-                  // "Publishing…" stuck forever with nothing actually moving
-                  // to Published, and no error shown to explain why.
-                  try {
-                    const story = buildStoryFromImport(item, draft)
-                    const result = await publishStoryCore(story)
-                    // Same rule as the single-item publish path: only mark the
-                    // import Published once a real Story actually exists behind
-                    // it — otherwise the row keeps saying Draft here forever
-                    // even though a story went live, because nothing else ever
-                    // wrote the status back onto the import record.
-                    if (result.success) { await importedContentService.updateStatus(item.id, 'published'); continue }
-                    if (result.limitKind) { setLimitModal(result.limitKind); break }
-                    setSaveError(result.error ?? `Could not publish "${item.title}". Please try again.`)
-                  } catch (err) {
-                    setSaveError(err instanceof Error ? err.message : `Could not publish "${item.title}". Please try again.`)
-                  }
-                }
-                setImportedChecked(new Set())
-                setImportedBulkPublishing(false)
-                refreshImported()
-              }
-
-              // Rewrites already-imported drafts with the founder's Voice &
-              // Brand Brief, the same real-per-item AI call the Instagram
-              // archive importer uses — for content that was imported before
-              // a brief existed, or that just kept its original caption.
-              // Sequential (each is a real AI call) with visible progress,
-              // same pattern as the Instagram importer; one failure doesn't
-              // stop the rest, it just leaves that item as it was.
-              async function handleRegenerateSelected() {
-                if (!canUseVoiceRewrite || !draft || !liveVoiceBrief?.trim()) return
-                // Real AI spend per item — never run it on a piece that's
-                // still locked behind Archive Unlock, or a founder could
-                // burn the cost this feature exists to gate before ever
-                // paying for it.
-                const ids = Array.from(importedChecked).filter(id => unlockedIdsImported.has(id))
-                if (ids.length === 0) return
-                setImportedRegenProgress({ done: 0, total: ids.length })
-                let held = 0
-                // Same rolling-memory fix as the Instagram archive importer —
-                // without this, every item in the batch is rewritten with no
-                // awareness of what any other item in the same batch just
-                // became, which is exactly what made bulk rewrites read as
-                // repetitive.
-                const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
-                for (let i = 0; i < ids.length; i++) {
-                  // Same reasoning as the Instagram archive importer: each
-                  // call resends the full Voice + Insight Brief, and firing
-                  // them with too little gap was tripping Anthropic's
-                  // token-throughput rate limits in testing, reproducibly,
-                  // even with a cold rate window — it's real per-batch
-                  // volume for founders with a large brief, not leftover
-                  // load from an earlier run.
-                  if (i > 0) await new Promise(r => setTimeout(r, 1500))
-                  const item = importedContentService.get(ids[i]!)
-                  if (item) {
-                    const { blog } = await generateBlogFromVoiceBrief({
-                      voiceBrief: liveVoiceBrief,
-                      founderName: draft.name ?? '',
-                      caption: item.description,
-                      transcript: item.transcriptText,
-                      platform: IMPORT_PLATFORM_LABELS[item.sourcePlatform] ?? item.sourcePlatform,
-                      kind: item.contentTypeHint?.[0],
-                      imageUrls: item.imageUrls?.length ? item.imageUrls : item.thumbnailUrl ? [item.thumbnailUrl] : undefined,
-                      postedAt: item.publishedAt ?? item.importedAt,
-                      insightBrief: liveInsightBrief,
-                      recentAngles: recentAngles.slice(-8),
-                    })
-                    if (blog?.status === 'ready') {
-                      await importedContentService.upsert({
-                        ...item,
-                        title: blog.title ?? item.title,
-                        description: blog.blog ?? item.description,
-                        subtitle: blog.subtitle ?? item.subtitle,
-                        topics: Array.from(new Set([...item.topics, ...(blog.topics ?? [])])),
-                        generationType: blog.generationType,
-                        insightConfidence: blog.insightConfidence,
-                        insightSource: blog.insightSource,
-                        factSources: blog.factSources,
-                        primaryQuestion: blog.primaryQuestion,
-                        decision: blog.decision,
-                        possibleGroupHint: blog.possibleGroupHint,
-                        articleShape: blog.articleShape,
-                      })
-                      recentAngles.push({
-                        title: blog.title, articleShape: blog.articleShape, generationType: blog.generationType,
-                        insightSource: blog.insightSource, primaryQuestion: blog.primaryQuestion,
-                      })
-                    } else if (blog?.status === 'insufficient_source') {
-                      // Held, not failed — the model correctly declined to
-                      // invent a story the source material doesn't support.
-                      // Flagged the same way a title/caption mismatch is, so
-                      // it shows an asterisk and drops out of bulk actions
-                      // until a human adds real context.
-                      held++
-                      await importedContentService.upsert({
-                        ...item,
-                        flaggedForReview: true,
-                        flagReason: blog.note ?? 'Not enough source material to rewrite without inventing detail.',
-                      })
-                    }
-                  }
-                  setImportedRegenProgress({ done: i + 1, total: ids.length })
-                }
-                setImportedChecked(new Set())
-                setImportedRegenProgress(null)
-                setSaveError(held > 0 ? `${held} item${held === 1 ? '' : 's'} had too little to go on and ${held === 1 ? 'was' : 'were'} held for review instead of guessed at.` : null)
-                refreshImported()
-              }
-
-              async function handleMergeSelected() {
-                // Draft-only — merging a published item would leave its live
-                // Story pointing at nothing, or wrongly combine two published
-                // pieces. Checked published rows are just silently excluded.
-                const ids = shown.filter(i => importedChecked.has(i.id) && !i.relatedStoryId).map(i => i.id)
-                if (ids.length < 2) return
-                if (!window.confirm(`Merge these ${ids.length} items into one? The others will be deleted — this can't be undone.`)) return
-                const result = await importedContentService.merge(ids)
-                if (!result.success) setSaveError(result.error ?? 'Could not merge those items.')
-                setImportedChecked(new Set())
-                refreshImported()
-              }
-
-              // Tags the selected drafts with a series — no publishing involved.
-              // Series is being used as an unpublished sorting/grouping layer
-              // for now (see ImportedContent.seriesId); episode order and the
-              // Story-level series/episode fields only come into play once
-              // something is actually published.
-              async function handleAddToSeries(seriesId: string) {
-                if (!seriesId) return
-                // Published items are included here — the checkbox now shows
-                // on every row, and moving something into a series shouldn't
-                // require it to still be a draft. Delete/Merge below stay
-                // scoped to drafts only, since those are destructive and
-                // published items already have a live Story to worry about.
-                const targets = shown.filter(i => importedChecked.has(i.id))
-                if (targets.length === 0) return
-                for (const item of targets) {
-                  await importedContentService.upsert({ ...item, seriesId })
-                }
-                setImportedChecked(new Set())
-                refreshImported()
-              }
-
-              function handleImportedDelete(id: string) {
-                importedContentService.delete(id)
-                refreshImported()
-              }
-
-              async function handleDeleteSelected() {
-                const ids = Array.from(importedChecked)
-                if (ids.length === 0) return
-                if (!window.confirm(`Delete ${ids.length} selected item${ids.length === 1 ? '' : 's'}? This can't be undone.`)) return
-                for (const id of ids) await importedContentService.delete(id)
-                setImportedChecked(new Set())
-                refreshImported()
-              }
-
-              function handleOpenAdvancedEdit(id: string) {
-                const item = importedContentService.get(id)
-                if (!item) return
-                setImportedSaveError(null)
-                setImportedEditDraft(item)
-                setEditingImportedId(id)
-              }
-
+            {/* Advanced Edit — rendered regardless of which subtab is
+                active (Ready, Needs More Value, Published…) since it's
+                opened from a row on any of them via the editImportedId URL
+                param, not from a dedicated tab any more. */}
+            {editingImportedId && importedEditDraft && (() => {
               function handleCancelAdvancedEdit() {
                 setEditingImportedId(null)
                 setImportedEditDraft(null)
@@ -2127,211 +2022,62 @@ export function DashboardProfilePage() {
                 if (importedEditDraft.relatedStoryId) await syncImportEditsToStory(importedEditDraft)
                 setImportedSavedFlash(true)
                 setTimeout(() => setImportedSavedFlash(false), 2000)
-                refreshImported()
+                setImportedTick(t => t + 1)
               }
 
               return (
-                <div className="flex gap-6 items-start">
-                <div className="flex-1 min-w-0">
-                  {platforms.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex flex-wrap gap-1.5 mb-1.5">
-                        <button onClick={() => setImportedPlatformFilter('all')}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === 'all' ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                          All {allImported.length}
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {platforms.map(p => (
-                          <button key={p} onClick={() => { setImportedPlatformFilter(p); setInstagramCaptionFilter('all') }}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${importedPlatformFilter === p ? 'bg-[#2D2A26] text-white border-[#2D2A26]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                            {IMPORT_PLATFORM_LABELS[p]} {allImported.filter(i => i.sourcePlatform === p && !i.seriesId).length}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Instagram brings in Posts (almost always captioned)
-                          and Stories (structurally never captioned) as one
-                          pile — this splits them so the ones worth a quick
-                          publish aren't buried among ones that need writing
-                          from scratch. */}
-                      {isInstagramView && (
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {([
-                            ['all',  `All ${shownByPlatform.length}`],
-                            ['has',  `Has caption ${instagramHasCaptionCount}`],
-                            ['none', `No caption ${instagramNoCaptionCount}`],
-                          ] as const).map(([value, label]) => (
-                            <button key={value} onClick={() => setInstagramCaptionFilter(value)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${instagramCaptionFilter === value ? 'bg-[#C86A43] text-white border-[#C86A43]' : 'bg-white text-[#6B7280] border-[#E8E4DD] hover:border-[#C86A43]/50'}`}>
-                              {label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {saveError && <p className="text-xs text-red-600 font-medium mb-3">{saveError}</p>}
-
-                  {(unpublishedItems.length > 0 || importedChecked.size > 0) && (
-                    <div className="flex items-center justify-between gap-3 mb-3 px-4 py-2.5 bg-[#FBF1EB] border border-[#F0DDD2] rounded-lg flex-wrap">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={importedChecked.size > 0 && importedChecked.size === readyItems.length}
-                            onChange={toggleSelectAllReady}
-                            disabled={readyItems.length === 0}
-                            className="w-4 h-4 accent-[#C86A43]"
-                          />
-                          Select all ready to publish ({readyItems.length})
-                        </label>
-                        <button
-                          type="button"
-                          onClick={toggleSelectAllUnpublished}
-                          disabled={unpublishedItems.length === 0}
-                          className="text-xs text-[#9CA3AF] hover:text-[#C86A43] underline decoration-dotted disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          or select all {unpublishedItems.length} unpublished
-                        </button>
-                      </div>
+                // Floating on top of the page, not swapped in in place — a
+                // big popup with a visible sliver of the list still showing
+                // behind it (the backdrop dims but doesn't fully hide it),
+                // rather than either squeezing into a narrow sidebar or
+                // taking over the whole page.
+                <div
+                  className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
+                  // No close-on-backdrop-click — a drag-select of text
+                  // inside the form that ends slightly outside the card
+                  // reads as a plain click on the backdrop, which used to
+                  // silently discard the edit. Closing this is deliberate
+                  // now: the X button or Cancel, nothing else (same fix as
+                  // StoryEditor's identical popup shell).
+                  onKeyDown={e => {
+                    // Backspace with focus outside a real text field is the
+                    // browser's native "go back" shortcut — since this
+                    // popup is driven by an editImportedId URL param, that
+                    // silently closed it and discarded the edit.
+                    if (e.key !== 'Backspace') return
+                    const el = e.target as HTMLElement
+                    const isEditable = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
+                    if (!isEditable) e.preventDefault()
+                  }}
+                >
+                  <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4">
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        {importedChecked.size >= 2 && (
-                          <button
-                            onClick={() => void handleMergeSelected()}
-                            title="Combine the selected items into one — for clips posted the same day that didn't group automatically"
-                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0"
-                          >
-                            Merge {importedChecked.size} selected
-                          </button>
+                        <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
+                        {importedSavedFlash && (
+                          <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>
                         )}
-                        {importedChecked.size > 0 && founderSeries.length > 0 && (
-                          <select
-                            value=""
-                            onChange={e => { if (e.target.value) void handleAddToSeries(e.target.value) }}
-                            title="Moves the selected drafts into a series — nothing gets published"
-                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors shrink-0 cursor-pointer"
-                          >
-                            <option value="" disabled>Move {importedChecked.size} to series…</option>
-                            {founderSeries.map(s => (
-                              <option key={s.id} value={s.id}>{s.title || 'Untitled series'}</option>
-                            ))}
-                          </select>
-                        )}
-                        {importedChecked.size > 0 && (
-                          <button
-                            onClick={() => void handleDeleteSelected()}
-                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-red-600 text-xs font-semibold rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors shrink-0"
-                          >
-                            Delete {importedChecked.size} selected
-                          </button>
-                        )}
-                        {canUseVoiceRewrite && importedChecked.size > 0 && (
-                          <button
-                            onClick={() => void handleRegenerateSelected()}
-                            disabled={!liveVoiceBrief?.trim() || !!importedRegenProgress}
-                            title={!liveVoiceBrief?.trim() ? 'Add your Voice & Brand Brief from Import Content first' : 'Rewrite the selected drafts using your Voice & Brand Brief'}
-                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-                          >
-                            {importedRegenProgress
-                              ? `Rewriting ${importedRegenProgress.done}/${importedRegenProgress.total}…`
-                              : `Rewrite ${importedChecked.size} with Voice Brief`}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => void handleImportedBulkPublish()}
-                          disabled={importedChecked.size === 0 || importedBulkPublishing}
-                          className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors shrink-0 ${
-                            importedChecked.size === 0
-                              ? 'bg-[#E8E4DD] text-[#9CA3AF] cursor-not-allowed'
-                              : 'bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed'
-                          }`}
-                        >
-                          {importedBulkPublishing ? 'Publishing…' : `Publish ${importedChecked.size || ''} selected`}
-                        </button>
                       </div>
+                      <button
+                        onClick={handleCancelAdvancedEdit}
+                        aria-label="Close"
+                        className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
-                  )}
-
-                  {shown.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
-                      <p className="text-sm font-semibold text-[#2D2A26]">Nothing imported yet.</p>
-                      <Link to="/dashboard/import-content" className="inline-flex mt-3 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
-                        Import content
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                      {shown.map(item => (
-                        <SavedRow
-                          key={item.id}
-                          item={item}
-                          checked={importedChecked.has(item.id)}
-                          onToggleCheck={() => toggleImportedChecked(item.id)}
-                          onAdvancedEdit={() => handleOpenAdvancedEdit(item.id)}
-                          onDelete={() => handleImportedDelete(item.id)}
-                          onStatusChange={status => void handleImportedStatusChange(item.id, status)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {editingImportedId && importedEditDraft && (
-                  // Floating on top of the page, not swapped in in place —
-                  // a big popup with a visible sliver of the list still
-                  // showing behind it (the backdrop dims but doesn't fully
-                  // hide it), rather than either squeezing into a narrow
-                  // sidebar or taking over the whole page.
-                  <div
-                    className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
-                    // No close-on-backdrop-click — a drag-select of text
-                    // inside the form that ends slightly outside the card
-                    // reads as a plain click on the backdrop, which used to
-                    // silently discard the edit. Closing this is deliberate
-                    // now: the X button or Cancel, nothing else (same fix as
-                    // StoryEditor's identical popup shell).
-                    onKeyDown={e => {
-                      // Backspace with focus outside a real text field is the
-                      // browser's native "go back" shortcut — since this
-                      // popup is driven by an editImportedId URL param, that
-                      // silently closed it and discarded the edit.
-                      if (e.key !== 'Backspace') return
-                      const el = e.target as HTMLElement
-                      const isEditable = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
-                      if (!isEditable) e.preventDefault()
-                    }}
-                  >
-                    <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-[#2D2A26]">Advanced edit</p>
-                          {importedSavedFlash && (
-                            <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>
-                          )}
-                        </div>
-                        <button
-                          onClick={handleCancelAdvancedEdit}
-                          aria-label="Close"
-                          className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      {importedSaveError && <p className="text-sm text-red-600 font-medium mb-2">{importedSaveError}</p>}
-                      <EditForm
-                        draft={importedEditDraft}
-                        onChange={setImportedEditDraft}
-                        onSave={() => void handleSaveAdvancedEdit()}
-                        onCancel={handleCancelAdvancedEdit}
-                        canRewrite={canUseVoiceRewrite}
-                        savedFlash={importedSavedFlash}
-                      />
-                    </div>
+                    {importedSaveError && <p className="text-sm text-red-600 font-medium mb-2">{importedSaveError}</p>}
+                    <EditForm
+                      draft={importedEditDraft}
+                      onChange={setImportedEditDraft}
+                      onSave={() => void handleSaveAdvancedEdit()}
+                      onCancel={handleCancelAdvancedEdit}
+                      canRewrite={canUseVoiceRewrite}
+                      savedFlash={importedSavedFlash}
+                    />
                   </div>
-                )}
                 </div>
               )
             })()}

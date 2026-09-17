@@ -222,10 +222,10 @@ export default function App() {
             <Route path="import-sources" element={<DashboardImportSourcesPage />}/>
             <Route path="import-content" element={<DashboardImportContentPage />}/>
             <Route path="archive-found"  element={<DashboardArchiveFoundPage />}  />
-            {/* Imported content is a Profile > Content subtab now (its own
-                sidebar link for quick access, still fully manageable from
-                Content) — see DashboardLayout's nav. */}
-            <Route path="villager"       element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=imported" replace />} />
+            {/* Imported content lives inside Ready to Publish / Needs More
+                Value now — the separate per-platform browsing tab is gone,
+                see DashboardProfilePage's Content tab. */}
+            <Route path="villager"       element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=ready" replace />} />
             <Route path="welcome"        element={<DashboardWelcomePage />}      />
             {/* Series is its own top-level tab in Profile's Content section now */}
             <Route path="series"         element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=series" replace />} />

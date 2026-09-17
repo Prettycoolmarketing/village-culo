@@ -178,7 +178,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
                   {result.skipped > 0 ? ` — ${result.skipped} skipped (no usable media)` : ''}. Nothing is published yet.
                 </p>
                 <Link
-                  to="/dashboard/profile?tab=content&contentSubTab=imported&platform=instagram"
+                  to="/dashboard/profile?tab=content&contentSubTab=ready"
                   className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A] text-white hover:bg-[#4a5539] transition-colors"
                 >
                   Review Instagram imports →

@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useDictation } from '../../hooks/useDictation'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounders, getFounder, updateFounder } from '../../services/founders'
-import { extractFaqsAI } from '../../services/blogWriter'
+import { extractFaqsAI, generateBlogFromVoiceBrief } from '../../services/blogWriter'
 import { getBusinesses, getBusiness } from '../../services/businesses'
 import { getStories, getStory } from '../../services/stories'
 import { importedContentService } from '../../services/importedContent'
@@ -27,6 +27,7 @@ import { slugify } from '../../utils/slugify'
 import { deriveSeoTitle, deriveSeoDescription } from '../../utils/seo'
 import { looksLikeChannelUrl } from '../../utils/url'
 import { partnerService } from '../../services/partner'
+import { canUseRewrite } from '../../utils/permissions'
 import type { ImportedContent } from '../../types/importedContent'
 import type { ContentType, Topic, Story } from '../../types'
 
@@ -442,6 +443,45 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
       () => alert("Dictation isn't supported in this browser — try Chrome, Edge or Safari.")
     )
   }
+  const { user } = useAuth()
+  // Rewrite/Clear all are staff tools (Capo + Admin) — a founder already has
+  // their own voice by definition; this is for the team drafting on a
+  // founder's behalf, same gate as the Content tab's rewrite feature.
+  const canRewrite = canUseRewrite(user?.role)
+  const [rewriting, setRewriting] = useState(false)
+  const [rewriteError, setRewriteError] = useState<string | null>(null)
+
+  async function handleRewriteBlog() {
+    const founder = getFounder(draft.founderId)
+    const voiceBrief = founder?.voiceBrief
+    if (!voiceBrief?.trim() || !draft.blog.trim()) return
+    setRewriting(true)
+    setRewriteError(null)
+    const { blog, error } = await generateBlogFromVoiceBrief({
+      voiceBrief,
+      founderName: founder?.name ?? '',
+      caption: draft.blog,
+      platform: 'The Culo Village',
+      kind: draft.contentTypes[0],
+      insightBrief: founder?.insightBrief,
+    })
+    if (blog?.status === 'ready') {
+      onChange({
+        title: blog.title || draft.title,
+        subtitle: blog.subtitle || draft.subtitle,
+        blog: normalizeBlogSpacing(blog.blog ?? draft.blog),
+      })
+    } else {
+      setRewriteError(blog?.note || error || 'Not enough here to rewrite from yet — add a bit more first.')
+    }
+    setRewriting(false)
+  }
+
+  function handleClearBlog() {
+    if (!window.confirm('Clear the headline, subtitle and blog text? This can\'t be undone.')) return
+    onChange({ title: '', subtitle: '', blog: '' })
+  }
+
   const types = draft.contentTypes
   const hasVideo    = types.some(t => ['reel', 'talking-head', 'youtube-video'].includes(t))
   const hasAudio    = types.some(t => ['podcast', 'voice-over'].includes(t))
@@ -657,16 +697,46 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
 
         {(hasBlog || hasSlides) && (
           <div className="border border-[#E8E4DD] rounded-xl overflow-hidden">
-            <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD]">
+            <div className="bg-[#F8F5F0] px-4 py-2 border-b border-[#E8E4DD] flex items-center justify-between gap-3">
               <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest">Today's Blog</p>
+              {canRewrite && (draft.title || draft.subtitle || draft.blog) && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRewriteBlog}
+                    disabled={rewriting || !draft.blog.trim()}
+                    title={!getFounder(draft.founderId)?.voiceBrief?.trim() ? 'Add a Voice & Brand Brief from Import Content first' : 'Rewrite using the Voice & Brand Brief'}
+                    className="text-[10px] font-semibold text-[#C86A43] hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:no-underline"
+                  >
+                    {rewriting ? 'Rewriting…' : 'Rewrite'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearBlog}
+                    className="text-[10px] font-semibold text-[#9CA3AF] hover:text-red-500"
+                  >
+                    Clear all
+                  </button>
+                </div>
+              )}
             </div>
             <div className="px-4 py-3 flex flex-col gap-3">
+              {rewriteError && <p className="text-xs text-red-600 font-medium">{rewriteError}</p>}
               <Field label="Title">
                 <input
                   type="text"
                   value={draft.title}
                   onChange={e => onChange({ title: e.target.value })}
                   placeholder="What is this story about?"
+                  className={inp}
+                />
+              </Field>
+              <Field label="Subtitle" hint="A short line under the title — optional.">
+                <input
+                  type="text"
+                  value={draft.subtitle}
+                  onChange={e => onChange({ subtitle: e.target.value })}
+                  placeholder="One line that sums it up"
                   className={inp}
                 />
               </Field>
@@ -751,6 +821,45 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
   onNext: () => void
   onBack: () => void
 }) {
+  const { user } = useAuth()
+  // Same staff-only gate as MediaStep's "Today's Blog" toolbar — a founder
+  // writing in their own words doesn't need a Rewrite/Clear all button.
+  const canRewrite = canUseRewrite(user?.role)
+  const [rewriting, setRewriting] = useState(false)
+  const [rewriteError, setRewriteError] = useState<string | null>(null)
+
+  async function handleRewriteBlog() {
+    const founder = getFounder(draft.founderId)
+    const voiceBrief = founder?.voiceBrief
+    if (!voiceBrief?.trim() || !draft.blog.trim()) return
+    setRewriting(true)
+    setRewriteError(null)
+    const { blog, error } = await generateBlogFromVoiceBrief({
+      voiceBrief,
+      founderName: founder?.name ?? '',
+      caption: draft.blog,
+      platform: 'The Culo Village',
+      kind: draft.contentTypes[0],
+      insightBrief: founder?.insightBrief,
+    })
+    if (blog?.status === 'ready') {
+      onChange({
+        title: blog.title || draft.title,
+        subtitle: blog.subtitle || draft.subtitle,
+        summary: blog.subtitle || draft.summary,
+        blog: normalizeBlogSpacing(blog.blog ?? draft.blog),
+      })
+    } else {
+      setRewriteError(blog?.note || error || 'Not enough here to rewrite from yet — add a bit more first.')
+    }
+    setRewriting(false)
+  }
+
+  function handleClearBlog() {
+    if (!window.confirm('Clear the headline, subtitle, summary and blog text? This can\'t be undone.')) return
+    onChange({ title: '', subtitle: '', summary: '', blog: '' })
+  }
+
   return (
     <div>
       <StepHeader
@@ -767,10 +876,35 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
           Not what you expected? Start a new blog from scratch →
         </Link>
       )}
+      {canRewrite && (draft.title || draft.subtitle || draft.summary || draft.blog) && (
+        <div className="flex items-center justify-end gap-3 mb-3">
+          {rewriteError && <p className="text-xs text-red-600 font-medium mr-auto">{rewriteError}</p>}
+          <button
+            type="button"
+            onClick={handleRewriteBlog}
+            disabled={rewriting || !draft.blog.trim()}
+            title={!getFounder(draft.founderId)?.voiceBrief?.trim() ? 'Add a Voice & Brand Brief from Import Content first' : 'Rewrite using the Voice & Brand Brief'}
+            className="text-xs font-semibold text-[#C86A43] hover:underline disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:no-underline"
+          >
+            {rewriting ? 'Rewriting…' : 'Rewrite'}
+          </button>
+          <button
+            type="button"
+            onClick={handleClearBlog}
+            className="text-xs font-semibold text-[#9CA3AF] hover:text-red-500"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
       <div className="flex flex-col gap-5">
         <Field label="Headline" hint="Optional. Village can draft one from your content if you leave this blank.">
           <input type="text" value={draft.title} onChange={e => onChange({ title: e.target.value })}
             placeholder="What is this story about?" className={inp + ' text-lg font-semibold py-3'} autoFocus />
+        </Field>
+        <Field label="Subtitle" hint="Optional — a short line under the headline.">
+          <input type="text" value={draft.subtitle} onChange={e => onChange({ subtitle: e.target.value })}
+            placeholder="One line that sums it up" className={inp} />
         </Field>
         <Field label="Summary" hint="Optional — a short paragraph, 1-3 sentences. Village will write one from your Blog if you leave this blank.">
           <div className="flex items-start gap-2">
@@ -1788,6 +1922,19 @@ export function DashboardPublishPage() {
     // draft.additionalReelUrls.length on an undefined array.
     const saved = loadAutoSavedDraft()
     if (!saved) return base
+    // A saved draft that already has a publishedStoryId is a *finished*
+    // wizard run, not an unfinished one — this autosave only exists to
+    // protect half-written work from a closed tab. Resuming it here as if
+    // it were still in progress is how a founder opening the wizard to
+    // write something genuinely new silently overwrote an already-live
+    // story instead: this draft's title/blog looked like "still there,"
+    // but its publishedStoryId quietly pointed publish() at the old story
+    // the whole time. Once a draft has published, its local shadow copy is
+    // done — clear it and start clean.
+    if (saved.publishedStoryId) {
+      try { localStorage.removeItem(DRAFT_AUTOSAVE_KEY) } catch { /* ignore */ }
+      return base
+    }
     // founderId/businessId are the two identity fields RLS actually checks
     // on save — always trust the live founder over whatever got autosaved,
     // never the other way round. A stale saved founderId (from before a
@@ -1809,16 +1956,23 @@ export function DashboardPublishPage() {
   const [autoSave,      setAutoSave]      = useState<AutoSaveStatus>('idle')
 
   // Debounced auto-save of the in-progress wizard state to localStorage.
-  // Guarded on step !== 'done': publish() marks the story published, calls
-  // localStorage.removeItem(DRAFT_AUTOSAVE_KEY), then patches draft with the
-  // new publishedStoryId — that patch is itself a `draft` change, which
-  // re-armed this exact effect and wrote the old title/blog/cover image
-  // straight back into localStorage ~600ms later, undoing the clear it had
-  // just done. The next time the wizard opened, that resurrected draft was
-  // still there waiting, looking exactly like the previous story's content
-  // "still being there" for a founder starting a genuinely new one.
+  // Guarded on step !== 'done' AND !draft.publishedStoryId: publish() marks
+  // the story published, calls localStorage.removeItem(DRAFT_AUTOSAVE_KEY),
+  // then patches draft with the new publishedStoryId — that patch is itself
+  // a `draft` change, which re-armed this exact effect and wrote the old
+  // title/blog/cover image straight back into localStorage ~600ms later,
+  // undoing the clear it had just done. The step==='done' guard alone only
+  // covers that instant — clicking "Continue Publishing" moves step off
+  // 'done' while draft.publishedStoryId is still set, which re-armed this
+  // same effect a second way and re-saved the just-published story's full
+  // identity (including publishedStoryId) back into localStorage. The next
+  // time the wizard opened fresh, that resurrected draft looked exactly
+  // like an in-progress piece — but publishing it silently overwrote the
+  // original story instead of creating a new one, since publishedStoryId
+  // was still pointing at it. A published draft has nothing left to
+  // "autosave" — the story itself is the source of truth from here on.
   useEffect(() => {
-    if (step === 'done') return
+    if (step === 'done' || draft.publishedStoryId) return
     setAutoSave('saving')
     const t = setTimeout(() => {
       try {
