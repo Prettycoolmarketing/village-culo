@@ -100,6 +100,14 @@ export function StoryGrid({
       if (aBlog !== bBlog) return bBlog - aBlog
       return (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)
     })
+  } else if (!explicitStories) {
+    // No caller-supplied order to respect (an explicit `stories` list, like
+    // a curated related-stories row, keeps whatever order it was built in) —
+    // otherwise this fell back to raw Supabase fetch order, which is
+    // whatever Postgres happens to return with no ORDER BY, not actually
+    // "latest" despite every heading here saying so ("Latest Stories" on
+    // the homepage, a topic/business/idea page's story list, etc).
+    stories = [...stories].sort((a, b) => (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt))
   }
 
   if (hideEmpty && stories.length === 0) return null

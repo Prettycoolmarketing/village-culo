@@ -12,6 +12,8 @@ import { MapPreviewWidget }          from '../widgets/MapPreviewWidget'
 import { NoticeboardPreviewWidget }  from '../widgets/NoticeboardPreviewWidget'
 import { filterEvents }              from '../utils/filters'
 import { InnerContainer }            from '../components/layout/PageContainer'
+import { getStories } from '../services/stories'
+import { dailyRotatingSlice } from '../utils/rotation'
 
 // Compact inline variant of the same signup mechanic JoinVillagePage uses —
 // no full-page takeover here, just inline feedback within this section's
@@ -174,7 +176,15 @@ export function VillagePage() {
           heading="Latest Stories"
           subheading="Real founder experiences transformed into blogs, reels and carousels."
           action={{ label: 'View All Stories', href: '/stories' }}
-          filter={{ publicOnly: true, limit: 6 }}
+          // A rotating window of the most recent stories, not a fixed top 6 —
+          // otherwise this always showed the exact same stories, and clicking
+          // "View All Stories" led straight back into the same items at the
+          // top of /stories. /stories itself stays plain newest-first (best
+          // for SEO/crawl consistency); only this homepage preview rotates.
+          stories={dailyRotatingSlice(
+            [...getStories({ publicOnly: true })].sort((a, b) => (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)).slice(0, 18),
+            6
+          )}
           hideKey="homepage"
           columns={3}
           cardVariant="vertical"
