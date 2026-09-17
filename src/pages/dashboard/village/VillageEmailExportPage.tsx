@@ -181,9 +181,12 @@ function SubscribersPanel() {
     setSubs(prev => prev.filter(s => s.id !== id))
   }
 
+  // Newest first — raw fetch order has no real meaning, and a growing
+  // subscriber list is far more useful sorted by who just joined.
+  const sortedSubs = [...subs].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const filteredSubs = search.trim()
-    ? subs.filter(s => s.email.toLowerCase().includes(search.trim().toLowerCase()))
-    : subs
+    ? sortedSubs.filter(s => s.email.toLowerCase().includes(search.trim().toLowerCase()))
+    : sortedSubs
 
   return (
     <div>
