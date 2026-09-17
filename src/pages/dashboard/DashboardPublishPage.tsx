@@ -3,7 +3,8 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useDictation } from '../../hooks/useDictation'
 import { getCurrentFounder } from '../../services/currentFounder'
-import { getFounders } from '../../services/founders'
+import { getFounders, getFounder, updateFounder } from '../../services/founders'
+import { extractFaqsAI } from '../../services/blogWriter'
 import { getBusinesses, getBusiness } from '../../services/businesses'
 import { getStories, getStory } from '../../services/stories'
 import { importedContentService } from '../../services/importedContent'
@@ -2028,6 +2029,39 @@ export function DashboardPublishPage() {
     setPublishedSlug(titleSlug)
     setPublishing(false)
     setStep('done')
+
+    // Real Q&A pairs (FAQPage structured data), not just the bare question
+    // strings Village Intelligence previews — this used to only ever happen
+    // if a founder later opened the story in "Edit your story" and clicked
+    // Detect. Publishing through this wizard produced zero real FAQs on its
+    // own. Fire-and-forget: a real AI call, no reason to hold up "done".
+    if (status === 'published' && story.blog?.trim()) {
+      void generateFaqsForPublishedStory(story.id, story.title, story.blog)
+    }
+  }
+
+  async function generateFaqsForPublishedStory(storyId: string, title: string, blog: string) {
+    const founder = getFounder(draft.founderId)
+    if (!founder) return
+    const existingFaqs = (founder.faqs ?? []).filter(f => f.relatedStoryIds.includes(storyId))
+    const existingQuestions = new Set(existingFaqs.map(f => f.question.toLowerCase().trim()))
+    const { pairs, error } = await extractFaqsAI({ title, text: blog, founderName: founder.name })
+    if (error || !pairs || pairs.length === 0) return
+    const fresh = pairs
+      .filter(p => !existingQuestions.has(p.question.toLowerCase().trim()))
+      .map(p => ({
+        id: `faq-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        question: p.question,
+        answer: p.answer,
+        topicIds: draft.topics.map(t => t.id),
+        expertiseIds: [],
+        relatedStoryIds: [storyId],
+        relatedIdeaIds: [],
+      }))
+    if (fresh.length === 0) return
+    const latest = getFounder(draft.founderId)
+    if (!latest) return
+    void updateFounder({ ...latest, faqs: [...(latest.faqs ?? []), ...fresh] })
   }
 
   const founderForLimit = getFounders().find(f => f.id === draft.founderId)

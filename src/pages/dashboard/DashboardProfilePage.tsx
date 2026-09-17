@@ -1641,6 +1641,42 @@ export function DashboardProfilePage() {
                 setImportedTick(t => t + 1)
               }
 
+              // Same real-publish path as publishItems above, for the row's
+              // own status dropdown — this used to call
+              // importedContentService.updateStatus directly, which only
+              // ever flipped the label to "Published" without creating the
+              // Story behind it, leaving nothing actually live anywhere on
+              // the site despite the badge.
+              async function handleRowStatusChange(item: ImportedContent, status: ImportedContentStatus) {
+                if ((status === 'published' || status === 'featured') && !unlockedIds.has(item.id)) {
+                  setSaveError('This piece is part of your locked archive — unlock it before publishing.')
+                  return
+                }
+                if (!draft || status !== 'published' && status !== 'featured') {
+                  await importedContentService.updateStatus(item.id, status)
+                  setImportedTick(t => t + 1)
+                  return
+                }
+                if (item.relatedStoryId) {
+                  const existing = getStory(item.relatedStoryId)
+                  if (existing) await updateStory({ ...existing, status })
+                  await importedContentService.updateStatus(item.id, status)
+                } else if (isReadyToPublish(item)) {
+                  const story = buildStoryFromImport(item, draft)
+                  story.status = status
+                  const result = await publishStoryCore(story)
+                  if (!result.success) {
+                    if (result.limitKind) setLimitModal(result.limitKind)
+                    else setSaveError(result.error ?? 'Could not publish. Please try again.')
+                  } else {
+                    await importedContentService.updateStatus(item.id, status)
+                  }
+                } else {
+                  setSaveError('Give this a real title before publishing it.')
+                }
+                setImportedTick(t => t + 1)
+              }
+
               const unlockedReadyItems = readyItems.filter(i => unlockedIds.has(i.id))
               const lockedReadyCount = readyItems.length - unlockedReadyItems.length
 
@@ -1742,7 +1778,7 @@ export function DashboardProfilePage() {
                                 onToggleCheck={() => toggleReadyChecked(item.id)}
                                 onAdvancedEdit={() => openInImported(item.id)}
                                 onDelete={() => handleReadyDelete(item.id)}
-                                onStatusChange={status => void importedContentService.updateStatus(item.id, status).then(() => setImportedTick(t => t + 1))}
+                                onStatusChange={status => void handleRowStatusChange(item, status)}
                               />
                             ))}
                           </div>
