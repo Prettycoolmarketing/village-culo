@@ -88,13 +88,17 @@ export function StoryGrid({
     // type — that's a deliberate choice, not a heuristic. Below that,
     // blogs (a real, sharp cover image) rank ahead of reels/carousels
     // (a video-frame thumbnail, which is what tends to read as blurry).
+    // Within each of those bands, newest-published wins — a founder who
+    // hasn't picked any Featured stories should still see their own
+    // profile lead with their latest post, not an arbitrary fetch order.
     stories = [...stories].sort((a, b) => {
       const aFeatured = a.featured ? 1 : 0
       const bFeatured = b.featured ? 1 : 0
       if (aFeatured !== bFeatured) return bFeatured - aFeatured
       const aBlog = a.contentTypes.includes('blog') ? 1 : 0
       const bBlog = b.contentTypes.includes('blog') ? 1 : 0
-      return bBlog - aBlog
+      if (aBlog !== bBlog) return bBlog - aBlog
+      return (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)
     })
   }
 

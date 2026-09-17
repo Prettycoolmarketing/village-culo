@@ -18,6 +18,7 @@ import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/bu
 import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { SourceIcon } from '../../components/ui/SourceIcon'
 import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
@@ -42,7 +43,7 @@ import { getFounderAppearsOn, getBusinessAppearsOn } from '../../utils/appearsOn
 import { loadDraft, saveDraft, clearDraft } from '../../utils/draftAutosave'
 import { suggestFaqsFromFounder } from '../../services/founderEnrichment'
 import type { BlogQaPair } from '../../services/importedContentEnrichment'
-import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry, FAQ } from '../../types'
+import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry, FAQ, Story } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
 // AI rewriting (via the founder's own Voice & Brand Brief) costs real
@@ -512,7 +513,10 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
             <input type="text" value={draft.tagline} onChange={e => set('tagline', e.target.value)} className={inputClass} placeholder="One line — what you do, in plain words" />
           </Field>
           <Field label="Description">
-            <textarea value={draft.description} onChange={e => set('description', e.target.value)} rows={4} className={inputClass + ' resize-y'} />
+            <div className="flex items-start gap-2">
+              <textarea value={draft.description} onChange={e => set('description', e.target.value)} rows={4} className={inputClass + ' resize-y flex-1'} />
+              <DictationMicButton value={draft.description} onChange={v => set('description', v)} />
+            </div>
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
@@ -1073,6 +1077,25 @@ export function DashboardProfilePage() {
     setSaved(false)
   }
 
+  // Single place that toggles a story's featured status — used by both the
+  // "Featured stories" picker below and the per-story "Feature" button in
+  // Content. Those used to write to two different, unrelated fields
+  // (featuredVideoStoryIds only controlled the public profile; story.featured
+  // only controlled Village-wide placement like the homepage's Story of the
+  // Day), so a story featured through one control silently didn't count for
+  // the other — a founder's Featured picks and what showed on culovillage.com
+  // could disagree. Both fields now change together, and both write
+  // immediately (not gated on the profile's own Save button) so this stays
+  // in sync with story.featured, which already saved instantly.
+  function toggleFeaturedStory(story: Story) {
+    const current = draft.featuredVideoStoryIds ?? []
+    const nowFeatured = !current.includes(story.id)
+    const nextIds = nowFeatured ? [story.id, ...current] : current.filter(id => id !== story.id)
+    set('featuredVideoStoryIds', nextIds)
+    void updateFounder({ ...draft, featuredVideoStoryIds: nextIds })
+    void updateStory({ ...story, featured: nowFeatured }).then(() => setImportedTick(t => t + 1))
+  }
+
   // Shared with the Profile tab (rendered right under Explore Your Life's Work) so editing
   // your name/photo/links doesn't require a separate tab — same draft/set, one
   // source of truth, just shown in two places.
@@ -1125,7 +1148,10 @@ export function DashboardProfilePage() {
           {bioAutoDrafted && (
             <p className="text-xs text-[#C86A43] font-medium mb-1.5">CULO drafted this from your MD file — review please.</p>
           )}
-          <textarea id="bio" value={draft.bio} onChange={e => { set('bio', e.target.value); setBioAutoDrafted(false) }} rows={6} className={inputClass + ' resize-y'} />
+          <div className="flex items-start gap-2">
+            <textarea id="bio" value={draft.bio} onChange={e => { set('bio', e.target.value); setBioAutoDrafted(false) }} rows={6} className={inputClass + ' resize-y flex-1'} />
+            <DictationMicButton value={draft.bio} onChange={v => { set('bio', v); setBioAutoDrafted(false) }} />
+          </div>
           <p className="text-xs text-right text-[#9CA3AF] mt-1">{draft.bio.length} chars</p>
         </Field>
 
@@ -1342,16 +1368,21 @@ export function DashboardProfilePage() {
               {renderIdentityFields(draft)}
             </div>
 
-            {/* Featured stories — hand-pick what shows on the public profile;
-                when any are picked the profile shows only these, not the
-                full auto-imported grid. */}
+            {/* Featured stories — hand-pick what shows on the public profile
+                and is eligible to be featured Village-wide (homepage's Story
+                of the Day, Featured Founders, etc — see toggleFeaturedStory).
+                Every published/featured story shows up here automatically,
+                newest first, the moment it goes live — nothing to register
+                separately. */}
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 flex flex-col gap-3">
               <div>
                 <p className="text-sm font-semibold text-[#2D2A26]">Featured stories</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Pick the work you want on your public profile. Once you pick any, your profile shows only these — nothing else from your library.</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Pick the work you want on your public profile and potentially featured on the main Culo Village.</p>
               </div>
               {(() => {
-                const eligible = founderStories.filter(s => s.status === 'published' || s.status === 'featured')
+                const eligible = founderStories
+                  .filter(s => s.status === 'published' || s.status === 'featured')
+                  .sort((a, b) => (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt))
                 if (eligible.length === 0) {
                   return <p className="text-xs text-[#9CA3AF]">Publish a story to feature it here.</p>
                 }
@@ -1373,9 +1404,7 @@ export function DashboardProfilePage() {
                             <input
                               type="checkbox"
                               checked={checked}
-                              onChange={() => set('featuredVideoStoryIds', checked
-                                ? selectedIds.filter(id => id !== story.id)
-                                : [...selectedIds, story.id])}
+                              onChange={() => toggleFeaturedStory(story)}
                             />
                             <span className="text-sm text-[#2D2A26] truncate">{story.title}</span>
                           </label>
@@ -2252,7 +2281,22 @@ export function DashboardProfilePage() {
                   // sidebar or taking over the whole page.
                   <div
                     className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center p-4 sm:p-8 overflow-y-auto"
-                    onClick={e => { if (e.target === e.currentTarget) handleCancelAdvancedEdit() }}
+                    // No close-on-backdrop-click — a drag-select of text
+                    // inside the form that ends slightly outside the card
+                    // reads as a plain click on the backdrop, which used to
+                    // silently discard the edit. Closing this is deliberate
+                    // now: the X button or Cancel, nothing else (same fix as
+                    // StoryEditor's identical popup shell).
+                    onKeyDown={e => {
+                      // Backspace with focus outside a real text field is the
+                      // browser's native "go back" shortcut — since this
+                      // popup is driven by an editImportedId URL param, that
+                      // silently closed it and discarded the edit.
+                      if (e.key !== 'Backspace') return
+                      const el = e.target as HTMLElement
+                      const isEditable = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
+                      if (!isEditable) e.preventDefault()
+                    }}
                   >
                     <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4">
                       <div className="flex items-center justify-between mb-4">
@@ -2356,7 +2400,7 @@ export function DashboardProfilePage() {
                         <div className="flex items-center gap-2 shrink-0">
                           {isLive && (
                             <button
-                              onClick={() => { void updateStory({ ...story, featured: !story.featured }).then(() => setImportedTick(t => t + 1)) }}
+                              onClick={() => toggleFeaturedStory(story)}
                               title={story.featured ? 'Featured on your profile — click to unfeature' : 'Feature this at the top of your profile'}
                               aria-pressed={story.featured}
                               className={`flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors ${

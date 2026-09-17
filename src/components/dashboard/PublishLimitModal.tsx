@@ -47,14 +47,16 @@ export function PublishLimitModal({
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-[#2D2A26]/60"
-      onClick={onClose}
+      // No close-on-backdrop-click — a drag-select of text inside the card
+      // that ends past its edge fires a native click whose target is this
+      // backdrop, not the card, so stopPropagation on the card can't catch
+      // it. Closing this is deliberate now: the X button, nothing else.
       role="dialog"
       aria-modal="true"
       style={{ fontFamily: "'DM Sans', sans-serif" }}
     >
       <div
         className="w-full max-w-md bg-white rounded-2xl shadow-xl p-7 relative"
-        onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}

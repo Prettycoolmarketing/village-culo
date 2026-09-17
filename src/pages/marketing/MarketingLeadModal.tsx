@@ -59,14 +59,16 @@ export function MarketingLeadModal({
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-charcoal/60"
-      onClick={onClose}
+      // No close-on-backdrop-click — a drag-select of text inside the card
+      // that ends past its edge fires a native click whose target is this
+      // backdrop, not the card, so stopPropagation on the card can't catch
+      // it. Closing this is deliberate now: the X button, nothing else.
       role="dialog"
       aria-modal="true"
       aria-label={`See rates for ${offerLabel}`}
     >
       <div
         className="w-full max-w-md bg-surface rounded-2xl shadow-lg p-7 relative"
-        onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}

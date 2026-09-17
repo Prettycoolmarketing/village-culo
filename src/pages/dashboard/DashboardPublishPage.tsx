@@ -11,6 +11,7 @@ import { villageContentIntelligenceService, storyToInput } from '../../services/
 import { publishStoryCore, fallbackSummary } from '../../services/publishStory'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { CanvaImportCard } from '../../components/dashboard/CanvaImportCard'
 import { PublishLimitModal } from '../../components/dashboard/PublishLimitModal'
 import { PublicationMeter } from '../../components/dashboard/PublicationMeter'
@@ -458,6 +459,16 @@ function MediaStep({ draft, onChange, onNext, onBack }: {
         subtitle="Bring what you have today. The Village always has room for more."
         onBack={onBack}
       />
+      {/* Same escape hatch as TellYourStoryStep, but that step is skipped
+          entirely for a blog-only draft (needsTranscriptStep is false), so a
+          founder stuck looking at an old title/blog/cover image here had no
+          way to reach it. */}
+      {(draft.title || draft.blog || draft.coverImage) && (
+        <Link to="/dashboard/publish?fresh=1" reloadDocument
+          className="inline-block mb-5 text-xs text-[#9CA3AF] hover:text-[#C86A43] underline">
+          Not what you expected? Start a new blog from scratch →
+        </Link>
+      )}
       <div className="flex flex-col gap-6">
 
         {hasVideo && (
@@ -761,17 +772,23 @@ function TellYourStoryStep({ draft, onChange, onNext, onBack }: {
             placeholder="What is this story about?" className={inp + ' text-lg font-semibold py-3'} autoFocus />
         </Field>
         <Field label="Summary" hint="Optional — a short paragraph, 1-3 sentences. Village will write one from your Blog if you leave this blank.">
-          <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={2}
-            placeholder="The honest story of…" className={inp + ' resize-y'} />
+          <div className="flex items-start gap-2">
+            <textarea value={draft.summary} onChange={e => onChange({ summary: e.target.value })} rows={2}
+              placeholder="The honest story of…" className={inp + ' resize-y flex-1'} />
+            <DictationMicButton size="sm" value={draft.summary} onChange={v => onChange({ summary: v })} />
+          </div>
         </Field>
         <Field label="Blog" hint="Optional. Paste a transcript above, or just write freely. Village will find the structure.">
-          <textarea
-            value={draft.blog}
-            onChange={e => onChange({ blog: e.target.value })}
-            rows={14}
-            placeholder="What happened? What did you learn? What would you do differently?"
-            className={inp + ' resize-y text-sm leading-relaxed'}
-          />
+          <div className="flex items-start gap-2">
+            <textarea
+              value={draft.blog}
+              onChange={e => onChange({ blog: e.target.value })}
+              rows={14}
+              placeholder="What happened? What did you learn? What would you do differently?"
+              className={inp + ' resize-y text-sm leading-relaxed flex-1'}
+            />
+            <DictationMicButton value={draft.blog} onChange={v => onChange({ blog: v })} />
+          </div>
         </Field>
         <button
           onClick={onNext}

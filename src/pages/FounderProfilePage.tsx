@@ -618,21 +618,23 @@ export function FounderProfilePage() {
             {/* ── Left: Primary content ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
 
-              {/* When the founder has hand-picked featured stories, the
-                  public profile shows only those (in the same arch cards,
-                  each linking to its article). Otherwise it falls back to
-                  the full published grid. */}
+              {/* Hand-picked featured stories lead the grid (sortBlogsFirst
+                  puts story.featured first, which stays in sync with the
+                  founder's Featured stories picks — see toggleFeaturedStory
+                  in DashboardProfilePage), then the rest of their published
+                  work follows in order of most recently published. Used to
+                  hide everything except the picks entirely once any existed —
+                  now it's just what's on top, with the rest one "View all"
+                  click away via StoryGrid's own built-in expansion. */}
               <StoryGrid
                 heading={hasFeaturedPicks ? `Featured by ${founder.name}` : `Stories by ${founder.name}`}
                 subheading={hasFeaturedPicks
                   ? undefined
                   : `Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
-                filter={hasFeaturedPicks
-                  ? { ids: featuredVideoStories.map(s => s.id), publicOnly: true }
-                  : { founderId: founder.id, publicOnly: true }}
+                filter={{ founderId: founder.id, publicOnly: true }}
                 sortBlogsFirst
                 hideKey="founder-profile"
-                limit={hasFeaturedPicks ? undefined : 6}
+                limit={6}
                 columns={2}
                 cardVariant="vertical"
                 showSummary

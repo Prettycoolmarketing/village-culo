@@ -4,6 +4,7 @@ import { getBusiness } from '../services/businesses'
 import { FounderCard } from '../components/cards/FounderCard'
 import { EmptyState } from '../components/ui/EmptyState'
 import { SectionHeading } from '../components/layout/PageContainer'
+import { dailyRotatingSlice } from '../utils/rotation'
 
 interface FounderGridProps {
   filter?: FounderFilter
@@ -19,6 +20,12 @@ interface FounderGridProps {
   // Featured yet, instead of showing "nothing yet" while real, just-not-
   // featured founders already exist and are live elsewhere.
   fallbackToPublic?: boolean
+  // Pass count via `limit` instead of `filter.limit` when using this — the
+  // grid needs the whole matching pool before it can rotate through it.
+  // Without this, a "Featured Founders" section always showed the same
+  // fixed founders forever instead of cycling the spotlight around.
+  rotate?: boolean
+  limit?: number
 }
 
 const columnClasses = {
@@ -38,10 +45,17 @@ export function FounderGrid({
   emptyTitle,
   emptyMessage,
   fallbackToPublic = false,
+  rotate = false,
+  limit,
 }: FounderGridProps) {
   let founders = getFounders(filter)
   if (fallbackToPublic && filter.featured && founders.length === 0) {
     founders = getFounders({ ...filter, featured: undefined })
+  }
+  if (rotate && limit) {
+    founders = dailyRotatingSlice(founders, limit)
+  } else if (limit) {
+    founders = founders.slice(0, limit)
   }
 
   return (

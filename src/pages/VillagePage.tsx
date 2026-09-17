@@ -219,7 +219,9 @@ export function VillagePage() {
             heading="Featured Founders"
             subheading="Meet the people behind the knowledge."
             action={{ label: 'All Founders', href: '/founders' }}
-            filter={{ publicOnly: true, featured: true, limit: 4 }}
+            filter={{ publicOnly: true, featured: true }}
+            limit={4}
+            rotate
             fallbackToPublic
             columns={2}
             cardVariant="default"

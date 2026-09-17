@@ -9,6 +9,7 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { HealthBadge } from '../../components/dashboard/PublishingHealth'
 import { OverflowMenu } from '../../components/ui/OverflowMenu'
 import { MediaUpload } from '../../components/ui/MediaUpload'
+import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { getLibraryMissingItems } from '../../utils/missingAssets'
 import { getLibraryItemAppearsOn } from '../../utils/appearsOn'
 import { focusField } from '../../utils/focusField'
@@ -191,7 +192,10 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
             </div>
             <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1">Description</label>
-              <textarea id="description" value={draft.description} onChange={e => set('description', e.target.value)} rows={4} className={inputClass + ' resize-y'} />
+              <div className="flex items-start gap-2">
+                <textarea id="description" value={draft.description} onChange={e => set('description', e.target.value)} rows={4} className={inputClass + ' resize-y flex-1'} />
+                <DictationMicButton value={draft.description} onChange={v => set('description', v)} />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-[#6B7280] mb-1.5">Availability</label>

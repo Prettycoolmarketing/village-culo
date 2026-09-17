@@ -11,6 +11,7 @@ import { BizLogo } from '../components/ui/BizLogo'
 import { SectionHeading } from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import { normalizeUrl } from '../utils/url'
+import { dailyRotatingPick } from '../utils/rotation'
 
 interface FeaturedWidgetProps {
   heading?: string
@@ -23,20 +24,23 @@ export function FeaturedWidget({
   subheading = 'The best of the Village, updated as new stories are published.',
   className = '',
 }: FeaturedWidgetProps) {
-  // Falls back to the most recent real published item whenever nothing's
-  // been marked Featured yet (see Village Overview > Spotlight) — otherwise
-  // this whole section silently shows nothing while real content already
-  // exists and is live elsewhere on the site.
-  const featuredStory = getStories({ publicOnly: true, featured: true, limit: 1 })[0]
-    ?? getStories({ publicOnly: true, limit: 1 })[0]
-  const featuredFounder = getFounders({ publicOnly: true, featured: true, limit: 1 })[0]
-    ?? getFounders({ publicOnly: true, limit: 1 })[0]
-  const featuredBusiness = getBusinesses({ publicOnly: true, featured: true, limit: 1 })[0]
-    ?? getBusinesses({ publicOnly: true, limit: 1 })[0]
-  const featuredIdea = getIdeas({ publicOnly: true, featured: true, limit: 1 })[0]
-    ?? getIdeas({ publicOnly: true, limit: 1 })[0]
-  const featuredEvent = getEvents({ featured: true, limit: 1 })[0]
-    ?? getEvents({ limit: 1 })[0]
+  // Falls back to the full public pool whenever nothing's been marked
+  // Featured yet (see Village Overview > Spotlight) — otherwise this whole
+  // section silently shows nothing while real content already exists and
+  // is live elsewhere on the site. "Of the Day" is a real daily rotation
+  // through that pool (dailyRotatingPick), not a fixed first item — this
+  // used to always show the same story/founder/etc. forever regardless of
+  // the label.
+  const featuredStory = dailyRotatingPick(getStories({ publicOnly: true, featured: true }))
+    ?? dailyRotatingPick(getStories({ publicOnly: true }))
+  const featuredFounder = dailyRotatingPick(getFounders({ publicOnly: true, featured: true }))
+    ?? dailyRotatingPick(getFounders({ publicOnly: true }))
+  const featuredBusiness = dailyRotatingPick(getBusinesses({ publicOnly: true, featured: true }))
+    ?? dailyRotatingPick(getBusinesses({ publicOnly: true }))
+  const featuredIdea = dailyRotatingPick(getIdeas({ publicOnly: true, featured: true }))
+    ?? dailyRotatingPick(getIdeas({ publicOnly: true }))
+  const featuredEvent = dailyRotatingPick(getEvents({ featured: true }))
+    ?? dailyRotatingPick(getEvents({}))
 
   const storyFounder = featuredStory ? getFounder(featuredStory.founderId) : undefined
   const storyBusiness = featuredStory ? getBusiness(featuredStory.businessId) : undefined

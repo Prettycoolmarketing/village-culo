@@ -381,6 +381,18 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
       // founders' place mid-edit even after narrowing when it fired.
       // Closing this long-form editor is deliberate now: the X button or
       // Save, nothing else.
+      onKeyDown={e => {
+        // Backspace pressed while focus is anywhere that isn't an actual
+        // text field (a button just clicked, a checkbox, the popup's own
+        // background) is the browser's native "go back" shortcut — since
+        // this editor is opened via a storyId URL param, that back
+        // navigation silently closed the whole popup, discarding the edit,
+        // with no way to tell why it just happened.
+        if (e.key !== 'Backspace') return
+        const el = e.target as HTMLElement
+        const isEditable = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable
+        if (!isEditable) e.preventDefault()
+      }}
     >
     <div className="w-full max-w-4xl bg-white rounded-2xl border border-[#E8E4DD] shadow-2xl p-6 my-4 flex flex-col">
       <div className="flex items-center justify-between mb-4">
@@ -512,11 +524,6 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <Field label="Reel URL">
             <input type="url" value={draft.reelUrl ?? ''} onChange={e => set('reelUrl', e.target.value || undefined)} className={inputClass} placeholder="https://…" />
-            {draft.reelUrl && (
-              <div className="mt-2">
-                <ReelContent reelUrl={draft.reelUrl} title={draft.title} summary={draft.summary} landscape />
-              </div>
-            )}
             <div className="mt-2">
               <MediaUpload
                 onChange={v => set('reelUrl', v || undefined)}
@@ -536,6 +543,16 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
               uploadOptions={{ founderId: draft.founderId, businessId: draft.businessId, usageType: 'story-cover' }}
             />
           </Field>
+          {/* Spans the full width below both fields, not squeezed into one
+              half of the grid — ReelContent's landscape video box is a
+              fixed 28rem-wide flex sibling, wider than either grid column
+              here, which was squeezing the summary text down to one word
+              per line. */}
+          {draft.reelUrl && (
+            <div className="md:col-span-2">
+              <ReelContent reelUrl={draft.reelUrl} title={draft.title} summary={draft.summary} landscape />
+            </div>
+          )}
         </div>
 
         <Field label="Extra photos / video" hint="Add extra photos, a carousel, or another reel/video clip — works alongside the primary content above.">

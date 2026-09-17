@@ -80,10 +80,15 @@ export function PublishingQuoteModal({ email: initialEmail, onClose, service = '
   const firstInstalment = tier ? Math.ceil(tier.price / 3) : 0
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      // No close-on-backdrop-click — a drag-select of text inside the card
+      // that ends past its edge fires a native click whose target is this
+      // backdrop, not the card, so stopPropagation on the card can't catch
+      // it. Closing this is deliberate now: the X button, nothing else.
+    >
       <div
         className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-xl"
-        onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start justify-between mb-4">
           <h2 className="font-heading text-2xl font-bold text-charcoal">Get your quote</h2>
