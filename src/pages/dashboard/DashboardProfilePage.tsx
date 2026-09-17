@@ -2373,8 +2373,8 @@ export function DashboardProfilePage() {
                               aria-pressed={story.featured}
                               className={`flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors ${
                                 story.featured
-                                  ? 'text-white bg-[#D6A94D] hover:bg-[#c49a3f]'
-                                  : 'text-[#9CA3AF] bg-[#F3EDE6] hover:text-[#D6A94D] hover:bg-[#D6A94D]/10'
+                                  ? 'text-white bg-[#3E6E92] hover:bg-[#325a78]'
+                                  : 'text-[#9CA3AF] bg-[#F3EDE6] hover:text-[#3E6E92] hover:bg-[#3E6E92]/10'
                               }`}
                             >
                               <svg className="w-4 h-4" fill={story.featured ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">

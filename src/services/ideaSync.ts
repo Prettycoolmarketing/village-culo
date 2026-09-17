@@ -99,6 +99,15 @@ function findIdeaMatch(pool: Idea[], story: Story, lessonText: string): number {
   )
 }
 
+// extractLessons (villageIntelligence.ts) is a keyword-marker sentence
+// scanner, not an AI summarizer — it grabs any sentence containing "learned,"
+// "realised," etc. verbatim. Most of those are real sentences from a blog,
+// not a standalone insight worth its own indexable page: too short to carry
+// any content on its own once separated from its paragraph. This is a floor,
+// not a rewrite — it can only reject the thinnest fragments, since there's
+// no synthesis step here to turn a short one into a longer one.
+const MIN_IDEA_LENGTH = 80
+
 /**
  * Turns a story's extracted lessons into real Idea records: strengthens an
  * existing matching idea (links the story/founder/business, does not
@@ -114,7 +123,7 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
 
   for (const lessonText of intel.lessons) {
     const trimmed = lessonText.trim()
-    if (!trimmed) continue
+    if (!trimmed || trimmed.length < MIN_IDEA_LENGTH) continue
     const title = shortenIdeaTitle(trimmed)
 
     const candidateIdx = findIdeaMatch(pool, story, trimmed)
@@ -156,7 +165,12 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
       relatedFounderIds: [story.founderId],
       relatedBusinessIds: story.businessId ? [story.businessId] : [],
       featured: false,
-      status: 'published',
+      // Auto-extracted from a keyword-marker scan, not written or reviewed
+      // by anyone — lands as a draft so a real person has to actually look
+      // at it and decide it's worth its own page before it goes public,
+      // instead of every "I realised..." sentence in a blog silently
+      // becoming a live, indexable Idea the moment the story publishes.
+      status: 'draft',
       createdAt: new Date().toISOString().split('T')[0]!,
       founderId: story.founderId,
     }
@@ -274,7 +288,7 @@ export function previewIdeaImpact(story: Story, intel: VillageContentIntelligenc
 
   for (const lessonText of intel.lessons) {
     const trimmed = lessonText.trim()
-    if (!trimmed) continue
+    if (!trimmed || trimmed.length < MIN_IDEA_LENGTH) continue
     const title = shortenIdeaTitle(trimmed)
 
     const idx = findIdeaMatch(pool, story, trimmed)

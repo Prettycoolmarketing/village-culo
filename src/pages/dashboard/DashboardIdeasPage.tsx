@@ -236,6 +236,9 @@ export function DashboardIdeasPage() {
                       {idea.status === 'archived' && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F3EDE6] text-[#9CA3AF]">Archived</span>
                       )}
+                      {idea.status === 'draft' && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#3E6E92]/10 text-[#3E6E92]">Ready to publish</span>
+                      )}
                     </div>
                     <p className="text-xs text-[#6B7280] mt-1 line-clamp-2">{idea.description}</p>
                     <div className="flex gap-1.5 mt-2 flex-wrap">
@@ -249,6 +252,15 @@ export function DashboardIdeasPage() {
                       <p className="text-xs text-[#9CA3AF]">{idea.relatedStoryIds.length} stories</p>
                       {relCount > 0 && <p className="text-[10px] text-[#9CA3AF] mt-0.5">{relCount} connected</p>}
                     </div>
+                    {idea.status === 'draft' && (
+                      <button
+                        onClick={e => { e.stopPropagation(); void updateIdea({ ...idea, status: 'published' }).then(refresh) }}
+                        title="Review it above first — this makes it live and indexable"
+                        className="text-xs font-semibold px-2.5 py-1.5 rounded-lg text-[#3E6E92] bg-[#3E6E92]/10 hover:bg-[#3E6E92]/20 transition-colors shrink-0"
+                      >
+                        Publish
+                      </button>
+                    )}
                     <OverflowMenu
                       archived={idea.status === 'archived'}
                       onEdit={() => setSelectedId(idea.id)}
