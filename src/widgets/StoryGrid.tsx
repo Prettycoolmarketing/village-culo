@@ -83,30 +83,14 @@ export function StoryGrid({
     .filter(s => !hideKey || !s.hiddenLocations?.includes(hideKey))
     .filter(s => !excludeIds?.includes(s.id))
 
-  if (sortBlogsFirst) {
-    // A founder's own "Feature" pick always wins first, regardless of
-    // type — that's a deliberate choice, not a heuristic. Below that,
-    // blogs (a real, sharp cover image) rank ahead of reels/carousels
-    // (a video-frame thumbnail, which is what tends to read as blurry).
-    // Within each of those bands, newest-published wins — a founder who
-    // hasn't picked any Featured stories should still see their own
-    // profile lead with their latest post, not an arbitrary fetch order.
-    stories = [...stories].sort((a, b) => {
-      const aFeatured = a.featured ? 1 : 0
-      const bFeatured = b.featured ? 1 : 0
-      if (aFeatured !== bFeatured) return bFeatured - aFeatured
-      const aBlog = a.contentTypes.includes('blog') ? 1 : 0
-      const bBlog = b.contentTypes.includes('blog') ? 1 : 0
-      if (aBlog !== bBlog) return bBlog - aBlog
-      return (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)
-    })
-  } else if (!explicitStories) {
-    // No caller-supplied order to respect (an explicit `stories` list, like
-    // a curated related-stories row, keeps whatever order it was built in) —
-    // otherwise this fell back to raw Supabase fetch order, which is
-    // whatever Postgres happens to return with no ORDER BY, not actually
-    // "latest" despite every heading here saying so ("Latest Stories" on
-    // the homepage, a topic/business/idea page's story list, etc).
+  // Base order is always plain newest-published-first (an explicit `stories`
+  // list, like a curated related-stories row, keeps whatever order it was
+  // built in instead) — this used to fall back to raw Supabase fetch order,
+  // whatever Postgres happens to return with no ORDER BY, not actually
+  // "latest" despite every heading here saying so ("Latest Stories" on the
+  // homepage, a topic/business/idea page's story list, etc). "View all"
+  // reveals the rest in this same real chronological order.
+  if (!explicitStories) {
     stories = [...stories].sort((a, b) => (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt))
   }
 
@@ -114,7 +98,23 @@ export function StoryGrid({
 
   const total = stories.length
   const capped = limit != null && !expanded && total > limit
-  const visible = capped ? stories.slice(0, limit) : stories
+
+  // sortBlogsFirst only reorders the capped preview, not the full "View
+  // all" list — a founder's Feature picks and blogs (a real, sharp cover
+  // image) lead the default few cards, but expanding shouldn't re-shuffle
+  // everything out of chronological order to keep that same banding.
+  let visible = capped ? stories.slice(0, limit) : stories
+  if (sortBlogsFirst && capped) {
+    visible = [...stories].sort((a, b) => {
+      const aFeatured = a.featured ? 1 : 0
+      const bFeatured = b.featured ? 1 : 0
+      if (aFeatured !== bFeatured) return bFeatured - aFeatured
+      const aBlog = a.contentTypes.includes('blog') ? 1 : 0
+      const bBlog = b.contentTypes.includes('blog') ? 1 : 0
+      if (aBlog !== bBlog) return bBlog - aBlog
+      return (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)
+    }).slice(0, limit)
+  }
 
   return (
     <section aria-label={heading ?? 'Stories'} className={className}>
