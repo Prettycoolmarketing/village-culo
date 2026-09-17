@@ -305,7 +305,14 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
             name:        vb.name,
             tagline:     '',
             description: vb.description ?? `${vb.name} — founded by ${displayName}.`,
-            logo:        '/placeholders/village-logo.svg',
+            // vb.logoUrl was being silently discarded here, always
+            // overwritten with the generic placeholder graphic even when a
+            // real logo was provided. Left blank when there genuinely isn't
+            // one — BizLogo already falls back to a clean first-letter
+            // badge instead of a broken image, no placeholder file needed.
+            // coverImage still needs a real fallback: a bare <img>, no
+            // built-in initial-letter treatment like BizLogo has.
+            logo:        vb.logoUrl?.trim() || '',
             coverImage:  '/placeholders/village-cover.svg',
             founderId,
             location,

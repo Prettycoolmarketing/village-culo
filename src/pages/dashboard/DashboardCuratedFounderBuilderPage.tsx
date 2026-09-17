@@ -224,7 +224,11 @@ export function DashboardCuratedFounderBuilderPage() {
         name: bizName.trim(),
         tagline: '',
         description: bizDesc.trim() || `${bizName.trim()} — founded by ${name.trim()}.`,
-        logo: '/placeholders/village-logo.svg',
+        // No logo field in this form — left blank rather than forced to a
+        // generic placeholder graphic; BizLogo already shows a clean
+        // first-letter badge for a business with no logo instead of a
+        // broken image, same as Avatar does for a founder.
+        logo: '',
         coverImage: '/placeholders/village-cover.svg',
         founderId,
         location,
