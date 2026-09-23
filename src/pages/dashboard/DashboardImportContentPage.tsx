@@ -1570,7 +1570,10 @@ export function DashboardImportContentPage() {
   return (
     <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-[1600px]'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* Header */}
+      {/* Header — the 4-step "how it works" walkthrough that used to live
+          here duplicated the one on the Welcome page; kept just the
+          summary line, since a founder reaching this page already knows
+          why they're here. */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#2D2A26]">Transfer your work into the village for visibility</h1>
         <p className="text-sm text-[#6B7280] mt-1.5 leading-relaxed">
@@ -1578,23 +1581,6 @@ export function DashboardImportContentPage() {
           bring your existing posted content into one place, embedded from the original source, never
           re-uploaded or copied away from it, just restructured for your ultimate visibility.
         </p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5">
-          {[
-            { title: 'Connect and import', desc: 'YouTube, Instagram Archives, Podcast episodes, Articles and your Culo Creative designs in Canva.' },
-            { title: 'Upload your brand brief', desc: 'Give The Village Intelligence context to help shape your story, if needed.' },
-            { title: 'Organise your series', desc: "Sort what you've imported into the chapters of your story." },
-            { title: 'Publish for discovery', desc: 'Being in the Village means your expertise positions you and your business as an authority.' },
-          ].map((s, i) => (
-            <div key={s.title} className="bg-white rounded-xl border border-[#E8E4DD] px-4 py-4">
-              <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-sm font-bold shrink-0 mb-2">
-                {i + 1}
-              </div>
-              <p className="text-sm font-semibold text-[#2D2A26] mb-0.5">{s.title}</p>
-              <p className="text-xs text-[#9CA3AF] leading-snug">{s.desc}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Real numbers only, straight from this founder's own sources/imports —

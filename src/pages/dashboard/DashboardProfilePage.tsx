@@ -1353,6 +1353,11 @@ export function DashboardProfilePage() {
         {tab === 'overview' && (
           <div className="flex flex-col gap-6">
 
+            <TabIntro>
+              Your name, photo, bio and the basics that make up who you are — the identity every business,
+              story and idea you publish gets connected back to.
+            </TabIntro>
+
             <a
               href={`/founders/${draft.slug}`}
               target="_blank"

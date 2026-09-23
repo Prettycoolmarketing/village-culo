@@ -111,16 +111,41 @@ export function DashboardWelcomePage() {
         {/* Canva-funnel founders used to skip any mention of the Village
             entirely — landing here to pay and go straight into the app,
             with nowhere pointing them at what to actually do with what
-            Creatives makes. Kept to one line, not the full explainer box
-            below, so it doesn't compete with the one decision this page
-            still exists for (start the trial). */}
-        <Link
-          to="/dashboard/import-content"
-          className="group inline-flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#C86A43] transition-colors"
-        >
-          Import your previously posted content for AI search-ability
-          <span className="text-[#C86A43] group-hover:translate-x-0.5 transition-transform">→</span>
-        </Link>
+            Creatives makes. Same "How The Culo Village Works" box the
+            Village/waitlist welcome below already shows, just also offered
+            here — the one-line version undersold it next to the Creatives
+            box above. */}
+        <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
+          <Link to="/dashboard/import-content" className="group block">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4 group-hover:text-[#C86A43] transition-colors">
+              How The Culo Village Works <span className="text-[#C86A43] text-lg font-normal">→</span>
+            </h2>
+            <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
+              Once Culo Creatives has made something, publish it into The Culo Village — your own permanent,
+              structured library of articles that positions you as an authority in your field and makes your
+              work findable by search and AI.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-4">
+              {HOW_IT_WORKS_STEPS.map((s, i) => (
+                <div key={s.title}>
+                  <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
+                    {i + 1}
+                  </div>
+                  <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
+                  <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </Link>
+          <div className="flex flex-col sm:items-end gap-4 pt-4">
+            <Link
+              to="/dashboard/import-content"
+              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
+            >
+              Import your content into The Village
+            </Link>
+          </div>
+        </section>
       </div>
     )
   }

@@ -69,10 +69,22 @@ function NavItem({ to, label, icon, hint }: { to: string; label: string; icon: R
 // isActive only matches pathname, so "Content" and "Profile" would both
 // light up together no matter which tab was actually showing. This checks
 // the real query param instead, and only ever highlights on an exact match.
-function ProfileTabNavItem({ tabValue, label, icon, hint }: { tabValue: string; label: string; icon: ReactNode; hint?: string }) {
+function ProfileTabNavItem({ tabValue, label, icon, hint, activeTabs }: {
+  tabValue: string
+  label: string
+  icon: ReactNode
+  hint?: string
+  // "Profile" in the sidebar has no nav item of its own for Businesses,
+  // FAQ/Expertise, Discovery or Settings — they're only reachable as
+  // sub-tabs inside the Profile page itself. Matching on tabValue alone
+  // meant visiting any of those left nothing highlighted at all, reading
+  // as if you'd navigated off the sidebar entirely. This widens the match
+  // to the whole family of tabs Profile actually covers.
+  activeTabs?: string[]
+}) {
   const location = useLocation()
   const currentTab = new URLSearchParams(location.search).get('tab') ?? 'overview'
-  const isActive = location.pathname === '/dashboard/profile' && currentTab === tabValue
+  const isActive = location.pathname === '/dashboard/profile' && (activeTabs ?? [tabValue]).includes(currentTab)
   const to = tabValue === 'overview' ? '/dashboard/profile' : `/dashboard/profile?tab=${tabValue}`
   return (
     <Link
@@ -249,7 +261,7 @@ export function DashboardLayout() {
           </NavLink>
 
           <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Ready to publish, needs more value, published, and series" />
-          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} />
+          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} activeTabs={['overview', 'businesses', 'expertise', 'discovery', 'settings']} />
 
           <NavLink
             to="/dashboard/publish"
