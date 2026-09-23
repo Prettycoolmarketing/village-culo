@@ -6,7 +6,6 @@ import { InnerContainer, Section } from '../components/layout/PageContainer'
 import { getFounderBySlug } from '../services/founders'
 import { getBusinesses } from '../services/businesses'
 import { getStories } from '../services/stories'
-import { importedContentService } from '../services/importedContent'
 import { publisherPartnerProfileService } from '../services/partnership'
 import { submitSupportRequest } from '../services/supportRequest'
 import { FounderCard } from '../components/cards/FounderCard'
@@ -185,7 +184,6 @@ export function SpeakerPage() {
   const founder = getFounderBySlug('shakas-designer')
   const businesses = founder ? getBusinesses({ founderId: founder.id }) : []
   const publishedStories = getStories({ publicOnly: true })
-  const totalImports = importedContentService.getAll().length
   const bookingUrl = founder ? publisherPartnerProfileService.get(founder.id)?.bookingUrl : undefined
 
   // Calendly inline embed — same "load their widget script once" pattern
@@ -382,14 +380,10 @@ export function SpeakerPage() {
             })}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-10">
             <div className="bg-surface rounded-3xl border border-border px-6 py-8 text-center sm:text-left">
               <p className="font-heading text-5xl font-bold text-primary">{publishedStories.length}</p>
               <p className="font-body text-sm text-muted mt-2">Founder stories published through the platform</p>
-            </div>
-            <div className="bg-surface rounded-3xl border border-border px-6 py-8 text-center sm:text-left">
-              <p className="font-heading text-5xl font-bold text-primary">{totalImports}</p>
-              <p className="font-body text-sm text-muted mt-2">Pieces of content processed</p>
             </div>
             <div className="bg-surface rounded-3xl border border-border px-6 py-8 text-center sm:text-left">
               <p className="font-heading text-5xl font-bold text-primary">{businesses.length}</p>
