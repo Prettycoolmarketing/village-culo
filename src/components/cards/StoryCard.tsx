@@ -74,17 +74,18 @@ export function StoryCard({
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent" aria-hidden="true" />
 
-          {/* Featured badge */}
-          {story.featured && (
-            <div className="absolute top-3 right-3">
+          {/* Featured badge — sits with Location, bottom-left, not top-right.
+              The card's arch (borderTopLeftRadius/borderTopRightRadius: 50%
+              48px above) curves both top corners inward, so a badge pinned
+              at top-3 right-3 sat right in that curve and got visually
+              clipped by it. The bottom corners are square, nothing to
+              clip. */}
+          <div className="absolute bottom-3 left-3 flex flex-col items-start gap-1.5">
+            {story.featured && (
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent text-charcoal">
                 Featured
               </span>
-            </div>
-          )}
-
-          {/* Location — bottom of image */}
-          <div className="absolute bottom-3 left-3">
+            )}
             <span className="inline-flex items-center gap-1 text-xs text-white/90 font-medium">
               <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />

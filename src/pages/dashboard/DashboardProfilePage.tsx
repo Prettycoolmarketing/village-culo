@@ -778,6 +778,22 @@ export function DashboardProfilePage() {
     const saved = loadDraft<Founder>(`culo_v1_profile_draft_${currentFounder.id}`)
     return saved ?? { ...currentFounder }
   })
+  // draft's useState initializer above only ever runs once, on this
+  // component's first mount — switching accounts without a full page
+  // reload (log out, log back in as someone else, in the same tab) left
+  // `draft` frozen on whichever founder was current when the page first
+  // mounted, silently showing one logged-in user another founder's private
+  // dashboard: their content list, edit/delete controls, everything. This
+  // resyncs draft the moment currentFounder actually changes to a
+  // different id, instead of only ever reading it once.
+  useEffect(() => {
+    setDraft(prev => {
+      if (!currentFounder) return null
+      if (prev?.id === currentFounder.id) return prev
+      const saved = loadDraft<Founder>(`culo_v1_profile_draft_${currentFounder.id}`)
+      return saved ?? { ...currentFounder }
+    })
+  }, [currentFounder?.id])
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -815,6 +831,8 @@ export function DashboardProfilePage() {
           : 'ready'
   )
   const [readyChecked, setReadyChecked] = useState<Set<string>>(new Set())
+  const [publishedChecked, setPublishedChecked] = useState<Set<string>>(new Set())
+  const [publishedBulkBusy, setPublishedBulkBusy] = useState(false)
   const [readyBulkPublishing, setReadyBulkPublishing] = useState(false)
   const [limitModal, setLimitModal] = useState<null | 'imported' | 'self'>(null)
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
@@ -2107,6 +2125,35 @@ export function DashboardProfilePage() {
                 publishedSort === 'newest' ? sortKey(b).localeCompare(sortKey(a)) : sortKey(a).localeCompare(sortKey(b))
               )
 
+              function togglePublishedChecked(id: string) {
+                setPublishedChecked(prev => {
+                  const next = new Set(prev)
+                  if (next.has(id)) next.delete(id); else next.add(id)
+                  return next
+                })
+              }
+
+              function toggleSelectAllPublished() {
+                setPublishedChecked(prev => prev.size === sortedStories.length ? new Set() : new Set(sortedStories.map(s => s.id)))
+              }
+
+              // Sets status directly to draft/published — this is the same
+              // field StoryDetailPage's own gate checks (status !==
+              // 'published' && status !== 'featured' returns the 404 page),
+              // so switching to draft here really does take the story off
+              // the public site, not just relabel it in this list.
+              async function handleBulkStatusChange(status: 'draft' | 'published') {
+                const targets = sortedStories.filter(s => publishedChecked.has(s.id))
+                if (targets.length === 0) return
+                setPublishedBulkBusy(true)
+                for (const story of targets) {
+                  await updateStory({ ...story, status })
+                }
+                setPublishedChecked(new Set())
+                setPublishedBulkBusy(false)
+                setImportedTick(t => t + 1)
+              }
+
               return activeStories.length === 0 ? (
                 <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
                   <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
@@ -2116,15 +2163,44 @@ export function DashboardProfilePage() {
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-end mb-2">
-                    <select
-                      value={publishedSort}
-                      onChange={e => setPublishedSort(e.target.value as 'newest' | 'oldest')}
-                      className="text-xs px-2 py-1.5 rounded-lg border border-[#E8E4DD] bg-white text-[#6B7280] focus:outline-none focus:border-[#C86A43]"
-                    >
-                      <option value="newest">Newest first</option>
-                      <option value="oldest">Oldest first</option>
-                    </select>
+                  <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                    <label className="flex items-center gap-2 text-xs font-medium text-[#2D2A26] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={publishedChecked.size > 0 && publishedChecked.size === sortedStories.length}
+                        onChange={toggleSelectAllPublished}
+                        className="w-4 h-4 accent-[#C86A43]"
+                      />
+                      Select all ({sortedStories.length})
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {publishedChecked.size > 0 && (
+                        <>
+                          <button
+                            onClick={() => void handleBulkStatusChange('draft')}
+                            disabled={publishedBulkBusy}
+                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#9CA3AF] text-xs font-semibold rounded-lg hover:border-red-300 hover:text-red-500 disabled:opacity-40 transition-colors"
+                          >
+                            {publishedBulkBusy ? 'Working…' : `Unpublish ${publishedChecked.size} selected`}
+                          </button>
+                          <button
+                            onClick={() => void handleBulkStatusChange('published')}
+                            disabled={publishedBulkBusy}
+                            className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors"
+                          >
+                            {publishedBulkBusy ? 'Working…' : `Publish ${publishedChecked.size} selected`}
+                          </button>
+                        </>
+                      )}
+                      <select
+                        value={publishedSort}
+                        onChange={e => setPublishedSort(e.target.value as 'newest' | 'oldest')}
+                        className="text-xs px-2 py-1.5 rounded-lg border border-[#E8E4DD] bg-white text-[#6B7280] focus:outline-none focus:border-[#C86A43]"
+                      >
+                        <option value="newest">Newest first</option>
+                        <option value="oldest">Oldest first</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
                   {sortedStories.map(story => {
@@ -2132,6 +2208,12 @@ export function DashboardProfilePage() {
                     return (
                       <div key={story.id} className="w-full flex items-center gap-4 px-5 py-4 hover:bg-[#FBF8F4] transition-colors">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={publishedChecked.has(story.id)}
+                            onChange={() => togglePublishedChecked(story.id)}
+                            className="w-4 h-4 accent-[#C86A43] shrink-0"
+                          />
                           <img src={story.coverImage} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 bg-[#F3EDE6]" />
                           <div className="flex-1 min-w-0">
                             <p className="text-base font-medium text-[#2D2A26] truncate">{story.title}</p>
@@ -2299,8 +2381,14 @@ export function DashboardProfilePage() {
         })()}
 
         {/* ── Businesses ────────────────────────────────────────────────── */}
+        {/* key=founderId forces a full remount when the signed-in founder
+            changes (e.g. switching accounts without a full page reload) —
+            every state hook inside BusinessesTab is a lazy initializer
+            keyed off its first-mount props, same bug as the outer `draft`
+            fix above; a fresh mount is simpler and safer here than
+            resyncing three separate pieces of state by hand. */}
         {tab === 'businesses' && (
-          <BusinessesTab founderId={draft.id} founderLocation={draft.location} founderIndustry={draft.industry} />
+          <BusinessesTab key={draft.id} founderId={draft.id} founderLocation={draft.location} founderIndustry={draft.industry} />
         )}
 
         {/* ── FAQ ──────────────────────────────────────────────────────────── */}

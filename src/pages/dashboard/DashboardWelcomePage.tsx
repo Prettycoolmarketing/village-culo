@@ -107,6 +107,20 @@ export function DashboardWelcomePage() {
             </a>
           </div>
         </section>
+
+        {/* Canva-funnel founders used to skip any mention of the Village
+            entirely — landing here to pay and go straight into the app,
+            with nowhere pointing them at what to actually do with what
+            Creatives makes. Kept to one line, not the full explainer box
+            below, so it doesn't compete with the one decision this page
+            still exists for (start the trial). */}
+        <Link
+          to="/dashboard/import-content"
+          className="group inline-flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#C86A43] transition-colors"
+        >
+          Import your previously posted content for AI search-ability
+          <span className="text-[#C86A43] group-hover:translate-x-0.5 transition-transform">→</span>
+        </Link>
       </div>
     )
   }

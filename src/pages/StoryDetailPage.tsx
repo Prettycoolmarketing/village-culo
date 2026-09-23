@@ -369,13 +369,6 @@ export function StoryDetailPage() {
         .slice(0, 3)
     : []
 
-  // Related businesses from intel
-  const intelRelatedBusinesses = intel
-    ? intel.relatedBusinessIds
-        .map(id => getBusiness(id))
-        .filter((b): b is NonNullable<typeof b> => !!b && (b.status === 'published' || b.status === 'featured'))
-        .slice(0, 3)
-    : []
 
   return (
     <main className="min-h-screen bg-background">
@@ -625,6 +618,25 @@ export function StoryDetailPage() {
                   <div>
                     <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Blog</h2>
                     <BlogContent content={story.blog} />
+                  </div>
+                )}
+
+                {/* A blog story's video is a companion to the writing, not
+                    the lead — shown right after it, in the main article
+                    column. This used to live in the sidebar instead, which
+                    squeezed it into a column too narrow for the video and
+                    its title to sit side by side. */}
+                {effectiveReelUrl && story.blog && (
+                  <div>
+                    <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Watch</h2>
+                    <ReelContent
+                      reelUrl={effectiveReelUrl}
+                      title={story.title}
+                      summary=""
+                      landscape={story.videoOrientation
+                        ? story.videoOrientation === 'landscape'
+                        : story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head')}
+                    />
                   </div>
                 )}
 
@@ -925,28 +937,14 @@ export function StoryDetailPage() {
                 </section>
               )}
 
-              {/* Related businesses from intel */}
-              {intelRelatedBusinesses.length > 0 && (
-                <section aria-labelledby="related-businesses-intel-heading">
-                  <h2
-                    id="related-businesses-intel-heading"
-                    className="font-heading text-2xl font-semibold text-charcoal mb-6"
-                  >
-                    Related Businesses
-                  </h2>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list">
-                    {intelRelatedBusinesses.map(b => {
-                      const bFounder = getFounder(b.founderId)
-                      return (
-                        <li key={b.id}>
-                          <BusinessCard business={b} founder={bFounder} variant="default" />
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </section>
-              )}
-
+              {/* "Related Businesses" (intel-derived, businesses only) used to
+                  render here as its own section, right on top of Connected
+                  To below — which already covers the same business
+                  relationships via the real relationship graph, plus
+                  founders/ideas/stories Related Businesses never showed.
+                  Dropping the narrower duplicate; the graph itself
+                  (relationshipService/getConnectedTo) is untouched, this is
+                  just one fewer near-identical section on the page. */}
               <FeaturedInSection items={storyFeaturedIn} headingId="story-featured-in-heading" />
 
               <ConnectedToWidget items={storyConnectedTo} headingId="story-connected-to-heading" />
@@ -1034,25 +1032,6 @@ export function StoryDetailPage() {
                     business={business}
                     founder={founder}
                     variant="default"
-                  />
-                </section>
-              )}
-
-              {/* Video for a blog story — kept out of the main column (see
-                  above) so the writing leads; this is the "watch this too"
-                  companion, placed right after Business in reading order. */}
-              {effectiveReelUrl && story.blog && (
-                <section aria-labelledby="story-video-heading">
-                  <h2 id="story-video-heading" className="font-heading text-base font-semibold text-charcoal mb-4">
-                    Watch
-                  </h2>
-                  <ReelContent
-                    reelUrl={effectiveReelUrl}
-                    title={story.title}
-                    summary=""
-                    landscape={story.videoOrientation
-                      ? story.videoOrientation === 'landscape'
-                      : story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head')}
                   />
                 </section>
               )}

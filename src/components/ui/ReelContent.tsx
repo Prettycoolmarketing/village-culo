@@ -1,10 +1,24 @@
+import { Link } from 'react-router-dom'
 import { PLATFORM_LABELS, detectPlatform, generateEmbedUrl } from '../../services/importedContent'
 import { normalizeUrl, looksLikeChannelUrl, isDirectVideoUrl } from '../../utils/url'
 
 // Shared video-content renderer — used on a Story's own page and on a
 // Founder's profile (Featured Video section) so both places play/link a
 // video identically instead of maintaining two copies.
-export function ReelContent({ reelUrl, title, summary, landscape = false }: { reelUrl?: string; title: string; summary: string; landscape?: boolean }) {
+export function ReelContent({ reelUrl, title, summary, landscape = false, storyHref }: {
+  reelUrl?: string
+  title: string
+  summary: string
+  landscape?: boolean
+  // Set only when this card is a preview of a DIFFERENT story than the page
+  // it's rendered on (e.g. a founder profile's "Watch" list) — the CTA then
+  // keeps the visitor on the Village, going to that story's own page,
+  // instead of sending them straight to YouTube. Left unset when this is a
+  // story's own page rendering its own video, where "watch on YouTube" is
+  // the only sensible external option (there's no other article to send
+  // them to).
+  storyHref?: string
+}) {
   const isChannelLink = looksLikeChannelUrl(reelUrl)
   const isUploadedFile = isDirectVideoUrl(reelUrl)
   const platform = reelUrl ? detectPlatform(reelUrl) : undefined
@@ -17,14 +31,20 @@ export function ReelContent({ reelUrl, title, summary, landscape = false }: { re
           video (YouTube, talking head) stretched into 9:16 is what was
           reading as blurry/cropped. */}
       <div
-        // sm:w-[28rem]/sm:w-56 fixed widths used to force this wider than
+        // A fixed sm:w-[28rem]/sm:w-56 used to force this wider than
         // whatever container it was actually placed in (e.g. a sidebar
-        // column, or one half of a 2-col grid) — the box either overflowed
-        // its column or squeezed a sibling's text down to one word per
-        // line. max-w instead of a fixed width lets it still reach the
-        // same size in a roomy container, but shrink to fit a narrow one.
-        className={`flex-shrink-0 w-full mx-auto bg-charcoal rounded-2xl overflow-hidden relative ${
-          landscape ? 'max-w-md sm:max-w-none sm:mx-0 sm:w-full sm:max-w-[28rem]' : 'max-w-[260px] sm:max-w-none sm:mx-0 sm:w-full sm:max-w-56'
+        // column, or a founder profile's main column), overflowing or
+        // squeezing the text sibling down to one word per line. It still
+        // squeezed after switching to max-w, because sm:max-w-none and
+        // sm:max-w-[28rem] set the same CSS property at the same
+        // breakpoint — Tailwind's generated order between a core utility
+        // and an arbitrary-value one isn't the JSX order, so max-w-none
+        // sometimes won and silently uncapped the width back to sm:w-full.
+        // shrink (not shrink-0) plus min-w-0 lets it actually give up space
+        // to the text sibling in a narrow container instead of just
+        // capping out in a roomy one.
+        className={`shrink min-w-0 w-full mx-auto bg-charcoal rounded-2xl overflow-hidden relative ${
+          landscape ? 'max-w-md sm:mx-0 sm:max-w-[28rem]' : 'max-w-[260px] sm:mx-0 sm:max-w-56'
         }`}
         style={{ aspectRatio: landscape ? '16/9' : '9/16' }}
         aria-label="Video preview"
@@ -59,10 +79,12 @@ export function ReelContent({ reelUrl, title, summary, landscape = false }: { re
                 )}
               </div>
               <p className="font-body text-xs text-white/60 leading-relaxed">
-                {isChannelLink ? `Visit their ${platformLabel} channel` : `Watch on ${platformLabel}`}
+                {storyHref ? 'Read the story' : isChannelLink ? `Visit their ${platformLabel} channel` : `Watch on ${platformLabel}`}
               </p>
             </div>
-            {reelUrl && (
+            {storyHref ? (
+              <Link to={storyHref} className="absolute inset-0" aria-label={`Read "${title}"`} />
+            ) : reelUrl && (
               <a
                 href={normalizeUrl(reelUrl)}
                 target="_blank"
@@ -80,7 +102,17 @@ export function ReelContent({ reelUrl, title, summary, landscape = false }: { re
         <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Video</p>
         <h3 className="font-heading text-xl font-semibold text-charcoal leading-snug mb-3">{title}</h3>
         {summary && <p className="font-body text-base text-muted leading-relaxed mb-5">{summary}</p>}
-        {reelUrl && !isUploadedFile && (
+        {storyHref ? (
+          // A preview of another story (e.g. a founder profile's "Watch"
+          // list) — keeps the visitor on the Village reading that story,
+          // rather than routing them straight out to YouTube/Instagram/etc.
+          <Link
+            to={storyHref}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
+          >
+            Read the story →
+          </Link>
+        ) : reelUrl && !isUploadedFile && (
           <a
             href={normalizeUrl(reelUrl)}
             target="_blank"

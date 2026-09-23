@@ -835,13 +835,13 @@ export function FounderProfilePage() {
                   <div className="flex flex-col gap-8">
                     {featuredVideoStories.filter(s => s.reelUrl).map(story => (
                       <div key={story.id}>
-                        <ReelContent reelUrl={story.reelUrl} title={story.title} summary={story.summary} landscape />
-                        <Link
-                          to={`/stories/${story.slug}`}
-                          className="mt-3 inline-block text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"
-                        >
-                          Read the full story →
-                        </Link>
+                        <ReelContent
+                          reelUrl={story.reelUrl}
+                          title={story.title}
+                          summary={story.summary}
+                          landscape
+                          storyHref={`/stories/${story.slug}`}
+                        />
                       </div>
                     ))}
                   </div>

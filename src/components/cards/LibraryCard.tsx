@@ -131,9 +131,20 @@ export function LibraryCard({ item, variant = 'default' }: LibraryCardProps) {
           </div>
         )}
 
-        {/* Purchase links */}
+        {/* Purchase links — "coming soon" has nothing to actually buy yet,
+            so its one "link" used to send visitors straight off the Village
+            to an external social profile instead of anywhere on-site. Kept
+            here instead, pointed at this item's own page. */}
         <div className="mt-auto pt-4 border-t border-border">
-          {item.purchaseLinks.length === 1 ? (
+          {item.status === 'coming-soon' && item.purchaseLinks.length === 1 ? (
+            <Link
+              to={`/library/${item.slug}`}
+              className="block w-full text-center px-4 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+              aria-label={`${item.purchaseLinks[0].label} — ${item.title}`}
+            >
+              {item.purchaseLinks[0].label}
+            </Link>
+          ) : item.purchaseLinks.length === 1 ? (
             <a
               href={normalizeUrl(item.purchaseLinks[0].url)}
               target="_blank"
