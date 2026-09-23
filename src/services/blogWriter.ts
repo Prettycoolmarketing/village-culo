@@ -196,6 +196,12 @@ It should allow another AI to turn my existing social media posts, videos, photo
 * Searchable questions and answers
 * Long-term authority content
 
+This file is also read directly, not just as writing reference. The Bio, Business (tagline, description,
+target audience) and Frequently Asked Questions sections of my Village profile are auto-filled straight
+from what's in it, and my team uses it to rewrite imported captions and transcripts into full stories on
+my behalf. So section 2b (business details) and the Frequently Asked Questions section below need to be
+complete and directly usable as-is, not just source material for someone to interpret later.
+
 This is primarily an **extraction task**, not an interview.
 
 Do not begin by asking me a long list of generic brand questions.
@@ -875,9 +881,15 @@ For each thread, explain:
 
 # Search and Discovery Layer
 
-Because this profile may be used to create CULO Village content, identify the real questions my experiences can answer.
+Because this profile may be used to create CULO Village content, identify the real questions my experiences can answer, and answer each one properly. A bare list of questions is not enough here, every question needs a real, complete answer written in my voice, because this section gets used directly as my Village FAQ, not just as a list of angles to write from later.
 
-Create:
+For each question, give:
+
+* The question, worded the way someone would actually ask it
+* A real, complete answer, two to five sentences, in my voice, based only on confirmed or repeated facts
+* The category it belongs to (see below)
+
+Cover these categories:
 
 ## Searchable questions
 
@@ -907,7 +919,7 @@ Questions connected to real places in my story, when relevant.
 
 Questions connected to the industries, tools and business models I genuinely understand.
 
-Do not manufacture keywords that have no connection to my actual work.
+Do not manufacture keywords that have no connection to my actual work. If a genuinely useful question doesn't have enough confirmed material for a real answer, list the question under High-Value Gaps instead of guessing at an answer.
 
 ---
 
@@ -1178,9 +1190,11 @@ Clearly label whether each passage is:
 
 Never present reconstructed writing as a direct quote.
 
-## 16. Searchable Questions My Work Can Answer
+## 16. Frequently Asked Questions
 
-Organise by topic and user intent.
+Every question paired with a real, complete answer, per the Search and Discovery Layer above. Organised
+by topic and user intent. This section should be usable as my Village FAQ exactly as written, not just a
+list of questions for someone else to answer later.
 
 ## 17. Content Pillars
 
