@@ -1179,7 +1179,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
       </BuilderCard>
 
       {/* ── 4. Questions this story answers ──────────────────────────────── */}
-      <BuilderCard title="Questions this story answers" subtitle="Helps search engines and AI assistants (like ChatGPT) understand and describe this story." defaultOpen={false}
+      <BuilderCard title="Questions this story answers" subtitle="Shown alongside this story so search engines and AI assistants (like ChatGPT) can see what it actually covers." defaultOpen={false}
         badge={<span className="text-[10px] text-[#9CA3AF]">{questions.length}</span>}>
         <EditableList items={questions} onChange={v => onChange({ questionsOverride: v })} placeholder="a question" />
       </BuilderCard>

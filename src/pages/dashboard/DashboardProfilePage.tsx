@@ -2400,12 +2400,12 @@ export function DashboardProfilePage() {
         {tab === 'expertise' && (
           <div className="flex flex-col gap-5">
             <TabIntro>
-              Real questions people ask you, with real answers. These help both search engines and
-              AI systems understand what you know.
+              Real questions people ask you, with real answers, written in plain text so people, search
+              engines and AI can read what you know.
             </TabIntro>
 
             <div>
-              <Field label="Frequently Asked Questions" hint="Real questions people ask you. These help both search engines and AI systems understand what you know.">
+              <Field label="Frequently Asked Questions" hint="Real questions people ask you, written in plain text so people, search engines and AI can read what you know.">
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <p className="text-[11px] text-[#9CA3AF]">Pull real questions and answers straight from your bio and published stories.</p>
                   <button type="button"

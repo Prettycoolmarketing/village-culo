@@ -257,7 +257,7 @@ function AffiliateLinksOverview({ founderId }: { founderId: string }) {
         )}
       </div>
       <p className="text-xs text-[#9CA3AF] mb-4 leading-relaxed">
-        Shows automatically wherever you mention that brand in a published story. Clicks tracked here.
+        Connects with no approval step once you scan a story that mentions this brand. Clicks tracked here.
       </p>
 
       {adding && (
@@ -542,7 +542,7 @@ function MyPicksSection({ founderId, onNavigate }: { founderId: string; onNaviga
         <div>
           <h2 className="text-xl font-bold text-[#2D2A26]">My Links</h2>
           <p className="text-sm text-[#6B7280] mt-1">
-            Your affiliate link portal. Add your links in Overview, and Village automatically connects them wherever you mention that brand.
+            Your affiliate link portal. Add your links in Overview, then scan your stories and Village connects them wherever you mention that brand, no approval step.
           </p>
         </div>
         <button
@@ -641,9 +641,9 @@ function MyPicksSection({ founderId, onNavigate }: { founderId: string; onNaviga
           <p className="text-xs font-semibold text-[#2D2A26] mb-3">How My Links works</p>
           <div className="space-y-2.5">
             {[
-              { step: '1', text: 'Village scans your published stories for mentions of businesses, tools and products.' },
+              { step: '1', text: 'Click Scan My Stories any time to check your published stories for mentions of businesses, tools and products.' },
               { step: '2', text: 'Add your own affiliate link for a brand in Overview, any time.' },
-              { step: '3', text: 'The moment you have a link for a brand you mention, Village connects it automatically. No approval step.' },
+              { step: '3', text: 'Once you have a link for a brand your next scan finds mentioned, Village connects it with no approval step.' },
               { step: '4', text: 'Every click on a connected link is tracked here and on Revenue.' },
             ].map(s => (
               <div key={s.step} className="flex items-start gap-3">

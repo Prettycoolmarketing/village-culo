@@ -494,7 +494,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
         )}
 
         {hasBlog && (
-          <Field label="Questions & Answers" hint="Detected from this story's Blog text — shown on the page and used by search engines and AI. Runs automatically; add or edit any below, or re-run it after changing the Blog.">
+          <Field label="Questions & Answers" hint="Detected from this story's Blog text, shown on the page in plain text so search engines and AI can read them. Runs automatically, add or edit any below, or re-run it after changing the Blog.">
             {storyFaqs.length === 0 && !detectingQa && (
               <p className="text-xs text-[#9CA3AF] mb-2">None detected yet.</p>
             )}

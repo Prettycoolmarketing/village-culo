@@ -80,12 +80,12 @@ export function DashboardWelcomePage() {
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Welcome to Culo Creatives in Canva</h1>
           <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl">
             {hasBilling
-              ? "You're all set — jump back into Canva to keep creating."
+              ? "You're all set, jump back into Canva to keep creating."
               : 'Start your 14-day free trial to turn your raw footage into finished blogs, carousels and reels, right inside Canva.'}
           </p>
         </div>
         <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             {CREATIVES_STEPS.map((s, i) => (
               <div key={s.title}>
                 <div className="w-11 h-11 rounded-full bg-[#EBF2F8] text-[#3E6E92] flex items-center justify-center shrink-0 mb-3 text-sm font-bold">
@@ -95,6 +95,23 @@ export function DashboardWelcomePage() {
                 <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
               </div>
             ))}
+          </div>
+          {/* Founders arriving through the Canva Marketplace never see the
+              website's landing pages (culovillage.com/creatives), so this
+              is the only place they'd ever actually see the app being
+              used, same clip CreativesPage shows in "See it in Canva".
+              Placed above the trial CTA, not after it, since watching how
+              it works is what makes starting the trial an easy decision. */}
+          <div className="mb-8">
+            <p className="text-xs font-semibold text-[#3E6E92] uppercase tracking-widest mb-3">See it in Canva</p>
+            <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden bg-[#2D2A26]">
+              <video
+                src="/creatives/culo-app-demo.mp4"
+                controls
+                preload="metadata"
+                className="absolute inset-0 w-full h-full object-contain bg-black"
+              />
+            </div>
           </div>
           <div className="flex flex-col sm:items-end gap-4 pt-4">
             <a

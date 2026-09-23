@@ -1577,9 +1577,10 @@ export function DashboardImportContentPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#2D2A26]">Transfer your work into the village for visibility</h1>
         <p className="text-sm text-[#6B7280] mt-1.5 leading-relaxed">
-          Your best ideas are probably already out there. Connect your YouTube, podcast or blog and CULO will
-          bring your existing posted content into one place, embedded from the original source, never
-          re-uploaded or copied away from it, just restructured for your ultimate visibility.
+          Your best ideas are probably already out there. Connect your YouTube, podcast or blog and CULO
+          will bring your existing posted content into one place, restructured for your ultimate
+          visibility. Connected sources stay embedded from the original, your Instagram archive is
+          brought in and hosted here so it can be published properly.
         </p>
       </div>
 
@@ -1654,17 +1655,11 @@ export function DashboardImportContentPage() {
       {!draft && (
         <div>
           {/* Voice & Insight Briefs — back above the import connectors,
-              where they started. This is the one thing worth doing before
-              anything else: without it, CULO can only keep each import's
-              original caption; with it, every import gets shaped into a
-              real blog in the founder's own voice as it comes in. */}
+              where they started. BrandBriefEditor carries its own heading
+              and description now, so this wrapper no longer needs its
+              own duplicate copy on top of it. */}
           {founder && (
             <div className="mt-4 sm:mt-6 mb-8 pb-8 border-b border-[#E8E4DD]">
-              <p className="text-xl font-bold text-[#2D2A26] mb-1">Do this first so CULO can help shape your story</p>
-              <p className="text-sm text-[#9CA3AF] mb-4">
-                Optional, but it's what turns a raw caption into a real blog written in your own voice — add it now
-                and every import from here on benefits from it.
-              </p>
               <BrandBriefEditor
                 value={voiceBriefDraft}
                 updatedAt={founder.voiceBriefUpdatedAt}
