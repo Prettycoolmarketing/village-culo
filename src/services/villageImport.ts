@@ -1,5 +1,5 @@
 import { slugify } from '../utils/slugify'
-import { getFounderBySlug, updateFounder } from './founders'
+import { getFounderBySlug, getFounderByLinkedIn, updateFounder } from './founders'
 import { getBusinessBySlug, updateBusiness } from './businesses'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { importedContentToInput, villageContentIntelligenceService } from './villageIntelligence'
@@ -261,9 +261,22 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
     const displayName = f.preferredName?.trim() || f.fullName?.trim() || 'Unknown'
 
     try {
-      // Slug
+      // Identity match — LinkedIn first, since it actually identifies a
+      // real person rather than just a name two different people could
+      // share (this has already happened on a real curated batch: two
+      // different people named Rohit Bhargava). Falls back to the
+      // name/slug match when there's no LinkedIn to check either side —
+      // but if BOTH sides have a LinkedIn on file and they disagree,
+      // that's positive evidence this is a different person with the same
+      // name, not a duplicate, so the slug match is deliberately not
+      // trusted in that one case.
       const baseSlug = f.slug?.trim() || slugify(displayName)
-      const existingFounder = getFounderBySlug(baseSlug)
+      const bySlug = getFounderBySlug(baseSlug)
+      const byLinkedIn = f.linkedinUrl?.trim() ? getFounderByLinkedIn(f.linkedinUrl) : undefined
+      const slugMatchIsActuallyDifferentPerson = !!(
+        bySlug?.linkedin?.trim() && f.linkedinUrl?.trim() && bySlug.linkedin.trim() !== f.linkedinUrl.trim() && !byLinkedIn
+      )
+      const existingFounder = byLinkedIn ?? (slugMatchIsActuallyDifferentPerson ? undefined : bySlug)
 
       if (existingFounder) {
         if (options.skipDuplicates && !options.overwriteDuplicates) {

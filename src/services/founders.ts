@@ -46,6 +46,21 @@ export function getFounderBySlug(slug: string): Founder | undefined {
   return live().find(f => f.slug === slug)
 }
 
+// A LinkedIn profile URL identifies a real person far more reliably than
+// their name does — Bulk Import's own duplicate check used to be name-only,
+// which meant two different real people who happen to share a name (not
+// hypothetical — it's already happened while curating a real batch) could
+// silently collide: the second one gets treated as "already exists" and
+// skipped, even though they're someone else entirely. Checked first, before
+// the slug/name match, so a genuine identity match always wins over a
+// same-name coincidence.
+export function getFounderByLinkedIn(linkedinUrl: string): Founder | undefined {
+  const normalize = (url: string) => url.trim().toLowerCase().replace(/\/+$/, '').replace(/^https?:\/\/(www\.)?/, '')
+  const target = normalize(linkedinUrl)
+  if (!target) return undefined
+  return live().find(f => f.linkedin && normalize(f.linkedin) === target)
+}
+
 export async function updateFounder(founder: Founder): Promise<WriteResult> {
   return writeEntity<Founder>({ cacheKey: KEY, item: founder, table: TABLE, toRow })
 }
