@@ -29,6 +29,20 @@ Not a fit:
 - Reseller/dropshipping-style accounts with no genuine personal story or expertise.
 - Anyone who mainly posts generic, AI-written-sounding content already.`
 
+const ENRICH_PROMPT = `Fill in the missing details for each row in this sheet — LinkedIn profile URL, Instagram URL, YouTube channel URL — using the podcast, YouTube or article link already in the row as your primary source, since that's the most reliable evidence of who this actually is.
+
+Australians only — if you can't confirm this person is Australian-based, leave the row blank and flag it in a comment instead of guessing.
+
+Before filling in a LinkedIn link, confirm it's genuinely the same person as the podcast guest: matching name, matching business, matching location. If you can't confirm the match, write "UNVERIFIED — check manually" in a comment on that cell rather than filling in a link that might be the wrong person.
+
+Prioritise information found through the original podcast/YouTube episode itself (show notes, episode description, host's own links) over a generic web search — that's a stronger, more reliable connection than a name search turning up someone who just happens to share a name.`
+
+const SOURCE_PROMPT = `Search recent episodes of [podcast name] for guests who are real Australian founders or business owners running their own company or practice.
+
+For each one, add a new row to this sheet with: their full name, the specific episode link they appeared on, their LinkedIn profile URL, their Instagram URL, their YouTube channel if they have one, and their business name.
+
+Skip anyone who isn't Australian-based. Skip pure media personalities, presenters or athletes who don't run their own business — we want founders, not people who just talk to founders. If you can't confirm someone is a real founder with genuine expertise, leave them out rather than guessing.`
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
@@ -56,14 +70,24 @@ function LinkCard({ to, label, desc }: { to: string; label: string; desc: string
   )
 }
 
-export function VillageTrainingPage() {
+function CopyPromptButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false)
-
-  function copyTargetPrompt() {
-    void navigator.clipboard.writeText(TARGET_PROFILE_PROMPT)
+  function handleCopy() {
+    void navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+  return (
+    <button
+      onClick={handleCopy}
+      className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+    >
+      {copied ? 'Copied ✓' : label}
+    </button>
+  )
+}
+
+export function VillageTrainingPage() {
 
   return (
     <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -232,26 +256,99 @@ export function VillageTrainingPage() {
         </ul>
       </Section>
 
-      <Section title="Building your own founder list">
+      <Section title="Building your own founder list: the full workflow">
         <p>
-          Before anything goes anywhere near Bulk Import, it starts as a plain research list: real
-          Australian founders you've actually found and looked at yourself on YouTube, Instagram or a
-          podcast, who fit what we're actually looking for.
+          Getting a real person from "someone we've never heard of" to "a claimed, live Village profile"
+          is six steps, in order. Each one matters — skipping the verification steps is how a wrong LinkedIn
+          link or a US-based founder ends up in the Village by mistake.
         </p>
-        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 mb-4">
-          <p className="text-sm font-semibold text-[#2D2A26] mb-2">Who we're looking for</p>
-          <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
-            A real, specific brief for what makes someone a good fit — copy it to keep next to you while
-            you're researching, or paste it into an AI tool to help you evaluate a candidate against it.
+
+        <SubSection title="Step 1 — Find candidates, mostly from podcasts">
+          <p>
+            Start from a real source, not a cold guess. The best source by far is a podcast's guest list —
+            podcast guests are already pre-vetted for having a real story to tell, the host has already done
+            the work of finding someone worth talking to, and the episode itself usually links straight to
+            the guest's business, Instagram and sometimes their LinkedIn in the show notes. YouTube channels
+            and Instagram accounts work too, but podcast scraping consistently turns up the strongest matches
+            to what we're actually looking for.
           </p>
-          <button
-            onClick={copyTargetPrompt}
-            className="text-xs font-semibold px-4 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
-          >
-            {copied ? 'Copied ✓' : 'Copy the target profile'}
-          </button>
-        </div>
-        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+          <p>Below is the exact brief for who counts as a good fit — copy it to keep next to you while you're looking through episodes, or paste it into Claude to help you judge a specific candidate.</p>
+          <CopyPromptButton text={TARGET_PROFILE_PROMPT} label="Copy the target profile" />
+        </SubSection>
+
+        <SubSection title="Step 2 — Enrich and verify with Claude in Excel">
+          <p>
+            Once you've got names in the sheet, you don't have to manually hunt down every LinkedIn and
+            Instagram link yourself — Claude is built directly into Excel (you'll see it as a panel on the
+            right of the spreadsheet, the same as the screenshot you'd have seen when this was set up for
+            you). You can talk to it in plain English, right there in the sheet, and it will search the web,
+            read what it finds, and fill in the cells for you.
+          </p>
+          <p>
+            <strong className="text-[#2D2A26]">Why this matters:</strong> a name search on its own can easily
+            surface the wrong person, especially for a common name. The instruction below tells Claude to
+            treat the podcast/YouTube episode itself as the source of truth, and to flag anything it can't
+            actually confirm rather than guessing — a link that's confidently wrong is worse than a blank
+            cell, because a blank cell gets noticed and checked, a wrong one doesn't.
+          </p>
+          <p>Paste this into the Claude panel to enrich and verify rows you've already added:</p>
+          <CopyPromptButton text={ENRICH_PROMPT} label="Copy the enrichment prompt" />
+          <p className="pt-2">
+            And use this one when you want Claude to go find new candidates itself, straight from a specific
+            podcast's episode list, rather than you scrolling through it manually:
+          </p>
+          <CopyPromptButton text={SOURCE_PROMPT} label="Copy the sourcing prompt" />
+          <p className="pt-2">
+            Either way, read back over what Claude fills in before moving on — it's a genuine time-saver, not
+            a replacement for actually checking the row makes sense.
+          </p>
+        </SubSection>
+
+        <SubSection title="Step 3 — Follow them on LinkedIn">
+          <p>
+            Once a row has a verified LinkedIn link, follow (or connect with) that person using the Sales
+            Navigator access you'll be given. This isn't optional busywork — showing up in their network
+            before they ever hear from the Village makes the eventual claim message land as a real, warm
+            outreach instead of a cold one out of nowhere.
+          </p>
+        </SubSection>
+
+        <SubSection title="Step 4 — Import into the Village">
+          <p>
+            Once a batch of rows is fully verified — real Australian founder, correct LinkedIn confirmed,
+            enough detail to build a real profile from — that's what actually goes into the Village, through
+            Bulk Import (linked below). This is the point where a name on a spreadsheet becomes a real,
+            live, curated profile page.
+          </p>
+        </SubSection>
+
+        <SubSection title="Step 5 — Check over each imported profile">
+          <p>
+            After importing, open each new profile and check it actually reads correctly — right business,
+            right bio, links that actually work. Bulk Import moves fast; this step catches anything that
+            came through wrong before a real person ever sees their own page.
+          </p>
+        </SubSection>
+
+        <SubSection title="Step 6 — Warm LinkedIn message to invite them to claim">
+          <p>
+            Last step: message them on LinkedIn (you're already connected from Step 3) letting them know
+            their Village profile exists and how to claim it — use "Copy link to claim" on their profile in
+            Founder Management to get their exact profile URL to send.
+          </p>
+        </SubSection>
+
+        <SubSection title="Tracking what's been imported">
+          <p>
+            Duplicate the shared spreadsheet for each new batch and label it clearly (e.g. by date or by
+            source podcast), rather than editing one master sheet forever — that way it's always obvious
+            which list has already been through Bulk Import and which is still being built. Keep the Status
+            column up to date on the original as you go: To Review while you're still researching, Approved
+            once verified and ready, Imported once it's actually live in the Village.
+          </p>
+        </SubSection>
+
+        <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 mt-2">
           <p className="text-sm font-semibold text-[#2D2A26] mb-1">Research template</p>
           <p className="text-xs text-[#9CA3AF] mb-3">
             A spreadsheet for tracking candidates as you find them — one row per person, with a Status
