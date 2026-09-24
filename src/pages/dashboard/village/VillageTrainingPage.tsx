@@ -73,6 +73,14 @@ If any of them — including the original person — has published a book or sel
 
 Australians only. Skip anyone you can't confirm is a real founder with genuine expertise, and skip anyone already in the sheet.`
 
+const DESCRIPTION_STRENGTH_PROMPT = `For each row in this sheet, look at the Bio/Description column and assess whether it's substantial enough to become a real published article — not just long enough, genuinely substantial.
+
+Flag any row where the description is under roughly 300 characters, reads like a one-line summary rather than a real piece of writing, or is mostly generic ("passionate founder helping people achieve their goals") rather than specific to what this person actually does or has said.
+
+For anything flagged, either: (a) find a longer, more specific description from the same source (the YouTube video's own description, the podcast show notes, the article itself) and replace it, or (b) mark it "NEEDS REAL DESCRIPTION" in a comment so it gets fixed by hand before import, rather than importing something too thin to read as a real article.
+
+This matters beyond just looking good — a description under about 40 characters doesn't get published as an article at all when it's imported, it just sits there as a link with nothing built from it.`
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
@@ -385,6 +393,16 @@ export function VillageTrainingPage() {
             Either way, read back over what Claude fills in before moving on — it's a genuine time-saver, not
             a replacement for actually checking the row makes sense.
           </p>
+        </SubSection>
+
+        <SubSection title="Before moving on — check descriptions are actually strong enough">
+          <p>
+            A row with a bio that's just one thin line won't become a real article — worse, if it's under
+            about 40 characters it won't get published as an article at all when it's imported, it'll just
+            sit there as a dead link with nothing built from it. Worth running this check on a batch before
+            it goes anywhere near Step 3.
+          </p>
+          <CopyPromptButton text={DESCRIPTION_STRENGTH_PROMPT} label="Copy the description-strength prompt" />
         </SubSection>
 
         <SubSection title="Step 3 — Follow them on LinkedIn (or find their email if they're not on it)">

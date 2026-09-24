@@ -32,6 +32,13 @@ export interface VillageImportFounder {
   tiktokUrl?: string
   podcastUrl?: string
   newsletterUrl?: string
+  // A real contact email found for a candidate with no LinkedIn (see the
+  // curation workflow's Step 2/3) — sets Founder.claimEmail, which the
+  // app's own claim resolution (getCurrentFounder, step 4) already checks:
+  // the real person signing up with this exact email auto-links to this
+  // curated profile, no separate claim step needed. Distinct from any
+  // login credential — this founder has no account yet either way.
+  claimEmail?: string
   profileImageUrl?: string
   topics?: string[]
   industries?: string[]

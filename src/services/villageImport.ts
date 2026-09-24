@@ -376,6 +376,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
         tiktok:       f.tiktokUrl?.trim() || undefined,
         podcast:      f.podcastUrl?.trim() || undefined,
         newsletter:   f.newsletterUrl?.trim() || undefined,
+        claimEmail:   f.claimEmail?.trim() || existingFounder?.claimEmail || undefined,
         status:       'published',
         featured:     false,
         createdAt:    existingFounder?.createdAt ?? now,
