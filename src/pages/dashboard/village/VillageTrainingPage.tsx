@@ -65,6 +65,14 @@ For each one, add a new row to this sheet with: their full name, the specific ep
 
 Skip anyone who isn't Australian-based. Skip pure media personalities, presenters or athletes who don't run their own business — we want founders, not people who just talk to founders. If you can't confirm someone is a real founder with genuine expertise, leave them out rather than guessing.`
 
+const EXPAND_FROM_PERSON_PROMPT = `Starting from [paste a YouTube channel, podcast episode or Instagram URL for someone you already like and know], find 10 other real Australian founders connected to them — people who've appeared as a guest on the same show, co-hosted with them, been interviewed by them, or are a known business partner or collaborator.
+
+For each one you find, add a new row with: their full name, their YouTube/podcast/article link, their LinkedIn URL, their Instagram URL, their business name, and their headline/bio.
+
+If any of them — including the original person — has published a book or sells a digital product (a course, template, guide, etc.), add its link (Amazon, Gumroad, their own store, wherever it's actually sold) in a Digital Product URL column, placed next to Article URL.
+
+Australians only. Skip anyone you can't confirm is a real founder with genuine expertise, and skip anyone already in the sheet.`
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-10">
@@ -353,6 +361,26 @@ export function VillageTrainingPage() {
             podcast's episode list, rather than you scrolling through it manually:
           </p>
           <CopyPromptButton text={SOURCE_PROMPT} label="Copy the sourcing prompt" />
+          <p className="pt-2 font-semibold text-[#2D2A26]">The best way to actually work through this: start from someone you know</p>
+          <p>
+            Rather than cold-scrolling a podcast's whole guest list, the fastest way to build a good batch is
+            to start from one real Australian founder you (or Mitchell) already know or like the look of, and
+            expand outward from them — the people they've had on their own show, been a guest with, or
+            clearly know. Add that first one, then use the prompt below to find 10 people connected to them.
+            Once those are in, pick one of the new ones you like and repeat the same thing again from them.
+            That's the whole method: one good seed, expand, pick the next seed, expand again.
+          </p>
+          <p>
+            Keep the focus on real Australian founders who'd want genuine credibility for what they've
+            actually built — not necessarily famous names, smaller creators are just as good a fit, often a
+            better one, since they're the ones with the most to gain from being made findable.
+          </p>
+          <p>
+            This same prompt also catches something the other two don't: anyone with a published book or a
+            digital product (a course, template, guide) gets its real sale link — Amazon, Gumroad, their own
+            store — added in its own column next to Article URL.
+          </p>
+          <CopyPromptButton text={EXPAND_FROM_PERSON_PROMPT} label="Copy the 'find people connected to them' prompt" />
           <p className="pt-2">
             Either way, read back over what Claude fills in before moving on — it's a genuine time-saver, not
             a replacement for actually checking the row makes sense.
