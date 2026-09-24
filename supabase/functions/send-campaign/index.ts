@@ -72,8 +72,7 @@ serve(async (req) => {
 
     // "All lists" — every address we hold, across every section of Email
     // Lists: explicit subscribers, the CULO Creatives waitlist, and every
-    // founder account's signup email (Village + Canva members). Deduped,
-    // lowercased.
+    // founder account's signup email. Deduped, lowercased.
     const [subs, waitlist, founders, unsubs] = await Promise.all([
       admin.from('email_subscribers').select('email'),
       admin.from('canva_waitlist').select('email'),
@@ -86,8 +85,14 @@ serve(async (req) => {
     for (const r of subs.data ?? []) if (r.email) emailSet.add((r.email as string).trim().toLowerCase())
     for (const r of waitlist.data ?? []) if (r.email) emailSet.add((r.email as string).trim().toLowerCase())
     for (const r of founders.data ?? []) {
-      const e = (r.data as { signupEmail?: string })?.signupEmail
-      if (e) emailSet.add(e.trim().toLowerCase())
+      const f = r.data as { signupEmail?: string; signupProduct?: string; creativeSubscription?: { stripeSubscriptionId?: string } }
+      if (!f.signupEmail) continue
+      // A Canva Marketplace signup is a real Village member from the
+      // moment they join, same as anyone else — but they haven't chosen
+      // to hear from us yet until they've actually paid for Creatives via
+      // Stripe. Village-sourced signups have no such gate.
+      if (f.signupProduct === 'canva' && !f.creativeSubscription?.stripeSubscriptionId) continue
+      emailSet.add(f.signupEmail.trim().toLowerCase())
     }
     const unsubscribed = new Set((unsubs.data ?? []).map(r => (r.email as string).trim().toLowerCase()))
     for (const e of unsubscribed) emailSet.delete(e)

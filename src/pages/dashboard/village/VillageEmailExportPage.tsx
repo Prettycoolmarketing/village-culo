@@ -12,7 +12,7 @@ import { toCSV, downloadCSV } from '../../../utils/emailExport'
 import { bodyTextToHtml, bodyHtmlToText } from '../../../utils/emailBody'
 
 export function VillageEmailExportPage() {
-  const [pageTab, setPageTab] = useState('village-members')
+  const [pageTab, setPageTab] = useState('members')
 
   // Waitlist signups still fold into Subscribers automatically — no longer
   // running a public waitlist tab/flow (people get added manually now), but
@@ -39,19 +39,17 @@ export function VillageEmailExportPage() {
 
       <Tabs
         tabs={[
-          { key: 'village-members', label: 'Village Members' },
-          { key: 'canva-members',   label: 'Canva Members' },
-          { key: 'subscribers',     label: 'Subscribers' },
-          { key: 'campaigns',       label: 'Newsletter' },
-          { key: 'sequences',       label: 'Sequences' },
+          { key: 'members',     label: 'Members' },
+          { key: 'subscribers', label: 'Subscribers' },
+          { key: 'campaigns',   label: 'Newsletter' },
+          { key: 'sequences',   label: 'Sequences' },
         ]}
         active={pageTab}
         onChange={setPageTab}
         className="mb-6"
       />
 
-      {pageTab === 'village-members' && <MembersPanel source="village" />}
-      {pageTab === 'canva-members' && <MembersPanel source="canva" />}
+      {pageTab === 'members' && <MembersPanel />}
       {pageTab === 'subscribers' && <SubscribersPanel />}
       {pageTab === 'campaigns' && <CampaignsPanel />}
       {pageTab === 'sequences' && <SequencesPanel />}
@@ -60,22 +58,22 @@ export function VillageEmailExportPage() {
   )
 }
 
-// ─── Members panel — /join-flow signups, split by which funnel created them ────
-// Two tabs (Village Members / Canva Members) rather than one mixed "Joined"
-// list, so CAPO can tell a direct culovillage.com signup apart from a Canva
-// Marketplace deep-link at a glance — same distinction already tracked in
-// Analytics. Delete removes both the founder profile and the actual login
-// (see delete-founder-account) — not just a cache-side hide.
+// ─── Members panel — every /join-flow signup, one list ─────────────────────
+// Used to be two separate tabs (Village Members / Canva Members) as if a
+// Canva-sourced signup were a different kind of member — it isn't, every
+// signup is a Village member from the moment they join, Canva or not.
+// signupProduct is now just a small tag per row for future campaign
+// targeting, not a second bucket. Delete removes both the founder profile
+// and the actual login (see delete-founder-account) — not just a
+// cache-side hide.
 
-function MembersPanel({ source }: { source: 'village' | 'canva' }) {
+function MembersPanel() {
   const [tick, setTick] = useState(0)
   void tick
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const founders = getFounders().filter(f => f.signupProduct === source)
-  const sorted = [...founders].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  const label = source === 'canva' ? 'Canva' : 'Village'
+  const sorted = [...getFounders()].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   async function handleDelete(f: (typeof sorted)[number]) {
     setError(null)
@@ -91,17 +89,17 @@ function MembersPanel({ source }: { source: 'village' | 'canva' }) {
       email: f.signupEmail ?? '', firstName: '', lastName: '', fullName: f.name,
       profileStatus: f.profileStatus ?? f.status, founderSlug: f.slug,
       profileUrl: `${window.location.origin}/founders/${f.slug}`, claimUrl: '',
-      businessName: '', tags: `${source}-join`, createdAt: f.createdAt,
+      businessName: '', tags: `${f.signupProduct ?? 'village'}-join`, createdAt: f.createdAt,
     })).filter(r => r.email)
     if (rows.length === 0) return
-    downloadCSV(toCSV(rows), `culo-village-${source}-members-${new Date().toISOString().slice(0, 10)}.csv`)
+    downloadCSV(toCSV(rows), `culo-village-members-${new Date().toISOString().slice(0, 10)}.csv`)
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-[#6B7280]">
-          {sorted.length} {label.toLowerCase()} member{sorted.length === 1 ? '' : 's'}.
+          {sorted.length} member{sorted.length === 1 ? '' : 's'}.
         </p>
         <button
           onClick={handleExport}
@@ -113,38 +111,49 @@ function MembersPanel({ source }: { source: 'village' | 'canva' }) {
       </div>
       {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
       {sorted.length === 0 ? (
-        <p className="text-sm text-[#9CA3AF]">No {label.toLowerCase()} members yet.</p>
+        <p className="text-sm text-[#9CA3AF]">No members yet.</p>
       ) : (
         <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-          {sorted.map(f => (
-            <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.signupEmail ?? f.name}</p>
-                <p className="text-[10px] text-[#9CA3AF]">
-                  {new Date(f.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  {f.passwordSet && ' · password set'}
-                </p>
+          {sorted.map(f => {
+            const isCanva = f.signupProduct === 'canva'
+            const hasPaid = !!f.creativeSubscription?.stripeSubscriptionId
+            return (
+              <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.signupEmail ?? f.name}</p>
+                    {isCanva && (
+                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#EBF2F8] text-[#3E6E92]">
+                        Canva{hasPaid ? ' · paid' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-[#9CA3AF]">
+                    {new Date(f.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {f.passwordSet && ' · password set'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <a
+                    href={`/founders/${f.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] text-[#C86A43] hover:underline"
+                  >
+                    View ↗
+                  </a>
+                  <ConfirmButton
+                    label="Delete"
+                    confirmLabel="Yes, delete"
+                    message={`Delete ${f.name}'s login too?`}
+                    onConfirm={() => void handleDelete(f)}
+                    disabled={deletingId === f.id}
+                    className="text-[10px] text-red-500 hover:text-red-600 transition-colors"
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <a
-                  href={`/founders/${f.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-[#C86A43] hover:underline"
-                >
-                  View ↗
-                </a>
-                <ConfirmButton
-                  label="Delete"
-                  confirmLabel="Yes, delete"
-                  message={`Delete ${f.name}'s login too?`}
-                  onConfirm={() => void handleDelete(f)}
-                  disabled={deletingId === f.id}
-                  className="text-[10px] text-red-500 hover:text-red-600 transition-colors"
-                />
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
@@ -315,7 +324,14 @@ function CampaignsPanel() {
       const emails = new Set<string>()
       for (const s of emailSubscribersService.getAll()) emails.add(s.email.trim().toLowerCase())
       for (const w of waitlistService.getAll()) emails.add(w.email.trim().toLowerCase())
-      for (const f of getFounders()) if (f.signupEmail) emails.add(f.signupEmail.trim().toLowerCase())
+      for (const f of getFounders()) {
+        if (!f.signupEmail) continue
+        // Mirrors send-campaign's own gate — an unpaid Canva signup isn't
+        // counted here either, so this estimate doesn't overstate who's
+        // actually about to be emailed.
+        if (f.signupProduct === 'canva' && !f.creativeSubscription?.stripeSubscriptionId) continue
+        emails.add(f.signupEmail.trim().toLowerCase())
+      }
       setRecipientCount(emails.size)
     })
   }, [])

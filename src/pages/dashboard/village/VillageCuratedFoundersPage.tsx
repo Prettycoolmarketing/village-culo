@@ -107,6 +107,13 @@ export function VillageCuratedFoundersPage() {
   )
   const [tick, setTick]           = useState(0)
   const [bulkError, setBulkError] = useState<string | null>(null)
+  const [copiedId, setCopiedId]   = useState<string | null>(null)
+
+  function copyProfileLink(f: { id: string; slug: string }) {
+    void navigator.clipboard.writeText(`${window.location.origin}/founders/${f.slug}`)
+    setCopiedId(f.id)
+    setTimeout(() => setCopiedId(prev => prev === f.id ? null : prev), 2000)
+  }
   const [search, setSearch]       = useState('')
   const [sortBy, setSortBy]       = useState<'newest' | 'oldest' | 'name-az' | 'name-za'>('newest')
   const [filterIndustry, setFilterIndustry] = useState('all')
@@ -491,12 +498,29 @@ export function VillageCuratedFoundersPage() {
                       View ↗
                     </Link>
                     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-                      {(!f.profileStatus || f.profileStatus === 'village-curated') && (
+                      {/* Curated only ever applies to a profile admin built
+                          from the imported JSON list — no real account
+                          exists yet (no userId). A founder who came through
+                          the actual /join flow has a real account from the
+                          moment they signed up; there's nothing to "curate"
+                          about them. */}
+                      {!f.userId && (!f.profileStatus || f.profileStatus === 'village-curated') && (
                         <button
                           onClick={() => { founderClaimService.markCurated(f.id); refresh() }}
                           className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
                         >
                           {!f.profileStatus ? 'Set Curated' : 'Re-curate'}
+                        </button>
+                      )}
+                      {/* Copy this curated profile's public link to send to
+                          the real founder so they can claim it — only makes
+                          sense before they actually have (claimed). */}
+                      {!f.userId && f.profileStatus === 'village-curated' && (
+                        <button
+                          onClick={() => copyProfileLink(f)}
+                          className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
+                        >
+                          {copiedId === f.id ? 'Copied ✓' : 'Copy link to claim'}
                         </button>
                       )}
                       {f.profileStatus === 'claimed' && (
