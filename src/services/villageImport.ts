@@ -1,5 +1,5 @@
 import { slugify } from '../utils/slugify'
-import { getFounderBySlug, getFounderByLinkedIn, updateFounder } from './founders'
+import { getFounderBySlug, getFounderByLinkedIn, getFounderByInstagram, updateFounder } from './founders'
 import { getBusinessBySlug, updateBusiness } from './businesses'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { importedContentToInput, villageContentIntelligenceService } from './villageIntelligence'
@@ -261,22 +261,31 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
     const displayName = f.preferredName?.trim() || f.fullName?.trim() || 'Unknown'
 
     try {
-      // Identity match — LinkedIn first, since it actually identifies a
-      // real person rather than just a name two different people could
-      // share (this has already happened on a real curated batch: two
-      // different people named Rohit Bhargava). Falls back to the
-      // name/slug match when there's no LinkedIn to check either side —
-      // but if BOTH sides have a LinkedIn on file and they disagree,
-      // that's positive evidence this is a different person with the same
-      // name, not a duplicate, so the slug match is deliberately not
-      // trusted in that one case.
+      // Identity match — LinkedIn or Instagram first, since either
+      // actually identifies a real person, unlike a name two different
+      // people could share (this has already happened on a real curated
+      // batch: two different people named Rohit Bhargava). Instagram
+      // matters as its own check, not just a LinkedIn substitute — a
+      // founder can post under a personal name on LinkedIn but under a
+      // completely different brand/handle on Instagram (e.g. "Anaita
+      // Sukar" personally, "Sell Anything Online" as her Instagram handle),
+      // so a name match alone would neither catch that as a duplicate nor
+      // correctly tell two different people apart. Falls back to the
+      // name/slug match only when neither side has a social URL to check —
+      // if BOTH sides have one and they disagree, that's positive evidence
+      // this is a different person with the same name, not a duplicate.
       const baseSlug = f.slug?.trim() || slugify(displayName)
       const bySlug = getFounderBySlug(baseSlug)
       const byLinkedIn = f.linkedinUrl?.trim() ? getFounderByLinkedIn(f.linkedinUrl) : undefined
+      const byInstagram = !byLinkedIn && f.instagramUrl?.trim() ? getFounderByInstagram(f.instagramUrl) : undefined
+      const socialMatch = byLinkedIn ?? byInstagram
       const slugMatchIsActuallyDifferentPerson = !!(
-        bySlug?.linkedin?.trim() && f.linkedinUrl?.trim() && bySlug.linkedin.trim() !== f.linkedinUrl.trim() && !byLinkedIn
+        !socialMatch && (
+          (bySlug?.linkedin?.trim() && f.linkedinUrl?.trim() && bySlug.linkedin.trim() !== f.linkedinUrl.trim()) ||
+          (bySlug?.instagram?.trim() && f.instagramUrl?.trim() && bySlug.instagram.trim() !== f.instagramUrl.trim())
+        )
       )
-      const existingFounder = byLinkedIn ?? (slugMatchIsActuallyDifferentPerson ? undefined : bySlug)
+      const existingFounder = socialMatch ?? (slugMatchIsActuallyDifferentPerson ? undefined : bySlug)
 
       if (existingFounder) {
         if (options.skipDuplicates && !options.overwriteDuplicates) {

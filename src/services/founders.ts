@@ -61,6 +61,20 @@ export function getFounderByLinkedIn(linkedinUrl: string): Founder | undefined {
   return live().find(f => f.linkedin && normalize(f.linkedin) === target)
 }
 
+// Same reasoning as getFounderByLinkedIn, and just as necessary — a founder
+// can post under a personal name on LinkedIn but a completely different
+// handle/brand name on Instagram (e.g. "Anaita Sukar" personally, "Sell
+// Anything Online" as her Instagram handle), so a name match alone would
+// neither catch a real duplicate under a different display name, nor
+// correctly tell two different people apart. The URL/handle itself is the
+// stable identity regardless of what display name sits on top of it.
+export function getFounderByInstagram(instagramUrl: string): Founder | undefined {
+  const normalize = (url: string) => url.trim().toLowerCase().replace(/\/+$/, '').replace(/^https?:\/\/(www\.)?/, '').replace(/^instagram\.com\//, '')
+  const target = normalize(instagramUrl)
+  if (!target) return undefined
+  return live().find(f => f.instagram && normalize(f.instagram) === target)
+}
+
 export async function updateFounder(founder: Founder): Promise<WriteResult> {
   return writeEntity<Founder>({ cacheKey: KEY, item: founder, table: TABLE, toRow })
 }
