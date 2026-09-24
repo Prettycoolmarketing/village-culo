@@ -76,15 +76,16 @@ export function DashboardWelcomePage() {
     const trialUrl = buildPaymentUrl(STANDARD_PAYMENT_LINK, founder?.id ?? '', user?.email)
     return (
       <div className="p-8 sm:pt-12 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-        <div className="px-8 sm:px-12">
-          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">Welcome to Culo Creatives in Canva</h1>
-          <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl">
+        {/* Heading now lives inside the white box, same treatment as "How
+            The Culo Village Works" below it, instead of sitting outside on
+            the bare page background. */}
+        <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4">Welcome to Culo Creatives in Canva</h1>
+          <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
             {hasBilling
               ? "You're all set, jump back into Canva to keep creating."
               : 'Start your 14-day free trial to turn your raw footage into finished blogs, carousels and reels, right inside Canva.'}
           </p>
-        </div>
-        <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             {CREATIVES_STEPS.map((s, i) => (
               <div key={s.title}>
@@ -103,8 +104,8 @@ export function DashboardWelcomePage() {
               Placed above the trial CTA, not after it, since watching how
               it works is what makes starting the trial an easy decision. */}
           <div className="mb-8">
-            <p className="text-xs font-semibold text-[#3E6E92] uppercase tracking-widest mb-3">See it in Canva</p>
-            <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden bg-[#2D2A26]">
+            <p className="text-2xl font-bold text-[#C86A43] mb-3">See Culo Creatives in Action</p>
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#2D2A26]">
               <video
                 src="/creatives/culo-app-demo.mp4"
                 controls
@@ -120,7 +121,7 @@ export function DashboardWelcomePage() {
               rel="noopener noreferrer"
               className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
             >
-              {hasBilling ? 'Open Culo Creatives in Canva' : 'Start my 14-day free trial'}
+              {hasBilling ? 'Open Culo Creatives in Canva' : 'Start my 14 day free trial in Canva'}
             </a>
           </div>
         </section>
