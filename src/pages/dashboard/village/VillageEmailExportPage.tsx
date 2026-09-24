@@ -8,7 +8,7 @@ import { emailSubscribersService, type EmailSubscriber } from '../../../services
 import { emailCampaignsService, type EmailCampaign, type CampaignSendStats } from '../../../services/emailCampaigns'
 import { emailSequencesService, emailSequenceEnrollmentsService, type EmailSequence, type EmailSequenceStep, type EmailSequenceEnrollment } from '../../../services/emailSequences'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
-import { toCSV, downloadCSV } from '../../../utils/emailExport'
+import { toCSV, downloadCSV, splitName } from '../../../utils/emailExport'
 import { bodyTextToHtml, bodyHtmlToText } from '../../../utils/emailBody'
 
 export function VillageEmailExportPage() {
@@ -197,18 +197,44 @@ function SubscribersPanel() {
     ? sortedSubs.filter(s => s.email.toLowerCase().includes(search.trim().toLowerCase()))
     : sortedSubs
 
+  // For pulling the whole list out to work with elsewhere — e.g. adding
+  // them into the curated founder candidate list, same reason Members has
+  // its own CSV export. Same EmailRow shape as that export (blank
+  // founder-specific fields), so the two can be merged/compared directly.
+  function handleExport() {
+    const rows = sortedSubs.map(s => {
+      const { firstName, lastName } = splitName(s.name ?? '')
+      return {
+        email: s.email, firstName, lastName, fullName: s.name ?? '',
+        profileStatus: '', founderSlug: '', profileUrl: '', claimUrl: '',
+        businessName: '', tags: s.source, createdAt: s.createdAt,
+      }
+    })
+    if (rows.length === 0) return
+    downloadCSV(toCSV(rows), `culo-village-subscribers-${new Date().toISOString().slice(0, 10)}.csv`)
+  }
+
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
-        <input
-          type="email"
-          value={newEmail}
-          onChange={e => setNewEmail(e.target.value)}
-          placeholder="Add a subscriber by email"
-          className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] focus:outline-none focus:border-[#C86A43]"
-        />
-        <button onClick={() => void handleAdd()} className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors">
-          Add
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="flex items-center gap-2 flex-1">
+          <input
+            type="email"
+            value={newEmail}
+            onChange={e => setNewEmail(e.target.value)}
+            placeholder="Add a subscriber by email"
+            className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] focus:outline-none focus:border-[#C86A43]"
+          />
+          <button onClick={() => void handleAdd()} className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shrink-0">
+            Add
+          </button>
+        </div>
+        <button
+          onClick={handleExport}
+          disabled={subs.length === 0}
+          className="text-xs font-semibold px-3 py-2 rounded-lg bg-white border border-[#E8E4DD] text-[#2D2A26] hover:border-[#C86A43]/40 disabled:opacity-40 transition-colors shrink-0"
+        >
+          Export CSV
         </button>
       </div>
       {subs.length > 0 && (

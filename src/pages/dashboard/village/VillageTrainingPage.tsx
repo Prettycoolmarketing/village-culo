@@ -29,6 +29,26 @@ Not a fit:
 - Reseller/dropshipping-style accounts with no genuine personal story or expertise.
 - Anyone who mainly posts generic, AI-written-sounding content already.`
 
+const WANTS_IT_PROMPT = `Read through this person's recent YouTube, Instagram or podcast content, plus their website if they have one, and assess how likely they are to actually want a Culo Village profile — not just whether they qualify, but whether the specific thing we offer would appeal to them.
+
+Look for these concrete signals:
+
+Strong buy signals:
+- They've said something like "this took me hours and got 40 views," or otherwise complained their content disappears/doesn't get seen once it's posted.
+- They already write long-form captions, blog posts or LinkedIn articles — they're already investing effort beyond a quick post, which means they'd value that effort being made permanent and searchable instead of buried.
+- They mention wanting to be seen as an authority, a go-to person, or getting speaking/media/client opportunities through their content, rather than posting just for engagement.
+- They post across more than one platform already (e.g. YouTube and Instagram, or podcast and blog) — shows they already care about reach and would want it consolidated rather than scattered.
+- They've mentioned SEO, "getting found on Google," or being findable by ChatGPT/AI specifically — a direct match to what we solve.
+- They don't appear to have an agency or in-house team already managing their content strategy — a solo founder or small team is a much better fit than someone who already has this fully handled.
+- Visible signs they're editing their own content by hand — jump cuts, no subtitles or captions burned in, inconsistent posting gaps, a caption that says something like "sorry for the radio silence, been flat out" — these all point to someone doing content alone, without a system, exactly who benefits most from Culo Creatives and the Village.
+
+Weak or no signal:
+- They only ever post short, low-effort content with no sign they care what happens to it afterward.
+- They already have a large, professionally run personal brand operation (agency, team, existing SEO strategy) — the problem we solve is likely already solved for them.
+- Nothing in their content suggests they think about being "found" at all — they post for their existing audience, not to be discovered by new people.
+
+Give a short verdict: Likely wants this, Possible but unproven, or Unlikely to see the value — with the specific line or behaviour that led you there, not a generic impression.`
+
 const ENRICH_PROMPT = `Fill in the missing details for each row in this sheet — LinkedIn profile URL, Instagram URL, YouTube channel URL — using the podcast, YouTube or article link already in the row as your primary source, since that's the most reliable evidence of who this actually is.
 
 If you genuinely can't find a LinkedIn profile for someone, find a real contact email instead (their business website's contact page, "about" page or footer is usually the best source) and put it in the Email column — we still need a way to reach every real candidate, LinkedIn or not.
@@ -276,6 +296,39 @@ export function VillageTrainingPage() {
           </p>
           <p>Below is the exact brief for who counts as a good fit — copy it to keep next to you while you're looking through episodes, or paste it into Claude to help you judge a specific candidate.</p>
           <CopyPromptButton text={TARGET_PROFILE_PROMPT} label="Copy the target profile" />
+          <p className="pt-3">
+            Fitting the profile isn't the same as actually wanting a Village profile, though — this second
+            prompt checks the difference: not "do they qualify," but "would this specific thing appeal to
+            them." Use it on a candidate you're on the fence about.
+          </p>
+          <CopyPromptButton text={WANTS_IT_PROMPT} label="Copy the 'would they want this' prompt" />
+          <p className="pt-3 font-semibold text-[#2D2A26]">What this actually looks like — example types, not real people</p>
+          <p>
+            These are illustrative patterns to help you recognise a good candidate, not real named
+            individuals — your actual candidates should always come from your own research (Step 1 above),
+            never invented. But this is the shape of who tends to want the Village most:
+          </p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li><strong className="text-[#2D2A26]">The tradie or renovator</strong> — films their own
+              before-and-afters on their phone, visible jump cuts, no subtitles, posts in bursts then goes
+              quiet for weeks. Real expertise, zero system for turning it into anything permanent.</li>
+            <li><strong className="text-[#2D2A26]">The allied health or wellness practitioner</strong> —
+              writes long, genuinely useful Instagram captions and basic Canva carousels themselves, often
+              mentions being stretched thin trying to "keep up" with content on top of actually running
+              their practice.</li>
+            <li><strong className="text-[#2D2A26]">The hospitality or food founder</strong> — shoots
+              behind-the-scenes content on their own phone between service, edits it themselves late at
+              night, posts inconsistently because there's simply no time.</li>
+            <li><strong className="text-[#2D2A26]">The solo B2B consultant or coach</strong> — writes their
+              own long-form LinkedIn posts by hand, no video at all yet, clearly wants to be seen as an
+              authority in their field but has no real content system or team behind them.</li>
+          </ul>
+          <p>
+            The common thread across all four: real expertise, content they're already making themselves by
+            hand, and no professional system turning it into anything that lasts. That combination — genuine
+            substance plus a genuine gap — is exactly who benefits most from both Culo Creatives and the
+            Village.
+          </p>
         </SubSection>
 
         <SubSection title="Step 2 — Enrich and verify with Claude in Excel">
