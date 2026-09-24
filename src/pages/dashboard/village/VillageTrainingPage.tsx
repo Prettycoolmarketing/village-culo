@@ -31,9 +31,11 @@ Not a fit:
 
 const ENRICH_PROMPT = `Fill in the missing details for each row in this sheet — LinkedIn profile URL, Instagram URL, YouTube channel URL — using the podcast, YouTube or article link already in the row as your primary source, since that's the most reliable evidence of who this actually is.
 
+If you genuinely can't find a LinkedIn profile for someone, find a real contact email instead (their business website's contact page, "about" page or footer is usually the best source) and put it in the Email column — we still need a way to reach every real candidate, LinkedIn or not.
+
 Australians only — if you can't confirm this person is Australian-based, leave the row blank and flag it in a comment instead of guessing.
 
-Before filling in a LinkedIn link, confirm it's genuinely the same person as the podcast guest: matching name, matching business, matching location. If you can't confirm the match, write "UNVERIFIED — check manually" in a comment on that cell rather than filling in a link that might be the wrong person.
+Before filling in a LinkedIn link or email, confirm it's genuinely the same person as the podcast guest: matching name, matching business, matching location. If you can't confirm the match, write "UNVERIFIED — check manually" in a comment on that cell rather than filling in a link that might be the wrong person.
 
 Prioritise information found through the original podcast/YouTube episode itself (show notes, episode description, host's own links) over a generic web search — that's a stronger, more reliable connection than a name search turning up someone who just happens to share a name.`
 
@@ -304,21 +306,27 @@ export function VillageTrainingPage() {
           </p>
         </SubSection>
 
-        <SubSection title="Step 3 — Follow them on LinkedIn">
+        <SubSection title="Step 3 — Follow them on LinkedIn (or find their email if they're not on it)">
           <p>
             Once a row has a verified LinkedIn link, follow (or connect with) that person using the Sales
             Navigator access you'll be given. This isn't optional busywork — showing up in their network
             before they ever hear from the Village makes the eventual claim message land as a real, warm
             outreach instead of a cold one out of nowhere.
           </p>
+          <p>
+            If someone genuinely doesn't have a LinkedIn, that's fine — it doesn't rule them out. Find a
+            real contact email for them instead (their business website is usually the best source) and use
+            that as the fallback contact method for Step 6, since LinkedIn was never the actual goal, reaching
+            them is.
+          </p>
         </SubSection>
 
         <SubSection title="Step 4 — Import into the Village">
           <p>
-            Once a batch of rows is fully verified — real Australian founder, correct LinkedIn confirmed,
-            enough detail to build a real profile from — that's what actually goes into the Village, through
-            Bulk Import (linked below). This is the point where a name on a spreadsheet becomes a real,
-            live, curated profile page.
+            Once a batch of rows is fully verified — real Australian founder, a way to actually reach them
+            (LinkedIn or email), enough detail to build a real profile from — that's what actually goes into
+            the Village, through Bulk Import (linked below). This is the point where a name on a spreadsheet
+            becomes a real, live, curated profile page.
           </p>
         </SubSection>
 
@@ -330,11 +338,13 @@ export function VillageTrainingPage() {
           </p>
         </SubSection>
 
-        <SubSection title="Step 6 — Warm LinkedIn message to invite them to claim">
+        <SubSection title="Step 6 — Warm outreach to invite them to claim">
           <p>
-            Last step: message them on LinkedIn (you're already connected from Step 3) letting them know
-            their Village profile exists and how to claim it — use "Copy link to claim" on their profile in
-            Founder Management to get their exact profile URL to send.
+            Last step: reach out and let them know their Village profile exists and how to claim it — use
+            "Copy link to claim" on their profile in Founder Management to get their exact profile URL to
+            send. If you followed/connected with them on LinkedIn in Step 3, message them there. If they had
+            no LinkedIn and you found an email instead, send it there — either way, the message is the same,
+            it's just the channel that changes.
           </p>
         </SubSection>
 
