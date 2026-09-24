@@ -34,6 +34,8 @@ import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
 import { isSupabaseConfigured } from '../../lib/supabase'
+import { accountFeedbackService } from '../../services/accountFeedback'
+import { cancelCreativesSubscription } from '../../services/creativeSubscription'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
@@ -832,6 +834,15 @@ export function DashboardProfilePage() {
   )
   const [readyChecked, setReadyChecked] = useState<Set<string>>(new Set())
   const [publishedChecked, setPublishedChecked] = useState<Set<string>>(new Set())
+  // Cancel Creatives / Delete Profile — both a two-step "tell us why, then
+  // confirm" flow rather than one click, so neither happens by accident.
+  const [cancelFlowOpen, setCancelFlowOpen] = useState(false)
+  const [cancelAnswer, setCancelAnswer] = useState('')
+  const [cancelSubmitting, setCancelSubmitting] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [deleteFlowOpen, setDeleteFlowOpen] = useState(false)
+  const [deleteAnswer, setDeleteAnswer] = useState('')
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false)
   const [publishedBulkBusy, setPublishedBulkBusy] = useState(false)
   const [readyBulkPublishing, setReadyBulkPublishing] = useState(false)
   const [limitModal, setLimitModal] = useState<null | 'imported' | 'self'>(null)
@@ -1233,9 +1244,41 @@ export function DashboardProfilePage() {
 
   async function handleDelete() {
     if (!draft) return
+    setDeleteSubmitting(true)
+    // Best-effort — a founder skipping the feedback box, or the submit
+    // itself failing, must never block the actual deletion they confirmed.
+    if (deleteAnswer.trim()) {
+      await accountFeedbackService.submit({
+        founderId: draft.id, section: 'culo-village', reason: 'delete', answer: deleteAnswer.trim(),
+      }).catch(() => { /* best-effort */ })
+    }
     const result = await deleteFounder(draft.id)
+    setDeleteSubmitting(false)
     if (result.success) navigate('/dashboard/home')
     else setSaveError(result.error ?? 'Could not delete this profile.')
+  }
+
+  async function handleCancelCreatives() {
+    if (!draft) return
+    setCancelSubmitting(true)
+    setCancelError(null)
+    if (cancelAnswer.trim()) {
+      await accountFeedbackService.submit({
+        founderId: draft.id, section: 'culo-creatives', reason: 'cancel', answer: cancelAnswer.trim(),
+      }).catch(() => { /* best-effort */ })
+    }
+    const result = await cancelCreativesSubscription(draft.id)
+    setCancelSubmitting(false)
+    if (!result.success) { setCancelError(result.error ?? 'Could not cancel your subscription. Please try again.'); return }
+    setCancelFlowOpen(false)
+    setCancelAnswer('')
+    // The real write happened server-side (service role, via the Edge
+    // Function) — reflect it here immediately rather than waiting on a
+    // refetch, since draft is this page's own local copy.
+    setDraft(prev => prev && prev.creativeSubscription ? {
+      ...prev,
+      creativeSubscription: { ...prev.creativeSubscription, cancelAtPeriodEnd: true },
+    } : prev)
   }
 
   async function handleSave() {
@@ -2543,6 +2586,67 @@ export function DashboardProfilePage() {
               </Link>
             </div>
 
+            {/* Culo Creatives membership — human-readable status and price
+                only, never a raw Stripe id/reference number. */}
+            {draft.creativeSubscription && (() => {
+              const sub = draft.creativeSubscription
+              const price = sub.tier === 'collaborator' ? '$19/month' : '$25/month'
+              const canCancel = (sub.status === 'trial' || sub.status === 'active') && !sub.cancelAtPeriodEnd
+              return (
+                <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+                  <p className="text-sm font-semibold text-[#2D2A26] mb-1">Culo Creatives Membership</p>
+                  <p className="text-xs text-[#6B7280] mb-3">
+                    {sub.cancelAtPeriodEnd
+                      ? `Cancelling — you're a Culo Creatives member at ${price} until your current billing period ends.`
+                      : sub.status === 'trial'
+                        ? `You're on a free trial of Culo Creatives, ${price} once it ends.`
+                        : sub.status === 'active'
+                          ? `You're a Culo Creatives member at ${price}.`
+                          : sub.status === 'expired'
+                            ? `Your Culo Creatives membership has expired.`
+                            : `Your Culo Creatives membership is cancelled.`}
+                  </p>
+                  {canCancel && !cancelFlowOpen && (
+                    <button
+                      onClick={() => setCancelFlowOpen(true)}
+                      className="text-xs font-semibold text-red-600 hover:underline"
+                    >
+                      Cancel my Culo Creatives subscription
+                    </button>
+                  )}
+                  {canCancel && cancelFlowOpen && (
+                    <div className="mt-2 pt-3 border-t border-[#F3EDE6]">
+                      <p className="text-xs font-semibold text-[#2D2A26] mb-1.5">Before you go, what didn't work for you?</p>
+                      <textarea
+                        value={cancelAnswer}
+                        onChange={e => setCancelAnswer(e.target.value)}
+                        rows={3}
+                        placeholder="Optional, but it genuinely helps us improve Culo Creatives…"
+                        className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 resize-y transition-colors"
+                      />
+                      {cancelError && <p className="text-xs text-red-600 mt-2">{cancelError}</p>}
+                      <div className="flex items-center gap-3 mt-2.5">
+                        <button
+                          onClick={() => { setCancelFlowOpen(false); setCancelAnswer(''); setCancelError(null) }}
+                          disabled={cancelSubmitting}
+                          className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] transition-colors"
+                        >
+                          Never mind, keep my subscription
+                        </button>
+                        <button
+                          onClick={() => void handleCancelCreatives()}
+                          disabled={cancelSubmitting}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                        >
+                          {cancelSubmitting ? 'Cancelling…' : 'Yes, I’m sure — cancel it'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Founder ID</p>
               <p className="text-xs font-mono text-[#6B7280]">{draft.id}</p>
@@ -2564,13 +2668,42 @@ export function DashboardProfilePage() {
                 and can't be undone.
               </p>
               {saveError && <p className="text-xs text-red-600 mb-2">{saveError}</p>}
-              <ConfirmButton
-                label="Delete Profile"
-                confirmLabel="Yes, delete permanently"
-                message="This can't be undone."
-                onConfirm={() => void handleDelete()}
-                className="px-4 py-2 text-sm border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-              />
+              {!deleteFlowOpen ? (
+                <button
+                  onClick={() => setDeleteFlowOpen(true)}
+                  className="px-4 py-2 text-sm border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  Delete Profile
+                </button>
+              ) : (
+                <div>
+                  <p className="text-xs font-semibold text-[#2D2A26] mb-1.5">Before you go, what made you leave?</p>
+                  <textarea
+                    value={deleteAnswer}
+                    onChange={e => setDeleteAnswer(e.target.value)}
+                    rows={3}
+                    placeholder="Optional, but it genuinely helps us improve The Culo Village…"
+                    className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 resize-y transition-colors"
+                  />
+                  <div className="flex items-center gap-3 mt-2.5">
+                    <button
+                      onClick={() => { setDeleteFlowOpen(false); setDeleteAnswer('') }}
+                      disabled={deleteSubmitting}
+                      className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] transition-colors"
+                    >
+                      Never mind, keep my profile
+                    </button>
+                    <ConfirmButton
+                      label="Delete Profile"
+                      confirmLabel="Yes, delete permanently"
+                      message="This can't be undone."
+                      onConfirm={() => void handleDelete()}
+                      disabled={deleteSubmitting}
+                      className="px-4 py-2 text-sm border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
