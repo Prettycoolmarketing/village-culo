@@ -579,6 +579,13 @@ export interface CreativeSubscription {
   // here too (not just on the feedback record) so the dashboard gate can
   // check subscription status without a second lookup.
   feedbackSubmittedAt?: string
+  // Set by stripe-cancel-subscription the moment a founder requests
+  // cancellation — Stripe still honours the rest of the period they've
+  // already paid for, this is just what the dashboard shows in the
+  // meantime. Cleared, and status flipped to 'cancelled', once
+  // stripe-creatives-webhook's customer.subscription.deleted actually
+  // fires at period end.
+  cancelAtPeriodEnd?: boolean
 }
 
 // One founder can only ever submit this once (see feedbackSubmittedAt

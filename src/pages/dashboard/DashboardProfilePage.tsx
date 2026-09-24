@@ -1429,8 +1429,9 @@ export function DashboardProfilePage() {
                 <p className="font-heading text-2xl font-semibold text-white leading-snug">
                   CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
                 </p>
-                <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+                <span className="flex-shrink-0 flex flex-col items-center gap-0.5 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
                   Create with CULO in Canva
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Launching soon</span>
                 </span>
               </div>
             </Link>
@@ -1483,8 +1484,9 @@ export function DashboardProfilePage() {
                     CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
                   </p>
                 </div>
-                <span className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+                <span className="flex-shrink-0 flex flex-col items-center gap-0.5 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
                   Create with CULO in Canva
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Launching soon</span>
                 </span>
               </div>
             </Link>

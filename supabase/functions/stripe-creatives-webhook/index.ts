@@ -135,11 +135,36 @@ serve(async (req) => {
           })
         }
 
+        // First real payment — regardless of whether this founder came
+        // through /join?source=canva, a plain Village signup who later
+        // upgraded, or a curated profile that only just got claimed. A
+        // Canva-sourced signup already gets enrolled into Sequence B at
+        // signup time (see joinFlow.ts), before they've necessarily paid —
+        // this catches everyone else the moment they actually start
+        // paying, which is the one thing all of those paths have in
+        // common. Guarded on !existingSub.stripeSubscriptionId so an
+        // existing paying founder re-running checkout (e.g. a plan change)
+        // doesn't get re-enrolled.
+        const isFirstSubscription = !existingSub.stripeSubscriptionId
         await patchSubscription(founderId, founderData, {
           status: 'active',
           stripeCustomerId: session.customer,
           stripeSubscriptionId: subscriptionId,
         })
+        if (isFirstSubscription) {
+          await admin.from('email_sequence_enrollments')
+            .select('id').eq('sequence_id', 'B').eq('email', (founderData.signupEmail as string | undefined)?.toLowerCase() ?? '')
+            .maybeSingle()
+            .then(async ({ data: existingEnrollment }) => {
+              const email = (founderData.signupEmail as string | undefined)?.trim().toLowerCase()
+              if (!email || existingEnrollment) return
+              const now = new Date().toISOString()
+              await admin.from('email_sequence_enrollments').insert({
+                id: crypto.randomUUID(), sequence_id: 'B', email,
+                data: { sequenceId: 'B', email, name: founderData.name, source: 'canva-paid', startedAt: now, sentDays: [], status: 'active' },
+              })
+            })
+        }
         void syncCanvaSubscription(founderData.canvaUserId as string | undefined, true)
         break
       }
@@ -159,7 +184,13 @@ serve(async (req) => {
             : subscription.status === 'past_due' || subscription.status === 'unpaid'
               ? 'expired'
               : 'cancelled'
-        await patchSubscription(founderRow.id, founderRow.data, { status })
+        await patchSubscription(founderRow.id, founderRow.data, {
+          status,
+          // Cleared once the cancellation actually lands — see
+          // stripe-cancel-subscription, which is the only place this ever
+          // gets set to true.
+          ...(event.type === 'customer.subscription.deleted' ? { cancelAtPeriodEnd: false } : {}),
+        })
         void syncCanvaSubscription(founderRow.data.canvaUserId as string | undefined, status === 'active' || status === 'trial')
         break
       }
