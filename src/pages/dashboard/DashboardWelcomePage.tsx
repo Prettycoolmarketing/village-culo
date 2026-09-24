@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { hasCreativeAccess } from '../../utils/creativeAccess'
@@ -58,6 +58,16 @@ const CREATIVES_STEPS = [
 export function DashboardWelcomePage() {
   const { user } = useAuth()
   const founder = getCurrentFounder(user)
+
+  // A staff-only account (Capo/Admin, no founder record of their own — they
+  // signed up via /dashboard/login, not /join) used to land here anyway and
+  // see the founder-facing Village/Creatives pitch, which has nothing to do
+  // with their actual job. Send them to Staff Training instead, the actual
+  // "read this first" page for a new team member.
+  if (!founder && user && user.role !== 'founder') {
+    return <Navigate to="/dashboard/village/training" replace />
+  }
+
   const canUseCreatives = hasCreativeAccess(founder?.creativeSubscription)
   // Same tier check as JoinOfferPage — every new signup is the Standard
   // $25/mo tier now; only founders who signed up under the old Collaborator

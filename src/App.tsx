@@ -71,6 +71,7 @@ import { DashboardBulkImportPage }            from './pages/dashboard/DashboardB
 import { VillageHQOverviewPage }              from './pages/dashboard/village/VillageHQOverviewPage'
 import { VillageCuratedFoundersPage }         from './pages/dashboard/village/VillageCuratedFoundersPage'
 import { VillageEmailExportPage }             from './pages/dashboard/village/VillageEmailExportPage'
+import { VillageTrainingPage }                from './pages/dashboard/village/VillageTrainingPage'
 import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
 import { CapoTeamPage }                       from './pages/dashboard/village/CapoTeamPage'
 import { CapoOpportunitiesHubPage }           from './pages/dashboard/village/CapoOpportunitiesHubPage'
@@ -253,6 +254,10 @@ export default function App() {
                 importing founders is a founders operation, not a system one. */}
             <Route path="village/imports"      element={<Navigate to="/dashboard/village/founders?tab=imports" replace />} />
             <Route path="village/emails"       element={<RoleProtectedRoute allow={CAPO_PERMISSIONS.emails}><VillageEmailExportPage /></RoleProtectedRoute>}             />
+            {/* Union of every section a Capo-role staff member can actually
+                reach — training explains all of it, so it shouldn't be
+                gated tighter than the narrowest section it covers. */}
+            <Route path="village/training"     element={<RoleProtectedRoute allow={[...new Set([...CAPO_PERMISSIONS.founders, ...CAPO_PERMISSIONS.emails, ...CAPO_PERMISSIONS.pcm])]}><VillageTrainingPage /></RoleProtectedRoute>}     />
             <Route path="village/spotlight"    element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />} />
             <Route path="village/featured"     element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />}                                                              />
             <Route path="village/editorial"    element={<Navigate to="/dashboard/village/opportunities?tab=spotlight" replace />}                                                              />

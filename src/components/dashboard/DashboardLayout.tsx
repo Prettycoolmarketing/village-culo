@@ -49,6 +49,13 @@ function NavItem({ to, label, icon, hint }: { to: string; label: string; icon: R
   return (
     <NavLink
       to={to}
+      // Without `end`, NavLink treats any nested route as also matching its
+      // ancestor — Client Tracker (/dashboard/pcm) and Leads
+      // (/dashboard/pcm/leads) both lit up together while viewing Leads,
+      // since /dashboard/pcm is a prefix of /dashboard/pcm/leads. Every
+      // entry here is its own distinct destination, so exact matching is
+      // the correct default.
+      end
       title={hint}
       className={({ isActive }) =>
         `flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors ${
@@ -307,11 +314,12 @@ export function DashboardLayout() {
                 || canAccessCapoSection(user?.role, 'emails')) && (
                 <>
                   <SectionLabel label="CULO Village" />
-                  {canAccessCapoSection(user?.role, 'emails') && (
-                    <NavItem to="/dashboard/village/emails" label="Email management" icon={<Icon path={icons.email} />} />
-                  )}
+                  <NavItem to="/dashboard/village/training" label="Staff Training" icon={<Icon path={icons.hq} />} hint="Read this first" />
                   {canAccessCapoSection(user?.role, 'founders') && (
                     <NavItem to="/dashboard/village/founders" label="Founder Management" icon={<Icon path={icons.curated} />} />
+                  )}
+                  {canAccessCapoSection(user?.role, 'emails') && (
+                    <NavItem to="/dashboard/village/emails" label="Email management" icon={<Icon path={icons.email} />} />
                   )}
                 </>
               )}
