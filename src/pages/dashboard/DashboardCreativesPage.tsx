@@ -11,21 +11,6 @@ import { Tabs, type DashTab } from '../../components/dashboard/Tabs'
 // DashboardWelcomePage's REAL_CANVA_APP_URL.
 const CULO_CANVA_URL = 'https://www.culovillage.com/how-culo-canva'
 
-const HOW_IT_WORKS_STEPS = [
-  {
-    title: 'Answer a few personalised questions',
-    desc: 'Complete About You and Shape Your Idea so CULO generates hooks, captions, blogs, carousels and Quick Rhythm reel content in your voice.',
-  },
-  {
-    title: 'Upload your raw footage',
-    desc: 'B-roll, Talking Head, Voice Over, Vlog or Photos — each becomes a different reel or carousel format.',
-  },
-  {
-    title: 'Get social media ready content back',
-    desc: 'Every reel comes subtitled, hooked and captioned, straight out of Canva.',
-  },
-]
-
 // ─── Welcome tab ────────────────────────────────────────────────────────────
 
 function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: string }) {
@@ -38,18 +23,6 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
         content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
         Village.
       </p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-        {HOW_IT_WORKS_STEPS.map((s, i) => (
-          <div key={s.title}>
-            <div className="w-11 h-11 rounded-full bg-[#FBF1EB] text-[#C86A43] flex items-center justify-center text-sm font-bold shrink-0 mb-3">
-              {i + 1}
-            </div>
-            <p className="text-base font-semibold text-[#2D2A26] mb-1">{s.title}</p>
-            <p className="text-sm text-[#9CA3AF] leading-relaxed">{s.desc}</p>
-          </div>
-        ))}
-      </div>
 
       <div>
         <p className="text-xl font-semibold text-[#2D2A26] mb-6">How to use CULO Creatives in Canva</p>
