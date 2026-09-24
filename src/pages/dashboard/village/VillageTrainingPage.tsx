@@ -73,9 +73,19 @@ If any of them — including the original person — has published a book or sel
 
 Australians only. Skip anyone you can't confirm is a real founder with genuine expertise, and skip anyone already in the sheet.`
 
+const MISSION_CONTEXT_PROMPT = `Before we start, here's what this spreadsheet is actually for, so you understand why every prompt I give you in this session matters and what "good" actually means.
+
+The Culo Village is a publishing platform for real founders. Most founders already have genuine content scattered across YouTube, podcasts, Instagram and articles — but it's buried in feeds and platforms search engines barely index, so nobody outside their existing audience ever finds it. The Village pulls that content in and restructures it into proper, permanent articles that search engines and AI systems (like ChatGPT) can actually read, understand and cite. That's the whole point: turning real expertise that already exists but is invisible into something genuinely discoverable.
+
+This spreadsheet is the first step: building a list of real Australian founders worth bringing into the Village, verified and researched properly before anyone touches Bulk Import.
+
+The one thing that matters more than anything else in this sheet is value, not volume. A row filled in just to look complete — a generic one-line bio, an unverified link, a guessed-at LinkedIn — is worse than an empty one, because it either produces a thin, forgettable profile that does nothing for the founder's credibility, or it points at the wrong person entirely. Every cell you fill in should be something you'd genuinely stand behind as accurate and substantial, not just present.
+
+So as you work through whatever I ask next: prioritise being right and being substantial over being fast or complete. Leave something blank and flagged rather than guess. A shorter list of real, well-verified, genuinely valuable candidates is worth far more than a long list padded with thin or unverified rows.`
+
 const DESCRIPTION_STRENGTH_PROMPT = `For each row in this sheet, look at the Bio/Description column and assess whether it's substantial enough to become a real published article — not just long enough, genuinely substantial.
 
-Flag any row where the description is under roughly 300 characters, reads like a one-line summary rather than a real piece of writing, or is mostly generic ("passionate founder helping people achieve their goals") rather than specific to what this person actually does or has said.
+Flag any row where the description from their podcast, article or YouTube description is under roughly 300 characters, reads like a one-line summary rather than a real piece of writing, or is mostly generic ("passionate founder helping people achieve their goals") rather than specific to what this person actually does or has said.
 
 For anything flagged, either: (a) find a longer, more specific description from the same source (the YouTube video's own description, the podcast show notes, the article itself) and replace it, or (b) mark it "NEEDS REAL DESCRIPTION" in a comment so it gets fixed by hand before import, rather than importing something too thin to read as a real article.
 
@@ -300,6 +310,16 @@ export function VillageTrainingPage() {
           is six steps, in order. Each one matters — skipping the verification steps is how a wrong LinkedIn
           link or a US-based founder ends up in the Village by mistake.
         </p>
+
+        <SubSection title="Before Step 1 — paste this into Claude first, every new session">
+          <p>
+            Claude in Excel doesn't automatically know what this sheet is for or why accuracy matters more
+            than speed. Paste this in once at the start of a new session, before any of the prompts below —
+            it sets the actual standard for everything you ask it to do afterward: real value over filled
+            cells, verified over guessed, a shorter good list over a longer thin one.
+          </p>
+          <CopyPromptButton text={MISSION_CONTEXT_PROMPT} label="Copy the context prompt" />
+        </SubSection>
 
         <SubSection title="Step 1 — Find candidates, mostly from podcasts">
           <p>
