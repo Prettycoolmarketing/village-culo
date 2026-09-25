@@ -16,16 +16,8 @@ const CULO_CANVA_URL = 'https://www.culovillage.com/how-culo-canva'
 function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: string }) {
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26]">What is CULO Creatives, Exclusively in Canva?</h2>
-
-      <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl">
-        CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
-        content, directly inside Canva — nowhere else. Create there. Publish it here. Keep building your
-        Village.
-      </p>
-
       <div>
-        <p className="text-xl font-semibold text-[#2D2A26] mb-6">How to use CULO Creatives in Canva</p>
+        <p className="text-xl font-semibold text-[#2D2A26] mb-6">How to edit your raw footage</p>
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
           <iframe
             src="https://www.youtube.com/embed/qe0pMAlpVFc?start=21"
@@ -190,7 +182,15 @@ export function DashboardCreativesPage() {
 
   return (
     <div className="p-8" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <h1 className="text-2xl font-bold text-[#2D2A26] mb-6">Culo Creatives in Canva</h1>
+      {/* Heading and description lead the page on both tabs; the tab
+          buttons sit underneath them rather than above under a separate
+          page title. */}
+      <h1 className="font-heading text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-3">What is CULO Creatives, Exclusively in Canva?</h1>
+      <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
+        CULO Creatives helps founders turn messy thoughts, stories and raw footage into different formats of
+        content, directly inside Canva, nowhere else. Create there. Publish it here. Keep building your
+        Village.
+      </p>
 
       <Tabs tabs={TABS} active={tab} onChange={setTab} className="mb-6" />
 
