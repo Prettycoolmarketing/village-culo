@@ -3,6 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getFounder } from '../../services/founders'
 import { importedContentService } from '../../services/importedContent'
+import { isReadyToPublish, hasRealCaption } from './DashboardImportContentPage'
 import { getUnlockedImportedIds, hasArchiveAccess } from '../../utils/archiveUnlock'
 import {
   getArchiveTier, ARCHIVE_UNLOCK_FREE_COUNT, isLive, offersSubsetUnlock,
@@ -39,6 +40,10 @@ export function DashboardArchiveFoundPage() {
   const tier = getArchiveTier(totalCount)
   const previewMock = unlocked[0]
   const lockedShown = locked.slice(0, 12)
+  // Same split Content's own tabs use, so the numbers here match exactly
+  // what the founder sees once they get there.
+  const readyCount = allImported.filter(i => !i.flaggedForReview && isReadyToPublish(i) && hasRealCaption(i)).length
+  const needsValueCount = totalCount - readyCount
 
   return (
     <div className="p-8 sm:pt-14" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -71,6 +76,57 @@ export function DashboardArchiveFoundPage() {
         <p className="text-sm text-[#6B7280] leading-relaxed">
           Add the Village badge to your own site, and every one of those links leads straight back to you too.
         </p>
+      </div>
+
+      {/* Set expectations before anyone pays: importing doesn't publish
+          anything. Every piece waits for the founder to look at it, and
+          some won't be ready yet. Said plainly up front so nobody unlocks
+          expecting 200 finished articles to appear on their own. */}
+      <div className="mb-10 bg-white rounded-2xl border border-[#E8E4DD] px-8 py-7">
+        <p className="text-lg font-bold text-[#2D2A26] mb-2">Nothing goes live until you've seen it</p>
+        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
+          Unlocking brings your archive in, it doesn't publish it. Every piece waits in your dashboard for you
+          to check first. Some will be ready straight away. Others came in too thin to publish yet, with no
+          description or less than about 300 characters of real writing behind them.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="rounded-xl border border-[#5E6B4A]/25 bg-[#5E6B4A]/5 px-5 py-4">
+            <p className="text-xs font-semibold text-[#5E6B4A] uppercase tracking-wide">Ready to Publish</p>
+            <p className="text-3xl font-bold text-[#2D2A26] mt-1">{readyCount}</p>
+            <p className="text-xs text-[#6B7280] mt-1">Has enough real writing to become an article now.</p>
+          </div>
+          <div className="rounded-xl border border-[#D6A94D]/35 bg-[#D6A94D]/10 px-5 py-4">
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Needs More Value</p>
+            <p className="text-3xl font-bold text-[#2D2A26] mt-1">{needsValueCount}</p>
+            <p className="text-xs text-[#6B7280] mt-1">Too thin to publish yet, easy to fix.</p>
+          </div>
+        </div>
+
+        <p className="text-sm font-semibold text-[#2D2A26] mb-1.5">Adding value is simple</p>
+        <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
+          Open any piece and use the Transcript button to bring in what you actually said. The more real
+          writing a piece has, the more it adds to your discovery, and the more it shapes the FAQs and topics
+          on your profile.
+        </p>
+
+        <p className="text-sm font-semibold text-[#2D2A26] mb-3">Every post becomes its own web article</p>
+        <div className="flex flex-col sm:flex-row items-stretch gap-3 text-sm">
+          <div className="flex-1 rounded-xl bg-[#F8F5F0] px-4 py-3">
+            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1">Your post</p>
+            <p className="text-[#2D2A26]">A reel, video or episode, buried in a feed</p>
+          </div>
+          <div className="hidden sm:flex items-center text-[#C86A43] text-lg">→</div>
+          <div className="flex-1 rounded-xl bg-[#F8F5F0] px-4 py-3">
+            <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1">Your dashboard</p>
+            <p className="text-[#2D2A26]">Checked by you, sorted into Ready or Needs More Value</p>
+          </div>
+          <div className="hidden sm:flex items-center text-[#C86A43] text-lg">→</div>
+          <div className="flex-1 rounded-xl bg-[#FBF1EB] px-4 py-3">
+            <p className="text-[10px] font-semibold text-[#C86A43] uppercase tracking-wide mb-1">The Village</p>
+            <p className="text-[#2D2A26]">Its own page, readable by Google and AI, linked back to you</p>
+          </div>
+        </div>
       </div>
 
       {/* The whole upsell, full width: the unlock stat is itself the
