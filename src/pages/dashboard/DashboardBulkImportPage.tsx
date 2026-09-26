@@ -255,10 +255,15 @@ export function DashboardBulkImportPage() {
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
 
+  // The line at the end isn't just polite — it's the required opt-out for
+  // this to be a compliant unsolicited commercial message (Spam Act 2003,
+  // and the equivalent in NZ/UK for anyone curated from there). Whoever
+  // sends this — Shakas, Gia, anyone else — gets it by default rather than
+  // needing to remember to add their own.
   function outreachMsg(name: string, slug: string) {
     const profileUrl = `${origin}/founders/${slug}`
     const claimUrl   = `${origin}/claim/${slug}`
-    return `Hi ${name}!\n\nI came across your work and added you to CULO Village — a curated directory of Australian founder stories and businesses.\n\nYour public profile is live here: ${profileUrl}\n\nIf you'd like to claim it, edit your details, or start creating content with CULO, you can do that here: ${claimUrl}\n\nIt's completely free to claim. Happy to help you get set up — let me know!`
+    return `Hi ${name}!\n\nI came across your work and added you to CULO Village — a curated directory of Australian founder stories and businesses.\n\nYour public profile is live here: ${profileUrl}\n\nIf you'd like to claim it, edit your details, or start creating content with CULO, you can do that here: ${claimUrl}\n\nIt's completely free to claim. Happy to help you get set up — let me know!\n\nIf you'd rather not be listed, just reply STOP and I'll remove your profile — no hard feelings.`
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────────
