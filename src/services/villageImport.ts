@@ -204,6 +204,28 @@ function isValidUrl(url: string): boolean {
 // different, equally real shape; this converts it into one instead of
 // rejecting it.
 
+// A curated Bio arrives as one continuous block with no line breaks at all —
+// normalizeBlogSpacing (used when this becomes a story's blog body) only
+// tidies up *existing* blank lines, so a bio with none stayed one dense,
+// hard-to-read paragraph on the published page regardless. Groups sentences
+// into short paragraphs so it actually reads like an article. Deliberately
+// simple (splits on ". "/"! "/"? " followed by a capital letter) — good
+// enough for real biographical prose, not a full sentence-boundary parser.
+function paragraphize(text: string, sentencesPerParagraph = 2): string {
+  const sentences = text
+    .trim()
+    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+    .map(s => s.trim())
+    .filter(Boolean)
+  if (sentences.length <= sentencesPerParagraph) return text.trim()
+
+  const paragraphs: string[] = []
+  for (let i = 0; i < sentences.length; i += sentencesPerParagraph) {
+    paragraphs.push(sentences.slice(i, i + sentencesPerParagraph).join(' '))
+  }
+  return paragraphs.join('\n\n')
+}
+
 function str(v: unknown): string | undefined {
   if (typeof v !== 'string') return undefined
   const t = v.trim()
@@ -261,7 +283,13 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
   // MIN_AUTO_PUBLISH_DESCRIPTION_LENGTH, and silently stays a bare linked
   // embed instead of becoming its own real, published article page.
   const headline = str(row['Headline'])
-  const bio = str(row['Bio'])
+  // Paragraph-broken once, then reused everywhere the bio shows up (the
+  // founder's own bio field and every content entry's description) — a
+  // curated bio arrives as one dense block with no line breaks, and reads
+  // as one wall of text on both the profile and the published article
+  // otherwise.
+  const rawBio = str(row['Bio'])
+  const bio = rawBio ? paragraphize(rawBio) : undefined
   const articleUrl  = str(row['Article URL'])
   const youtubeUrl  = str(row['YouTube URL'])
   const podcastUrl  = str(row['Podcast URL'])
