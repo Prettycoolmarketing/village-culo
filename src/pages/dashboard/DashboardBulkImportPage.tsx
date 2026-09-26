@@ -5,7 +5,7 @@ import { importBatchService } from '../../services/importBatch'
 import { DEFAULT_IMPORT_OPTIONS } from '../../types/villageImport'
 import type { VillageImportPackage, VIFValidationResult, VIFImportOptions, VIFImportResult } from '../../types/villageImport'
 import { useAuth } from '../../contexts/AuthContext'
-import { getFounder, updateFounder, deleteFounderAccount } from '../../services/founders'
+import { getFounder, deleteFounderAccount } from '../../services/founders'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal } from '../../components/dashboard/FounderEditModal'
 import type { Founder } from '../../types'
@@ -159,16 +159,7 @@ export function DashboardBulkImportPage() {
   const [copied, setCopied]     = useState<string | null>(null)
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
   const [deletedIds, setDeletedIds]         = useState<Set<string>>(new Set())
-  const [publishingId, setPublishingId]     = useState<string | null>(null)
   const [resultTick, setResultTick]         = useState(0)
-
-  async function handlePublish(id: string) {
-    setPublishingId(id)
-    const founder = getFounder(id)
-    if (founder) await updateFounder({ ...founder, status: 'published' })
-    setPublishingId(null)
-    setResultTick(t => t + 1)
-  }
 
   async function handleDeleteImported(id: string) {
     const result = await deleteFounderAccount(id)
@@ -674,90 +665,73 @@ export function DashboardBulkImportPage() {
               <div className="space-y-3">
                 {result.created.filter(f => !deletedIds.has(f.id)).map(f => {
                   const profileUrl = `${origin}/founders/${f.slug}`
-                  const claimUrl   = `${origin}/claim/${f.slug}`
                   const msgKey     = `outreach-${f.id}`
                   const profKey    = `profile-${f.id}`
-                  const claimKey   = `claim-${f.id}`
                   const live       = getFounder(f.id)
                   void resultTick // recompute `live` after publish/delete
 
                   return (
-                    <div key={f.id} className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
-                      <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#F3EDE6]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#F3EDE6] flex items-center justify-center text-[#C86A43] text-sm font-bold flex-shrink-0">
-                            {f.name[0]}
-                          </div>
-                          <div>
+                    <div
+                      key={f.id}
+                      onClick={() => { if (live) setEditingFounder(live) }}
+                      className="bg-white rounded-xl border border-[#E8E4DD] hover:border-[#C86A43]/50 hover:shadow-sm transition-all cursor-pointer overflow-hidden"
+                    >
+                      <div className="flex items-center gap-4 px-5 py-4">
+                        <div className="w-9 h-9 rounded-full bg-[#F3EDE6] flex items-center justify-center text-[#C86A43] text-sm font-bold flex-shrink-0">
+                          {f.name[0]}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-[#2D2A26]">{f.name}</p>
-                            <p className="text-[10px] text-[#9CA3AF] font-mono">/founders/{f.slug}</p>
+                            <Pill label={live?.status === 'published' ? 'Published' : 'Draft — not public yet'} color={live?.status === 'published' ? 'green' : 'amber'} />
+                          </div>
+                          <p className="text-[10px] text-[#9CA3AF] font-mono">/founders/{f.slug}</p>
+                          <div className="flex flex-wrap items-center gap-3 mt-2" onClick={e => e.stopPropagation()}>
+                            <a
+                              href={profileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
+                            >
+                              View ↗
+                            </a>
+                            <button
+                              onClick={() => copyText(profileUrl, profKey)}
+                              className={`text-[11px] font-semibold transition-colors ${
+                                copied === profKey ? 'text-[#5E6B4A]' : 'text-[#9CA3AF] hover:text-[#C86A43]'
+                              }`}
+                            >
+                              {copied === profKey ? '✓ Copied' : 'Copy Link'}
+                            </button>
+                            <button
+                              onClick={() => copyText(outreachMsg(f.name, f.slug), msgKey)}
+                              className={`text-[11px] font-semibold transition-colors ${
+                                copied === msgKey ? 'text-[#5E6B4A]' : 'text-[#9CA3AF] hover:text-[#C86A43]'
+                              }`}
+                            >
+                              {copied === msgKey ? '✓ Copied' : 'Copy LinkedIn Outreach'}
+                            </button>
+                            <ConfirmButton
+                              label="Delete"
+                              confirmLabel="Yes, delete"
+                              message={`Delete ${f.name}? This can't be undone.`}
+                              onConfirm={() => void handleDeleteImported(f.id)}
+                              className="text-[11px] font-semibold text-red-500 hover:text-red-600 transition-colors"
+                            />
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <a
-                            href={profileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
-                          >
-                            View ↗
-                          </a>
-                          <Pill label={live?.status === 'published' ? 'Published' : 'Draft — not public yet'} color={live?.status === 'published' ? 'green' : 'amber'} />
-                        </div>
-                      </div>
-                      <div className="px-5 py-3 flex flex-wrap items-center gap-2">
+                        {/* Bigger, on the right — the one thing every one of
+                            these rows needs: open it, look at it properly,
+                            and Publish from inside there (see
+                            FounderEditModal) rather than a Publish button
+                            sitting out here that skips the review step
+                            entirely. */}
                         <button
-                          onClick={() => copyText(profileUrl, profKey)}
-                          className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                            copied === profKey
-                              ? 'bg-[#5E6B4A] text-white'
-                              : 'bg-[#F3EDE6] text-[#C86A43] hover:bg-[#C86A43] hover:text-white'
-                          }`}
+                          onClick={e => { e.stopPropagation(); if (live) setEditingFounder(live) }}
+                          className="shrink-0 px-5 py-3 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
                         >
-                          {copied === profKey ? '✓ Copied' : 'Copy Profile URL'}
+                          Edit →
                         </button>
-                        <button
-                          onClick={() => copyText(claimUrl, claimKey)}
-                          className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                            copied === claimKey
-                              ? 'bg-[#5E6B4A] text-white'
-                              : 'bg-[#F3EDE6] text-[#C86A43] hover:bg-[#C86A43] hover:text-white'
-                          }`}
-                        >
-                          {copied === claimKey ? '✓ Copied' : 'Copy Claim URL'}
-                        </button>
-                        <button
-                          onClick={() => copyText(outreachMsg(f.name, f.slug), msgKey)}
-                          className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-                            copied === msgKey
-                              ? 'bg-[#5E6B4A] text-white'
-                              : 'bg-white border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43]'
-                          }`}
-                        >
-                          {copied === msgKey ? '✓ Copied' : 'Copy LinkedIn Outreach'}
-                        </button>
-                        <button
-                          onClick={() => { if (live) setEditingFounder(live) }}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors"
-                        >
-                          Edit
-                        </button>
-                        {live?.status !== 'published' && (
-                          <button
-                            onClick={() => void handlePublish(f.id)}
-                            disabled={publishingId === f.id}
-                            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A] text-white hover:bg-[#4a5538] disabled:opacity-60 transition-colors"
-                          >
-                            {publishingId === f.id ? 'Publishing…' : 'Publish'}
-                          </button>
-                        )}
-                        <ConfirmButton
-                          label="Delete"
-                          confirmLabel="Yes, delete"
-                          message={`Delete ${f.name}? This can't be undone.`}
-                          onConfirm={() => void handleDeleteImported(f.id)}
-                          className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors ml-auto"
-                        />
                       </div>
                     </div>
                   )

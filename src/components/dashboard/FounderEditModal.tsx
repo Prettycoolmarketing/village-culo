@@ -167,7 +167,12 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
       </div>
       <div>
         <label className={LABEL_CLS}>Bio</label>
-        <textarea className={`${INPUT_CLS} resize-y`} rows={4} value={bio} onChange={e => setBio(e.target.value)} />
+        <textarea
+          className={`${INPUT_CLS} resize-y leading-relaxed`}
+          rows={10}
+          value={bio}
+          onChange={e => setBio(e.target.value)}
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -232,7 +237,18 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
   const [tab, setTab] = useState<'profile' | 'articles'>('profile')
   const [current, setCurrent] = useState(founder)
   const [tick, setTick] = useState(0)
+  const [publishing, setPublishing] = useState(false)
   const articleCount = importedContentService.getAll({ founderId: founder.id }).length
+
+  async function handlePublish() {
+    setPublishing(true)
+    const result = await updateFounder({ ...current, status: 'published' })
+    setPublishing(false)
+    if (result.success) {
+      setCurrent(prev => ({ ...prev, status: 'published' }))
+      onChanged()
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -254,13 +270,30 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
               <p className="text-xs text-[#9CA3AF] truncate">/founders/{current.slug}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors text-xl leading-none px-1"
-            aria-label="Close"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Publish lives here, inside the review popup, not as a
+                one-click button out on the results list — the whole point
+                of a draft-first import is that someone's actually looked at
+                this before it goes live. */}
+            {current.status === 'published' ? (
+              <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A]/10 text-[#5E6B4A]">Published</span>
+            ) : (
+              <button
+                onClick={() => void handlePublish()}
+                disabled={publishing}
+                className="text-sm font-semibold px-4 py-2 rounded-xl bg-[#5E6B4A] text-white hover:bg-[#4a5538] disabled:opacity-60 transition-colors"
+              >
+                {publishing ? 'Publishing…' : 'Publish'}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors text-xl leading-none px-1"
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <Tabs
