@@ -199,23 +199,30 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
     location: str(row['Business Location']),
   }] : undefined
 
-  // The one link a founder-level field doesn't already cover — no title or
-  // description of its own in this shape, so it becomes a plain content
-  // entry (an embed, not an auto-published story: there's nothing here long
-  // enough to build a real article from) rather than being silently dropped.
-  const articleUrl = str(row['Article URL'])
-  const content: VillageImportContent[] | undefined = articleUrl ? [{
-    title: `${fullName} — featured article`,
-    url: articleUrl,
-    platform: 'article',
+  // Every founder gets one real content entry, not just the ones who happen
+  // to have an Article URL — Article URL is preferred (it's the actual
+  // written piece), but a founder with only a YouTube or podcast link still
+  // gets one, otherwise they'd import with zero content and never become a
+  // published article at all. The bio becomes this entry's description —
+  // without it, the item had no description of its own, fell well under
+  // MIN_AUTO_PUBLISH_DESCRIPTION_LENGTH, and silently stayed a bare linked
+  // embed instead of the real published article per founder this is
+  // actually meant to produce.
+  const primaryContentUrl = str(row['Article URL']) ?? str(row['YouTube URL']) ?? str(row['Podcast URL'])
+  const headline = str(row['Headline'])
+  const bio = str(row['Bio'])
+  const content: VillageImportContent[] | undefined = primaryContentUrl ? [{
+    title: headline ?? `${fullName}'s story`,
+    url: primaryContentUrl,
+    description: bio,
   }] : undefined
 
   const digitalProductUrl = str(row['Digital Product URL'])
 
   return {
     fullName,
-    headline: str(row['Headline']),
-    bio: str(row['Bio']),
+    headline,
+    bio,
     country: str(row['Country']),
     state: str(row['State']),
     city: str(row['City']),
