@@ -199,7 +199,7 @@ export function StoryPreviewPage() {
                   <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" role="list">
                     {story.carouselImages.map((src, i) => (
                       <li key={i} role="listitem">
-                        <div className="rounded-xl overflow-hidden" style={{ aspectRatio: '1/1' }}>
+                        <div className="rounded-xl overflow-hidden" style={{ aspectRatio: '4/3' }}>
                           <img src={src} alt={`Carousel slide ${i + 1} of ${story.carouselImages!.length}`} className="w-full h-full object-cover" loading="lazy" />
                         </div>
                       </li>

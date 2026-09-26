@@ -158,7 +158,7 @@ function CarouselContent({ images, title }: { images: string[]; title: string })
       >
         {images.map((src, i) => (
           <li key={i} role="listitem">
-            <div className="rounded-xl overflow-hidden" style={{ aspectRatio: '1/1' }}>
+            <div className="rounded-xl overflow-hidden" style={{ aspectRatio: '4/3' }}>
               <img
                 src={src}
                 alt={`Carousel slide ${i + 1} of ${images.length} — ${title}`}

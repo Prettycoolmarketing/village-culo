@@ -130,7 +130,7 @@ export function VillagePage() {
                 the stories, experiences and insights you already have.
               </p>
               <HomeInstantJoin />
-              <Link to="/how-culo-canva" className="inline-block text-sm font-medium text-white/50 hover:text-white transition-colors mt-4">
+              <Link to="/how-culo-canva" className="inline-block text-base sm:text-lg font-semibold text-white hover:text-primary transition-colors mt-5 underline underline-offset-4 decoration-white/30 hover:decoration-primary">
                 Learn more about CULO Creatives in Canva →
               </Link>
             </div>
