@@ -387,12 +387,27 @@ export function FounderProfilePage() {
                   </span>
                 </p>
               </div>
-              <Link
-                to={`/claim/${founder.slug}`}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-colors"
-              >
-                Is this you? Claim this profile →
-              </Link>
+              <div className="flex flex-col items-start sm:items-end gap-1.5 flex-shrink-0">
+                <Link
+                  to={`/claim/${founder.slug}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  Is this you? Claim this profile →
+                </Link>
+                {/* The banner text above already promises "claim it or
+                    request removal" — this is that actual link, not just a
+                    claim to have one. Pre-fills the message so CAPO gets the
+                    founder's name and slug without the person having to
+                    explain it themselves. */}
+                <Link
+                  to={`/culocontact?source=profile-removal-request&message=${encodeURIComponent(
+                    `Please remove my curated profile from The Culo Village.\n\nName: ${founder.name}\nProfile: ${typeof window !== 'undefined' ? window.location.origin : ''}/founders/${founder.slug}`,
+                  )}`}
+                  className="text-[11px] text-blue-700 hover:underline"
+                >
+                  Not you, or don't want to be listed? Request removal
+                </Link>
+              </div>
             </div>
           </InnerContainer>
         </div>

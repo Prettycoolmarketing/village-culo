@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { submitSupportRequest } from '../services/supportRequest'
@@ -44,9 +45,14 @@ export function ContactPage() {
 }
 
 function ContactForm() {
+  // A link from a curated founder's own profile (or the outreach email)
+  // pre-fills the message so someone asking to be removed doesn't have to
+  // explain from scratch who they are or what they're asking for — see the
+  // "Request removal" link on the curated-profile banner.
+  const [searchParams] = useSearchParams()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(searchParams.get('message') ?? '')
   const [status, setStatus] = useState<'idle' | 'busy' | 'done' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
 
@@ -55,7 +61,8 @@ function ContactForm() {
     if (!name.trim() || !email.trim() || !message.trim()) return
     setStatus('busy')
     setError(null)
-    const result = await submitSupportRequest({ name: name.trim(), email: email.trim(), message: message.trim(), source: 'contact-page' })
+    const source = searchParams.get('source') ?? 'contact-page'
+    const result = await submitSupportRequest({ name: name.trim(), email: email.trim(), message: message.trim(), source })
     if (result.success) setStatus('done')
     else { setStatus('error'); setError(result.error ?? 'Could not send your message. Please try again.') }
   }
