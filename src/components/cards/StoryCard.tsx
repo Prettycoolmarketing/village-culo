@@ -66,6 +66,7 @@ export function StoryCard({
           tabIndex={0}
         >
           <CoverImage
+            fallbackSrc="/placeholders/village-story.svg"
             src={story.coverImage}
             alt={`Cover image for "${story.title}" by ${founder?.name ?? 'Unknown founder'}`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -181,6 +182,7 @@ export function StoryCard({
           aria-hidden="true"
         >
           <CoverImage
+            fallbackSrc="/placeholders/village-story.svg"
             src={story.coverImage}
             alt=""
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -222,6 +224,7 @@ export function StoryCard({
         aria-hidden="true"
       >
         <CoverImage
+          fallbackSrc="/placeholders/village-story.svg"
           src={story.coverImage}
           alt=""
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

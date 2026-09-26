@@ -50,6 +50,14 @@ export function FoundersPage() {
   const matchCount = getFounders(filter).length
   const hasActiveFilter = activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all'
   const featuredFounders = getFounders({ featured: true, publicOnly: true })
+  // "All Founders" excludes anyone already shown in "Featured Founders"
+  // above, to avoid repeating the same few people twice. But when every
+  // real founder happens to be featured, that leaves an empty grid showing
+  // "the first Publisher is almost here" right under a real, live founder —
+  // a contradiction on the same page. Only render the section when there's
+  // actually someone left to show there, or when there's genuinely nobody
+  // at all (the true "nothing here yet" case).
+  const allFoundersAlreadyFeatured = !hasActiveFilter && matchCount > 0 && matchCount <= featuredFounders.length
 
   function clearFilters() {
     setActiveLocation('all')
@@ -189,32 +197,36 @@ export function FoundersPage() {
 
       {/* ── Founder grid — "View all founders" lives here now, not as a tile
           inside Featured Founders above: this section already shows every
-          founder, so it's the actual "view all," not a link pointing at one. */}
-      <section
-        id="founders-directory"
-        className="py-12 md:py-16 scroll-mt-32"
-        aria-label={hasActiveFilter ? 'Filtered founders' : 'All founders'}
-      >
-        <InnerContainer>
-          <FounderGrid
-            filter={filter}
-            // Featured founders already have their own row above — leaving
-            // them out here too avoids showing the same few people twice
-            // on the same page. Only while browsing unfiltered; an active
-            // filter should still surface a matching featured founder.
-            excludeIds={!hasActiveFilter ? featuredFounders.map(f => f.id) : undefined}
-            sortByJoinOrder={!hasActiveFilter}
-            heading="All Founders"
-            columns={3}
-            cardVariant="featured"
-            emptyTitle={hasActiveFilter ? 'No founders match these filters' : 'The first Publisher is almost here.'}
-            emptyMessage={hasActiveFilter
-              ? 'Try clearing one or more filters to see more founders.'
-              : 'CULO Village is setting up for its founding members. The first Publisher will arrive soon — and everything they share will live here permanently.'
-            }
-          />
-        </InnerContainer>
-      </section>
+          founder, so it's the actual "view all," not a link pointing at one.
+          Skipped entirely when every real founder is already featured above
+          — see allFoundersAlreadyFeatured. */}
+      {!allFoundersAlreadyFeatured && (
+        <section
+          id="founders-directory"
+          className="py-12 md:py-16 scroll-mt-32"
+          aria-label={hasActiveFilter ? 'Filtered founders' : 'All founders'}
+        >
+          <InnerContainer>
+            <FounderGrid
+              filter={filter}
+              // Featured founders already have their own row above — leaving
+              // them out here too avoids showing the same few people twice
+              // on the same page. Only while browsing unfiltered; an active
+              // filter should still surface a matching featured founder.
+              excludeIds={!hasActiveFilter ? featuredFounders.map(f => f.id) : undefined}
+              sortByJoinOrder={!hasActiveFilter}
+              heading="All Founders"
+              columns={3}
+              cardVariant="featured"
+              emptyTitle={hasActiveFilter ? 'No founders match these filters' : 'The first Publisher is almost here.'}
+              emptyMessage={hasActiveFilter
+                ? 'Try clearing one or more filters to see more founders.'
+                : 'CULO Village is setting up for its founding members. The first Publisher will arrive soon — and everything they share will live here permanently.'
+              }
+            />
+          </InnerContainer>
+        </section>
+      )}
 
     </main>
   )

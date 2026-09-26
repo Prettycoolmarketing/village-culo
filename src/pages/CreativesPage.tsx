@@ -17,7 +17,7 @@ const FORMATS = [
 const STEPS = [
   {
     title: 'Answer a few personalised questions',
-    image: '/creatives/step-1-about-you.png',
+    image: '/creatives/step-1-about-you.jpg',
     bullets: [
       <>Complete the <strong className="text-charcoal font-semibold">About You</strong> section with a few quick details about your business and brand.</>,
       <>CULO uses that to generate personalised questions in <strong className="text-charcoal font-semibold">Shape Your Idea</strong>.</>,
@@ -26,7 +26,7 @@ const STEPS = [
   },
   {
     title: 'Upload your raw footage',
-    image: '/creatives/step-2-uploading-media.png',
+    image: '/creatives/step-2-uploading-media.jpg',
     bullets: [
       <>Upload your footage into the right Media Library section: B-roll, Talking Head, Voice Over, Vlog or Photos.</>,
       <><strong className="text-charcoal font-semibold">B-roll</strong> becomes background footage for Voice Over reels, or rotates silently in Quick Rhythm reels.</>,
@@ -36,7 +36,7 @@ const STEPS = [
   },
   {
     title: 'Get social media ready content back',
-    image: '/creatives/step-3-ready-to-post.png',
+    image: '/creatives/step-3-ready-to-post.jpg',
     bullets: [
       <>Ready to post content across Quick Rhythm, Voice Over, Talking Head and Vlog Style formats.</>,
       <>Every reel comes subtitled, hooked and captioned, straight out of Canva.</>,

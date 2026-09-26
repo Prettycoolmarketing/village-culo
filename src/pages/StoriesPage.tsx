@@ -167,6 +167,8 @@ export function StoriesPage() {
             showFounder
             showTopics
             showCTA
+            limit={30}
+            incremental
             emptyTitle={hasActiveFilter ? 'No stories match these filters' : 'The first story is brewing.'}
             emptyMessage={hasActiveFilter
               ? 'Try clearing one or more filters to see more stories.'

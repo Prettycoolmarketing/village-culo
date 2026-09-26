@@ -48,11 +48,11 @@ interface LocationCardProps {
   featured?: boolean
 }
 
-function StatChip({ value, label }: { value: number; label: string }) {
+function StatChip({ value, singular, plural }: { value: number; singular: string; plural: string }) {
   return (
     <span className="flex flex-col items-center gap-0.5">
       <span className="font-heading text-lg font-bold text-charcoal leading-none">{value}</span>
-      <span className="font-body text-xs text-muted">{label}</span>
+      <span className="font-body text-xs text-muted">{value === 1 ? singular : plural}</span>
     </span>
   )
 }
@@ -133,10 +133,10 @@ function LocationCard({ location, stats, isMostActive, featured = false }: Locat
             className="flex items-start justify-between gap-2 pb-5 mb-5 border-b border-border"
             aria-label={`Activity in ${location.name}`}
           >
-            {stats.stories    > 0 && <StatChip value={stats.stories}    label="stories"    />}
-            {stats.founders   > 0 && <StatChip value={stats.founders}   label="founders"   />}
-            {stats.businesses > 0 && <StatChip value={stats.businesses} label="businesses" />}
-            {stats.events     > 0 && <StatChip value={stats.events}     label="events"     />}
+            {stats.stories    > 0 && <StatChip value={stats.stories}    singular="story"    plural="stories"    />}
+            {stats.founders   > 0 && <StatChip value={stats.founders}   singular="founder"  plural="founders"   />}
+            {stats.businesses > 0 && <StatChip value={stats.businesses} singular="business" plural="businesses" />}
+            {stats.events     > 0 && <StatChip value={stats.events}     singular="event"    plural="events"     />}
             {/* Fill empty slots so layout stays consistent */}
             {stats.stories    === 0 && <span className="flex-1" aria-hidden="true" />}
             {stats.founders   === 0 && <span className="flex-1" aria-hidden="true" />}

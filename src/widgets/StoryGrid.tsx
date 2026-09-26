@@ -48,6 +48,14 @@ interface StoryGridProps {
   // Show at most this many, with a "View all N" button that expands the
   // rest in place — keeps long profile pages tight.
   limit?: number
+  // "View all" jumps straight to the full list (fine for a founder's own
+  // handful of stories in a profile preview). For the full /stories
+  // directory, with 200+ entries, that means rendering every card — and
+  // every card's cover image — at once. `incremental` makes "Load more"
+  // reveal another `limit` each click instead, so the directory never
+  // renders more than it needs to for however far someone's actually
+  // scrolled.
+  incremental?: boolean
 }
 
 const columnClasses = {
@@ -76,8 +84,10 @@ export function StoryGrid({
   sortBlogsFirst = false,
   hideEmpty = false,
   limit,
+  incremental = false,
 }: StoryGridProps) {
   const [expanded, setExpanded] = useState(false)
+  const [shown, setShown] = useState(limit ?? 0)
   const fetched = explicitStories ?? getStories(filter)
   let stories = fetched
     .filter(s => !hideKey || !s.hiddenLocations?.includes(hideKey))
@@ -97,13 +107,17 @@ export function StoryGrid({
   if (hideEmpty && stories.length === 0) return null
 
   const total = stories.length
-  const capped = limit != null && !expanded && total > limit
+  const effectiveLimit = incremental ? shown : limit
+  const capped = effectiveLimit != null && !expanded && total > effectiveLimit && !incremental
+  const incrementalCapped = incremental && limit != null && total > shown
 
   // sortBlogsFirst only reorders the capped preview, not the full "View
   // all" list — a founder's Feature picks and blogs (a real, sharp cover
   // image) lead the default few cards, but expanding shouldn't re-shuffle
   // everything out of chronological order to keep that same banding.
-  let visible = capped ? stories.slice(0, limit) : stories
+  let visible = incremental
+    ? stories.slice(0, shown)
+    : capped ? stories.slice(0, limit) : stories
   if (sortBlogsFirst && capped) {
     visible = [...stories].sort((a, b) => {
       const aFeatured = a.featured ? 1 : 0
@@ -162,6 +176,17 @@ export function StoryGrid({
             className="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary text-primary text-sm font-semibold rounded-xl hover:bg-primary hover:text-white transition-colors"
           >
             View all {total} stories
+          </button>
+        </div>
+      )}
+
+      {incrementalCapped && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => setShown(s => s + (limit ?? 30))}
+            className="inline-flex items-center gap-2 px-6 py-3 border-2 border-primary text-primary text-sm font-semibold rounded-xl hover:bg-primary hover:text-white transition-colors"
+          >
+            Load more ({total - shown} left)
           </button>
         </div>
       )}

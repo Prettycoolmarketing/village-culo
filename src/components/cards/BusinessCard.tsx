@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Business, Founder } from '../../types'
 import { Badge } from '../ui/Badge'
 import { BizLogo } from '../ui/BizLogo'
+import { CoverImage } from '../ui/CoverImage'
 import { normalizeUrl } from '../../utils/url'
 
 interface BusinessCardProps {
@@ -26,7 +27,8 @@ export function BusinessCard({ business, founder, variant = 'default', className
             crop stays proportional to the card's actual width instead of
             zooming in harder on narrower cards and looser on wider ones. */}
         <div className="relative aspect-[16/9] overflow-hidden bg-charcoal">
-          <img
+          <CoverImage
+            fallbackSrc="/placeholders/village-cover.svg"
             src={business.coverImage}
             alt={`${business.name} cover image`}
             className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"

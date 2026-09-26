@@ -1,11 +1,29 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { topics } from '../data/topics'
+import { locations } from '../data/locations'
+import { getStories } from '../services/stories'
+import { getFounders } from '../services/founders'
+import { getBusinesses } from '../services/businesses'
+import { getIdeas } from '../services/ideas'
 
 // Curated topic pills shown in the hero — highest-count topics
 const popularTopics = topics
   .sort((a, b) => b.count - a.count)
   .slice(0, 8)
+
+// Real counts, not the placeholder numbers this widget shipped with —
+// matches the same "not archived" definition /archive already uses, so this
+// never again disagrees with the page a click on any of these leads to.
+function villageStats() {
+  return [
+    { count: getStories().filter(s => s.status !== 'archived').length,    label: 'Stories',    href: '/stories' },
+    { count: getFounders().filter(f => f.status !== 'archived').length,   label: 'Founders',   href: '/founders' },
+    { count: getBusinesses().filter(b => b.status !== 'archived').length, label: 'Businesses', href: '/businesses' },
+    { count: getIdeas({ publicOnly: true }).length,                       label: 'Ideas',      href: '/ideas' },
+    { count: locations.length,                                           label: 'Locations',  href: '/map' },
+  ]
+}
 
 interface HeroWidgetProps {
   className?: string
@@ -159,13 +177,7 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
           <p className="font-body text-xs font-semibold text-muted uppercase tracking-widest">
             Village
           </p>
-          {[
-            { count: '8', label: 'Stories', href: '/stories' },
-            { count: '6', label: 'Founders', href: '/founders' },
-            { count: '5', label: 'Businesses', href: '/businesses' },
-            { count: '6', label: 'Ideas', href: '/ideas' },
-            { count: '6', label: 'Locations', href: '/map' },
-          ].map(stat => (
+          {villageStats().map(stat => (
             <Link
               key={stat.label}
               to={stat.href}

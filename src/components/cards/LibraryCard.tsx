@@ -32,6 +32,7 @@ export function LibraryCard({ item, variant = 'default' }: LibraryCardProps) {
         <Link to={`/library/${item.slug}`} className="flex-shrink-0" aria-hidden="true" tabIndex={-1}>
           <div className="w-14 h-20 rounded-lg overflow-hidden bg-border">
             <CoverImage
+              fallbackSrc="/placeholders/village-library.svg"
               src={item.coverImage}
               alt=""
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -71,6 +72,7 @@ export function LibraryCard({ item, variant = 'default' }: LibraryCardProps) {
       {/* Cover */}
       <Link to={`/library/${item.slug}`} className="block relative overflow-hidden" style={{ aspectRatio: '3/2' }} aria-hidden="true" tabIndex={-1}>
         <CoverImage
+          fallbackSrc="/placeholders/village-library.svg"
           src={item.coverImage}
           alt=""
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

@@ -1,10 +1,18 @@
 import { Link } from 'react-router-dom'
 import { usePageTitle } from '../utils/usePageTitle'
 import { expertiseList } from '../data/expertise'
+import { getFounders } from '../services/founders'
 import { InnerContainer } from '../components/layout/PageContainer'
 
 export function ExpertisePage() {
   usePageTitle('Expertise')
+
+  // expertise.founderIds includes placeholder seed founders who were never
+  // actually created as real profiles — counting them here (unlike
+  // ExpertiseDetailPage, which already filters to real founders when
+  // listing them) showed "3 founders" on a card backing a Village with 1
+  // real founder in it. Same real-founder count both places now.
+  const realFounderIds = new Set(getFounders({ publicOnly: true }).map(f => f.id))
 
   return (
     <main className="min-h-screen bg-background pt-20" id="expertise-index">
@@ -27,7 +35,9 @@ export function ExpertisePage() {
 
         {/* Expertise grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 pb-16">
-          {expertiseList.map(expertise => (
+          {expertiseList.map(expertise => {
+            const realFounderCount = expertise.founderIds.filter(id => realFounderIds.has(id)).length
+            return (
             <Link
               key={expertise.id}
               to={`/expertise/${expertise.slug}`}
@@ -46,10 +56,10 @@ export function ExpertisePage() {
 
               {/* Signals */}
               <div className="flex flex-wrap gap-3 text-xs text-muted font-body border-t border-border pt-4 mt-auto">
-                {expertise.founderIds.length > 0 && (
+                {realFounderCount > 0 && (
                   <span>
-                    <strong className="text-charcoal">{expertise.founderIds.length}</strong>{' '}
-                    {expertise.founderIds.length === 1 ? 'founder' : 'founders'}
+                    <strong className="text-charcoal">{realFounderCount}</strong>{' '}
+                    {realFounderCount === 1 ? 'founder' : 'founders'}
                   </span>
                 )}
                 {expertise.serviceIds.length > 0 && (
@@ -72,7 +82,8 @@ export function ExpertisePage() {
                 )}
               </div>
             </Link>
-          ))}
+            )
+          })}
         </div>
 
       </InnerContainer>

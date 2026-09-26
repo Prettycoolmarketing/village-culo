@@ -130,8 +130,11 @@ export function NoticeboardPage() {
             filter={filter}
             columns={3}
             cardVariant="featured"
-            emptyTitle="No notices match these filters"
-            emptyMessage="Try clearing one or more filters, or check back as founders post new events and opportunities."
+            emptyTitle={hasActiveFilter ? 'No notices match these filters' : 'Nothing here yet'}
+            emptyMessage={hasActiveFilter
+              ? 'Try clearing one or more filters to see more notices.'
+              : 'Check back as founders post new events and opportunities.'
+            }
           />
         </InnerContainer>
       </section>
