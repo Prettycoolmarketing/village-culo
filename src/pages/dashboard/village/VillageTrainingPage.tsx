@@ -91,20 +91,29 @@ For anything flagged, either: (a) find a longer, more specific description from 
 
 This matters beyond just looking good — a description under about 40 characters doesn't get published as an article at all when it's imported, it just sits there as a link with nothing built from it.`
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   return (
-    <section className="mb-10">
-      <h2 className="text-xl font-bold text-[#2D2A26] mb-3">{title}</h2>
-      <div className="text-sm text-[#6B7280] leading-relaxed space-y-3">{children}</div>
+    <section id={id} className="mb-16 scroll-mt-24">
+      <h2 className="text-2xl font-bold text-[#2D2A26] mb-5 pb-3 border-b border-[#E8E4DD]">{title}</h2>
+      <div className="text-sm text-[#6B7280] leading-relaxed space-y-4">{children}</div>
     </section>
   )
 }
 
+const NAV_ITEMS = [
+  { id: 'what-is-village', label: 'What the Village is' },
+  { id: 'sections-guide', label: 'What each section is for' },
+  { id: 'responsibilities', label: 'Your responsibilities' },
+  { id: 'workflow', label: 'Building your founder list' },
+  { id: 'where-to', label: 'Where to do this' },
+  { id: 'video', label: 'Watch the demo' },
+]
+
 function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 mb-4">
-      <h3 className="text-sm font-bold text-[#2D2A26] mb-2">{title}</h3>
-      <div className="text-sm text-[#6B7280] leading-relaxed space-y-2.5">{children}</div>
+    <div className="bg-white rounded-2xl border border-[#E8E4DD] px-6 py-6 mb-5 shadow-sm">
+      <h3 className="text-base font-bold text-[#2D2A26] mb-3">{title}</h3>
+      <div className="text-sm text-[#6B7280] leading-relaxed space-y-3">{children}</div>
     </div>
   )
 }
@@ -138,19 +147,37 @@ function CopyPromptButton({ text, label }: { text: string; label: string }) {
 export function VillageTrainingPage() {
 
   return (
-    <div className="p-8 max-w-3xl" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="p-8 max-w-[1400px] mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <CapoBackLink />
-      <div className="mb-8">
+      <div className="mb-10">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Staff Training</h1>
-        <p className="text-sm text-[#6B7280] mt-0.5">
+        <h1 className="text-3xl font-bold text-[#2D2A26]">Staff Training</h1>
+        <p className="text-sm text-[#6B7280] mt-1 max-w-2xl">
           Read this properly before touching anything else in CAPO — it's written for the first time you're
           seeing any of this, not as a quick summary. It explains what The Culo Village actually is, what
           each section does and exactly how it works, and what your own responsibilities are.
         </p>
       </div>
 
-      <Section title="What The Culo Village actually is">
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,800px)] gap-12 items-start">
+        <nav className="hidden lg:block sticky top-8 self-start">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">On this page</p>
+          <ul className="space-y-1">
+            {NAV_ITEMS.map(item => (
+              <li key={item.id}>
+                <a
+                  href={`#${item.id}`}
+                  className="block text-sm text-[#6B7280] hover:text-[#C86A43] px-3 py-1.5 rounded-lg hover:bg-white transition-colors"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div>
+      <Section id="what-is-village" title="What The Culo Village actually is">
         <p>
           The Culo Village is a publishing platform for founders. Most founders already have real content
           scattered across YouTube, podcasts, Instagram, and their own blog or website — videos, episodes,
@@ -180,7 +207,7 @@ export function VillageTrainingPage() {
         </p>
       </Section>
 
-      <Section title="What each section is for">
+      <Section id="sections-guide" title="What each section is for">
         <SubSection title="Founder Management">
           <p>
             This is the full list of every founder account that exists in the Village, and it holds two
@@ -286,7 +313,7 @@ export function VillageTrainingPage() {
         </SubSection>
       </Section>
 
-      <Section title="Your responsibilities">
+      <Section id="responsibilities" title="Your responsibilities">
         <p>
           Day to day, your job has two main parts: building out the Village's founder list, and managing
           client work through the tracker.
@@ -304,7 +331,7 @@ export function VillageTrainingPage() {
         </ul>
       </Section>
 
-      <Section title="Building your own founder list: the full workflow">
+      <Section id="workflow" title="Building your own founder list: the full workflow">
         <p>
           Getting a real person from "someone we've never heard of" to "a claimed, live Village profile"
           is six steps, in order. Each one matters — skipping the verification steps is how a wrong LinkedIn
@@ -495,7 +522,7 @@ export function VillageTrainingPage() {
         </div>
       </Section>
 
-      <Section title="Where to actually do this">
+      <Section id="where-to" title="Where to actually do this">
         <div className="space-y-3">
           <LinkCard to="/dashboard/village/founders" label="Founder Management" desc="Every founder account — real and curated." />
           <LinkCard to="/dashboard/bulk-import" label="Bulk Import" desc="Add a whole prepared list of founders to the Village at once." />
@@ -505,9 +532,31 @@ export function VillageTrainingPage() {
         </div>
       </Section>
 
-      <Section title="Video training">
-        <p>Coming soon — this page will be updated with a walkthrough video once it's ready.</p>
+      <Section id="video" title="Watch the demo">
+        <p>
+          A walkthrough of how founders actually use Culo Creatives and the Village — worth watching once
+          before you're explaining it to a candidate yourself.
+        </p>
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
+          <iframe
+            src="https://www.youtube.com/embed/qe0pMAlpVFc?start=22"
+            title="How to publish with CULO"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full"
+          />
+        </div>
+        <a
+          href="https://www.culovillage.com/how-culo-canva"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors mt-1"
+        >
+          See the full "How CULO in Canva" page →
+        </a>
       </Section>
+        </div>
+      </div>
     </div>
   )
 }
