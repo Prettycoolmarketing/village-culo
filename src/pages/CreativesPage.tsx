@@ -228,19 +228,24 @@ export function CreativesPage() {
         path so there are no surprises between here and editing in Canva.
       */}
       <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="join-village-heading">
-        <InnerContainer className="max-w-3xl">
-          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-            About joining the Village
-          </p>
-          <h2 id="join-village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
-            Culo Creatives is the editing platform in Canva for founders in the Culo Village
-          </h2>
-          <p className="font-body text-lg text-muted leading-relaxed mb-8">
-            The Village is your home base. It is free forever, and it is where your finished content gets
-            published so people can actually find you through search and AI. Culo Creatives is the Canva
-            app you edit in.
-          </p>
-          <ol className="flex flex-col gap-4 mb-8">
+        <InnerContainer className="max-w-5xl">
+          <div className="max-w-3xl">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+              About joining the Village
+            </p>
+            <h2 id="join-village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
+              Culo Creatives is the editing platform in Canva for founders in the Culo Village
+            </h2>
+            <p className="font-body text-lg text-muted leading-relaxed mb-8">
+              The Village is your home base. It is free forever, and it is where your finished content gets
+              published so people can actually find you through search and AI. Culo Creatives is the Canva
+              app you edit in.
+            </p>
+          </div>
+          {/* Arch cards — same doorway shape as the Village Story card and
+              the PCM services grid on the marketing landing page, so this
+              reads as one consistent visual language across the site. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-4 mb-10">
             {[
               ['Join Culo Creatives', 'Hit the join button below and enter your email.'],
               ['Start your free trial', '14 days free, then $25 AUD a month.'],
@@ -248,15 +253,21 @@ export function CreativesPage() {
               ['Land in your dashboard', 'The Culo Creatives section welcomes you with your instructions and the link straight into the Canva app.'],
               ['Edit in Canva, publish in the Village', 'Turn your footage into blogs, carousels and reels in Canva, then publish them across the Village for discovery.'],
             ].map(([title, body], i) => (
-              <li key={title} className="flex gap-4">
-                <span className="shrink-0 w-7 h-7 rounded-full bg-primary/10 text-primary font-heading font-bold text-sm flex items-center justify-center">{i + 1}</span>
-                <div>
-                  <p className="font-heading font-semibold text-charcoal">{title}</p>
-                  <p className="font-body text-muted leading-relaxed">{body}</p>
+              <div
+                key={title}
+                className="flex flex-col bg-white shadow-card overflow-hidden"
+                style={{ borderTopLeftRadius: '50% 40px', borderTopRightRadius: '50% 40px', borderBottomLeftRadius: '1rem', borderBottomRightRadius: '1rem' }}
+              >
+                <div className={`flex items-center justify-center pt-8 pb-6 ${i % 2 === 0 ? 'bg-[#EBF2F8]' : 'bg-[#FBF1EB]'}`}>
+                  <span className={`font-heading text-3xl font-bold ${i % 2 === 0 ? 'text-[#3E6E92]' : 'text-primary'}`}>{i + 1}</span>
                 </div>
-              </li>
+                <div className="flex-1 flex flex-col px-5 py-5">
+                  <p className="font-heading text-base font-bold text-charcoal mb-1.5">{title}</p>
+                  <p className="font-body text-sm text-muted leading-relaxed">{body}</p>
+                </div>
+              </div>
             ))}
-          </ol>
+          </div>
           <a
             href="https://www.culovillage.com/joincanva"
             className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
