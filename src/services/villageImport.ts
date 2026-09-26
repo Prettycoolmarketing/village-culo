@@ -140,10 +140,24 @@ export function parseVIF(raw: string): { pkg: VillageImportPackage | null; error
     const parsed = JSON.parse(raw) as unknown
     if (typeof parsed !== 'object' || parsed === null) return { pkg: null, error: 'JSON must be an object.' }
     const obj = parsed as Record<string, unknown>
-    if (!obj.batchName) return { pkg: null, error: 'Missing required field: batchName' }
+
+    // batchName is only ever used as a label (the import history log, the
+    // preview screen) — nothing downstream depends on it structurally, so
+    // hard-failing an otherwise-good file just because whatever produced it
+    // (Claude, ChatGPT, Sellable) used a slightly different key, or left it
+    // out altogether, was blocking real, importable batches for no real
+    // reason. Accept the common alternate keys, and default it rather than
+    // reject the file if none of them are present.
+    if (!obj.batchName) {
+      const altKey = ['batch_name', 'name', 'title'].find(k => typeof obj[k] === 'string' && (obj[k] as string).trim())
+      obj.batchName = altKey
+        ? obj[altKey]
+        : `Untitled batch — ${new Date().toISOString().slice(0, 10)}`
+    }
+
     if (!Array.isArray(obj.founders)) return { pkg: null, error: 'Missing required field: founders (must be an array)' }
     if (obj.founders.length === 0) return { pkg: null, error: 'founders array is empty' }
-    return { pkg: parsed as VillageImportPackage, error: null }
+    return { pkg: obj as unknown as VillageImportPackage, error: null }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Invalid JSON'
     return { pkg: null, error: `JSON parse error: ${msg}` }

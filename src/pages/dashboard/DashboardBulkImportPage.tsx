@@ -416,17 +416,6 @@ export function DashboardBulkImportPage() {
               All imported profiles default to <strong>Village Curated</strong> and show a claim banner. Original source links are preserved. Village never claims ownership of the founder's content.
             </p>
           </div>
-
-          <div className="flex justify-end pt-2">
-            <button
-              type="button"
-              onClick={handleValidate}
-              disabled={!raw.trim()}
-              className="px-6 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors disabled:opacity-40"
-            >
-              Validate JSON →
-            </button>
-          </div>
         </div>
       )}
 
