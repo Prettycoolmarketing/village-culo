@@ -5,6 +5,7 @@ import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
+import { StoryGrid } from '../widgets/StoryGrid'
 
 // Resized/compressed from the original 1971x1430 PNG (~1MB) down to a
 // 1200px-wide JPEG (~100KB) — the raw screenshot was slow to load in the
@@ -194,6 +195,9 @@ export function JoinVillagePage() {
               <p className="font-body text-xs text-white/40 mt-4">
                 The Culo Village is free, forever · Culo Creatives in Canva: 14-day free trial, then $25 AUD/month · No spam emails
               </p>
+              <Link to="/how-culo-canva" className="inline-block font-body text-sm font-semibold text-white hover:text-primary transition-colors mt-4 underline underline-offset-4 decoration-white/30 hover:decoration-primary">
+                Learn more about CULO Creatives in Canva →
+              </Link>
             </div>
             <img
               src={isCanva ? HERO_IMAGE_CANVA : HERO_IMAGE}
@@ -462,6 +466,23 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
+      {/* ── See it in action — real evidence, not just the pitch above,
+          same section as CreativesPage's "See it in action". */}
+      <section className="py-16 bg-surface border-y border-border">
+        <InnerContainer>
+          <StoryGrid
+            heading="See it in action"
+            subheading="Real stories, published by real founders using Culo Creatives and the Village."
+            filter={{ publicOnly: true }}
+            columns={3}
+            cardVariant="vertical"
+            limit={3}
+            hideEmpty
+            action={{ label: 'See all stories', href: '/stories' }}
+          />
+        </InnerContainer>
+      </section>
+
       {/* ── Founder note ──────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="founder-note-heading">
         <InnerContainer>
@@ -492,7 +513,7 @@ export function JoinVillagePage() {
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
                 From the founder
               </p>
-              <p id="founder-note-heading" className="font-heading italic text-base sm:text-lg text-charcoal leading-relaxed mb-6">
+              <p id="founder-note-heading" className="font-body text-base sm:text-lg text-charcoal leading-relaxed mb-6">
                 "Business owners don't have time to learn another course or wrestle with AI prompts to get
                 strong storytelling content. I took Pretty Cool Marketing's proven workflow and made it
                 accessible inside Canva — for the billions of users who struggle to tell their story and show
@@ -501,6 +522,30 @@ export function JoinVillagePage() {
               <p className="font-body text-sm text-muted">Shakas — CEO / Founder of Pretty Cool Marketing x CULO</p>
             </div>
           </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── Want it done for you — bridges into Pretty Cool Marketing's
+          done-for-you services for anyone who'd rather not run the
+          publishing themselves. */}
+      <section className="py-16 md:py-20 bg-charcoal text-center" aria-labelledby="services-heading">
+        <InnerContainer className="max-w-2xl">
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+            Would rather not do this yourself?
+          </p>
+          <h2 id="services-heading" className="font-heading text-2xl sm:text-3xl font-bold text-white mb-4 leading-tight">
+            Pretty Cool Marketing can run it for you
+          </h2>
+          <p className="font-body text-base text-white/70 leading-relaxed mb-8">
+            Send us your footage and archive, and we edit, publish and schedule it for you across the
+            Village and every platform, no Canva editing required on your end.
+          </p>
+          <Link
+            to="/marketing"
+            className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+          >
+            See our services →
+          </Link>
         </InnerContainer>
       </section>
 

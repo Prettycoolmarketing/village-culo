@@ -340,11 +340,13 @@ export function FounderProfilePage() {
         .filter((f): f is NonNullable<typeof f> => !!f && f.id !== founder.id)
     : []
 
-  // Intel-driven related businesses
+  // Intel-driven related businesses — exclude the founder's own (already
+  // shown above in "Connect with {founder}"), otherwise a business the
+  // founder runs themselves can double up in both sections.
   const intelRelatedBusinesses = aggregatedIntel
     ? aggregatedIntel.relatedBusinessIds
         .map(id => getBusinesses({ publicOnly: true }).find(b => b.id === id))
-        .filter((b): b is NonNullable<typeof b> => !!b)
+        .filter((b): b is NonNullable<typeof b> => !!b && !founderOwnedBusinesses.some(fb => fb.id === b.id))
     : []
 
   return (
@@ -578,7 +580,7 @@ export function FounderProfilePage() {
 
             {/* Create with CULO CTA */}
             <div className="mt-7">
-              <CreateWithCuloCTA variant="button" label="Continue your story with CULO Creatives exclusively in Canva" />
+              <CreateWithCuloCTA variant="button" size="lg" label="Continue your story with CULO Creatives exclusively in Canva" />
             </div>
 
             <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-7" />

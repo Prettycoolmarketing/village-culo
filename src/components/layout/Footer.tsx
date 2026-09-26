@@ -9,7 +9,7 @@ const sections = [
   {
     heading: 'Discover',
     links: [
-      { to: '/how-culo-canva', label: 'Creatives in Canva'  },
+      { to: '/join', label: 'Join Culo Creatives'  },
       { to: '/founders',  label: 'Founders'   },
       { to: '/businesses',   label: 'Businesses' },
       { to: '/stories',   label: 'Stories'    },

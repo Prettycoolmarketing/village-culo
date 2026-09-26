@@ -211,7 +211,7 @@ export function CreativesPage() {
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
                 From the founder
               </p>
-              <p id="founder-note-heading" className="font-heading italic text-base sm:text-lg text-charcoal leading-relaxed mb-6">
+              <p id="founder-note-heading" className="font-body text-base sm:text-lg text-charcoal leading-relaxed mb-6">
                 "Business owners don't have time to learn another course or wrestle with AI prompts to get
                 strong storytelling content. I took Pretty Cool Marketing's proven workflow and made it
                 accessible inside Canva — for the billions of users who struggle to tell their story and show

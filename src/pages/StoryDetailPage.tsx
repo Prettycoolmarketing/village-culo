@@ -11,10 +11,9 @@ import { getBusiness } from '../services/businesses'
 import { recommendationService, publisherPartnerProfileService, trackingService } from '../services/partnership'
 import { partnerService } from '../services/partner'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
-import { getFeaturedIn, getConnectedTo } from '../services/relationships'
+import { getFeaturedIn } from '../services/relationships'
 import { importedContentService, PLATFORM_LABELS, detectPlatform } from '../services/importedContent'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
-import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { ReelContent } from '../components/ui/ReelContent'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
@@ -190,7 +189,6 @@ export function StoryDetailPage() {
   const intel   = story ? (villageContentIntelligenceService.getByContent('story', story.id) ?? null) : null
   const jsonLdSource = story?.importedContentId ? importedContentService.get(story.importedContentId) : undefined
   const storyFeaturedIn = story ? getFeaturedIn('story', story.id) : []
-  const storyConnectedTo = story ? getConnectedTo('story', story.id) : []
   const bookingUrl = founder ? publisherPartnerProfileService.get(founder.id)?.bookingUrl : undefined
   const partner = story?.partnerId ? partnerService.get(story.partnerId) : undefined
 
@@ -323,27 +321,38 @@ export function StoryDetailPage() {
   const approvedRecs = recommendationService.getAll({ storyId: story.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
 
-  // Related stories: prefer relatedStoryIds, then intel relatedContentIds, fall back to same primary topic
+  // Related stories: prefer relatedStoryIds, then intel relatedContentIds, then
+  // same primary topic — and if the preferred source alone doesn't have 3
+  // (e.g. only 1 explicit relatedStoryId was ever set), backfill the rest
+  // from the next source rather than showing a thin one- or two-up row.
+  const RELATED_TARGET = 3
   const notHiddenFromRelated = (s: Story) => !s.hiddenLocations?.includes('related')
   const related = (() => {
+    const picked: Story[] = []
+    const seen = new Set<string>([story.id])
+    function add(candidates: Story[]) {
+      for (const s of candidates) {
+        if (picked.length >= RELATED_TARGET) break
+        if (seen.has(s.id) || !notHiddenFromRelated(s)) continue
+        seen.add(s.id)
+        picked.push(s)
+      }
+    }
+
     if (story.relatedStoryIds.length > 0) {
-      return getStories({ publicOnly: true })
-        .filter(s => story.relatedStoryIds.includes(s.id) && s.id !== story.id && notHiddenFromRelated(s))
-        .slice(0, 3)
+      add(getStories({ publicOnly: true }).filter(s => story.relatedStoryIds.includes(s.id)))
     }
-    if (intel && intel.relatedContentIds.length > 0) {
-      const fromIntel = intel.relatedContentIds
-        .map(id => getStory(id))
-        .filter((s): s is NonNullable<typeof s> => !!s && s.id !== story.id && (s.status === 'published' || s.status === 'featured') && notHiddenFromRelated(s))
-        .slice(0, 3)
-      if (fromIntel.length > 0) return fromIntel
+    if (picked.length < RELATED_TARGET && intel && intel.relatedContentIds.length > 0) {
+      add(
+        intel.relatedContentIds
+          .map(id => getStory(id))
+          .filter((s): s is NonNullable<typeof s> => !!s && (s.status === 'published' || s.status === 'featured')),
+      )
     }
-    if (story.topics.length > 0) {
-      return getStories({ topicId: story.topics[0].id, publicOnly: true, limit: 4 })
-        .filter(s => s.id !== story.id && notHiddenFromRelated(s))
-        .slice(0, 3)
+    if (picked.length < RELATED_TARGET && story.topics.length > 0) {
+      add(getStories({ topicId: story.topics[0].id, publicOnly: true, limit: RELATED_TARGET + picked.length + 1 }))
     }
-    return []
+    return picked
   })()
 
   // Other published stories by the same founder — a reader who liked this one
@@ -526,7 +535,7 @@ export function StoryDetailPage() {
                   </Link>
                 )}
                 <Link
-                  to="/marketing/publishing"
+                  to="/join"
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-[#b05a35] transition-colors"
                 >
                   Feature in The Culo Village →
@@ -946,8 +955,6 @@ export function StoryDetailPage() {
                   (relationshipService/getConnectedTo) is untouched, this is
                   just one fewer near-identical section on the page. */}
               <FeaturedInSection items={storyFeaturedIn} headingId="story-featured-in-heading" />
-
-              <ConnectedToWidget items={storyConnectedTo} headingId="story-connected-to-heading" />
 
               {/* Related stories */}
               {related.length > 0 && (

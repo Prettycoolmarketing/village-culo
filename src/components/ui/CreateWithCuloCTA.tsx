@@ -4,6 +4,10 @@ import { getCurrentFounder } from '../../services/currentFounder'
 interface Props {
   variant?: 'banner' | 'button' | 'inline'
   label?: string
+  // 'lg' matches the site's other primary CTAs (bg-primary, larger padding —
+  // e.g. "Join The Culo Village") rather than the compact dark default,
+  // for spots like the founder profile page where this is the main CTA.
+  size?: 'md' | 'lg'
 }
 
 // Every "Create/Continue with CULO in Canva" button across the app points
@@ -17,7 +21,7 @@ interface Props {
 const CULO_CANVA_URL = 'https://www.culovillage.com/joincanva'
 const MEMBER_CONTENT_URL = '/dashboard/profile?tab=content'
 
-export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
+export function CreateWithCuloCTA({ variant = 'button', label, size = 'md' }: Props) {
   const { user } = useAuth()
   const founder = getCurrentFounder(user)
   const isMember = !!founder
@@ -72,9 +76,13 @@ export function CreateWithCuloCTA({ variant = 'button', label }: Props) {
     <a
       href={href}
       {...linkProps}
-      className="inline-flex items-center gap-2 px-4 py-2 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
+      className={
+        size === 'lg'
+          ? 'inline-flex items-center gap-2 px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors'
+          : 'inline-flex items-center gap-2 px-4 py-2 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors'
+      }
     >
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <svg className={size === 'lg' ? 'w-5 h-5' : 'w-4 h-4'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
       </svg>
       {label ?? 'Create with CULO in Canva'}
