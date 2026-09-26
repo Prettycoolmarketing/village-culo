@@ -5,7 +5,7 @@ import { useInstantJoin } from '../hooks/useInstantJoin'
 import { HeroWidget }                from '../widgets/HeroWidget'
 import { FeaturedWidget }            from '../widgets/FeaturedWidget'
 import { StoryGrid }                 from '../widgets/StoryGrid'
-import { IdeaGrid }                  from '../widgets/IdeaGrid'
+import { IdeaAnnouncementCarousel }  from '../widgets/IdeaAnnouncementCarousel'
 import { FounderGrid }               from '../widgets/FounderGrid'
 import { BusinessGrid }              from '../widgets/BusinessGrid'
 import { MapPreviewWidget }          from '../widgets/MapPreviewWidget'
@@ -197,23 +197,17 @@ export function VillagePage() {
         />
       </VillageSection>
 
-      {/* ── 5. Trending Ideas ───────────────────────────────────────────────── */}
-      {/*
-        Knowledge extracted from stories.
-        IdeaGrid with showQuotes enabled — every 4th card becomes a full-width
-        editorial quote from a real founder, breaking the grid rhythm intentionally.
-      */}
+      {/* ── 5. From the Village — founder announcement carousel ─────────────
+          Replaces the old static "Trending Ideas" grid. A continuously
+          scrolling strip gives variety (many founders cycle through a small
+          space instead of a fixed 6-card grid) without cluttering the
+          homepage, and renders nothing at all once there's nothing real to
+          show — no "coming soon" placeholder needed here. */}
       <VillageSection surface>
-        <IdeaGrid
-          heading="Trending Ideas"
-          subheading="Knowledge extracted from stories across the Village."
+        <IdeaAnnouncementCarousel
+          heading="From the Village"
+          subheading="Founders publishing real knowledge, right now."
           action={{ label: 'Explore Ideas', href: '/ideas' }}
-          filter={{ publicOnly: true, featured: true, limit: 6 }}
-          fallbackToPublic
-          columns={3}
-          showQuotes
-          emptyTitle="The first ideas are waiting to be discovered."
-          emptyMessage="Ideas are extracted from published founder stories. As founders publish, the knowledge layer of the Village will grow here."
         />
       </VillageSection>
 
