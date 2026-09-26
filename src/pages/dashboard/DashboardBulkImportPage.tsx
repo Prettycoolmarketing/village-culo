@@ -4,6 +4,18 @@ import { parseVIF, validateVIF, importVIF } from '../../services/villageImport'
 import { importBatchService } from '../../services/importBatch'
 import { DEFAULT_IMPORT_OPTIONS } from '../../types/villageImport'
 import type { VillageImportPackage, VIFValidationResult, VIFImportOptions, VIFImportResult } from '../../types/villageImport'
+import { useAuth } from '../../contexts/AuthContext'
+
+// Nobody's got a "name" field in the system today — email is all a staff
+// account carries (see AuthUser) — so this is derived, not stored: the part
+// of the email before the @, first letter capitalised. Good enough to tell
+// "Shakas" from "Gia" in an import history list, which is the whole point.
+function staffDisplayName(email?: string): string | undefined {
+  if (!email) return undefined
+  const local = email.split('@')[0]?.split(/[.+_-]/)[0]
+  if (!local) return undefined
+  return local[0]!.toUpperCase() + local.slice(1).toLowerCase()
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -128,6 +140,8 @@ function OptionToggle({
 // ─── Bulk Import Page ─────────────────────────────────────────────────────────
 
 export function DashboardBulkImportPage() {
+  const { user } = useAuth()
+  const curatorName = staffDisplayName(user?.email)
   const [step, setStep]         = useState<Step>(0)
   const [raw, setRaw]           = useState('')
   const [parseError, setParseError] = useState<string | null>(null)
@@ -178,7 +192,7 @@ export function DashboardBulkImportPage() {
 
   function handleValidate() {
     setParseError(null)
-    const { pkg: parsed, error } = parseVIF(raw.trim())
+    const { pkg: parsed, error } = parseVIF(raw.trim(), curatorName)
     if (error || !parsed) {
       setParseError(error ?? 'Unknown parse error')
       return

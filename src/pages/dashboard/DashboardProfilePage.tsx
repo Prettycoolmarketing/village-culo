@@ -41,11 +41,12 @@ import { AppearsOnPanel } from '../../components/dashboard/AppearsOnPanel'
 import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPanel'
 import { BusinessDiscoveryProfile, BusinessProgramsTab } from '../../components/dashboard/BusinessWorkspace'
 import { StoryEditor } from '../../components/dashboard/StoryEditor'
+import { LibraryItemEditModal } from '../../components/dashboard/LibraryItemEditModal'
 import { getFounderAppearsOn, getBusinessAppearsOn } from '../../utils/appearsOn'
 import { loadDraft, saveDraft, clearDraft } from '../../utils/draftAutosave'
 import { suggestFaqsFromFounder } from '../../services/founderEnrichment'
 import type { BlogQaPair } from '../../services/importedContentEnrichment'
-import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry, FAQ, Story } from '../../types'
+import type { Founder, Topic, SocialLink, SocialPlatform, Business, Location, Industry, FAQ, Story, LibraryItem } from '../../types'
 import type { PublisherPartnerProfile } from '../../types/partnership'
 
 // AI rewriting (via the founder's own Voice & Brand Brief) costs real
@@ -763,6 +764,7 @@ export function DashboardProfilePage() {
     const saved = loadDraft<Founder>(`culo_v1_profile_draft_${currentFounder.id}`)
     return saved ?? { ...currentFounder }
   })
+  const [editingLibraryItem, setEditingLibraryItem] = useState<LibraryItem | null>(null)
   // draft's useState initializer above only ever runs once, on this
   // component's first mount — switching accounts without a full page
   // reload (log out, log back in as someone else, in the same tab) left
@@ -2456,10 +2458,10 @@ export function DashboardProfilePage() {
             ) : (
               <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
                 {founderLibrary.map(item => (
-                  <Link
+                  <button
                     key={item.id}
-                    to="/dashboard/library"
-                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FDFCFB] transition-colors"
+                    onClick={() => setEditingLibraryItem(item)}
+                    className="w-full text-left flex items-center gap-4 px-5 py-3.5 hover:bg-[#FDFCFB] transition-colors"
                   >
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#F3EDE6] flex-shrink-0">
                       {item.coverImage && <img src={item.coverImage} alt="" className="w-full h-full object-cover" />}
@@ -2475,7 +2477,7 @@ export function DashboardProfilePage() {
                     }`}>
                       {item.status}
                     </span>
-                  </Link>
+                  </button>
                 ))}
               </div>
             )}
@@ -2761,6 +2763,14 @@ export function DashboardProfilePage() {
           {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
           {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
         </div>
+      )}
+
+      {editingLibraryItem && (
+        <LibraryItemEditModal
+          item={editingLibraryItem}
+          onClose={() => setEditingLibraryItem(null)}
+          onSaved={setEditingLibraryItem}
+        />
       )}
     </div>
   )

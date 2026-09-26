@@ -24,6 +24,14 @@ import type {
 
 // ─── Location matching ────────────────────────────────────────────────────────
 
+// A founder with no city/state given (common for a remote-first or
+// nationally-known guest) used to silently default to locations[0]
+// (Brisbane) — a specific, wrong-looking city with no basis in anything
+// the row actually said. 'regional-remote' ("Regional or Remote
+// Australia") is the real, honest fallback: still correctly Australian,
+// but doesn't invent a city nobody claimed.
+const UNKNOWN_LOCATION_FALLBACK_ID = 'regional-remote'
+
 function resolveLocation(city?: string, state?: string): Location {
   if (city || state) {
     const needle = `${city ?? ''} ${state ?? ''}`.toLowerCase()
@@ -34,7 +42,7 @@ function resolveLocation(city?: string, state?: string): Location {
     )
     if (match) return match
   }
-  return locations[0] // Brisbane default
+  return locations.find(l => l.id === UNKNOWN_LOCATION_FALLBACK_ID) ?? locations[0]
 }
 
 // ─── Industry matching ────────────────────────────────────────────────────────
@@ -230,7 +238,19 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
 
 // ─── Validate ─────────────────────────────────────────────────────────────────
 
-export function parseVIF(raw: string): { pkg: VillageImportPackage | null; error: string | null } {
+// `curatedBy` is whichever staff member is actually running this import
+// (their derived display name, e.g. "Shakas" or "Gia" — see
+// DashboardBulkImportPage) — always appended to the batch's name so the
+// import history is attributable at a glance, whether the file brought its
+// own name or not. Multiple staff each importing their own lists is exactly
+// the case this exists for: "Untitled batch — 2026-09-26" told you nothing
+// about who actually curated it.
+function withCuratorLabel(name: string, curatedBy?: string): string {
+  if (!curatedBy) return name
+  return `${name} · curated by ${curatedBy}`
+}
+
+export function parseVIF(raw: string, curatedBy?: string): { pkg: VillageImportPackage | null; error: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown
     if (parsed === null || typeof parsed !== 'object') return { pkg: null, error: 'JSON must be an object or an array of founders.' }
@@ -253,9 +273,12 @@ export function parseVIF(raw: string): { pkg: VillageImportPackage | null; error
     // reject the file if none of them are present.
     if (!obj.batchName) {
       const altKey = ['batch_name', 'name', 'title'].find(k => typeof obj[k] === 'string' && (obj[k] as string).trim())
-      obj.batchName = altKey
-        ? obj[altKey]
-        : `Untitled batch — ${new Date().toISOString().slice(0, 10)}`
+      const base = altKey
+        ? (obj[altKey] as string)
+        : new Date().toISOString().slice(0, 10)
+      obj.batchName = withCuratorLabel(base, curatedBy)
+    } else {
+      obj.batchName = withCuratorLabel(obj.batchName as string, curatedBy)
     }
 
     if (!Array.isArray(obj.founders)) return { pkg: null, error: 'Missing required field: founders (must be an array)' }
@@ -294,7 +317,7 @@ export function validateVIF(pkg: VillageImportPackage): VIFValidationResult {
 
     if (!f.fullName?.trim()) errors.push('fullName is required')
     if (!f.bio?.trim()) warnings.push('bio is missing — profile will have no description')
-    if (!f.city && !f.state) warnings.push('No location — will default to Brisbane, QLD')
+    if (!f.city && !f.state) warnings.push('No location — will default to Regional or Remote Australia')
     if (!f.industries || f.industries.length === 0) warnings.push('No industry — will use first available industry')
 
     const baseSlug = f.slug?.trim() || slugify(f.preferredName?.trim() || f.fullName?.trim() || `founder-${i}`)
