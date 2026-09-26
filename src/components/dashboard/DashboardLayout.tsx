@@ -268,7 +268,7 @@ export function DashboardLayout() {
           </NavLink>
 
           <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Ready to publish, needs more value, published, and series" />
-          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} activeTabs={['overview', 'businesses', 'expertise', 'discovery', 'settings']} />
+          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} activeTabs={['overview', 'businesses', 'library', 'expertise', 'discovery', 'settings']} />
 
           <NavLink
             to="/dashboard/publish"

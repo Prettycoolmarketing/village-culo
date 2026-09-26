@@ -141,9 +141,10 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
         </div>
       </div>
 
-      <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-5" />
+      <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-6" />
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="max-w-2xl">
 
         {tab === 'overview' && (
           <div className="flex flex-col gap-4">
@@ -164,14 +165,14 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
                 mini carousel, whatever gives visitors more to look at than the cover alone.
               </p>
               {(draft.previewImages ?? []).length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
+                <div className="grid grid-cols-4 gap-2 mb-2">
                   {(draft.previewImages ?? []).map((url, i) => (
-                    <div key={i} className="relative w-16 h-20 rounded-lg overflow-hidden border border-[#E8E4DD] shrink-0">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-[#E8E4DD] bg-[#F3EDE6]">
+                      <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => set('previewImages', (draft.previewImages ?? []).filter((_, j) => j !== i))}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center hover:bg-black/80"
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-black/80"
                       >✕</button>
                     </div>
                   ))}
@@ -327,6 +328,7 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
         {tab === 'improve' && (
           <MissingAssetsPanel items={missing} onAction={item => { setTab('overview'); focusField(item.field) }} />
         )}
+        </div>
       </div>
     </div>
   )
@@ -352,7 +354,12 @@ export function DashboardLibraryPage() {
     <div className="flex h-full" style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ── List ──────────────────────────────────────────────────────── */}
-      <div className={`flex flex-col overflow-hidden ${selected ? 'flex-1 min-w-0 border-r border-[#E8E4DD]' : 'w-full'}`}>
+      {/* A fixed-width list once something's selected (not flex-1, which
+          squeezed down to make room and left the detail pane a cramped
+          288px sidebar) — the detail pane gets the rest of the screen,
+          the same amount of breathing room the advanced story editor
+          gets, instead of a narrow strip. */}
+      <div className={`flex flex-col overflow-hidden ${selected ? 'w-[380px] shrink-0 border-r border-[#E8E4DD]' : 'w-full'}`}>
         <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
           <div>
             <h1 className="text-2xl font-bold text-[#2D2A26]">Library</h1>
@@ -413,7 +420,7 @@ export function DashboardLibraryPage() {
 
       {/* ── Detail pane ────────────────────────────────────────────── */}
       {selected && (
-        <div className="w-72 shrink-0 bg-white border-l border-[#E8E4DD] flex flex-col overflow-hidden">
+        <div className="flex-1 min-w-0 bg-white flex flex-col overflow-hidden">
           <LibraryDetailPane
             key={selected.id}
             item={selected}

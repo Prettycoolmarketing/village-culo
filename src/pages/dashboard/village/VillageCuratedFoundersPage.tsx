@@ -9,6 +9,7 @@ import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { Founder } from '../../../types'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
+import { FounderEditModal } from '../../../components/dashboard/FounderEditModal'
 import { VillageBulkImportPage } from './VillageBulkImportPage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
@@ -126,6 +127,7 @@ export function VillageCuratedFoundersPage() {
   const [filterHasEmail, setFilterHasEmail] = useState(false)
   const [selected, setSelected]   = useState<Set<string>>(new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
   void tick
 
   const refresh = () => { setTick(t => t + 1); setSelected(new Set()) }
@@ -490,13 +492,21 @@ export function VillageCuratedFoundersPage() {
                         destructive actions on the right — deliberately not
                         next to Delete, so the two are never in easy reach
                         of the same misclick. */}
-                    <Link
-                      to={`/founders/${f.slug}`}
-                      target="_blank"
-                      className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors shrink-0"
-                    >
-                      View ↗
-                    </Link>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <Link
+                        to={`/founders/${f.slug}`}
+                        target="_blank"
+                        className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
+                      >
+                        View ↗
+                      </Link>
+                      <button
+                        onClick={() => setEditingFounder(f)}
+                        className="text-[10px] font-semibold text-[#C86A43] hover:underline"
+                      >
+                        Edit
+                      </button>
+                    </div>
                     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
                       {/* Curated only ever applies to a profile admin built
                           from the imported JSON list — no real account
@@ -569,6 +579,14 @@ export function VillageCuratedFoundersPage() {
         onExport={() => void exportSelected(selected)}
       />
       </>
+      )}
+
+      {editingFounder && (
+        <FounderEditModal
+          founder={editingFounder}
+          onClose={() => setEditingFounder(null)}
+          onChanged={refresh}
+        />
       )}
     </div>
   )

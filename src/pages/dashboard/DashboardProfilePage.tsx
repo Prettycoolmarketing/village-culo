@@ -475,23 +475,6 @@ function BusinessesTab({ founderId, founderLocation, founderIndustry }: {
         </button>
       </div>
 
-      {/* Digital Products — sits right next to Businesses so a founder
-          managing their profile sees both in one place, instead of only
-          discovering Library exists via its own separate sidebar link. */}
-      <div className="flex flex-wrap items-center gap-2 -mt-2">
-        <span className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wide mr-1">Digital Products</span>
-        {getLibraryItems({ founderId }).map(item => (
-          <Link key={item.id} to="/dashboard/library"
-            className="px-3 py-1.5 rounded-lg text-sm font-medium border border-[#E8E4DD] bg-white text-[#6B7280] hover:border-[#C86A43]/50 transition-colors">
-            {item.title}
-          </Link>
-        ))}
-        <Link to="/dashboard/library"
-          className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#C86A43] border border-dashed border-[#C86A43]/50 hover:bg-[#FDF6F3] transition-colors">
-          + Add product
-        </Link>
-      </div>
-
       {!draft ? (
         <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
           <p className="text-sm font-semibold text-[#2D2A26]">No businesses yet.</p>
@@ -1082,6 +1065,7 @@ export function DashboardProfilePage() {
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
     { key: 'businesses',    label: 'Businesses'    },
+    { key: 'library',       label: 'Digital Products', badge: founderLibrary.length },
     { key: 'expertise',     label: 'FAQ'           },
     { key: 'discovery',     label: 'Discovery' },
     { key: 'settings',      label: 'Settings'      },
@@ -2439,6 +2423,63 @@ export function DashboardProfilePage() {
             resyncing three separate pieces of state by hand. */}
         {tab === 'businesses' && (
           <BusinessesTab key={draft.id} founderId={draft.id} founderLocation={draft.location} founderIndustry={draft.industry} />
+        )}
+
+        {/* ── Digital Products — its own tab, same standing as Businesses,
+            instead of a small pill row buried inside it. Editing itself
+            still happens on the Library page (its detail pane already
+            covers cover image, description, availability, timeline and
+            more) — this tab is the properly aligned entry point into it
+            from Profile, not a duplicate editor. */}
+        {tab === 'library' && (
+          <div className="flex flex-col gap-4">
+            <TabIntro>
+              Books, courses, templates and anything else you sell or give away — each one gets its own
+              public page. Manage the details (cover, description, availability, pricing) in the Library.
+            </TabIntro>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-[#2D2A26]">
+                {founderLibrary.length} {founderLibrary.length === 1 ? 'product' : 'products'}
+              </p>
+              <Link
+                to="/dashboard/library"
+                className="px-3 py-1.5 rounded-lg text-sm font-semibold text-[#C86A43] border border-dashed border-[#C86A43]/50 hover:bg-[#FDF6F3] transition-colors"
+              >
+                + Add product
+              </Link>
+            </div>
+            {founderLibrary.length === 0 ? (
+              <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
+                <p className="text-sm font-semibold text-[#2D2A26]">No digital products yet.</p>
+                <p className="text-xs text-[#9CA3AF] mt-1">Add one to give it its own public page.</p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+                {founderLibrary.map(item => (
+                  <Link
+                    key={item.id}
+                    to="/dashboard/library"
+                    className="flex items-center gap-4 px-5 py-3.5 hover:bg-[#FDFCFB] transition-colors"
+                  >
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#F3EDE6] flex-shrink-0">
+                      {item.coverImage && <img src={item.coverImage} alt="" className="w-full h-full object-cover" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
+                      <p className="text-xs text-[#9CA3AF] truncate">{item.productType} · {item.price ?? 'Free'}</p>
+                    </div>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                      item.status === 'available' || item.status === 'free-download' ? 'bg-green-100 text-green-700' :
+                      item.status === 'coming-soon' ? 'bg-amber-100 text-amber-700' :
+                      'bg-[#F3EDE6] text-[#9CA3AF]'
+                    }`}>
+                      {item.status}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* ── FAQ ──────────────────────────────────────────────────────────── */}
