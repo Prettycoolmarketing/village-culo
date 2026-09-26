@@ -199,23 +199,27 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
     location: str(row['Business Location']),
   }] : undefined
 
-  // Every founder gets one real content entry, not just the ones who happen
-  // to have an Article URL — Article URL is preferred (it's the actual
-  // written piece), but a founder with only a YouTube or podcast link still
-  // gets one, otherwise they'd import with zero content and never become a
-  // published article at all. The bio becomes this entry's description —
-  // without it, the item had no description of its own, fell well under
-  // MIN_AUTO_PUBLISH_DESCRIPTION_LENGTH, and silently stayed a bare linked
-  // embed instead of the real published article per founder this is
-  // actually meant to produce.
-  const primaryContentUrl = str(row['Article URL']) ?? str(row['YouTube URL']) ?? str(row['Podcast URL'])
+  // One content entry per real link this founder actually has — Article,
+  // YouTube, Podcast — not just a single "best" one. The whole point of a
+  // curated import is that it should read like this founder connected their
+  // own accounts and published each piece themselves, the same as anyone
+  // who joins directly; picking only one link and dropping the rest doesn't
+  // match that. Every entry gets the founder's own bio as its description —
+  // without it, an entry has no description of its own, falls well under
+  // MIN_AUTO_PUBLISH_DESCRIPTION_LENGTH, and silently stays a bare linked
+  // embed instead of becoming its own real, published article page.
   const headline = str(row['Headline'])
   const bio = str(row['Bio'])
-  const content: VillageImportContent[] | undefined = primaryContentUrl ? [{
-    title: headline ?? `${fullName}'s story`,
-    url: primaryContentUrl,
-    description: bio,
-  }] : undefined
+  const articleUrl  = str(row['Article URL'])
+  const youtubeUrl  = str(row['YouTube URL'])
+  const podcastUrl  = str(row['Podcast URL'])
+  const content: VillageImportContent[] = (
+    [
+      articleUrl  ? { title: headline ?? `${fullName}'s article`, url: articleUrl,  description: bio } : undefined,
+      youtubeUrl  ? { title: `${fullName} on YouTube`,            url: youtubeUrl,  description: bio } : undefined,
+      podcastUrl  ? { title: `${fullName} on Podcast`,            url: podcastUrl,  description: bio } : undefined,
+    ] as (VillageImportContent | undefined)[]
+  ).filter((c): c is VillageImportContent => !!c)
 
   const digitalProductUrl = str(row['Digital Product URL'])
 
@@ -534,7 +538,13 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
         podcast:      f.podcastUrl?.trim() || undefined,
         newsletter:   f.newsletterUrl?.trim() || undefined,
         claimEmail:   f.claimEmail?.trim() || existingFounder?.claimEmail || undefined,
-        status:       'published',
+        // A brand-new curated founder lands as a draft — invisible in
+        // Founders, the homepage, search, everywhere public-facing relies
+        // on getFounders({ publicOnly: true }) — until a staff member has
+        // actually opened their profile and pressed Publish. Overwriting an
+        // existing founder (already published, claimed, whatever they were)
+        // keeps their real status; this only affects genuinely new rows.
+        status:       existingFounder?.status ?? 'draft',
         featured:     false,
         createdAt:    existingFounder?.createdAt ?? now,
         profileStatus: 'village-curated',

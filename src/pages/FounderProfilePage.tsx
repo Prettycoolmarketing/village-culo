@@ -458,8 +458,16 @@ export function FounderProfilePage() {
           <InnerContainer>
             <div className="flex flex-col gap-6 pt-10 sm:pt-12 -mt-4 sm:-mt-6">
               <div className="flex flex-col sm:flex-row sm:items-end gap-6">
-                <Avatar src={founder.avatar} alt={founder.name} size="xl"
-                  className="ring-4 ring-surface shadow-lg flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 text-3xl" />
+                {/* A curated profile was never given a real photo — Avatar's
+                    own fallback is the Culo mark, which reads as a real
+                    (if generic) profile photo rather than what this
+                    actually is: a profile nobody's claimed or photographed
+                    yet. Cleaner to show no image at all here than a
+                    placeholder that implies there is one. */}
+                {(founder.avatar || founder.profileStatus !== 'village-curated') && (
+                  <Avatar src={founder.avatar} alt={founder.name} size="xl"
+                    className="ring-4 ring-surface shadow-lg flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 text-3xl" />
+                )}
                 <div className="flex-1 min-w-0 pt-2">
                   <h1 id="founder-name" className="font-heading text-2xl sm:text-4xl font-bold text-charcoal leading-tight flex flex-wrap items-center gap-2.5">
                     {founder.name}
@@ -999,8 +1007,15 @@ export function FounderProfilePage() {
                 </section>
               )}
 
-              {/* Related founders */}
-              {(relatedFounders.length > 0 || intelRelatedFounders.length > 0) && (
+              {/* Related founders — skipped for a curated profile nobody's
+                  claimed yet. This is built from shared industry/location/
+                  topic overlap, which reads as a real, earned connection for
+                  a founder who's actually published here — for a profile
+                  that's just been imported from a spreadsheet, "related to"
+                  a stranger sharing their industry tag isn't a real
+                  relationship yet, just noise next to a profile that isn't
+                  really live. */}
+              {founder.profileStatus !== 'village-curated' && (relatedFounders.length > 0 || intelRelatedFounders.length > 0) && (
                 <section aria-labelledby="related-founders-heading">
                   <h2 id="related-founders-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
                     Related Founders

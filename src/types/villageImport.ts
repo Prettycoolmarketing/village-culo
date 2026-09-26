@@ -152,7 +152,13 @@ export interface VIFImportOptions {
 }
 
 export const DEFAULT_IMPORT_OPTIONS: VIFImportOptions = {
-  publishContent: true,
+  // Off by default — nothing a curated batch brings in goes live anywhere
+  // (not the founder's content, and per the founder's own status below, not
+  // even their profile listing) until a real person has actually looked at
+  // it and pressed Publish. Staff can still tick this on for a batch
+  // they've already fully vetted, but importing shouldn't silently publish
+  // by default.
+  publishContent: false,
   runIntelligence: true,
   createBusinesses: true,
   overwriteDuplicates: false,

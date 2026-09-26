@@ -5,6 +5,10 @@ import { importBatchService } from '../../services/importBatch'
 import { DEFAULT_IMPORT_OPTIONS } from '../../types/villageImport'
 import type { VillageImportPackage, VIFValidationResult, VIFImportOptions, VIFImportResult } from '../../types/villageImport'
 import { useAuth } from '../../contexts/AuthContext'
+import { getFounder, updateFounder, deleteFounderAccount } from '../../services/founders'
+import { ConfirmButton } from '../../components/ui/ConfirmButton'
+import { FounderEditModal } from '../../components/dashboard/FounderEditModal'
+import type { Founder } from '../../types'
 
 // Nobody's got a "name" field in the system today — email is all a staff
 // account carries (see AuthUser) — so this is derived, not stored: the part
@@ -153,6 +157,23 @@ export function DashboardBulkImportPage() {
   const [importError, setImportError] = useState<string | null>(null)
   const [exampleOpen, setExampleOpen] = useState(false)
   const [copied, setCopied]     = useState<string | null>(null)
+  const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
+  const [deletedIds, setDeletedIds]         = useState<Set<string>>(new Set())
+  const [publishingId, setPublishingId]     = useState<string | null>(null)
+  const [resultTick, setResultTick]         = useState(0)
+
+  async function handlePublish(id: string) {
+    setPublishingId(id)
+    const founder = getFounder(id)
+    if (founder) await updateFounder({ ...founder, status: 'published' })
+    setPublishingId(null)
+    setResultTick(t => t + 1)
+  }
+
+  async function handleDeleteImported(id: string) {
+    const result = await deleteFounderAccount(id)
+    if (result.success) setDeletedIds(prev => new Set(prev).add(id))
+  }
   const [fileName, setFileName] = useState<string | null>(null)
   const [pasteOpen, setPasteOpen] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
@@ -587,6 +608,9 @@ export function DashboardBulkImportPage() {
             <p className="text-xs text-[#6B7280] leading-relaxed">
               All imported founders will be marked <strong>Village Curated</strong> and show a visible claim banner on their public profile. Original source links are preserved. Village does not claim ownership.
             </p>
+            <p className="text-xs text-[#6B7280] leading-relaxed mt-2">
+              Every founder imports as a <strong>draft</strong> regardless of the options above — invisible in Founders, the homepage and search until you open them on the next screen and press Publish.
+            </p>
           </div>
         </div>
       )}
@@ -643,14 +667,19 @@ export function DashboardBulkImportPage() {
           {/* Created founders list */}
           {result.created.length > 0 && (
             <div>
-              <SectionHead title="Imported Founders" sub="Copy profile URLs or outreach messages for each founder." />
+              <SectionHead
+                title="Imported Founders"
+                sub="Review each one, then Publish when you're happy with it — nothing here is visible anywhere on the public site until you do."
+              />
               <div className="space-y-3">
-                {result.created.map(f => {
+                {result.created.filter(f => !deletedIds.has(f.id)).map(f => {
                   const profileUrl = `${origin}/founders/${f.slug}`
                   const claimUrl   = `${origin}/claim/${f.slug}`
                   const msgKey     = `outreach-${f.id}`
                   const profKey    = `profile-${f.id}`
                   const claimKey   = `claim-${f.id}`
+                  const live       = getFounder(f.id)
+                  void resultTick // recompute `live` after publish/delete
 
                   return (
                     <div key={f.id} className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
@@ -673,10 +702,10 @@ export function DashboardBulkImportPage() {
                           >
                             View ↗
                           </a>
-                          <Pill label="Village Curated" color="blue" />
+                          <Pill label={live?.status === 'published' ? 'Published' : 'Draft — not public yet'} color={live?.status === 'published' ? 'green' : 'amber'} />
                         </div>
                       </div>
-                      <div className="px-5 py-3 flex flex-wrap gap-2">
+                      <div className="px-5 py-3 flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => copyText(profileUrl, profKey)}
                           className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
@@ -707,6 +736,28 @@ export function DashboardBulkImportPage() {
                         >
                           {copied === msgKey ? '✓ Copied' : 'Copy LinkedIn Outreach'}
                         </button>
+                        <button
+                          onClick={() => { if (live) setEditingFounder(live) }}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43] hover:text-[#C86A43] transition-colors"
+                        >
+                          Edit
+                        </button>
+                        {live?.status !== 'published' && (
+                          <button
+                            onClick={() => void handlePublish(f.id)}
+                            disabled={publishingId === f.id}
+                            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A] text-white hover:bg-[#4a5538] disabled:opacity-60 transition-colors"
+                          >
+                            {publishingId === f.id ? 'Publishing…' : 'Publish'}
+                          </button>
+                        )}
+                        <ConfirmButton
+                          label="Delete"
+                          confirmLabel="Yes, delete"
+                          message={`Delete ${f.name}? This can't be undone.`}
+                          onConfirm={() => void handleDeleteImported(f.id)}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors ml-auto"
+                        />
                       </div>
                     </div>
                   )
@@ -794,6 +845,14 @@ export function DashboardBulkImportPage() {
             </div>
           )}
         </div>
+      )}
+
+      {editingFounder && (
+        <FounderEditModal
+          founder={editingFounder}
+          onClose={() => setEditingFounder(null)}
+          onChanged={() => setResultTick(t => t + 1)}
+        />
       )}
     </div>
   )
