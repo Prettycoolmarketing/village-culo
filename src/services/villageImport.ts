@@ -1,5 +1,5 @@
 import { slugify } from '../utils/slugify'
-import { getFounderBySlug, getFounderByLinkedIn, getFounderByInstagram, updateFounder } from './founders'
+import { getFounderBySlug, getFounderByLinkedIn, getFounderByInstagram, normalizeLinkedInUrl, normalizeInstagramUrl, updateFounder } from './founders'
 import { getBusinessBySlug, updateBusiness } from './businesses'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { importedContentToInput, villageContentIntelligenceService } from './villageIntelligence'
@@ -281,8 +281,8 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
       const socialMatch = byLinkedIn ?? byInstagram
       const slugMatchIsActuallyDifferentPerson = !!(
         !socialMatch && (
-          (bySlug?.linkedin?.trim() && f.linkedinUrl?.trim() && bySlug.linkedin.trim() !== f.linkedinUrl.trim()) ||
-          (bySlug?.instagram?.trim() && f.instagramUrl?.trim() && bySlug.instagram.trim() !== f.instagramUrl.trim())
+          (bySlug?.linkedin?.trim() && f.linkedinUrl?.trim() && normalizeLinkedInUrl(bySlug.linkedin) !== normalizeLinkedInUrl(f.linkedinUrl)) ||
+          (bySlug?.instagram?.trim() && f.instagramUrl?.trim() && normalizeInstagramUrl(bySlug.instagram) !== normalizeInstagramUrl(f.instagramUrl))
         )
       )
       const existingFounder = socialMatch ?? (slugMatchIsActuallyDifferentPerson ? undefined : bySlug)

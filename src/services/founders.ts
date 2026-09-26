@@ -54,11 +54,23 @@ export function getFounderBySlug(slug: string): Founder | undefined {
 // skipped, even though they're someone else entirely. Checked first, before
 // the slug/name match, so a genuine identity match always wins over a
 // same-name coincidence.
+// LinkedIn serves the same profile under www., au., nz., uk. etc. — and real
+// curated sheets mix them — so the country subdomain, query string and
+// trailing slash are all stripped before comparing.
+export function normalizeLinkedInUrl(url: string): string {
+  return url.trim().toLowerCase().split(/[?#]/)[0].replace(/\/+$/, '')
+    .replace(/^https?:\/\//, '').replace(/^([a-z]{2,3}\.)?linkedin\.com\//, 'linkedin.com/')
+}
+
+export function normalizeInstagramUrl(url: string): string {
+  return url.trim().toLowerCase().split(/[?#]/)[0].replace(/\/+$/, '')
+    .replace(/^https?:\/\/(www\.)?/, '').replace(/^instagram\.com\//, '').replace(/^@/, '')
+}
+
 export function getFounderByLinkedIn(linkedinUrl: string): Founder | undefined {
-  const normalize = (url: string) => url.trim().toLowerCase().replace(/\/+$/, '').replace(/^https?:\/\/(www\.)?/, '')
-  const target = normalize(linkedinUrl)
+  const target = normalizeLinkedInUrl(linkedinUrl)
   if (!target) return undefined
-  return live().find(f => f.linkedin && normalize(f.linkedin) === target)
+  return live().find(f => f.linkedin && normalizeLinkedInUrl(f.linkedin) === target)
 }
 
 // Same reasoning as getFounderByLinkedIn, and just as necessary — a founder
@@ -69,10 +81,9 @@ export function getFounderByLinkedIn(linkedinUrl: string): Founder | undefined {
 // correctly tell two different people apart. The URL/handle itself is the
 // stable identity regardless of what display name sits on top of it.
 export function getFounderByInstagram(instagramUrl: string): Founder | undefined {
-  const normalize = (url: string) => url.trim().toLowerCase().replace(/\/+$/, '').replace(/^https?:\/\/(www\.)?/, '').replace(/^instagram\.com\//, '')
-  const target = normalize(instagramUrl)
+  const target = normalizeInstagramUrl(instagramUrl)
   if (!target) return undefined
-  return live().find(f => f.instagram && normalize(f.instagram) === target)
+  return live().find(f => f.instagram && normalizeInstagramUrl(f.instagram) === target)
 }
 
 export async function updateFounder(founder: Founder): Promise<WriteResult> {
