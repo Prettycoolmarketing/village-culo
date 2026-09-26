@@ -113,7 +113,7 @@ export function IdeaCard({ idea, variant = 'default', className = '' }: IdeaCard
         </svg>
       </div>
 
-      <h3 className="font-heading text-lg font-semibold text-charcoal leading-snug mb-2">
+      <h3 className="font-heading text-lg font-semibold text-charcoal leading-snug mb-2 line-clamp-3">
         <Link to={ideaUrl} className="hover:text-[#3E6E92] transition-colors focus:outline-none focus-visible:underline">
           {idea.title}
         </Link>

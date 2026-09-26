@@ -54,40 +54,34 @@ function similarity(a: string, b: string): number {
 
 const SIMILARITY_THRESHOLD = 0.6
 
-// A lesson comes out of villageIntelligence as a whole extracted sentence
-// ("I learned that following your dreams means taking risks even when the
-// outcome feels uncertain") — fine as the Idea's own description, but a bad
-// title. Ideas are meant to be small, generic, shareable categories other
-// founders can recognise and click into too (Authenticity, Travel, Writing
-// A Novel) — not a wall of long, story-specific sentences that only ever
-// grows and never gets reused. Strip the common "I learned that..." lead-in
-// and cap it to a short, title-cased phrase; the full sentence still lives
-// in `description` for anyone who opens the idea.
-const IDEA_LEAD_INS = [
-  'i learned that', 'i learnt that', 'i realized that', 'i realised that',
-  'i learned', 'i learnt', 'i realized', 'i realised',
-  'the key lesson was that', 'the biggest lesson was that',
-  'one thing i learned is that', 'one lesson i learned is that',
-  'my biggest takeaway was that', 'the takeaway is that',
-  'what i learned is that', 'it taught me that', 'this taught me that',
-  'taught me that', 'taught me',
-]
-const IDEA_TITLE_MAX_WORDS = 5
+// The old approach cut a lesson sentence ("I want founders to have a
+// permanent home for the things they've created...") down to its first 5
+// words and title-cased them — which produced titles like "I Want Founders
+// To Have", a sentence fragment with no meaning on its own. An Idea's title
+// is now a plain CULO-voiced announcement built entirely from real,
+// structured data (who, what business, where, what topic) instead of
+// truncating free text, so it can never come out as a fragment — the full
+// lesson sentence still lives in `description` underneath it.
+function ideaTitleForNewStory(story: Story, founder: Founder, topicName: string): string {
+  const business = story.businessId ? getBusinesses().find(b => b.id === story.businessId) : undefined
+  const where = `${story.location.name}, ${story.location.state}`
+  return business
+    ? `${founder.name} from ${business.name} in ${where} published an article about ${topicName}`
+    : `${founder.name} in ${where} published an article about ${topicName}`
+}
 
-function shortenIdeaTitle(sentence: string): string {
-  let s = sentence.trim()
-  const lower = s.toLowerCase()
-  for (const leadIn of IDEA_LEAD_INS) {
-    if (lower.startsWith(leadIn)) { s = s.slice(leadIn.length).trim(); break }
-  }
-  s = s.replace(/^(that|to)\s+/i, '')
-  const words = s.split(/\s+/).filter(Boolean).slice(0, IDEA_TITLE_MAX_WORDS)
-  s = words.join(' ').replace(/[,;:.!?]+$/, '')
-  if (!s) return sentence.trim().slice(0, 40)
-  return s
-    .split(' ')
-    .map(w => (w.length > 0 ? w[0]!.toUpperCase() + w.slice(1) : w))
-    .join(' ')
+// Once a second (and later, third+) founder's story links into the same
+// idea, a title naming only the first founder would read as wrong — this is
+// meant to be a shared, recurring concept across founders, not one person's
+// announcement forever. Recomputed with the full current founder list every
+// time the idea is strengthened by a new founder.
+function ideaTitleForFounders(founderIds: string[], topicName: string): string {
+  const names = founderIds
+    .map(id => getFounders().find(f => f.id === id)?.name)
+    .filter((n): n is string => !!n)
+  if (names.length <= 1) return `${names[0] ?? 'A founder'} published an article about ${topicName}`
+  if (names.length === 2) return `${names[0]} and ${names[1]} both published articles about ${topicName}`
+  return `${names.length} founders have published articles about ${topicName}`
 }
 
 /** Shared matching rule — the one place "is this the same idea?" is decided, used by both the real sync and the read-only preview so they can never disagree. */
@@ -119,12 +113,16 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
   const strengthened: Idea[] = []
   if (!story.founderId) return { created, strengthened }
 
+  const founder = getFounders().find(f => f.id === story.founderId)
+  if (!founder) return { created, strengthened }
+
   const pool = [...getIdeas()]
 
   for (const lessonText of intel.lessons) {
     const trimmed = lessonText.trim()
     if (!trimmed || trimmed.length < MIN_IDEA_LENGTH) continue
-    const title = shortenIdeaTitle(trimmed)
+    const topicName = story.topics[0]?.name ?? story.title
+    const title = ideaTitleForNewStory(story, founder, topicName)
 
     const candidateIdx = findIdeaMatch(pool, story, trimmed)
 
@@ -140,8 +138,16 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
         continue // this exact story already strengthened this idea — no-op, not a re-count
       }
 
+      // A newly-added founder makes the old single-founder title wrong —
+      // rebuild it from the full founder list whenever the list actually grew.
+      const founderListGrew = nextFounders.length !== candidate.relatedFounderIds.length
+      const nextTitle = founderListGrew
+        ? ideaTitleForFounders(nextFounders, candidate.topics[0]?.name ?? topicName)
+        : candidate.title
+
       const next: Idea = {
         ...candidate,
+        title: nextTitle,
         relatedStoryIds: alreadyLinked ? candidate.relatedStoryIds : [...candidate.relatedStoryIds, story.id],
         relatedFounderIds: nextFounders,
         relatedBusinessIds: nextBusinesses,
@@ -289,7 +295,6 @@ export function previewIdeaImpact(story: Story, intel: VillageContentIntelligenc
   for (const lessonText of intel.lessons) {
     const trimmed = lessonText.trim()
     if (!trimmed || trimmed.length < MIN_IDEA_LENGTH) continue
-    const title = shortenIdeaTitle(trimmed)
 
     const idx = findIdeaMatch(pool, story, trimmed)
     if (idx !== -1) {
@@ -304,9 +309,11 @@ export function previewIdeaImpact(story: Story, intel: VillageContentIntelligenc
     newIdeas++
     // Simulate the pool gaining this idea so a second similar lesson later in
     // the same draft strengthens it instead of double-counting as new —
-    // exactly what syncIdeasFromStory does for real.
+    // exactly what syncIdeasFromStory does for real. This preview never
+    // displays a title (only the newIdeas/strengthenedIdeas counts above
+    // are shown), so a real templated title isn't worth building here.
     pool.push({
-      id: `preview-${newIdeas}`, slug: '', title, description: trimmed, topics: story.topics,
+      id: `preview-${newIdeas}`, slug: '', title: trimmed, description: trimmed, topics: story.topics,
       relatedStoryIds: [story.id],
       relatedFounderIds: story.founderId ? [story.founderId] : [],
       relatedBusinessIds: story.businessId ? [story.businessId] : [],
