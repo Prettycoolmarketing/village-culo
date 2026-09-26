@@ -7,7 +7,7 @@ import { buildStoryFromImport, publishStoryCore } from './publishStory'
 import type { WriteResult } from '../lib/entityStore'
 import { locations } from '../data/locations'
 import { industries } from '../data/industries'
-import { topics as ALL_TOPICS } from '../data/topics'
+import { topics as ALL_TOPICS, createCustomTopic } from '../data/topics'
 import type { Founder, Business, Location, Industry, Topic } from '../types'
 import type { ImportedContent } from '../types/importedContent'
 import type {
@@ -45,32 +45,84 @@ function resolveLocation(city?: string, state?: string): Location {
   return locations.find(l => l.id === UNKNOWN_LOCATION_FALLBACK_ID) ?? locations[0]
 }
 
+// A curated row's Industry/Topics are specific, real phrases ("quantity
+// surveying", "construction contracts") — the site's own predefined lists
+// are broad categories ("Construction & Trades"). A plain substring check
+// (does one string literally contain the other) only catches a match when
+// the words happen to appear in the same order, which most real phrases
+// don't — "health & fitness" vs "Fitness & Wellness" is a real, obvious
+// match a human reads instantly and this old check missed entirely. This
+// compares the two as sets of significant words instead.
+// 'services' specifically excluded too — it's the generic suffix on so many
+// unrelated categories (Professional Services, Financial Services, Home
+// Services, Childcare & Family Services…) that matching on it alone
+// produced confident-looking but wrong pairings, e.g. a startup venture
+// advisor's "Professional Services" tag landing on "Childcare & Family
+// Services" purely because both end in the same generic word.
+const STOPWORDS = new Set(['and', 'the', 'a', 'an', 'of', 'for', 'in', 'on', '&', 'services'])
+function significantWords(s: string): Set<string> {
+  return new Set(
+    s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOPWORDS.has(w)),
+  )
+}
+function wordOverlap(a: Set<string>, b: Set<string>): number {
+  let n = 0
+  for (const w of a) if (b.has(w)) n++
+  return n
+}
+
 // ─── Industry matching ────────────────────────────────────────────────────────
 
-function resolveIndustry(industryNames?: string[]): Industry {
+// Checks every industry the row gave (not just the first), and returns
+// whether the result is a genuine match or the fallback default — a founder
+// whose given industries don't fit anything real should never be silently
+// mislabelled with no way to know it happened; see the "industry didn't
+// match anything" warning in validateVIF.
+function resolveIndustry(industryNames?: string[]): { industry: Industry; matched: boolean } {
   if (industryNames && industryNames.length > 0) {
-    const first = industryNames[0].toLowerCase()
-    const match = industries.find(i =>
-      i.name.toLowerCase().includes(first) || first.includes(i.name.toLowerCase())
-    )
-    if (match) return match
+    let best: { industry: Industry; score: number } | null = null
+    for (const raw of industryNames) {
+      const words = significantWords(raw)
+      for (const candidate of industries) {
+        const score = wordOverlap(words, significantWords(candidate.name))
+        if (score > 0 && (!best || score > best.score)) best = { industry: candidate, score }
+      }
+    }
+    if (best) return { industry: best.industry, matched: true }
   }
-  return industries[0]
+  return { industry: industries[0], matched: false }
 }
 
 // ─── Topic matching ───────────────────────────────────────────────────────────
 
-function resolveTopics(topicNames?: string[]): Topic[] {
+// `pool` is shared across the whole import batch (seeded with the real
+// predefined topics, extended as new custom ones get created) so that two
+// different founders both tagged "quantity surveying" end up sharing the
+// exact same Topic record instead of each silently getting their own
+// separately-generated one with the same name.
+function resolveTopics(topicNames: string[] | undefined, pool: Topic[]): Topic[] {
   if (!topicNames || topicNames.length === 0) return []
-  return topicNames
-    .map(name => {
-      const lower = name.toLowerCase()
-      return ALL_TOPICS.find(t =>
-        t.name.toLowerCase().includes(lower) || lower.includes(t.name.toLowerCase())
-      )
-    })
-    .filter((t): t is Topic => !!t)
-    .slice(0, 10)
+  const resolved: Topic[] = []
+  for (const raw of topicNames) {
+    const words = significantWords(raw)
+    let best: { topic: Topic; score: number } | null = null
+    for (const candidate of pool) {
+      const score = wordOverlap(words, significantWords(candidate.name))
+      if (score > 0 && (!best || score > best.score)) best = { topic: candidate, score }
+    }
+    if (best) {
+      resolved.push(best.topic)
+    } else {
+      // A real, specific topic this founder was actually tagged with, and
+      // nothing close enough exists yet — becomes a real custom Topic
+      // (createCustomTopic) rather than silently vanishing, same as any
+      // founder typing a new topic elsewhere in the app already can.
+      const custom = createCustomTopic(raw)
+      pool.push(custom)
+      resolved.push(custom)
+    }
+  }
+  return resolved.slice(0, 10)
 }
 
 // ─── Slug uniqueness ──────────────────────────────────────────────────────────
@@ -213,15 +265,19 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
   const articleUrl  = str(row['Article URL'])
   const youtubeUrl  = str(row['YouTube URL'])
   const podcastUrl  = str(row['Podcast URL'])
+  const digitalProductUrl = str(row['Digital Product URL'])
   const content: VillageImportContent[] = (
     [
-      articleUrl  ? { title: headline ?? `${fullName}'s article`, url: articleUrl,  description: bio } : undefined,
-      youtubeUrl  ? { title: `${fullName} on YouTube`,            url: youtubeUrl,  description: bio } : undefined,
-      podcastUrl  ? { title: `${fullName} on Podcast`,            url: podcastUrl,  description: bio } : undefined,
+      articleUrl        ? { title: headline ?? `${fullName}'s article`, url: articleUrl,        description: bio } : undefined,
+      youtubeUrl        ? { title: `${fullName} on YouTube`,            url: youtubeUrl,        description: bio } : undefined,
+      podcastUrl        ? { title: `${fullName} on Podcast`,            url: podcastUrl,        description: bio } : undefined,
+      // Without this, a real Digital Product URL only ever landed in
+      // admin-only notes text — never a real clickable link anywhere on
+      // the founder's actual page. Same pattern as the others: a plain
+      // content entry, its own real link out.
+      digitalProductUrl ? { title: `${fullName}'s digital product`,     url: digitalProductUrl, description: bio } : undefined,
     ] as (VillageImportContent | undefined)[]
   ).filter((c): c is VillageImportContent => !!c)
-
-  const digitalProductUrl = str(row['Digital Product URL'])
 
   return {
     fullName,
@@ -417,6 +473,9 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
   const slugsTaken = new Set<string>()
   const bizSlugsTaken = new Set<string>()
+  // Shared across the whole batch — see resolveTopics — so two founders
+  // tagged with the same real-world topic end up sharing one Topic record.
+  const topicsPool: Topic[] = [...ALL_TOPICS]
 
   for (const f of pkg.founders) {
     const displayName = f.preferredName?.trim() || f.fullName?.trim() || 'Unknown'
@@ -461,8 +520,16 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
       // Resolve location, industry, topics
       const location = resolveLocation(f.city, f.state)
-      const industry = resolveIndustry(f.industries)
-      const topics   = resolveTopics(f.topics)
+      const { industry, matched: industryMatched } = resolveIndustry(f.industries)
+      const topics   = resolveTopics(f.topics, topicsPool)
+      // Not a failure — the founder still imports fine — but a silently
+      // wrong industry with no trace of it happening is worse than an
+      // admin-visible note. Surfaces in this founder's own Edit popup
+      // (Profile tab, "Curator notes"), which the draft-first workflow
+      // already has staff opening before they publish anyone.
+      const industryWarning = (!industryMatched && f.industries && f.industries.length > 0)
+        ? `Industry mismatch: "${f.industries.join(', ')}" didn't match anything real — saved as "${industry.name}" instead. Check this is right.`
+        : undefined
 
       // Businesses
       let primaryBusinessId = existingFounder?.businessId ?? ''
@@ -517,7 +584,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
       }
 
       // Supplementary notes
-      const claimNotes = buildSupplementaryNotes(f)
+      const claimNotes = buildSupplementaryNotes(f, industryWarning)
 
       // Founder record
       const founder: Founder = {
