@@ -693,7 +693,7 @@ export function DashboardBulkImportPage() {
                               rel="noopener noreferrer"
                               className="text-[11px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
                             >
-                              View ↗
+                              {live?.status === 'published' ? 'View ↗' : 'Preview ↗'}
                             </a>
                             <button
                               onClick={() => copyText(profileUrl, profKey)}

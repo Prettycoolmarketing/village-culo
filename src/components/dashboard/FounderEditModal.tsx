@@ -4,7 +4,8 @@ import type { Founder } from '../../types'
 import type { ImportedContent, ImportedContentStatus } from '../../types/importedContent'
 import { updateFounder } from '../../services/founders'
 import { importedContentService } from '../../services/importedContent'
-import { getStory } from '../../services/stories'
+import { getStory, updateStory } from '../../services/stories'
+import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { Tabs } from './Tabs'
@@ -27,6 +28,10 @@ const STATUS_COLORS: Record<ImportedContentStatus, string> = {
 
 function ArticleRow({ item, onChanged }: { item: ImportedContent; onChanged: () => void }) {
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [title, setTitle] = useState(item.title)
+  const [description, setDescription] = useState(item.description ?? '')
+  const [saved, setSaved] = useState(false)
   // A piece that's already been turned into a real Story links to its own
   // permanent page; otherwise the only place to see it is where it came
   // from.
@@ -45,53 +50,111 @@ function ArticleRow({ item, onChanged }: { item: ImportedContent; onChanged: () 
     onChanged()
   }
 
+  // Editing this only changes the imported record by itself — if this piece
+  // already became a real Story (auto-published on import), that Story's
+  // own title/blog were built from the old values at that moment and never
+  // update again on their own. Keeping both in sync here means what staff
+  // see and edit in this popup is actually what's on the page.
+  async function handleSaveEdit() {
+    setBusy(true)
+    const nextDescription = normalizeBlogSpacing(description.trim())
+    await importedContentService.upsert({ ...item, title: title.trim() || item.title, description: nextDescription })
+    if (publishedStory) {
+      await updateStory({ ...publishedStory, title: title.trim() || publishedStory.title, blog: nextDescription })
+    }
+    setBusy(false)
+    setSaved(true)
+    setEditing(false)
+    onChanged()
+    setTimeout(() => setSaved(false), 2000)
+  }
+
   return (
-    <div className="flex items-center gap-4 px-4 py-3.5 border-b border-[#F3EDE6] last:border-b-0">
-      <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#F3EDE6] flex-shrink-0">
-        {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{item.sourcePlatform}</p>
-        <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
-        {item.description && <p className="text-xs text-[#6B7280] truncate">{item.description}</p>}
-      </div>
-      <select
-        value={item.status}
-        disabled={busy}
-        onChange={e => void setStatus(e.target.value as ImportedContentStatus)}
-        className={`text-xs font-semibold px-3 py-1.5 rounded-lg border-0 focus:outline-none cursor-pointer shrink-0 ${STATUS_COLORS[item.status]}`}
-      >
-        <option value="draft">Draft</option>
-        <option value="published">Published</option>
-        <option value="featured">Featured</option>
-        <option value="archived">Archived</option>
-      </select>
-      {publishedStory ? (
-        <Link
-          to={`/stories/${publishedStory.slug}`}
-          target="_blank"
-          className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0"
+    <div className="border-b border-[#F3EDE6] last:border-b-0">
+      <div className="flex items-center gap-4 px-4 py-3.5">
+        <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#F3EDE6] flex-shrink-0">
+          {item.thumbnailUrl && <img src={item.thumbnailUrl} alt="" className="w-full h-full object-cover" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{item.sourcePlatform}</p>
+          <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
+          {item.description && <p className="text-xs text-[#6B7280] truncate">{item.description}</p>}
+        </div>
+        <select
+          value={item.status}
+          disabled={busy}
+          onChange={e => void setStatus(e.target.value as ImportedContentStatus)}
+          className={`text-xs font-semibold px-3 py-1.5 rounded-lg border-0 focus:outline-none cursor-pointer shrink-0 ${STATUS_COLORS[item.status]}`}
         >
-          View article ↗
-        </Link>
-      ) : (
-        <a
-          href={item.originalUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="featured">Featured</option>
+          <option value="archived">Archived</option>
+        </select>
+        <button
+          onClick={() => setEditing(o => !o)}
           className="text-xs font-semibold text-[#9CA3AF] hover:text-[#C86A43] transition-colors shrink-0"
         >
-          Source ↗
-        </a>
+          {editing ? 'Close' : 'Edit'}
+        </button>
+        {publishedStory ? (
+          <Link
+            to={`/stories/${publishedStory.slug}`}
+            target="_blank"
+            className="text-xs font-semibold text-[#C86A43] hover:underline shrink-0"
+          >
+            View article ↗
+          </Link>
+        ) : (
+          <a
+            href={item.originalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-semibold text-[#9CA3AF] hover:text-[#C86A43] transition-colors shrink-0"
+          >
+            Source ↗
+          </a>
+        )}
+        <ConfirmButton
+          label="Delete"
+          confirmLabel="Yes"
+          message="Delete this piece of content?"
+          onConfirm={() => void handleDelete()}
+          disabled={busy}
+          className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors shrink-0"
+        />
+      </div>
+
+      {/* What's actually on the page — the exact title and blog body this
+          piece publishes with (or already did, if it's live), editable
+          right here instead of only being visible after publishing. */}
+      {editing && (
+        <div className="px-4 pb-4 flex flex-col gap-3 bg-[#FAF8F5]">
+          <div>
+            <label className={LABEL_CLS}>Title</label>
+            <input className={INPUT_CLS} value={title} onChange={e => setTitle(e.target.value)} />
+          </div>
+          <div>
+            <label className={LABEL_CLS}>Blog body</label>
+            <textarea
+              className={`${INPUT_CLS} resize-y leading-relaxed`}
+              rows={8}
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => void handleSaveEdit()}
+              disabled={busy}
+              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+            >
+              {busy ? 'Saving…' : 'Save'}
+            </button>
+            {saved && <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>}
+          </div>
+        </div>
       )}
-      <ConfirmButton
-        label="Delete"
-        confirmLabel="Yes"
-        message="Delete this piece of content?"
-        onConfirm={() => void handleDelete()}
-        disabled={busy}
-        className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors shrink-0"
-      />
     </div>
   )
 }
@@ -220,7 +283,11 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           target="_blank"
           className="text-xs font-semibold text-[#9CA3AF] hover:text-[#C86A43] transition-colors ml-auto"
         >
-          View public profile ↗
+          {/* Still a real render of the actual page — not a separate mock-up
+              — but honest about what it is while it's a draft: nobody else
+              can load this URL and see anything yet, only you, in this same
+              browser, because you're the one who just wrote it. */}
+          {founder.status === 'published' ? 'View public profile ↗' : 'Preview (not public yet) ↗'}
         </Link>
       </div>
     </div>
