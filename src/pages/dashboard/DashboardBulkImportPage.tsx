@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { parseVIF, validateVIF, importVIF } from '../../services/villageImport'
 import { importBatchService } from '../../services/importBatch'
@@ -139,6 +139,30 @@ export function DashboardBulkImportPage() {
   const [importError, setImportError] = useState<string | null>(null)
   const [exampleOpen, setExampleOpen] = useState(false)
   const [copied, setCopied]     = useState<string | null>(null)
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [pasteOpen, setPasteOpen] = useState(false)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // ── File upload — the normal path. Reads the .json Claude/ChatGPT/Sellable
+  // produced straight off disk instead of asking staff to open it and paste
+  // the contents in by hand.
+  function handleFile(file: File) {
+    setFileError(null)
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      setFileError('That doesn\'t look like a .json file — pick the file the Village Import Format was saved as.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = typeof reader.result === 'string' ? reader.result : ''
+      setFileName(file.name)
+      setRaw(text)
+      setParseError(null)
+    }
+    reader.onerror = () => setFileError('Could not read that file — try again.')
+    reader.readAsText(file)
+  }
 
   // ── Copy helper ───────────────────────────────────────────────────────────
 
@@ -209,6 +233,8 @@ export function DashboardBulkImportPage() {
   function reset() {
     setStep(0); setRaw(''); setParseError(null); setPkg(null)
     setValidation(null); setOptions(DEFAULT_IMPORT_OPTIONS); setResult(null)
+    setFileName(null); setFileError(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   // ── Outreach message ─────────────────────────────────────────────────────
@@ -238,7 +264,7 @@ export function DashboardBulkImportPage() {
             <h1 className="text-2xl font-bold text-[#2D2A26]">Bulk Import</h1>
           </div>
           <p className="text-sm text-[#6B7280]">
-            Paste a Village Import Format JSON file to import multiple founders at once.
+            Add a Village Import Format .json file to import multiple founders at once.
           </p>
         </div>
       </div>
@@ -266,58 +292,114 @@ export function DashboardBulkImportPage() {
         </div>
       )}
 
-      {/* ── Step 0: Paste JSON ──────────────────────────────────────────────── */}
+      {/* ── Step 0: Add a file ───────────────────────────────────────────────
+          File upload is the normal path — a Village Import Format .json file
+          from Claude, ChatGPT or Sellable — so it leads here. Pasting JSON
+          directly is a fallback for anyone without a file, tucked away
+          rather than shown by default. */}
       {step === 0 && (
         <div className="space-y-4">
 
-          {/* Example format */}
-          <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setExampleOpen(o => !o)}
-              className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-[#2D2A26] hover:bg-[#F8F5F0] transition-colors"
-            >
-              <span>Village Import Format — Example JSON</span>
-              <span className="text-[#9CA3AF] text-xs font-normal">
-                {exampleOpen ? '▲ Collapse' : '▼ Expand'}
-              </span>
-            </button>
-            {exampleOpen && (
-              <div className="border-t border-[#E8E4DD]">
-                <div className="flex items-center justify-between px-5 py-2.5 bg-[#F8F5F0]">
-                  <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide">VIF JSON Schema Example</p>
-                  <button
-                    onClick={() => copyText(EXAMPLE_JSON, 'example')}
-                    className={`text-xs font-semibold px-3 py-1 rounded-lg transition-colors ${
-                      copied === 'example'
-                        ? 'bg-[#5E6B4A] text-white'
-                        : 'bg-white border border-[#E8E4DD] text-[#C86A43] hover:bg-[#C86A43] hover:text-white'
-                    }`}
-                  >
-                    {copied === 'example' ? '✓ Copied' : 'Copy'}
-                  </button>
-                </div>
-                <pre className="text-[11px] text-[#4B4845] leading-relaxed px-5 py-4 overflow-x-auto font-mono bg-white max-h-80 overflow-y-auto">
-                  {EXAMPLE_JSON}
-                </pre>
-              </div>
+          {/* File upload */}
+          <div
+            onDragOver={e => e.preventDefault()}
+            onDrop={e => {
+              e.preventDefault()
+              const file = e.dataTransfer.files[0]
+              if (file) handleFile(file)
+            }}
+            className={`rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
+              fileName ? 'border-[#5E6B4A] bg-[#5E6B4A]/5' : 'border-[#E8E4DD] bg-white hover:border-[#C86A43]/50'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+            />
+            {fileName ? (
+              <>
+                <p className="text-sm font-semibold text-[#5E6B4A]">✓ {fileName}</p>
+                <p className="text-xs text-[#6B7280] mt-1">Loaded — hit Validate JSON below to continue.</p>
+                <button
+                  type="button"
+                  onClick={() => { setFileName(null); setRaw(''); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                  className="mt-3 text-xs font-semibold text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
+                >
+                  Remove and choose a different file
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-[#2D2A26] mb-1">Add your founder batch file</p>
+                <p className="text-xs text-[#6B7280] mb-4">A Village Import Format .json file — from Claude, ChatGPT or Sellable.</p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                >
+                  Choose a file
+                </button>
+                <p className="text-[11px] text-[#9CA3AF] mt-3">or drag it in here</p>
+              </>
             )}
           </div>
 
-          {/* Textarea */}
-          <div>
-            <label className="block text-xs font-semibold text-[#2D2A26] mb-2">
-              Paste Village Import Format JSON
-            </label>
-            <textarea
-              className="w-full px-4 py-3.5 rounded-xl border border-[#E8E4DD] text-xs font-mono text-[#2D2A26] focus:outline-none focus:border-[#C86A43] bg-white placeholder:text-[#9CA3AF] resize-y"
-              rows={14}
-              placeholder={`{\n  "batchName": "My Founder Batch",\n  "source": "claude",\n  "founders": [...]\n}`}
-              value={raw}
-              onChange={e => { setRaw(e.target.value); setParseError(null) }}
-              spellCheck={false}
-            />
-          </div>
+          {fileError && (
+            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+              <svg className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+              </svg>
+              <p className="text-xs text-red-700">{fileError}</p>
+            </div>
+          )}
+
+          {/* Paste JSON — fallback for anyone without a file */}
+          <details className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden" open={pasteOpen} onToggle={e => setPasteOpen((e.target as HTMLDetailsElement).open)}>
+            <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-semibold text-[#2D2A26] hover:bg-[#F8F5F0] transition-colors flex items-center justify-between">
+              <span>No file? Paste the JSON directly</span>
+              <span className="text-[#9CA3AF] text-xs font-normal">{pasteOpen ? '▲ Collapse' : '▼ Expand'}</span>
+            </summary>
+            <div className="border-t border-[#E8E4DD] p-5 space-y-3">
+              <textarea
+                className="w-full px-4 py-3.5 rounded-xl border border-[#E8E4DD] text-xs font-mono text-[#2D2A26] focus:outline-none focus:border-[#C86A43] bg-white placeholder:text-[#9CA3AF] resize-y"
+                rows={10}
+                placeholder={`{\n  "batchName": "My Founder Batch",\n  "source": "claude",\n  "founders": [...]\n}`}
+                value={raw}
+                onChange={e => { setRaw(e.target.value); setParseError(null); setFileName(null) }}
+                spellCheck={false}
+              />
+              <button
+                type="button"
+                onClick={() => setExampleOpen(o => !o)}
+                className="text-xs font-semibold text-[#C86A43] hover:underline"
+              >
+                {exampleOpen ? '▲ Hide example format' : '▼ See an example of the format'}
+              </button>
+              {exampleOpen && (
+                <div className="rounded-xl border border-[#E8E4DD] overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-[#F8F5F0]">
+                    <p className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide">VIF JSON Schema Example</p>
+                    <button
+                      onClick={() => copyText(EXAMPLE_JSON, 'example')}
+                      className={`text-xs font-semibold px-3 py-1 rounded-lg transition-colors ${
+                        copied === 'example'
+                          ? 'bg-[#5E6B4A] text-white'
+                          : 'bg-white border border-[#E8E4DD] text-[#C86A43] hover:bg-[#C86A43] hover:text-white'
+                      }`}
+                    >
+                      {copied === 'example' ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <pre className="text-[11px] text-[#4B4845] leading-relaxed px-4 py-4 overflow-x-auto font-mono bg-white max-h-80 overflow-y-auto">
+                    {EXAMPLE_JSON}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </details>
 
           {parseError && (
             <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">

@@ -1369,7 +1369,7 @@ export function SavedRow({
   const statusColors: Record<ImportedContentStatus, string> = {
     draft:     'bg-[#F3EDE6] text-[#9CA3AF]',
     published: 'bg-[#5E6B4A]/10 text-[#5E6B4A]',
-    featured:  'bg-[#D6A94D]/20 text-amber-700',
+    featured:  'bg-[#3E6E92]/15 text-[#3E6E92]',
     archived:  'bg-[#F3EDE6] text-[#6B7280]',
   }
 

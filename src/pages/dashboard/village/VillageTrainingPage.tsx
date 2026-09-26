@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Link } from 'react-router-dom'
 
@@ -145,6 +145,26 @@ function CopyPromptButton({ text, label }: { text: string; label: string }) {
 }
 
 export function VillageTrainingPage() {
+  const [activeSection, setActiveSection] = useState(NAV_ITEMS[0].id)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+
+  useEffect(() => {
+    const sections = NAV_ITEMS
+      .map(item => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => !!el)
+
+    observerRef.current = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(e => e.isIntersecting)
+        if (visible.length > 0) {
+          setActiveSection(visible[0].target.id)
+        }
+      },
+      { rootMargin: '-96px 0px -70% 0px', threshold: 0 },
+    )
+    sections.forEach(el => observerRef.current!.observe(el))
+    return () => observerRef.current?.disconnect()
+  }, [])
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -162,12 +182,16 @@ export function VillageTrainingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,800px)] gap-12 items-start">
         <nav className="hidden lg:block sticky top-8 self-start">
           <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">On this page</p>
-          <ul className="space-y-1">
+          <ul className="flex flex-col gap-1.5">
             {NAV_ITEMS.map(item => (
               <li key={item.id}>
                 <a
                   href={`#${item.id}`}
-                  className="block text-sm text-[#6B7280] hover:text-[#C86A43] px-3 py-1.5 rounded-lg hover:bg-white transition-colors"
+                  className={`block px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                    activeSection === item.id
+                      ? 'bg-[#C86A43] text-white'
+                      : 'text-[#6B7280] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
+                  }`}
                 >
                   {item.label}
                 </a>
