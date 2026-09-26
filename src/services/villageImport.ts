@@ -13,6 +13,8 @@ import type { ImportedContent } from '../types/importedContent'
 import type {
   VillageImportPackage,
   VillageImportFounder,
+  VillageImportBusiness,
+  VillageImportContent,
   VIFFounderPreview,
   VIFValidationResult,
   VIFImportOptions,
@@ -133,13 +135,114 @@ function isValidUrl(url: string): boolean {
   }
 }
 
+// ─── Raw spreadsheet row adapter ───────────────────────────────────────────────
+// The curation workflow's real output (Claude in Excel, Sellable, a plain
+// spreadsheet-to-JSON export) is a flat array of rows with human column
+// headers ("Full Name", "YouTube URL", "Business Location", …) — not the
+// camelCase VillageImportFounder shape, and not wrapped in a {batchName,
+// founders: [...]} package at all. That's not a malformed file, it's just a
+// different, equally real shape; this converts it into one instead of
+// rejecting it.
+
+function str(v: unknown): string | undefined {
+  if (typeof v !== 'string') return undefined
+  const t = v.trim()
+  return t.length > 0 ? t : undefined
+}
+
+// "construction contracts, contract administration, AI in construction" → 3
+// trimmed, non-empty entries — used for Topics/Industries/Speaking Topics,
+// which all arrive as one comma-separated cell rather than a real array.
+function splitList(v: unknown): string[] | undefined {
+  const s = str(v)
+  if (!s) return undefined
+  const parts = s.split(',').map(p => p.trim()).filter(Boolean)
+  return parts.length > 0 ? parts : undefined
+}
+
+// A row that already looks like a proper VillageImportFounder (has a
+// camelCase fullName) passes through untouched; only a raw spreadsheet row
+// (has "Full Name" instead) gets converted.
+function looksLikeRawRow(row: Record<string, unknown>): boolean {
+  return !('fullName' in row) && ('Full Name' in row || 'Full name' in row)
+}
+
+function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFounder {
+  const fullName = str(row['Full Name']) ?? str(row['Full name']) ?? 'Unknown Founder'
+
+  // Curator's own working notes (fit assessment, evidence, flagged link
+  // issues) — not part of the founder's public profile, but too useful to
+  // silently drop. Lands in `notes`, which buildSupplementaryNotes() already
+  // surfaces as admin-only claimNotes on the founder record.
+  const curatorNotes = [
+    str(row['Culo Village Fit']) && `Culo Village Fit: ${row['Culo Village Fit']}`,
+    str(row['Fit Evidence']) && `Fit Evidence: ${row['Fit Evidence']}`,
+    str(row['Link Issues']) && `Link Issues: ${row['Link Issues']}`,
+    str(row['Other businesses']) && `Other businesses: ${row['Other businesses']}`,
+  ].filter((s): s is string => !!s).join('\n')
+
+  const businessName = str(row['Business Name'])
+  const businesses: VillageImportBusiness[] | undefined = businessName ? [{
+    name: businessName,
+    website: str(row['Business Website']),
+    description: str(row['Business Description']),
+    industry: str(row['Industry']),
+    role: str(row['Role']),
+    location: str(row['Business Location']),
+  }] : undefined
+
+  // The one link a founder-level field doesn't already cover — no title or
+  // description of its own in this shape, so it becomes a plain content
+  // entry (an embed, not an auto-published story: there's nothing here long
+  // enough to build a real article from) rather than being silently dropped.
+  const articleUrl = str(row['Article URL'])
+  const content: VillageImportContent[] | undefined = articleUrl ? [{
+    title: `${fullName} — featured article`,
+    url: articleUrl,
+    platform: 'article',
+  }] : undefined
+
+  const digitalProductUrl = str(row['Digital Product URL'])
+
+  return {
+    fullName,
+    headline: str(row['Headline']),
+    bio: str(row['Bio']),
+    country: str(row['Country']),
+    state: str(row['State']),
+    city: str(row['City']),
+    website: str(row['Website']),
+    linkedinUrl: str(row['LinkedIn URL']),
+    youtubeUrl: str(row['YouTube URL']),
+    instagramUrl: str(row['Instagram URL']),
+    tiktokUrl: str(row['TikTok URL']),
+    podcastUrl: str(row['Podcast URL']),
+    claimEmail: str(row['Claim Email']),
+    topics: splitList(row['Topics']),
+    industries: splitList(row['Industries']),
+    speakingTopics: splitList(row['Speaking Topics']),
+    businesses,
+    content,
+    sourceLinks: digitalProductUrl ? [digitalProductUrl] : undefined,
+    notes: curatorNotes || undefined,
+  }
+}
+
 // ─── Validate ─────────────────────────────────────────────────────────────────
 
 export function parseVIF(raw: string): { pkg: VillageImportPackage | null; error: string | null } {
   try {
     const parsed = JSON.parse(raw) as unknown
-    if (typeof parsed !== 'object' || parsed === null) return { pkg: null, error: 'JSON must be an object.' }
-    const obj = parsed as Record<string, unknown>
+    if (parsed === null || typeof parsed !== 'object') return { pkg: null, error: 'JSON must be an object or an array of founders.' }
+
+    // A bare array — a raw spreadsheet export with no {batchName, founders}
+    // wrapper at all — is founders on its own, not a malformed package.
+    const isBareFounderArray = Array.isArray(parsed)
+    const founderList = isBareFounderArray ? (parsed as unknown[]) : undefined
+
+    const obj: Record<string, unknown> = isBareFounderArray
+      ? { founders: founderList }
+      : (parsed as Record<string, unknown>)
 
     // batchName is only ever used as a label (the import history log, the
     // preview screen) — nothing downstream depends on it structurally, so
@@ -157,6 +260,16 @@ export function parseVIF(raw: string): { pkg: VillageImportPackage | null; error
 
     if (!Array.isArray(obj.founders)) return { pkg: null, error: 'Missing required field: founders (must be an array)' }
     if (obj.founders.length === 0) return { pkg: null, error: 'founders array is empty' }
+
+    // Convert any row still using raw spreadsheet column names (whether the
+    // file was a bare array or already wrapped in {batchName, founders}) —
+    // real VIF founders pass through untouched.
+    obj.founders = (obj.founders as unknown[]).map(f => {
+      if (typeof f !== 'object' || f === null) return f
+      const row = f as Record<string, unknown>
+      return looksLikeRawRow(row) ? normalizeRawFounderRow(row) : row
+    })
+
     return { pkg: obj as unknown as VillageImportPackage, error: null }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Invalid JSON'
