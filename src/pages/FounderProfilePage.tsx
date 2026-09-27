@@ -460,7 +460,7 @@ export function FounderProfilePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
           </div>
         ) : (
-          <div className="h-32 bg-gradient-to-br from-primary/20 to-secondary/10" aria-hidden="true" />
+          <div className="h-32 bg-gradient-to-br from-[#3E6E92]/25 to-[#3E6E92]/5" aria-hidden="true" />
         )}
 
         <div className="bg-surface border-b border-border pb-12">

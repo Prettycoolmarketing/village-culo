@@ -355,7 +355,11 @@ function buildCuratedBio(
   const subjectPhrase = speakingTopic ? lowercaseFirst(speakingTopic) : topicName
   const about = subjectPhrase ? `, whose work focuses on ${subjectPhrase}` : ''
   const bizSentence = businessDescription ? ` ${businessDescription}` : ''
-  return `${displayName} is ${role}, based in ${locationLabel}${about}${platformsPhrase}.${bizSentence} Curated by CULO Village from publicly available content.`
+  // No "Curated by CULO..." line here — the profile page's own curated
+  // banner (FounderProfilePage) already states that, right above this bio.
+  // The article body's closing paragraph keeps its own version of this,
+  // since an article page has no such banner.
+  return `${displayName} is ${role}, based in ${locationLabel}${about}${platformsPhrase}.${bizSentence}`.trim()
 }
 
 // A one-sentence bio is fine on a profile card, but a content item's
@@ -369,6 +373,17 @@ function buildCuratedBio(
 // whatever real context the curation sheet captured (business description,
 // speaking topics) — still entirely CULO's own writing, never the
 // founder's scraped prose.
+// Giving every one of a founder's links (article, YouTube, podcast, digital
+// product) the same full multi-paragraph treatment produced 3-4 pages per
+// founder that were ~90% identical text — real, confirmed duplicate content
+// across a founder's own pages, which search engines penalise (keyword
+// cannibalisation) and which reads to an AI system as templated filler
+// rather than 3-4 independent pieces of evidence, undermining exactly the
+// citability the Village exists for. There's only ever one real synthesised
+// Key Facts paragraph per founder (not one per link), so only ONE item — the
+// designated "article" — gets the full journalistic treatment; every other
+// link gets a short, honest, clearly-lighter mention instead of a duplicate
+// full article.
 function buildContentItemBody(
   kind: string | undefined,
   displayName: string,
@@ -379,18 +394,19 @@ function buildContentItemBody(
   keyFacts: string | undefined,
   locationLabel: string,
 ): string {
-  const p1 = `${displayName} is ${role}, based in ${locationLabel}.`
-
-  // Never quotes the item's own title back at the reader — the page's
-  // title already says that; a body that opens by restating its own
-  // heading verbatim reads circular, not like a real article intro.
-  const introByKind: Record<string, string> = {
-    youtube:           `This is ${displayName}'s appearance on YouTube.`,
-    podcast:           `This is ${displayName}'s appearance on their podcast.`,
-    article:           `This is ${displayName}'s own article.`,
-    'digital-product': `This is ${displayName}'s digital product.`,
+  if (kind !== 'article') {
+    const shortIntro: Record<string, string> = {
+      youtube:           `Watch ${displayName} on YouTube.`,
+      podcast:           `Listen to ${displayName}'s appearance on their podcast.`,
+      'digital-product': `${displayName}'s digital product — see the link above for details.`,
+    }
+    const p1 = (kind && shortIntro[kind]) || `One of ${displayName}'s own links — see above.`
+    const p2 = `For ${displayName}'s full profile and their main written piece, see their Village page. Curated by CULO Village from publicly available content — the original is above, straight from their own channel.`
+    return [p1, p2].join('\n\n')
   }
-  const p2 = (kind && introByKind[kind]) || `This is one of ${displayName}'s own pieces.`
+
+  const p1 = `${displayName} is ${role}, based in ${locationLabel}.`
+  const p2 = `This is ${displayName}'s own article.`
 
   // Real substance: keyFacts is a curator's own synthesis of the specific
   // detail in the actual linked content (real numbers, dates, named
@@ -400,10 +416,7 @@ function buildContentItemBody(
   const subjectTopics = speakingTopics.length > 0 ? speakingTopics : topicNames
   const p3 = keyFacts || (subjectTopics.length > 0 ? `It covers ${joinNaturally(subjectTopics)}.` : '')
 
-  // Only the article/product piece carries the business description — every
-  // item repeating the same business blurb is exactly the sameness this is
-  // meant to fix.
-  const p4 = (kind === 'article' || kind === 'digital-product') && businessDescription ? businessDescription : ''
+  const p4 = businessDescription || ''
 
   const p5 = `This profile was curated by CULO Village from publicly available content, not written by ${displayName} themselves — the original posts and links are above, straight from their own channels. If this is your profile and you'd like to update it in your own words, you can claim it or request its removal using the links on this page.`
 
@@ -886,6 +899,14 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
       // Content
       if (f.content && f.content.length > 0) {
+        // Every founder gets exactly one full-substance piece. Normally
+        // that's whichever link came from the Article URL field — but a
+        // founder with only a YouTube/podcast link and no Article URL would
+        // otherwise get zero real articles at all, just short mentions; the
+        // first real link stands in as the primary piece for them instead.
+        const hasArticleKind = f.content.some(c => c.platform === 'article')
+        let primaryAssigned = false
+
         for (const c of f.content) {
           if (!c.url || !isValidUrl(c.url)) continue
 
@@ -908,8 +929,10 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
           }
 
           const itemTitle = c.title || draft.title
+          const isPrimary = c.platform === 'article' || (!hasArticleKind && !primaryAssigned)
+          if (isPrimary) primaryAssigned = true
           const generatedItemBody = buildContentItemBody(
-            c.platform, displayName, curatedRole,
+            isPrimary ? 'article' : c.platform, displayName, curatedRole,
             f.businesses?.[0]?.description, topics.map(t => t.name), f.speakingTopics ?? [], f.keyFacts, locationLabel,
           )
 
