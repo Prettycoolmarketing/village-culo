@@ -7,6 +7,12 @@ import type { EvidenceLedger } from '../types/editorialEngine'
 // editorial_items table (no local cache layer yet — this is a low-volume,
 // manual-trigger feature for now, not something read on every page load).
 
+export interface AuditIssue {
+  sentence: string
+  issue_type: 'INVENTED_FACT' | 'DROPPED_ATTRIBUTION' | 'OVERSTATED_CONFIDENCE' | 'FACTUAL_DRIFT'
+  explanation: string
+}
+
 export interface EditorialItemRow {
   id: string
   founder_id: string
@@ -14,6 +20,7 @@ export interface EditorialItemRow {
   type: 'profile_bio' | 'source_article'
   draft_content: { title?: string; body: string; byline?: string; claim_ids_used?: string[] } | null
   editorial_status: 'pending' | 'pass' | 'review' | 'reject'
+  auditor_notes: AuditIssue[] | null
   auto_publish_allowed: boolean
   created_at: string
 }
@@ -93,6 +100,49 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
     .single()
   if (dbError || !data) return { success: false, error: dbError?.message ?? 'Could not save draft.' }
   return { success: true, item: data as EditorialItemRow }
+}
+
+// Stage 3 — Auditor. Checks an already-written draft against the same
+// evidence ledger it was written from — a second, independent pass, not
+// the Writer re-checking its own work. Never rewrites, never re-searches;
+// only produces a verdict (pass/review/reject) and, when it finds
+// something, a list of specific sentence-level issues for the review
+// queue to show.
+export async function runAudit(item: EditorialItemRow): Promise<WriteResult> {
+  if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
+  const founder = getFounder(item.founder_id)
+  const ledger = founder?.evidenceLedger
+  if (!founder || !ledger) return { success: false, error: 'No evidence ledger found for this founder.' }
+  if (!item.draft_content?.body) return { success: false, error: 'This item has no draft to audit.' }
+
+  const claims = ledger.claims.filter(c => c.human_review !== 'rejected')
+  const { data, error } = await supabase.functions.invoke<{ result?: { verdict: 'pass' | 'review' | 'reject'; issues: AuditIssue[] }; error?: string }>(
+    'editorial-audit',
+    {
+      body: {
+        founderName: founder.name,
+        draftTitle: item.draft_content.title,
+        draftBody: item.draft_content.body,
+        claims,
+      },
+    },
+  )
+  if (error || data?.error || !data?.result) {
+    return { success: false, error: data?.error || (error instanceof Error ? error.message : 'Audit failed.') }
+  }
+
+  const { data: updated, error: dbError } = await supabase
+    .from('editorial_items')
+    .update({
+      editorial_status: data.result.verdict,
+      auditor_notes: data.result.issues,
+      last_verified_at: new Date().toISOString(),
+    })
+    .eq('id', item.id)
+    .select()
+    .single()
+  if (dbError || !updated) return { success: false, error: dbError?.message ?? 'Could not save audit result.' }
+  return { success: true, item: updated as EditorialItemRow }
 }
 
 // Writes one source_article item for a specific valid source. Call once

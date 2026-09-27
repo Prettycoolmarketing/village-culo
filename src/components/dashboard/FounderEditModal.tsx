@@ -13,7 +13,7 @@ import { Tabs } from './Tabs'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { runFounderResearch } from '../../services/editorialResearch'
 import { passesRiskGate, riskGateReasons } from '../../services/editorialEngine'
-import { writeProfileBio, writeSourceArticle, getEditorialItems, type EditorialItemRow } from '../../services/editorialItems'
+import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, type EditorialItemRow } from '../../services/editorialItems'
 
 // Culo Editorial Engine, Sprint 1 — Stage 1 (Researcher) only, manual
 // trigger, one founder at a time. Not wired into Bulk Import. See
@@ -146,6 +146,14 @@ function EditorialWritePanel({ founder, ledger }: { founder: Founder; ledger: No
     setItems(prev => [...prev, result.item!])
   }
 
+  async function handleAudit(item: EditorialItemRow) {
+    setWritingKey(`audit-${item.id}`); setError(null)
+    const result = await runAudit(item)
+    setWritingKey(null)
+    if (!result.success) { setError(result.error ?? 'Audit failed.'); return }
+    setItems(prev => prev.map(i => i.id === item.id ? result.item! : i))
+  }
+
   return (
     <div className="mt-3 pt-3 border-t border-[#E8E4DD]">
       <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-2">
@@ -155,11 +163,7 @@ function EditorialWritePanel({ founder, ledger }: { founder: Founder; ledger: No
 
       <div className="mb-3">
         {bioItem ? (
-          <div className="bg-[#F8F5F0] rounded-lg px-3 py-2">
-            <p className="text-xs font-semibold text-[#2D2A26] mb-1">Bio draft ({bioItem.editorial_status})</p>
-            <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{bioItem.draft_content?.body}</p>
-            <p className="text-[10px] text-[#9CA3AF] italic mt-1">{bioItem.draft_content?.byline}</p>
-          </div>
+          <DraftItemCard item={bioItem} auditing={writingKey === `audit-${bioItem.id}`} onAudit={() => void handleAudit(bioItem)} />
         ) : (
           <button
             onClick={() => void handleWriteBio()}
@@ -179,11 +183,7 @@ function EditorialWritePanel({ founder, ledger }: { founder: Founder; ledger: No
             <div key={source.url} className="bg-[#F8F5F0] rounded-lg px-3 py-2">
               <p className="text-xs font-semibold text-[#2D2A26] truncate">{source.source_title ?? source.url}</p>
               {existing ? (
-                <>
-                  <p className="text-[10px] text-[#9CA3AF] mb-1">Draft status: {existing.editorial_status}</p>
-                  <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{existing.draft_content?.body}</p>
-                  <p className="text-[10px] text-[#9CA3AF] italic mt-1">{existing.draft_content?.byline}</p>
-                </>
+                <DraftItemCard item={existing} auditing={writingKey === `audit-${existing.id}`} onAudit={() => void handleAudit(existing)} />
               ) : (
                 <button
                   onClick={() => void handleWriteSource(source)}
@@ -197,6 +197,49 @@ function EditorialWritePanel({ founder, ledger }: { founder: Founder; ledger: No
           )
         })}
       </div>
+    </div>
+  )
+}
+
+const AUDIT_STATUS_COLORS: Record<EditorialItemRow['editorial_status'], string> = {
+  pending: 'text-[#9CA3AF]',
+  pass: 'text-[#5E6B4A]',
+  review: 'text-amber-600',
+  reject: 'text-red-600',
+}
+
+// Shared display for one Writer draft — bio or article. Shows the draft
+// itself, its fixed Culo byline, an "Audit this draft" trigger (Stage 3),
+// and any issues the Auditor found, each tied to the specific sentence it
+// flagged so a reviewer doesn't have to re-read the whole piece to find it.
+function DraftItemCard({ item, auditing, onAudit }: { item: EditorialItemRow; auditing: boolean; onAudit: () => void }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <p className={`text-[10px] font-semibold uppercase ${AUDIT_STATUS_COLORS[item.editorial_status]}`}>
+          {item.editorial_status === 'pending' ? 'Not yet audited' : `Audit: ${item.editorial_status}`}
+        </p>
+        <button
+          onClick={onAudit}
+          disabled={auditing}
+          className="text-[10px] font-semibold text-[#3E6E92] hover:underline disabled:opacity-50 shrink-0"
+        >
+          {auditing ? 'Auditing…' : item.editorial_status === 'pending' ? 'Audit this draft' : 'Re-audit'}
+        </button>
+      </div>
+      <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{item.draft_content?.body}</p>
+      <p className="text-[10px] text-[#9CA3AF] italic mt-1">{item.draft_content?.byline}</p>
+      {item.auditor_notes && item.auditor_notes.length > 0 && (
+        <ul className="mt-2 space-y-1.5">
+          {item.auditor_notes.map((issue, i) => (
+            <li key={i} className="border-l-2 border-red-300 pl-2">
+              <p className="text-[10px] font-semibold uppercase text-red-600">{issue.issue_type}</p>
+              <p className="text-xs text-[#2D2A26] italic">"{issue.sentence}"</p>
+              <p className="text-[10px] text-[#6B7280]">{issue.explanation}</p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
