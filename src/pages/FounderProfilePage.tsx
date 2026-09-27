@@ -291,7 +291,16 @@ export function FounderProfilePage() {
     } : undefined,
   })
 
-  if (!founder || (founder.status !== 'published' && founder.status !== 'featured')) return <FounderNotFound slug={slug ?? ''} />
+  // No separate "is this founder public" check here — RLS is what actually
+  // decides that: a draft founder only ever reaches this browser's local
+  // cache at all if the signed-in session is authorized to see it (its own
+  // owner, or CAPO staff via is_village_admin()). A real anonymous visitor
+  // hitting a draft's URL gets nothing back from Supabase in the first
+  // place, so `founder` is genuinely undefined for them — this used to
+  // additionally require status === published/featured, which blocked the
+  // dashboard's own "Preview (not public yet)" link for every draft, the
+  // one case this branch exists to serve.
+  if (!founder) return <FounderNotFound slug={slug ?? ''} />
   // Real FAQs the founder actually wrote (Profile > FAQ tab) — this used to
   // read from a parallel fake FAQ system that had no connection to what
   // founders could edit, so answering FAQs in the dashboard never showed up

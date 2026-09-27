@@ -276,15 +276,31 @@ function resolveCuratedRole(
   return 'a founder'
 }
 
+function lowercaseFirst(s: string): string {
+  return s.length > 0 ? s[0]!.toLowerCase() + s.slice(1) : s
+}
+
+// "talking about X" reads fine for a neutral interest (SaaS, makeup artistry)
+// but flattens a genuine cause — grief, addiction, poverty, faith — into a
+// hobby topic, which reads as tone-deaf regardless of intent. A Speaking
+// Topic ("Tackling period poverty in Australia") is curator-written with
+// real agency already in it, so it's preferred over the bare taxonomy
+// Topic name ("period poverty") whenever one exists; the real business
+// description (already dignified, real research, not a scraped bio) gets
+// folded in too instead of leaving the cause as a single flat keyword.
 function buildCuratedBio(
   role: string,
   topicName: string | undefined,
+  speakingTopic: string | undefined,
+  businessDescription: string | undefined,
   displayName: string,
   locationLabel: string,
   platformsPhrase: string,
 ): string {
-  const about = topicName ? `, talking about ${topicName}` : ''
-  return `${displayName} is ${role}, based in ${locationLabel}${about}${platformsPhrase}. Curated by CULO Village from publicly available content.`
+  const subjectPhrase = speakingTopic ? lowercaseFirst(speakingTopic) : topicName
+  const about = subjectPhrase ? `, whose work focuses on ${subjectPhrase}` : ''
+  const bizSentence = businessDescription ? ` ${businessDescription}` : ''
+  return `${displayName} is ${role}, based in ${locationLabel}${about}${platformsPhrase}.${bizSentence} Curated by CULO Village from publicly available content.`
 }
 
 // A one-sentence bio is fine on a profile card, but a content item's
@@ -734,7 +750,9 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
       const locationLabel = `${location.name}, ${location.state}`
       const platformsPhrase = describePlatformsPhrase(f)
       const curatedRole = resolveCuratedRole(f.headline, f.businesses?.[0]?.name, industry.name, industryMatched)
-      const curatedBio = buildCuratedBio(curatedRole, topics[0]?.name, displayName, locationLabel, platformsPhrase)
+      const curatedBio = buildCuratedBio(
+        curatedRole, topics[0]?.name, f.speakingTopics?.[0], f.businesses?.[0]?.description, displayName, locationLabel, platformsPhrase,
+      )
 
       // Founder record
       const founder: Founder = {
