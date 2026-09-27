@@ -152,6 +152,18 @@ export function VillagePage() {
       */}
       <HeroWidget />
 
+      {/* A direct "Join the Village" straight to the dashboard signup form —
+          /join is Culo Creatives-in-Canva-flavoured and reads confusingly
+          to someone who just wants a plain Village account. */}
+      <div className="bg-background pb-12 -mt-4 text-center">
+        <Link
+          to="/dashboard/login?mode=signup"
+          className="inline-flex items-center justify-center px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+        >
+          Join the Village
+        </Link>
+      </div>
+
       {/* ── 3. Today's Highlights ───────────────────────────────────────────── */}
       {/*
         Story of the Day, Founder of the Day, Idea of the Day,

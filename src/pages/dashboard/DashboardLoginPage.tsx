@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { WebmailButtons } from '../../components/ui/WebmailButtons'
 
@@ -8,6 +8,7 @@ type Mode = 'signin' | 'signup'
 export function DashboardLoginPage() {
   const { user, signIn, signUp, isConfigured } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   // signIn/signUp resolving successfully doesn't mean the auth context's
   // own `user` has caught up yet — that comes from a separate
@@ -23,7 +24,10 @@ export function DashboardLoginPage() {
     if (user) navigate('/dashboard/welcome')
   }, [user, navigate])
 
-  const [mode,            setMode]            = useState<Mode>('signin')
+  // A direct "Join the Village" link (e.g. from the homepage) should land
+  // straight on the signup form, not the sign-in form with an extra click
+  // to switch — /dashboard/login?mode=signup does that.
+  const [mode,            setMode]            = useState<Mode>(searchParams.get('mode') === 'signup' ? 'signup' : 'signin')
   const [email,           setEmail]           = useState('')
   const [password,        setPassword]        = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
