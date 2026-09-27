@@ -88,35 +88,50 @@ export function IdeaAnnouncementCarousel({
 
   if (cards.length === 0) return null
 
+  // Duplicating the list to make the scroll loop seamless only reads as
+  // seamless once there's enough real content that the repeat isn't
+  // obviously the same handful of cards again — with only 1-2 real ideas
+  // (all the Village currently has, early on), the "duplicate" was just the
+  // exact same cards immediately repeating, visibly, which is the opposite
+  // of the effect. Below that threshold this is a plain static row instead:
+  // real content once, no animation, no illusion to sell.
+  const enoughForLoop = cards.length >= 6
+
   return (
     <section className={className} aria-label={heading}>
-      {heading && <SectionHeading title={heading} subtitle={subheading} action={action} />}
+      {heading && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <SectionHeading title={heading} subtitle={subheading} action={action} />
+        </div>
+      )}
 
       <div className="relative overflow-hidden">
         {/* Fade edges so cards don't feel like they're cut off mid-scroll */}
         <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" aria-hidden="true" />
         <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" aria-hidden="true" />
 
-        <style>{`
-          @keyframes idea-announcement-scroll {
-            from { transform: translateX(0); }
-            to   { transform: translateX(-50%); }
-          }
-          .idea-announcement-track {
-            animation: idea-announcement-scroll ${Math.max(cards.length * 6, 30)}s linear infinite;
-          }
-          .idea-announcement-track:hover {
-            animation-play-state: paused;
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .idea-announcement-track {
-              animation: none;
-              overflow-x: auto;
+        {enoughForLoop && (
+          <style>{`
+            @keyframes idea-announcement-scroll {
+              from { transform: translateX(0); }
+              to   { transform: translateX(-50%); }
             }
-          }
-        `}</style>
+            .idea-announcement-track {
+              animation: idea-announcement-scroll ${Math.max(cards.length * 6, 30)}s linear infinite;
+            }
+            .idea-announcement-track:hover {
+              animation-play-state: paused;
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .idea-announcement-track {
+                animation: none;
+                overflow-x: auto;
+              }
+            }
+          `}</style>
+        )}
 
-        <div className="idea-announcement-track flex w-max gap-5">
+        <div className={`${enoughForLoop ? 'idea-announcement-track' : ''} flex w-max gap-5 px-4 sm:px-6 lg:px-8`}>
           <div className="flex gap-5" role="list" aria-label={`${cards.length} recent founder announcements`}>
             {cards.map(({ idea, founder, story }) => (
               <div key={idea.id} role="listitem">
@@ -126,12 +141,15 @@ export function IdeaAnnouncementCarousel({
           </div>
           {/* Inert duplicate — same cards again, purely to make the loop
               seamless. Hidden from assistive tech and out of tab order so
-              nobody tabs through the whole list twice. */}
-          <div className="flex gap-5" aria-hidden="true">
-            {cards.map(({ idea, founder, story }) => (
-              <IdeaAnnouncementCard key={`dup-${idea.id}`} idea={idea} founder={founder} story={story} tabIndex={-1} />
-            ))}
-          </div>
+              nobody tabs through the whole list twice. Only rendered once
+              there's enough real content for the repeat to be invisible. */}
+          {enoughForLoop && (
+            <div className="flex gap-5" aria-hidden="true">
+              {cards.map(({ idea, founder, story }) => (
+                <IdeaAnnouncementCard key={`dup-${idea.id}`} idea={idea} founder={founder} story={story} tabIndex={-1} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

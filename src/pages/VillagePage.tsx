@@ -203,13 +203,16 @@ export function VillagePage() {
           space instead of a fixed 6-card grid) without cluttering the
           homepage, and renders nothing at all once there's nothing real to
           show — no "coming soon" placeholder needed here. */}
-      <VillageSection surface>
+      {/* Not wrapped in VillageSection's InnerContainer — the scrolling
+          track needs to span the full page width, not the max-w-7xl content
+          column; the widget constrains its own heading internally. */}
+      <section className="bg-surface py-14 md:py-20">
         <IdeaAnnouncementCarousel
           heading="From the Village"
           subheading="Founders publishing real knowledge, right now."
           action={{ label: 'Explore Ideas', href: '/ideas' }}
         />
-      </VillageSection>
+      </section>
 
       {/* ── 6. Featured Founders + Mercato preview ──────────────────────────── */}
       {/*
