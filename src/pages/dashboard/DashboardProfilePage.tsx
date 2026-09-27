@@ -1067,7 +1067,7 @@ export function DashboardProfilePage() {
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
     { key: 'businesses',    label: 'Businesses'    },
-    { key: 'library',       label: 'Digital Products', badge: founderLibrary.length },
+    { key: 'library',       label: 'Digital Products' },
     { key: 'expertise',     label: 'FAQ'           },
     { key: 'discovery',     label: 'Discovery' },
     { key: 'settings',      label: 'Settings'      },
@@ -2470,12 +2470,8 @@ export function DashboardProfilePage() {
                       <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
                       <p className="text-xs text-[#9CA3AF] truncate">{item.productType} · {item.price ?? 'Free'}</p>
                     </div>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                      item.status === 'available' || item.status === 'free-download' ? 'bg-green-100 text-green-700' :
-                      item.status === 'coming-soon' ? 'bg-amber-100 text-amber-700' :
-                      'bg-[#F3EDE6] text-[#9CA3AF]'
-                    }`}>
-                      {item.status}
+                    <span className="text-[10px] font-semibold text-[#C86A43] shrink-0">
+                      Edit
                     </span>
                   </button>
                 ))}

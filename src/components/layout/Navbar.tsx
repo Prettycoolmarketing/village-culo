@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 import { SearchInput } from '../ui/SearchInput'
 
 // Archive and Expertise keep their routes and all SEO/GEO value — they're
@@ -101,6 +102,11 @@ function MobileSearch({ onSubmitted }: { onSubmitted: () => void }) {
 export function Navbar({ dark = false }: { dark?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, loading } = useAuth()
+  // Someone can be logged in without actually being a founder yet (a CAPO
+  // staff account, or a real signup that hasn't created a profile) — only
+  // an actual member sees "Publish Dashboard"; everyone else logged in
+  // still sees the invite to join.
+  const isMember = !!getCurrentFounder(user)
 
   return (
     <header
@@ -168,10 +174,10 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
               </Link>
               {user ? (
                 <Link
-                  to="/dashboard/publish"
+                  to={isMember ? '/dashboard/publish' : '/onboarding'}
                   className="whitespace-nowrap px-4 py-2 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1815] transition-colors"
                 >
-                  Publish Dashboard
+                  {isMember ? 'Publish Dashboard' : 'Join The Village'}
                 </Link>
               ) : (
                 <>
@@ -247,11 +253,11 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
               </Link>
               {!loading && (user ? (
                 <Link
-                  to="/dashboard/publish"
+                  to={isMember ? '/dashboard/publish' : '/onboarding'}
                   onClick={() => setMobileOpen(false)}
                   className="block px-3 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl text-center hover:bg-[#1a1815] transition-colors"
                 >
-                  Publish Dashboard
+                  {isMember ? 'Publish Dashboard' : 'Join The Village'}
                 </Link>
               ) : (
                 <>

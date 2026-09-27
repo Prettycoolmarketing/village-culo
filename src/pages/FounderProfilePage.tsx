@@ -373,16 +373,16 @@ export function FounderProfilePage() {
           founder later linked to themselves outside the claim-request flow). A
           profile with a real owner must never show "claim this profile". */}
       {founder.profileStatus === 'village-curated' && !founder.userId && (
-        <div className="bg-blue-50 border-b border-blue-100" role="note" aria-label="Curated profile notice">
+        <div className="bg-[#3E6E92]/10 border-b border-[#3E6E92]/20" role="note" aria-label="Curated profile notice">
           <InnerContainer>
             <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-2.5">
-                <svg className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                <svg className="w-4 h-4 text-[#3E6E92] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
-                <p className="font-body text-sm text-blue-800 leading-relaxed">
+                <p className="font-body text-sm text-[#2D4E66] leading-relaxed">
                   This profile has been curated by CULO Village using publicly available content and original source links.{' '}
-                  <span className="text-blue-600">
+                  <span className="text-[#3E6E92]">
                     If this is your profile and you would like changes, you can claim it or request removal.
                   </span>
                 </p>
@@ -390,7 +390,7 @@ export function FounderProfilePage() {
               <div className="flex flex-col items-start sm:items-end gap-1.5 flex-shrink-0">
                 <Link
                   to={`/claim/${founder.slug}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#3E6E92] text-white text-xs font-semibold rounded-xl hover:bg-[#345c7a] transition-colors"
                 >
                   Is this you? Claim this profile →
                 </Link>
@@ -403,7 +403,7 @@ export function FounderProfilePage() {
                   to={`/culocontact?source=profile-removal-request&message=${encodeURIComponent(
                     `Please remove my curated profile from The Culo Village.\n\nName: ${founder.name}\nProfile: ${typeof window !== 'undefined' ? window.location.origin : ''}/founders/${founder.slug}`,
                   )}`}
-                  className="text-[11px] text-blue-700 hover:underline"
+                  className="text-[11px] text-[#3E6E92] hover:underline"
                 >
                   Not you, or don't want to be listed? Request removal
                 </Link>

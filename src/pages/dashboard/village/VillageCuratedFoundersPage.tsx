@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getFounders, updateFoundersBatch, deleteFoundersBatch, deleteFounderAccount } from '../../../services/founders'
-import { ensureClaimTokens } from '../../../services/founderClaimTokens'
+import { getCurrentFounder } from '../../../services/currentFounder'
 import { getBusinesses } from '../../../services/businesses'
 import { importedContentService } from '../../../services/importedContent'
 import { founderClaimService } from '../../../services/founderClaim'
@@ -18,6 +18,7 @@ import { canAccessCapoSection } from '../../../utils/permissions'
 
 function StatusPill({ status }: { status: string }) {
   const cls: Record<string, string> = {
+    draft:             'bg-amber-50 text-amber-700',
     'village-curated': 'bg-blue-50 text-blue-700',
     'claim-pending':   'bg-amber-50 text-amber-700',
     'claimed':         'bg-[#5E6B4A]/10 text-[#5E6B4A]',
@@ -26,6 +27,7 @@ function StatusPill({ status }: { status: string }) {
     'archived':        'bg-red-50 text-red-400',
   }
   const labels: Record<string, string> = {
+    draft: 'Draft — awaiting review',
     'village-curated': 'Curated', 'claim-pending': 'Pending',
     'claimed': 'Claimed', 'verified': 'Verified',
     'published': 'Published', 'archived': 'Archived',
@@ -37,6 +39,18 @@ function StatusPill({ status }: { status: string }) {
   )
 }
 
+// Small, separate from StatusPill's lifecycle status — a founder can be
+// "Published" (live, publicly visible) and still be an unclaimed curated
+// profile at the same time; conflating the two into one pill used to hide
+// that a live founder is still nobody's real account yet.
+function CuratedTag() {
+  return (
+    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 uppercase tracking-wide">
+      Curated
+    </span>
+  )
+}
+
 // ─── Bulk action bar ──────────────────────────────────────────────────────────
 
 function BulkBar({
@@ -44,21 +58,15 @@ function BulkBar({
   total,
   onSelectAll,
   onClearAll,
-  onMarkCurated,
   onPublish,
-  onHide,
   onArchive,
-  onExport,
 }: {
   selected: Set<string>
   total: number
   onSelectAll: () => void
   onClearAll: () => void
-  onMarkCurated: () => void
   onPublish: () => void
-  onHide: () => void
   onArchive: () => void
-  onExport: () => void
 }) {
   if (selected.size === 0) return null
   return (
@@ -67,17 +75,14 @@ function BulkBar({
         {selected.size} of {total} selected
       </p>
       <div className="flex items-center gap-2">
-        <button onClick={onMarkCurated} className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">Mark Curated</button>
         <button onClick={onPublish}     className="text-xs px-3 py-1.5 bg-[#5E6B4A] text-white rounded-lg font-semibold hover:bg-[#4a5538] transition-colors">Publish</button>
-        <button onClick={onHide}        className="text-xs px-3 py-1.5 bg-[#6B7280] text-white rounded-lg font-semibold hover:bg-[#4B5563] transition-colors">Hide</button>
         <ConfirmButton
-          label="Archive"
-          confirmLabel="Yes, archive"
-          message={`Remove ${selected.size} founder${selected.size === 1 ? '' : 's'}?`}
+          label="Delete"
+          confirmLabel="Yes, delete"
+          message={`Delete ${selected.size} founder${selected.size === 1 ? '' : 's'}?`}
           onConfirm={onArchive}
           className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
         />
-        <button onClick={onExport}      className="text-xs px-3 py-1.5 bg-[#C86A43] text-white rounded-lg font-semibold hover:bg-[#b05a35] transition-colors">Export CSV</button>
       </div>
       <div className="flex gap-1">
         <button onClick={onSelectAll} className="text-[10px] text-[#9CA3AF] hover:text-white transition-colors">All</button>
@@ -128,6 +133,11 @@ export function VillageCuratedFoundersPage() {
   const [selected, setSelected]   = useState<Set<string>>(new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
+  // Founders imported/added but not yet reviewed sit in "Curated" (still
+  // draft — invisible to the public) until a human presses Publish; once
+  // published they move to "Published" and keep a separate Curated tag if
+  // nobody's claimed the profile yet.
+  const [founderView, setFounderView] = useState<'curated' | 'published'>('curated')
   void tick
 
   const refresh = () => { setTick(t => t + 1); setSelected(new Set()) }
@@ -168,9 +178,13 @@ export function VillageCuratedFoundersPage() {
 
   const industries = useMemo(() => [...new Set(founders.map(f => f.industry.name))].sort(), [founders])
 
+  const curatedDraftFounders = useMemo(() => founders.filter(f => f.status === 'draft'), [founders])
+  const publishedFounders    = useMemo(() => founders.filter(f => f.status !== 'draft'), [founders])
+  const viewFounders = founderView === 'curated' ? curatedDraftFounders : publishedFounders
+
   // Filter + sort
   const filtered = useMemo(() => {
-    let list = [...founders]
+    let list = [...viewFounders]
 
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -201,7 +215,7 @@ export function VillageCuratedFoundersPage() {
     })
 
     return list
-  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, founders, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder])
+  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, viewFounders, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder])
 
   // Bulk operations — one Supabase upsert/delete + one cache rewrite per batch,
   // not one round-trip per founder (see Sprint 19B-Fix audit for the O(n²) bug
@@ -225,37 +239,19 @@ export function VillageCuratedFoundersPage() {
     refresh()
   }
 
-  async function exportSelected(ids: Set<string>) {
-    const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const targets = getFounders().filter(f => ids.has(f.id))
-    // claimUrl carries a real per-founder secret (?key=) so it's safe to
-    // paste straight into a bulk outreach tool (Sellable AI, a mail-merge
-    // campaign, etc.) as a personalization field — each contact gets a
-    // link that claims *their* profile instantly, and only theirs; the
-    // plain /claim/:slug URL alone (already public on their profile page)
-    // isn't enough on its own. See ensureClaimTokens/claimToken.
-    const tokens = await ensureClaimTokens(targets)
-    const rows = targets
-      .map(f => {
-        const parts = f.name.split(' ')
-        const biz   = businesses.find(b => b.founderId === f.id)
-        return [
-          claimEmailByFounder.get(f.id) ?? '',
-          parts[0] ?? '', parts.length > 1 ? parts[parts.length - 1] : '',
-          f.name, f.linkedin ?? '', f.profileStatus ?? f.status, f.slug,
-          `${origin}/founders/${f.slug}`, `${origin}/claim/${f.slug}?key=${tokens.get(f.id) ?? ''}`,
-          biz?.name ?? '', 'selected-export', f.createdAt,
-        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
-      })
-    const csv  = ['email,firstName,lastName,fullName,linkedin,profileStatus,founderSlug,profileUrl,claimUrl,businessName,tags,createdAt', ...rows].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href = url; a.download = `village-founders-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
-    URL.revokeObjectURL(url)
-  }
+
+  // The Pretty Cool Marketing staff account itself sometimes shows up in
+  // this list (it's a real founder record) — it must never be selectable
+  // for bulk archive/delete, so it's excluded from selection entirely and
+  // never shows a checkbox. Same for the real owner's own personal founder
+  // profile ("Shakas Designer", slug shakas-designer) — nobody but the
+  // owner logged in as themselves manages that row, ever.
+  const PROTECTED_EMAIL = 'support@prettycoolmarketing.com'
+  const PROTECTED_FOUNDER_SLUG = 'shakas-designer'
+  const isProtectedFounder = (f: Founder) => f.signupEmail?.toLowerCase() === PROTECTED_EMAIL || f.slug === PROTECTED_FOUNDER_SLUG
 
   function toggleSelect(id: string) {
+    if (founders.find(f => f.id === id && isProtectedFounder(f))) return
     setSelected(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id); else next.add(id)
@@ -265,6 +261,15 @@ export function VillageCuratedFoundersPage() {
 
   const activeFiltersCount = [filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail].filter(Boolean).length +
     (filterIndustry !== 'all' ? 1 : 0) + (filterStatus !== 'all' ? 1 : 0)
+
+  const selectableFiltered = filtered.filter(f => !isProtectedFounder(f))
+
+  // Resolves to the real personal founder account of whoever is logged in
+  // right now (null for a staff account with no founder profile of its
+  // own) — used so the owner's protected row (shakas-designer) only ever
+  // shows manage actions when the person viewing it really is the owner.
+  const ownFounderId = useMemo(() => getCurrentFounder(user)?.id ?? null, [user, tick])
+  const isLockedFromViewer = (f: Founder) => f.slug === PROTECTED_FOUNDER_SLUG && f.id !== ownFounderId
 
   return (
     <div className="p-8 max-w-5xl pb-24" style={{ fontFamily: "'DM Sans', sans-serif" }}>
@@ -304,10 +309,10 @@ export function VillageCuratedFoundersPage() {
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'Total',   value: founders.length,                                          color: 'text-[#C86A43]' },
-          { label: 'Curated', value: founders.filter(f => f.profileStatus === 'village-curated').length, color: 'text-blue-700' },
-          { label: 'Claimed', value: founders.filter(f => f.profileStatus === 'claimed' || f.profileStatus === 'verified').length, color: 'text-[#5E6B4A]' },
-          { label: 'Filtered',value: filtered.length, color: 'text-[#2D2A26]' },
+          { label: 'Total',         value: founders.length,                color: 'text-[#C86A43]' },
+          { label: 'Awaiting review', value: curatedDraftFounders.length,  color: 'text-amber-600' },
+          { label: 'Published',     value: publishedFounders.length,       color: 'text-[#5E6B4A]' },
+          { label: 'Filtered',      value: filtered.length,                color: 'text-[#2D2A26]' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-[#E8E4DD] px-3 py-2.5">
             <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
@@ -315,6 +320,17 @@ export function VillageCuratedFoundersPage() {
           </div>
         ))}
       </div>
+
+      {/* Curated (draft, awaiting review) vs Published sub-view */}
+      <Tabs
+        tabs={[
+          { key: 'curated',   label: 'Curated',   badge: curatedDraftFounders.length },
+          { key: 'published', label: 'Published', badge: publishedFounders.length },
+        ]}
+        active={founderView}
+        onChange={key => { setFounderView(key as 'curated' | 'published'); setSelected(new Set()) }}
+        className="mb-4"
+      />
 
       {/* Search + sort */}
       <div className="flex gap-3 mb-3">
@@ -420,10 +436,10 @@ export function VillageCuratedFoundersPage() {
           <div className="col-span-1 flex items-center">
             <input
               type="checkbox"
-              checked={selected.size === filtered.length && filtered.length > 0}
+              checked={selectableFiltered.length > 0 && selected.size === selectableFiltered.length}
               onChange={() => {
-                if (selected.size === filtered.length) setSelected(new Set())
-                else setSelected(new Set(filtered.map(f => f.id)))
+                if (selected.size === selectableFiltered.length) setSelected(new Set())
+                else setSelected(new Set(selectableFiltered.map(f => f.id)))
               }}
               className="accent-[#C86A43]"
             />
@@ -451,12 +467,14 @@ export function VillageCuratedFoundersPage() {
               return (
                 <div key={f.id} className={`grid grid-cols-12 gap-3 px-5 py-3.5 items-center transition-colors ${isSelected ? 'bg-[#C86A43]/5' : 'hover:bg-[#F8F5F0]'}`}>
                   <div className="col-span-1">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleSelect(f.id)}
-                      className="accent-[#C86A43]"
-                    />
+                    {!isProtectedFounder(f) && (
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(f.id)}
+                        className="accent-[#C86A43]"
+                      />
+                    )}
                   </div>
                   <div className="col-span-3 flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-full bg-[#F3EDE6] flex-shrink-0 flex items-center justify-center text-[#C86A43] text-xs font-bold">
@@ -484,10 +502,18 @@ export function VillageCuratedFoundersPage() {
                     {f.podcast   && <span title="Podcast"   className="w-1.5 h-1.5 rounded-full bg-purple-400"  />}
                     {f.tiktok    && <span title="TikTok"    className="w-1.5 h-1.5 rounded-full bg-neutral-500" />}
                   </div>
-                  <div className="col-span-2">
-                    <StatusPill status={f.profileStatus ?? f.status} />
+                  <div className="col-span-2 flex flex-wrap gap-1">
+                    {f.status === 'draft'
+                      ? <StatusPill status="draft" />
+                      : <StatusPill status={f.profileStatus ?? f.status} />
+                    }
+                    {f.status !== 'draft' && !f.userId && f.profileStatus === 'village-curated' && <CuratedTag />}
                   </div>
                   <div className="col-span-3 flex items-center justify-between gap-2">
+                    {isLockedFromViewer(f) ? (
+                      <p className="text-[10px] text-[#9CA3AF] italic">Owner-managed — no CAPO actions</p>
+                    ) : (
+                    <>
                     {/* View sits alone on the far left, well clear of the
                         destructive actions on the right — deliberately not
                         next to Delete, so the two are never in easy reach
@@ -552,6 +578,8 @@ export function VillageCuratedFoundersPage() {
                         />
                       )}
                     </div>
+                    </>
+                    )}
                   </div>
                 </div>
               )
@@ -569,14 +597,11 @@ export function VillageCuratedFoundersPage() {
       {/* Bulk action bar */}
       <BulkBar
         selected={selected}
-        total={filtered.length}
-        onSelectAll={() => setSelected(new Set(filtered.map(f => f.id)))}
+        total={selectableFiltered.length}
+        onSelectAll={() => setSelected(new Set(selectableFiltered.map(f => f.id)))}
         onClearAll={() => setSelected(new Set())}
-        onMarkCurated={() => void bulkUpdate(selected, { profileStatus: 'village-curated', isClaimable: true })}
         onPublish={() => void bulkUpdate(selected, { status: 'published' })}
-        onHide={() => void bulkUpdate(selected, { status: 'archived' })}
         onArchive={() => void archiveSelected(selected)}
-        onExport={() => void exportSelected(selected)}
       />
       </>
       )}

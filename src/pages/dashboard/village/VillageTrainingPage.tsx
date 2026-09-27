@@ -83,6 +83,32 @@ The one thing that matters more than anything else in this sheet is value, not v
 
 So as you work through whatever I ask next: prioritise being right and being substantial over being fast or complete. Leave something blank and flagged rather than guess. A shorter list of real, well-verified, genuinely valuable candidates is worth far more than a long list padded with thin or unverified rows.`
 
+// The all-in-one version of Step 1/2's separate prompts — sourcing,
+// verification and every column in one pass, for whenever you want Claude to
+// find AND fully complete a batch of new rows in a single instruction rather
+// than working through the individual prompts above one at a time.
+const FIND_AND_COMPLETE_PROMPT = `Find and complete a batch of real Australian founder candidates, filling in every column below for each one. Be thorough, but accuracy matters far more than speed or completeness — a wrong or guessed cell is worse than a blank one.
+
+Who counts as a real candidate:
+A real Australian founder, business owner or practitioner who already posts organically on YouTube, Instagram or a podcast about their business, expertise or lived experience — with an actual ongoing body of content (not a brand-new account with one or two posts), a real business or genuine expertise behind it, and content that shows real opinions, lessons or experience, not just polished marketing. Skip pure entertainment/meme accounts, reseller/dropshipping accounts with no real story, and anyone who mainly posts generic AI-written-sounding content. Podcast guest lists are the strongest source — the host has already vetted them and show notes usually link straight to their business, Instagram and LinkedIn.
+
+Verification rules (don't skip these):
+- Confirm every candidate is Australian-based. If you can't confirm this, leave them out.
+- Before filling in a LinkedIn link or email, confirm it's genuinely the same person as the source content — matching name, matching business, matching location. If you can't confirm the match, write "UNVERIFIED — check manually" in a comment rather than filling in a link that might be the wrong person.
+- Prioritise the original podcast/YouTube episode's own show notes and description over a generic web search — that's a stronger connection than a name search that might turn up someone who just shares a name.
+- If someone genuinely has no LinkedIn, find a real contact email instead (their business website's contact/about page is usually best) and put it in Claim Email.
+- Skip anyone already in this sheet.
+
+Bio column specifically:
+The Bio column just needs to capture real, substantial source material about this person (what they do, their story, their expertise) — it does not need to be written in any particular voice, since it gets rewritten before anything is published. But it does need to be genuinely substantial: flag anything under roughly 300 characters, or anything that reads like a generic one-liner ("passionate founder helping people achieve their goals") rather than something specific to this person, as "NEEDS REAL DESCRIPTION" in a comment. Anything under about 40 characters won't produce a real article at all once imported — it's not worth including a row for.
+
+Columns to fill in for each candidate:
+Full Name, YouTube URL, Podcast URL, Article URL, Digital Product URL, Headline, Bio, Country, State, City, Website, LinkedIn URL, Instagram URL, Claim Email, TikTok URL, Business Name, Business Website, Business Description, Industry, Role, Business Location, Other businesses, Topics, Industries, Speaking Topics, Culo Village Fit, Fit Evidence, Link Issues
+
+For the last three: Culo Village Fit is your verdict (Likely wants this / Possible but unproven / Unlikely to see the value), Fit Evidence is the specific line or behaviour from their content that led you there, and Link Issues is anything you couldn't verify or resolve cleanly.
+
+Leave a cell blank and flagged rather than guess. A shorter list of real, well-verified candidates is worth far more than a longer one padded with thin or unverified rows.`
+
 const DESCRIPTION_STRENGTH_PROMPT = `For each row in this sheet, look at the Bio/Description column and assess whether it's substantial enough to become a real published article — not just long enough, genuinely substantial.
 
 Flag any row where the description from their podcast, article or YouTube description is under roughly 300 characters, reads like a one-line summary rather than a real piece of writing, or is mostly generic ("passionate founder helping people achieve their goals") rather than specific to what this person actually does or has said.
@@ -179,28 +205,27 @@ export function VillageTrainingPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,800px)] gap-12 items-start">
-        <nav className="hidden lg:block sticky top-8 self-start">
-          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">On this page</p>
-          <ul className="flex flex-col gap-1.5">
-            {NAV_ITEMS.map(item => (
-              <li key={item.id}>
-                <a
-                  href={`#${item.id}`}
-                  className={`block px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                    activeSection === item.id
-                      ? 'bg-[#C86A43] text-white'
-                      : 'text-[#6B7280] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
-                  }`}
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      <nav className="sticky top-0 z-10 bg-[#FDFCFB]/95 backdrop-blur-sm border-b border-[#E8E4DD] mb-10 -mx-8 px-8 py-3">
+        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">On this page</p>
+        <ul className="flex flex-wrap gap-1.5">
+          {NAV_ITEMS.map(item => (
+            <li key={item.id}>
+              <a
+                href={`#${item.id}`}
+                className={`block px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
+                  activeSection === item.id
+                    ? 'bg-[#C86A43] text-white'
+                    : 'text-[#6B7280] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
+                }`}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
-        <div>
+      <div className="max-w-[800px] mx-auto">
       <Section id="what-is-village" title="What The Culo Village actually is">
         <p>
           The Culo Village is a publishing platform for founders. Most founders already have real content
@@ -440,6 +465,12 @@ export function VillageTrainingPage() {
             podcast's episode list, rather than you scrolling through it manually:
           </p>
           <CopyPromptButton text={SOURCE_PROMPT} label="Copy the sourcing prompt" />
+          <p className="pt-2">
+            Or, if you'd rather do sourcing and completing every column in one pass instead of working through
+            the prompts above one at a time, use this all-in-one version — it covers the same verification
+            rules and every column the sheet needs:
+          </p>
+          <CopyPromptButton text={FIND_AND_COMPLETE_PROMPT} label="Copy the find & complete prompt" />
           <p className="pt-2 font-semibold text-[#2D2A26]">The best way to actually work through this: start from someone you know</p>
           <p>
             Rather than cold-scrolling a podcast's whole guest list, the fastest way to build a good batch is
@@ -579,7 +610,6 @@ export function VillageTrainingPage() {
           See the full "How CULO in Canva" page →
         </a>
       </Section>
-        </div>
       </div>
     </div>
   )
