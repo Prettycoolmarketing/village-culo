@@ -105,12 +105,12 @@ export function IdeaAnnouncementCarousel({
         </div>
       )}
 
-      <div className="relative overflow-hidden">
-        {/* Fade edges so cards don't feel like they're cut off mid-scroll */}
-        <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" aria-hidden="true" />
-        <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" aria-hidden="true" />
+      {enoughForLoop ? (
+        <div className="relative overflow-hidden">
+          {/* Fade edges so cards don't feel like they're cut off mid-scroll */}
+          <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" aria-hidden="true" />
+          <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" aria-hidden="true" />
 
-        {enoughForLoop && (
           <style>{`
             @keyframes idea-announcement-scroll {
               from { transform: translateX(0); }
@@ -129,29 +129,40 @@ export function IdeaAnnouncementCarousel({
               }
             }
           `}</style>
-        )}
 
-        <div className={`${enoughForLoop ? 'idea-announcement-track' : ''} flex w-max gap-5 px-4 sm:px-6 lg:px-8`}>
-          <div className="flex gap-5" role="list" aria-label={`${cards.length} recent founder announcements`}>
-            {cards.map(({ idea, founder, story }) => (
-              <div key={idea.id} role="listitem">
-                <IdeaAnnouncementCard idea={idea} founder={founder} story={story} />
-              </div>
-            ))}
-          </div>
-          {/* Inert duplicate — same cards again, purely to make the loop
-              seamless. Hidden from assistive tech and out of tab order so
-              nobody tabs through the whole list twice. Only rendered once
-              there's enough real content for the repeat to be invisible. */}
-          {enoughForLoop && (
+          <div className="idea-announcement-track flex w-max gap-5 px-4 sm:px-6 lg:px-8">
+            <div className="flex gap-5" role="list" aria-label={`${cards.length} recent founder announcements`}>
+              {cards.map(({ idea, founder, story }) => (
+                <div key={idea.id} role="listitem">
+                  <IdeaAnnouncementCard idea={idea} founder={founder} story={story} />
+                </div>
+              ))}
+            </div>
+            {/* Inert duplicate — same cards again, purely to make the loop
+                seamless. Hidden from assistive tech and out of tab order so
+                nobody tabs through the whole list twice. */}
             <div className="flex gap-5" aria-hidden="true">
               {cards.map(({ idea, founder, story }) => (
                 <IdeaAnnouncementCard key={`dup-${idea.id}`} idea={idea} founder={founder} story={story} tabIndex={-1} />
               ))}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        // Too few real ideas yet for a scrolling illusion to read as
+        // seamless — a plain row, aligned with the heading above it like
+        // every other section on the page, instead of a full-bleed track
+        // with nothing actually scrolling.
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap gap-5" role="list" aria-label={`${cards.length} recent founder announcements`}>
+            {cards.map(({ idea, founder, story }) => (
+              <div key={idea.id} role="listitem" className="flex-1 min-w-[280px] max-w-sm">
+                <IdeaAnnouncementCard idea={idea} founder={founder} story={story} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   )
 }

@@ -126,7 +126,7 @@ This matters beyond just looking good — a description under about 40 character
 function Section({ id, title, children }: { id?: string; title: string; children: React.ReactNode }) {
   return (
     <section id={id} className="mb-16 scroll-mt-24">
-      <h2 className="text-2xl font-bold text-[#2D2A26] mb-5 pb-3 border-b border-[#E8E4DD]">{title}</h2>
+      <h2 className="text-3xl font-bold text-[#2D2A26] mb-5 pb-3 border-b border-[#E8E4DD]">{title}</h2>
       <div className="text-sm text-[#6B7280] leading-relaxed space-y-4">{children}</div>
     </section>
   )
@@ -144,7 +144,7 @@ const NAV_ITEMS = [
 function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl border border-[#E8E4DD] px-6 py-6 mb-5 shadow-sm">
-      <h3 className="text-base font-bold text-[#2D2A26] mb-3">{title}</h3>
+      <h3 className="text-lg font-bold text-[#2D2A26] mb-3">{title}</h3>
       <div className="text-sm text-[#6B7280] leading-relaxed space-y-3">{children}</div>
     </div>
   )
@@ -203,7 +203,7 @@ export function VillageTrainingPage() {
       <CapoBackLink />
       <div className="mb-10">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
-        <h1 className="text-3xl font-bold text-[#2D2A26]">Staff Training</h1>
+        <h1 className="text-4xl font-bold text-[#2D2A26]">Staff Training</h1>
         <p className="text-sm text-[#6B7280] mt-1 max-w-2xl">
           Read this properly before touching anything else in CAPO — it's written for the first time you're
           seeing any of this, not as a quick summary. It explains what The Culo Village actually is, what
@@ -211,9 +211,13 @@ export function VillageTrainingPage() {
         </p>
       </div>
 
-      <nav className="sticky top-0 z-10 bg-[#FDFCFB]/95 backdrop-blur-sm border-b border-[#E8E4DD] mb-10 -mx-8 px-8 py-3">
+      <nav className="mb-10">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">On this page</p>
-        <ul className="flex flex-wrap gap-1.5">
+        {/* Same pill-tab style as the rest of CAPO (see Tabs component) —
+            the previous sticky white bar with its own background/blur/
+            shadow read as a stray floating box, out of step with how every
+            other nav in the dashboard looks. */}
+        <ul className="flex flex-wrap gap-1.5 border-b border-[#E8E4DD] pb-3">
           {NAV_ITEMS.map(item => (
             <li key={item.id}>
               <a
