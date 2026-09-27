@@ -910,15 +910,6 @@ export function DashboardBulkImportPage() {
                               onConfirm={() => void handleDeleteImported(f.id)}
                               className="text-[11px] font-semibold text-red-500 hover:text-red-600 transition-colors"
                             />
-                            {createEditorialContent && (
-                              <button
-                                onClick={() => void handleRunEditorialPipeline([f.id])}
-                                disabled={pipelineRunning}
-                                className="text-[11px] font-semibold text-[#3E6E92] hover:underline disabled:opacity-50"
-                              >
-                                Run this one only →
-                              </button>
-                            )}
                           </div>
                         </div>
                         {/* Bigger, on the right — the one thing every one of
@@ -926,9 +917,23 @@ export function DashboardBulkImportPage() {
                             and Publish from inside there (see
                             FounderEditModal) rather than a Publish button
                             sitting out here that skips the review step
-                            entirely. */}
+                            entirely. Opening it is also what kicks off this
+                            founder's research/write/audit run when the Step 2
+                            checkbox is on — no separate "Run this one" link,
+                            it just runs in the background while you look at
+                            the rest of the profile (BioDraftBlock/ArticleRow
+                            inside the modal pick up the drafts the moment
+                            they land, same as everywhere else in this
+                            engine). Skipped if this founder's already been
+                            researched, so re-opening Edit doesn't burn a
+                            fresh set of API calls every time. */}
                         <button
-                          onClick={e => { e.stopPropagation(); if (live) setEditingFounder(live) }}
+                          onClick={e => {
+                            e.stopPropagation()
+                            if (!live) return
+                            setEditingFounder(live)
+                            if (createEditorialContent && !live.evidenceLedger) void handleRunEditorialPipeline([f.id])
+                          }}
                           className="shrink-0 px-5 py-3 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
                         >
                           Edit →
