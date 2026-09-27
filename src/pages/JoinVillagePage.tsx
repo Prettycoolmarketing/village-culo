@@ -171,7 +171,7 @@ export function JoinVillagePage() {
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
                 {isCanva
                   ? "Turn your messy thoughts and raw footage into structured blogs, carousels and reels — try it free for 14 days, right inside Canva."
-                  : "It's time to share your messy thoughts and raw footage into structured social media posts, join the Culo Village to republish your previously posted content across platforms structured for discovery as web articles."}
+                  : "It's time to share your messy thoughts and raw footage into structured social media posts in Canva! First join the Culo Village to republish your previously posted content across platforms structured for discovery as web article"}
               </p>
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
                 <input
@@ -195,7 +195,7 @@ export function JoinVillagePage() {
               <p className="font-body text-xs text-white/40 mt-4">
                 The Culo Village is free, forever · Culo Creatives in Canva: 14-day free trial, then $25 AUD/month · No spam emails
               </p>
-              <Link to="/how-culo-canva" className="inline-block font-body text-sm font-semibold text-white hover:text-primary transition-colors mt-4 underline underline-offset-4 decoration-white/30 hover:decoration-primary">
+              <Link to="/join?source=canva" className="inline-block font-body text-sm font-semibold text-white hover:text-primary transition-colors mt-4 underline underline-offset-4 decoration-white/30 hover:decoration-primary">
                 Learn more about CULO Creatives in Canva →
               </Link>
             </div>
@@ -373,8 +373,28 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
+      {/* ── Product screenshot grid — 3 over 3, with the "raw footage" line
+          as a single-line title spanning the top, now above How It Works. */}
+      <section className="py-16 md:py-20 border-y border-border" aria-labelledby="product-heading">
+        <InnerContainer>
+          <h2 id="product-heading" className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-charcoal text-center leading-tight mb-10 lg:whitespace-nowrap">
+            Turn your raw footage into social media posts in one workspace
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+            {GRID_ROW_1.map(src => (
+              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {GRID_ROW_2.map(src => (
+              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
+            ))}
+          </div>
+        </InnerContainer>
+      </section>
+
       {/* ── How it works — same "Tell your story" section as CreativesPage,
-          now sitting above the screenshot grid instead of below it. */}
+          now sitting below the screenshot grid instead of above it. */}
       <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="how-heading">
         <InnerContainer>
           <div className="max-w-2xl mb-12">
@@ -410,26 +430,6 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
-      {/* ── Product screenshot grid — 3 over 3, with the "raw footage" line
-          as a single-line title spanning the top, now under How It Works. */}
-      <section className="py-16 md:py-20 border-y border-border" aria-labelledby="product-heading">
-        <InnerContainer>
-          <h2 id="product-heading" className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-charcoal text-center leading-tight mb-10 lg:whitespace-nowrap">
-            Turn your raw footage into social media posts in one workspace
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-            {GRID_ROW_1.map(src => (
-              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {GRID_ROW_2.map(src => (
-              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
-            ))}
-          </div>
-        </InnerContainer>
-      </section>
-
       {/* ── Final CTA ─────────────────────────────────────────────────────── */}
       <section className="py-16 md:py-20 text-center" aria-label="Join The Culo Village">
         <InnerContainer>
@@ -437,7 +437,8 @@ export function JoinVillagePage() {
             Every founder has a story worth finding.
           </h2>
           <p className="font-body text-base text-muted leading-relaxed mb-8 max-w-xl mx-auto">
-            Join The Culo Village free, publish your first 10 articles on us, and start being found.
+            Edit with Culo Creatives, publish in the Village, then share your articles on LinkedIn for
+            maximum visibility and credibility online.
           </p>
           <a
             href="#join-heading"
@@ -466,13 +467,37 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
-      {/* ── See it in action — real evidence, not just the pitch above,
-          same section as CreativesPage's "See it in action". */}
-      <section className="py-16 bg-surface border-y border-border">
-        <InnerContainer>
+      {/* ── Explore the village — real evidence, not just the pitch above.
+          On the same blue treatment as "What is CULO Creatives" above, with
+          a short paragraph about the Village's actual services (not just
+          the story grid alone), since this is the section that should sell
+          what membership includes, not only show finished output. */}
+      <section className="relative overflow-hidden py-16 md:py-20" aria-labelledby="explore-heading">
+        <div className="absolute inset-0 bg-background" aria-hidden="true">
+          <div
+            className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full opacity-20"
+            style={{ background: 'radial-gradient(circle, #7CA9CC 0%, transparent 70%)' }}
+          />
+          <div
+            className="absolute -bottom-24 -right-24 w-[400px] h-[400px] rounded-full opacity-10"
+            style={{ background: 'radial-gradient(circle, #5E6B4A 0%, transparent 70%)' }}
+          />
+        </div>
+        <InnerContainer className="relative">
+          <div className="max-w-2xl mx-auto text-center mb-12">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+              Explore the village
+            </p>
+            <h2 id="explore-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-4">
+              Incredible founders sharing their knowledge and expertise online
+            </h2>
+            <p className="font-body text-base text-muted leading-relaxed">
+              Every founder in the Village gets their own profile, a real published article for every piece of
+              content they bring in, and a home their expertise can actually be found from — by people searching,
+              and by AI systems like ChatGPT.
+            </p>
+          </div>
           <StoryGrid
-            heading="See it in action"
-            subheading="Real stories, published by real founders using Culo Creatives and the Village."
             filter={{ publicOnly: true }}
             columns={3}
             cardVariant="vertical"
@@ -537,8 +562,9 @@ export function JoinVillagePage() {
             Pretty Cool Marketing can run it for you
           </h2>
           <p className="font-body text-base text-white/70 leading-relaxed mb-8">
-            Send us your footage and archive, and we edit, publish and schedule it for you across the
-            Village and every platform, no Canva editing required on your end.
+            Send us your footage and archive, and we run Culo Creatives for you — turning it into finished
+            blogs, carousels and reels, publishing it into the Village and scheduling it across every platform,
+            no Canva editing required on your end.
           </p>
           <Link
             to="/marketing"
