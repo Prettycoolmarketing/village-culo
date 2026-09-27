@@ -384,8 +384,15 @@ function buildCuratedBio(
 // become the real published piece.
 // Splits on sentence boundaries — same simple heuristic as paragraphize()
 // above (". "/"! "/"? " followed by a capital letter).
+// Allows an optional closing quote/bracket between the sentence-ending
+// punctuation and the following space — without it, a sentence ending in a
+// quote ("...the Startup Olympics.") never counted as a boundary, silently
+// merging it with the next sentence and shrinking how many real rotation
+// states a founder's Key Facts actually had (confirmed live: this collapsed
+// 3 real sentences into 2, so two of a founder's three content items landed
+// on the same rotation offset and read identically anyway).
 function splitSentences(text: string): string[] {
-  return text.split(/(?<=[.!?])\s+(?=[A-Z])/).map(s => s.trim()).filter(Boolean)
+  return text.split(/(?<=[.!?]["')]?)\s+(?=[A-Z])/).map(s => s.trim()).filter(Boolean)
 }
 
 // Confirmed live: a founder's article/YouTube/podcast pages were "literally
