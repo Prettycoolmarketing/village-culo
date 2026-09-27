@@ -686,10 +686,14 @@ export function FounderProfilePage() {
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list">
                     {previewImports.map(item => (
                       <li key={item.id}>
-                        <a
-                          href={item.originalUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                        {/* Links to the actual written piece (rendered the
+                            exact same way it would look once published —
+                            see StoryPreviewPage), not the raw external
+                            source link — the point is to preview the
+                            article itself, not bounce someone out to
+                            YouTube/the podcast host. */}
+                        <Link
+                          to={`/dashboard/preview/${item.id}`}
                           className="block bg-surface rounded-xl border border-border p-4 hover:border-secondary/40 transition-colors"
                         >
                           <p className="font-body text-[10px] font-semibold text-secondary uppercase tracking-widest mb-1">
@@ -698,7 +702,7 @@ export function FounderProfilePage() {
                           <p className="font-heading text-sm font-semibold text-charcoal leading-snug line-clamp-2">
                             {item.title}
                           </p>
-                        </a>
+                        </Link>
                       </li>
                     ))}
                   </ul>
