@@ -801,19 +801,24 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
             // vb.logoUrl was being silently discarded here, always
             // overwritten with the generic placeholder graphic even when a
             // real logo was provided. Left blank when there genuinely isn't
-            // one — BizLogo already falls back to a clean first-letter
-            // badge instead of a broken image, no placeholder file needed.
-            // coverImage still needs a real fallback: a bare <img>, no
-            // built-in initial-letter treatment like BizLogo has.
+            // one — BizLogo/CoverImage's own fallbacks already handle a
+            // missing image (and, for an unclaimed curated business, hide
+            // it entirely rather than show a placeholder that reads as a
+            // real photo).
             logo:        vb.logoUrl?.trim() || '',
-            coverImage:  '/placeholders/village-cover.svg',
+            coverImage:  '',
             founderId,
             location,
             industry:    bizIndustry,
             topics,
             website:     vb.website || undefined,
             offers:      [],
-            status:      'published',
+            // A business went live immediately on import regardless of its
+            // founder's own draft status — visible in Businesses, search,
+            // everywhere, before anyone had reviewed the founder at all.
+            // Mirrors the founder's own status exactly, same as the
+            // founder record's own draft-first default below.
+            status:      existingFounder?.status ?? 'draft',
             featured:    false,
             createdAt:   now,
           }

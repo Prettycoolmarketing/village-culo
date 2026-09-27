@@ -81,6 +81,13 @@ export function IdeaDetailPage() {
   if (!idea || idea.status === 'archived') return <IdeaNotFound slug={slug ?? ''} />
 
   const quoteFounder = idea.quoteFounderId ? getFounder(idea.quoteFounderId) : undefined
+  // idea.description is the raw extracted quote fragment ("I realised this
+  // with my clients also!") — real, but reads as an orphaned line without
+  // the article it came from. The connected story's own summary is what
+  // this page's lede should actually show.
+  const primaryStory = idea.relatedStoryIds[0]
+    ? getStories({ publicOnly: true }).find(s => s.id === idea.relatedStoryIds[0])
+    : undefined
   // Owner-only control — an idea is extracted onto one of the founders it's
   // linked to, so "do you own this" means "is one of those founders yours".
   const isOwner = !!user && idea.relatedFounderIds.some(id => getFounder(id)?.userId === user.id)
@@ -141,8 +148,16 @@ export function IdeaDetailPage() {
 
             {/* Description */}
             <p className="font-body text-lg text-muted leading-relaxed mb-6 max-w-2xl">
-              {idea.description}
+              {primaryStory?.summary || idea.description}
             </p>
+            {primaryStory && (
+              <Link
+                to={`/stories/${primaryStory.slug}`}
+                className="inline-flex items-center gap-1 text-sm font-medium text-secondary hover:text-[#4d5a3a] transition-colors mb-6 -mt-3"
+              >
+                Read the full article →
+              </Link>
+            )}
 
             {/* Topic badges */}
             {idea.topics.length > 0 && (
