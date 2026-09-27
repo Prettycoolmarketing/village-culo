@@ -6,7 +6,7 @@ import { importedContentToInput, villageContentIntelligenceService } from './vil
 import { buildStoryFromImport, publishStoryCore } from './publishStory'
 import type { WriteResult } from '../lib/entityStore'
 import { locations } from '../data/locations'
-import { industries } from '../data/industries'
+import { industries, UNSET_INDUSTRY } from '../data/industries'
 import { topics as ALL_TOPICS, createCustomTopic } from '../data/topics'
 import type { Founder, Business, Location, Industry, Topic } from '../types'
 import type { ImportedContent } from '../types/importedContent'
@@ -32,7 +32,14 @@ import type {
 // but doesn't invent a city nobody claimed.
 const UNKNOWN_LOCATION_FALLBACK_ID = 'regional-remote'
 
-function resolveLocation(city?: string, state?: string): Location {
+// Real city/state text that doesn't match the fixed location list (a real
+// town like Griffith, Morayfield or Mandurah, none of which are on it) used
+// to fall to the generic fallback with zero trace of it happening — unlike
+// an industry mismatch, which already writes an admin-visible warning. A
+// batch of 20 real founders hit this for 7 of them; returning whether it
+// matched lets the caller flag it the same way, instead of silently
+// discarding real, curator-provided location detail.
+function resolveLocation(city?: string, state?: string): { location: Location; matched: boolean; rawInput?: string } {
   if (city || state) {
     const needle = `${city ?? ''} ${state ?? ''}`.toLowerCase()
     const match = locations.find(l =>
@@ -40,9 +47,14 @@ function resolveLocation(city?: string, state?: string): Location {
       needle.includes(l.state.toLowerCase()) ||
       (l.slug && needle.includes(l.slug))
     )
-    if (match) return match
+    if (match) return { location: match, matched: true }
+    return {
+      location: locations.find(l => l.id === UNKNOWN_LOCATION_FALLBACK_ID) ?? locations[0]!,
+      matched: false,
+      rawInput: `${city ?? ''}${city && state ? ', ' : ''}${state ?? ''}`.trim(),
+    }
   }
-  return locations.find(l => l.id === UNKNOWN_LOCATION_FALLBACK_ID) ?? locations[0]
+  return { location: locations.find(l => l.id === UNKNOWN_LOCATION_FALLBACK_ID) ?? locations[0]!, matched: true }
 }
 
 // A curated row's Industry/Topics are specific, real phrases ("quantity
@@ -65,11 +77,31 @@ function significantWords(s: string): Set<string> {
     s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOPWORDS.has(w)),
   )
 }
-function wordOverlap(a: Set<string>, b: Set<string>): number {
-  let n = 0
-  for (const w of a) if (b.has(w)) n++
-  return n
+// A plain shared-word count let one generic word ("leadership", "development",
+// "business") make a match all on its own — confirmed live: a fitness
+// franchisee's own topic list picked up "church leadership" (an unrelated
+// founder's topic, created earlier in the same batch's shared pool) purely
+// because both phrases contained the word "leadership". The fix is standard
+// IDF-style weighting: a word that appears across many different topic names
+// is a weak, generic signal (a common modifier), while a word that appears
+// in very few is a strong, specific one — "fitness" (rare across topic
+// names) should decide a match; "leadership" (common across many) shouldn't
+// on its own. `docFreq` is how many topic names in the pool contain each
+// word; threshold tuned so one distinctive shared word matches, but one
+// generic shared word alone doesn't.
+function buildWordDocFrequency(pool: { name: string }[]): Map<string, number> {
+  const freq = new Map<string, number>()
+  for (const t of pool) {
+    for (const w of significantWords(t.name)) freq.set(w, (freq.get(w) ?? 0) + 1)
+  }
+  return freq
 }
+function weightedOverlap(a: Set<string>, b: Set<string>, docFreq: Map<string, number>): number {
+  let score = 0
+  for (const w of a) if (b.has(w)) score += 1 / (docFreq.get(w) ?? 1)
+  return score
+}
+const MATCH_THRESHOLD = 0.5
 
 // ─── Industry matching ────────────────────────────────────────────────────────
 
@@ -78,19 +110,27 @@ function wordOverlap(a: Set<string>, b: Set<string>): number {
 // whose given industries don't fit anything real should never be silently
 // mislabelled with no way to know it happened; see the "industry didn't
 // match anything" warning in validateVIF.
+const industryDocFreq = buildWordDocFrequency(industries)
+
 function resolveIndustry(industryNames?: string[]): { industry: Industry; matched: boolean } {
   if (industryNames && industryNames.length > 0) {
     let best: { industry: Industry; score: number } | null = null
     for (const raw of industryNames) {
       const words = significantWords(raw)
       for (const candidate of industries) {
-        const score = wordOverlap(words, significantWords(candidate.name))
-        if (score > 0 && (!best || score > best.score)) best = { industry: candidate, score }
+        const score = weightedOverlap(words, significantWords(candidate.name), industryDocFreq)
+        if (score >= MATCH_THRESHOLD && (!best || score > best.score)) best = { industry: candidate, score }
       }
     }
     if (best) return { industry: best.industry, matched: true }
   }
-  return { industry: industries[0], matched: false }
+  // industries[0] ("Marketing & Advertising") isn't a deliberate safe
+  // default, it's just array position zero — every genuinely unmatched
+  // founder (a pastor, a VC advisor with no matching category) was landing
+  // in that one specific real category by accident. UNSET_INDUSTRY is the
+  // actual "we don't know" sentinel already used for this exact situation
+  // elsewhere (see joinFlow.ts).
+  return { industry: UNSET_INDUSTRY, matched: false }
 }
 
 // ─── Topic matching ───────────────────────────────────────────────────────────
@@ -103,14 +143,28 @@ function resolveIndustry(industryNames?: string[]): { industry: Industry; matche
 function resolveTopics(topicNames: string[] | undefined, pool: Topic[]): Topic[] {
   if (!topicNames || topicNames.length === 0) return []
   const resolved: Topic[] = []
+  const seenIds = new Set<string>()
+  // Recomputed per call, not cached — pool grows as custom topics are added
+  // through the batch, and a word's frequency has to reflect the pool's
+  // current state (a later founder should see topics earlier founders
+  // created; their word-frequency counts have to include them too).
+  const topicDocFreq = buildWordDocFrequency(pool)
   for (const raw of topicNames) {
     const words = significantWords(raw)
     let best: { topic: Topic; score: number } | null = null
     for (const candidate of pool) {
-      const score = wordOverlap(words, significantWords(candidate.name))
-      if (score > 0 && (!best || score > best.score)) best = { topic: candidate, score }
+      const score = weightedOverlap(words, significantWords(candidate.name), topicDocFreq)
+      if (score >= MATCH_THRESHOLD && (!best || score > best.score)) best = { topic: candidate, score }
     }
+    // Two different raw phrases in the same row (e.g. a Topics cell entry
+    // and a Speaking Topics phrase) can both legitimately best-match the
+    // same predefined Topic — pushing it twice produced real, live
+    // duplicate entries in a founder's topic list (confirmed: Anna Porter's
+    // had "prophetic ministry" listed twice). Only the first match for a
+    // given resolved topic counts.
     if (best) {
+      if (seenIds.has(best.topic.id)) continue
+      seenIds.add(best.topic.id)
       resolved.push(best.topic)
     } else {
       // A real, specific topic this founder was actually tagged with, and
@@ -119,6 +173,7 @@ function resolveTopics(topicNames: string[] | undefined, pool: Topic[]): Topic[]
       // founder typing a new topic elsewhere in the app already can.
       const custom = createCustomTopic(raw)
       pool.push(custom)
+      seenIds.add(custom.id)
       resolved.push(custom)
     }
   }
@@ -316,7 +371,6 @@ function buildCuratedBio(
 // founder's scraped prose.
 function buildContentItemBody(
   kind: string | undefined,
-  itemTitle: string,
   displayName: string,
   role: string,
   businessDescription: string | undefined,
@@ -327,13 +381,16 @@ function buildContentItemBody(
 ): string {
   const p1 = `${displayName} is ${role}, based in ${locationLabel}.`
 
+  // Never quotes the item's own title back at the reader — the page's
+  // title already says that; a body that opens by restating its own
+  // heading verbatim reads circular, not like a real article intro.
   const introByKind: Record<string, string> = {
-    youtube:           `This is ${displayName}'s appearance on YouTube, "${itemTitle}."`,
-    podcast:           `This is ${displayName}'s appearance on their podcast, "${itemTitle}."`,
-    article:           `This is ${displayName}'s own article, "${itemTitle}."`,
-    'digital-product': `This is ${displayName}'s digital product, "${itemTitle}."`,
+    youtube:           `This is ${displayName}'s appearance on YouTube.`,
+    podcast:           `This is ${displayName}'s appearance on their podcast.`,
+    article:           `This is ${displayName}'s own article.`,
+    'digital-product': `This is ${displayName}'s digital product.`,
   }
-  const p2 = (kind && introByKind[kind]) || `This is ${displayName}'s "${itemTitle}."`
+  const p2 = (kind && introByKind[kind]) || `This is one of ${displayName}'s own pieces.`
 
   // Real substance: keyFacts is a curator's own synthesis of the specific
   // detail in the actual linked content (real numbers, dates, named
@@ -391,14 +448,31 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
   ].filter((s): s is string => !!s).join('\n')
 
   const businessName = str(row['Business Name'])
-  const businesses: VillageImportBusiness[] | undefined = businessName ? [{
-    name: businessName,
-    website: str(row['Business Website']),
-    description: str(row['Business Description']),
-    industry: str(row['Industry']),
-    role: str(row['Role']),
-    location: str(row['Business Location']),
-  }] : undefined
+  // A second real business (e.g. a founder who owns both a salon and a
+  // separate venue) used to only ever become free text in "Other
+  // businesses" — never a real, visitable Business page, unlike the first
+  // one. "Business Name 2" is the same simple pattern as the first business
+  // columns, for when a second business is worth its own real page; genuine
+  // passing mentions with no real detail behind them still belong in "Other
+  // businesses" as before.
+  const businessName2 = str(row['Business Name 2'])
+  const businesses: VillageImportBusiness[] | undefined = businessName ? [
+    {
+      name: businessName,
+      website: str(row['Business Website']),
+      description: str(row['Business Description']),
+      industry: str(row['Industry']),
+      role: str(row['Role']),
+      location: str(row['Business Location']),
+    },
+    ...(businessName2 ? [{
+      name: businessName2,
+      website: str(row['Business Website 2']),
+      description: str(row['Business Description 2']),
+      industry: str(row['Industry']),
+      location: str(row['Business Location']),
+    }] : []),
+  ] : undefined
 
   // One content entry per real link this founder actually has — Article,
   // YouTube, Podcast — not just a single "best" one. The whole point of a
@@ -678,17 +752,21 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
       slugsTaken.add(resolvedSlug)
 
       // Resolve location, industry, topics
-      const location = resolveLocation(f.city, f.state)
+      const { location, matched: locationMatched, rawInput: rawLocationInput } = resolveLocation(f.city, f.state)
       const { industry, matched: industryMatched } = resolveIndustry(f.industries)
       const topics   = resolveTopics(f.topics, topicsPool)
       // Not a failure — the founder still imports fine — but a silently
-      // wrong industry with no trace of it happening is worse than an
-      // admin-visible note. Surfaces in this founder's own Edit popup
+      // wrong industry/location with no trace of it happening is worse than
+      // an admin-visible note. Surfaces in this founder's own Edit popup
       // (Profile tab, "Curator notes"), which the draft-first workflow
       // already has staff opening before they publish anyone.
       const industryWarning = (!industryMatched && f.industries && f.industries.length > 0)
-        ? `Industry mismatch: "${f.industries.join(', ')}" didn't match anything real — saved as "${industry.name}" instead. Check this is right.`
+        ? `Industry mismatch: "${f.industries.join(', ')}" didn't match anything real — saved as "${industry.name || 'Unset'}" instead. Check this is right.`
         : undefined
+      const locationWarning = !locationMatched && rawLocationInput
+        ? `Location mismatch: "${rawLocationInput}" isn't one of the Village's listed cities — saved as "${location.name}" instead. Check this is right, or add a closer real city.`
+        : undefined
+      const adminWarnings = [industryWarning, locationWarning].filter((w): w is string => !!w).join('\n')
 
       // Businesses
       let primaryBusinessId = existingFounder?.businessId ?? ''
@@ -704,9 +782,17 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
           const bizSlug = uniqueBizSlug(bizBaseSlug, bizSlugsTaken)
           bizSlugsTaken.add(bizSlug)
 
-          const bizIndustry = vb.industry
-            ? (industries.find(i => i.name.toLowerCase().includes(vb.industry!.toLowerCase())) ?? industry)
-            : industry
+          // Same word-overlap scorer as the founder's own industry — a plain
+          // substring check missed real matches ("health & fitness" vs
+          // "Fitness & Wellness") the same way the founder-level one used to,
+          // and gave a business no mismatch warning at all when it was
+          // wrong. Falls back to the founder's own (already-resolved)
+          // industry when the business doesn't state its own — a business
+          // belonging to this founder is reasonably assumed to share it.
+          const { industry: bizIndustryMatch, matched: bizIndustryMatched } = vb.industry
+            ? resolveIndustry([vb.industry])
+            : { industry, matched: true }
+          const bizIndustry = bizIndustryMatched ? bizIndustryMatch : industry
 
           const newBiz: Business = {
             id:          crypto.randomUUID(),
@@ -743,7 +829,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
       }
 
       // Supplementary notes
-      const claimNotes = buildSupplementaryNotes(f, industryWarning)
+      const claimNotes = buildSupplementaryNotes(f, adminWarnings || undefined)
 
       // CULO-voiced summary — this, not f.bio, is what actually gets
       // published (see buildCuratedBio's comment for why). Short form for
@@ -823,7 +909,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
           const itemTitle = c.title || draft.title
           const generatedItemBody = buildContentItemBody(
-            c.platform, itemTitle, displayName, curatedRole,
+            c.platform, displayName, curatedRole,
             f.businesses?.[0]?.description, topics.map(t => t.name), f.speakingTopics ?? [], f.keyFacts, locationLabel,
           )
 
