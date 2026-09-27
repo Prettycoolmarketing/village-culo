@@ -79,6 +79,27 @@ export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder;
   const gatePassed = ledger ? passesRiskGate(ledger) : undefined
   const gateReasons = ledger && !gatePassed ? riskGateReasons(ledger) : []
 
+  // "I'm treating this workflow as the sources being accurate and
+  // trustworthy based on research and audit" — a founder's own stated
+  // working assumption. Confirming every still-blocking claim in one
+  // click, rather than one at a time, matches that: the research and
+  // audit stages are already doing the checking, so a single sign-off
+  // over the batch is the right amount of friction, not a click per claim.
+  async function handleConfirmAllBlocking() {
+    if (!ledger) return
+    const claims = ledger.claims.map(c => {
+      const blocking = gateReasons.some(r => r.includes(`"${c.claim}"`))
+      return blocking && !c.human_review ? { ...c, human_review: 'confirmed' as const } : c
+    })
+    const nextLedger = { ...ledger, claims }
+    const next = { ...founder, evidenceLedger: nextLedger }
+    await updateFounder(next)
+    onSaved(next)
+  }
+  const unreviewedBlockingCount = ledger
+    ? ledger.claims.filter(c => !c.human_review && gateReasons.some(r => r.includes(`"${c.claim}"`))).length
+    : 0
+
   return (
     <div className="bg-white border border-[#E8E4DD] rounded-lg px-3 py-3">
       <div className="flex items-center justify-between gap-2 mb-2">
@@ -100,9 +121,19 @@ export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder;
       )}
       {ledger && (
         <div className="space-y-2">
-          <p className={`text-xs font-semibold ${gatePassed ? 'text-[#5E6B4A]' : 'text-red-600'}`}>
-            Risk Gate: {gatePassed ? 'Passed — no blocking issues found' : 'Needs human review before anything is written'}
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className={`text-xs font-semibold ${gatePassed ? 'text-[#5E6B4A]' : 'text-red-600'}`}>
+              Risk Gate: {gatePassed ? 'Passed — no blocking issues found' : 'Needs human review before anything is written'}
+            </p>
+            {unreviewedBlockingCount > 0 && (
+              <button
+                onClick={() => void handleConfirmAllBlocking()}
+                className="text-[11px] font-semibold text-[#5E6B4A] hover:underline shrink-0"
+              >
+                Confirm all ({unreviewedBlockingCount}) ✓
+              </button>
+            )}
+          </div>
           {gateReasons.length > 0 && (
             <ul className="text-xs text-red-600 list-disc pl-4 space-y-0.5">
               {gateReasons.map((r, i) => <li key={i}>{r}</li>)}
@@ -431,20 +462,18 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
         </div>
       )}
 
+      {/* No separate draft preview here — a written article is synced
+          straight into title/description above (see handleWriteArticle),
+          so the row's own preview and the Edit panel already show it.
+          This is just the status line + manual retry trigger. */}
       {founder.evidenceLedger && (
         <div className="px-4 pb-3">
           {articleError && <p className="text-xs text-red-600 mb-1">{articleError}</p>}
           {writingArticle && !editorialItem && <p className="text-xs text-[#9CA3AF]">Writing from research…</p>}
           {editorialItem ? (
-            <div className="bg-[#F8F5F0] rounded-lg px-3 py-2">
-              {editorialItem.draft_content?.title && (
-                <p className="text-xs font-semibold text-[#2D2A26] mb-1.5">{editorialItem.draft_content.title}</p>
-              )}
-              <DraftBody body={editorialItem.draft_content?.body} />
-              <p className="text-[10px] text-[#9CA3AF] italic mt-2">
-                {editorialItem.draft_content?.byline} · audit: {editorialItem.editorial_status} · synced to Title/Blog body above, ready to Publish
-              </p>
-            </div>
+            <p className="text-[10px] text-[#9CA3AF]">
+              {editorialItem.draft_content?.byline} · audit: {editorialItem.editorial_status} — written into Title/Blog body above
+            </p>
           ) : !writingArticle && (
             <button
               onClick={() => void handleWriteArticle()}
@@ -507,6 +536,7 @@ function BioDraftBlock({ founder, onUseBio }: { founder: Founder; onUseBio: (bod
   const [writing, setWriting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const autoTriggered = useRef(false)
+  const autoSynced = useRef(false)
 
   if (!loaded) {
     void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
@@ -516,53 +546,49 @@ function BioDraftBlock({ founder, onUseBio }: { founder: Founder; onUseBio: (bod
   const ledger = founder.evidenceLedger
   const bioItem = items.find(i => i.type === 'profile_bio')
 
+  // Writes straight into the actual Bio field above (via onUseBio), every
+  // time — this workflow trusts research + audit to be accurate, so the
+  // draft IS the bio, not a separate thing waiting for a manual copy step.
+  // Founders/staff can still hand-edit the Bio field afterwards as normal.
   async function handleWrite() {
     setWriting(true); setError(null)
     const result = await writeProfileBio(founder.id)
     setWriting(false)
     if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
     setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
+    if (result.item?.draft_content?.body) onUseBio(result.item.draft_content.body)
   }
 
   if (ledger && !bioItem && !writing && !autoTriggered.current) {
     autoTriggered.current = true
     void handleWrite()
   }
+  if (bioItem && !autoSynced.current) {
+    autoSynced.current = true
+    onUseBio(bioItem.draft_content?.body ?? '')
+  }
 
   if (!ledger && !bioItem) return null
 
   return (
-    <div className="bg-[#F8F5F0] rounded-lg px-3 py-2.5">
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <p className={LABEL_CLS}>Culo-written bio draft</p>
-        {ledger && (
-          <button
-            onClick={() => void handleWrite()}
-            disabled={writing}
-            className="text-xs font-semibold text-[#3E6E92] hover:underline disabled:opacity-50 shrink-0"
-          >
-            {writing ? 'Writing…' : bioItem ? 'Rewrite from research' : 'Write from research'}
-          </button>
-        )}
-      </div>
-      {error && <p className="text-xs text-red-600 mb-1">{error}</p>}
-      {writing && !bioItem && <p className="text-xs text-[#9CA3AF]">Writing from research…</p>}
-      {bioItem ? (
-        <>
-          <DraftBody body={bioItem.draft_content?.body} />
-          <div className="flex items-center gap-3 mt-1.5">
-            <p className="text-[10px] text-[#9CA3AF] italic">{bioItem.draft_content?.byline} · audit: {bioItem.editorial_status}</p>
-            <button
-              onClick={() => onUseBio(bioItem.draft_content?.body ?? '')}
-              className="text-[10px] font-semibold text-[#5E6B4A] hover:underline shrink-0"
-            >
-              Use this bio ↑
-            </button>
-          </div>
-        </>
-      ) : !writing && (
-        <p className="text-xs text-[#9CA3AF]">Not written yet — this draft is separate from the Bio field above and never overwrites it automatically.</p>
+    <div className="bg-[#F8F5F0] rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+      {writing && !bioItem ? (
+        <p className="text-xs text-[#9CA3AF]">Writing bio from research…</p>
+      ) : bioItem ? (
+        <p className="text-xs text-[#9CA3AF]">
+          {bioItem.draft_content?.byline} — written into the Bio field above · audit: {bioItem.editorial_status}
+        </p>
+      ) : null}
+      {ledger && (
+        <button
+          onClick={() => void handleWrite()}
+          disabled={writing}
+          className="text-xs font-semibold text-[#3E6E92] hover:underline disabled:opacity-50 shrink-0"
+        >
+          {writing ? 'Writing…' : bioItem ? 'Rewrite from research' : 'Write from research'}
+        </button>
       )}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )
 }

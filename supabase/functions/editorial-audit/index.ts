@@ -52,6 +52,8 @@ For every substantive claim in the draft (a fact, date, number, role, quote, or 
 
 Do not flag stylistic choices, phrasing, word count, or which claims were chosen to include — only flag genuine mismatches against the ledger.
 
+Culo's editorial voice is deliberately positive and generous, attributing claims naturally without hedging or adding disclaimers ("X told the podcast..." rather than "X claims, though this has not been independently verified..."). A confident, attributed, hedge-free sentence is correct writing, not a problem — never flag a sentence as OVERSTATED_CONFIDENCE just because it lacks a disclaimer; only flag it if the draft states something the ledger marks "unverified" or "conflicting" as if it were a plain, settled fact with no attribution at all.
+
 If you consider flagging something and then conclude on reflection that it's actually fine, do not include it in "issues" at all — not even to note that it turned out to be correct. Every entry in "issues" must be a real, standing problem; the array should be empty when nothing is wrong.
 
 Give a holistic verdict:
