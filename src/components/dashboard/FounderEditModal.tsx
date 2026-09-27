@@ -11,6 +11,77 @@ import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { Tabs } from './Tabs'
 import { ConfirmButton } from '../ui/ConfirmButton'
+import { runFounderResearch } from '../../services/editorialResearch'
+import { passesRiskGate, riskGateReasons } from '../../services/editorialEngine'
+
+// Culo Editorial Engine, Sprint 1 — Stage 1 (Researcher) only, manual
+// trigger, one founder at a time. Not wired into Bulk Import. See
+// src/services/editorialResearch.ts and supabase/functions/editorial-research.
+function EditorialResearchPanel({ founder, onSaved }: { founder: Founder; onSaved: (f: Founder) => void }) {
+  const [running, setRunning] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const status = founder.researchStatus
+  const ledger = founder.evidenceLedger
+
+  async function handleRun() {
+    setRunning(true); setError(null)
+    const result = await runFounderResearch(founder.id)
+    setRunning(false)
+    if (!result.success) { setError(result.error ?? 'Research failed.'); return }
+    // Re-read from cache — runFounderResearch already wrote status/ledger.
+    onSaved({ ...founder, researchStatus: 'done', evidenceLedger: result.ledger })
+  }
+
+  const gatePassed = ledger ? passesRiskGate(ledger) : undefined
+  const gateReasons = ledger && !gatePassed ? riskGateReasons(ledger) : []
+
+  return (
+    <div className="bg-white border border-[#E8E4DD] rounded-lg px-3 py-3">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className={LABEL_CLS}>Editorial research (Stage 1 — Researcher)</p>
+        <button
+          onClick={() => void handleRun()}
+          disabled={running || status === 'researching'}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors shrink-0"
+        >
+          {running || status === 'researching' ? 'Researching…' : ledger ? 'Re-run research' : 'Research this founder'}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+      {!ledger && !running && (
+        <p className="text-xs text-[#9CA3AF]">
+          Searches the web to verify this founder's real sources and build a structured evidence ledger.
+          Produces no article or bio yet — that's Stage 2, not built.
+        </p>
+      )}
+      {ledger && (
+        <div className="space-y-2">
+          <p className={`text-xs font-semibold ${gatePassed ? 'text-[#5E6B4A]' : 'text-red-600'}`}>
+            Risk Gate: {gatePassed ? 'Passed — no blocking issues found' : 'Needs human review before anything is written'}
+          </p>
+          {gateReasons.length > 0 && (
+            <ul className="text-xs text-red-600 list-disc pl-4 space-y-0.5">
+              {gateReasons.map((r, i) => <li key={i}>{r}</li>)}
+            </ul>
+          )}
+          <details className="text-xs text-[#6B7280]">
+            <summary className="cursor-pointer font-semibold text-[#2D2A26]">
+              {ledger.claims.length} claim{ledger.claims.length === 1 ? '' : 's'} found · {ledger.source_assessments.length} source{ledger.source_assessments.length === 1 ? '' : 's'} assessed
+            </summary>
+            <div className="mt-2 space-y-1.5">
+              {ledger.claims.map((c, i) => (
+                <p key={i} className="border-l-2 border-[#E8E4DD] pl-2">
+                  <span className="font-semibold uppercase text-[10px] text-[#9CA3AF]">{c.claim_type}</span>{' '}
+                  {c.claim}
+                </p>
+              ))}
+            </div>
+          </details>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function isReadyToPublish(item: ImportedContent): boolean {
   return item.title.trim().length > 0
@@ -304,6 +375,8 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{founder.claimNotes}</p>
         </div>
       )}
+
+      <EditorialResearchPanel founder={founder} onSaved={onSaved} />
 
       {saveError && <p className="text-xs text-red-600">{saveError}</p>}
       <div className="flex items-center gap-3 pt-2">

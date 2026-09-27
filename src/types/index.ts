@@ -441,6 +441,13 @@ export interface Founder {
   claimEmail?: string
   claimNotes?: string
   isClaimable?: boolean
+  // Culo Editorial Engine, Sprint 1 (Stage 1: Researcher only) — see
+  // src/types/editorialEngine.ts and supabase/functions/editorial-research.
+  // Manual, one-founder-at-a-time trigger; not wired into Bulk Import yet.
+  researchStatus?: import('./editorialEngine').ResearchStatus
+  researchRequestedAt?: string
+  researchCompletedAt?: string
+  evidenceLedger?: import('./editorialEngine').EvidenceLedger
   // Voice & Brand Brief — free text describing who this founder is, their
   // real businesses/chapters, how they write, and what not to say. Feeds
   // AI-generated blogs for imported content (see services/blogWriter.ts) —
