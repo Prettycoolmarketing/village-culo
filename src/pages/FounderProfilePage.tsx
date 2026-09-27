@@ -454,13 +454,11 @@ export function FounderProfilePage() {
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section aria-labelledby="founder-name">
-        {founder.coverImage ? (
+        {founder.coverImage && (
           <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
             <CoverImage src={founder.coverImage} alt={`${founder.name}'s cover photo`} className="w-full h-full object-cover opacity-70" loading="eager" />
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
           </div>
-        ) : (
-          <div className="h-32 bg-gradient-to-br from-[#3E6E92]/25 to-[#3E6E92]/5" aria-hidden="true" />
         )}
 
         <div className="bg-surface border-b border-border pb-12">

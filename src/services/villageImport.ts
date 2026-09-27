@@ -373,19 +373,16 @@ function buildCuratedBio(
 // whatever real context the curation sheet captured (business description,
 // speaking topics) — still entirely CULO's own writing, never the
 // founder's scraped prose.
-// Giving every one of a founder's links (article, YouTube, podcast, digital
-// product) the same full multi-paragraph treatment produced 3-4 pages per
-// founder that were ~90% identical text — real, confirmed duplicate content
-// across a founder's own pages, which search engines penalise (keyword
-// cannibalisation) and which reads to an AI system as templated filler
-// rather than 3-4 independent pieces of evidence, undermining exactly the
-// citability the Village exists for. There's only ever one real synthesised
-// Key Facts paragraph per founder (not one per link), so only ONE item — the
-// designated "article" — gets the full journalistic treatment; every other
-// link gets a short, honest, clearly-lighter mention instead of a duplicate
-// full article.
+// Every one of a founder's links gets a real, substantial write-up — a
+// thin "Watch the podcast" stub is worse than a repeated paragraph (a
+// founder confirmed this directly: a stub reads as broken, not as
+// deliberately lightweight). The real duplicate-content risk this used to
+// solve by thinning these out is instead handled at the *publishing* step —
+// CAPO only ever turns one item per founder into an actual live Story page
+// (see the founders-page tooling); the other items' descriptions are still
+// worth writing properly since staff read them, and any of them could
+// become the real published piece.
 function buildContentItemBody(
-  kind: string | undefined,
   displayName: string,
   role: string,
   businessDescription: string | undefined,
@@ -394,33 +391,21 @@ function buildContentItemBody(
   keyFacts: string | undefined,
   locationLabel: string,
 ): string {
-  if (kind !== 'article') {
-    const shortIntro: Record<string, string> = {
-      youtube:           `Watch ${displayName} on YouTube.`,
-      podcast:           `Listen to ${displayName}'s appearance on their podcast.`,
-      'digital-product': `${displayName}'s digital product — see the link above for details.`,
-    }
-    const p1 = (kind && shortIntro[kind]) || `One of ${displayName}'s own links — see above.`
-    const p2 = `For ${displayName}'s full profile and their main written piece, see their Village page. Curated by CULO Village from publicly available content — the original is above, straight from their own channel.`
-    return [p1, p2].join('\n\n')
-  }
-
-  const p1 = `${displayName} is ${role}, based in ${locationLabel}.`
-  const p2 = `This is ${displayName}'s own article.`
-
-  // Real substance: keyFacts is a curator's own synthesis of the specific
-  // detail in the actual linked content (real numbers, dates, named
-  // entities) — this is what makes an article read as a real piece rather
-  // than a template. Falls back to a bare topic list only when no curator
-  // has captured that yet, which reads thinner but is still honest.
+  // A "This is X's appearance on YouTube" line before the real substance is
+  // pure throat-clearing — no journalist opens a piece by announcing what
+  // format it's in, and it added nothing a reader couldn't already see from
+  // the page's own title and source link. The opening paragraph now goes
+  // straight from who they are into the real substance (keyFacts) as one
+  // flowing paragraph, the way an actual short profile piece reads.
   const subjectTopics = speakingTopics.length > 0 ? speakingTopics : topicNames
-  const p3 = keyFacts || (subjectTopics.length > 0 ? `It covers ${joinNaturally(subjectTopics)}.` : '')
+  const substance = keyFacts || (subjectTopics.length > 0 ? `Their work covers ${joinNaturally(subjectTopics)}.` : '')
+  const p1 = [`${displayName} is ${role}, based in ${locationLabel}.`, substance].filter(Boolean).join(' ')
 
-  const p4 = businessDescription || ''
+  const p2 = businessDescription || ''
 
-  const p5 = `This profile was curated by CULO Village from publicly available content, not written by ${displayName} themselves — the original posts and links are above, straight from their own channels. If this is your profile and you'd like to update it in your own words, you can claim it or request its removal using the links on this page.`
+  const p3 = `This profile was curated by CULO Village from publicly available content, not written by ${displayName} themselves — the original posts and links are above, straight from their own channels. If this is your profile and you'd like to update it in your own words, you can claim it or request its removal using the links on this page.`
 
-  return [p1, p2, p3, p4, p5].filter(Boolean).join('\n\n')
+  return [p1, p2, p3].filter(Boolean).join('\n\n')
 }
 
 function str(v: unknown): string | undefined {
@@ -899,14 +884,6 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
       // Content
       if (f.content && f.content.length > 0) {
-        // Every founder gets exactly one full-substance piece. Normally
-        // that's whichever link came from the Article URL field — but a
-        // founder with only a YouTube/podcast link and no Article URL would
-        // otherwise get zero real articles at all, just short mentions; the
-        // first real link stands in as the primary piece for them instead.
-        const hasArticleKind = f.content.some(c => c.platform === 'article')
-        let primaryAssigned = false
-
         for (const c of f.content) {
           if (!c.url || !isValidUrl(c.url)) continue
 
@@ -929,10 +906,8 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
           }
 
           const itemTitle = c.title || draft.title
-          const isPrimary = c.platform === 'article' || (!hasArticleKind && !primaryAssigned)
-          if (isPrimary) primaryAssigned = true
           const generatedItemBody = buildContentItemBody(
-            isPrimary ? 'article' : c.platform, displayName, curatedRole,
+            displayName, curatedRole,
             f.businesses?.[0]?.description, topics.map(t => t.name), f.speakingTopics ?? [], f.keyFacts, locationLabel,
           )
 
