@@ -19,7 +19,9 @@ export interface EditorialItemRow {
   imported_content_id: string | null
   type: 'profile_bio' | 'source_article'
   draft_content: { title?: string; body: string; byline?: string; claim_ids_used?: string[] } | null
-  editorial_status: 'pending' | 'pass' | 'review' | 'reject'
+  // pending/pass/review/reject are the Auditor's own machine verdict.
+  // approved is set only by a human in the Review Queue — see approveItem.
+  editorial_status: 'pending' | 'pass' | 'review' | 'reject' | 'approved'
   auditor_notes: AuditIssue[] | null
   auto_publish_allowed: boolean
   created_at: string
@@ -41,6 +43,51 @@ export async function getEditorialItems(founderId: string): Promise<EditorialIte
     .order('created_at', { ascending: true })
   if (error || !data) return []
   return data as EditorialItemRow[]
+}
+
+// Across every founder — the Review Queue's own data source. Low-volume
+// by design (manual trigger, one founder at a time upstream), so one
+// unfiltered select is fine; revisit with real pagination if that stops
+// being true once bulk import can create these automatically.
+export async function getAllEditorialItems(): Promise<EditorialItemRow[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+  const { data, error } = await supabase
+    .from('editorial_items')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error || !data) return []
+  return data as EditorialItemRow[]
+}
+
+// The human sign-off the agreed design requires — an Auditor "pass" (or a
+// "review" a human decided was actually fine) routes here, never straight
+// to publish on its own. This is the one action in the whole pipeline a
+// model never gets to take for itself.
+export async function approveItem(itemId: string): Promise<WriteResult> {
+  if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
+  const { data, error } = await supabase
+    .from('editorial_items')
+    .update({ editorial_status: 'approved' })
+    .eq('id', itemId)
+    .select()
+    .single()
+  if (error || !data) return { success: false, error: error?.message ?? 'Could not approve.' }
+  return { success: true, item: data as EditorialItemRow }
+}
+
+// A human override, distinct from the Auditor's own "reject" verdict —
+// used when a CAPO reviewer disagrees with a "pass" or "review" and wants
+// it out of the queue without waiting for a re-audit to catch up.
+export async function rejectItem(itemId: string): Promise<WriteResult> {
+  if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
+  const { data, error } = await supabase
+    .from('editorial_items')
+    .update({ editorial_status: 'reject' })
+    .eq('id', itemId)
+    .select()
+    .single()
+  if (error || !data) return { success: false, error: error?.message ?? 'Could not reject.' }
+  return { success: true, item: data as EditorialItemRow }
 }
 
 interface WriteResult {

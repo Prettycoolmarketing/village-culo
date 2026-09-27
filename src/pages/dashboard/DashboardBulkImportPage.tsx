@@ -8,6 +8,9 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getFounder, deleteFounderAccount, updateFounder } from '../../services/founders'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
+import { runFounderResearch } from '../../services/editorialResearch'
+import { writeProfileBio, writeSourceArticle } from '../../services/editorialItems'
+import { importedContentService } from '../../services/importedContent'
 import type { Founder } from '../../types'
 
 // Nobody's got a "name" field in the system today — email is all a staff
@@ -160,6 +163,10 @@ export function DashboardBulkImportPage() {
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
   const [deletedIds, setDeletedIds]         = useState<Set<string>>(new Set())
   const [resultTick, setResultTick]         = useState(0)
+  const [createEditorialContent, setCreateEditorialContent] = useState(false)
+  const [pipelineRunning, setPipelineRunning] = useState(false)
+  const [pipelineProgress, setPipelineProgress] = useState<{ done: number; total: number; note: string } | null>(null)
+  const [pipelineDone, setPipelineDone]     = useState(false)
 
   async function handleDeleteImported(id: string) {
     const result = await deleteFounderAccount(id)
@@ -252,6 +259,53 @@ export function DashboardBulkImportPage() {
     } finally {
       setImporting(false)
     }
+  }
+
+  // ── Step 3 → Optional editorial pipeline (Stage 1 + Stage 2 only) ───────
+  //
+  // Deliberately requires its own explicit click here rather than firing
+  // the moment import finishes — the checkbox in Step 2 only records
+  // intent, matching the same draft-first philosophy already used for
+  // publishing (see ArticleRow: nothing goes further until a human looks
+  // and presses the actual button). This runs real, metered API calls —
+  // research per founder, then a bio + one article per valid source — so
+  // it needs its own deliberate press, with the founder/source count
+  // visible first.
+  //
+  // Stage 3 (Auditor) is NOT run here — that stays a per-item action in
+  // the Editorial Queue, so a human decides what to audit rather than
+  // spending on auditing drafts nobody's going to use.
+  async function handleRunEditorialPipeline() {
+    if (!result) return
+    const targets = result.created.filter(f => !deletedIds.has(f.id))
+    setPipelineRunning(true)
+    setPipelineDone(false)
+    setPipelineProgress({ done: 0, total: targets.length, note: '' })
+    for (let i = 0; i < targets.length; i++) {
+      const f = targets[i]!
+      const hasSources = importedContentService.getAll({ founderId: f.id }).some(item => item.originalUrl)
+      if (!hasSources) {
+        setPipelineProgress({ done: i + 1, total: targets.length, note: `${f.name}: no linked sources, skipped` })
+        continue
+      }
+      setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: researching…` })
+      const research = await runFounderResearch(f.id)
+      if (!research.success || !research.ledger) {
+        setPipelineProgress({ done: i + 1, total: targets.length, note: `${f.name}: research failed — ${research.error ?? 'unknown error'}` })
+        continue
+      }
+      setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: writing bio…` })
+      await writeProfileBio(f.id)
+      const validSources = research.ledger.source_assessments.filter(s => s.source_valid)
+      for (const source of validSources) {
+        setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: writing article (${source.source_title ?? source.url})…` })
+        await writeSourceArticle(f.id, source.imported_content_id, source)
+      }
+      setPipelineProgress({ done: i + 1, total: targets.length, note: `${f.name}: done — bio + ${validSources.length} article${validSources.length === 1 ? '' : 's'} drafted` })
+    }
+    setPipelineRunning(false)
+    setPipelineDone(true)
+    setResultTick(t => t + 1)
   }
 
   // ── Reset ────────────────────────────────────────────────────────────────
@@ -578,6 +632,12 @@ export function DashboardBulkImportPage() {
             checked={options.autoPublishAsStories}
             onChange={v => setOptions(o => ({ ...o, autoPublishAsStories: v }))}
           />
+          <OptionToggle
+            label="Create Culo editorial content"
+            description="After import, lets you research and write a Culo bio + articles for each founder with linked sources — a separate button on the results screen, not automatic. Uses real, metered API calls (Stage 1 research + Stage 2 writing per founder); auditing and publishing still need their own review in the Editorial Queue."
+            checked={createEditorialContent}
+            onChange={setCreateEditorialContent}
+          />
 
           <div className="bg-white rounded-xl border border-[#E8E4DD] p-4 space-y-3">
             <p className="text-xs font-bold text-[#2D2A26]">Duplicate handling</p>
@@ -652,6 +712,39 @@ export function DashboardBulkImportPage() {
             <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3">
               <p className="text-xs font-bold text-amber-700 mb-1.5">Skipped (duplicate slugs)</p>
               <p className="text-xs text-amber-700">{result.skipped.join(', ')}</p>
+            </div>
+          )}
+
+          {/* Optional editorial pipeline — only offered when the Step 2
+              checkbox was on, and only ever runs on an explicit click here,
+              never automatically. */}
+          {createEditorialContent && result.created.length > 0 && (
+            <div className="bg-[#3E6E92]/5 border border-[#3E6E92]/20 rounded-xl px-5 py-4">
+              <p className="text-sm font-bold text-[#2D2A26] mb-1">Culo editorial content</p>
+              <p className="text-xs text-[#6B7280] mb-3">
+                Research and write a bio + articles for each of the {result.created.filter(f => !deletedIds.has(f.id)).length} founders above that have linked sources. This uses real API calls and can take a while for a large batch.
+              </p>
+              {!pipelineRunning && !pipelineDone && (
+                <button
+                  onClick={() => void handleRunEditorialPipeline()}
+                  className="px-5 py-2.5 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] transition-colors"
+                >
+                  Run research + writing for {result.created.filter(f => !deletedIds.has(f.id)).length} founders →
+                </button>
+              )}
+              {pipelineProgress && (pipelineRunning || pipelineDone) && (
+                <div>
+                  <p className="text-xs font-semibold text-[#2D2A26] mb-1">
+                    {pipelineDone ? 'Done' : `Working…`} ({pipelineProgress.done}/{pipelineProgress.total})
+                  </p>
+                  <p className="text-xs text-[#6B7280]">{pipelineProgress.note}</p>
+                </div>
+              )}
+              {pipelineDone && (
+                <p className="text-xs text-[#5E6B4A] font-semibold mt-2">
+                  Review the drafts and run the Auditor from each founder's Editor modal, or from the Editorial Queue tab.
+                </p>
+              )}
             </div>
           )}
 

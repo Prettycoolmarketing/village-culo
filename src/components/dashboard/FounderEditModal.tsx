@@ -152,6 +152,7 @@ const AUDIT_STATUS_COLORS: Record<EditorialItemRow['editorial_status'], string> 
   pass: 'text-[#5E6B4A]',
   review: 'text-amber-600',
   reject: 'text-red-600',
+  approved: 'text-[#3E6E92]',
 }
 
 // Shared display for one Writer draft — bio or article. Shows the draft

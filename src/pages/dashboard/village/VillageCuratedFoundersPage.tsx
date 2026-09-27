@@ -11,6 +11,7 @@ import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import { FounderEditModal } from '../../../components/dashboard/FounderEditModal'
 import { VillageBulkImportPage } from './VillageBulkImportPage'
+import { EditorialQueuePage } from './EditorialQueuePage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 
@@ -107,8 +108,9 @@ export function VillageCuratedFoundersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
   // Export moved to Village Overview — no longer a tab here.
-  const [pageTab, setPageTab]     = useState<'founders' | 'imports'>(
+  const [pageTab, setPageTab]     = useState<'founders' | 'imports' | 'editorial'>(
     searchParams.get('tab') === 'imports' ? 'imports'
+    : searchParams.get('tab') === 'editorial' ? 'editorial'
     : !canSeeFounders ? 'imports' : 'founders',
   )
   const [tick, setTick]           = useState(0)
@@ -296,13 +298,15 @@ export function VillageCuratedFoundersPage() {
         tabs={[
           ...(canSeeFounders ? [{ key: 'founders', label: 'Founders' }] : []),
           ...(canSeeImports ? [{ key: 'imports', label: 'Bulk Import' }] : []),
+          ...(canSeeImports ? [{ key: 'editorial', label: 'Editorial Queue' }] : []),
         ]}
         active={pageTab}
-        onChange={key => setPageTab(key as 'founders' | 'imports')}
+        onChange={key => setPageTab(key as 'founders' | 'imports' | 'editorial')}
         className="mb-6"
       />
 
       {pageTab === 'imports' && canSeeImports && <VillageBulkImportPage embedded />}
+      {pageTab === 'editorial' && canSeeImports && <EditorialQueuePage embedded />}
 
       {pageTab === 'founders' && canSeeFounders && (
       <>
