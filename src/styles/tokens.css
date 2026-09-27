@@ -7,7 +7,7 @@
   --color-primary:     #C86A43;   /* Terracotta */
   --color-secondary:   #5E6B4A;   /* Olive */
   --color-accent:      #D6A94D;   /* Gold */
-  --color-background:  #F8F5F0;   /* Warm Cream */
+  --color-background:  #F3F7FA;   /* Village Blue-Grey — matches Tailwind's `background` token; was left on an older cream palette, showing through on mobile overscroll */
   --color-surface:     #FFFFFF;   /* Card White */
   --color-text:        #2D2A26;   /* Charcoal */
   --color-text-muted:  #7A7570;   /* Muted Charcoal */
