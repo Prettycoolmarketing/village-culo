@@ -107,7 +107,13 @@ function ArticleRow({ item, founder, onChanged }: { item: ImportedContent; found
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">{item.sourcePlatform}</p>
           <p className="text-sm font-semibold text-[#2D2A26] truncate">{item.title}</p>
-          {item.description && <p className="text-xs text-[#6B7280] truncate">{item.description}</p>}
+          {/* Every item's real substance shares the same opening lede
+              sentence ("X is [role], based in [location]") by design — a
+              single-line truncated preview showed nothing past that shared
+              part, so every item in this list looked identical at a glance
+              even when their actual bodies genuinely differ further in.
+              Multi-line so the distinguishing part is actually visible. */}
+          {item.description && <p className="text-xs text-[#6B7280] line-clamp-2">{item.description}</p>}
         </div>
         <select
           value={item.status}
