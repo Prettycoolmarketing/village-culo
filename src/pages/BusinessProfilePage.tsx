@@ -2,7 +2,7 @@ import type { ReactNode }             from 'react'
 import { useParams, Link }           from 'react-router-dom'
 import { usePageMeta }               from '../utils/usePageMeta'
 import { normalizeUrl }              from '../utils/url'
-import { getBusinesses, getBusinessBySlug } from '../services/businesses'
+import { getBusinessBySlug } from '../services/businesses'
 import { getFounder }                      from '../services/founders'
 import { getCurrentFounder }               from '../services/currentFounder'
 import { useAuth }                         from '../contexts/AuthContext'
@@ -18,7 +18,6 @@ import { getServices }                     from '../services/serviceOfferings'
 import { StoryGrid }                  from '../widgets/StoryGrid'
 import { LibraryGrid }               from '../widgets/LibraryGrid'
 import { FounderCard }                from '../components/cards/FounderCard'
-import { BusinessCard }               from '../components/cards/BusinessCard'
 import { StoryCard }                  from '../components/cards/StoryCard'
 import { BizLogo }                    from '../components/ui/BizLogo'
 import { Badge }                      from '../components/ui/Badge'
@@ -187,21 +186,6 @@ export function BusinessProfilePage() {
   // id with a demo seed entry (e.g. this session's own "pretty-cool-
   // marketing") showed fabricated answers alongside its real ones.
   const realFaqs = [...(business.faqs ?? []), ...services.flatMap(s => s.faqs ?? [])].filter(f => f.answer.trim().length > 0)
-
-  const businessTopicIds = new Set(business.topics.map(t => t.id))
-  const related = getBusinesses({ publicOnly: true })
-    .filter(b => b.id !== business.id)
-    .map(b => {
-      let score = 0
-      if (b.industry.id === business.industry.id)         score += 3
-      if (b.location.id  === business.location.id)        score += 2
-      if (b.topics.some(t => businessTopicIds.has(t.id))) score += 1
-      return { business: b, score }
-    })
-    .filter(({ score }) => score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map(({ business: b }) => b)
 
   const publicPrograms = programService.getAll({ businessId: business.id, status: 'active', isPublic: true })
   const receivedRecs   = recommendationService.getAll({ businessId: business.id, status: 'approved' })
@@ -698,33 +682,6 @@ export function BusinessProfilePage() {
                 columns={2}
                 hideEmpty
               />
-
-              {/* Related businesses */}
-              {related.length > 0 && (
-                <section aria-labelledby="related-businesses-heading">
-                  <h2 id="related-businesses-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    Related Businesses
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-6">
-                    Businesses in the Village that share industry, location or topics.
-                  </p>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-5" role="list" aria-label="Related businesses">
-                    {related.map(rel => {
-                      const relFounder = getFounder(rel.founderId)
-                      return (
-                        <li key={rel.id}>
-                          <BusinessCard business={rel} founder={relFounder} variant="default" />
-                        </li>
-                      )
-                    })}
-                  </ul>
-                  <div className="mt-6">
-                    <Link to="/businesses" className="text-sm font-medium text-primary hover:text-[#b05a35] transition-colors">
-                      Browse all businesses →
-                    </Link>
-                  </div>
-                </section>
-              )}
 
             </div>
 
