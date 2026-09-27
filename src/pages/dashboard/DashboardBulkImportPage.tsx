@@ -163,7 +163,13 @@ export function DashboardBulkImportPage() {
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
   const [deletedIds, setDeletedIds]         = useState<Set<string>>(new Set())
   const [resultTick, setResultTick]         = useState(0)
-  const [createEditorialContent, setCreateEditorialContent] = useState(false)
+  // Defaults on — the whole point of importing a batch through the
+  // editorial engine rather than the old deterministic templates is real,
+  // researched content, so that should be the normal path, not something
+  // staff have to remember to opt into every time. Still just a checkbox:
+  // actually running it still needs the explicit button on the results
+  // screen (see handleRunEditorialPipeline).
+  const [createEditorialContent, setCreateEditorialContent] = useState(true)
   const [pipelineRunning, setPipelineRunning] = useState(false)
   const [pipelineProgress, setPipelineProgress] = useState<{ done: number; total: number; note: string } | null>(null)
   const [pipelineDone, setPipelineDone]     = useState(false)
