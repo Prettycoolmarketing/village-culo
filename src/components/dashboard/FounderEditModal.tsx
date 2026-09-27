@@ -15,14 +15,33 @@ import { runFounderResearch } from '../../services/editorialResearch'
 import { passesRiskGate, riskGateReasons } from '../../services/editorialEngine'
 import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, type EditorialItemRow } from '../../services/editorialItems'
 
-// Culo Editorial Engine, Sprint 1 — Stage 1 (Researcher) only, manual
-// trigger, one founder at a time. Not wired into Bulk Import. See
-// src/services/editorialResearch.ts and supabase/functions/editorial-research.
-function EditorialResearchPanel({ founder, onSaved }: { founder: Founder; onSaved: (f: Founder) => void }) {
+// Culo Editorial Engine — Stage 1 (Researcher) and Stage 3 (Auditor) live
+// here, in Bulk Import, next to the JSON that started the whole chain — not
+// inside the general Founder edit modal, which every founder (self-signup
+// included) passes through. Stage 2 (Writer) is deliberately elsewhere: see
+// BioDraftBlock in ProfileTab and the per-item block in ArticleRow, since
+// writing a bio or an article belongs with the bio/article it's writing,
+// not with the research/audit control panel.
+export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder; onSaved: (f: Founder) => void }) {
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [items, setItems] = useState<EditorialItemRow[]>([])
+  const [itemsLoaded, setItemsLoaded] = useState(false)
+  const [auditingId, setAuditingId] = useState<string | null>(null)
   const status = founder.researchStatus
   const ledger = founder.evidenceLedger
+
+  if (!itemsLoaded) {
+    void getEditorialItems(founder.id).then(r => { setItems(r); setItemsLoaded(true) })
+  }
+
+  async function handleAudit(item: EditorialItemRow) {
+    setAuditingId(item.id); setError(null)
+    const result = await runAudit(item)
+    setAuditingId(null)
+    if (!result.success) { setError(result.error ?? 'Audit failed.'); return }
+    setItems(prev => prev.map(i => i.id === item.id ? result.item! : i))
+  }
 
   async function handleRun() {
     setRunning(true); setError(null)
@@ -107,96 +126,23 @@ function EditorialResearchPanel({ founder, onSaved }: { founder: Founder; onSave
         </div>
       )}
 
-      {ledger && <EditorialWritePanel founder={founder} ledger={ledger} />}
-    </div>
-  )
-}
-
-// Stage 2 — Writer. Bio is one call, each valid source is its own call
-// (2A/2B per the agreed build order) — never regenerated in bulk, each
-// triggered individually so a founder with several sources doesn't burn
-// tokens on ones you don't want written yet.
-function EditorialWritePanel({ founder, ledger }: { founder: Founder; ledger: NonNullable<Founder['evidenceLedger']> }) {
-  const [items, setItems] = useState<EditorialItemRow[]>([])
-  const [loaded, setLoaded] = useState(false)
-  const [writingKey, setWritingKey] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  if (!loaded) {
-    void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
-    return <p className="text-xs text-[#9CA3AF] mt-3">Loading draft status…</p>
-  }
-
-  const bioItem = items.find(i => i.type === 'profile_bio')
-  const validSources = ledger.source_assessments.filter(s => s.source_valid)
-
-  async function handleWriteBio() {
-    setWritingKey('bio'); setError(null)
-    const result = await writeProfileBio(founder.id)
-    setWritingKey(null)
-    if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
-    setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
-  }
-
-  async function handleWriteSource(source: typeof validSources[number]) {
-    setWritingKey(source.url); setError(null)
-    const result = await writeSourceArticle(founder.id, source.imported_content_id, source)
-    setWritingKey(null)
-    if (!result.success) { setError(result.error ?? 'Failed to write article.'); return }
-    setItems(prev => [...prev, result.item!])
-  }
-
-  async function handleAudit(item: EditorialItemRow) {
-    setWritingKey(`audit-${item.id}`); setError(null)
-    const result = await runAudit(item)
-    setWritingKey(null)
-    if (!result.success) { setError(result.error ?? 'Audit failed.'); return }
-    setItems(prev => prev.map(i => i.id === item.id ? result.item! : i))
-  }
-
-  return (
-    <div className="mt-3 pt-3 border-t border-[#E8E4DD]">
-      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-2">
-        Stage 2 — Writer (draft only, nothing published)
-      </p>
-      {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
-
-      <div className="mb-3">
-        {bioItem ? (
-          <DraftItemCard item={bioItem} auditing={writingKey === `audit-${bioItem.id}`} onAudit={() => void handleAudit(bioItem)} />
-        ) : (
-          <button
-            onClick={() => void handleWriteBio()}
-            disabled={writingKey === 'bio'}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#3E6E92] text-white hover:bg-[#345c7a] disabled:opacity-50 transition-colors"
-          >
-            {writingKey === 'bio' ? 'Writing…' : 'Write profile bio'}
-          </button>
-        )}
-      </div>
-
-      <p className="text-xs text-[#9CA3AF] mb-1.5">{validSources.length} valid source{validSources.length === 1 ? '' : 's'} to write from:</p>
-      <div className="space-y-2">
-        {validSources.map(source => {
-          const existing = items.find(i => i.type === 'source_article' && i.imported_content_id === source.imported_content_id)
-          return (
-            <div key={source.url} className="bg-[#F8F5F0] rounded-lg px-3 py-2">
-              <p className="text-xs font-semibold text-[#2D2A26] truncate">{source.source_title ?? source.url}</p>
-              {existing ? (
-                <DraftItemCard item={existing} auditing={writingKey === `audit-${existing.id}`} onAudit={() => void handleAudit(existing)} />
-              ) : (
-                <button
-                  onClick={() => void handleWriteSource(source)}
-                  disabled={writingKey === source.url}
-                  className="text-xs font-semibold text-[#3E6E92] hover:underline mt-1"
-                >
-                  {writingKey === source.url ? 'Writing…' : 'Write this article'}
-                </button>
-              )}
-            </div>
-          )
-        })}
-      </div>
+      {itemsLoaded && items.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-[#E8E4DD]">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-2">
+            Stage 3 — Auditor (checks each Writer draft against the ledger above)
+          </p>
+          <div className="space-y-2">
+            {items.map(item => (
+              <div key={item.id} className="bg-[#F8F5F0] rounded-lg px-3 py-2">
+                <p className="text-xs font-semibold text-[#2D2A26] mb-1">
+                  {item.type === 'profile_bio' ? 'Profile bio' : item.draft_content?.title ?? 'Article'}
+                </p>
+                <DraftItemCard item={item} auditing={auditingId === item.id} onAudit={() => void handleAudit(item)} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -263,7 +209,32 @@ const STATUS_COLORS: Record<ImportedContentStatus, string> = {
 // status control, view/delete) — CAPO staff reviewing an imported founder's
 // batch see the exact same picture the founder themselves would.
 
-function ArticleRow({ item, founder, onChanged }: { item: ImportedContent; founder: Founder; onChanged: () => void }) {
+function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChanged }: {
+  item: ImportedContent
+  founder: Founder
+  onChanged: () => void
+  editorialItem?: EditorialItemRow
+  onEditorialChanged: (item: EditorialItemRow) => void
+}) {
+  const [writingArticle, setWritingArticle] = useState(false)
+  const [articleError, setArticleError] = useState<string | null>(null)
+
+  // Stage 2 (Writer) for this specific article — matched to the founder's
+  // evidence ledger by imported_content_id first (set when Stage 1 was
+  // given this exact item), falling back to a URL match for older ledgers
+  // researched before that field was threaded through.
+  async function handleWriteArticle() {
+    const ledger = founder.evidenceLedger
+    const source = ledger?.source_assessments.find(s => s.imported_content_id === item.id)
+      ?? ledger?.source_assessments.find(s => s.url === item.originalUrl)
+    if (!source) { setArticleError('No matching research source found — run Stage 1 research on this founder in Bulk Import first.'); return }
+    setWritingArticle(true); setArticleError(null)
+    const result = await writeSourceArticle(founder.id, item.id, source)
+    setWritingArticle(false)
+    if (!result.success) { setArticleError(result.error ?? 'Failed to write article.'); return }
+    onEditorialChanged(result.item!)
+  }
+
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(item.title)
@@ -424,6 +395,26 @@ function ArticleRow({ item, founder, onChanged }: { item: ImportedContent; found
           </div>
         </div>
       )}
+
+      {founder.evidenceLedger && (
+        <div className="px-4 pb-3">
+          {articleError && <p className="text-xs text-red-600 mb-1">{articleError}</p>}
+          {editorialItem ? (
+            <div className="bg-[#F8F5F0] rounded-lg px-3 py-2">
+              <p className="text-xs text-[#6B7280] whitespace-pre-wrap line-clamp-3">{editorialItem.draft_content?.body}</p>
+              <p className="text-[10px] text-[#9CA3AF] italic mt-1">{editorialItem.draft_content?.byline} · audit: {editorialItem.editorial_status}</p>
+            </div>
+          ) : (
+            <button
+              onClick={() => void handleWriteArticle()}
+              disabled={writingArticle}
+              className="text-xs font-semibold text-[#3E6E92] hover:underline disabled:opacity-50"
+            >
+              {writingArticle ? 'Writing…' : 'Write Culo article from research'}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -431,6 +422,11 @@ function ArticleRow({ item, founder, onChanged }: { item: ImportedContent; found
 function ArticlesTab({ founder, tick, bump }: { founder: Founder; tick: number; bump: () => void }) {
   void tick
   const items = importedContentService.getAll({ founderId: founder.id })
+  const [editorialItems, setEditorialItems] = useState<EditorialItemRow[]>([])
+  const [editorialLoaded, setEditorialLoaded] = useState(false)
+  if (!editorialLoaded) {
+    void getEditorialItems(founder.id).then(r => { setEditorialItems(r); setEditorialLoaded(true) })
+  }
 
   if (items.length === 0) {
     return (
@@ -443,12 +439,75 @@ function ArticlesTab({ founder, tick, bump }: { founder: Founder; tick: number; 
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden max-h-[50vh] overflow-y-auto">
-      {items.map(item => <ArticleRow key={item.id} item={item} founder={founder} onChanged={bump} />)}
+      {items.map(item => (
+        <ArticleRow
+          key={item.id}
+          item={item}
+          founder={founder}
+          onChanged={bump}
+          editorialItem={editorialItems.find(e => e.type === 'source_article' && e.imported_content_id === item.id)}
+          onEditorialChanged={ei => setEditorialItems(prev => [...prev.filter(x => x.id !== ei.id), ei])}
+        />
+      ))}
     </div>
   )
 }
 
 // ─── Profile tab ────────────────────────────────────────────────────────────
+
+// Stage 2 (Writer) for the bio specifically — lives with the Bio field it
+// writes into, not with the research/audit control panel in Bulk Import.
+// Needs a completed evidence ledger to run (Stage 1, run from Bulk Import).
+function BioDraftBlock({ founder }: { founder: Founder }) {
+  const [items, setItems] = useState<EditorialItemRow[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [writing, setWriting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (!loaded) {
+    void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
+    return null
+  }
+
+  const ledger = founder.evidenceLedger
+  const bioItem = items.find(i => i.type === 'profile_bio')
+
+  async function handleWrite() {
+    setWriting(true); setError(null)
+    const result = await writeProfileBio(founder.id)
+    setWriting(false)
+    if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
+    setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
+  }
+
+  if (!ledger && !bioItem) return null
+
+  return (
+    <div className="bg-[#F8F5F0] rounded-lg px-3 py-2.5">
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <p className={LABEL_CLS}>Culo-written bio draft</p>
+        {ledger && (
+          <button
+            onClick={() => void handleWrite()}
+            disabled={writing}
+            className="text-xs font-semibold text-[#3E6E92] hover:underline disabled:opacity-50 shrink-0"
+          >
+            {writing ? 'Writing…' : bioItem ? 'Rewrite from research' : 'Write from research'}
+          </button>
+        )}
+      </div>
+      {error && <p className="text-xs text-red-600 mb-1">{error}</p>}
+      {bioItem ? (
+        <>
+          <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{bioItem.draft_content?.body}</p>
+          <p className="text-[10px] text-[#9CA3AF] italic mt-1">{bioItem.draft_content?.byline} · audit: {bioItem.editorial_status}</p>
+        </>
+      ) : (
+        <p className="text-xs text-[#9CA3AF]">Not written yet — this draft is separate from the Bio field above and never overwrites it automatically.</p>
+      )}
+    </div>
+  )
+}
 
 function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Founder) => void }) {
   const [name, setName]           = useState(founder.name)
@@ -506,6 +565,9 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           onChange={e => setBio(e.target.value)}
         />
       </div>
+
+      <BioDraftBlock founder={founder} />
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={LABEL_CLS}>Location</label>
@@ -529,15 +591,6 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
         <div><label className={LABEL_CLS}>Podcast</label><input className={INPUT_CLS} value={podcast} onChange={e => setPodcast(e.target.value)} /></div>
       </div>
       <div><label className={LABEL_CLS}>Newsletter</label><input className={INPUT_CLS} value={newsletter} onChange={e => setNewsletter(e.target.value)} /></div>
-
-      {founder.claimNotes && (
-        <div className="bg-[#F8F5F0] rounded-lg px-3 py-2.5">
-          <p className={LABEL_CLS}>Curator notes (not public)</p>
-          <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{founder.claimNotes}</p>
-        </div>
-      )}
-
-      <EditorialResearchPanel founder={founder} onSaved={onSaved} />
 
       {saveError && <p className="text-xs text-red-600">{saveError}</p>}
       <div className="flex items-center gap-3 pt-2">

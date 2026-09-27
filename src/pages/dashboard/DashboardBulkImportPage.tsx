@@ -5,9 +5,9 @@ import { importBatchService } from '../../services/importBatch'
 import { DEFAULT_IMPORT_OPTIONS } from '../../types/villageImport'
 import type { VillageImportPackage, VIFValidationResult, VIFImportOptions, VIFImportResult } from '../../types/villageImport'
 import { useAuth } from '../../contexts/AuthContext'
-import { getFounder, deleteFounderAccount } from '../../services/founders'
+import { getFounder, deleteFounderAccount, updateFounder } from '../../services/founders'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
-import { FounderEditModal } from '../../components/dashboard/FounderEditModal'
+import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
 import type { Founder } from '../../types'
 
 // Nobody's got a "name" field in the system today — email is all a staff
@@ -733,6 +733,28 @@ export function DashboardBulkImportPage() {
                           Edit →
                         </button>
                       </div>
+
+                      {/* Culo Editorial Engine — Stage 1 (Researcher) and
+                          Stage 3 (Auditor) live right here, next to the
+                          import that started the chain, not buried inside
+                          the general edit modal every founder passes
+                          through. Stage 2 (Writer) is triggered from the
+                          Profile/Articles tabs in that modal instead, since
+                          writing a bio or article belongs with the bio or
+                          article it's writing. */}
+                      {live && (
+                        <details className="border-t border-[#F3EDE6]" onClick={e => e.stopPropagation()}>
+                          <summary className="cursor-pointer list-none px-5 py-2.5 text-xs font-semibold text-[#9CA3AF] hover:text-[#3E6E92] transition-colors">
+                            Editorial research &amp; audit
+                          </summary>
+                          <div className="px-5 pb-4">
+                            <EditorialResearchPanel
+                              founder={live}
+                              onSaved={next => { void updateFounder(next); setResultTick(t => t + 1) }}
+                            />
+                          </div>
+                        </details>
+                      )}
                     </div>
                   )
                 })}
