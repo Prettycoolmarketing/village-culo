@@ -40,6 +40,13 @@ export interface VillageImportFounder {
   // login credential — this founder has no account yet either way.
   claimEmail?: string
   profileImageUrl?: string
+  // A curator's own synthesis of the specific, factual detail in the
+  // founder's actual podcast/YouTube/article content — real numbers, dates,
+  // named entities, written in the curator's own words from what they read
+  // or watched — not the founder's own scraped wording. This is what a
+  // published article's real substance is built from (see
+  // buildContentItemBody); a generic Bio field alone reads as a stub.
+  keyFacts?: string
   topics?: string[]
   industries?: string[]
   notes?: string

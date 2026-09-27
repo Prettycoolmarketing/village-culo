@@ -322,6 +322,7 @@ function buildContentItemBody(
   businessDescription: string | undefined,
   topicNames: string[],
   speakingTopics: string[],
+  keyFacts: string | undefined,
   locationLabel: string,
 ): string {
   const p1 = `${displayName} is ${role}, based in ${locationLabel}.`
@@ -332,21 +333,24 @@ function buildContentItemBody(
     article:           `This is ${displayName}'s own article, "${itemTitle}."`,
     'digital-product': `This is ${displayName}'s digital product, "${itemTitle}."`,
   }
-  const intro = (kind && introByKind[kind]) || `This is ${displayName}'s "${itemTitle}."`
+  const p2 = (kind && introByKind[kind]) || `This is ${displayName}'s "${itemTitle}."`
 
+  // Real substance: keyFacts is a curator's own synthesis of the specific
+  // detail in the actual linked content (real numbers, dates, named
+  // entities) — this is what makes an article read as a real piece rather
+  // than a template. Falls back to a bare topic list only when no curator
+  // has captured that yet, which reads thinner but is still honest.
   const subjectTopics = speakingTopics.length > 0 ? speakingTopics : topicNames
-  const subjectSentence = subjectTopics.length > 0 ? ` It covers ${joinNaturally(subjectTopics)}.` : ''
+  const p3 = keyFacts || (subjectTopics.length > 0 ? `It covers ${joinNaturally(subjectTopics)}.` : '')
+
   // Only the article/product piece carries the business description — every
   // item repeating the same business blurb is exactly the sameness this is
   // meant to fix.
-  const bizSentence = (kind === 'article' || kind === 'digital-product') && businessDescription
-    ? ` ${businessDescription}`
-    : ''
-  const p2 = `${intro}${subjectSentence}${bizSentence}`
+  const p4 = (kind === 'article' || kind === 'digital-product') && businessDescription ? businessDescription : ''
 
-  const p3 = `This profile was curated by CULO Village from publicly available content, not written by ${displayName} themselves — the original posts and links are above, straight from their own channels. If this is your profile and you'd like to update it in your own words, you can claim it or request its removal using the links on this page.`
+  const p5 = `This profile was curated by CULO Village from publicly available content, not written by ${displayName} themselves — the original posts and links are above, straight from their own channels. If this is your profile and you'd like to update it in your own words, you can claim it or request its removal using the links on this page.`
 
-  return [p1, p2, p3].join('\n\n')
+  return [p1, p2, p3, p4, p5].filter(Boolean).join('\n\n')
 }
 
 function str(v: unknown): string | undefined {
@@ -447,6 +451,7 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
     tiktokUrl: str(row['TikTok URL']),
     podcastUrl: str(row['Podcast URL']),
     claimEmail: str(row['Claim Email']),
+    keyFacts: str(row['Key Facts']),
     topics: splitList(row['Topics']),
     industries: splitList(row['Industries']),
     speakingTopics: splitList(row['Speaking Topics']),
@@ -819,7 +824,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
           const itemTitle = c.title || draft.title
           const generatedItemBody = buildContentItemBody(
             c.platform, itemTitle, displayName, curatedRole,
-            f.businesses?.[0]?.description, topics.map(t => t.name), f.speakingTopics ?? [], locationLabel,
+            f.businesses?.[0]?.description, topics.map(t => t.name), f.speakingTopics ?? [], f.keyFacts, locationLabel,
           )
 
           const item: ImportedContent = {
