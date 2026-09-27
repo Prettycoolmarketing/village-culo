@@ -143,7 +143,12 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             model: 'claude-opus-4-8',
-            max_tokens: 4000,
+            // Web search consumes real output tokens on search-tool-use
+            // turns before the model ever reaches the final JSON — 4000 was
+            // confirmed live to truncate the ledger mid-object on a real
+            // 2-source run. Raised well above what a several-claim ledger
+            // actually needs.
+            max_tokens: 8000,
             system: RESEARCHER_SYSTEM_PROMPT,
             // Server-side web search — Claude decides its own search queries
             // and reads results directly; this is the live-research step the
@@ -175,7 +180,34 @@ serve(async (req) => {
     const raw = textBlocks[textBlocks.length - 1]?.text?.trim()
     if (!raw) throw new Error('Research returned no text')
 
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+    // Despite the system prompt asking for JSON only, web_search's
+    // multi-turn tool loop means the model's final text block sometimes
+    // opens with a plain-language recap before the object (confirmed
+    // live: a real response started "The BreakUP Buddy app..." before its
+    // JSON) — extract the first balanced {...} block instead of assuming
+    // the whole trimmed string is already valid JSON.
+    const withoutFences = raw.replace(/```(?:json)?/gi, '').trim()
+    const firstBrace = withoutFences.indexOf('{')
+    if (firstBrace === -1) throw new Error(`Research returned no JSON object: ${withoutFences.slice(0, 200)}`)
+    let depth = 0
+    let endIndex = -1
+    for (let i = firstBrace; i < withoutFences.length; i++) {
+      if (withoutFences[i] === '{') depth++
+      else if (withoutFences[i] === '}') {
+        depth--
+        if (depth === 0) { endIndex = i; break }
+      }
+    }
+    if (endIndex === -1) {
+      // Diagnostic detail on the actual failure — stop_reason distinguishes
+      // "genuinely truncated by max_tokens" from some other malformed-output
+      // cause, and the tail of the text shows exactly where it cut off.
+      throw new Error(
+        `Research returned an incomplete JSON object (stop_reason: ${data.stop_reason ?? 'unknown'}, ` +
+        `length: ${withoutFences.length} chars). Tail: ...${withoutFences.slice(-300)}`,
+      )
+    }
+    const cleaned = withoutFences.slice(firstBrace, endIndex + 1)
     const ledger = JSON.parse(cleaned)
     ledger.researched_at = new Date().toISOString()
 

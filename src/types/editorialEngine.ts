@@ -41,6 +41,12 @@ export interface EvidenceClaim {
   // interview answers) supports this — no independent corroboration.
   first_party_only: boolean
   sources: EvidenceSource[]
+  // Set by a CAPO staff member reviewing a blocking claim directly (e.g.
+  // confirming "BreakUP Buddy" is real and upcoming even though current
+  // public sources don't yet corroborate it) — the one thing that can
+  // clear a per-claim block, since the Risk Gate itself never re-decides
+  // based on a later prompt, only on this explicit human input.
+  human_review?: 'confirmed' | 'rejected'
 }
 
 export interface SourceAssessment {

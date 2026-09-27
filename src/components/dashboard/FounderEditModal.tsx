@@ -13,6 +13,7 @@ import { Tabs } from './Tabs'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { runFounderResearch } from '../../services/editorialResearch'
 import { passesRiskGate, riskGateReasons } from '../../services/editorialEngine'
+import { writeProfileBio, writeSourceArticle, getEditorialItems, type EditorialItemRow } from '../../services/editorialItems'
 
 // Culo Editorial Engine, Sprint 1 — Stage 1 (Researcher) only, manual
 // trigger, one founder at a time. Not wired into Bulk Import. See
@@ -30,6 +31,15 @@ function EditorialResearchPanel({ founder, onSaved }: { founder: Founder; onSave
     if (!result.success) { setError(result.error ?? 'Research failed.'); return }
     // Re-read from cache — runFounderResearch already wrote status/ledger.
     onSaved({ ...founder, researchStatus: 'done', evidenceLedger: result.ledger })
+  }
+
+  async function handleClaimReview(index: number, review: 'confirmed' | 'rejected') {
+    if (!ledger) return
+    const claims = ledger.claims.map((c, i) => i === index ? { ...c, human_review: review } : c)
+    const nextLedger = { ...ledger, claims }
+    const next = { ...founder, evidenceLedger: nextLedger }
+    await updateFounder(next)
+    onSaved(next)
   }
 
   const gatePassed = ledger ? passesRiskGate(ledger) : undefined
@@ -69,16 +79,122 @@ function EditorialResearchPanel({ founder, onSaved }: { founder: Founder; onSave
               {ledger.claims.length} claim{ledger.claims.length === 1 ? '' : 's'} found · {ledger.source_assessments.length} source{ledger.source_assessments.length === 1 ? '' : 's'} assessed
             </summary>
             <div className="mt-2 space-y-1.5">
-              {ledger.claims.map((c, i) => (
-                <p key={i} className="border-l-2 border-[#E8E4DD] pl-2">
-                  <span className="font-semibold uppercase text-[10px] text-[#9CA3AF]">{c.claim_type}</span>{' '}
-                  {c.claim}
-                </p>
-              ))}
+              {ledger.claims.map((c, i) => {
+                const blocking = !gatePassed && gateReasons.some(r => r.includes(`"${c.claim}"`))
+                return (
+                  <div key={i} className={`border-l-2 pl-2 ${c.human_review === 'rejected' ? 'border-red-200 opacity-50' : blocking ? 'border-red-400' : 'border-[#E8E4DD]'}`}>
+                    <p>
+                      <span className="font-semibold uppercase text-[10px] text-[#9CA3AF]">{c.claim_type}</span>{' '}
+                      {c.claim}
+                    </p>
+                    {c.human_review === 'confirmed' && <p className="text-[10px] text-[#5E6B4A] font-semibold mt-0.5">Confirmed by review — no longer blocking</p>}
+                    {c.human_review === 'rejected' && <p className="text-[10px] text-red-600 font-semibold mt-0.5">Rejected — excluded from writing</p>}
+                    {blocking && !c.human_review && (
+                      <div className="flex gap-3 mt-1">
+                        <button onClick={() => void handleClaimReview(i, 'confirmed')} className="text-[10px] font-semibold text-[#5E6B4A] hover:underline">
+                          Confirm, clear this
+                        </button>
+                        <button onClick={() => void handleClaimReview(i, 'rejected')} className="text-[10px] font-semibold text-red-600 hover:underline">
+                          Reject, exclude
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </details>
         </div>
       )}
+
+      {ledger && <EditorialWritePanel founder={founder} ledger={ledger} />}
+    </div>
+  )
+}
+
+// Stage 2 — Writer. Bio is one call, each valid source is its own call
+// (2A/2B per the agreed build order) — never regenerated in bulk, each
+// triggered individually so a founder with several sources doesn't burn
+// tokens on ones you don't want written yet.
+function EditorialWritePanel({ founder, ledger }: { founder: Founder; ledger: NonNullable<Founder['evidenceLedger']> }) {
+  const [items, setItems] = useState<EditorialItemRow[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [writingKey, setWritingKey] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  if (!loaded) {
+    void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
+    return <p className="text-xs text-[#9CA3AF] mt-3">Loading draft status…</p>
+  }
+
+  const bioItem = items.find(i => i.type === 'profile_bio')
+  const validSources = ledger.source_assessments.filter(s => s.source_valid)
+
+  async function handleWriteBio() {
+    setWritingKey('bio'); setError(null)
+    const result = await writeProfileBio(founder.id)
+    setWritingKey(null)
+    if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
+    setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
+  }
+
+  async function handleWriteSource(source: typeof validSources[number]) {
+    setWritingKey(source.url); setError(null)
+    const result = await writeSourceArticle(founder.id, source.imported_content_id, source)
+    setWritingKey(null)
+    if (!result.success) { setError(result.error ?? 'Failed to write article.'); return }
+    setItems(prev => [...prev, result.item!])
+  }
+
+  return (
+    <div className="mt-3 pt-3 border-t border-[#E8E4DD]">
+      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-2">
+        Stage 2 — Writer (draft only, nothing published)
+      </p>
+      {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+
+      <div className="mb-3">
+        {bioItem ? (
+          <div className="bg-[#F8F5F0] rounded-lg px-3 py-2">
+            <p className="text-xs font-semibold text-[#2D2A26] mb-1">Bio draft ({bioItem.editorial_status})</p>
+            <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{bioItem.draft_content?.body}</p>
+          </div>
+        ) : (
+          <button
+            onClick={() => void handleWriteBio()}
+            disabled={writingKey === 'bio'}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#3E6E92] text-white hover:bg-[#345c7a] disabled:opacity-50 transition-colors"
+          >
+            {writingKey === 'bio' ? 'Writing…' : 'Write profile bio'}
+          </button>
+        )}
+      </div>
+
+      <p className="text-xs text-[#9CA3AF] mb-1.5">{validSources.length} valid source{validSources.length === 1 ? '' : 's'} to write from:</p>
+      <div className="space-y-2">
+        {validSources.map(source => {
+          const existing = items.find(i => i.type === 'source_article' && i.imported_content_id === source.imported_content_id)
+          return (
+            <div key={source.url} className="bg-[#F8F5F0] rounded-lg px-3 py-2">
+              <p className="text-xs font-semibold text-[#2D2A26] truncate">{source.source_title ?? source.url}</p>
+              {existing ? (
+                <>
+                  <p className="text-[10px] text-[#9CA3AF] mb-1">Draft status: {existing.editorial_status}</p>
+                  <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{existing.draft_content?.body}</p>
+                </>
+              ) : (
+                <button
+                  onClick={() => void handleWriteSource(source)}
+                  disabled={writingKey === source.url}
+                  className="text-xs font-semibold text-[#3E6E92] hover:underline mt-1"
+                >
+                  {writingKey === source.url ? 'Writing…' : 'Write this article'}
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

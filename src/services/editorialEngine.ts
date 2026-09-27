@@ -20,6 +20,11 @@ export function passesRiskGate(ledger: EvidenceLedger): boolean {
 }
 
 function claimIsBlocking(claim: EvidenceClaim): boolean {
+  // A CAPO staff member has already looked at this specific claim and
+  // confirmed it — the one override the Risk Gate accepts, since it's a
+  // human decision recorded on the claim itself, not a model talking its
+  // way past the gate.
+  if (claim.human_review === 'confirmed') return false
   if (claim.sensitive) return true
   // A claim asserted as plain fact but only ever confirmed by the subject's
   // own material — no independent source — needs a human's eyes before it
