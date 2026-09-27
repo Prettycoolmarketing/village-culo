@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import type { Founder } from '../../types'
 import type { ImportedContent, ImportedContentStatus } from '../../types/importedContent'
@@ -307,6 +307,21 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
   const [description, setDescription] = useState(item.description ?? '')
   const [saved, setSaved] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
+
+  // Keeps this row's editable text in sync with the real record whenever it
+  // changes from outside this component (the auto-write above, or a bulk
+  // pipeline run elsewhere) — useState's initial value only applies on the
+  // very first render, so without this, a write that lands in the
+  // background after mount never reaches the open Edit panel's textarea,
+  // and a Save pressed from that stale panel would silently overwrite the
+  // just-written Culo content with the old text still sitting in the form.
+  // Skipped while actively editing so it never clobbers someone's own
+  // in-progress typing.
+  useEffect(() => {
+    if (editing) return
+    setTitle(item.title)
+    setDescription(item.description ?? '')
+  }, [item.title, item.description, editing])
   // A piece that's already been turned into a real Story links to its own
   // permanent page; otherwise the only place to see it is where it came
   // from.

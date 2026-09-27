@@ -26,11 +26,16 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
   // the real destination — the article gives readers (and crawlers) actual
   // context the raw embed never does. The external platform link becomes
   // the secondary "watch/listen at the source" option instead of the only
-  // way in.
+  // way in. A real, substantial written body with no Story yet (a Culo
+  // draft still awaiting Publish) still gets a genuine article-reading
+  // link via the same preview page a founder uses to see an unpublished
+  // piece — this is what makes an editorial-engine article readable the
+  // moment it's written, not only after someone remembers to hit Publish.
   const relatedStory = content.relatedStoryId ? getStory(content.relatedStoryId) : undefined
-  const articleLink   = relatedStory && (relatedStory.status === 'published' || relatedStory.status === 'featured')
+  const hasRealArticleBody = (content.description?.trim().length ?? 0) >= 200
+  const articleLink = relatedStory && (relatedStory.status === 'published' || relatedStory.status === 'featured')
     ? `/stories/${relatedStory.slug}`
-    : undefined
+    : hasRealArticleBody ? `/dashboard/preview/${content.id}` : undefined
   const sourceUrl = normalizeUrl(content.originalUrl)
 
   // Compact — used for sidebar lists like "From Around the Web" — is a

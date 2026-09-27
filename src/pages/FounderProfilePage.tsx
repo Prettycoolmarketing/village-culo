@@ -312,7 +312,17 @@ export function FounderProfilePage() {
 
   const approvedRecs    = recommendationService.getAll({ founderId: founder.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
-  const publicImports   = importedContentService.getAll({ founderId: founder.id, publicOnly: true })
+  // publicOnly only applies once this founder is actually published — for a
+  // draft founder being previewed, `founder` itself is only ever non-null
+  // here because RLS already decided this exact viewer is allowed to see it
+  // (its own owner, or CAPO staff), so showing their draft content too is
+  // no more of a leak than the founder profile itself already is. A real
+  // anonymous visitor hitting a draft founder's URL never reaches this line
+  // at all — see the founder-not-found branch above.
+  const publicImports   = importedContentService.getAll({
+    founderId: founder.id,
+    publicOnly: founder.status === 'published' || founder.status === 'featured',
+  })
 
   // Featured picks — stories the founder has chosen to spotlight (see
   // Profile > Content). When they've picked any, the public profile leads
