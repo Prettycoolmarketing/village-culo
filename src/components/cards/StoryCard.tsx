@@ -82,11 +82,6 @@ export function StoryCard({
               clipped by it. The bottom corners are square, nothing to
               clip. */}
           <div className="absolute bottom-3 left-3 flex flex-col items-start gap-1.5">
-            {story.featured && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#3E6E92] text-white">
-                Featured
-              </span>
-            )}
             <span className="inline-flex items-center gap-1 text-xs text-white/90 font-medium">
               <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
