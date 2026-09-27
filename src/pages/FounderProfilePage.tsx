@@ -5,7 +5,7 @@ import { normalizeUrl } from '../utils/url'
 import { getFounders } from '../services/founders'
 import { getBusiness, getBusinesses } from '../services/businesses'
 import { recommendationService, publisherPartnerProfileService } from '../services/partnership'
-import { importedContentService, PLATFORM_LABELS } from '../services/importedContent'
+import { importedContentService } from '../services/importedContent'
 import { getStories } from '../services/stories'
 import { getSeriesList, getSeriesEpisodes } from '../services/series'
 import { villageContentIntelligenceService } from '../services/villageIntelligence'
@@ -313,14 +313,6 @@ export function FounderProfilePage() {
   const approvedRecs    = recommendationService.getAll({ founderId: founder.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
   const publicImports   = importedContentService.getAll({ founderId: founder.id, publicOnly: true })
-  // Everything curated for this founder that hasn't been turned into a real
-  // published Story yet — RLS only ever returns these to the founder's own
-  // account or CAPO staff (imported_content_public_read requires
-  // status IN published/featured), so a real anonymous visitor never sees
-  // this section at all; it's a preview of what a full profile could look
-  // like, the actual point of curating someone in the first place.
-  const previewImports  = importedContentService.getAll({ founderId: founder.id })
-    .filter(item => !item.relatedStoryId)
 
   // Featured picks — stories the founder has chosen to spotlight (see
   // Profile > Content). When they've picked any, the public profile leads
@@ -668,46 +660,6 @@ export function FounderProfilePage() {
                 showCTA
                 hideEmpty
               />
-
-              {/* Curated-but-not-yet-published content — only ever reaches
-                  this browser at all for the founder's own account or CAPO
-                  staff (RLS), so a real visitor never sees this section.
-                  The whole point of curating someone is to show what a full
-                  profile with connected articles could look like before
-                  they claim it. */}
-              {previewImports.length > 0 && (
-                <section aria-labelledby="preview-content-heading">
-                  <h2 id="preview-content-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                    More from {founder.name}
-                  </h2>
-                  <p className="font-body text-sm text-muted mb-6">
-                    Curated from {founder.name}'s public content — not yet published as full articles.
-                  </p>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list">
-                    {previewImports.map(item => (
-                      <li key={item.id}>
-                        {/* Links to the actual written piece (rendered the
-                            exact same way it would look once published —
-                            see StoryPreviewPage), not the raw external
-                            source link — the point is to preview the
-                            article itself, not bounce someone out to
-                            YouTube/the podcast host. */}
-                        <Link
-                          to={`/dashboard/preview/${item.id}`}
-                          className="block bg-surface rounded-xl border border-border p-4 hover:border-secondary/40 transition-colors"
-                        >
-                          <p className="font-body text-[10px] font-semibold text-secondary uppercase tracking-widest mb-1">
-                            {PLATFORM_LABELS[item.sourcePlatform]} · Preview
-                          </p>
-                          <p className="font-heading text-sm font-semibold text-charcoal leading-snug line-clamp-2">
-                            {item.title}
-                          </p>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
 
               {/* Ideas — capped with the rest one "View all" click away
                   (kept in the DOM via a native <details>, so this doesn't
