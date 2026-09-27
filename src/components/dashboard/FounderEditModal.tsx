@@ -158,6 +158,7 @@ function EditorialWritePanel({ founder, ledger }: { founder: Founder; ledger: No
           <div className="bg-[#F8F5F0] rounded-lg px-3 py-2">
             <p className="text-xs font-semibold text-[#2D2A26] mb-1">Bio draft ({bioItem.editorial_status})</p>
             <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{bioItem.draft_content?.body}</p>
+            <p className="text-[10px] text-[#9CA3AF] italic mt-1">{bioItem.draft_content?.byline}</p>
           </div>
         ) : (
           <button
@@ -181,6 +182,7 @@ function EditorialWritePanel({ founder, ledger }: { founder: Founder; ledger: No
                 <>
                   <p className="text-[10px] text-[#9CA3AF] mb-1">Draft status: {existing.editorial_status}</p>
                   <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{existing.draft_content?.body}</p>
+                  <p className="text-[10px] text-[#9CA3AF] italic mt-1">{existing.draft_content?.byline}</p>
                 </>
               ) : (
                 <button

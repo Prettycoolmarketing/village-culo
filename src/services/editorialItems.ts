@@ -12,11 +12,18 @@ export interface EditorialItemRow {
   founder_id: string
   imported_content_id: string | null
   type: 'profile_bio' | 'source_article'
-  draft_content: { title?: string; body: string; claim_ids_used?: string[] } | null
+  draft_content: { title?: string; body: string; byline?: string; claim_ids_used?: string[] } | null
   editorial_status: 'pending' | 'pass' | 'review' | 'reject'
   auto_publish_allowed: boolean
   created_at: string
 }
+
+// Fixed, never model-written — the legal requirement from the editorial
+// engine's own design discussion: a piece must never read as if the
+// founder wrote or endorsed it themselves. A constant here is safer than
+// asking the Writer prompt to produce it, since a byline is exactly the
+// kind of line that must never vary or go missing on one run.
+const CULO_BYLINE = 'Written by Culo'
 
 export async function getEditorialItems(founderId: string): Promise<EditorialItemRow[]> {
   if (!isSupabaseConfigured || !supabase) return []
@@ -79,7 +86,7 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
     .insert({
       founder_id: founderId,
       type: 'profile_bio',
-      draft_content: draft,
+      draft_content: { ...draft, byline: CULO_BYLINE },
       auto_publish_allowed: autoPublishAllowed,
     })
     .select()
@@ -113,7 +120,7 @@ export async function writeSourceArticle(
       founder_id: founderId,
       imported_content_id: importedContentId ?? null,
       type: 'source_article',
-      draft_content: draft,
+      draft_content: { ...draft, byline: CULO_BYLINE },
       auto_publish_allowed: autoPublishAllowed,
     })
     .select()
