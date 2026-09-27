@@ -75,6 +75,23 @@ export async function approveItem(itemId: string): Promise<WriteResult> {
   return { success: true, item: data as EditorialItemRow }
 }
 
+// Bulk version of approveItem — "Confirm all" in the UI, for approving
+// every already-passing draft in one action instead of clicking Approve
+// once per item. Deliberately still only approves items already at
+// "pass" (never "review" or "pending") — a bulk action is not a way to
+// skip the one review a "review"/"pending" item is still waiting on.
+export async function approveAllPassing(itemIds: string[]): Promise<{ approved: number; failed: number }> {
+  if (!isSupabaseConfigured || !supabase || itemIds.length === 0) return { approved: 0, failed: 0 }
+  const { data, error } = await supabase
+    .from('editorial_items')
+    .update({ editorial_status: 'approved' })
+    .in('id', itemIds)
+    .eq('editorial_status', 'pass')
+    .select('id')
+  if (error) return { approved: 0, failed: itemIds.length }
+  return { approved: data?.length ?? 0, failed: 0 }
+}
+
 // A human override, distinct from the Auditor's own "reject" verdict —
 // used when a CAPO reviewer disagrees with a "pass" or "review" and wants
 // it out of the queue without waiting for a re-audit to catch up.

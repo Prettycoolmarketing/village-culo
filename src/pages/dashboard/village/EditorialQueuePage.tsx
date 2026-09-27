@@ -4,11 +4,12 @@ import {
   getAllEditorialItems,
   runAudit,
   approveItem,
+  approveAllPassing,
   rejectItem,
   type EditorialItemRow,
 } from '../../../services/editorialItems'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
-import { FounderEditModal } from '../../../components/dashboard/FounderEditModal'
+import { FounderEditModal, DraftBody } from '../../../components/dashboard/FounderEditModal'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import type { Founder } from '../../../types'
 
@@ -106,7 +107,7 @@ function QueueRow({ item, founder, onChanged, onOpenFounder }: { item: Editorial
           {item.draft_content?.title && item.type === 'source_article' && (
             <p className="text-xs font-semibold text-[#2D2A26] mb-1">{item.draft_content.title}</p>
           )}
-          <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{item.draft_content?.body}</p>
+          <DraftBody body={item.draft_content?.body} />
           <p className="text-[10px] text-[#9CA3AF] italic mt-1">{item.draft_content?.byline}</p>
           {item.auditor_notes && item.auditor_notes.length > 0 && (
             <ul className="mt-2 space-y-1.5">
@@ -171,6 +172,7 @@ export function EditorialQueuePage({ embedded = false }: { embedded?: boolean } 
   const [loaded, setLoaded] = useState(false)
   const [filter, setFilter] = useState<QueueFilter>('needs_review')
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
+  const [approvingAll, setApprovingAll] = useState(false)
 
   if (!loaded) {
     void getAllEditorialItems().then(r => { setItems(r); setLoaded(true) })
@@ -187,6 +189,14 @@ export function EditorialQueuePage({ embedded = false }: { embedded?: boolean } 
   const needsReview = rows.filter(r => r.item.editorial_status === 'pending' || r.item.editorial_status === 'pass' || r.item.editorial_status === 'review')
   const approved    = rows.filter(r => r.item.editorial_status === 'approved')
   const rejected    = rows.filter(r => r.item.editorial_status === 'reject')
+  const passingNow  = needsReview.filter(r => r.item.editorial_status === 'pass')
+
+  async function handleApproveAllPassing() {
+    setApprovingAll(true)
+    const result = await approveAllPassing(passingNow.map(r => r.item.id))
+    setApprovingAll(false)
+    if (result.approved > 0) setLoaded(false)
+  }
 
   const visible = filter === 'needs_review' ? needsReview
     : filter === 'approved' ? approved
@@ -208,17 +218,27 @@ export function EditorialQueuePage({ embedded = false }: { embedded?: boolean } 
 
       <PipelineStatusBoard items={items} />
 
-      <Tabs
-        tabs={[
-          { key: 'needs_review', label: 'Needs Review', badge: needsReview.length },
-          { key: 'approved',     label: 'Approved',      badge: approved.length },
-          { key: 'rejected',     label: 'Rejected',      badge: rejected.length },
-          { key: 'all',          label: 'All',           badge: rows.length },
-        ]}
-        active={filter}
-        onChange={key => setFilter(key as QueueFilter)}
-        className="mb-5"
-      />
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <Tabs
+          tabs={[
+            { key: 'needs_review', label: 'Needs Review', badge: needsReview.length },
+            { key: 'approved',     label: 'Approved',      badge: approved.length },
+            { key: 'rejected',     label: 'Rejected',      badge: rejected.length },
+            { key: 'all',          label: 'All',           badge: rows.length },
+          ]}
+          active={filter}
+          onChange={key => setFilter(key as QueueFilter)}
+        />
+        {passingNow.length > 0 && (
+          <button
+            onClick={() => void handleApproveAllPassing()}
+            disabled={approvingAll}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A] text-white hover:bg-[#4a5538] disabled:opacity-50 transition-colors shrink-0"
+          >
+            {approvingAll ? 'Approving…' : `Confirm all (${passingNow.length} passing) ✓`}
+          </button>
+        )}
+      </div>
 
       {!loaded && <p className="text-sm text-[#9CA3AF]">Loading…</p>}
 

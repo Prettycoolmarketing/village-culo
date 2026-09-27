@@ -9,8 +9,9 @@ import { getFounder, deleteFounderAccount, updateFounder } from '../../services/
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
 import { runFounderResearch } from '../../services/editorialResearch'
-import { writeProfileBio, writeSourceArticle, runAudit } from '../../services/editorialItems'
+import { writeProfileBio, writeSourceArticle, runAudit, approveAllPassing } from '../../services/editorialItems'
 import { importedContentService } from '../../services/importedContent'
+import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import type { Founder } from '../../types'
 
 // Nobody's got a "name" field in the system today — email is all a staff
@@ -173,6 +174,13 @@ export function DashboardBulkImportPage() {
   const [pipelineRunning, setPipelineRunning] = useState(false)
   const [pipelineProgress, setPipelineProgress] = useState<{ done: number; total: number; note: string } | null>(null)
   const [pipelineDone, setPipelineDone]     = useState(false)
+  // Which founders the pipeline button runs on — defaults to everyone just
+  // imported (set the moment results land, see handleImport), but staff
+  // can uncheck any they don't want to spend on right now, or use the
+  // per-row "Run" button to fire just one at a time.
+  const [selectedForPipeline, setSelectedForPipeline] = useState<Set<string>>(new Set())
+  const [pipelineDraftIds, setPipelineDraftIds] = useState<string[]>([])
+  const [approvingAllDrafts, setApprovingAllDrafts] = useState(false)
 
   async function handleDeleteImported(id: string) {
     const result = await deleteFounderAccount(id)
@@ -259,6 +267,7 @@ export function DashboardBulkImportPage() {
         setImportError(`Import completed, but the history log failed to save: ${batchResult.write.error ?? 'unknown error'}`)
       }
       setResult(res)
+      setSelectedForPipeline(new Set(res.created.map(f => f.id)))
       setStep(3)
     } catch (err) {
       setImportError(err instanceof Error ? err.message : 'Import failed. Please try again.')
@@ -276,14 +285,17 @@ export function DashboardBulkImportPage() {
   // and presses the actual button). This runs real, metered API calls —
   // research, a bio write, one article write per valid source, then an
   // audit on every draft just written — so it needs its own deliberate
-  // press, with the founder/source count visible first. Nothing here
-  // publishes anything; Approve in the Editorial Queue is still required.
-  async function handleRunEditorialPipeline() {
+  // press. Takes an explicit target list so the same function backs both
+  // the "run selected" button and each row's individual "Run" button.
+  // Nothing here publishes anything; Approve is still a separate step
+  // (either per item, or "Confirm all" once the run below finishes).
+  async function handleRunEditorialPipeline(targetIds: string[]) {
     if (!result) return
-    const targets = result.created.filter(f => !deletedIds.has(f.id))
+    const targets = result.created.filter(f => targetIds.includes(f.id))
     setPipelineRunning(true)
     setPipelineDone(false)
     setPipelineProgress({ done: 0, total: targets.length, note: '' })
+    const writtenIds: string[] = []
     for (let i = 0; i < targets.length; i++) {
       const f = targets[i]!
       // Never gated on having pre-linked content — a founder curated from
@@ -302,7 +314,8 @@ export function DashboardBulkImportPage() {
       const bioResult = await writeProfileBio(f.id)
       if (bioResult.success && bioResult.item) {
         setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: auditing bio…` })
-        await runAudit(bioResult.item)
+        const audited = await runAudit(bioResult.item)
+        if (audited.success && audited.item) writtenIds.push(audited.item.id)
       }
 
       const validSources = research.ledger.source_assessments.filter(s => s.source_valid)
@@ -318,14 +331,34 @@ export function DashboardBulkImportPage() {
         setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: writing article (${source.source_title ?? source.url})…` })
         const articleResult = await writeSourceArticle(f.id, matchedContent?.id, source)
         if (articleResult.success && articleResult.item) {
+          // Sync the draft into the real ImportedContent title/description —
+          // same as the manual per-article trigger in ArticleRow — so the
+          // existing Publish control uses what Culo wrote, no separate
+          // copy-paste step once a draft is approved.
+          if (matchedContent && articleResult.item.draft_content?.body) {
+            await importedContentService.upsert({
+              ...matchedContent,
+              title: articleResult.item.draft_content.title || matchedContent.title,
+              description: normalizeBlogSpacing(articleResult.item.draft_content.body),
+            })
+          }
           setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: auditing article (${source.source_title ?? source.url})…` })
-          await runAudit(articleResult.item)
+          const audited = await runAudit(articleResult.item)
+          if (audited.success && audited.item) writtenIds.push(audited.item.id)
         }
       }
       setPipelineProgress({ done: i + 1, total: targets.length, note: `${f.name}: done — bio + ${validSources.length} article${validSources.length === 1 ? '' : 's'} drafted and audited` })
     }
     setPipelineRunning(false)
     setPipelineDone(true)
+    setPipelineDraftIds(prev => [...prev, ...writtenIds])
+    setResultTick(t => t + 1)
+  }
+
+  async function handleApproveAllDrafts() {
+    setApprovingAllDrafts(true)
+    await approveAllPassing(pipelineDraftIds)
+    setApprovingAllDrafts(false)
     setResultTick(t => t + 1)
   }
 
@@ -738,23 +771,27 @@ export function DashboardBulkImportPage() {
 
           {/* Optional editorial pipeline — only offered when the Step 2
               checkbox was on, and only ever runs on an explicit click here,
-              never automatically. */}
+              never automatically. Selection defaults to everyone just
+              imported (see setSelectedForPipeline in handleImport); uncheck
+              any founder below to leave them out, or use their own row's
+              "Run" button to fire just one at a time. */}
           {createEditorialContent && result.created.length > 0 && (
             <div className="bg-[#3E6E92]/5 border border-[#3E6E92]/20 rounded-xl px-5 py-4">
               <p className="text-sm font-bold text-[#2D2A26] mb-1">Culo editorial content</p>
               <p className="text-xs text-[#6B7280] mb-3">
-                Research, write and audit a bio for each of the {result.created.filter(f => !deletedIds.has(f.id)).length} founders above — plus an article for every real source found, whether it was a link on the spreadsheet or one Culo discovered itself. This uses real API calls and can take a while for a large batch.
+                Research, write and audit a bio for each checked founder below — plus an article for every real source found, whether it was a link on the spreadsheet or one Culo discovered itself. This uses real API calls and can take a while for a large batch.
               </p>
-              {!pipelineRunning && !pipelineDone && (
+              {!pipelineRunning && (
                 <button
-                  onClick={() => void handleRunEditorialPipeline()}
-                  className="px-5 py-2.5 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] transition-colors"
+                  onClick={() => void handleRunEditorialPipeline([...selectedForPipeline])}
+                  disabled={selectedForPipeline.size === 0}
+                  className="px-5 py-2.5 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] disabled:opacity-40 transition-colors"
                 >
-                  Run research, writing &amp; audit for {result.created.filter(f => !deletedIds.has(f.id)).length} founders →
+                  Run research, writing &amp; audit for {selectedForPipeline.size} selected founder{selectedForPipeline.size === 1 ? '' : 's'} →
                 </button>
               )}
               {pipelineProgress && (pipelineRunning || pipelineDone) && (
-                <div>
+                <div className={pipelineRunning ? '' : 'mt-1'}>
                   <p className="text-xs font-semibold text-[#2D2A26] mb-1">
                     {pipelineDone ? 'Done' : `Working…`} ({pipelineProgress.done}/{pipelineProgress.total})
                   </p>
@@ -762,9 +799,20 @@ export function DashboardBulkImportPage() {
                 </div>
               )}
               {pipelineDone && (
-                <p className="text-xs text-[#5E6B4A] font-semibold mt-2">
-                  Review the drafts and run the Auditor from each founder's Editor modal, or from the Editorial Queue tab.
-                </p>
+                <div className="flex items-center gap-3 mt-3">
+                  {pipelineDraftIds.length > 0 && (
+                    <button
+                      onClick={() => void handleApproveAllDrafts()}
+                      disabled={approvingAllDrafts}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A] text-white hover:bg-[#4a5538] disabled:opacity-50 transition-colors"
+                    >
+                      {approvingAllDrafts ? 'Approving…' : 'Confirm all passing drafts ✓'}
+                    </button>
+                  )}
+                  <p className="text-xs text-[#6B7280]">
+                    Review anything not auto-approved in the Editorial Queue tab, or in each founder's Editor.
+                  </p>
+                </div>
               )}
             </div>
           )}
@@ -772,10 +820,24 @@ export function DashboardBulkImportPage() {
           {/* Created founders list */}
           {result.created.length > 0 && (
             <div>
-              <SectionHead
-                title="Imported Founders"
-                sub="Review each one, then Publish when you're happy with it — nothing here is visible anywhere on the public site until you do."
-              />
+              <div className="flex items-center justify-between gap-3">
+                <SectionHead
+                  title="Imported Founders"
+                  sub="Review each one, then Publish when you're happy with it — nothing here is visible anywhere on the public site until you do."
+                />
+                {createEditorialContent && (
+                  <button
+                    onClick={() => setSelectedForPipeline(prev =>
+                      prev.size === result.created.filter(f => !deletedIds.has(f.id)).length
+                        ? new Set()
+                        : new Set(result.created.filter(f => !deletedIds.has(f.id)).map(f => f.id)),
+                    )}
+                    className="text-[11px] font-semibold text-[#3E6E92] hover:underline shrink-0"
+                  >
+                    {selectedForPipeline.size === result.created.filter(f => !deletedIds.has(f.id)).length ? 'Deselect all' : 'Select all'}
+                  </button>
+                )}
+              </div>
               <div className="space-y-3">
                 {result.created.filter(f => !deletedIds.has(f.id)).map(f => {
                   const profileUrl = `${origin}/founders/${f.slug}`
@@ -791,6 +853,22 @@ export function DashboardBulkImportPage() {
                       className="bg-white rounded-xl border border-[#E8E4DD] hover:border-[#C86A43]/50 hover:shadow-sm transition-all cursor-pointer overflow-hidden"
                     >
                       <div className="flex items-center gap-4 px-5 py-4">
+                        {createEditorialContent && (
+                          <input
+                            type="checkbox"
+                            checked={selectedForPipeline.has(f.id)}
+                            onChange={e => {
+                              e.stopPropagation()
+                              setSelectedForPipeline(prev => {
+                                const next = new Set(prev)
+                                if (e.target.checked) next.add(f.id); else next.delete(f.id)
+                                return next
+                              })
+                            }}
+                            onClick={e => e.stopPropagation()}
+                            className="w-4 h-4 accent-[#3E6E92] shrink-0"
+                          />
+                        )}
                         <div className="w-9 h-9 rounded-full bg-[#F3EDE6] flex items-center justify-center text-[#C86A43] text-sm font-bold flex-shrink-0">
                           {f.name[0]}
                         </div>
@@ -832,6 +910,15 @@ export function DashboardBulkImportPage() {
                               onConfirm={() => void handleDeleteImported(f.id)}
                               className="text-[11px] font-semibold text-red-500 hover:text-red-600 transition-colors"
                             />
+                            {createEditorialContent && (
+                              <button
+                                onClick={() => void handleRunEditorialPipeline([f.id])}
+                                disabled={pipelineRunning}
+                                className="text-[11px] font-semibold text-[#3E6E92] hover:underline disabled:opacity-50"
+                              >
+                                Run this one only →
+                              </button>
+                            )}
                           </div>
                         </div>
                         {/* Bigger, on the right — the one thing every one of

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import type { Founder } from '../../types'
 import type { ImportedContent, ImportedContentStatus } from '../../types/importedContent'
@@ -14,6 +14,21 @@ import { ConfirmButton } from '../ui/ConfirmButton'
 import { runFounderResearch } from '../../services/editorialResearch'
 import { passesRiskGate, riskGateReasons } from '../../services/editorialEngine'
 import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, type EditorialItemRow } from '../../services/editorialItems'
+
+// Shared renderer for any Culo-written draft (bio or article) — splits on
+// blank lines and gives each paragraph real spacing, rather than one
+// whitespace-pre-wrap blob that runs paragraphs together with no visual
+// break. Used everywhere a draft body is shown: BioDraftBlock, ArticleRow,
+// DraftItemCard, and the Editorial Queue.
+export function DraftBody({ body, className = 'text-xs text-[#6B7280]' }: { body?: string; className?: string }) {
+  if (!body) return null
+  const paragraphs = body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+  return (
+    <div className="space-y-2.5">
+      {paragraphs.map((p, i) => <p key={i} className={`${className} leading-relaxed`}>{p}</p>)}
+    </div>
+  )
+}
 
 // Culo Editorial Engine — Stage 1 (Researcher) and Stage 3 (Auditor) live
 // here, in Bulk Import, next to the JSON that started the whole chain — not
@@ -174,8 +189,8 @@ function DraftItemCard({ item, auditing, onAudit }: { item: EditorialItemRow; au
           {auditing ? 'Auditing…' : item.editorial_status === 'pending' ? 'Audit this draft' : 'Re-audit'}
         </button>
       </div>
-      <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{item.draft_content?.body}</p>
-      <p className="text-[10px] text-[#9CA3AF] italic mt-1">{item.draft_content?.byline}</p>
+      <DraftBody body={item.draft_content?.body} />
+      <p className="text-[10px] text-[#9CA3AF] italic mt-2">{item.draft_content?.byline}</p>
       {item.auditor_notes && item.auditor_notes.length > 0 && (
         <ul className="mt-2 space-y-1.5">
           {item.auditor_notes.map((issue, i) => (
@@ -219,11 +234,16 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
 }) {
   const [writingArticle, setWritingArticle] = useState(false)
   const [articleError, setArticleError] = useState<string | null>(null)
+  const autoTriggeredArticle = useRef(false)
 
   // Stage 2 (Writer) for this specific article — matched to the founder's
   // evidence ledger by imported_content_id first (set when Stage 1 was
   // given this exact item), falling back to a URL match for older ledgers
-  // researched before that field was threaded through.
+  // researched before that field was threaded through. Also syncs the
+  // written draft straight into this item's real title/description — the
+  // same fields the existing Publish control (setStatus below) already
+  // reads via buildStoryFromImport — so publishing actually uses what
+  // Culo wrote instead of needing a separate manual copy-paste step.
   async function handleWriteArticle() {
     const ledger = founder.evidenceLedger
     const source = ledger?.source_assessments.find(s => s.imported_content_id === item.id)
@@ -234,6 +254,20 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
     setWritingArticle(false)
     if (!result.success) { setArticleError(result.error ?? 'Failed to write article.'); return }
     onEditorialChanged(result.item!)
+    const draft = result.item!.draft_content
+    if (draft?.body) {
+      const nextTitle = draft.title || item.title
+      const nextDescription = normalizeBlogSpacing(draft.body)
+      await importedContentService.upsert({ ...item, title: nextTitle, description: nextDescription })
+      setTitle(nextTitle)
+      setDescription(nextDescription)
+      onChanged()
+    }
+  }
+
+  if (founder.evidenceLedger && !editorialItem && !writingArticle && !autoTriggeredArticle.current) {
+    autoTriggeredArticle.current = true
+    void handleWriteArticle()
   }
 
   const [busy, setBusy] = useState(false)
@@ -400,18 +434,23 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
       {founder.evidenceLedger && (
         <div className="px-4 pb-3">
           {articleError && <p className="text-xs text-red-600 mb-1">{articleError}</p>}
+          {writingArticle && !editorialItem && <p className="text-xs text-[#9CA3AF]">Writing from research…</p>}
           {editorialItem ? (
             <div className="bg-[#F8F5F0] rounded-lg px-3 py-2">
-              <p className="text-xs text-[#6B7280] whitespace-pre-wrap line-clamp-3">{editorialItem.draft_content?.body}</p>
-              <p className="text-[10px] text-[#9CA3AF] italic mt-1">{editorialItem.draft_content?.byline} · audit: {editorialItem.editorial_status}</p>
+              {editorialItem.draft_content?.title && (
+                <p className="text-xs font-semibold text-[#2D2A26] mb-1.5">{editorialItem.draft_content.title}</p>
+              )}
+              <DraftBody body={editorialItem.draft_content?.body} />
+              <p className="text-[10px] text-[#9CA3AF] italic mt-2">
+                {editorialItem.draft_content?.byline} · audit: {editorialItem.editorial_status} · synced to Title/Blog body above, ready to Publish
+              </p>
             </div>
-          ) : (
+          ) : !writingArticle && (
             <button
               onClick={() => void handleWriteArticle()}
-              disabled={writingArticle}
-              className="text-xs font-semibold text-[#3E6E92] hover:underline disabled:opacity-50"
+              className="text-xs font-semibold text-[#3E6E92] hover:underline"
             >
-              {writingArticle ? 'Writing…' : 'Write Culo article from research'}
+              Write Culo article from research
             </button>
           )}
         </div>
@@ -459,11 +498,15 @@ function ArticlesTab({ founder, tick, bump }: { founder: Founder; tick: number; 
 // Stage 2 (Writer) for the bio specifically — lives with the Bio field it
 // writes into, not with the research/audit control panel in Bulk Import.
 // Needs a completed evidence ledger to run (Stage 1, run from Bulk Import).
-function BioDraftBlock({ founder }: { founder: Founder }) {
+// Auto-writes the moment research exists and nothing's been drafted yet —
+// so opening this modal after research already shows a written bio to
+// read, rather than one more manual click before there's anything to see.
+function BioDraftBlock({ founder, onUseBio }: { founder: Founder; onUseBio: (body: string) => void }) {
   const [items, setItems] = useState<EditorialItemRow[]>([])
   const [loaded, setLoaded] = useState(false)
   const [writing, setWriting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const autoTriggered = useRef(false)
 
   if (!loaded) {
     void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
@@ -479,6 +522,11 @@ function BioDraftBlock({ founder }: { founder: Founder }) {
     setWriting(false)
     if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
     setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
+  }
+
+  if (ledger && !bioItem && !writing && !autoTriggered.current) {
+    autoTriggered.current = true
+    void handleWrite()
   }
 
   if (!ledger && !bioItem) return null
@@ -498,12 +546,21 @@ function BioDraftBlock({ founder }: { founder: Founder }) {
         )}
       </div>
       {error && <p className="text-xs text-red-600 mb-1">{error}</p>}
+      {writing && !bioItem && <p className="text-xs text-[#9CA3AF]">Writing from research…</p>}
       {bioItem ? (
         <>
-          <p className="text-xs text-[#6B7280] whitespace-pre-wrap">{bioItem.draft_content?.body}</p>
-          <p className="text-[10px] text-[#9CA3AF] italic mt-1">{bioItem.draft_content?.byline} · audit: {bioItem.editorial_status}</p>
+          <DraftBody body={bioItem.draft_content?.body} />
+          <div className="flex items-center gap-3 mt-1.5">
+            <p className="text-[10px] text-[#9CA3AF] italic">{bioItem.draft_content?.byline} · audit: {bioItem.editorial_status}</p>
+            <button
+              onClick={() => onUseBio(bioItem.draft_content?.body ?? '')}
+              className="text-[10px] font-semibold text-[#5E6B4A] hover:underline shrink-0"
+            >
+              Use this bio ↑
+            </button>
+          </div>
         </>
-      ) : (
+      ) : !writing && (
         <p className="text-xs text-[#9CA3AF]">Not written yet — this draft is separate from the Bio field above and never overwrites it automatically.</p>
       )}
     </div>
@@ -567,7 +624,7 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
         />
       </div>
 
-      <BioDraftBlock founder={founder} />
+      <BioDraftBlock founder={founder} onUseBio={setBio} />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
