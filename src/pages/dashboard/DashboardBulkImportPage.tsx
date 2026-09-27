@@ -9,7 +9,7 @@ import { getFounder, deleteFounderAccount, updateFounder } from '../../services/
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
 import { runFounderResearch } from '../../services/editorialResearch'
-import { writeProfileBio, writeSourceArticle } from '../../services/editorialItems'
+import { writeProfileBio, writeSourceArticle, runAudit } from '../../services/editorialItems'
 import { importedContentService } from '../../services/importedContent'
 import type { Founder } from '../../types'
 
@@ -261,20 +261,17 @@ export function DashboardBulkImportPage() {
     }
   }
 
-  // ── Step 3 → Optional editorial pipeline (Stage 1 + Stage 2 only) ───────
+  // ── Step 3 → Optional editorial pipeline (Research → Write → Audit) ─────
   //
   // Deliberately requires its own explicit click here rather than firing
   // the moment import finishes — the checkbox in Step 2 only records
   // intent, matching the same draft-first philosophy already used for
   // publishing (see ArticleRow: nothing goes further until a human looks
   // and presses the actual button). This runs real, metered API calls —
-  // research per founder, then a bio + one article per valid source — so
-  // it needs its own deliberate press, with the founder/source count
-  // visible first.
-  //
-  // Stage 3 (Auditor) is NOT run here — that stays a per-item action in
-  // the Editorial Queue, so a human decides what to audit rather than
-  // spending on auditing drafts nobody's going to use.
+  // research, a bio write, one article write per valid source, then an
+  // audit on every draft just written — so it needs its own deliberate
+  // press, with the founder/source count visible first. Nothing here
+  // publishes anything; Approve in the Editorial Queue is still required.
   async function handleRunEditorialPipeline() {
     if (!result) return
     const targets = result.created.filter(f => !deletedIds.has(f.id))
@@ -283,11 +280,12 @@ export function DashboardBulkImportPage() {
     setPipelineProgress({ done: 0, total: targets.length, note: '' })
     for (let i = 0; i < targets.length; i++) {
       const f = targets[i]!
-      const hasSources = importedContentService.getAll({ founderId: f.id }).some(item => item.originalUrl)
-      if (!hasSources) {
-        setPipelineProgress({ done: i + 1, total: targets.length, note: `${f.name}: no linked sources, skipped` })
-        continue
-      }
+      // Never gated on having pre-linked content — a founder curated from
+      // a spreadsheet with no links yet still gets researched from their
+      // name and whatever identity hints exist (see runFounderResearch).
+      // The spreadsheet is there to help find the right person, not to
+      // decide whether the pipeline runs at all.
+      const founderContent = importedContentService.getAll({ founderId: f.id })
       setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: researching…` })
       const research = await runFounderResearch(f.id)
       if (!research.success || !research.ledger) {
@@ -295,13 +293,30 @@ export function DashboardBulkImportPage() {
         continue
       }
       setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: writing bio…` })
-      await writeProfileBio(f.id)
+      const bioResult = await writeProfileBio(f.id)
+      if (bioResult.success && bioResult.item) {
+        setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: auditing bio…` })
+        await runAudit(bioResult.item)
+      }
+
       const validSources = research.ledger.source_assessments.filter(s => s.source_valid)
       for (const source of validSources) {
+        // Match the real ImportedContent row by URL rather than trusting
+        // the Researcher's own echoed imported_content_id — an LLM output,
+        // not guaranteed to round-trip correctly, especially for a source
+        // it discovered itself rather than one it was given. Getting this
+        // right is what actually sorts the written article into the right
+        // podcast/YouTube/website row in the Articles tab instead of
+        // leaving it orphaned.
+        const matchedContent = founderContent.find(c => c.originalUrl === source.url)
         setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: writing article (${source.source_title ?? source.url})…` })
-        await writeSourceArticle(f.id, source.imported_content_id, source)
+        const articleResult = await writeSourceArticle(f.id, matchedContent?.id, source)
+        if (articleResult.success && articleResult.item) {
+          setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: auditing article (${source.source_title ?? source.url})…` })
+          await runAudit(articleResult.item)
+        }
       }
-      setPipelineProgress({ done: i + 1, total: targets.length, note: `${f.name}: done — bio + ${validSources.length} article${validSources.length === 1 ? '' : 's'} drafted` })
+      setPipelineProgress({ done: i + 1, total: targets.length, note: `${f.name}: done — bio + ${validSources.length} article${validSources.length === 1 ? '' : 's'} drafted and audited` })
     }
     setPipelineRunning(false)
     setPipelineDone(true)
@@ -634,7 +649,7 @@ export function DashboardBulkImportPage() {
           />
           <OptionToggle
             label="Create Culo editorial content"
-            description="After import, lets you research and write a Culo bio + articles for each founder with linked sources — a separate button on the results screen, not automatic. Uses real, metered API calls (Stage 1 research + Stage 2 writing per founder); auditing and publishing still need their own review in the Editorial Queue."
+            description="After import, lets you research, write and audit a Culo bio for every founder (plus an article for each real source found, linked or discovered) — a separate button on the results screen, not automatic. The spreadsheet's fields only help find the right person; research runs even for founders with no linked sources yet. Uses real, metered API calls; final publish approval still happens in the Editorial Queue."
             checked={createEditorialContent}
             onChange={setCreateEditorialContent}
           />
@@ -722,14 +737,14 @@ export function DashboardBulkImportPage() {
             <div className="bg-[#3E6E92]/5 border border-[#3E6E92]/20 rounded-xl px-5 py-4">
               <p className="text-sm font-bold text-[#2D2A26] mb-1">Culo editorial content</p>
               <p className="text-xs text-[#6B7280] mb-3">
-                Research and write a bio + articles for each of the {result.created.filter(f => !deletedIds.has(f.id)).length} founders above that have linked sources. This uses real API calls and can take a while for a large batch.
+                Research, write and audit a bio for each of the {result.created.filter(f => !deletedIds.has(f.id)).length} founders above — plus an article for every real source found, whether it was a link on the spreadsheet or one Culo discovered itself. This uses real API calls and can take a while for a large batch.
               </p>
               {!pipelineRunning && !pipelineDone && (
                 <button
                   onClick={() => void handleRunEditorialPipeline()}
                   className="px-5 py-2.5 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] transition-colors"
                 >
-                  Run research + writing for {result.created.filter(f => !deletedIds.has(f.id)).length} founders →
+                  Run research, writing &amp; audit for {result.created.filter(f => !deletedIds.has(f.id)).length} founders →
                 </button>
               )}
               {pipelineProgress && (pipelineRunning || pipelineDone) && (

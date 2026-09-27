@@ -42,6 +42,16 @@ interface RequestBody {
   // already true because it's in the database.
   existingBio?: string
   existingHeadline?: string
+  // Anything else that helps identify the right person in search results
+  // when there's no pre-supplied link to confirm against — business name,
+  // role, location, industry. Same discipline as existingBio: a lead to
+  // chase, never a fact to restate.
+  identityHints?: string
+  // Curator-supplied links to verify are the common case, but never a
+  // hard requirement — a founder with no linked content yet still gets
+  // researched from their name and whatever identity hints exist. The
+  // spreadsheet a founder was curated from is there to help find the
+  // right person, not to gate whether research happens at all.
   sources: SourceInput[]
 }
 
@@ -50,6 +60,8 @@ const RESEARCHER_SYSTEM_PROMPT = `You are the Culo Researcher, the fact-finding 
 Your only job is to research a real, named founder using real web search, and return a structured Evidence Ledger — never prose, never an article, never a bio. A later, separate stage writes the actual piece from what you find here; you never write it yourself.
 
 CORE RULE: treat every field provided to you (an imported bio, a headline, a business description) as an UNVERIFIED LEAD to investigate, not as an established fact. Your job is to confirm, correct, or flag each one using independent web research — never to simply restate it as verified.
+
+Sometimes you'll be given no source URLs at all — only the founder's name and a few identifying leads. In that case, search the web yourself to find the real person and build the whole ledger from what you discover; do not refuse just because nothing was pre-supplied. Be honest about identity confidence: a common name with thin corroborating detail should get identity_confidence "low" or "medium," never "high" just because a plausible-looking result came up.
 
 For each source URL you're given:
 1. Confirm it actually, substantially features this specific founder (not someone who shares their name, not a page that merely mentions them in passing). If you cannot confirm this, or cannot access the source, set source_valid to false and give a specific reason — never invent content for an unreachable or irrelevant source.
@@ -106,7 +118,6 @@ serve(async (req) => {
   try {
     const body = await req.json() as RequestBody
     if (!body?.founderId || !body?.founderName) throw new Error('founderId and founderName are required')
-    if (!body.sources || body.sources.length === 0) throw new Error('At least one source is required')
 
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('Editorial research is not configured yet')
@@ -114,13 +125,19 @@ serve(async (req) => {
     const leadsBlock = [
       body.existingHeadline ? `Imported headline (unverified lead): ${body.existingHeadline}` : undefined,
       body.existingBio ? `Imported bio (unverified lead — investigate, do not restate as fact): ${body.existingBio}` : undefined,
+      body.identityHints ? `Other identifying info (unverified lead, to help find the right person — not a fact): ${body.identityHints}` : undefined,
     ].filter(Boolean).join('\n')
 
-    const sourcesBlock = body.sources
-      .map((s, i) => `${i + 1}. [${s.sourceType}] ${s.url}${s.importedContentId ? ` (imported_content_id: ${s.importedContentId})` : ''}`)
-      .join('\n')
+    const hasSources = body.sources && body.sources.length > 0
+    const sourcesBlock = hasSources
+      ? body.sources
+          .map((s, i) => `${i + 1}. [${s.sourceType}] ${s.url}${s.importedContentId ? ` (imported_content_id: ${s.importedContentId})` : ''}`)
+          .join('\n')
+      : undefined
 
-    const userText = `Research this founder: ${body.founderName}\n\n${leadsBlock ? leadsBlock + '\n\n' : ''}Sources to investigate:\n${sourcesBlock}\n\nSearch the web to verify who this person is and confirm each source above genuinely features them. Build the Evidence Ledger from what you actually find.`
+    const userText = hasSources
+      ? `Research this founder: ${body.founderName}\n\n${leadsBlock ? leadsBlock + '\n\n' : ''}Sources to investigate:\n${sourcesBlock}\n\nSearch the web to verify who this person is and confirm each source above genuinely features them. Build the Evidence Ledger from what you actually find.`
+      : `Research this founder: ${body.founderName}\n\n${leadsBlock ? leadsBlock + '\n\n' : ''}No sources were pre-supplied — search the web yourself to find real, current public information about this specific person (use the identifying info above to make sure you have the right person, not someone else with the same name). Build the Evidence Ledger entirely from what you find, including the sources you discover yourself.`
 
     const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 529])
     async function callAnthropic(): Promise<Response> {

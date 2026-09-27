@@ -1,23 +1,24 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getFounder, updateFounder } from './founders'
 import { importedContentService } from './importedContent'
+import { getBusinesses } from './businesses'
 import type { EvidenceLedger } from '../types/editorialEngine'
 
-// Sprint 1 of the Culo Editorial Engine — Stage 1 (Researcher) only. This
-// is deliberately not wired into Bulk Import yet; it's a manual, one-
-// founder-at-a-time trigger so the pipeline can be proven on a real,
-// known-good case (Vinisha Rathod) before anything touches a real batch.
-// See supabase/functions/editorial-research and the build order agreed
-// alongside it.
-
+// Stage 1 (Researcher). A founder's own imported content items are the
+// natural place to start — real links (article/YouTube/podcast/product)
+// already curated — but they're never a requirement: a founder curated
+// from a spreadsheet with no links yet still gets researched from their
+// name and whatever identifying info exists (bio, business, location,
+// industry). That spreadsheet data is there to help find the right
+// person, not to gate whether research runs at all — see identityHints
+// below, and the same "unverified lead, not a fact" discipline that
+// already applies to existingBio.
 export interface ResearchResult {
   success: boolean
   ledger?: EvidenceLedger
   error?: string
 }
 
-// A founder's own content items are the source list — the same real links
-// (article/YouTube/podcast/product) already curated, not a new input.
 export async function runFounderResearch(founderId: string): Promise<ResearchResult> {
   if (!isSupabaseConfigured || !supabase) {
     return { success: false, error: 'Research requires a configured Supabase project.' }
@@ -36,9 +37,13 @@ export async function runFounderResearch(founderId: string): Promise<ResearchRes
         : i.sourcePlatform === 'website' ? 'website' as const
         : 'other' as const,
     }))
-  if (sources.length === 0) {
-    return { success: false, error: 'This founder has no linked content to research yet.' }
-  }
+
+  const business = getBusinesses({ founderId })[0]
+  const identityHints = [
+    business ? `Runs ${business.name}${business.description ? ` (${business.description})` : ''}` : undefined,
+    founder.industry?.name ? `Industry: ${founder.industry.name}` : undefined,
+    founder.location?.name ? `Based in ${founder.location.name}, ${founder.location.state}` : undefined,
+  ].filter(Boolean).join('. ')
 
   await updateFounder({ ...founder, researchStatus: 'researching', researchRequestedAt: new Date().toISOString() })
 
@@ -49,7 +54,7 @@ export async function runFounderResearch(founderId: string): Promise<ResearchRes
         founderId,
         founderName: founder.name,
         existingBio: founder.bio,
-        existingHeadline: undefined,
+        identityHints: identityHints || undefined,
         sources,
       },
     },
