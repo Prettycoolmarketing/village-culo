@@ -2625,25 +2625,40 @@ export function DashboardProfilePage() {
               </Link>
             </div>
 
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Founder ID</p>
+              <p className="text-xs font-mono text-[#6B7280]">{draft.id}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Public Slug</p>
+              <p className="text-xs font-mono text-[#6B7280]">/founders/{draft.slug}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 text-sm">
+              <p className="font-semibold text-[#2D2A26] mb-1">Created</p>
+              <p className="text-[#6B7280]">{draft.createdAt}</p>
+            </div>
+
             {/* Culo Creatives membership — human-readable status and price
-                only, never a raw Stripe id/reference number. */}
+                only, never a raw Stripe id/reference number. Only shown for
+                a genuinely active or cancelling paid member — a free
+                Village-only account, or one whose trial/membership has
+                already lapsed, has nothing real to manage here, so this
+                stayed as clutter rather than a real action. Sits directly
+                above Danger Zone since cancelling Creatives and deleting
+                the whole profile are the two "leaving" actions on this page. */}
             {draft.creativeSubscription && (() => {
               const sub = draft.creativeSubscription
               const price = sub.tier === 'collaborator' ? '$19/month' : '$25/month'
-              const canCancel = (sub.status === 'trial' || sub.status === 'active') && !sub.cancelAtPeriodEnd
+              const isRealMember = sub.status === 'active' || sub.cancelAtPeriodEnd
+              if (!isRealMember) return null
+              const canCancel = sub.status === 'active' && !sub.cancelAtPeriodEnd
               return (
                 <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
                   <p className="text-sm font-semibold text-[#2D2A26] mb-1">Culo Creatives Membership</p>
                   <p className="text-xs text-[#6B7280] mb-3">
                     {sub.cancelAtPeriodEnd
                       ? `Cancelling — you're a Culo Creatives member at ${price} until your current billing period ends.`
-                      : sub.status === 'trial'
-                        ? `You're on a free trial of Culo Creatives, ${price} once it ends.`
-                        : sub.status === 'active'
-                          ? `You're a Culo Creatives member at ${price}.`
-                          : sub.status === 'expired'
-                            ? `Your Culo Creatives membership has expired.`
-                            : `Your Culo Creatives membership is cancelled.`}
+                      : `You're a Culo Creatives member at ${price}.`}
                   </p>
                   {canCancel && !cancelFlowOpen && (
                     <button
@@ -2686,25 +2701,16 @@ export function DashboardProfilePage() {
               )
             })()}
 
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Founder ID</p>
-              <p className="text-xs font-mono text-[#6B7280]">{draft.id}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Public Slug</p>
-              <p className="text-xs font-mono text-[#6B7280]">/founders/{draft.slug}</p>
-            </div>
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 text-sm">
-              <p className="font-semibold text-[#2D2A26] mb-1">Created</p>
-              <p className="text-[#6B7280]">{draft.createdAt}</p>
-            </div>
-
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-2">Danger Zone</p>
-              <p className="text-xs text-[#9CA3AF] mb-3">
+            <div className="bg-white rounded-xl border border-2 border-red-200 px-5 py-4">
+              <p className="text-sm font-semibold text-red-700 mb-2">Danger Zone — delete your Culo Village account</p>
+              <p className="text-xs text-[#6B7280] mb-3">
                 To hide your profile from public directories while keeping your data, set visibility to
-                Archived in the Discovery tab instead. Deleting removes your founder profile permanently
-                and can't be undone.
+                Archived in the Discovery tab instead — that can be undone later.{' '}
+                <span className="font-semibold text-red-700">
+                  Deleting is permanent: your founder profile, every imported piece, every published article
+                  and every connected business will be gone for good, and none of it can be recovered
+                  afterwards.
+                </span>
               </p>
               {saveError && <p className="text-xs text-red-600 mb-2">{saveError}</p>}
               {!deleteFlowOpen ? (
