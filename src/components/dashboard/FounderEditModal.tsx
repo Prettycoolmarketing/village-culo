@@ -5,11 +5,16 @@ import type { ImportedContent, ImportedContentStatus } from '../../types/importe
 import { updateFounder } from '../../services/founders'
 import { importedContentService } from '../../services/importedContent'
 import { getStory, updateStory } from '../../services/stories'
+import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { Tabs } from './Tabs'
 import { ConfirmButton } from '../ui/ConfirmButton'
+
+function isReadyToPublish(item: ImportedContent): boolean {
+  return item.title.trim().length > 0
+}
 
 const INPUT_CLS = 'w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] focus:outline-none focus:border-[#C86A43] bg-white'
 const LABEL_CLS = 'block text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-1'
@@ -26,20 +31,44 @@ const STATUS_COLORS: Record<ImportedContentStatus, string> = {
 // status control, view/delete) — CAPO staff reviewing an imported founder's
 // batch see the exact same picture the founder themselves would.
 
-function ArticleRow({ item, onChanged }: { item: ImportedContent; onChanged: () => void }) {
+function ArticleRow({ item, founder, onChanged }: { item: ImportedContent; founder: Founder; onChanged: () => void }) {
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(item.title)
   const [description, setDescription] = useState(item.description ?? '')
   const [saved, setSaved] = useState(false)
+  const [publishError, setPublishError] = useState<string | null>(null)
   // A piece that's already been turned into a real Story links to its own
   // permanent page; otherwise the only place to see it is where it came
   // from.
   const publishedStory = item.relatedStoryId ? getStory(item.relatedStoryId) : undefined
 
+  // The founder's own dashboard (DashboardProfilePage's handleRowStatusChange)
+  // already does this — build a real Story the first time a piece goes
+  // live, then just flip status on it after — but that path only ever ran
+  // for a founder's own logged-in session. CAPO staff picking "Published"
+  // here for a curated founder was only ever flipping ImportedContent's own
+  // status field, never actually creating anything a visitor could see —
+  // the "Publish" control existed with nothing behind it.
   async function setStatus(status: ImportedContentStatus) {
     setBusy(true)
-    await importedContentService.updateStatus(item.id, status)
+    setPublishError(null)
+    if (item.relatedStoryId) {
+      const existing = getStory(item.relatedStoryId)
+      if (existing) await updateStory({ ...existing, status })
+      await importedContentService.updateStatus(item.id, status)
+    } else if ((status === 'published' || status === 'featured') && isReadyToPublish(item)) {
+      const story = buildStoryFromImport(item, founder)
+      story.status = status
+      const result = await publishStoryCore(story)
+      if (!result.success) {
+        setPublishError(result.error ?? 'Could not publish. Please try again.')
+      } else {
+        await importedContentService.updateStatus(item.id, status)
+      }
+    } else {
+      await importedContentService.updateStatus(item.id, status)
+    }
     setBusy(false)
     onChanged()
   }
@@ -125,6 +154,8 @@ function ArticleRow({ item, onChanged }: { item: ImportedContent; onChanged: () 
         />
       </div>
 
+      {publishError && <p className="px-4 pb-2 text-xs text-red-600">{publishError}</p>}
+
       {/* What's actually on the page — the exact title and blog body this
           piece publishes with (or already did, if it's live), editable
           right here instead of only being visible after publishing. */}
@@ -174,7 +205,7 @@ function ArticlesTab({ founder, tick, bump }: { founder: Founder; tick: number; 
 
   return (
     <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden max-h-[50vh] overflow-y-auto">
-      {items.map(item => <ArticleRow key={item.id} item={item} onChanged={bump} />)}
+      {items.map(item => <ArticleRow key={item.id} item={item} founder={founder} onChanged={bump} />)}
     </div>
   )
 }
