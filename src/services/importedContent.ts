@@ -23,7 +23,18 @@ export function detectPlatform(url: string): ImportedContentPlatform {
     if (host.includes('linkedin.com')) return 'linkedin'
     if (host === 'tiktok.com') return 'tiktok'
     if (
-      (host.includes('spotify.com') && u.pathname.includes('/show')) ||
+      // Confirmed live: podcasts.apple.com and acast.com are two of the
+      // most common real podcast links curated founders actually have, and
+      // a Spotify *episode* link (not just a show) is just as real a
+      // podcast link as a show link — none of these matched before, so
+      // real podcast appearances were silently mislabelled "Blogs"
+      // (website's own display label) across every founder that had one.
+      host.includes('spotify.com') ||
+      host.includes('podcasts.apple.com') ||
+      host.includes('acast.com') ||
+      host.includes('overcast.fm') ||
+      host.includes('pocketcasts.com') ||
+      host.includes('podcasts.google.com') ||
       host.includes('anchor.fm') ||
       host.includes('buzzsprout.com') ||
       host.includes('podbean.com') ||
