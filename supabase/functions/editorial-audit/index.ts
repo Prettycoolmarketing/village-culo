@@ -52,6 +52,8 @@ For every substantive claim in the draft (a fact, date, number, role, quote, or 
 
 Do not flag stylistic choices, phrasing, word count, or which claims were chosen to include — only flag genuine mismatches against the ledger.
 
+If you consider flagging something and then conclude on reflection that it's actually fine, do not include it in "issues" at all — not even to note that it turned out to be correct. Every entry in "issues" must be a real, standing problem; the array should be empty when nothing is wrong.
+
 Give a holistic verdict:
 - "pass": every claim in the draft traces cleanly to the ledger with attribution intact.
 - "review": at least one issue found, but none is an invented fact — a human should look before this goes further.
