@@ -382,6 +382,26 @@ function buildCuratedBio(
 // (see the founders-page tooling); the other items' descriptions are still
 // worth writing properly since staff read them, and any of them could
 // become the real published piece.
+// Splits on sentence boundaries — same simple heuristic as paragraphize()
+// above (". "/"! "/"? " followed by a capital letter).
+function splitSentences(text: string): string[] {
+  return text.split(/(?<=[.!?])\s+(?=[A-Z])/).map(s => s.trim()).filter(Boolean)
+}
+
+// Confirmed live: a founder's article/YouTube/podcast pages were "literally
+// all the same" — every item drew the exact same Key Facts paragraph
+// word-for-word, so the only thing distinguishing them was which title sat
+// above identical text. There's only ever one real Key Facts paragraph per
+// founder (not one per link), so genuine per-item variety has to come from
+// presenting that same real material differently — rotating which
+// sentence leads changes what's said first and what's said last without
+// inventing anything or dropping any fact.
+function rotateStartingAt(sentences: string[], index: number): string {
+  if (sentences.length <= 1) return sentences.join(' ')
+  const offset = index % sentences.length
+  return [...sentences.slice(offset), ...sentences.slice(0, offset)].join(' ')
+}
+
 function buildContentItemBody(
   displayName: string,
   role: string,
@@ -390,6 +410,7 @@ function buildContentItemBody(
   speakingTopics: string[],
   keyFacts: string | undefined,
   locationLabel: string,
+  itemIndex: number,
 ): string {
   // A "This is X's appearance on YouTube" line before the real substance is
   // pure throat-clearing — no journalist opens a piece by announcing what
@@ -398,7 +419,10 @@ function buildContentItemBody(
   // straight from who they are into the real substance (keyFacts) as one
   // flowing paragraph, the way an actual short profile piece reads.
   const subjectTopics = speakingTopics.length > 0 ? speakingTopics : topicNames
-  const substance = keyFacts || (subjectTopics.length > 0 ? `Their work covers ${joinNaturally(subjectTopics)}.` : '')
+  const keyFactsSentences = keyFacts ? splitSentences(keyFacts) : []
+  const substance = keyFactsSentences.length > 0
+    ? rotateStartingAt(keyFactsSentences, itemIndex)
+    : (subjectTopics.length > 0 ? `Their work covers ${joinNaturally(subjectTopics)}.` : '')
   const p1 = [`${displayName} is ${role}, based in ${locationLabel}.`, substance].filter(Boolean).join(' ')
 
   const p2 = businessDescription || ''
@@ -889,7 +913,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
       // Content
       if (f.content && f.content.length > 0) {
-        for (const c of f.content) {
+        for (const [contentIndex, c] of f.content.entries()) {
           if (!c.url || !isValidUrl(c.url)) continue
 
           const contentStatus: ImportedContent['status'] = options.publishContent
@@ -914,6 +938,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
           const generatedItemBody = buildContentItemBody(
             displayName, curatedRole,
             f.businesses?.[0]?.description, topics.map(t => t.name), f.speakingTopics ?? [], f.keyFacts, locationLabel,
+            contentIndex,
           )
 
           const item: ImportedContent = {

@@ -230,7 +230,7 @@ export function StoryDetailPage() {
         </span>
       ))}
       {story.featured && (
-        <span className="px-3 py-1 rounded-full text-xs font-medium bg-accent text-charcoal">
+        <span className="px-3 py-1 rounded-full text-xs font-medium bg-[#3E6E92] text-white">
           Featured
         </span>
       )}
