@@ -155,7 +155,7 @@ function buildSupplementaryNotes(f: VillageImportFounder, adminNotes?: string): 
   const parts: string[] = []
   if (adminNotes) parts.push(`ADMIN NOTES: ${adminNotes}`)
   // The founder's own original wording — never published as-is (see
-  // buildCuratedBio/buildCuratedArticleBody), but kept here so it's not lost: a real staff
+  // buildCuratedBio/buildContentItemBody), but kept here so it's not lost: a real staff
   // member can read it before publishing, and the founder gets it back the
   // moment they claim the profile and can write in their own voice again.
   if (f.bio?.trim()) parts.push(`ORIGINAL SOURCE BIO (not published — see profile bio for the published summary): ${paragraphize(f.bio.trim())}`)
@@ -251,45 +251,82 @@ function describePlatformsPhrase(f: Pick<VillageImportFounder, 'youtubeUrl' | 'i
   return ` online across ${platforms.slice(0, -1).join(', ')} and ${platforms[platforms.length - 1]}`
 }
 
-function buildCuratedBio(
-  displayName: string,
-  industryName: string,
-  topicName: string | undefined,
-  businessName: string | undefined,
-  locationLabel: string,
-  platformsPhrase: string,
-): string {
-  const role = businessName ? `founder of ${businessName}` : `a ${industryName.toLowerCase()} founder`
-  const about = topicName ? `, talking about ${topicName}` : ''
-  return `${displayName} is ${role}, based in ${locationLabel}${about}${platformsPhrase}. Curated by CULO Village from publicly available content.`
-}
-
 function joinNaturally(items: string[]): string {
   if (items.length === 0) return ''
   if (items.length === 1) return items[0]!
   return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }
 
-// A one-sentence bio is fine on a profile card, but it becomes the *entire*
-// published article body verbatim (ImportedContent.description -> Story.blog,
-// see publishStory.ts) — one sentence there reads as a stub, not an article.
-// This builds a genuine multi-paragraph piece from the same structured facts,
-// still entirely CULO's own writing, never the founder's scraped prose.
-function buildCuratedArticleBody(
-  displayName: string,
-  industryName: string,
-  topicNames: string[],
+// A real, curator-written Headline ("Senior Pastor, Kingdom Culture Church")
+// is always a better public role descriptor than the resolved Industry —
+// industries are a fixed list the app has to force every founder into, and
+// when nothing real matches (industryMatched is false), asserting that
+// forced-fallback category in public text reads as flatly wrong (a pastor
+// described as "a marketing & advertising founder"). Only ever states the
+// industry when it's a genuine match.
+function resolveCuratedRole(
+  headline: string | undefined,
   businessName: string | undefined,
+  industryName: string,
+  industryMatched: boolean,
+): string {
+  if (headline) return headline
+  if (businessName) return `founder of ${businessName}`
+  if (industryMatched) return `a ${industryName.toLowerCase()} founder`
+  return 'a founder'
+}
+
+function buildCuratedBio(
+  role: string,
+  topicName: string | undefined,
+  displayName: string,
   locationLabel: string,
   platformsPhrase: string,
 ): string {
-  const role = businessName
-    ? `the founder of ${businessName}, a ${industryName.toLowerCase()} business`
-    : `a ${industryName.toLowerCase()} founder`
+  const about = topicName ? `, talking about ${topicName}` : ''
+  return `${displayName} is ${role}, based in ${locationLabel}${about}${platformsPhrase}. Curated by CULO Village from publicly available content.`
+}
+
+// A one-sentence bio is fine on a profile card, but a content item's
+// description becomes the *entire* published article body verbatim
+// (ImportedContent.description -> Story.blog, see publishStory.ts) — one
+// generic sentence shared identically across every one of a founder's
+// linked pieces reads as a stub, and reading identically to every other
+// item defeats the point of having separate article pages at all. This
+// builds a real, per-item piece: what this specific link actually is (a
+// podcast appearance vs. a website bio vs. their own article), grounded in
+// whatever real context the curation sheet captured (business description,
+// speaking topics) — still entirely CULO's own writing, never the
+// founder's scraped prose.
+function buildContentItemBody(
+  kind: string | undefined,
+  itemTitle: string,
+  displayName: string,
+  role: string,
+  businessDescription: string | undefined,
+  topicNames: string[],
+  speakingTopics: string[],
+  locationLabel: string,
+): string {
   const p1 = `${displayName} is ${role}, based in ${locationLabel}.`
 
-  const topicsPhrase = topicNames.length > 0 ? joinNaturally(topicNames) : industryName.toLowerCase()
-  const p2 = `Their public content focuses on ${topicsPhrase}, which they share${platformsPhrase || ' online'}.`
+  const introByKind: Record<string, string> = {
+    youtube:           `This is ${displayName}'s appearance on YouTube, "${itemTitle}."`,
+    podcast:           `This is ${displayName}'s appearance on their podcast, "${itemTitle}."`,
+    article:           `This is ${displayName}'s own article, "${itemTitle}."`,
+    'digital-product': `This is ${displayName}'s digital product, "${itemTitle}."`,
+  }
+  const intro = (kind && introByKind[kind]) || `This is ${displayName}'s "${itemTitle}."`
+
+  const subjectTopics = speakingTopics.length > 0 ? speakingTopics : topicNames
+  const subjectSentence = subjectTopics.length > 0 ? ` It covers ${joinNaturally(subjectTopics)}.` : ''
+  // Only the article/product piece carries the business description — every
+  // item repeating the same business blurb is exactly the sameness this is
+  // meant to fix.
+  const bizSentence = (kind === 'article' || kind === 'digital-product') && businessDescription
+    ? ` ${businessDescription}`
+    : ''
+  const p2 = `${intro}${subjectSentence}${bizSentence}`
 
   const p3 = `This profile was curated by CULO Village from publicly available content, not written by ${displayName} themselves — the original posts and links are above, straight from their own channels. If this is your profile and you'd like to update it in your own words, you can claim it or request its removal using the links on this page.`
 
@@ -355,7 +392,7 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
   const headline = str(row['Headline'])
   // Kept as the raw source bio only — buildSupplementaryNotes tucks this
   // into claimNotes (admin-only), and importVIF generates the actual
-  // *published* bio/content descriptions itself (buildCuratedBio/buildCuratedArticleBody),
+  // *published* bio/content descriptions itself (buildCuratedBio/buildContentItemBody),
   // rather than this scraped text going out verbatim under the founder's
   // name before they've ever agreed to any of it.
   const rawBio = str(row['Bio'])
@@ -363,16 +400,20 @@ function normalizeRawFounderRow(row: Record<string, unknown>): VillageImportFoun
   const youtubeUrl  = str(row['YouTube URL'])
   const podcastUrl  = str(row['Podcast URL'])
   const digitalProductUrl = str(row['Digital Product URL'])
+  // `platform` here is which VIF field this link actually came from (we
+  // know this structurally — no URL-sniffing needed), not a display label —
+  // buildContentItemBody uses it to write each item its own real, distinct
+  // paragraph instead of stamping the same generic text on all of them.
   const content: VillageImportContent[] = (
     [
-      articleUrl        ? { title: headline ?? `${fullName}'s article`, url: articleUrl        } : undefined,
-      youtubeUrl        ? { title: `${fullName} on YouTube`,            url: youtubeUrl        } : undefined,
-      podcastUrl        ? { title: `${fullName} on Podcast`,            url: podcastUrl        } : undefined,
+      articleUrl        ? { title: headline ?? `${fullName}'s article`, url: articleUrl,        platform: 'article'          } : undefined,
+      youtubeUrl        ? { title: `${fullName} on YouTube`,            url: youtubeUrl,        platform: 'youtube'          } : undefined,
+      podcastUrl        ? { title: `${fullName} on Podcast`,            url: podcastUrl,        platform: 'podcast'          } : undefined,
       // Without this, a real Digital Product URL only ever landed in
       // admin-only notes text — never a real clickable link anywhere on
       // the founder's actual page. Same pattern as the others: a plain
       // content entry, its own real link out.
-      digitalProductUrl ? { title: `${fullName}'s digital product`,     url: digitalProductUrl } : undefined,
+      digitalProductUrl ? { title: `${fullName}'s digital product`,     url: digitalProductUrl, platform: 'digital-product' } : undefined,
     ] as (VillageImportContent | undefined)[]
   ).filter((c): c is VillageImportContent => !!c)
 
@@ -685,17 +726,15 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
       // CULO-voiced summary — this, not f.bio, is what actually gets
       // published (see buildCuratedBio's comment for why). Short form for
-      // the profile bio; a fuller multi-paragraph form for content items,
-      // since a content item's description becomes an entire published
-      // Story's blog body verbatim (see buildCuratedArticleBody).
+      // the profile bio; each content item gets its own real, distinct body
+      // built per-item further down (see buildContentItemBody), since a
+      // content item's description becomes an entire published Story's blog
+      // body verbatim — every item repeating the same paragraph defeats the
+      // point of separate article pages.
       const locationLabel = `${location.name}, ${location.state}`
       const platformsPhrase = describePlatformsPhrase(f)
-      const curatedBio = buildCuratedBio(
-        displayName, industry.name, topics[0]?.name, f.businesses?.[0]?.name, locationLabel, platformsPhrase,
-      )
-      const curatedArticleBody = buildCuratedArticleBody(
-        displayName, industry.name, topics.map(t => t.name), f.businesses?.[0]?.name, locationLabel, platformsPhrase,
-      )
+      const curatedRole = resolveCuratedRole(f.headline, f.businesses?.[0]?.name, industry.name, industryMatched)
+      const curatedBio = buildCuratedBio(curatedRole, topics[0]?.name, displayName, locationLabel, platformsPhrase)
 
       // Founder record
       const founder: Founder = {
@@ -759,10 +798,16 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
             }
           }
 
+          const itemTitle = c.title || draft.title
+          const generatedItemBody = buildContentItemBody(
+            c.platform, itemTitle, displayName, curatedRole,
+            f.businesses?.[0]?.description, topics.map(t => t.name), f.speakingTopics ?? [], locationLabel,
+          )
+
           const item: ImportedContent = {
             ...draft,
-            title:      c.title || draft.title,
-            description: c.description || curatedArticleBody || draft.description,
+            title:      itemTitle,
+            description: c.description || generatedItemBody || draft.description,
             businessId: contentBizId ?? (primaryBusinessId || undefined),
             status:     contentStatus,
             visibility: contentStatus === 'published' || contentStatus === 'featured' ? 'public' : 'private',
