@@ -420,20 +420,20 @@ export function IdeaDetailPage() {
                 )}
 
                 {/* CTA panel */}
-                <div className="bg-secondary/5 rounded-2xl p-5 border border-secondary/20">
+                <div className="bg-primary/5 rounded-2xl p-5 border border-primary/20">
                   <p className="font-body text-sm text-charcoal leading-relaxed mb-4">
                     This idea came from real founder stories. Explore more in the Village, or discover all ideas.
                   </p>
                   <div className="flex flex-col gap-2">
                     <Link
                       to="/stories"
-                      className="block text-center px-4 py-2.5 bg-secondary text-white text-sm font-medium rounded-xl hover:bg-[#4d5a3a] transition-colors"
+                      className="block text-center px-4 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
                     >
                       Browse all Stories
                     </Link>
                     <Link
                       to="/ideas"
-                      className="block text-center px-4 py-2.5 border border-secondary/30 text-secondary text-sm font-medium rounded-xl hover:border-secondary hover:bg-secondary/5 transition-colors"
+                      className="block text-center px-4 py-2.5 border border-primary/30 text-primary text-sm font-medium rounded-xl hover:border-primary hover:bg-primary/5 transition-colors"
                     >
                       Back to Ideas
                     </Link>

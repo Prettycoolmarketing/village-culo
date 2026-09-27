@@ -15,6 +15,13 @@ interface BusinessCardProps {
 export function BusinessCard({ business, founder, variant = 'default', className = '' }: BusinessCardProps) {
   const businessUrl = `/businesses/${business.slug}`
   const founderUrl = founder ? `/founders/${founder.slug}` : undefined
+  // An unclaimed curated business was never given a real logo or cover —
+  // BizLogo/CoverImage's own fallbacks (an initial badge, a placeholder
+  // graphic) read as if a real one exists. None at all for these, same as
+  // FounderCard's avatar handling.
+  const isUnclaimedCurated = founder?.profileStatus === 'village-curated' && !founder?.userId
+  const showLogo = !!business.logo || !isUnclaimedCurated
+  const showCover = !!business.coverImage || !isUnclaimedCurated
 
   // ─── Featured ────────────────────────────────────────────────────────────────
   if (variant === 'featured') {
@@ -26,32 +33,36 @@ export function BusinessCard({ business, founder, variant = 'default', className
         {/* Cover — a fixed aspect ratio (not a fixed pixel height) so the
             crop stays proportional to the card's actual width instead of
             zooming in harder on narrower cards and looser on wider ones. */}
-        <div className="relative aspect-[16/9] overflow-hidden bg-charcoal">
-          <CoverImage
-            fallbackSrc="/placeholders/village-cover.svg"
-            src={business.coverImage}
-            alt={`${business.name} cover image`}
-            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-charcoal/50 to-transparent" aria-hidden="true" />
-          {business.featured && (
-            <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-medium bg-accent text-charcoal">
-              Featured
-            </span>
-          )}
-        </div>
+        {showCover && (
+          <div className="relative aspect-[16/9] overflow-hidden bg-charcoal">
+            <CoverImage
+              fallbackSrc="/placeholders/village-cover.svg"
+              src={business.coverImage}
+              alt={`${business.name} cover image`}
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-charcoal/50 to-transparent" aria-hidden="true" />
+            {business.featured && (
+              <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-medium bg-[#3E6E92] text-white">
+                Featured
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="p-5">
           {/* Logo + name — no plate/box behind it, just the mark itself,
               sized up and given room to breathe below the cover photo. */}
-          <div className="flex items-start gap-3 -mt-4 mb-3 pt-2">
-            <Link to={businessUrl} aria-label={`View ${business.name}`}>
-              <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
-                <BizLogo logo={business.logo} name={business.name} className="text-2xl" />
-              </div>
-            </Link>
-            <div className="pt-11 min-w-0">
+          <div className={`flex items-start gap-3 mb-3 ${showCover ? '-mt-4 pt-2' : ''}`}>
+            {showLogo && (
+              <Link to={businessUrl} aria-label={`View ${business.name}`}>
+                <div className="w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                  <BizLogo logo={business.logo} name={business.name} className="text-2xl" />
+                </div>
+              </Link>
+            )}
+            <div className={`min-w-0 ${showCover ? 'pt-11' : ''}`}>
               <h3 className="font-heading text-base font-semibold text-charcoal leading-tight line-clamp-1">
                 <Link to={businessUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">
                   {business.name}
@@ -115,11 +126,13 @@ export function BusinessCard({ business, founder, variant = 'default', className
         className={`flex items-center gap-3 bg-surface rounded-xl p-3 shadow-card hover:shadow-md transition-all duration-200 ${className}`}
         aria-label={`Business: ${business.name}`}
       >
-        <Link to={businessUrl} tabIndex={-1} aria-hidden="true">
-          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white ring-1 ring-border flex items-center justify-center p-2">
-            <BizLogo logo={business.logo} name={business.name} />
-          </div>
-        </Link>
+        {showLogo && (
+          <Link to={businessUrl} tabIndex={-1} aria-hidden="true">
+            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white ring-1 ring-border flex items-center justify-center p-2">
+              <BizLogo logo={business.logo} name={business.name} />
+            </div>
+          </Link>
+        )}
         <div className="min-w-0 flex-1">
           <h3 className="font-heading text-sm font-semibold text-charcoal leading-tight line-clamp-1">
             <Link to={businessUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">
@@ -142,11 +155,13 @@ export function BusinessCard({ business, founder, variant = 'default', className
       <div className="p-5">
         {/* Logo + header */}
         <div className="flex items-start gap-3 mb-4">
-          <Link to={businessUrl} aria-label={`View ${business.name}`}>
-            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-border flex items-center justify-center p-2.5">
-              <BizLogo logo={business.logo} name={business.name} />
-            </div>
-          </Link>
+          {showLogo && (
+            <Link to={businessUrl} aria-label={`View ${business.name}`}>
+              <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-border flex items-center justify-center p-2.5">
+                <BizLogo logo={business.logo} name={business.name} />
+              </div>
+            </Link>
+          )}
           <div className="min-w-0 flex-1 pt-1">
             <h3 className="font-heading text-base font-semibold text-charcoal leading-tight">
               <Link to={businessUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">

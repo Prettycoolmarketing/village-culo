@@ -399,7 +399,7 @@ export function FounderProfilePage() {
               <div className="flex flex-col items-start sm:items-end gap-1.5 flex-shrink-0">
                 <Link
                   to={`/claim/${founder.slug}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#3E6E92] text-white text-xs font-semibold rounded-xl hover:bg-[#345c7a] transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] transition-colors"
                 >
                   Is this you? Claim this profile →
                 </Link>

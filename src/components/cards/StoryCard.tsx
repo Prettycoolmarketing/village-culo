@@ -83,7 +83,7 @@ export function StoryCard({
               clip. */}
           <div className="absolute bottom-3 left-3 flex flex-col items-start gap-1.5">
             {story.featured && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent text-charcoal">
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#3E6E92] text-white">
                 Featured
               </span>
             )}

@@ -39,6 +39,15 @@ export function FeaturedWidget({
     ?? dailyRotatingPick(getBusinesses({ publicOnly: true }))
   const featuredIdea = dailyRotatingPick(getIdeas({ publicOnly: true, featured: true }))
     ?? dailyRotatingPick(getIdeas({ publicOnly: true }))
+  // An Idea's own `description` is the raw extracted lesson fragment (e.g.
+  // "I realised this with my clients also!") — real, but reads as a random
+  // orphaned line without the article it came from. This box's whole job is
+  // to be a blog-summary card linking to the real article, so it links to
+  // and summarises the actual connected Story instead of the idea's own
+  // (much thinner) detail page.
+  const ideaStory = featuredIdea?.relatedStoryIds[0]
+    ? getStories({ publicOnly: true }).find(s => s.id === featuredIdea.relatedStoryIds[0])
+    : undefined
   const featuredEvent = dailyRotatingPick(getEvents({ featured: true }))
     ?? dailyRotatingPick(getEvents({}))
 
@@ -158,13 +167,15 @@ export function FeaturedWidget({
             >
               <p className="font-body text-xs font-semibold text-secondary uppercase tracking-widest mb-3">Idea of the Day</p>
               <h3 className="font-heading text-base font-semibold text-charcoal leading-snug mb-2">
-                <Link to={`/ideas/${featuredIdea.slug}`} className="hover:text-secondary transition-colors focus:outline-none focus-visible:underline">
+                <Link to={ideaStory ? `/stories/${ideaStory.slug}` : `/ideas/${featuredIdea.slug}`} className="hover:text-secondary transition-colors focus:outline-none focus-visible:underline">
                   {featuredIdea.title}
                 </Link>
               </h3>
-              <p className="font-body text-sm text-muted line-clamp-2 mb-3">
-                {featuredIdea.description}
-              </p>
+              {ideaStory?.summary && (
+                <p className="font-body text-sm text-muted line-clamp-2 mb-3">
+                  {ideaStory.summary}
+                </p>
+              )}
               <p className="font-body text-xs text-muted">
                 <strong className="text-charcoal">{featuredIdea.relatedStoryIds.length}</strong> stories &nbsp;·&nbsp;
                 <strong className="text-charcoal">{featuredIdea.relatedFounderIds.length}</strong> founders

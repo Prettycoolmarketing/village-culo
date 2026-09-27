@@ -47,6 +47,11 @@ interface FounderCardProps {
 export function FounderCard({ founder, business, variant = 'default', className = '' }: FounderCardProps) {
   const founderUrl = `/founders/${founder.slug}`
   const businessUrl = business ? `/businesses/${business.slug}` : undefined
+  // An unclaimed curated profile was never given a real photo — showing the
+  // Culo-mark fallback anywhere it appears (not just on the founder's own
+  // profile page, which already handles this) reads as a real photo exists
+  // when it doesn't. No avatar at all for these, on any card variant.
+  const showAvatar = !!founder.avatar || founder.profileStatus !== 'village-curated' || !!founder.userId
 
   // ─── Featured variant — hero row style ──────────────────────────────────────
   if (variant === 'featured') {
@@ -67,7 +72,7 @@ export function FounderCard({ founder, business, variant = 'default', className 
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal/50 to-transparent" aria-hidden="true" />
             {founder.featured && (
               <div className="absolute top-3 right-3">
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent text-charcoal">Featured</span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-[#3E6E92] text-white">Featured</span>
               </div>
             )}
           </div>
@@ -76,14 +81,16 @@ export function FounderCard({ founder, business, variant = 'default', className 
         <div className="p-5">
           {/* Avatar + name */}
           <div className="flex items-start gap-3 -mt-10 mb-3" style={founder.coverImage ? { marginTop: '-2.5rem' } : {}}>
-            <Link to={founderUrl} aria-label={`View ${founder.name}'s profile`}>
-              <Avatar
-                src={founder.avatar}
-                alt={founder.name}
-                size="xl"
-                className="ring-4 ring-surface shadow-md"
-              />
-            </Link>
+            {showAvatar && (
+              <Link to={founderUrl} aria-label={`View ${founder.name}'s profile`}>
+                <Avatar
+                  src={founder.avatar}
+                  alt={founder.name}
+                  size="xl"
+                  className="ring-4 ring-surface shadow-md"
+                />
+              </Link>
+            )}
             <div className="pt-10 min-w-0">
               <h3 className="font-heading text-lg font-semibold text-charcoal leading-tight">
                 <Link to={founderUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">
@@ -140,9 +147,11 @@ export function FounderCard({ founder, business, variant = 'default', className 
         className={`flex items-center gap-3 bg-surface rounded-xl p-3 shadow-card hover:shadow-md transition-all duration-200 ${className}`}
         aria-label={`Founder: ${founder.name}`}
       >
-        <Link to={founderUrl} aria-label={`View ${founder.name}'s profile`} tabIndex={-1} aria-hidden="true">
-          <Avatar src={founder.avatar} alt={founder.name} size="md" />
-        </Link>
+        {showAvatar && (
+          <Link to={founderUrl} aria-label={`View ${founder.name}'s profile`} tabIndex={-1} aria-hidden="true">
+            <Avatar src={founder.avatar} alt={founder.name} size="md" />
+          </Link>
+        )}
         <div className="min-w-0 flex-1">
           <h3 className="font-heading text-sm font-semibold text-charcoal leading-tight truncate">
             <Link to={founderUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">
@@ -171,14 +180,16 @@ export function FounderCard({ founder, business, variant = 'default', className 
       <div className="p-5">
         {/* Avatar + name + meta */}
         <div className="flex items-start gap-4 mb-4">
-          <Link to={founderUrl} aria-label={`View ${founder.name}'s profile`}>
-            <Avatar
-              src={founder.avatar}
-              alt={founder.name}
-              size="lg"
-              className="ring-2 ring-border"
-            />
-          </Link>
+          {showAvatar && (
+            <Link to={founderUrl} aria-label={`View ${founder.name}'s profile`}>
+              <Avatar
+                src={founder.avatar}
+                alt={founder.name}
+                size="lg"
+                className="ring-2 ring-border"
+              />
+            </Link>
+          )}
           <div className="min-w-0 flex-1 pt-1">
             <h3 className="font-heading text-base font-semibold text-charcoal leading-tight">
               <Link to={founderUrl} className="hover:text-primary transition-colors focus:outline-none focus-visible:underline">

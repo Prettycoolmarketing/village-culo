@@ -110,6 +110,7 @@ export function BusinessProfilePage() {
 
   // Pre-guard lookups — hooks must be called unconditionally before any early return
   const founder              = business ? getFounder(business.founderId) : undefined
+  const isUnclaimedCuratedBiz = founder?.profileStatus === 'village-curated' && !founder?.userId
   const businessIntelRecords = business
     ? villageContentIntelligenceService.getByFounder(business.founderId).filter(r => !r.businessId || r.businessId === business.id)
     : []
@@ -261,21 +262,28 @@ export function BusinessProfilePage() {
 
       {/* ── Business hero ───────────────────────────────────────────────────── */}
       <section aria-labelledby="business-title">
-        <div className="relative h-56 sm:h-72 md:h-80 overflow-hidden bg-charcoal">
-          <img src={business.coverImage} alt={`${business.name} cover image`}
-            className="w-full h-full object-cover opacity-70" loading="eager" />
-          <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
-          {business.featured && (
-            <span className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium bg-primary text-white">Featured</span>
-          )}
-        </div>
+        {/* An unclaimed curated business was never given a real cover/logo —
+            showing them anyway (a broken empty-src image, BizLogo's initial
+            badge) reads as if a real one exists. */}
+        {(business.coverImage || !isUnclaimedCuratedBiz) && (
+          <div className="relative h-56 sm:h-72 md:h-80 overflow-hidden bg-charcoal">
+            <img src={business.coverImage} alt={`${business.name} cover image`}
+              className="w-full h-full object-cover opacity-70" loading="eager" />
+            <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
+            {business.featured && (
+              <span className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium bg-primary text-white">Featured</span>
+            )}
+          </div>
+        )}
 
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
             <div className="flex items-end gap-5 -mt-10 relative z-10 mb-6">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-surface shadow-lg bg-background flex-shrink-0 flex items-center justify-center p-2.5">
-                <BizLogo logo={business.logo} name={business.name} className="text-2xl" />
-              </div>
+              {(business.logo || !isUnclaimedCuratedBiz) && (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-surface shadow-lg bg-background flex-shrink-0 flex items-center justify-center p-2.5">
+                  <BizLogo logo={business.logo} name={business.name} className="text-2xl" />
+                </div>
+              )}
               <div className="pb-1">
                 <span className="font-body text-xs font-semibold text-primary uppercase tracking-widest">
                   {business.industry.name}
