@@ -126,8 +126,21 @@ export function ImportedContentCard({ content, compact = false, intel, fullLengt
           />
         </div>
       ) : !compact ? (
-        <div className="bg-[#F3EDE6] flex items-center justify-center" style={{ height: '120px' }}>
-          <PlatformIcon platform={content.sourcePlatform} />
+        // A researched article has no real photo of its own — rather than
+        // an empty icon box, use the same shared Culo brand image as the
+        // founder hero (see FounderProfilePage): a real image, honest
+        // about not depicting the article itself, still better than a
+        // placeholder that reads as broken or unfinished.
+        <div className="relative w-full" style={{ paddingTop: thumbAspect }}>
+          <img
+            src="/assets/culo-brand-cover.png"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+          <span className={`absolute bottom-2 left-2 font-body text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${platformColor}`}>
+            {platformLabel}
+          </span>
         </div>
       ) : null}
 

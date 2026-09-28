@@ -607,7 +607,7 @@ export function FounderProfilePage() {
               )}
             </div>
 
-            <div className="mt-8 max-w-3xl space-y-4">
+            <div className="mt-8 max-w-4xl space-y-4">
               {/* Split on blank lines into real paragraphs instead of one
                   whitespace-pre-wrap block — a bio with several paragraphs
                   (a Culo-written one especially) read as one dense run-on
