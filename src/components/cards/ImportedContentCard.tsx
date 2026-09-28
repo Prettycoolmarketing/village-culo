@@ -7,24 +7,6 @@ import { normalizeUrl } from '../../utils/url'
 
 const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok'])
 
-// Fallback-image tint per platform — with no real thumbnail, every card
-// reuses the same shared Culo brand photo (see below), which reads as an
-// obvious duplicate the moment two land side by side. A platform-tinted
-// gradient over the same base image keeps the branding consistent while
-// still visually distinguishing each card, so a row of them reads as
-// designed rather than as one photo copy-pasted twice.
-const PLATFORM_TINT: Record<string, string> = {
-  youtube:    'from-red-900/50 via-red-900/10',
-  instagram:  'from-fuchsia-900/50 via-fuchsia-900/10',
-  linkedin:   'from-sky-900/50 via-sky-900/10',
-  tiktok:     'from-neutral-900/60 via-neutral-900/10',
-  podcast:    'from-violet-900/50 via-violet-900/10',
-  website:    'from-primary/50 via-primary/10',
-  vimeo:      'from-cyan-900/50 via-cyan-900/10',
-  url:        'from-primary/50 via-primary/10',
-  etsy:       'from-orange-900/50 via-orange-900/10',
-}
-
 interface Props {
   content: ImportedContent
   compact?: boolean
@@ -151,15 +133,18 @@ export function ImportedContentCard({ content, compact = false, intel, size = 'd
         // an empty icon box, use the same shared Culo brand image as the
         // founder hero (see FounderProfilePage): a real image, honest
         // about not depicting the article itself, still better than a
-        // placeholder that reads as broken or unfinished.
-        <div className="relative w-full" style={{ paddingTop: thumbAspect }}>
+        // placeholder that reads as broken or unfinished. Always the same
+        // 16:9 box regardless of platform — the square treatment is only
+        // for real podcast cover art (see thumbAspect); this same shared
+        // photo used square next to another used 16:9 made two cards with
+        // no real thumbnail of their own look mismatched side by side.
+        <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
           <img
             src="/assets/culo-brand-cover.png"
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
           />
-          <div className={`absolute inset-0 bg-gradient-to-t ${PLATFORM_TINT[content.sourcePlatform] ?? PLATFORM_TINT.website} to-transparent`} aria-hidden="true" />
           <span className={`absolute bottom-2 left-2 font-body text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${platformColor}`}>
             {platformLabel}
           </span>

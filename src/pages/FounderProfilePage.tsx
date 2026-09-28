@@ -695,7 +695,9 @@ export function FounderProfilePage() {
           instead, nested in the normal content column (see further down). */}
       {!hasRealStories && importsSection && (
         <div className="pt-14 md:pt-16">
-          <InnerContainer>{importsSection}</InnerContainer>
+          <InnerContainer>
+            <div className="max-w-5xl mx-auto">{importsSection}</div>
+          </InnerContainer>
         </div>
       )}
 
