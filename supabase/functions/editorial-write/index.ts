@@ -88,11 +88,13 @@ Output ONLY a single valid JSON object, no markdown fences, no commentary before
 
 const PROFILE_BIO_PROMPT = `${SHARED_RULES}
 
-TASK: write a short founder bio (roughly 3-5 sentences, one paragraph) synthesising the founder's identity, real role(s), and what their work actually focuses on — drawn only from "fact" and well-attributed claims in the ledger. Do not attempt to cover every claim; pick what actually establishes who this person is.
+TASK: write a founder bio (roughly 120-200 words) synthesising the founder's identity, real role(s), and what their work actually focuses on — drawn only from "fact" and well-attributed claims in the ledger. Do not attempt to cover every claim; pick what actually establishes who this person is.
+
+Write it as 2-3 short paragraphs, separated by a blank line (\\n\\n) — never one dense block. A natural split: who they are and what they've built; then what they focus on or believe, drawing on an attributed claim if one exists. Each paragraph should read as a complete thought, not an arbitrary line break.
 
 {
   "title": "the founder's full name, exactly as given",
-  "body": "the bio, one paragraph, first reference full name then first name throughout"
+  "body": "the bio, 2-3 paragraphs separated by \\n\\n, first reference full name then first name throughout"
 }`
 
 const SOURCE_ARTICLE_PROMPT = `${SHARED_RULES}

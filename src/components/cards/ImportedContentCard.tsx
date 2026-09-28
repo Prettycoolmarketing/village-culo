@@ -11,9 +11,14 @@ interface Props {
   content: ImportedContent
   compact?: boolean
   intel?: VillageContentIntelligence
+  // A single article is often the whole page for a brand-new curated
+  // profile — clamping its summary the same way a list of several would
+  // reads as withholding when there's nothing else to read. Shows the
+  // real full text instead of a 3-line clamp.
+  fullLength?: boolean
 }
 
-export function ImportedContentCard({ content, compact = false, intel }: Props) {
+export function ImportedContentCard({ content, compact = false, intel, fullLength = false }: Props) {
   const platformLabel = PLATFORM_LABELS[content.sourcePlatform]
   const platformColor = PLATFORM_COLORS[content.sourcePlatform]
   const canEmbed      = EMBEDDABLE.has(content.sourcePlatform) && !!content.embedUrl
@@ -127,7 +132,7 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
       ) : null}
 
       {/* Body */}
-      <div className="p-4">
+      <div className={fullLength ? 'p-6 sm:p-8' : 'p-4'}>
         {/* Platform badge + source link */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <span className={`font-body text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${platformColor}`}>
@@ -148,7 +153,7 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
             readers (and crawlers) land on real context instead of a bare
             embed; falls back to the external platform when there's no
             article yet. */}
-        <h3 className={`font-heading font-semibold text-charcoal leading-snug ${compact ? 'text-sm' : 'text-base'}`}>
+        <h3 className={`font-heading font-semibold text-charcoal leading-snug ${compact ? 'text-sm' : fullLength ? 'text-2xl' : 'text-base'}`}>
           {content.title}
         </h3>
         {articleLink && (
@@ -157,11 +162,20 @@ export function ImportedContentCard({ content, compact = false, intel }: Props) 
           </span>
         )}
 
-        {/* Description */}
+        {/* Description — full paragraphs at real length when this is the
+            only piece there is, a 3-line clamp otherwise. */}
         {content.description && !compact && (
-          <p className="font-body text-sm text-muted mt-2 leading-relaxed line-clamp-3">
-            {content.description}
-          </p>
+          fullLength ? (
+            <div className="mt-3 space-y-3">
+              {content.description.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map((p, i) => (
+                <p key={i} className="font-body text-[15px] text-charcoal/80 leading-loose">{p}</p>
+              ))}
+            </div>
+          ) : (
+            <p className="font-body text-sm text-muted mt-2 leading-relaxed line-clamp-3">
+              {content.description}
+            </p>
+          )
         )}
 
         {/* Diary note */}

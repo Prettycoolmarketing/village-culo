@@ -20,8 +20,6 @@ import { StoryGrid } from '../widgets/StoryGrid'
 import { CoverImage } from '../components/ui/CoverImage'
 import { IdeaGrid } from '../widgets/IdeaGrid'
 import { LibraryGrid } from '../widgets/LibraryGrid'
-import { LibraryCard } from '../components/cards/LibraryCard'
-import { getLibraryItems } from '../services/library'
 import { EventGrid } from '../widgets/EventGrid'
 import { BusinessCard } from '../components/cards/BusinessCard'
 import { Badge } from '../components/ui/Badge'
@@ -242,11 +240,6 @@ export function FounderProfilePage() {
   const founderOwnedBusinesses = founder
     ? getBusinesses({ founderId: founder.id }).filter(b => b.name.trim().length > 0)
     : []
-  // Every status except 'archived' is publicly visible for Library items —
-  // same rule LibraryPage/LibraryDetailPage/the bot middleware already use.
-  const founderDigitalProducts = founder
-    ? getLibraryItems({ founderId: founder.id }).filter(i => i.status !== 'archived')
-    : []
   const business           = founder
     ? founderOwnedBusinesses.find(b => b.id === founder.businessId) ?? founderOwnedBusinesses[0]
     : undefined
@@ -333,6 +326,49 @@ export function FounderProfilePage() {
     .map(id => getStories({ publicOnly: true }).find(s => s.id === id))
     .filter((s): s is NonNullable<typeof s> => !!s)
   const hasFeaturedPicks = featuredVideoStories.length > 0
+
+  // A curated founder with no real published Stories yet has nothing else
+  // to lead with — "From Around the Web" is the whole page, so it should
+  // come first. A founder with real Stories/Featured picks already has a
+  // proper lead; From Around the Web then reads as supplementary and
+  // belongs after it, not competing with it for the top of the page.
+  const hasRealStories = getStories({ founderId: founder.id, publicOnly: true }).length > 0
+
+  // Unclaimed curated founders never uploaded their own cover photo — a
+  // shared Culo-branded banner gives the page a real hero instead of an
+  // empty gap, without pretending to be a personal photo.
+  const isUnclaimedCurated = founder.profileStatus === 'village-curated' && !founder.userId
+  const heroImage = founder.coverImage || (isUnclaimedCurated ? '/assets/culo-brand-cover.png' : undefined)
+
+  // A single curated article often IS the entire page for a brand-new
+  // profile — clamping its summary to a few lines the same way a list of
+  // several would reads as withholding when there's nothing else to see.
+  // With just one, show it in full.
+  const importsSection = publicImports.length > 0 && (
+    <section aria-labelledby="founder-imports-heading">
+      <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
+        From Around the Web
+      </h2>
+      <div className="flex flex-col gap-4">
+        {publicImports.slice(0, 5).map(item => (
+          <ImportedContentCard key={item.id} content={item} fullLength={publicImports.length === 1} />
+        ))}
+      </div>
+      {publicImports.length > 5 && (
+        <details className="group mt-4">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-primary hover:underline">
+            <span className="group-open:hidden">View all {publicImports.length} →</span>
+            <span className="hidden group-open:inline">Show fewer</span>
+          </summary>
+          <div className="flex flex-col gap-4 mt-4">
+            {publicImports.slice(5).map(item => (
+              <ImportedContentCard key={item.id} content={item} />
+            ))}
+          </div>
+        </details>
+      )}
+    </section>
+  )
 
   // Series — one shelf per published series this founder runs, each shown
   // with its episodes in order. A series with zero published episodes
@@ -449,9 +485,9 @@ export function FounderProfilePage() {
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section aria-labelledby="founder-name">
-        {founder.coverImage && (
+        {heroImage && (
           <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
-            <CoverImage src={founder.coverImage} alt={`${founder.name}'s cover photo`} className="w-full h-full object-cover opacity-70" loading="eager" />
+            <CoverImage src={heroImage} alt={founder.coverImage ? `${founder.name}'s cover photo` : 'The Culo Village'} className="w-full h-full object-cover opacity-70" loading="eager" />
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent" aria-hidden="true" />
           </div>
         )}
@@ -647,41 +683,12 @@ export function FounderProfilePage() {
             {/* ── Left: Primary content ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
 
-              {/* From Around the Web — a founder's real written articles,
-                  each with its actual source link and a short summary.
-                  Leads the content column, directly under the dark
-                  evidence strip, rather than sitting further down the
-                  page below the Stories grid. */}
-              {publicImports.length > 0 && (
-                <section aria-labelledby="founder-imports-heading">
-                  <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-                    From Around the Web
-                  </h2>
-                  {/* Full card, not the compact list row — a bare title with
-                      no summary read as sparse with only 1-3 real pieces,
-                      which is the common case. Same treatment regardless of
-                      count, so it never needs special-casing later if a
-                      founder ends up with more sources. */}
-                  <div className="flex flex-col gap-4">
-                    {publicImports.slice(0, 5).map(item => (
-                      <ImportedContentCard key={item.id} content={item} />
-                    ))}
-                  </div>
-                  {publicImports.length > 5 && (
-                    <details className="group mt-4">
-                      <summary className="cursor-pointer list-none text-sm font-semibold text-primary hover:underline">
-                        <span className="group-open:hidden">View all {publicImports.length} →</span>
-                        <span className="hidden group-open:inline">Show fewer</span>
-                      </summary>
-                      <div className="flex flex-col gap-4 mt-4">
-                        {publicImports.slice(5).map(item => (
-                          <ImportedContentCard key={item.id} content={item} />
-                        ))}
-                      </div>
-                    </details>
-                  )}
-                </section>
-              )}
+              {/* From Around the Web only leads when it's the only real
+                  content this founder has (no published Stories yet) — a
+                  founder with real Stories/Featured picks gets those first,
+                  and this comes after as supplementary, not competing with
+                  it for the top of the page. See importsSection/hasRealStories. */}
+              {!hasRealStories && importsSection}
 
               {/* Hand-picked featured stories lead the grid (sortBlogsFirst
                   puts story.featured first, which stays in sync with the
@@ -708,6 +715,8 @@ export function FounderProfilePage() {
                 showCTA
                 hideEmpty
               />
+
+              {hasRealStories && importsSection}
 
               {/* Ideas — capped with the rest one "View all" click away
                   (kept in the DOM via a native <details>, so this doesn't
@@ -927,24 +936,6 @@ export function FounderProfilePage() {
                   <div className="flex flex-col gap-4">
                     {founderOwnedBusinesses.map(biz => (
                       <BusinessCard key={biz.id} business={biz} founder={founder} variant="default" />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Digital products — a quick, sidebar-level way to reach
-                  what this founder sells without scrolling all the way
-                  down to the full Library section below. Each card links
-                  straight to that item's own page, which is where the
-                  real purchase links live. */}
-              {founderDigitalProducts.length > 0 && (
-                <section aria-labelledby="founder-products-heading">
-                  <h2 id="founder-products-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-                    Digital Products
-                  </h2>
-                  <div className="flex flex-col gap-3">
-                    {founderDigitalProducts.map(item => (
-                      <LibraryCard key={item.id} item={item} variant="compact" />
                     ))}
                   </div>
                 </section>
