@@ -820,15 +820,30 @@ export function DashboardBulkImportPage() {
               <p className="text-xs text-[#6B7280] mb-3">
                 Research, write and audit a bio for each checked founder below — plus an article for every real source found, whether it was a link on the spreadsheet or one Culo discovered itself. This uses real API calls and can take a while for a large batch.
               </p>
-              {!pipelineRunning && (
-                <button
-                  onClick={() => void handleRunEditorialPipeline([...selectedForPipeline])}
-                  disabled={selectedForPipeline.size === 0}
-                  className="px-5 py-2.5 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] disabled:opacity-40 transition-colors"
-                >
-                  Run research, writing &amp; audit for {selectedForPipeline.size} selected founder{selectedForPipeline.size === 1 ? '' : 's'} →
-                </button>
-              )}
+              {!pipelineRunning && (() => {
+                const failedIds = result.created
+                  .filter(f => !deletedIds.has(f.id) && getFounder(f.id)?.researchStatus === 'failed')
+                  .map(f => f.id)
+                return (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => void handleRunEditorialPipeline([...selectedForPipeline])}
+                      disabled={selectedForPipeline.size === 0}
+                      className="px-5 py-2.5 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] disabled:opacity-40 transition-colors"
+                    >
+                      Run research, writing &amp; audit for {selectedForPipeline.size} selected founder{selectedForPipeline.size === 1 ? '' : 's'} →
+                    </button>
+                    {failedIds.length > 0 && (
+                      <button
+                        onClick={() => void handleRunEditorialPipeline(failedIds)}
+                        className="px-4 py-2.5 bg-white border border-red-300 text-red-600 text-sm font-semibold rounded-xl hover:bg-red-50 transition-colors"
+                      >
+                        Retry {failedIds.length} failed →
+                      </button>
+                    )}
+                  </div>
+                )
+              })()}
               {pipelineProgress && (pipelineRunning || pipelineDone) && (
                 <div className={pipelineRunning ? '' : 'mt-1'}>
                   <p className="text-xs font-semibold text-[#2D2A26] mb-1">
