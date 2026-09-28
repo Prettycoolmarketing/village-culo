@@ -654,23 +654,28 @@ export function FounderProfilePage() {
                   page below the Stories grid. */}
               {publicImports.length > 0 && (
                 <section aria-labelledby="founder-imports-heading">
-                  <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-3">
+                  <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
                     From Around the Web
                   </h2>
-                  <div className="flex flex-col gap-3">
+                  {/* Full card, not the compact list row — a bare title with
+                      no summary read as sparse with only 1-3 real pieces,
+                      which is the common case. Same treatment regardless of
+                      count, so it never needs special-casing later if a
+                      founder ends up with more sources. */}
+                  <div className="flex flex-col gap-4">
                     {publicImports.slice(0, 5).map(item => (
-                      <ImportedContentCard key={item.id} content={item} compact />
+                      <ImportedContentCard key={item.id} content={item} />
                     ))}
                   </div>
                   {publicImports.length > 5 && (
-                    <details className="group mt-3">
+                    <details className="group mt-4">
                       <summary className="cursor-pointer list-none text-sm font-semibold text-primary hover:underline">
                         <span className="group-open:hidden">View all {publicImports.length} →</span>
                         <span className="hidden group-open:inline">Show fewer</span>
                       </summary>
-                      <div className="flex flex-col gap-3 mt-3">
+                      <div className="flex flex-col gap-4 mt-4">
                         {publicImports.slice(5).map(item => (
-                          <ImportedContentCard key={item.id} content={item} compact />
+                          <ImportedContentCard key={item.id} content={item} />
                         ))}
                       </div>
                     </details>
