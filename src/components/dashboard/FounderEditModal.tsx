@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import type { Founder } from '../../types'
 import type { ImportedContent, ImportedContentStatus } from '../../types/importedContent'
-import { updateFounder } from '../../services/founders'
+import { updateFounder, getFounder } from '../../services/founders'
 import { importedContentService } from '../../services/importedContent'
 import { getStory, updateStory } from '../../services/stories'
 import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
@@ -173,23 +173,36 @@ export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder;
         </div>
       )}
 
-      {itemsLoaded && items.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-[#E8E4DD]">
-          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-2">
-            Stage 3 — Auditor (checks each Writer draft against the ledger above)
-          </p>
-          <div className="space-y-2">
-            {items.map(item => (
-              <div key={item.id} className="bg-[#F8F5F0] rounded-lg px-3 py-2">
-                <p className="text-xs font-semibold text-[#2D2A26] mb-1">
-                  {item.type === 'profile_bio' ? 'Profile bio' : item.draft_content?.title ?? 'Article'}
-                </p>
-                <DraftItemCard item={item} auditing={auditingId === item.id} onAudit={() => void handleAudit(item)} />
+      {itemsLoaded && items.length > 0 && (() => {
+        // A clean audit already auto-approves (see runAudit) — showing an
+        // approved item's full text here again is exactly the "overload of
+        // writing on the popup" this collapses. Only what still needs a
+        // human look gets shown, and even that stays behind a closed
+        // dropdown by default rather than always fully expanded.
+        const needsAttention = items.filter(i => i.editorial_status !== 'approved')
+        const approvedCount = items.length - needsAttention.length
+        return (
+          <details className="mt-3 pt-3 border-t border-[#E8E4DD]">
+            <summary className="cursor-pointer text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wide">
+              Stage 3 — Auditor: {approvedCount} approved{needsAttention.length > 0 ? `, ${needsAttention.length} need${needsAttention.length === 1 ? 's' : ''} review` : ''}
+            </summary>
+            {needsAttention.length === 0 ? (
+              <p className="text-xs text-[#9CA3AF] mt-2">Everything here passed clean and is already approved.</p>
+            ) : (
+              <div className="space-y-2 mt-2">
+                {needsAttention.map(item => (
+                  <div key={item.id} className="bg-[#F8F5F0] rounded-lg px-3 py-2">
+                    <p className="text-xs font-semibold text-[#2D2A26] mb-1">
+                      {item.type === 'profile_bio' ? 'Profile bio' : item.draft_content?.title ?? 'Article'}
+                    </p>
+                    <DraftItemCard item={item} auditing={auditingId === item.id} onAudit={() => void handleAudit(item)} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            )}
+          </details>
+        )
+      })()}
     </div>
   )
 }
@@ -719,17 +732,6 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           {saving ? 'Saving…' : 'Save changes'}
         </button>
         {saved && <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>}
-        <Link
-          to={`/founders/${founder.slug}`}
-          target="_blank"
-          className="text-xs font-semibold text-[#9CA3AF] hover:text-[#C86A43] transition-colors ml-auto"
-        >
-          {/* Still a real render of the actual page — not a separate mock-up
-              — but honest about what it is while it's a draft: nobody else
-              can load this URL and see anything yet, only you, in this same
-              browser, because you're the one who just wrote it. */}
-          {founder.status === 'published' ? 'View public profile ↗' : 'Preview (not public yet) ↗'}
-        </Link>
       </div>
     </div>
   )
@@ -747,6 +749,31 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
   const [tick, setTick] = useState(0)
   const [publishing, setPublishing] = useState(false)
   const articleCount = importedContentService.getAll({ founderId: founder.id }).length
+
+  // Edit is what actually triggers a background research run (see
+  // DashboardBulkImportPage's Edit button) — but that run updates the
+  // founder in the shared cache, not this modal's own `current` state,
+  // which was only ever seeded once from the prop at open time. Without
+  // this, a research/write cycle that finishes after the modal is already
+  // open would never be reflected in it at all — the exact "old writing
+  // still in the box" risk this polls to close. Stops once research is no
+  // longer in progress and there's nothing pending to catch up on.
+  useEffect(() => {
+    // Keep polling until research has actually settled — a founder can
+    // open here with no ledger and no researchStatus yet at all (the Edit
+    // click's own background trigger hasn't landed its first update in
+    // the cache the instant the modal mounts), so "not currently
+    // researching" isn't enough of a stop condition on its own.
+    if (current.evidenceLedger && current.researchStatus !== 'researching') return
+    const interval = setInterval(() => {
+      const fresh = getFounder(current.id)
+      if (fresh && (fresh.evidenceLedger !== current.evidenceLedger || fresh.researchStatus !== current.researchStatus)) {
+        setCurrent(fresh)
+        setTick(t => t + 1)
+      }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [current.id, current.researchStatus, current.evidenceLedger])
 
   async function handlePublish() {
     setPublishing(true)
@@ -782,18 +809,29 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
             {/* Publish lives here, inside the review popup, not as a
                 one-click button out on the results list — the whole point
                 of a draft-first import is that someone's actually looked at
-                this before it goes live. */}
+                this before it goes live. Disabled while research is still
+                running for this founder — publishing before a background
+                write has landed would ship whatever old content was there
+                before it, not what's actually about to be written. */}
             {current.status === 'published' ? (
               <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A]/10 text-[#5E6B4A]">Published</span>
             ) : (
               <button
                 onClick={() => void handlePublish()}
-                disabled={publishing}
+                disabled={publishing || current.researchStatus === 'researching'}
+                title={current.researchStatus === 'researching' ? 'Research is still running for this founder — wait for it to finish first' : undefined}
                 className="text-sm font-semibold px-4 py-2 rounded-xl bg-[#5E6B4A] text-white hover:bg-[#4a5538] disabled:opacity-60 transition-colors"
               >
-                {publishing ? 'Publishing…' : 'Publish'}
+                {publishing ? 'Publishing…' : current.researchStatus === 'researching' ? 'Researching…' : 'Publish'}
               </button>
             )}
+            <Link
+              to={`/founders/${current.slug}`}
+              target="_blank"
+              className="text-sm font-semibold px-4 py-2 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+            >
+              Preview ↗
+            </Link>
             <button
               onClick={onClose}
               className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors text-xl leading-none px-1"

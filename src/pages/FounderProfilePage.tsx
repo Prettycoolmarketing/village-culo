@@ -571,12 +571,14 @@ export function FounderProfilePage() {
               )}
             </div>
 
-            <div className="mt-8 max-w-3xl">
-              {/* whitespace-pre-wrap keeps real paragraph breaks a founder
-                  typed instead of collapsing them into one run-on block —
-                  purely a CSS rendering choice, the actual text search
-                  engines and AI systems read is identical either way. */}
-              <p className="font-body text-base text-charcoal/80 leading-loose whitespace-pre-wrap">{founder.bio}</p>
+            <div className="mt-8 max-w-3xl space-y-4">
+              {/* Split on blank lines into real paragraphs instead of one
+                  whitespace-pre-wrap block — a bio with several paragraphs
+                  (a Culo-written one especially) read as one dense run-on
+                  block with no visual break between ideas. */}
+              {founder.bio.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map((p, i) => (
+                <p key={i} className="font-body text-base text-charcoal/80 leading-loose">{p}</p>
+              ))}
             </div>
 
             {founder.topics.length > 0 && (
@@ -644,6 +646,37 @@ export function FounderProfilePage() {
 
             {/* ── Left: Primary content ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
+
+              {/* From Around the Web — a founder's real written articles,
+                  each with its actual source link and a short summary.
+                  Leads the content column, directly under the dark
+                  evidence strip, rather than sitting further down the
+                  page below the Stories grid. */}
+              {publicImports.length > 0 && (
+                <section aria-labelledby="founder-imports-heading">
+                  <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-3">
+                    From Around the Web
+                  </h2>
+                  <div className="flex flex-col gap-3">
+                    {publicImports.slice(0, 5).map(item => (
+                      <ImportedContentCard key={item.id} content={item} compact />
+                    ))}
+                  </div>
+                  {publicImports.length > 5 && (
+                    <details className="group mt-3">
+                      <summary className="cursor-pointer list-none text-sm font-semibold text-primary hover:underline">
+                        <span className="group-open:hidden">View all {publicImports.length} →</span>
+                        <span className="hidden group-open:inline">Show fewer</span>
+                      </summary>
+                      <div className="flex flex-col gap-3 mt-3">
+                        {publicImports.slice(5).map(item => (
+                          <ImportedContentCard key={item.id} content={item} compact />
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </section>
+              )}
 
               {/* Hand-picked featured stories lead the grid (sortBlogsFirst
                   puts story.featured first, which stays in sync with the
@@ -915,32 +948,11 @@ export function FounderProfilePage() {
               {/* Imported content — only the first few show by default; the
                   rest stay rendered in the DOM (just visually collapsed via
                   a native <details>) so search and AI crawlers still see the
-                  whole list. */}
-              {publicImports.length > 0 && (
-                <section aria-labelledby="founder-imports-heading">
-                  <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-3">
-                    From Around the Web
-                  </h2>
-                  <div className="flex flex-col gap-3">
-                    {publicImports.slice(0, 5).map(item => (
-                      <ImportedContentCard key={item.id} content={item} compact />
-                    ))}
-                  </div>
-                  {publicImports.length > 5 && (
-                    <details className="group mt-3">
-                      <summary className="cursor-pointer list-none text-sm font-semibold text-primary hover:underline">
-                        <span className="group-open:hidden">View all {publicImports.length} →</span>
-                        <span className="hidden group-open:inline">Show fewer</span>
-                      </summary>
-                      <div className="flex flex-col gap-3 mt-3">
-                        {publicImports.slice(5).map(item => (
-                          <ImportedContentCard key={item.id} content={item} compact />
-                        ))}
-                      </div>
-                    </details>
-                  )}
-                </section>
-              )}
+                  whole list. Moved to lead the content column, directly
+                  under the dark evidence strip — a founder's actual
+                  written articles (with their real links and a short
+                  summary) belong at the top of the page, not buried below
+                  the Stories grid. */}
 
               {/* Explore Further — aggregated topics/locations across founder's content */}
               {aggregatedIntel && (aggregatedIntel.topics.length > 0 || aggregatedIntel.locations.length > 0) && (

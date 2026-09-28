@@ -196,10 +196,21 @@ export async function runAudit(item: EditorialItemRow): Promise<WriteResult> {
     return { success: false, error: data?.error || (error instanceof Error ? error.message : 'Audit failed.') }
   }
 
+  // A clean pass — zero issues found — goes straight to approved rather
+  // than sitting in "needs review" waiting for a human to confirm what the
+  // Auditor already confirmed. Per direct instruction: a "review" verdict,
+  // or a "pass" that still carries an issue note, still needs a human's
+  // eyes; only a genuinely clean pass skips that step, to keep the
+  // Editorial research panel from filling up with items that don't
+  // actually need attention.
+  const finalStatus = data.result.verdict === 'pass' && data.result.issues.length === 0
+    ? 'approved'
+    : data.result.verdict
+
   const { data: updated, error: dbError } = await supabase
     .from('editorial_items')
     .update({
-      editorial_status: data.result.verdict,
+      editorial_status: finalStatus,
       auditor_notes: data.result.issues,
       last_verified_at: new Date().toISOString(),
     })
