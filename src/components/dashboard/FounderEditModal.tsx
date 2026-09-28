@@ -101,10 +101,23 @@ export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder;
     ? ledger.claims.filter(c => !c.human_review && gateReasons.some(r => r.includes(`"${c.claim}"`))).length
     : 0
 
+  // Not a step staff need to act on before publishing — the real
+  // confirmation is staff reading the finished bio/article boxes and
+  // choosing to publish. This is reference notes: proof the research and
+  // audit ran, and what they found, there to check back on if something
+  // ever looks off, not a gate in front of the actual work. Collapsed by
+  // default so it doesn't compete with the writing itself for attention.
+  const summaryText = !ledger
+    ? (status === 'researching' ? 'Researching…' : 'Not yet researched')
+    : gatePassed ? 'Researched · nothing flagged' : `Researched · ${unreviewedBlockingCount > 0 ? `${unreviewedBlockingCount} item${unreviewedBlockingCount === 1 ? '' : 's'} flagged` : 'reviewed'}`
+
   return (
-    <div className="bg-white border border-[#E8E4DD] rounded-lg px-3 py-3">
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <p className={LABEL_CLS}>Editorial research (Stage 1 — Researcher)</p>
+    <details className="bg-white border border-[#E8E4DD] rounded-lg px-3 py-3">
+      <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
+        <span className={LABEL_CLS}>Editorial research &amp; audit notes — {summaryText}</span>
+        <span className="text-[10px] text-[#9CA3AF] shrink-0">▾</span>
+      </summary>
+      <div className="flex items-center justify-end mt-2 mb-2">
         <button
           onClick={() => void handleRun()}
           disabled={running || status === 'researching'}
@@ -203,7 +216,7 @@ export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder;
           </details>
         )
       })()}
-    </div>
+    </details>
   )
 }
 
