@@ -9,6 +9,7 @@ import { Badge } from '../components/ui/Badge'
 import { LibraryCard } from '../components/cards/LibraryCard'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { normalizeUrl } from '../utils/url'
+import { formatLocationLabel } from '../utils/location'
 
 // ─── Provider button label ──────────────────────────────────────────────────────
 
@@ -421,7 +422,7 @@ export function LibraryDetailPage() {
                     {item.location && (
                       <div>
                         <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Created in</dt>
-                        <dd className="text-charcoal">{item.location.name}, {item.location.state}</dd>
+                        <dd className="text-charcoal">{formatLocationLabel(item.location)}</dd>
                       </div>
                     )}
                     {item.topics.length > 0 && (

@@ -28,6 +28,7 @@ import { InnerContainer }   from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType, Story } from '../types'
 import { normalizeUrl, isDirectAudioUrl } from '../utils/url'
+import { formatLocationLabel } from '../utils/location'
 
 const DISCLOSURE_TYPE_LABELS: Record<string, string> = {
   affiliate:          'Affiliate Relationship',
@@ -511,7 +512,7 @@ export function StoryDetailPage() {
                   <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                     <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                   </svg>
-                  {story.location.name}, {story.location.state}
+                  {formatLocationLabel(story.location)}
                 </span>
                 <span>{story.industry.name}</span>
                 <time
@@ -1083,7 +1084,7 @@ export function StoryDetailPage() {
                   )}
                   <div>
                     <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Location</dt>
-                    <dd className="text-charcoal">{story.location.name}, {story.location.state}</dd>
+                    <dd className="text-charcoal">{formatLocationLabel(story.location)}</dd>
                   </div>
                   <div>
                     <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1">Industry</dt>

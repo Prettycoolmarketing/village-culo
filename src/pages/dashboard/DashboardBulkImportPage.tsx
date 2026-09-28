@@ -714,8 +714,8 @@ export function DashboardBulkImportPage() {
             onChange={v => setOptions(o => ({ ...o, runIntelligence: v }))}
           />
           <OptionToggle
-            label="Create linked businesses"
-            description="Create Business records for any businesses included in the JSON and link them to the founder."
+            label="Create linked business pages"
+            description="Off by default — a curated business rarely has enough real content for its own page. The business name is always kept on the founder's record either way; turn this on only for a batch where the business genuinely has enough to show a real page."
             checked={options.createBusinesses}
             onChange={v => setOptions(o => ({ ...o, createBusinesses: v }))}
           />

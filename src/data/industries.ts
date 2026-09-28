@@ -14,7 +14,14 @@ export const industries: Industry[] = [
   { id: 'design',           slug: 'design',           name: 'Design & Creative' },
   { id: 'technology',       slug: 'technology',       name: 'Technology & Software' },
   { id: 'hospitality',      slug: 'hospitality',      name: 'Hospitality & Food' },
-  { id: 'fitness',          slug: 'fitness',          name: 'Fitness & Wellness' },
+  // Split from a single combined "Fitness & Wellness" entry — the word
+  // "wellness" alone (a mindfulness coach, a wellness podcast host with no
+  // training/movement focus) was matching this via plain word overlap and
+  // getting tagged as fitness, which isn't what they do. Keep them as two
+  // real, separate industries; a founder who's genuinely both gets matched
+  // to whichever their own words actually emphasise.
+  { id: 'fitness',          slug: 'fitness',          name: 'Fitness' },
+  { id: 'wellness',         slug: 'wellness',         name: 'Wellness' },
   { id: 'real-estate',      slug: 'real-estate',      name: 'Real Estate & Property' },
   { id: 'education',        slug: 'education',        name: 'Education & Training' },
   { id: 'retail',           slug: 'retail',           name: 'Retail & E-commerce' },

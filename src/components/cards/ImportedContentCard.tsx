@@ -7,18 +7,39 @@ import { normalizeUrl } from '../../utils/url'
 
 const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok'])
 
+// Fallback-image tint per platform — with no real thumbnail, every card
+// reuses the same shared Culo brand photo (see below), which reads as an
+// obvious duplicate the moment two land side by side. A platform-tinted
+// gradient over the same base image keeps the branding consistent while
+// still visually distinguishing each card, so a row of them reads as
+// designed rather than as one photo copy-pasted twice.
+const PLATFORM_TINT: Record<string, string> = {
+  youtube:    'from-red-900/50 via-red-900/10',
+  instagram:  'from-fuchsia-900/50 via-fuchsia-900/10',
+  linkedin:   'from-sky-900/50 via-sky-900/10',
+  tiktok:     'from-neutral-900/60 via-neutral-900/10',
+  podcast:    'from-violet-900/50 via-violet-900/10',
+  website:    'from-primary/50 via-primary/10',
+  vimeo:      'from-cyan-900/50 via-cyan-900/10',
+  url:        'from-primary/50 via-primary/10',
+  etsy:       'from-orange-900/50 via-orange-900/10',
+}
+
 interface Props {
   content: ImportedContent
   compact?: boolean
   intel?: VillageContentIntelligence
   // A single article is often the whole page for a brand-new curated
-  // profile — a bigger, more prominent card (larger title, more padding,
-  // a longer summary) instead of the same small treatment used for one
-  // of several. Still a summary, not the raw article text.
-  fullLength?: boolean
+  // profile — a bigger, more prominent card (larger title, more padding, a
+  // longer summary) than one of several. 'featured' (1 article, fills the
+  // page on its own) gets the biggest treatment, 'large' (2-3, sharing a
+  // row evenly) a step down, 'default' (4+, stacked) the original compact
+  // size. Still always a summary, never the raw article text.
+  size?: 'default' | 'large' | 'featured'
 }
 
-export function ImportedContentCard({ content, compact = false, intel, fullLength = false }: Props) {
+export function ImportedContentCard({ content, compact = false, intel, size = 'default' }: Props) {
+  const fullLength    = size === 'featured'
   const platformLabel = PLATFORM_LABELS[content.sourcePlatform]
   const platformColor = PLATFORM_COLORS[content.sourcePlatform]
   const canEmbed      = EMBEDDABLE.has(content.sourcePlatform) && !!content.embedUrl
@@ -138,6 +159,7 @@ export function ImportedContentCard({ content, compact = false, intel, fullLengt
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
           />
+          <div className={`absolute inset-0 bg-gradient-to-t ${PLATFORM_TINT[content.sourcePlatform] ?? PLATFORM_TINT.website} to-transparent`} aria-hidden="true" />
           <span className={`absolute bottom-2 left-2 font-body text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${platformColor}`}>
             {platformLabel}
           </span>
@@ -145,7 +167,7 @@ export function ImportedContentCard({ content, compact = false, intel, fullLengt
       ) : null}
 
       {/* Body */}
-      <div className={fullLength ? 'p-6 sm:p-8' : 'p-4'}>
+      <div className={fullLength ? 'p-6 sm:p-8' : size === 'large' ? 'p-5' : 'p-4'}>
         {/* Platform badge + source link */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <span className={`font-body text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${platformColor}`}>
@@ -166,7 +188,7 @@ export function ImportedContentCard({ content, compact = false, intel, fullLengt
             readers (and crawlers) land on real context instead of a bare
             embed; falls back to the external platform when there's no
             article yet. */}
-        <h3 className={`font-heading font-semibold text-charcoal leading-snug ${compact ? 'text-sm' : fullLength ? 'text-2xl' : 'text-base'}`}>
+        <h3 className={`font-heading font-semibold text-charcoal leading-snug ${compact ? 'text-sm' : fullLength ? 'text-2xl' : size === 'large' ? 'text-lg' : 'text-base'}`}>
           {content.title}
         </h3>
         {articleLink && (
@@ -176,9 +198,9 @@ export function ImportedContentCard({ content, compact = false, intel, fullLengt
         )}
 
         {/* Description — still a summary, not the full raw text, but a
-            bigger card (the only piece there is) earns a longer one. */}
+            bigger card (fewer of them sharing the page) earns a longer one. */}
         {content.description && !compact && (
-          <p className={`font-body text-sm text-muted mt-2 leading-relaxed ${fullLength ? 'line-clamp-6' : 'line-clamp-3'}`}>
+          <p className={`font-body text-sm text-muted mt-2 leading-relaxed ${fullLength ? 'line-clamp-6' : size === 'large' ? 'line-clamp-4' : 'line-clamp-3'}`}>
             {content.description}
           </p>
         )}

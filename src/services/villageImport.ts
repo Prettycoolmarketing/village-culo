@@ -241,6 +241,16 @@ function buildSupplementaryNotes(f: VillageImportFounder, adminNotes?: string): 
   if (f.sourceLinks && f.sourceLinks.length > 0) {
     parts.push(`SOURCE LINKS: ${f.sourceLinks.join(', ')}`)
   }
+  // Business names/websites are identifying information worth keeping on
+  // the founder record — helps staff recognise who this is and helps
+  // matching content to the right brand — but curated founders no longer
+  // get a real public Business page built for them (see createBusinesses
+  // default): a page with almost no real content of its own reads as
+  // unfinished, and it's the founder's own to build once they claim.
+  if (f.businesses && f.businesses.length > 0) {
+    const bz = f.businesses.map(b => `${b.name}${b.website ? ` (${b.website})` : ''}`).join(' | ')
+    parts.push(`BUSINESS (name only, no page created — founder can add their own on claim): ${bz}`)
+  }
   return parts.length > 0 ? parts.join('\n') : undefined
 }
 

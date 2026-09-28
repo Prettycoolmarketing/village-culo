@@ -167,7 +167,15 @@ export const DEFAULT_IMPORT_OPTIONS: VIFImportOptions = {
   // by default.
   publishContent: false,
   runIntelligence: true,
-  createBusinesses: true,
+  // Off by default — a curated founder's business rarely has enough real
+  // content behind it (no real description, no offers, often no logo) to
+  // justify its own public page; it reads as unfinished rather than
+  // credible. The business name/website is still kept on the founder's own
+  // record for identification (see buildSupplementaryNotes' BUSINESS line)
+  // — the founder builds their real business page themselves once they
+  // claim their profile. Staff can still tick this on per-batch when a
+  // business genuinely has enough to show.
+  createBusinesses: false,
   overwriteDuplicates: false,
   skipDuplicates: true,
   autoPublishAsStories: true,

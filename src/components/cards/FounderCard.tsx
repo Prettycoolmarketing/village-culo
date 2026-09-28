@@ -4,6 +4,7 @@ import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
 import { normalizeUrl } from '../../utils/url'
 import { publisherPartnerProfileService } from '../../services/partnership'
+import { formatLocationLabel } from '../../utils/location'
 
 // Compact discoverability row — a story page is often the only page an AI
 // crawler or a reader ever lands on for this founder, so it needs a real
@@ -116,7 +117,7 @@ export function FounderCard({ founder, business, variant = 'default', className 
               <svg className="w-3.5 h-3.5 text-primary/60" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
-              <span>{founder.location.name}, {founder.location.state}</span>
+              <span>{formatLocationLabel(founder.location)}</span>
             </span>
             <span className="text-border">·</span>
             <span>{founder.industry.name}</span>

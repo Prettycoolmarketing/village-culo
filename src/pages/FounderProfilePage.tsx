@@ -26,6 +26,7 @@ import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
+import { formatLocationLabel } from '../utils/location'
 
 // ─── Social icons ────────────────────────────────────────────────────────────────
 
@@ -279,7 +280,9 @@ export function FounderProfilePage() {
       ...(business ? { affiliation: { '@type': 'Organization', name: business.name } } : {}),
       homeLocation: {
         '@type': 'Place',
-        name: `${founder.location.name}, ${founder.location.state}, Australia`,
+        // Real city: "City, State, Australia". Unmatched fallback: name is
+        // already just "Australia" — don't repeat it (see formatLocationLabel).
+        name: founder.location.state ? `${formatLocationLabel(founder.location)}, Australia` : formatLocationLabel(founder.location),
       },
     } : undefined,
   })
@@ -343,11 +346,15 @@ export function FounderProfilePage() {
   // A single curated article often IS the entire page for a brand-new
   // profile — clamping its summary to a few lines the same way a list of
   // several would reads as withholding when there's nothing else to see.
-  // With just one, show it in full.
-  // 1 article: one wide, prominent card. 2: side by side, evenly split.
-  // 3+: back to a stacked single column — a grid stops reading as
-  // considered once it doesn't fill evenly.
-  const importsLayoutClass = publicImports.length === 2 ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'flex flex-col gap-4'
+  // With just one, show it in full. 1 article: one wide, prominent card.
+  // 2 or 3: an evenly-split row, each still bigger than the plain list
+  // treatment. 4+: back to a stacked single column — a grid stops reading
+  // as considered once it doesn't fill evenly.
+  const importsLayoutClass =
+    publicImports.length === 2 ? 'grid grid-cols-1 sm:grid-cols-2 gap-6' :
+    publicImports.length === 3 ? 'grid grid-cols-1 sm:grid-cols-3 gap-6' :
+    'flex flex-col gap-4'
+  const importsCardSize = publicImports.length === 1 ? 'featured' : publicImports.length <= 3 ? 'large' : 'default'
   const importsSection = publicImports.length > 0 && (
     <section aria-labelledby="founder-imports-heading">
       <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
@@ -355,7 +362,7 @@ export function FounderProfilePage() {
       </h2>
       <div className={importsLayoutClass}>
         {publicImports.slice(0, 5).map(item => (
-          <ImportedContentCard key={item.id} content={item} fullLength={publicImports.length === 1} />
+          <ImportedContentCard key={item.id} content={item} size={importsCardSize} />
         ))}
       </div>
       {publicImports.length > 5 && (
@@ -526,7 +533,7 @@ export function FounderProfilePage() {
                     <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                       <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
-                    {founder.location.name}, {founder.location.state}, Australia
+                    {founder.location.state ? `${formatLocationLabel(founder.location)}, Australia` : formatLocationLabel(founder.location)}
                   </p>
                   {/* /speaker is a bespoke page authored for Shakas specifically
                       (not a generic per-founder feature), so this link is
@@ -679,20 +686,26 @@ export function FounderProfilePage() {
         </InnerContainer>
       </section>
 
+      {/* From Around the Web only leads when it's the only real content this
+          founder has (no published Stories yet) — full page width rather
+          than confined to the 2/3-width content column below, since the
+          sidebar next to it has nothing of its own to show yet for a
+          brand-new curated profile. A founder with real Stories/Featured
+          picks gets those first, and this comes after as supplementary
+          instead, nested in the normal content column (see further down). */}
+      {!hasRealStories && importsSection && (
+        <div className="pt-14 md:pt-16">
+          <InnerContainer>{importsSection}</InnerContainer>
+        </div>
+      )}
+
       {/* ── Main content + sidebar ───────────────────────────────────────────── */}
-      <div className="py-14 md:py-16">
+      <div className={hasRealStories ? 'py-14 md:py-16' : 'pb-14 md:pb-16'}>
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14">
 
             {/* ── Left: Primary content ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
-
-              {/* From Around the Web only leads when it's the only real
-                  content this founder has (no published Stories yet) — a
-                  founder with real Stories/Featured picks gets those first,
-                  and this comes after as supplementary, not competing with
-                  it for the top of the page. See importsSection/hasRealStories. */}
-              {!hasRealStories && importsSection}
 
               {/* Hand-picked featured stories lead the grid (sortBlogsFirst
                   puts story.featured first, which stays in sync with the

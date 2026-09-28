@@ -4,6 +4,7 @@ import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
 import { CoverImage } from '../ui/CoverImage'
 import { contentTypeLabel } from '../../utils/slugify'
+import { formatLocationLabel } from '../../utils/location'
 
 interface StoryCardProps {
   story: Story
@@ -86,7 +87,7 @@ export function StoryCard({
               <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
-              <span>{story.location.name}, {story.location.state}</span>
+              <span>{formatLocationLabel(story.location)}</span>
             </span>
           </div>
         </Link>
