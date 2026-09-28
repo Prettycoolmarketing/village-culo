@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getFounder } from './founders'
 import { passesRiskGate } from './editorialEngine'
 import type { EvidenceLedger } from '../types/editorialEngine'
+import type { Founder } from '../types'
 
 // Culo Editorial Engine, Sprint 2 — Stage 2 (Writer). Directly against the
 // editorial_items table (no local cache layer yet — this is a low-volume,
@@ -241,4 +242,20 @@ export async function writeSourceArticle(
     .single()
   if (dbError || !data) return { success: false, error: dbError?.message ?? 'Could not save draft.' }
   return { success: true, item: data as EditorialItemRow }
+}
+
+// A real status readout built only from what the data already records —
+// not a background job queue. Nothing in this pipeline runs unattended
+// yet: research, writing and auditing each still need a staff member's
+// browser tab open to trigger them. Shared between the Editorial Queue's
+// Pipeline Status board and each founder row in Bulk Import, so staff can
+// see where a founder sits without expanding anything.
+export function pipelineStage(founder: Founder, founderItems: EditorialItemRow[]): { label: string; color: string } {
+  if (founder.researchStatus === 'researching') return { label: 'Researching…', color: 'bg-blue-50 text-blue-700' }
+  if (founder.researchStatus === 'failed') return { label: 'Research failed', color: 'bg-red-50 text-red-600' }
+  if (!founder.evidenceLedger) return { label: 'Not started', color: 'bg-[#F3EDE6] text-[#9CA3AF]' }
+  if (founderItems.length === 0) return { label: 'Researched — ready to write', color: 'bg-blue-50 text-blue-700' }
+  if (founderItems.some(i => i.editorial_status === 'approved')) return { label: 'Approved — ready to publish', color: 'bg-[#3E6E92]/10 text-[#3E6E92]' }
+  if (founderItems.every(i => i.editorial_status === 'pending')) return { label: 'Written — awaiting audit', color: 'bg-amber-50 text-amber-700' }
+  return { label: 'Audited — awaiting CAPO review', color: 'bg-amber-50 text-amber-700' }
 }

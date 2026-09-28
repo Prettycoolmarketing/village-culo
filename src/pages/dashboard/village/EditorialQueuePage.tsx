@@ -6,6 +6,7 @@ import {
   approveItem,
   approveAllPassing,
   rejectItem,
+  pipelineStage,
   type EditorialItemRow,
 } from '../../../services/editorialItems'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
@@ -124,25 +125,6 @@ function QueueRow({ item, founder, onChanged, onOpenFounder }: { item: Editorial
       )}
     </div>
   )
-}
-
-// A real status readout built only from what the data already records —
-// not a background job queue. Nothing in this pipeline runs unattended
-// yet: research, writing and auditing each still need a staff member's
-// browser tab open to trigger them (see runFounderResearch,
-// writeProfileBio/writeSourceArticle, runAudit). A true async queue would
-// need a scheduled worker (e.g. pg_cron driving the Edge Functions
-// directly) that doesn't exist in this stack — this board is honest about
-// that: it's "where does each founder sit right now," not "what's
-// running in the background."
-function pipelineStage(founder: Founder, founderItems: EditorialItemRow[]): { label: string; color: string } {
-  if (founder.researchStatus === 'researching') return { label: 'Researching…', color: 'bg-blue-50 text-blue-700' }
-  if (founder.researchStatus === 'failed') return { label: 'Research failed', color: 'bg-red-50 text-red-600' }
-  if (!founder.evidenceLedger) return { label: 'Not started', color: 'bg-[#F3EDE6] text-[#9CA3AF]' }
-  if (founderItems.length === 0) return { label: 'Researched — ready to write', color: 'bg-blue-50 text-blue-700' }
-  if (founderItems.some(i => i.editorial_status === 'approved')) return { label: 'Approved — ready to publish', color: 'bg-[#3E6E92]/10 text-[#3E6E92]' }
-  if (founderItems.every(i => i.editorial_status === 'pending')) return { label: 'Written — awaiting audit', color: 'bg-amber-50 text-amber-700' }
-  return { label: 'Audited — awaiting CAPO review', color: 'bg-amber-50 text-amber-700' }
 }
 
 function PipelineStatusBoard({ items }: { items: EditorialItemRow[] }) {

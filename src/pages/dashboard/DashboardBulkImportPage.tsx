@@ -9,7 +9,7 @@ import { getFounder, deleteFounderAccount, updateFounder } from '../../services/
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
 import { runFounderResearch } from '../../services/editorialResearch'
-import { writeProfileBio, writeSourceArticle, runAudit, approveAllPassing } from '../../services/editorialItems'
+import { writeProfileBio, writeSourceArticle, runAudit, approveAllPassing, getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../services/editorialItems'
 import { importedContentService } from '../../services/importedContent'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import type { Founder } from '../../types'
@@ -164,6 +164,17 @@ export function DashboardBulkImportPage() {
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
   const [deletedIds, setDeletedIds]         = useState<Set<string>>(new Set())
   const [resultTick, setResultTick]         = useState(0)
+  // Status pill per row ("Researching…", "Written — awaiting audit", etc.)
+  // so staff can see where each founder sits without expanding anything.
+  // Re-fetched whenever resultTick bumps (every write/audit/publish action
+  // already bumps it), so it stays live while a background pipeline run
+  // works through the list.
+  const [editorialItemsAll, setEditorialItemsAll] = useState<EditorialItemRow[]>([])
+  const [editorialItemsLoaded, setEditorialItemsLoaded] = useState(-1)
+  if (editorialItemsLoaded !== resultTick) {
+    setEditorialItemsLoaded(resultTick)
+    void getAllEditorialItems().then(setEditorialItemsAll)
+  }
   // Defaults on — the whole point of importing a batch through the
   // editorial engine rather than the old deterministic templates is real,
   // researched content, so that should be the normal path, not something
@@ -876,6 +887,14 @@ export function DashboardBulkImportPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-[#2D2A26]">{f.name}</p>
                             <Pill label={live?.status === 'published' ? 'Published' : 'Draft — not public yet'} color={live?.status === 'published' ? 'green' : 'amber'} />
+                            {live && (live.researchStatus || live.evidenceLedger) && (() => {
+                              const stage = pipelineStage(live, editorialItemsAll.filter(i => i.founder_id === f.id))
+                              return (
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${stage.color}`}>
+                                  {stage.label}
+                                </span>
+                              )
+                            })()}
                           </div>
                           <p className="text-[10px] text-[#9CA3AF] font-mono">/founders/{f.slug}</p>
                           <div className="flex flex-wrap items-center gap-3 mt-2" onClick={e => e.stopPropagation()}>

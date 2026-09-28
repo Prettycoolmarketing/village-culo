@@ -30,13 +30,14 @@ export function DraftBody({ body, className = 'text-xs text-[#6B7280]' }: { body
   )
 }
 
-// Culo Editorial Engine — Stage 1 (Researcher) and Stage 3 (Auditor) live
-// here, in Bulk Import, next to the JSON that started the whole chain — not
-// inside the general Founder edit modal, which every founder (self-signup
-// included) passes through. Stage 2 (Writer) is deliberately elsewhere: see
-// BioDraftBlock in ProfileTab and the per-item block in ArticleRow, since
-// writing a bio or an article belongs with the bio/article it's writing,
-// not with the research/audit control panel.
+// Culo Editorial Engine — Stage 1 (Researcher) and Stage 3 (Auditor)
+// status, claims and Confirm actions. Shown both here in the Founder edit
+// modal (so staff can see research running and confirm claims without
+// leaving it — Edit is what triggers research, see DashboardBulkImportPage)
+// and in Bulk Import's own per-row panel, next to the JSON that started the
+// chain. Stage 2 (Writer) stays elsewhere: see BioDraftBlock in ProfileTab
+// and the per-item block in ArticleRow, since writing a bio or an article
+// belongs with the bio/article it's writing, not with this control panel.
 export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder; onSaved: (f: Founder) => void }) {
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -664,6 +665,13 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           onChange={e => setBio(e.target.value)}
         />
       </div>
+
+      {/* Research (Stage 1) and Audit (Stage 3) status, claims and Confirm
+          actions live here too now — not just in Bulk Import — since Edit
+          is what actually triggers research (see DashboardBulkImportPage's
+          Edit button), staff need to see it's running and confirm claims
+          without leaving this modal. */}
+      <EditorialResearchPanel founder={founder} onSaved={onSaved} />
 
       <BioDraftBlock founder={founder} onUseBio={setBio} />
 
