@@ -8,8 +8,10 @@ import { pullVisibleRows } from './entityStore'
 // Partnership Operating System) — RLS returns only what this session can see for
 // each table, whether that's "my own rows", "my own + public rows", or (for an
 // admin) the full Village HQ queue.
+// founders is intentionally NOT in this fixed list — see
+// syncUserDataFromSupabase, which picks the raw table or founders_safe
+// per-call depending on whether this session is CAPO staff.
 const SYNCED_TABLES: Array<{ table: string; cacheKey: string }> = [
-  { table: 'founders',                       cacheKey: 'founders' },
   { table: 'businesses',                     cacheKey: 'businesses' },
   { table: 'stories',                        cacheKey: 'stories' },
   { table: 'series',                         cacheKey: 'series' },
@@ -45,7 +47,18 @@ const SYNCED_TABLES: Array<{ table: string; cacheKey: string }> = [
 
 // RLS scopes every table's result to what this session can see, so no userId param
 // is needed — see the SYNCED_TABLES comment above.
-export async function syncUserDataFromSupabase(): Promise<void> {
+//
+// founders is the one exception: it needs to know the caller's own role,
+// not just RLS. A regular founder — even reading their OWN claimed
+// record — must never see evidenceLedger/researchStatus/claimNotes; those
+// are CAPO-internal, not something a founder manages or should even know
+// exists. Only CAPO staff (is_village_admin()) read the raw table; every
+// other signed-in session reads founders_safe, same as an anonymous
+// visitor (see publicSync.ts and migration 042_founders_safe_view.sql).
+export async function syncUserDataFromSupabase(isCapoStaff: boolean): Promise<void> {
   if (!supabase) return
-  await Promise.all(SYNCED_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey)))
+  await Promise.all([
+    pullVisibleRows(isCapoStaff ? 'founders' : 'founders_safe', 'founders'),
+    ...SYNCED_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey)),
+  ])
 }

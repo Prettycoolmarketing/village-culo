@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { syncUserDataFromSupabase } from '../lib/sync'
+import { syncPublishedContent } from '../lib/publicSync'
 import type { User } from '@supabase/supabase-js'
 
 /**
@@ -95,15 +96,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) setUser(await toAuthUser(session.user))
+      if (session?.user) {
+        const restoredUser = await toAuthUser(session.user)
+        setUser(restoredUser)
+        // onAuthStateChange's SIGNED_IN branch doesn't fire for a session
+        // restored from storage on a plain reload — without this, a CAPO
+        // staff member's 'founders' cache would only ever get the full
+        // table at the moment they originally signed in, then silently
+        // fall back to founders_safe (the same stripped view a visitor
+        // gets) on every reload after, since syncPublishedContent() always
+        // runs unconditionally on mount too. Re-sync here so a reload
+        // gives staff the same real data a fresh sign-in would.
+        //
+        // Both this call and App.tsx's unconditional syncPublishedContent()
+        // write the same 'founders' cache key (full table vs. founders_safe)
+        // and pullVisibleRows does a full replace — whichever settles last
+        // wins. Awaiting the same memoized public-sync promise first makes
+        // the order explicit: the public pull always lands, then (for CAPO
+        // staff) this admin pull always overwrites it last, deterministically.
+        void syncPublishedContent().finally(() => {
+          void syncUserDataFromSupabase(STAFF_ROLES.includes(restoredUser.role))
+        })
+      }
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       void (async () => {
-        setUser(session?.user ? await toAuthUser(session.user) : null)
+        const nextUser = session?.user ? await toAuthUser(session.user) : null
+        setUser(nextUser)
         if (event === 'SIGNED_IN' && session?.user) {
-          void syncUserDataFromSupabase()
+          // See the getSession() branch above for why this awaits the
+          // shared public-sync promise first instead of racing it.
+          void syncPublishedContent().finally(() => {
+            void syncUserDataFromSupabase(!!nextUser && STAFF_ROLES.includes(nextUser.role))
+          })
         }
       })()
     })

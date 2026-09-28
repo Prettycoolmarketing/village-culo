@@ -8,7 +8,11 @@ import { villageSettingsService } from '../services/villageSettings'
 const PUBLIC_TABLES: Array<{ table: string; cacheKey: string }> = [
   { table: 'stories',                      cacheKey: 'stories' },
   { table: 'series',                       cacheKey: 'series' },
-  { table: 'founders',                     cacheKey: 'founders' },
+  // founders_safe, not the raw table — strips editorial-engine-internal
+  // fields (evidenceLedger, researchStatus/*At, claimNotes) that RLS
+  // alone can't hide, since RLS is row-level and founders.data is one
+  // JSONB blob. See migration 042_founders_safe_view.sql.
+  { table: 'founders_safe',                cacheKey: 'founders' },
   { table: 'businesses',                   cacheKey: 'businesses' },
   { table: 'library_items',                cacheKey: 'library' },
   { table: 'services',                     cacheKey: 'services' },
@@ -21,14 +25,28 @@ const PUBLIC_TABLES: Array<{ table: string; cacheKey: string }> = [
   { table: 'editorial_features',           cacheKey: 'editorial_features' },
 ]
 
-// Called once on app init so Village public pages show real Supabase data, not just
-// whatever was last cached locally. Never falls back to static seed data — an empty
-// result here just means the public cache stays whatever it already was/empty.
-export async function syncPublishedContent(): Promise<void> {
+async function runPublicSync(): Promise<void> {
   if (!supabase) return
 
   await Promise.all(PUBLIC_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey)))
 
   const { data, error } = await supabase.from('village_settings').select('data').eq('id', 'default').maybeSingle()
   if (!error && data) villageSettingsService.cacheFromRemote(data.data as Partial<import('../types/villageSettings').VillageSettings>)
+}
+
+// Both this (App.tsx, unconditional on every mount, for anonymous visitors
+// and regular founders alike) and AuthContext's CAPO-only founders pull
+// write to the same 'founders' cache key — one with founders_safe, one
+// with the raw table — and pullVisibleRows does a full replace, so
+// whichever settles LAST wins. Two independent calls racing on the
+// network would make that non-deterministic: a CAPO session could end up
+// with the stripped view depending on which network request happened to
+// finish last. A single shared, memoized promise makes the ordering
+// explicit instead: everyone awaits the exact same public-sync call, so
+// AuthContext's admin pull (see src/lib/sync.ts) can simply await this
+// first and then always be the one to write last when it applies.
+let publicSyncPromise: Promise<void> | null = null
+export function syncPublishedContent(): Promise<void> {
+  if (!publicSyncPromise) publicSyncPromise = runPublicSync()
+  return publicSyncPromise
 }
