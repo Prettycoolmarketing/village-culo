@@ -309,6 +309,19 @@ export function DashboardBulkImportPage() {
     const writtenIds: string[] = []
     for (let i = 0; i < targets.length; i++) {
       const f = targets[i]!
+      // Skip a founder that's already been researched — matches the Edit
+      // button's own guard. Without this, pressing "Run selected" a second
+      // time (the same founders often stay checked) silently re-ran the
+      // whole pipeline on top of itself: duplicate bio/article drafts,
+      // duplicate audits, real API spend for nothing new. Re-running a
+      // specific founder on purpose still works from "Re-run research"
+      // inside their own edit modal — a deliberate single action, not
+      // something a bulk button should do by accident.
+      const live = getFounder(f.id)
+      if (live?.evidenceLedger) {
+        setPipelineProgress({ done: i + 1, total: targets.length, note: `${f.name}: already researched, skipped` })
+        continue
+      }
       // Never gated on having pre-linked content — a founder curated from
       // a spreadsheet with no links yet still gets researched from their
       // name and whatever identity hints exist (see runFounderResearch).

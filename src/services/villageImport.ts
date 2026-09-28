@@ -920,6 +920,17 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
       // Content
       if (f.content && f.content.length > 0) {
+        // Only reached when overwriting an existing founder (skipDuplicates
+        // already `continue`d above otherwise) — re-importing the same
+        // batch used to always insert a fresh row per link, since
+        // buildDraftImport hands out a new crypto.randomUUID() regardless
+        // of whether this founder already has a row for that exact URL.
+        // Match by originalUrl first so overwrite genuinely means
+        // "update," not "duplicate every article on every re-run."
+        const existingContentByUrl = existingFounder
+          ? new Map(importedContentService.getAll({ founderId }).map(c => [c.originalUrl, c]))
+          : undefined
+
         for (const [contentIndex, c] of f.content.entries()) {
           if (!c.url || !isValidUrl(c.url)) continue
 
@@ -927,7 +938,8 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
             ? (c.status ?? 'published')
             : 'draft'
 
-          const draft = buildDraftImport(founderId, c.url)
+          const existingMatch = existingContentByUrl?.get(c.url)
+          const draft = existingMatch ?? buildDraftImport(founderId, c.url)
 
           // Find matching business by name
           let contentBizId: string | undefined
@@ -950,8 +962,14 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
 
           const item: ImportedContent = {
             ...draft,
-            title:      itemTitle,
-            description: c.description || generatedItemBody || draft.description,
+            // An existing match keeps its own title/description exactly as
+            // they are — never regenerated from the deterministic template
+            // on re-import. Whatever's there (a founder's own edit, or a
+            // Culo-written article synced in by the editorial engine) is
+            // the real content now; re-importing the same spreadsheet link
+            // must never silently revert it.
+            title:      existingMatch ? draft.title : itemTitle,
+            description: existingMatch ? draft.description : (c.description || generatedItemBody || draft.description),
             businessId: contentBizId ?? (primaryBusinessId || undefined),
             status:     contentStatus,
             visibility: contentStatus === 'published' || contentStatus === 'featured' ? 'public' : 'private',
