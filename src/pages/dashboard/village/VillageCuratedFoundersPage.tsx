@@ -14,6 +14,7 @@ import { VillageBulkImportPage } from './VillageBulkImportPage'
 import { EditorialQueuePage } from './EditorialQueuePage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
+import { getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../../services/editorialItems'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
@@ -114,6 +115,16 @@ export function VillageCuratedFoundersPage() {
     : !canSeeFounders ? 'imports' : 'founders',
   )
   const [tick, setTick]           = useState(0)
+  // Research/write/audit status per founder — shown right here, not only
+  // in Bulk Import's own session view, since this list is where staff
+  // actually come back to review and publish. Re-fetched whenever tick
+  // bumps (an edit/publish/delete already does).
+  const [editorialItemsAll, setEditorialItemsAll] = useState<EditorialItemRow[]>([])
+  const [editorialItemsTick, setEditorialItemsTick] = useState(-1)
+  if (editorialItemsTick !== tick) {
+    setEditorialItemsTick(tick)
+    void getAllEditorialItems().then(setEditorialItemsAll)
+  }
   const [bulkError, setBulkError] = useState<string | null>(null)
   const [copiedId, setCopiedId]   = useState<string | null>(null)
 
@@ -512,6 +523,14 @@ export function VillageCuratedFoundersPage() {
                       : <StatusPill status={f.profileStatus ?? f.status} />
                     }
                     {f.status !== 'draft' && !f.userId && f.profileStatus === 'village-curated' && <CuratedTag />}
+                    {(f.researchStatus || f.evidenceLedger) && (() => {
+                      const stage = pipelineStage(f, editorialItemsAll.filter(i => i.founder_id === f.id))
+                      return (
+                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${stage.color}`}>
+                          {stage.label}
+                        </span>
+                      )
+                    })()}
                   </div>
                   <div className="col-span-3 flex items-center justify-between gap-2">
                     {isLockedFromViewer(f) ? (
