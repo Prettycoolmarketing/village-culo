@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { locations } from '../data/locations'
 import { getStories } from '../services/stories'
 import { SectionHeading } from '../components/layout/PageContainer'
-import { formatLocationLabel } from '../utils/location'
+import { formatLocationFull } from '../utils/location'
 
 // A different invitation per empty location instead of the same "Be first"
 // repeated across the whole grid — deterministic by index so it doesn't
@@ -58,7 +58,7 @@ export function MapPreviewWidget({
                 <div className="relative overflow-hidden" style={{ aspectRatio: '3/4' }}>
                   <img
                     src={location.image}
-                    alt={location.state ? `${formatLocationLabel(location)}, Australia` : formatLocationLabel(location)}
+                    alt={formatLocationFull(location)}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />

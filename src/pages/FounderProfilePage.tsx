@@ -26,7 +26,7 @@ import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
-import { formatLocationLabel } from '../utils/location'
+import { formatLocationFull } from '../utils/location'
 
 // ─── Social icons ────────────────────────────────────────────────────────────────
 
@@ -280,9 +280,7 @@ export function FounderProfilePage() {
       ...(business ? { affiliation: { '@type': 'Organization', name: business.name } } : {}),
       homeLocation: {
         '@type': 'Place',
-        // Real city: "City, State, Australia". Unmatched fallback: name is
-        // already just "Australia" — don't repeat it (see formatLocationLabel).
-        name: founder.location.state ? `${formatLocationLabel(founder.location)}, Australia` : formatLocationLabel(founder.location),
+        name: formatLocationFull(founder.location),
       },
     } : undefined,
   })
@@ -533,7 +531,7 @@ export function FounderProfilePage() {
                     <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                       <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                     </svg>
-                    {founder.location.state ? `${formatLocationLabel(founder.location)}, Australia` : formatLocationLabel(founder.location)}
+                    {formatLocationFull(founder.location)}
                   </p>
                   {/* /speaker is a bespoke page authored for Shakas specifically
                       (not a generic per-founder feature), so this link is

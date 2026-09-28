@@ -14,6 +14,7 @@ import { ConfirmButton } from '../ui/ConfirmButton'
 import { runFounderResearch } from '../../services/editorialResearch'
 import { passesRiskGate, riskGateReasons } from '../../services/editorialEngine'
 import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, type EditorialItemRow } from '../../services/editorialItems'
+import { formatLocationLabel } from '../../utils/location'
 
 // Shared renderer for any Culo-written draft (bio or article) — splits on
 // blank lines and gives each paragraph real spacing, rather than one
@@ -734,7 +735,7 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
         <div>
           <label className={LABEL_CLS}>Location</label>
           <select className={INPUT_CLS} value={locationId} onChange={e => setLocationId(e.target.value)}>
-            {locations.map(l => <option key={l.id} value={l.id}>{l.name}, {l.state}</option>)}
+            {locations.map(l => <option key={l.id} value={l.id}>{formatLocationLabel(l)}</option>)}
           </select>
         </div>
         <div>

@@ -19,6 +19,7 @@ import { industries } from '../../data/industries'
 import { topics as ALL_TOPICS } from '../../data/topics'
 import type { Founder, Business } from '../../types'
 import type { ImportedContent } from '../../types/importedContent'
+import { formatLocationLabel } from '../../utils/location'
 
 // ─── Types ───────────────────────────────────────────────────────────────────────
 
@@ -468,7 +469,7 @@ export function DashboardCuratedFounderBuilderPage() {
                 onChange={e => setLocationId(e.target.value)}
               >
                 {locations.map(l => (
-                  <option key={l.id} value={l.id}>{l.name}, {l.state}</option>
+                  <option key={l.id} value={l.id}>{formatLocationLabel(l)}</option>
                 ))}
               </select>
             </Field>

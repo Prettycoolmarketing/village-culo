@@ -39,15 +39,42 @@ const UNKNOWN_LOCATION_FALLBACK_ID = 'regional-remote'
 // batch of 20 real founders hit this for 7 of them; returning whether it
 // matched lets the caller flag it the same way, instead of silently
 // discarding real, curator-provided location detail.
+// Common abbreviations/synonyms a curator's spreadsheet or a research
+// result might use instead of a location's own full name — "US"/"USA"
+// wouldn't otherwise match the United States catch-all's name field at all,
+// and unlike a real city's name, a bare "US" is too short/generic to safely
+// treat as a name/state substring match on its own.
+const COUNTRY_ALIASES: Record<string, string> = {
+  'us': 'united-states', 'usa': 'united-states', 'u.s.': 'united-states', 'u.s.a.': 'united-states', 'america': 'united-states',
+  'uk': 'united-kingdom', 'u.k.': 'united-kingdom', 'england': 'united-kingdom', 'scotland': 'united-kingdom', 'wales': 'united-kingdom', 'britain': 'united-kingdom', 'great britain': 'united-kingdom',
+}
+
 function resolveLocation(city?: string, state?: string): { location: Location; matched: boolean; rawInput?: string } {
   if (city || state) {
     const needle = `${city ?? ''} ${state ?? ''}`.toLowerCase()
-    const match = locations.find(l =>
-      needle.includes(l.name.toLowerCase()) ||
-      needle.includes(l.state.toLowerCase()) ||
-      (l.slug && needle.includes(l.slug))
+    const words = needle.split(/[\s,]+/).filter(Boolean)
+    // Real cities/regions first — every one of these has a genuine name
+    // (and most a real state) to match on. Each region's own catch-all
+    // (empty state) is checked only afterward, and only for a country
+    // keyword/alias — an empty state is a substring of literally any
+    // string, so checking it here for every location would make whichever
+    // empty-state catch-all happens to sit earliest in the array win by
+    // accident for any input that didn't already match a real city.
+    const cityMatch = locations.find(l =>
+      l.state !== '' && (
+        needle.includes(l.name.toLowerCase()) ||
+        needle.includes(l.state.toLowerCase()) ||
+        (l.slug && needle.includes(l.slug))
+      )
     )
-    if (match) return { location: match, matched: true }
+    if (cityMatch) return { location: cityMatch, matched: true }
+
+    const aliasId = words.map(w => COUNTRY_ALIASES[w]).find(Boolean)
+    const regionMatch = locations.find(l =>
+      l.state === '' && (l.id === aliasId || needle.includes(l.name.toLowerCase()))
+    )
+    if (regionMatch) return { location: regionMatch, matched: true }
+
     return {
       location: locations.find(l => l.id === UNKNOWN_LOCATION_FALLBACK_ID) ?? locations[0]!,
       matched: false,

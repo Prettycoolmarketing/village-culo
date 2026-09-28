@@ -30,6 +30,7 @@ import { partnerService } from '../../services/partner'
 import { canUseRewrite } from '../../utils/permissions'
 import type { ImportedContent } from '../../types/importedContent'
 import type { ContentType, Topic, Story } from '../../types'
+import { formatLocationLabel } from '../../utils/location'
 
 // ─── Content formats ──────────────────────────────────────────────────────────
 
@@ -1276,7 +1277,7 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
         <div className="flex flex-col gap-3">
           <Field label="Primary location">
             <select value={draft.locationId || founder?.location.id || ''} onChange={e => onChange({ locationId: e.target.value })} className={inp}>
-              {locations.map(l => <option key={l.id} value={l.id}>{l.name}, {l.state}</option>)}
+              {locations.map(l => <option key={l.id} value={l.id}>{formatLocationLabel(l)}</option>)}
             </select>
           </Field>
           {intel.cities.length > 0 && (

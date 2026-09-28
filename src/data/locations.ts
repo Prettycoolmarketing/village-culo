@@ -76,6 +76,31 @@ export const locations: Location[] = [
 
   // Catch-all — kept last so it never crowds out a real city in the dropdown.
   { id: 'regional-remote', slug: 'regional-remote', name: 'Australia', state: '', country: 'Australia', description: 'Wherever the work happens.', image: '/placeholders/village-location.svg' },
+
+  // ─── United States ──────────────────────────────────────────────────────
+  { id: 'new-york',      slug: 'new-york',      name: 'New York',      state: 'NY', country: 'United States', description: 'Founders building at the centre of the conversation.', image: '/placeholders/village-location-4.svg' },
+  { id: 'los-angeles',   slug: 'los-angeles',   name: 'Los Angeles',   state: 'CA', country: 'United States', description: 'Where the story and the business are built together.', image: '/placeholders/village-location-2.svg' },
+  { id: 'san-francisco', slug: 'san-francisco', name: 'San Francisco', state: 'CA', country: 'United States', description: 'Founders building for scale from day one.', image: '/placeholders/village-location.svg' },
+  { id: 'chicago',       slug: 'chicago',       name: 'Chicago',       state: 'IL', country: 'United States', description: 'Straightforward founders, real businesses.', image: '/placeholders/village-location-6.svg' },
+  { id: 'miami',         slug: 'miami',         name: 'Miami',         state: 'FL', country: 'United States', description: 'A fast-growing hub with global reach.', image: '/placeholders/village-location-5.svg' },
+  { id: 'austin',        slug: 'austin',        name: 'Austin',        state: 'TX', country: 'United States', description: 'Independent founders building their own lane.', image: '/placeholders/village-location-3.svg' },
+  // Catch-all — a founder clearly based in the US without a matched city.
+  { id: 'united-states', slug: 'united-states', name: 'United States', state: '',   country: 'United States', description: 'Wherever the work happens.', image: '/placeholders/village-location.svg' },
+
+  // ─── United Kingdom ─────────────────────────────────────────────────────
+  { id: 'london',       slug: 'london',       name: 'London',     state: 'England',  country: 'United Kingdom', description: 'Founders building in one of the world\'s most competitive markets.', image: '/placeholders/village-location-4.svg' },
+  { id: 'manchester',   slug: 'manchester',   name: 'Manchester', state: 'England',  country: 'United Kingdom', description: 'A city that backs founders who do the work.', image: '/placeholders/village-location-6.svg' },
+  { id: 'edinburgh',    slug: 'edinburgh',    name: 'Edinburgh',  state: 'Scotland', country: 'United Kingdom', description: 'Considered, well-built businesses.', image: '/placeholders/village-location-3.svg' },
+  { id: 'birmingham',   slug: 'birmingham',   name: 'Birmingham', state: 'England',  country: 'United Kingdom', description: 'Founders serving the whole of the Midlands and beyond.', image: '/placeholders/village-location-2.svg' },
+  // Catch-all — a founder clearly based in the UK without a matched city.
+  { id: 'united-kingdom', slug: 'united-kingdom', name: 'United Kingdom', state: '', country: 'United Kingdom', description: 'Wherever the work happens.', image: '/placeholders/village-location.svg' },
+
+  // ─── Asia ───────────────────────────────────────────────────────────────
+  { id: 'singapore', slug: 'singapore', name: 'Singapore', state: '',     country: 'Singapore', description: 'Founders building for the whole region from one hub.', image: '/placeholders/village-location.svg' },
+  { id: 'hong-kong', slug: 'hong-kong', name: 'Hong Kong', state: '',     country: 'Hong Kong', description: 'Fast-moving founders at the crossroads of East and West.', image: '/placeholders/village-location-5.svg' },
+  { id: 'tokyo',     slug: 'tokyo',     name: 'Tokyo',     state: '',     country: 'Japan',     description: 'Precision and craft, founder by founder.', image: '/placeholders/village-location-3.svg' },
+  // Catch-all — a founder clearly based somewhere in Asia without a matched city/country.
+  { id: 'asia', slug: 'asia', name: 'Asia', state: '', country: 'Asia', description: 'Wherever the work happens.', image: '/placeholders/village-location.svg' },
 ]
 
 export const getLocation = (id: string) => locations.find(l => l.id === id)
