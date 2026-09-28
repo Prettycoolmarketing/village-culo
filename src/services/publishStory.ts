@@ -318,6 +318,40 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
 }
 
 /**
+ * Publishing a curated founder's profile used to only flip their own record's
+ * status — none of their drafted articles ever went live with it, so staff
+ * had to open every single ArticleRow individually afterward and publish it
+ * there too, which is easy to forget (see the elle-kress case this was
+ * built for: her profile went live, her only article didn't). Publishing the
+ * founder now doubles as the human approval for every article still on
+ * their content list — matches the collapsed review UX (a clean audit
+ * already auto-approves; staff read the drafts, delete whatever's off, and
+ * Publish is the one action that ships everything that's left). Anything
+ * staff already deleted is gone from importedContentService entirely, so
+ * it's excluded automatically — never resurrected by this. Same real
+ * publish path as ArticleRow's own per-item control (buildStoryFromImport +
+ * publishStoryCore for a first publish, a plain status flip on the existing
+ * Story for a re-publish), just run once per still-draft item instead of
+ * needing a click each.
+ */
+export async function publishFounderArticles(founder: Founder): Promise<void> {
+  const items = importedContentService.getAll({ founderId: founder.id })
+    .filter(i => i.status === 'draft' && i.title.trim().length > 0)
+  for (const item of items) {
+    if (item.relatedStoryId) {
+      const existing = getStory(item.relatedStoryId)
+      if (existing) await updateStory({ ...existing, status: 'published' })
+      await importedContentService.updateStatus(item.id, 'published')
+    } else {
+      const story = buildStoryFromImport(item, founder)
+      story.status = 'published'
+      const result = await publishStoryCore(story)
+      if (result.success) await importedContentService.updateStatus(item.id, 'published')
+    }
+  }
+}
+
+/**
  * "Edit your story" on an already-published import used to only save the
  * ImportedContent copy — the founder edits something, sees no error, and the
  * live Story silently keeps showing the old text. Mirrors the same field

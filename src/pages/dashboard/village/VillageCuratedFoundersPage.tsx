@@ -13,44 +13,28 @@ import { FounderEditModal } from '../../../components/dashboard/FounderEditModal
 import { VillageBulkImportPage } from './VillageBulkImportPage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
-import { getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../../services/editorialItems'
+import { getAllEditorialItems, type EditorialItemRow } from '../../../services/editorialItems'
 import { runFounderResearch } from '../../../services/editorialResearch'
+import { publishFounderArticles } from '../../../services/publishStory'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
-function StatusPill({ status }: { status: string }) {
-  const cls: Record<string, string> = {
-    draft:             'bg-amber-50 text-amber-700',
-    'village-curated': 'bg-blue-50 text-blue-700',
-    'claim-pending':   'bg-amber-50 text-amber-700',
-    'claimed':         'bg-[#5E6B4A]/10 text-[#5E6B4A]',
-    'verified':        'bg-[#C86A43]/10 text-[#C86A43]',
-    'published':       'bg-[#F3EDE6] text-[#6B7280]',
-    'archived':        'bg-red-50 text-red-400',
+// One word, one pill — draft vs. published, claim-pending, and every
+// pipeline sub-stage all used to show as separate/stacked pills on the same
+// row, which was more status detail than staff scanning this list at a
+// glance actually needed. This page is curated founders only (see the
+// `founders` filter below) regardless of draft/published, so there's really
+// just one normal state ("Curated") plus two that need attention.
+function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialItemRow[] }) {
+  if (founder.researchStatus === 'failed') {
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-red-50 text-red-600">Failed</span>
   }
-  const labels: Record<string, string> = {
-    draft: 'Draft — awaiting review',
-    'village-curated': 'Curated', 'claim-pending': 'Pending',
-    'claimed': 'Claimed', 'verified': 'Verified',
-    'published': 'Published', 'archived': 'Archived',
+  const needsReview = founder.researchStatus === 'researching'
+    || items.some(i => i.editorial_status === 'review' || i.editorial_status === 'pending' || i.editorial_status === 'reject')
+  if (needsReview) {
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-amber-50 text-amber-700">Review</span>
   }
-  return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${cls[status] ?? 'bg-[#F3EDE6] text-[#9CA3AF]'}`}>
-      {labels[status] ?? status}
-    </span>
-  )
-}
-
-// Small, separate from StatusPill's lifecycle status — a founder can be
-// "Published" (live, publicly visible) and still be an unclaimed curated
-// profile at the same time; conflating the two into one pill used to hide
-// that a live founder is still nobody's real account yet.
-function CuratedTag() {
-  return (
-    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 uppercase tracking-wide">
-      Curated
-    </span>
-  )
+  return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-blue-50 text-blue-700">Curated</span>
 }
 
 // ─── Bulk action bar ──────────────────────────────────────────────────────────
@@ -273,6 +257,17 @@ export function VillageCuratedFoundersPage() {
     const result = await updateFoundersBatch(targets)
     if (!result.success) setBulkError(result.error ?? `Failed to update ${ids.size} founder${ids.size === 1 ? '' : 's'}. Try again.`)
     refresh()
+  }
+
+  // Same fix as the Edit modal's own Publish button (see publishFounderArticles) —
+  // publishing a founder from this list is the same human approval moment,
+  // so their still-draft articles need to go live with them here too, not
+  // just when publishing happens to go through the modal instead.
+  async function publishSelected(ids: Set<string>) {
+    const allFounders = getFounders()
+    const targets = Array.from(ids).map(id => allFounders.find(fo => fo.id === id)).filter((f): f is Founder => !!f)
+    await bulkUpdate(ids, { status: 'published' })
+    for (const f of targets) await publishFounderArticles(f)
   }
 
   async function archiveSelected(ids: Set<string>) {
@@ -554,19 +549,7 @@ export function VillageCuratedFoundersPage() {
                     {f.tiktok    && <span title="TikTok"    className="w-1.5 h-1.5 rounded-full bg-neutral-500" />}
                   </div>
                   <div className="col-span-2 flex flex-wrap gap-1">
-                    {f.status === 'draft'
-                      ? <StatusPill status="draft" />
-                      : <StatusPill status={f.profileStatus ?? f.status} />
-                    }
-                    {f.status !== 'draft' && !f.userId && f.profileStatus === 'village-curated' && <CuratedTag />}
-                    {(f.researchStatus || f.evidenceLedger) && (() => {
-                      const stage = pipelineStage(f, editorialItemsAll.filter(i => i.founder_id === f.id))
-                      return (
-                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide ${stage.color}`}>
-                          {stage.label}
-                        </span>
-                      )
-                    })()}
+                    <SimpleStatus founder={f} items={editorialItemsAll.filter(i => i.founder_id === f.id)} />
                   </div>
                   <div className="col-span-3 flex items-center justify-between gap-2">
                     {isLockedFromViewer(f) ? (
@@ -661,7 +644,7 @@ export function VillageCuratedFoundersPage() {
         researchProgress={researchProgress}
         onSelectAll={() => setSelected(new Set(selectableFiltered.map(f => f.id)))}
         onClearAll={() => setSelected(new Set())}
-        onPublish={() => void bulkUpdate(selected, { status: 'published' })}
+        onPublish={() => void publishSelected(selected)}
         onArchive={() => void archiveSelected(selected)}
         onResearch={() => void runResearchSelected(selected)}
       />

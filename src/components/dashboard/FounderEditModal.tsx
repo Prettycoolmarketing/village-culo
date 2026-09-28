@@ -5,7 +5,7 @@ import type { ImportedContent, ImportedContentStatus } from '../../types/importe
 import { updateFounder, getFounder } from '../../services/founders'
 import { importedContentService } from '../../services/importedContent'
 import { getStory, updateStory } from '../../services/stories'
-import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
+import { buildStoryFromImport, publishStoryCore, publishFounderArticles } from '../../services/publishStory'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
@@ -819,6 +819,7 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
   async function handlePublish() {
     setPublishing(true)
     const result = await updateFounder({ ...current, status: 'published' })
+    if (result.success) await publishFounderArticles(current)
     setPublishing(false)
     if (result.success) {
       setCurrent(prev => ({ ...prev, status: 'published' }))
