@@ -11,7 +11,6 @@ import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import { FounderEditModal } from '../../../components/dashboard/FounderEditModal'
 import { VillageBulkImportPage } from './VillageBulkImportPage'
-import { EditorialQueuePage } from './EditorialQueuePage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 import { getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../../services/editorialItems'
@@ -59,43 +58,43 @@ function CuratedTag() {
 function BulkBar({
   selected,
   total,
-  failedCount,
-  retrying,
-  retryProgress,
+  researching,
+  researchProgress,
   onSelectAll,
   onClearAll,
   onPublish,
   onArchive,
-  onRetryFailed,
+  onResearch,
 }: {
   selected: Set<string>
   total: number
-  failedCount: number
-  retrying: boolean
-  retryProgress: { done: number; total: number } | null
+  researching: boolean
+  researchProgress: { done: number; total: number } | null
   onSelectAll: () => void
   onClearAll: () => void
   onPublish: () => void
   onArchive: () => void
-  onRetryFailed: () => void
+  onResearch: () => void
 }) {
   if (selected.size === 0) return null
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2D2A26] rounded-2xl px-5 py-3 flex items-center gap-4 shadow-2xl">
       <p className="text-xs font-semibold text-white whitespace-nowrap">
-        {retrying && retryProgress ? `Retrying research… (${retryProgress.done}/${retryProgress.total})` : `${selected.size} of ${total} selected`}
+        {researching && researchProgress ? `Researching… (${researchProgress.done}/${researchProgress.total})` : `${selected.size} of ${total} selected`}
       </p>
       <div className="flex items-center gap-2">
+        {/* Runs (or re-runs, for anything failed/unresearched in the
+            selection) Stage 1 research — works on any selection, not just
+            failed ones, so this is also how staff kick off research on a
+            batch that was just imported. Skips anything already mid-run. */}
+        <button
+          onClick={onResearch}
+          disabled={researching}
+          className="text-xs px-3 py-1.5 bg-[#3E6E92] text-white rounded-lg font-semibold hover:bg-[#345c7a] disabled:opacity-50 transition-colors"
+        >
+          {researching ? 'Researching…' : 'Research'}
+        </button>
         <button onClick={onPublish}     className="text-xs px-3 py-1.5 bg-[#5E6B4A] text-white rounded-lg font-semibold hover:bg-[#4a5538] transition-colors">Publish</button>
-        {failedCount > 0 && (
-          <button
-            onClick={onRetryFailed}
-            disabled={retrying}
-            className="text-xs px-3 py-1.5 bg-[#3E6E92] text-white rounded-lg font-semibold hover:bg-[#345c7a] disabled:opacity-50 transition-colors"
-          >
-            {retrying ? 'Retrying…' : `Retry research (${failedCount})`}
-          </button>
-        )}
         <ConfirmButton
           label="Delete"
           confirmLabel="Yes, delete"
@@ -126,10 +125,16 @@ export function VillageCuratedFoundersPage() {
   const canDeleteAccounts = user?.role === 'admin' || user?.role === 'owner'
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [searchParams] = useSearchParams()
-  // Export moved to Village Overview — no longer a tab here.
-  const [pageTab, setPageTab]     = useState<'founders' | 'imports' | 'editorial'>(
+  // Export moved to Village Overview — no longer a tab here. The separate
+  // Editorial Queue tab/page is gone too — it was a cross-founder review
+  // board for the human "approve" step, which auto-approves on a clean
+  // audit now (see runAudit); everything it did is already visible right
+  // here per-row (the pipeline stage pill) and per-founder (Edit modal's
+  // research/audit dropdown). This tab takes its name instead, since this
+  // list — filtered to curated founders only, see `founders` below — is
+  // effectively what "the editorial queue" now means.
+  const [pageTab, setPageTab]     = useState<'founders' | 'imports'>(
     searchParams.get('tab') === 'imports' ? 'imports'
-    : searchParams.get('tab') === 'editorial' ? 'editorial'
     : !canSeeFounders ? 'imports' : 'founders',
   )
   const [tick, setTick]           = useState(0)
@@ -162,15 +167,10 @@ export function VillageCuratedFoundersPage() {
   const [filterHasClaim, setFilterHasClaim] = useState(false)
   const [filterHasEmail, setFilterHasEmail] = useState(false)
   const [selected, setSelected]   = useState<Set<string>>(new Set())
-  const [retryingResearch, setRetryingResearch] = useState(false)
-  const [retryProgress, setRetryProgress] = useState<{ done: number; total: number } | null>(null)
+  const [researching, setResearching] = useState(false)
+  const [researchProgress, setResearchProgress] = useState<{ done: number; total: number } | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
-  // Founders imported/added but not yet reviewed sit in "Curated" (still
-  // draft — invisible to the public) until a human presses Publish; once
-  // published they move to "Published" and keep a separate Curated tag if
-  // nobody's claimed the profile yet.
-  const [founderView, setFounderView] = useState<'curated' | 'published'>('curated')
   void tick
 
   const refresh = () => { setTick(t => t + 1); setSelected(new Set()) }
@@ -184,7 +184,12 @@ export function VillageCuratedFoundersPage() {
     refresh()
   }
 
-  const founders  = getFounders()
+  // This whole page manages CULO's own curated batch — a real founder who's
+  // claimed and verified their profile manages it themselves through their
+  // own dashboard, and isn't part of what staff need to bulk-review/publish/
+  // research here. Scoping the base dataset itself (not just a sub-tab)
+  // means every stat, filter and bulk action below is already curated-only.
+  const founders  = getFounders().filter(f => f.profileStatus === 'village-curated' || f.profileStatus === 'claim-pending')
   const businesses = getBusinesses()
   const claims    = founderClaimService.getAll()
 
@@ -213,11 +218,10 @@ export function VillageCuratedFoundersPage() {
 
   const curatedDraftFounders = useMemo(() => founders.filter(f => f.status === 'draft'), [founders])
   const publishedFounders    = useMemo(() => founders.filter(f => f.status !== 'draft'), [founders])
-  const viewFounders = founderView === 'curated' ? curatedDraftFounders : publishedFounders
 
   // Filter + sort
   const filtered = useMemo(() => {
-    let list = [...viewFounders]
+    let list = [...founders]
 
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -247,8 +251,14 @@ export function VillageCuratedFoundersPage() {
       return 0
     })
 
+    // Failed research sinks to the bottom regardless of the chosen sort —
+    // it needs attention, not a spot mixed in wherever its created date or
+    // name happens to land. Array.sort is stable, so this second pass only
+    // moves failed rows down without disturbing the order above otherwise.
+    list.sort((a, b) => (a.researchStatus === 'failed' ? 1 : 0) - (b.researchStatus === 'failed' ? 1 : 0))
+
     return list
-  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, viewFounders, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder])
+  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, founders, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder])
 
   // Bulk operations — one Supabase upsert/delete + one cache rewrite per batch,
   // not one round-trip per founder (see Sprint 19B-Fix audit for the O(n²) bug
@@ -272,22 +282,24 @@ export function VillageCuratedFoundersPage() {
     refresh()
   }
 
-  // Only re-runs founders whose research actually failed — same real API
-  // calls as Bulk Import's own "Retry failed" button, just reachable from
-  // this list directly (staff often notice failures here first, via the
-  // status pill on each row) instead of needing to go back to the import
-  // screen to act on them.
-  async function retryFailedResearch(ids: Set<string>) {
-    const failed = Array.from(ids).filter(id => getFounder(id)?.researchStatus === 'failed')
-    if (failed.length === 0) return
-    setRetryingResearch(true)
-    setRetryProgress({ done: 0, total: failed.length })
-    for (let i = 0; i < failed.length; i++) {
-      await runFounderResearch(failed[i]!)
-      setRetryProgress({ done: i + 1, total: failed.length })
+  // Runs (or re-runs) Stage 1 research for whatever's selected — covers a
+  // freshly imported batch with no research yet, a mix of failed ones to
+  // retry, or both at once, all from this list directly (staff often
+  // notice status here first, via the pipeline pill on each row) instead
+  // of needing to go back to the import screen. Skips anything already
+  // mid-run so re-clicking a selection that includes in-progress founders
+  // doesn't fire a second overlapping request for them.
+  async function runResearchSelected(ids: Set<string>) {
+    const targets = Array.from(ids).filter(id => getFounder(id)?.researchStatus !== 'researching')
+    if (targets.length === 0) return
+    setResearching(true)
+    setResearchProgress({ done: 0, total: targets.length })
+    for (let i = 0; i < targets.length; i++) {
+      await runFounderResearch(targets[i]!)
+      setResearchProgress({ done: i + 1, total: targets.length })
     }
-    setRetryingResearch(false)
-    setRetryProgress(null)
+    setResearching(false)
+    setResearchProgress(null)
     refresh()
   }
 
@@ -346,17 +358,15 @@ export function VillageCuratedFoundersPage() {
 
       <Tabs
         tabs={[
-          ...(canSeeFounders ? [{ key: 'founders', label: 'Founders' }] : []),
+          ...(canSeeFounders ? [{ key: 'founders', label: 'Editorial Queue' }] : []),
           ...(canSeeImports ? [{ key: 'imports', label: 'Bulk Import' }] : []),
-          ...(canSeeImports ? [{ key: 'editorial', label: 'Editorial Queue' }] : []),
         ]}
         active={pageTab}
-        onChange={key => setPageTab(key as 'founders' | 'imports' | 'editorial')}
+        onChange={key => setPageTab(key as 'founders' | 'imports')}
         className="mb-6"
       />
 
       {pageTab === 'imports' && canSeeImports && <VillageBulkImportPage embedded />}
-      {pageTab === 'editorial' && canSeeImports && <EditorialQueuePage embedded />}
 
       {pageTab === 'founders' && canSeeFounders && (
       <>
@@ -374,17 +384,6 @@ export function VillageCuratedFoundersPage() {
           </div>
         ))}
       </div>
-
-      {/* Curated (draft, awaiting review) vs Published sub-view */}
-      <Tabs
-        tabs={[
-          { key: 'curated',   label: 'Curated',   badge: curatedDraftFounders.length },
-          { key: 'published', label: 'Published', badge: publishedFounders.length },
-        ]}
-        active={founderView}
-        onChange={key => { setFounderView(key as 'curated' | 'published'); setSelected(new Set()) }}
-        className="mb-4"
-      />
 
       {/* Search + sort */}
       <div className="flex gap-3 mb-3">
@@ -441,8 +440,6 @@ export function VillageCuratedFoundersPage() {
                 <option value="all">All statuses</option>
                 <option value="village-curated">Village Curated</option>
                 <option value="claim-pending">Claim Pending</option>
-                <option value="claimed">Claimed</option>
-                <option value="verified">Verified</option>
                 <option value="published">Published</option>
                 <option value="archived">Archived</option>
               </select>
@@ -660,14 +657,13 @@ export function VillageCuratedFoundersPage() {
       <BulkBar
         selected={selected}
         total={selectableFiltered.length}
-        failedCount={Array.from(selected).filter(id => getFounder(id)?.researchStatus === 'failed').length}
-        retrying={retryingResearch}
-        retryProgress={retryProgress}
+        researching={researching}
+        researchProgress={researchProgress}
         onSelectAll={() => setSelected(new Set(selectableFiltered.map(f => f.id)))}
         onClearAll={() => setSelected(new Set())}
         onPublish={() => void bulkUpdate(selected, { status: 'published' })}
         onArchive={() => void archiveSelected(selected)}
-        onRetryFailed={() => void retryFailedResearch(selected)}
+        onResearch={() => void runResearchSelected(selected)}
       />
       </>
       )}
