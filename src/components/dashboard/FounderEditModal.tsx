@@ -639,11 +639,6 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
   const [industryId, setIndustryId] = useState(founder.industry.id)
   const [website, setWebsite]     = useState(founder.website ?? '')
   const [linkedin, setLinkedin]   = useState(founder.linkedin ?? '')
-  const [instagram, setInstagram] = useState(founder.instagram ?? '')
-  const [youtube, setYoutube]     = useState(founder.youtube ?? '')
-  const [tiktok, setTiktok]       = useState(founder.tiktok ?? '')
-  const [podcast, setPodcast]     = useState(founder.podcast ?? '')
-  const [newsletter, setNewsletter] = useState(founder.newsletter ?? '')
   const [saving, setSaving]       = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved]         = useState(false)
@@ -659,11 +654,6 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
       location, industry,
       website: website.trim() || undefined,
       linkedin: linkedin.trim() || undefined,
-      instagram: instagram.trim() || undefined,
-      youtube: youtube.trim() || undefined,
-      tiktok: tiktok.trim() || undefined,
-      podcast: podcast.trim() || undefined,
-      newsletter: newsletter.trim() || undefined,
     }
     const result = await updateFounder(next)
     setSaving(false)
@@ -712,15 +702,17 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           </select>
         </div>
       </div>
+      {/* Instagram/YouTube/TikTok/Podcast/Newsletter deliberately don't
+          have fields here — for a curated founder, a link in those
+          platforms is a research source (one video, one episode), not a
+          verified claim that it's their own owned account. It still does
+          real work as a source for the editorial engine's articles; a
+          founder adds their own real social links themselves once they
+          claim their profile, on their own dashboard. */}
       <div className="grid grid-cols-2 gap-3">
         <div><label className={LABEL_CLS}>Website</label><input className={INPUT_CLS} value={website} onChange={e => setWebsite(e.target.value)} /></div>
         <div><label className={LABEL_CLS}>LinkedIn</label><input className={INPUT_CLS} value={linkedin} onChange={e => setLinkedin(e.target.value)} /></div>
-        <div><label className={LABEL_CLS}>Instagram</label><input className={INPUT_CLS} value={instagram} onChange={e => setInstagram(e.target.value)} /></div>
-        <div><label className={LABEL_CLS}>YouTube</label><input className={INPUT_CLS} value={youtube} onChange={e => setYoutube(e.target.value)} /></div>
-        <div><label className={LABEL_CLS}>TikTok</label><input className={INPUT_CLS} value={tiktok} onChange={e => setTiktok(e.target.value)} /></div>
-        <div><label className={LABEL_CLS}>Podcast</label><input className={INPUT_CLS} value={podcast} onChange={e => setPodcast(e.target.value)} /></div>
       </div>
-      <div><label className={LABEL_CLS}>Newsletter</label><input className={INPUT_CLS} value={newsletter} onChange={e => setNewsletter(e.target.value)} /></div>
 
       {saveError && <p className="text-xs text-red-600">{saveError}</p>}
       <div className="flex items-center gap-3 pt-2">

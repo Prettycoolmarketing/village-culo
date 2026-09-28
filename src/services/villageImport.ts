@@ -891,12 +891,17 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
         businessId: primaryBusinessId,
         topics,
         website:      f.website?.trim() || undefined,
-        instagram:    f.instagramUrl?.trim() || undefined,
         linkedin:     f.linkedinUrl?.trim() || undefined,
-        youtube:      f.youtubeUrl?.trim() || undefined,
-        tiktok:       f.tiktokUrl?.trim() || undefined,
-        podcast:      f.podcastUrl?.trim() || undefined,
-        newsletter:   f.newsletterUrl?.trim() || undefined,
+        // Instagram/YouTube/TikTok/Podcast/Newsletter are deliberately NOT
+        // set here, even when the spreadsheet has a URL for them — for a
+        // curated founder that link is a research source (one video, one
+        // episode), not a verified claim that this is the founder's own
+        // owned account. Stamping it onto the profile as if it were their
+        // personal channel was often simply wrong. The same URL still does
+        // real work as a content source (see the `content` array above,
+        // which the editorial engine researches and writes an article
+        // from) — a founder adds their own real social links themselves
+        // once they claim the profile.
         claimEmail:   f.claimEmail?.trim() || existingFounder?.claimEmail || undefined,
         // A brand-new curated founder lands as a draft — invisible in
         // Founders, the homepage, search, everywhere public-facing relies
