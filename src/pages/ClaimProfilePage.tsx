@@ -10,7 +10,6 @@ import { InnerContainer } from '../components/layout/PageContainer'
 export function ClaimProfilePage() {
   const { slug } = useParams<{ slug: string }>()
   const [searchParams] = useSearchParams()
-  const { user } = useAuth()
   const founder = getFounders().find(f => f.slug === slug)
   const key = searchParams.get('key')
 
@@ -39,14 +38,6 @@ export function ClaimProfilePage() {
       ? `Claim your CULO Village profile for ${founder.name} to edit, import content, and publish with CULO.`
       : 'Claim your CULO Village founder profile.',
   })
-
-  const [name, setName]             = useState('')
-  const [email, setEmail]           = useState('')
-  const [message, setMessage]       = useState('')
-  const [evidenceUrl, setEvidenceUrl] = useState('')
-  const [submitted, setSubmitted]   = useState(false)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError]           = useState('')
 
   // Not found
   if (!founder || (founder.status !== 'published' && founder.status !== 'featured')) {
@@ -134,264 +125,88 @@ export function ClaimProfilePage() {
     )
   }
 
-  if (claimKeyState === 'valid') {
-    return <InstantClaimForm founder={founder} />
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-
-    if (!name.trim() || !email.trim()) {
-      setError('Please fill in your name and email.')
-      return
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address.')
-      return
-    }
-
-    setSubmitting(true)
-    try {
-      await founderClaimService.create({
-        founderId:        founder!.id,
-        requesterName:    name.trim(),
-        requesterEmail:   email.trim(),
-        requesterMessage: message.trim() || undefined,
-        evidenceUrl:      evidenceUrl.trim() || undefined,
-        requesterUserId:  user?.email === email.trim() ? user.id : undefined,
-      })
-      setSubmitted(true)
-    } catch (err) {
-      setError(err instanceof Error && err.message ? err.message : 'Something went wrong submitting your claim. Please try again.')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  if (submitted) {
-    return (
-      <main className="min-h-screen bg-background pt-20">
-        <InnerContainer>
-          <div className="max-w-lg mx-auto text-center py-20">
-            <div className="w-14 h-14 rounded-full bg-secondary/15 flex items-center justify-center mx-auto mb-5" aria-hidden="true">
-              <svg className="w-7 h-7 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h1 className="font-heading text-2xl font-semibold text-charcoal mb-3">
-              Claim submitted
-            </h1>
-            <p className="font-body text-muted mb-2 leading-relaxed">
-              Thank you, {name}. Your claim for {founder.name}'s profile has been received.
-            </p>
-            <p className="font-body text-sm text-muted mb-8 leading-relaxed">
-              Our team will review your request and reach out to you at <strong>{email}</strong> within a few business days.
-            </p>
-            <Link
-              to={`/founders/${founder.slug}`}
-              className="text-sm font-medium text-primary hover:underline"
-            >
-              ← Back to {founder.name}'s profile
-            </Link>
-          </div>
-        </InnerContainer>
-      </main>
-    )
-  }
-
-  return (
-    <main className="min-h-screen bg-background pt-20">
-
-      {/* Breadcrumb */}
-      <nav className="bg-surface border-b border-border pb-4 pt-4" aria-label="Breadcrumb">
-        <InnerContainer>
-          <ol className="flex items-center gap-2 text-sm font-body text-muted flex-wrap" role="list">
-            <li><Link to="/" className="hover:text-primary transition-colors">Village</Link></li>
-            <li aria-hidden="true" className="text-border">›</li>
-            <li><Link to="/founders" className="hover:text-primary transition-colors">Founders</Link></li>
-            <li aria-hidden="true" className="text-border">›</li>
-            <li>
-              <Link to={`/founders/${founder.slug}`} className="hover:text-primary transition-colors">
-                {founder.name}
-              </Link>
-            </li>
-            <li aria-hidden="true" className="text-border">›</li>
-            <li className="text-charcoal font-medium" aria-current="page">Claim Profile</li>
-          </ol>
-        </InnerContainer>
-      </nav>
-
-      <div className="py-12">
-        <InnerContainer>
-          <div className="max-w-2xl mx-auto">
-
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center gap-4 mb-5">
-                {founder.avatar && (
-                  <img
-                    src={founder.avatar}
-                    alt=""
-                    className="w-14 h-14 rounded-full object-cover ring-2 ring-border"
-                  />
-                )}
-                <div>
-                  <h1 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight">
-                    Claim {founder.name}'s Profile
-                  </h1>
-                  <p className="font-body text-sm text-muted mt-0.5">
-                    {founder.industry.name} · {founder.location.name}
-                  </p>
-                </div>
-              </div>
-
-              {/* Ethics note */}
-              <div className="bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-xl px-5 py-4">
-                <p className="font-body text-sm text-[#5E6B4A] leading-relaxed font-semibold mb-1">
-                  About this profile
-                </p>
-                <p className="font-body text-sm text-charcoal/80 leading-relaxed">
-                  This profile was curated by CULO Village using publicly available content and original source links.
-                  If you are {founder.name}, you can claim ownership. We will verify your identity and transfer
-                  control so you can edit, update and manage this profile directly.
-                </p>
-                {founder.curatedAt && (
-                  <p className="font-body text-xs text-muted mt-2">
-                    Curated by {founder.curatedBy ?? 'CULO Village'} · {new Date(founder.curatedAt).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Claim form */}
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="bg-white rounded-2xl border border-border p-6 flex flex-col gap-5">
-                <h2 className="font-heading text-lg font-semibold text-charcoal">
-                  Your details
-                </h2>
-
-                <div>
-                  <label className="block font-body text-sm font-semibold text-charcoal mb-1.5" htmlFor="claim-name">
-                    Full name <span className="text-primary">*</span>
-                  </label>
-                  <input
-                    id="claim-name"
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    required
-                    autoComplete="name"
-                    className="w-full px-3 py-2.5 text-sm border border-border rounded-xl focus:outline-none focus:border-primary transition-colors"
-                    placeholder={`e.g. ${founder.name}`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-body text-sm font-semibold text-charcoal mb-1.5" htmlFor="claim-email">
-                    Email address <span className="text-primary">*</span>
-                  </label>
-                  <input
-                    id="claim-email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    className="w-full px-3 py-2.5 text-sm border border-border rounded-xl focus:outline-none focus:border-primary transition-colors"
-                    placeholder="you@yourdomain.com"
-                  />
-                  <p className="font-body text-xs text-muted mt-1.5">
-                    We'll use this to verify your identity and follow up.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block font-body text-sm font-semibold text-charcoal mb-1.5" htmlFor="claim-evidence">
-                    Evidence URL
-                  </label>
-                  <input
-                    id="claim-evidence"
-                    type="url"
-                    value={evidenceUrl}
-                    onChange={e => setEvidenceUrl(e.target.value)}
-                    className="w-full px-3 py-2.5 text-sm border border-border rounded-xl focus:outline-none focus:border-primary transition-colors"
-                    placeholder="https://yourwebsite.com or linkedin.com/in/you"
-                  />
-                  <p className="font-body text-xs text-muted mt-1.5">
-                    A link that confirms your identity — your website, LinkedIn, YouTube channel, or social profile.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block font-body text-sm font-semibold text-charcoal mb-1.5" htmlFor="claim-message">
-                    Message
-                  </label>
-                  <textarea
-                    id="claim-message"
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    rows={4}
-                    className="w-full px-3 py-2.5 text-sm border border-border rounded-xl focus:outline-none focus:border-primary transition-colors resize-none"
-                    placeholder="Anything you'd like to add — how we can verify you, or changes you'd like to request."
-                  />
-                </div>
-
-                {error && (
-                  <p className="font-body text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-2.5 rounded-xl" role="alert">
-                    {error}
-                  </p>
-                )}
-
-                <div className="flex items-center gap-4 pt-1">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
-                  >
-                    {submitting ? 'Submitting…' : 'Submit Claim'}
-                  </button>
-                  <Link
-                    to={`/founders/${founder.slug}`}
-                    className="font-body text-sm text-muted hover:text-charcoal transition-colors"
-                  >
-                    Cancel
-                  </Link>
-                </div>
-              </div>
-            </form>
-
-            {/* Transparency footer */}
-            <p className="font-body text-xs text-muted/70 mt-6 leading-relaxed text-center">
-              If this is your profile and you would like changes or removal instead of claiming it,
-              mention that in your message above. CULO Village is committed to transparency and will
-              honour all reasonable removal requests.
-            </p>
-          </div>
-        </InnerContainer>
-      </div>
-    </main>
-  )
+  // A staff-sent secret link (?key=) is a fully trusted signal on its own —
+  // skip the email/name matching heuristics below entirely for it. Every
+  // other visitor lands on the same instant form; matchClaimEmail() decides
+  // at submit time whether they go straight to their dashboard or fall back
+  // to the review queue.
+  return <InstantClaimForm founder={founder} skipVerification={claimKeyState === 'valid'} />
 }
 
-// Reached only with a valid ?key= — no review queue, no staff step. Creates
-// the real Supabase account right here and marks the founder claimed with
-// this email, so getCurrentFounder()'s existing claimEmail-match (see
-// services/currentFounder.ts) picks it up the moment they land in the
-// dashboard — the exact same resolution a staff-approved claim already
-// relies on, just triggered immediately instead of on their next sign-in.
-function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>[number] }) {
+// Loose matching for a claimant with no exact verified claimEmail on file —
+// most curated founders won't have one (research only sets it when it finds
+// a real, high-confidence contact). Rather than hard-block everyone else
+// into a manual queue, look for other signals a genuine founder's own email
+// would carry: their own domain, or their own name in the address. Neither
+// is proof by itself, but either is a reasonable bar for self-serve access —
+// staff still see a note on the profile (claimNotes) when it was a soft
+// match rather than an exact one.
+const GENERIC_EMAIL_DOMAINS = new Set([
+  'gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com', 'me.com', 'live.com', 'aol.com', 'proton.me', 'protonmail.com',
+])
+const GENERIC_LINK_DOMAINS = new Set([
+  'instagram.com', 'linkedin.com', 'youtube.com', 'tiktok.com', 'facebook.com', 'twitter.com', 'x.com', 'threads.net', 'spotify.com', 'linktr.ee',
+])
+
+function normalizeToken(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function extractDomain(url?: string): string | null {
+  if (!url) return null
+  try {
+    const u = new URL(/^https?:\/\//.test(url) ? url : `https://${url}`)
+    return u.hostname.replace(/^www\./, '').toLowerCase()
+  } catch {
+    return null
+  }
+}
+
+type ClaimMatch = 'verified' | 'likely' | 'none'
+
+function matchClaimEmail(email: string, founder: ReturnType<typeof getFounders>[number]): ClaimMatch {
+  const normalizedEmail = email.trim().toLowerCase()
+  if (founder.claimEmail && founder.claimEmail.trim().toLowerCase() === normalizedEmail) return 'verified'
+
+  const [localPart, emailDomain] = normalizedEmail.split('@')
+  const localToken = normalizeToken(localPart ?? '')
+
+  const ownDomains = [founder.website, founder.instagram, founder.linkedin, founder.youtube, founder.podcast, ...(founder.socialLinks?.map(l => l.url) ?? [])]
+    .map(extractDomain)
+    .filter((d): d is string => !!d && !GENERIC_LINK_DOMAINS.has(d))
+  if (emailDomain && !GENERIC_EMAIL_DOMAINS.has(emailDomain) && ownDomains.includes(emailDomain)) return 'likely'
+
+  const nameParts = founder.name.toLowerCase().split(/\s+/).map(normalizeToken).filter(p => p.length >= 3)
+  if (localToken.length >= 3 && nameParts.some(part => localToken.includes(part))) return 'likely'
+
+  return 'none'
+}
+
+// The default public claim path — no review queue, no staff step, unless
+// matchClaimEmail() can't find any signal tying the claimant to this
+// founder (skipVerification bypasses that check entirely for a trusted
+// ?key= link). Creates the real Supabase account right here and marks the
+// founder claimed with this email, so getCurrentFounder()'s existing
+// claimEmail-match (see services/currentFounder.ts) picks it up the moment
+// they land in the dashboard.
+function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<typeof getFounders>[number]; skipVerification: boolean }) {
   const navigate = useNavigate()
   const { signUp } = useAuth()
+  const [name, setName]           = useState('')
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]         = useState('')
   const [needsConfirmation, setNeedsConfirmation] = useState(false)
+  const [submittedForReview, setSubmittedForReview] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (!name.trim()) {
+      setError('Please enter your name.')
+      return
+    }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Please enter a valid email address.')
       return
@@ -400,6 +215,30 @@ function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>
       setError('Password must be at least 8 characters.')
       return
     }
+
+    // No exact verified email or staff link — try the softer name/domain
+    // signals before deciding this needs a human to look at it. 'none'
+    // means nothing on file resembles this claimant at all, so this goes
+    // to the review queue instead of straight into someone else's dashboard.
+    const match = skipVerification ? 'verified' : matchClaimEmail(email, founder)
+    if (match === 'none') {
+      setSubmitting(true)
+      try {
+        await founderClaimService.create({
+          founderId:        founder.id,
+          requesterName:    name.trim(),
+          requesterEmail:   email.trim(),
+          requesterMessage: 'Submitted via instant claim — could not auto-verify email against profile records.',
+        })
+        setSubmittedForReview(true)
+      } catch (err) {
+        setError(err instanceof Error && err.message ? err.message : 'Something went wrong submitting your claim. Please try again.')
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+
     setSubmitting(true)
     try {
       await updateFounder({
@@ -408,6 +247,9 @@ function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>
         claimedAt: new Date().toISOString(),
         claimEmail: email.trim(),
         isClaimable: false,
+        claimNotes: match === 'likely'
+          ? `Instant-claimed by ${name.trim()} <${email.trim()}> — soft match (name/domain), not an exact verified email. Worth a quick look.`
+          : founder.claimNotes,
       })
       const { error: signUpError, needsConfirmation: needsConf, alreadyRegistered } = await signUp(email.trim(), password, '/dashboard/welcome')
       if (alreadyRegistered) {
@@ -426,6 +268,30 @@ function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (submittedForReview) {
+    return (
+      <main className="min-h-screen bg-background pt-20">
+        <InnerContainer>
+          <div className="max-w-lg mx-auto text-center py-20">
+            <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-5" aria-hidden="true">
+              <svg className="w-7 h-7 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="font-heading text-2xl font-semibold text-charcoal mb-3">Claim submitted for review</h1>
+            <p className="font-body text-muted mb-6 leading-relaxed">
+              We couldn't automatically verify <strong>{email}</strong> against what we have on file for {founder.name}, so
+              our team will take a quick look and follow up by email within a few business days.
+            </p>
+            <Link to={`/founders/${founder.slug}`} className="text-sm font-medium text-primary hover:underline">
+              ← Back to {founder.name}'s profile
+            </Link>
+          </div>
+        </InnerContainer>
+      </main>
+    )
   }
 
   if (needsConfirmation) {
@@ -449,9 +315,21 @@ function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>
             Claim {founder.name}'s profile
           </h1>
           <p className="font-body text-sm text-muted mb-8 leading-relaxed">
-            This link is yours — create your account below and everything already on your profile (bio, stories, businesses) will be waiting, fully editable.
+            Create your account below and everything already on your profile (bio, stories, businesses) will be waiting, fully editable.
           </p>
           <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-4">
+            <div>
+              <label className="block font-body text-sm font-medium text-charcoal mb-1.5">Full name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+                autoComplete="name"
+                placeholder={`e.g. ${founder.name}`}
+                className="w-full px-3.5 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
             <div>
               <label className="block font-body text-sm font-medium text-charcoal mb-1.5">Email</label>
               <input
@@ -459,8 +337,12 @@ function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
+              <p className="font-body text-xs text-muted mt-1.5">
+                Use the email associated with your business or public profile — it helps us confirm this is really you.
+              </p>
             </div>
             <div>
               <label className="block font-body text-sm font-medium text-charcoal mb-1.5">Set a password</label>
@@ -470,6 +352,7 @@ function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>
                 onChange={e => setPassword(e.target.value)}
                 required
                 minLength={8}
+                autoComplete="new-password"
                 className="w-full px-3.5 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
@@ -482,6 +365,9 @@ function InstantClaimForm({ founder }: { founder: ReturnType<typeof getFounders>
               {submitting ? 'Creating your account…' : 'Claim my profile'}
             </button>
           </form>
+          <p className="font-body text-xs text-muted/70 mt-6 leading-relaxed text-center">
+            If we can't verify your email automatically, we'll send your claim to our team for a quick manual check instead.
+          </p>
         </div>
       </InnerContainer>
     </main>
