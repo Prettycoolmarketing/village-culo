@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { getFounders, updateFoundersBatch, deleteFoundersBatch, deleteFounderAccount } from '../../../services/founders'
+import { getFounders, getFounder, updateFoundersBatch, deleteFoundersBatch, deleteFounderAccount } from '../../../services/founders'
 import { getCurrentFounder } from '../../../services/currentFounder'
 import { getBusinesses } from '../../../services/businesses'
 import { importedContentService } from '../../../services/importedContent'
@@ -15,6 +15,7 @@ import { EditorialQueuePage } from './EditorialQueuePage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 import { getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../../services/editorialItems'
+import { runFounderResearch } from '../../../services/editorialResearch'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
@@ -58,26 +59,43 @@ function CuratedTag() {
 function BulkBar({
   selected,
   total,
+  failedCount,
+  retrying,
+  retryProgress,
   onSelectAll,
   onClearAll,
   onPublish,
   onArchive,
+  onRetryFailed,
 }: {
   selected: Set<string>
   total: number
+  failedCount: number
+  retrying: boolean
+  retryProgress: { done: number; total: number } | null
   onSelectAll: () => void
   onClearAll: () => void
   onPublish: () => void
   onArchive: () => void
+  onRetryFailed: () => void
 }) {
   if (selected.size === 0) return null
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2D2A26] rounded-2xl px-5 py-3 flex items-center gap-4 shadow-2xl">
       <p className="text-xs font-semibold text-white whitespace-nowrap">
-        {selected.size} of {total} selected
+        {retrying && retryProgress ? `Retrying research… (${retryProgress.done}/${retryProgress.total})` : `${selected.size} of ${total} selected`}
       </p>
       <div className="flex items-center gap-2">
         <button onClick={onPublish}     className="text-xs px-3 py-1.5 bg-[#5E6B4A] text-white rounded-lg font-semibold hover:bg-[#4a5538] transition-colors">Publish</button>
+        {failedCount > 0 && (
+          <button
+            onClick={onRetryFailed}
+            disabled={retrying}
+            className="text-xs px-3 py-1.5 bg-[#3E6E92] text-white rounded-lg font-semibold hover:bg-[#345c7a] disabled:opacity-50 transition-colors"
+          >
+            {retrying ? 'Retrying…' : `Retry research (${failedCount})`}
+          </button>
+        )}
         <ConfirmButton
           label="Delete"
           confirmLabel="Yes, delete"
@@ -144,6 +162,8 @@ export function VillageCuratedFoundersPage() {
   const [filterHasClaim, setFilterHasClaim] = useState(false)
   const [filterHasEmail, setFilterHasEmail] = useState(false)
   const [selected, setSelected]   = useState<Set<string>>(new Set())
+  const [retryingResearch, setRetryingResearch] = useState(false)
+  const [retryProgress, setRetryProgress] = useState<{ done: number; total: number } | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
   // Founders imported/added but not yet reviewed sit in "Curated" (still
@@ -249,6 +269,25 @@ export function VillageCuratedFoundersPage() {
     setBulkError(null)
     const result = await deleteFoundersBatch(Array.from(ids))
     if (!result.success) setBulkError(result.error ?? `Failed to archive ${ids.size} founder${ids.size === 1 ? '' : 's'}. Try again.`)
+    refresh()
+  }
+
+  // Only re-runs founders whose research actually failed — same real API
+  // calls as Bulk Import's own "Retry failed" button, just reachable from
+  // this list directly (staff often notice failures here first, via the
+  // status pill on each row) instead of needing to go back to the import
+  // screen to act on them.
+  async function retryFailedResearch(ids: Set<string>) {
+    const failed = Array.from(ids).filter(id => getFounder(id)?.researchStatus === 'failed')
+    if (failed.length === 0) return
+    setRetryingResearch(true)
+    setRetryProgress({ done: 0, total: failed.length })
+    for (let i = 0; i < failed.length; i++) {
+      await runFounderResearch(failed[i]!)
+      setRetryProgress({ done: i + 1, total: failed.length })
+    }
+    setRetryingResearch(false)
+    setRetryProgress(null)
     refresh()
   }
 
@@ -621,10 +660,14 @@ export function VillageCuratedFoundersPage() {
       <BulkBar
         selected={selected}
         total={selectableFiltered.length}
+        failedCount={Array.from(selected).filter(id => getFounder(id)?.researchStatus === 'failed').length}
+        retrying={retryingResearch}
+        retryProgress={retryProgress}
         onSelectAll={() => setSelected(new Set(selectableFiltered.map(f => f.id)))}
         onClearAll={() => setSelected(new Set())}
         onPublish={() => void bulkUpdate(selected, { status: 'published' })}
         onArchive={() => void archiveSelected(selected)}
+        onRetryFailed={() => void retryFailedResearch(selected)}
       />
       </>
       )}

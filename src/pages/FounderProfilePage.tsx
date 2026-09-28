@@ -344,12 +344,16 @@ export function FounderProfilePage() {
   // profile — clamping its summary to a few lines the same way a list of
   // several would reads as withholding when there's nothing else to see.
   // With just one, show it in full.
+  // 1 article: one wide, prominent card. 2: side by side, evenly split.
+  // 3+: back to a stacked single column — a grid stops reading as
+  // considered once it doesn't fill evenly.
+  const importsLayoutClass = publicImports.length === 2 ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : 'flex flex-col gap-4'
   const importsSection = publicImports.length > 0 && (
     <section aria-labelledby="founder-imports-heading">
       <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
         From Around the Web
       </h2>
-      <div className="flex flex-col gap-4">
+      <div className={importsLayoutClass}>
         {publicImports.slice(0, 5).map(item => (
           <ImportedContentCard key={item.id} content={item} fullLength={publicImports.length === 1} />
         ))}
@@ -494,7 +498,7 @@ export function FounderProfilePage() {
 
         <div className="bg-surface border-b border-border pb-12">
           <InnerContainer>
-            <div className="flex flex-col gap-6 pt-10 sm:pt-12 -mt-4 sm:-mt-6">
+            <div className="flex flex-col gap-6 pt-14 sm:pt-16 -mt-2 sm:-mt-3">
               <div className="flex flex-col sm:flex-row sm:items-end gap-6">
                 {/* A curated profile was never given a real photo — Avatar's
                     own fallback is the Culo mark, which reads as a real

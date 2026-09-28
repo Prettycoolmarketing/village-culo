@@ -12,9 +12,9 @@ interface Props {
   compact?: boolean
   intel?: VillageContentIntelligence
   // A single article is often the whole page for a brand-new curated
-  // profile — clamping its summary the same way a list of several would
-  // reads as withholding when there's nothing else to read. Shows the
-  // real full text instead of a 3-line clamp.
+  // profile — a bigger, more prominent card (larger title, more padding,
+  // a longer summary) instead of the same small treatment used for one
+  // of several. Still a summary, not the raw article text.
   fullLength?: boolean
 }
 
@@ -175,20 +175,12 @@ export function ImportedContentCard({ content, compact = false, intel, fullLengt
           </span>
         )}
 
-        {/* Description — full paragraphs at real length when this is the
-            only piece there is, a 3-line clamp otherwise. */}
+        {/* Description — still a summary, not the full raw text, but a
+            bigger card (the only piece there is) earns a longer one. */}
         {content.description && !compact && (
-          fullLength ? (
-            <div className="mt-3 space-y-3">
-              {content.description.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map((p, i) => (
-                <p key={i} className="font-body text-[15px] text-charcoal/80 leading-loose">{p}</p>
-              ))}
-            </div>
-          ) : (
-            <p className="font-body text-sm text-muted mt-2 leading-relaxed line-clamp-3">
-              {content.description}
-            </p>
-          )
+          <p className={`font-body text-sm text-muted mt-2 leading-relaxed ${fullLength ? 'line-clamp-6' : 'line-clamp-3'}`}>
+            {content.description}
+          </p>
         )}
 
         {/* Diary note */}
@@ -222,7 +214,7 @@ export function ImportedContentCard({ content, compact = false, intel, fullLengt
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              Turn this into content with CULO
+              Publish your story in The Culo Village — free
             </Link>
           </div>
         )}
