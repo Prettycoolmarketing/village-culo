@@ -10,7 +10,7 @@ import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
 import { runFounderResearch } from '../../services/editorialResearch'
 import { writeProfileBio, writeSourceArticle, runAudit, approveAllPassing, getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../services/editorialItems'
-import { importedContentService } from '../../services/importedContent'
+import { importedContentService, buildDraftImport } from '../../services/importedContent'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import type { Founder } from '../../types'
 
@@ -338,7 +338,22 @@ export function DashboardBulkImportPage() {
         // right is what actually sorts the written article into the right
         // podcast/YouTube/website row in the Articles tab instead of
         // leaving it orphaned.
-        const matchedContent = founderContent.find(c => c.originalUrl === source.url)
+        let matchedContent = founderContent.find(c => c.originalUrl === source.url)
+        // A founder with no pre-linked content at all still gets researched
+        // (see runFounderResearch) — the Researcher finds its own real
+        // sources via web search. Without a matching ImportedContent row,
+        // that written article would only ever be visible in CAPO tools,
+        // never as a real clickable card on the founder's own page. Create
+        // the row here so a Culo-discovered source ends up exactly where a
+        // curator-provided one would.
+        if (!matchedContent) {
+          const created = buildDraftImport(f.id, source.url)
+          const createResult = await importedContentService.upsert(created)
+          if (createResult.success) {
+            matchedContent = created
+            founderContent.push(created)
+          }
+        }
         setPipelineProgress({ done: i, total: targets.length, note: `${f.name}: writing article (${source.source_title ?? source.url})…` })
         const articleResult = await writeSourceArticle(f.id, matchedContent?.id, source)
         if (articleResult.success && articleResult.item) {
