@@ -546,7 +546,7 @@ function ArticlesTab({ founder, tick, bump }: { founder: Founder; tick: number; 
 // Auto-writes the moment research exists and nothing's been drafted yet —
 // so opening this modal after research already shows a written bio to
 // read, rather than one more manual click before there's anything to see.
-function BioDraftBlock({ founder, onUseBio }: { founder: Founder; onUseBio: (body: string) => void }) {
+function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUseBio: (body: string) => void; onSaved: (f: Founder) => void }) {
   const [items, setItems] = useState<EditorialItemRow[]>([])
   const [loaded, setLoaded] = useState(false)
   const [writing, setWriting] = useState(false)
@@ -562,17 +562,27 @@ function BioDraftBlock({ founder, onUseBio }: { founder: Founder; onUseBio: (bod
   const ledger = founder.evidenceLedger
   const bioItem = items.find(i => i.type === 'profile_bio')
 
-  // Writes straight into the actual Bio field above (via onUseBio), every
-  // time — this workflow trusts research + audit to be accurate, so the
-  // draft IS the bio, not a separate thing waiting for a manual copy step.
-  // Founders/staff can still hand-edit the Bio field afterwards as normal.
+  // Writes straight into the real founder record, not just this open
+  // modal's Bio textarea — the earlier version only updated local state,
+  // so the founder's real bio never changed until someone happened to
+  // press "Save changes" too, and the public/preview page kept showing
+  // the old bio indefinitely. This workflow trusts research + audit to be
+  // accurate, so the draft IS the bio the moment it's written. Founders/
+  // staff can still hand-edit the Bio field afterwards as normal.
+  async function persistBio(body: string) {
+    onUseBio(body)
+    const next = { ...founder, bio: body }
+    await updateFounder(next)
+    onSaved(next)
+  }
+
   async function handleWrite() {
     setWriting(true); setError(null)
     const result = await writeProfileBio(founder.id)
     setWriting(false)
     if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
     setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
-    if (result.item?.draft_content?.body) onUseBio(result.item.draft_content.body)
+    if (result.item?.draft_content?.body) void persistBio(result.item.draft_content.body)
   }
 
   if (ledger && !bioItem && !writing && !autoTriggered.current) {
@@ -581,7 +591,7 @@ function BioDraftBlock({ founder, onUseBio }: { founder: Founder; onUseBio: (bod
   }
   if (bioItem && !autoSynced.current) {
     autoSynced.current = true
-    onUseBio(bioItem.draft_content?.body ?? '')
+    void persistBio(bioItem.draft_content?.body ?? '')
   }
 
   if (!ledger && !bioItem) return null
@@ -673,7 +683,7 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           without leaving this modal. */}
       <EditorialResearchPanel founder={founder} onSaved={onSaved} />
 
-      <BioDraftBlock founder={founder} onUseBio={setBio} />
+      <BioDraftBlock founder={founder} onUseBio={setBio} onSaved={onSaved} />
 
       <div className="grid grid-cols-2 gap-3">
         <div>

@@ -75,7 +75,7 @@ export const locations: Location[] = [
   { id: 'alice-springs',   slug: 'alice-springs',   name: 'Alice Springs',   state: 'NT',  country: 'Australia', description: 'The centre of the country, home to founders who build against the odds.', image: '/placeholders/village-location-6.svg' },
 
   // Catch-all — kept last so it never crowds out a real city in the dropdown.
-  { id: 'regional-remote', slug: 'regional-remote', name: 'Regional or Remote Australia', state: '', country: 'Australia', description: 'Wherever the work happens.', image: '/placeholders/village-location.svg' },
+  { id: 'regional-remote', slug: 'regional-remote', name: 'Australia', state: '', country: 'Australia', description: 'Wherever the work happens.', image: '/placeholders/village-location.svg' },
 ]
 
 export const getLocation = (id: string) => locations.find(l => l.id === id)

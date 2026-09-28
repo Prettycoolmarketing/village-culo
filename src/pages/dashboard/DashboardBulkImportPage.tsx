@@ -856,8 +856,19 @@ export function DashboardBulkImportPage() {
             </div>
           )}
 
-          {/* Created founders list */}
-          {result.created.length > 0 && (
+          {/* Created founders list — failed research always sorts to the
+              end, so a founder actually ready for review isn't buried
+              under ones that need attention/a re-run first. */}
+          {result.created.length > 0 && (() => {
+            const visibleFounders = result.created
+              .filter(f => !deletedIds.has(f.id))
+              .slice()
+              .sort((a, b) => {
+                const aFailed = getFounder(a.id)?.researchStatus === 'failed' ? 1 : 0
+                const bFailed = getFounder(b.id)?.researchStatus === 'failed' ? 1 : 0
+                return aFailed - bFailed
+              })
+            return (
             <div>
               <div className="flex items-center justify-between gap-3">
                 <SectionHead
@@ -867,18 +878,18 @@ export function DashboardBulkImportPage() {
                 {createEditorialContent && (
                   <button
                     onClick={() => setSelectedForPipeline(prev =>
-                      prev.size === result.created.filter(f => !deletedIds.has(f.id)).length
+                      prev.size === visibleFounders.length
                         ? new Set()
-                        : new Set(result.created.filter(f => !deletedIds.has(f.id)).map(f => f.id)),
+                        : new Set(visibleFounders.map(f => f.id)),
                     )}
                     className="text-[11px] font-semibold text-[#3E6E92] hover:underline shrink-0"
                   >
-                    {selectedForPipeline.size === result.created.filter(f => !deletedIds.has(f.id)).length ? 'Deselect all' : 'Select all'}
+                    {selectedForPipeline.size === visibleFounders.length ? 'Deselect all' : 'Select all'}
                   </button>
                 )}
               </div>
               <div className="space-y-3">
-                {result.created.filter(f => !deletedIds.has(f.id)).map(f => {
+                {visibleFounders.map(f => {
                   const profileUrl = `${origin}/founders/${f.slug}`
                   const msgKey     = `outreach-${f.id}`
                   const profKey    = `profile-${f.id}`
@@ -1013,7 +1024,8 @@ export function DashboardBulkImportPage() {
                 })}
               </div>
             </div>
-          )}
+            )
+          })()}
 
           {/* Ethics */}
           <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">

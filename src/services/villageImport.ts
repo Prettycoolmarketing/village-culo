@@ -646,7 +646,7 @@ export function validateVIF(pkg: VillageImportPackage): VIFValidationResult {
 
     if (!f.fullName?.trim()) errors.push('fullName is required')
     if (!f.bio?.trim()) warnings.push('bio is missing — profile will have no description')
-    if (!f.city && !f.state) warnings.push('No location — will default to Regional or Remote Australia')
+    if (!f.city && !f.state) warnings.push('No location — will default to Australia')
     if (!f.industries || f.industries.length === 0) warnings.push('No industry — will use first available industry')
 
     const baseSlug = f.slug?.trim() || slugify(f.preferredName?.trim() || f.fullName?.trim() || `founder-${i}`)
