@@ -639,9 +639,33 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
   const [industryId, setIndustryId] = useState(founder.industry.id)
   const [website, setWebsite]     = useState(founder.website ?? '')
   const [linkedin, setLinkedin]   = useState(founder.linkedin ?? '')
+  const [instagram, setInstagram] = useState(founder.instagram ?? '')
+  const [youtube, setYoutube]     = useState(founder.youtube ?? '')
+  const [tiktok, setTiktok]       = useState(founder.tiktok ?? '')
+  const [podcast, setPodcast]     = useState(founder.podcast ?? '')
+  const [claimEmail, setClaimEmail] = useState(founder.claimEmail ?? '')
   const [saving, setSaving]       = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved]         = useState(false)
+
+  // Research runs in the background (see the Edit button in Bulk Import)
+  // and, when it verifies a founder's own real profile, fills it in on the
+  // founder record — but this tab's fields were only ever seeded once at
+  // mount, so a verification that lands after the modal is already open
+  // would silently never show up here. Re-syncs once when a ledger first
+  // appears, and only into fields still empty locally, so it never
+  // overwrites something staff already typed.
+  const socialAutoSynced = useRef(false)
+  useEffect(() => {
+    if (!founder.evidenceLedger || socialAutoSynced.current) return
+    socialAutoSynced.current = true
+    if (!instagram && founder.instagram) setInstagram(founder.instagram)
+    if (!youtube && founder.youtube) setYoutube(founder.youtube)
+    if (!tiktok && founder.tiktok) setTiktok(founder.tiktok)
+    if (!podcast && founder.podcast) setPodcast(founder.podcast)
+    if (!linkedin && founder.linkedin) setLinkedin(founder.linkedin)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [founder.evidenceLedger])
 
   async function handleSave() {
     setSaving(true); setSaveError(null); setSaved(false)
@@ -654,6 +678,11 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
       location, industry,
       website: website.trim() || undefined,
       linkedin: linkedin.trim() || undefined,
+      instagram: instagram.trim() || undefined,
+      youtube: youtube.trim() || undefined,
+      tiktok: tiktok.trim() || undefined,
+      podcast: podcast.trim() || undefined,
+      claimEmail: claimEmail.trim() || undefined,
     }
     const result = await updateFounder(next)
     setSaving(false)
@@ -702,16 +731,22 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           </select>
         </div>
       </div>
-      {/* Instagram/YouTube/TikTok/Podcast/Newsletter deliberately don't
-          have fields here — for a curated founder, a link in those
-          platforms is a research source (one video, one episode), not a
-          verified claim that it's their own owned account. It still does
-          real work as a source for the editorial engine's articles; a
-          founder adds their own real social links themselves once they
-          claim their profile, on their own dashboard. */}
+      {/* Instagram/YouTube/TikTok/Podcast only ever auto-fill from a
+          verified_profiles find — the Researcher's own confirmation that
+          an account is genuinely the founder's, not just a source (one
+          article, one video) they happened to appear in. Staff can still
+          add one by hand if they've verified it themselves. */}
       <div className="grid grid-cols-2 gap-3">
         <div><label className={LABEL_CLS}>Website</label><input className={INPUT_CLS} value={website} onChange={e => setWebsite(e.target.value)} /></div>
         <div><label className={LABEL_CLS}>LinkedIn</label><input className={INPUT_CLS} value={linkedin} onChange={e => setLinkedin(e.target.value)} /></div>
+        <div><label className={LABEL_CLS}>Instagram</label><input className={INPUT_CLS} value={instagram} onChange={e => setInstagram(e.target.value)} /></div>
+        <div><label className={LABEL_CLS}>YouTube</label><input className={INPUT_CLS} value={youtube} onChange={e => setYoutube(e.target.value)} /></div>
+        <div><label className={LABEL_CLS}>TikTok</label><input className={INPUT_CLS} value={tiktok} onChange={e => setTiktok(e.target.value)} /></div>
+        <div><label className={LABEL_CLS}>Podcast</label><input className={INPUT_CLS} value={podcast} onChange={e => setPodcast(e.target.value)} /></div>
+      </div>
+      <div>
+        <label className={LABEL_CLS}>Email (for staff outreach — not shown publicly)</label>
+        <input className={INPUT_CLS} type="email" value={claimEmail} onChange={e => setClaimEmail(e.target.value)} />
       </div>
 
       {saveError && <p className="text-xs text-red-600">{saveError}</p>}

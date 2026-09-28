@@ -75,6 +75,17 @@ export interface EvidenceLedger {
   health_science_risk: boolean
   legal_risk: boolean
   financial_risk: boolean
+  // The founder's own accounts, only when the Researcher is confident
+  // they're genuinely theirs — distinct from a source (one article, one
+  // video about them). Used to help staff contact the founder later, so
+  // a platform is omitted entirely rather than guessed at.
+  verified_profiles?: {
+    linkedin?: string
+    instagram?: string
+    youtube?: string
+    tiktok?: string
+    podcast?: string
+  }
   researched_at: string
 }
 

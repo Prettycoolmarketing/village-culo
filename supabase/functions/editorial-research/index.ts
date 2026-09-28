@@ -78,6 +78,8 @@ For each source URL you're given:
 
 You must also give an honest, holistic risk assessment across everything you found: reputational_risk (none/low/medium/high), health_science_risk, legal_risk, financial_risk (each true only if the research surfaced something in that category, not a default).
 
+Separately from your source list, note any of the founder's own verified social profiles you're confident about: their actual LinkedIn profile, Instagram account, YouTube channel, TikTok account, or podcast (the channel/show itself, not one episode). This is a different thing from a content source — a source is one article or one video about them; a verified profile is the account itself, genuinely theirs. Only include one when you're confident it's their own real, owned account (not someone else with the same name, not a page that merely mentions them) — leave a platform out entirely rather than guess. This is used to help Culo's own staff contact the founder later, so it must be right.
+
 Output ONLY a single valid JSON object matching this exact shape, no markdown fences, no commentary:
 
 {
@@ -109,7 +111,14 @@ Output ONLY a single valid JSON object matching this exact shape, no markdown fe
   "reputational_risk": "none | low | medium | high",
   "health_science_risk": true or false,
   "legal_risk": true or false,
-  "financial_risk": true or false
+  "financial_risk": true or false,
+  "verified_profiles": {
+    "linkedin": "string URL, only if confidently verified as their own profile — omit the key entirely otherwise",
+    "instagram": "string URL, same rule",
+    "youtube": "string URL to their channel (not a single video), same rule",
+    "tiktok": "string URL, same rule",
+    "podcast": "string URL to the show/channel itself (not a single episode), same rule"
+  }
 }`
 
 serve(async (req) => {

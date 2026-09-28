@@ -66,8 +66,21 @@ export async function runFounderResearch(founderId: string): Promise<ResearchRes
     return { success: false, error: message }
   }
 
+  // Only ever fills in a platform the founder doesn't already have a value
+  // for — never overwrites something already there, whether that's a real
+  // claimed founder's own entry or an earlier research run's own find.
+  const verified = data.ledger.verified_profiles
+  const profileFields = {
+    linkedin: founder.linkedin || verified?.linkedin,
+    instagram: founder.instagram || verified?.instagram,
+    youtube: founder.youtube || verified?.youtube,
+    tiktok: founder.tiktok || verified?.tiktok,
+    podcast: founder.podcast || verified?.podcast,
+  }
+
   await updateFounder({
     ...founder,
+    ...profileFields,
     researchStatus: 'done',
     researchCompletedAt: new Date().toISOString(),
     evidenceLedger: data.ledger,
