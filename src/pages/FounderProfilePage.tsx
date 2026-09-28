@@ -695,8 +695,12 @@ export function FounderProfilePage() {
           instead, nested in the normal content column (see further down). */}
       {!hasRealStories && importsSection && (
         <div className="pt-14 md:pt-16">
+          {/* No mx-auto — the bio/CTA content above (max-w-4xl, no auto
+              margin) starts flush at the container's left edge, and
+              centering this block would shift its own left edge inward,
+              throwing it out of line with everything above it. */}
           <InnerContainer>
-            <div className="max-w-5xl mx-auto">{importsSection}</div>
+            <div className="max-w-5xl">{importsSection}</div>
           </InnerContainer>
         </div>
       )}
