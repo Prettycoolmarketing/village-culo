@@ -679,8 +679,6 @@ export function FounderProfilePage() {
         </div>
       </section>
 
-      <ClaimProfileBanner founder={founder} />
-
       {/* ── Evidence strip ──────────────────────────────────────────────────── */}
       <section className="bg-charcoal py-5" aria-label="Authority metrics">
         <InnerContainer>
@@ -1111,14 +1109,16 @@ export function FounderProfilePage() {
         </InnerContainer>
       </div>
 
-      {/* Bottom-of-page nudge toward Culo Creatives — separate from the
-          claim CTA above the evidence strip, this is about what they could
-          make once they're in, not about claiming the profile itself. */}
+      {/* Bottom-of-page nudge toward Culo Creatives, and the claim CTA —
+          both sit right above the site's dark footer, the very last thing
+          on the page rather than competing with the hero or evidence
+          strip further up. */}
       {isUnclaimedCurated && (
-        <div className="pb-14 md:pb-16">
+        <div className="pb-14 md:pb-16 flex flex-col gap-10">
           <InnerContainer>
             <CreateWithCuloCTA variant="banner" label="Create content from your messy thoughts and raw footage" />
           </InnerContainer>
+          <ClaimProfileBanner founder={founder} />
         </div>
       )}
 

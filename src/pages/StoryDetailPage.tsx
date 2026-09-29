@@ -623,8 +623,6 @@ export function StoryDetailPage() {
         </div>
       </section>
 
-      {founder && <ClaimProfileBanner founder={founder} />}
-
       {/* ── Main content ────────────────────────────────────────────────────── */}
       <div className="py-12 md:py-16">
         <InnerContainer>
@@ -1160,6 +1158,11 @@ export function StoryDetailPage() {
           </div>
         </InnerContainer>
       </div>
+
+      {/* Claim CTA sits right above the site's dark footer — the very last
+          thing on the article page, not competing with the byline/CTA row
+          further up. */}
+      {founder && <ClaimProfileBanner founder={founder} />}
 
     </main>
   )
