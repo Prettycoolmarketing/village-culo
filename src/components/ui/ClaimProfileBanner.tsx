@@ -49,17 +49,16 @@ export function AreYouThisFounderCTA({ founder, initialLabel, initialClassName }
   )
 }
 
-// The black-box pitch, same treatment as the marketing site's own "Join
-// The Culo Village" box (MarketingLandingPage) — floating inside a light
-// section rather than sitting flush on the page background. Shown at the
-// bottom of both a curated founder's own profile and their auto-published
-// articles (replacing the small Culo Creatives banner there), immediately
-// followed by ClaimProfileBanner underneath.
+// The black-box pitch — sits directly under the page's own content on the
+// normal page background, no separate coloured section around it. Shown
+// at the bottom of both a curated founder's own profile and their
+// auto-published articles (replacing the small Culo Creatives banner
+// there), immediately followed by ClaimProfileBanner underneath.
 export function ClaimPitchSection({ founder }: { founder: Founder }) {
   if (founder.profileStatus !== 'village-curated' || founder.userId) return null
   return (
     <>
-      <section className="pt-14 md:pt-16 pb-16 md:pb-20 bg-[#EBF2F8]">
+      <div className="pt-14 md:pt-16 pb-16 md:pb-20">
         <InnerContainer>
           <div className="bg-charcoal rounded-3xl px-8 py-14 md:px-16 md:py-20 text-center">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
@@ -81,7 +80,7 @@ export function ClaimPitchSection({ founder }: { founder: Founder }) {
             </div>
           </div>
         </InnerContainer>
-      </section>
+      </div>
       <ClaimProfileBanner founder={founder} />
     </>
   )

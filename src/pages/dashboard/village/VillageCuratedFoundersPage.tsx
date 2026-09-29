@@ -29,7 +29,6 @@ import { publishFounderArticles } from '../../../services/publishStory'
 // case. Publish is what clears a row out of "Review": once it's published
 // there's nothing left needing a look, so this renders nothing at all.
 function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialItemRow[] }) {
-  if (founder.status === 'published') return null
   if (founder.researchStatus === 'failed') {
     return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-red-50 text-red-600">Failed</span>
   }
@@ -37,6 +36,13 @@ function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialIt
     || items.some(i => i.editorial_status === 'review' || i.editorial_status === 'pending' || i.editorial_status === 'reject')
   if (needsReview) {
     return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-amber-50 text-amber-700">Review</span>
+  }
+  // Staff work through this queue batch by batch — seeing which ones are
+  // already live (vs. still sitting in draft with nothing wrong) is how
+  // they track progress through it, so this stays visible rather than
+  // showing nothing once a founder's published.
+  if (founder.status === 'published') {
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#5E6B4A]/10 text-[#5E6B4A]">Published</span>
   }
   return null
 }
