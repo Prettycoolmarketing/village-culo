@@ -338,6 +338,7 @@ export function FounderProfilePage() {
   // shared Culo-branded banner gives the page a real hero instead of an
   // empty gap, without pretending to be a personal photo.
   const isUnclaimedCurated = founder.profileStatus === 'village-curated' && !founder.userId
+  const villageMemberCount = isUnclaimedCurated ? getFounders({ publicOnly: true }).length : 0
 
   // A curated founder with no real published Stories yet has nothing else
   // to lead with — "From Around the Web" is the whole page, so it should
@@ -667,7 +668,7 @@ export function FounderProfilePage() {
                   to={`/claim/${founder.slug}`}
                   className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
-                  Join the Culo Village to publish your story instantly
+                  Claim your profile to publish instantly
                 </Link>
               ) : (
                 <CreateWithCuloCTA variant="button" size="lg" label="Continue your story with CULO Creatives exclusively in Canva" />
@@ -689,10 +690,21 @@ export function FounderProfilePage() {
                 <span className="font-body text-xs text-white/50 uppercase tracking-wide">FAQs answered</span>
               </div>
             )}
-            <div className="flex flex-col">
-              <span className="font-heading text-2xl font-bold text-white">{new Date(founder.createdAt).getFullYear()}</span>
-              <span className="font-body text-xs text-white/50 uppercase tracking-wide">Publishing on Village since</span>
-            </div>
+            {/* "Publishing on Village since [year]" isn't true yet for an
+                unclaimed curated founder — they haven't joined or published
+                anything themselves. Village size is real social proof for
+                the claim CTA instead: other founders already here. */}
+            {isUnclaimedCurated ? (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{villageMemberCount}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Members in the Village</span>
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                <span className="font-heading text-2xl font-bold text-white">{new Date(founder.createdAt).getFullYear()}</span>
+                <span className="font-body text-xs text-white/50 uppercase tracking-wide">Publishing on Village since</span>
+              </div>
+            )}
             {founder.topics.length > 0 && (
               <div className="flex flex-col">
                 <span className="font-heading text-2xl font-bold text-white">{founder.topics.length}</span>
