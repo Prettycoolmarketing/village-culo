@@ -263,23 +263,12 @@ export function getConnectedTo(entityType: GraphEntityType, entityId: string, li
     }
   }
 
-  if (entityType === 'founder') {
-    for (const sim of getSimilarFounders(entityId, limit)) {
-      const key = `founder:${sim.founderId}`
-      if (byKey.has(key)) continue
-      const resolved = resolveEntityLink('founder', sim.founderId)
-      if (!resolved) continue
-      byKey.set(key, {
-        entityType: 'founder',
-        entityId: sim.founderId,
-        label: resolved.label,
-        url: resolved.url,
-        relationshipType: 'similar_topic',
-        confidence: sim.confidence,
-        why: sim.why,
-      })
-    }
-  }
+  // Founder-to-founder topic-similarity used to be added here too (via
+  // getSimilarFounders) — "Connected To" is meant to be real relationships
+  // (explicit edges, business-to-business), not a topic-overlap guess
+  // dressed up as a connection. That guess is exactly what put an
+  // unrelated founder ("Elle Kress", similar topics) on a page it had no
+  // real business relationship to.
 
   return [...byKey.values()].sort((a, b) => b.confidence - a.confidence).slice(0, limit)
 }

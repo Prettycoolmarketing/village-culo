@@ -168,6 +168,11 @@ function FounderNotFound({ slug }: { slug: string }) {
 
 function getRelatedFounders(founderId: string, industryId: string, locationId: string, topicIds: string[]) {
   return getFounders({ publicOnly: true })
+    // An unclaimed curated founder isn't a real, verified account yet — a
+    // topic/industry overlap with one reads as a genuine connection to
+    // visitors and staff alike, when it's really just an artifact of two
+    // unrelated people happening to share a category.
+    .filter(f => !(f.profileStatus === 'village-curated' && !f.userId))
     .filter(f => f.id !== founderId)
     .map(f => {
       let score = 0
@@ -401,11 +406,51 @@ export function FounderProfilePage() {
     relatedBusinessIds:  [...new Set(founderIntelRecords.flatMap(r => r.relatedBusinessIds))].slice(0, 3),
   } : null
 
+  // Extracted so it can render in two different spots depending on
+  // isUnclaimedCurated (see below) rather than being duplicated — an
+  // unclaimed curated founder has no real Stories/sidebar content, so
+  // this rendering inside the normal 2/3+1/3 grid left it floating oddly
+  // to the right of a near-empty main column; it belongs with the
+  // full-width "From Around the Web" block instead for that case.
+  const exploreFurtherSection = aggregatedIntel && (aggregatedIntel.topics.length > 0 || aggregatedIntel.locations.length > 0) && (
+    <section aria-labelledby="founder-explore-heading">
+      <h2 id="founder-explore-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
+        Explore Further
+      </h2>
+
+      {aggregatedIntel.topics.length > 0 && (
+        <div className="mb-4">
+          <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Topics covered</p>
+          <div className="flex flex-wrap gap-1.5">
+            {aggregatedIntel.topics.map(t => (
+              <span key={t} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary">
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {aggregatedIntel.locations.length > 0 && (
+        <div>
+          <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Locations</p>
+          <div className="flex flex-wrap gap-1.5">
+            {aggregatedIntel.locations.map(l => (
+              <span key={l} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-border text-charcoal/70">
+                {l}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+
   // Intel-driven related founders (supplement existing scoring-based related founders)
   const intelRelatedFounders = aggregatedIntel
     ? aggregatedIntel.relatedFounderIds
         .map(id => getFounders({ publicOnly: true }).find(f => f.id === id))
-        .filter((f): f is NonNullable<typeof f> => !!f && f.id !== founder.id)
+        .filter((f): f is NonNullable<typeof f> => !!f && f.id !== founder.id && !(f.profileStatus === 'village-curated' && !f.userId))
     : []
 
   // Intel-driven related businesses — exclude the founder's own (already
@@ -702,7 +747,10 @@ export function FounderProfilePage() {
               centering this block would shift its own left edge inward,
               throwing it out of line with everything above it. */}
           <InnerContainer>
-            <div className="max-w-5xl">{importsSection}</div>
+            <div className="max-w-5xl flex flex-col gap-10">
+              {importsSection}
+              {isUnclaimedCurated && exploreFurtherSection}
+            </div>
           </InnerContainer>
         </div>
       )}
@@ -977,40 +1025,9 @@ export function FounderProfilePage() {
                   summary) belong at the top of the page, not buried below
                   the Stories grid. */}
 
-              {/* Explore Further — aggregated topics/locations across founder's content */}
-              {aggregatedIntel && (aggregatedIntel.topics.length > 0 || aggregatedIntel.locations.length > 0) && (
-                <section aria-labelledby="founder-explore-heading">
-                  <h2 id="founder-explore-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-                    Explore Further
-                  </h2>
-
-                  {aggregatedIntel.topics.length > 0 && (
-                    <div className="mb-4">
-                      <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Topics covered</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {aggregatedIntel.topics.map(t => (
-                          <span key={t} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary">
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {aggregatedIntel.locations.length > 0 && (
-                    <div>
-                      <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Locations</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {aggregatedIntel.locations.map(l => (
-                          <span key={l} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-border text-charcoal/70">
-                            {l}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </section>
-              )}
+              {/* Explore Further renders in the full-width leading block
+                  instead when isUnclaimedCurated — see exploreFurtherSection. */}
+              {!isUnclaimedCurated && exploreFurtherSection}
 
               {/* Connected To, Related Businesses and Related Founders (further
                   below) are all auto-inferred from the relationship/intel
