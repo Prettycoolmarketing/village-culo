@@ -658,9 +658,20 @@ export function FounderProfilePage() {
               </div>
             )}
 
-            {/* Create with CULO CTA */}
+            {/* Create with CULO CTA — an unclaimed curated founder has no
+                account to "continue" anything with yet; the CTA points at
+                claiming/joining instead of the Canva creation flow. */}
             <div className="mt-7">
-              <CreateWithCuloCTA variant="button" size="lg" label="Continue your story with CULO Creatives exclusively in Canva" />
+              {isUnclaimedCurated ? (
+                <Link
+                  to={`/claim/${founder.slug}`}
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                >
+                  Join the Culo Village to publish your story instantly
+                </Link>
+              ) : (
+                <CreateWithCuloCTA variant="button" size="lg" label="Continue your story with CULO Creatives exclusively in Canva" />
+              )}
             </div>
 
             <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-7" />
@@ -1099,6 +1110,17 @@ export function FounderProfilePage() {
           </div>
         </InnerContainer>
       </div>
+
+      {/* Bottom-of-page nudge toward Culo Creatives — separate from the
+          claim CTA above the evidence strip, this is about what they could
+          make once they're in, not about claiming the profile itself. */}
+      {isUnclaimedCurated && (
+        <div className="pb-14 md:pb-16">
+          <InnerContainer>
+            <CreateWithCuloCTA variant="banner" label="Create content from your messy thoughts and raw footage" />
+          </InnerContainer>
+        </div>
+      )}
 
     </main>
   )
