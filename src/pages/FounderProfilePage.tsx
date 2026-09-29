@@ -25,7 +25,7 @@ import { BusinessCard } from '../components/cards/BusinessCard'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
-import { AreYouThisFounderCTA } from '../components/ui/ClaimProfileBanner'
+import { AreYouThisFounderCTA, ClaimPitchSection } from '../components/ui/ClaimProfileBanner'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { formatLocationFull } from '../utils/location'
 
@@ -1120,36 +1120,9 @@ export function FounderProfilePage() {
         </InnerContainer>
       </div>
 
-      {/* Bottom-of-page claim CTA — same black-box treatment as the
-          marketing site's own "Join The Culo Village" pitch
-          (MarketingLandingPage), rather than the separate dark Canva
-          banner and blue claim banner it replaced. Sits right above the
-          site's dark footer, the very last thing on the page. */}
-      {isUnclaimedCurated && (
-        <div className="pt-14 md:pt-16">
-          <InnerContainer>
-            <div className="bg-charcoal rounded-3xl px-8 py-14 md:px-16 md:py-20 text-center">
-              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                This is your profile
-              </p>
-              <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-5 leading-tight max-w-2xl mx-auto">
-                Claim it for free and publish your first 10 articles on us.
-              </h2>
-              <p className="font-body text-lg text-white/70 leading-relaxed mb-8 max-w-2xl mx-auto">
-                Everything already written and imported here — bio, stories, businesses — will be waiting for you,
-                fully editable. Culo Creatives, the editing tool inside Canva, is a separate optional add-on.
-              </p>
-              <div className="flex justify-center">
-                <AreYouThisFounderCTA
-                  founder={founder}
-                  initialLabel="Claim your profile to publish instantly"
-                  initialClassName="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-                />
-              </div>
-            </div>
-          </InnerContainer>
-        </div>
-      )}
+      {/* Bottom-of-page claim pitch — black box + blue claim banner, the
+          very last thing on the page, right above the site's dark footer. */}
+      <ClaimPitchSection founder={founder} />
 
     </main>
   )

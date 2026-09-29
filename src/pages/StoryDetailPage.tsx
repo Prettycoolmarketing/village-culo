@@ -25,7 +25,7 @@ import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBl
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { InnerContainer }   from '../components/layout/PageContainer'
-import { ClaimProfileBanner } from '../components/ui/ClaimProfileBanner'
+import { ClaimPitchSection } from '../components/ui/ClaimProfileBanner'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType, Story } from '../types'
 import { normalizeUrl, isDirectAudioUrl } from '../utils/url'
@@ -219,6 +219,11 @@ export function StoryDetailPage() {
         ? story.videoOrientation === 'landscape'
         : story.contentTypes.includes('youtube-video') || story.contentTypes.includes('talking-head'))
     : false
+  // No hero banner at all when there's no real pulled thumbnail (a YouTube
+  // video, podcast art) — the shared Culo brand photo works as a card
+  // fallback elsewhere, but a full-width hero implies a real photo of the
+  // piece itself in a way a smaller card doesn't.
+  const hasRealCoverImage = !!story?.coverImage && story.coverImage !== '/assets/culo-brand-cover.png'
   const contentBadges = story && (
     <>
       {story.contentTypes.map(type => (
@@ -429,8 +434,9 @@ export function StoryDetailPage() {
       <section aria-labelledby="story-title">
         {/* Cover image — skipped for a vertical video, which already fills
             the frame; a wide banner above it would just repeat a cropped,
-            lower-quality version of the same shot. */}
-        {!isVerticalVideo && (
+            lower-quality version of the same shot. Also skipped entirely
+            when there's no real thumbnail (see hasRealCoverImage). */}
+        {!isVerticalVideo && hasRealCoverImage && (
           <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
             <CoverImage
               src={story.coverImage}
@@ -453,7 +459,10 @@ export function StoryDetailPage() {
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
             <div className="pt-12 sm:pt-16">
-              {isVerticalVideo && (
+              {/* No hero image means the badges never got their usual spot
+                  overlaid on it — shown here instead, same as vertical
+                  video already does. */}
+              {(isVerticalVideo || !hasRealCoverImage) && (
                 <div className="flex flex-wrap gap-2 mb-4" aria-label="Content formats">
                   {contentBadges}
                 </div>
@@ -1013,11 +1022,15 @@ export function StoryDetailPage() {
                 </section>
               )}
 
-              {/* Create with CULO CTA */}
-              <CreateWithCuloCTA
-                variant="banner"
-                label="Create content from your messy thoughts and raw footage"
-              />
+              {/* Create with CULO CTA — an unclaimed curated founder's
+                  article gets the bigger claim pitch at the true bottom of
+                  the page instead (see ClaimPitchSection), not this too. */}
+              {!isUnclaimedCuratedStory && (
+                <CreateWithCuloCTA
+                  variant="banner"
+                  label="Create content from your messy thoughts and raw footage"
+                />
+              )}
 
             </div>
 
@@ -1159,10 +1172,10 @@ export function StoryDetailPage() {
         </InnerContainer>
       </div>
 
-      {/* Claim CTA sits right above the site's dark footer — the very last
-          thing on the article page, not competing with the byline/CTA row
-          further up. */}
-      {founder && <ClaimProfileBanner founder={founder} />}
+      {/* Black-box claim pitch + blue banner, same as the founder's own
+          profile page — sits right above the site's dark footer, the very
+          last thing on the article page. */}
+      {founder && <ClaimPitchSection founder={founder} />}
 
     </main>
   )

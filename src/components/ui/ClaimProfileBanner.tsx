@@ -49,6 +49,44 @@ export function AreYouThisFounderCTA({ founder, initialLabel, initialClassName }
   )
 }
 
+// The black-box pitch, same treatment as the marketing site's own "Join
+// The Culo Village" box (MarketingLandingPage) — floating inside a light
+// section rather than sitting flush on the page background. Shown at the
+// bottom of both a curated founder's own profile and their auto-published
+// articles (replacing the small Culo Creatives banner there), immediately
+// followed by ClaimProfileBanner underneath.
+export function ClaimPitchSection({ founder }: { founder: Founder }) {
+  if (founder.profileStatus !== 'village-curated' || founder.userId) return null
+  return (
+    <>
+      <section className="pt-14 md:pt-16 pb-16 md:pb-20 bg-[#EBF2F8]">
+        <InnerContainer>
+          <div className="bg-charcoal rounded-3xl px-8 py-14 md:px-16 md:py-20 text-center">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+              Is this your profile?
+            </p>
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-5 leading-tight max-w-2xl mx-auto">
+              Publish your previously posted content across platforms as individual web articles for AI discovery
+              instantly, thanks to CULO.
+            </h2>
+            <p className="font-body text-lg text-white/70 leading-relaxed mb-8 max-w-2xl mx-auto">
+              Your first 20 articles are on us! Optional upgrade to edit your raw footage with Culo Creatives in Canva!
+            </p>
+            <div className="flex justify-center">
+              <AreYouThisFounderCTA
+                founder={founder}
+                initialLabel="Claim your profile to publish instantly"
+                initialClassName="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+              />
+            </div>
+          </div>
+        </InnerContainer>
+      </section>
+      <ClaimProfileBanner founder={founder} />
+    </>
+  )
+}
+
 // Shown on both a curated founder's own profile page (just above the
 // evidence strip) and on their auto-published articles (same spot, just
 // above the article body) — a visitor reading the story is exactly the
