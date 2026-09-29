@@ -70,7 +70,7 @@ export function ClaimPitchSection({ founder }: { founder: Founder }) {
               instantly, thanks to CULO.
             </h2>
             <p className="font-body text-lg text-white/70 leading-relaxed mb-8 max-w-2xl mx-auto">
-              Your first 20 articles are on us! Optional upgrade to edit your raw footage with Culo Creatives in Canva!
+              Your first 10 articles are on us! Optional upgrade to edit your raw footage with Culo Creatives in Canva!
             </p>
             <div className="flex justify-center">
               <AreYouThisFounderCTA

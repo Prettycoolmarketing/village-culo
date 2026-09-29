@@ -321,7 +321,12 @@ function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<t
               only asks for an email and password, which undersells what's
               on the other side of it without this. Same free-10 offer as
               the main join flow (see JoinVillagePage/MarketingLandingPage). */}
-          <ul className="flex flex-col gap-2 mb-8 bg-surface rounded-xl border border-border p-4">
+          <div className="mb-8 bg-surface rounded-xl border border-border p-4">
+            <p className="font-body text-sm font-semibold text-charcoal mb-3">
+              Structure your previously posted content from across platforms and republish it as individual web
+              articles for AI discoverability.
+            </p>
+            <ul className="flex flex-col gap-2">
             {[
               'Free membership, forever — no credit card required',
               'Your first 10 articles published free, on us',
@@ -334,7 +339,8 @@ function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<t
                 {item}
               </li>
             ))}
-          </ul>
+            </ul>
+          </div>
           <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-4">
             <div>
               <label className="block font-body text-sm font-medium text-charcoal mb-1.5">Full name</label>

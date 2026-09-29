@@ -223,7 +223,7 @@ export function StoryDetailPage() {
   // video, podcast art) — the shared Culo brand photo works as a card
   // fallback elsewhere, but a full-width hero implies a real photo of the
   // piece itself in a way a smaller card doesn't.
-  const hasRealCoverImage = !!story?.coverImage && story.coverImage !== '/assets/culo-brand-cover.png'
+  const hasRealCoverImage = !!story?.coverImage && !story.coverImage.includes('/placeholders/') && story.coverImage !== '/assets/culo-brand-cover.png'
   const contentBadges = story && (
     <>
       {story.contentTypes.map(type => (

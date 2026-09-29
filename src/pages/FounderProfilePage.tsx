@@ -371,7 +371,7 @@ export function FounderProfilePage() {
       </h2>
       <div className={importsLayoutClass}>
         {publicImports.slice(0, 5).map(item => (
-          <ImportedContentCard key={item.id} content={item} size={importsCardSize} />
+          <ImportedContentCard key={item.id} content={item} size={importsCardSize} founder={founder} />
         ))}
       </div>
       {publicImports.length > 5 && (
@@ -382,7 +382,7 @@ export function FounderProfilePage() {
           </summary>
           <div className="flex flex-col gap-4 mt-4">
             {publicImports.slice(5).map(item => (
-              <ImportedContentCard key={item.id} content={item} />
+              <ImportedContentCard key={item.id} content={item} founder={founder} />
             ))}
           </div>
         </details>

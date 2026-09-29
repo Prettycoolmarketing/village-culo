@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import type { ImportedContent } from '../../types/importedContent'
 import type { VillageContentIntelligence } from '../../types/villageIntelligence'
+import type { Founder } from '../../types'
 import { PLATFORM_LABELS, PLATFORM_COLORS } from '../../services/importedContent'
 import { getStory } from '../../services/stories'
 import { normalizeUrl } from '../../utils/url'
+import { AreYouThisFounderCTA } from '../ui/ClaimProfileBanner'
 
 const EMBEDDABLE = new Set(['youtube', 'vimeo', 'tiktok'])
 
@@ -18,9 +20,14 @@ interface Props {
   // row evenly) a step down, 'default' (4+, stacked) the original compact
   // size. Still always a summary, never the raw article text.
   size?: 'default' | 'large' | 'featured'
+  // When given and still an unclaimed curated founder, the bottom CTA asks
+  // "are you this founder?" first instead of linking straight into a
+  // dashboard nobody viewing this card necessarily has yet.
+  founder?: Founder
 }
 
-export function ImportedContentCard({ content, compact = false, intel, size = 'default' }: Props) {
+export function ImportedContentCard({ content, compact = false, intel, size = 'default', founder }: Props) {
+  const isUnclaimedCurated = founder?.profileStatus === 'village-curated' && !founder.userId
   const fullLength    = size === 'featured'
   const platformLabel = PLATFORM_LABELS[content.sourcePlatform]
   const platformColor = PLATFORM_COLORS[content.sourcePlatform]
@@ -214,15 +221,23 @@ export function ImportedContentCard({ content, compact = false, intel, size = 'd
         {/* Create with CULO CTA */}
         {!compact && (
           <div className="relative z-20 mt-3 pt-3 border-t border-border">
-            <Link
-              to="/dashboard/publish"
-              className="font-body text-[10px] font-semibold text-primary hover:text-[#b05a35] transition-colors flex items-center gap-1"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Publish your story in The Culo Village — free
-            </Link>
+            {isUnclaimedCurated ? (
+              <AreYouThisFounderCTA
+                founder={founder!}
+                initialLabel="Publish your story in The Culo Village — free"
+                initialClassName="font-body text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors flex items-center gap-1.5"
+              />
+            ) : (
+              <Link
+                to="/dashboard/publish"
+                className="font-body text-[10px] font-semibold text-primary hover:text-[#b05a35] transition-colors flex items-center gap-1"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Publish your story in The Culo Village — free
+              </Link>
+            )}
           </div>
         )}
       </div>
