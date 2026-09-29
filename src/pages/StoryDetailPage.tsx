@@ -25,6 +25,7 @@ import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBl
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { InnerContainer }   from '../components/layout/PageContainer'
+import { ClaimProfileBanner } from '../components/ui/ClaimProfileBanner'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType, Story } from '../types'
 import { normalizeUrl, isDirectAudioUrl } from '../utils/url'
@@ -621,6 +622,8 @@ export function StoryDetailPage() {
           </InnerContainer>
         </div>
       </section>
+
+      {founder && <ClaimProfileBanner founder={founder} />}
 
       {/* ── Main content ────────────────────────────────────────────────────── */}
       <div className="py-12 md:py-16">
