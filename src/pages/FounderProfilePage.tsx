@@ -220,13 +220,13 @@ function AreYouThisFounderCTA({ founder }: { founder: Founder }) {
           to={`/claim/${founder.slug}`}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
         >
-          Yes, claim my profile
+          Yes, claim my free profile
         </Link>
         <Link
           to="/onboarding"
           className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-charcoal text-sm font-semibold rounded-xl hover:border-primary hover:text-primary transition-colors"
         >
-          No, start my own
+          No, publish my story free
         </Link>
       </div>
     </div>
