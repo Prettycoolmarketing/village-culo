@@ -119,15 +119,14 @@ export function VillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Coming soon · Exclusively in Canva
+                Free to join · Culo Creatives optional add-on
               </p>
               <h2 id="creatives-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                CULO Creatives is coming to Canva.
+                Republish your posts as individual web articles for AI discoverability.
               </h2>
               <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
-                Culo Creatives helps founders turn their messy thoughts and raw footage into
-                social media content. CULO helps you create blogs, carousels and multiple reel formats from
-                the stories, experiences and insights you already have.
+                Publish in the Village for free, then use Culo Creatives — coming soon, exclusively in Canva — to
+                turn your messy thoughts and raw footage into different formats of social media content.
               </p>
               <HomeInstantJoin />
               <Link to="/join" className="inline-block text-base sm:text-lg font-semibold text-white hover:text-primary transition-colors mt-5 underline underline-offset-4 decoration-white/30 hover:decoration-primary">
