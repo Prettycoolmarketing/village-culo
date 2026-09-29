@@ -1,4 +1,5 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
+import { getFounder } from './founders'
 import type { Business, BusinessFilter } from '../types'
 
 const KEY = 'businesses'
@@ -16,7 +17,18 @@ export function getBusinesses(filter?: BusinessFilter): Business[] {
   if (filter.locationId) result = result.filter(b => b.location.id === filter.locationId)
   if (filter.industryId) result = result.filter(b => b.industry.id === filter.industryId)
   if (filter.topicId)    result = result.filter(b => b.topics.some(t => t.id === filter.topicId))
-  if (filter.publicOnly) result = result.filter(b => (b.status === 'published' || b.status === 'featured') && b.name.trim().length > 0)
+  // A business's own status field isn't the only thing that should gate
+  // public visibility — a stray write path (or old data predating a fix
+  // elsewhere) can leave a business published while its owning founder is
+  // still draft/unreviewed. A visitor should never be able to reach a
+  // curated founder's business page before the founder themselves has
+  // actually been published — a founder with no businessId link (a real
+  // founder with no linked business at all) isn't affected by this check.
+  if (filter.publicOnly) result = result.filter(b =>
+    (b.status === 'published' || b.status === 'featured') &&
+    b.name.trim().length > 0 &&
+    (() => { const f = getFounder(b.founderId); return !f || f.status === 'published' || f.status === 'featured' })()
+  )
   if (filter.featured !== undefined) result = result.filter(b => b.featured === filter.featured)
   // Curated businesses (featuredOrder set) come first, in that order; everyone
   // else keeps their existing relative order after them (Array#sort is stable).

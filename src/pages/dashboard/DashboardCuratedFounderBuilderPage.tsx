@@ -237,7 +237,12 @@ export function DashboardCuratedFounderBuilderPage() {
         topics: resolvedTopics,
         website: bizWebsite.trim() || undefined,
         offers: [],
-        status: 'published',
+        // Draft, mirroring the founder's own draft-first status below — a
+        // curated business used to go live the moment it was created here
+        // regardless of review, the same bug already fixed in the bulk
+        // import path (see villageImport.ts), just never ported to this
+        // single-founder builder. Publish is a deliberate staff action.
+        status: 'draft',
         featured: false,
         createdAt: now,
       }
@@ -268,7 +273,10 @@ export function DashboardCuratedFounderBuilderPage() {
       tiktok: tiktok.trim() || undefined,
       podcast: podcast.trim() || undefined,
       newsletter: newsletter.trim() || undefined,
-      status: 'published',
+      // Draft — invisible publicly until staff review and press Publish,
+      // same draft-first policy as bulk import. This page used to publish
+      // a brand-new curated founder immediately on creation.
+      status: 'draft',
       featured: false,
       createdAt: now,
       profileStatus: 'village-curated',
