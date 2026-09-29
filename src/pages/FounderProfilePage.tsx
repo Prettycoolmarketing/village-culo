@@ -328,17 +328,21 @@ export function FounderProfilePage() {
     .filter((s): s is NonNullable<typeof s> => !!s)
   const hasFeaturedPicks = featuredVideoStories.length > 0
 
+  // Unclaimed curated founders never uploaded their own cover photo — a
+  // shared Culo-branded banner gives the page a real hero instead of an
+  // empty gap, without pretending to be a personal photo.
+  const isUnclaimedCurated = founder.profileStatus === 'village-curated' && !founder.userId
+
   // A curated founder with no real published Stories yet has nothing else
   // to lead with — "From Around the Web" is the whole page, so it should
   // come first. A founder with real Stories/Featured picks already has a
   // proper lead; From Around the Web then reads as supplementary and
   // belongs after it, not competing with it for the top of the page.
-  const hasRealStories = getStories({ founderId: founder.id, publicOnly: true }).length > 0
-
-  // Unclaimed curated founders never uploaded their own cover photo — a
-  // shared Culo-branded banner gives the page a real hero instead of an
-  // empty gap, without pretending to be a personal photo.
-  const isUnclaimedCurated = founder.profileStatus === 'village-curated' && !founder.userId
+  // An unclaimed curated founder stays in the "From Around the Web only"
+  // shape even once Publish has turned their articles into real Stories —
+  // "Stories by X" reads as if they're here writing/publishing themselves,
+  // which isn't true until they've actually claimed the profile.
+  const hasRealStories = !isUnclaimedCurated && getStories({ founderId: founder.id, publicOnly: true }).length > 0
   const heroImage = founder.coverImage || (isUnclaimedCurated ? '/assets/culo-brand-cover.png' : undefined)
 
   // A single curated article often IS the entire page for a brand-new
@@ -719,23 +723,25 @@ export function FounderProfilePage() {
                   hide everything except the picks entirely once any existed —
                   now it's just what's on top, with the rest one "View all"
                   click away via StoryGrid's own built-in expansion. */}
-              <StoryGrid
-                heading={hasFeaturedPicks ? `Featured by ${founder.name}` : `Stories by ${founder.name}`}
-                subheading={hasFeaturedPicks
-                  ? undefined
-                  : `Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
-                filter={{ founderId: founder.id, publicOnly: true }}
-                sortBlogsFirst
-                hideKey="founder-profile"
-                limit={6}
-                columns={2}
-                cardVariant="vertical"
-                showSummary
-                showFounder={false}
-                showTopics
-                showCTA
-                hideEmpty
-              />
+              {!isUnclaimedCurated && (
+                <StoryGrid
+                  heading={hasFeaturedPicks ? `Featured by ${founder.name}` : `Stories by ${founder.name}`}
+                  subheading={hasFeaturedPicks
+                    ? undefined
+                    : `Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
+                  filter={{ founderId: founder.id, publicOnly: true }}
+                  sortBlogsFirst
+                  hideKey="founder-profile"
+                  limit={6}
+                  columns={2}
+                  cardVariant="vertical"
+                  showSummary
+                  showFounder={false}
+                  showTopics
+                  showCTA
+                  hideEmpty
+                />
+              )}
 
               {hasRealStories && importsSection}
 
@@ -1006,10 +1012,16 @@ export function FounderProfilePage() {
                 </section>
               )}
 
-              <ConnectedToWidget items={founderConnectedTo} headingId="founder-connected-to-heading" />
+              {/* Connected To, Related Businesses and Related Founders (further
+                  below) are all auto-inferred from the relationship/intel
+                  graph — real signal for a founder who's actually claimed
+                  and is publishing here themselves, but noise for a profile
+                  nobody's verified yet (e.g. a shared-topic overlap with an
+                  unrelated real founder reading as a genuine "connection"). */}
+              {!isUnclaimedCurated && <ConnectedToWidget items={founderConnectedTo} headingId="founder-connected-to-heading" />}
 
               {/* Intel-driven related businesses */}
-              {intelRelatedBusinesses.length > 0 && (
+              {!isUnclaimedCurated && intelRelatedBusinesses.length > 0 && (
                 <section aria-labelledby="founder-intel-businesses-heading">
                   <h2 id="founder-intel-businesses-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
                     Related Businesses
@@ -1046,7 +1058,7 @@ export function FounderProfilePage() {
                   a stranger sharing their industry tag isn't a real
                   relationship yet, just noise next to a profile that isn't
                   really live. */}
-              {founder.profileStatus !== 'village-curated' && (relatedFounders.length > 0 || intelRelatedFounders.length > 0) && (
+              {!isUnclaimedCurated && (relatedFounders.length > 0 || intelRelatedFounders.length > 0) && (
                 <section aria-labelledby="related-founders-heading">
                   <h2 id="related-founders-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
                     Related Founders

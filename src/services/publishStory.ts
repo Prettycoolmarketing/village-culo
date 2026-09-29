@@ -17,6 +17,7 @@ import { industries } from '../data/industries'
 import { topics as allTopics } from '../data/topics'
 import { slugify } from '../utils/slugify'
 import { normalizeBlogSpacing } from '../utils/blogFormatting'
+import { approveAllForFounder } from './editorialItems'
 import type { Story, ContentType, Founder } from '../types'
 import type { ImportedContent, ImportedContentPlatform } from '../types/importedContent'
 
@@ -243,7 +244,12 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     title: item.title || `Imported from ${PLATFORM_LABELS[item.sourcePlatform]}`,
     subtitle: item.subtitle,
     summary: item.subtitle || item.autoSummary || fallbackSummary(item.description),
-    coverImage: item.thumbnailUrl || '/placeholders/village-story.svg',
+    // The generic grey placeholder read as broken/unfinished for a
+    // real-looking published article — the shared Culo brand photo (same
+    // fallback as ImportedContentCard/the founder hero) is an honest,
+    // on-brand image when there's no real pulled thumbnail (a YouTube video,
+    // podcast art) to show instead.
+    coverImage: item.thumbnailUrl || '/assets/culo-brand-cover.png',
     founderId: founder.id,
     businessId: item.businessId ?? founder.businessId,
     location: matchedLocation,
@@ -335,6 +341,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
  * needing a click each.
  */
 export async function publishFounderArticles(founder: Founder): Promise<void> {
+  void approveAllForFounder(founder.id)
   const items = importedContentService.getAll({ founderId: founder.id })
     .filter(i => i.status === 'draft' && i.title.trim().length > 0)
   for (const item of items) {

@@ -76,6 +76,17 @@ export async function approveItem(itemId: string): Promise<WriteResult> {
   return { success: true, item: data as EditorialItemRow }
 }
 
+// Publishing a founder's profile is now the one human approval moment for
+// everything the editorial engine wrote them (see publishFounderArticles) —
+// bios included, not just articles, and regardless of whatever audit
+// verdict an item is currently sitting at. Staff already had their chance
+// to delete/edit anything off; Publish ships what's left. Silently a no-op
+// when Supabase isn't configured, same as every other editorial_items call.
+export async function approveAllForFounder(founderId: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return
+  await supabase.from('editorial_items').update({ editorial_status: 'approved' }).eq('founder_id', founderId).neq('editorial_status', 'approved')
+}
+
 // Bulk version of approveItem — "Confirm all" in the UI, for approving
 // every already-passing draft in one action instead of clicking Approve
 // once per item. Deliberately still only approves items already at

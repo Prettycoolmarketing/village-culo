@@ -911,8 +911,12 @@ export function StoryDetailPage() {
                 </section>
               )}
 
-              {/* Related founders from intel */}
-              {intelRelatedFounders.length > 0 && (
+              {/* Related founders from intel — skipped for an unclaimed
+                  curated founder's article, same reasoning as their own
+                  profile page: a shared-topic overlap with an unrelated
+                  real founder isn't a real connection for a profile
+                  nobody's actually claimed yet. */}
+              {!(founder?.profileStatus === 'village-curated' && !founder?.userId) && intelRelatedFounders.length > 0 && (
                 <section aria-labelledby="related-founders-intel-heading">
                   <h2
                     id="related-founders-intel-heading"

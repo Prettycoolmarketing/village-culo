@@ -25,7 +25,11 @@ import { publishFounderArticles } from '../../../services/publishStory'
 // glance actually needed. This page is curated founders only (see the
 // `founders` filter below) regardless of draft/published, so there's really
 // just one normal state ("Curated") plus two that need attention.
+// Nothing to flag is nothing shown — no "Curated" pill for the normal
+// case. Publish is what clears a row out of "Review": once it's published
+// there's nothing left needing a look, so this renders nothing at all.
 function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialItemRow[] }) {
+  if (founder.status === 'published') return null
   if (founder.researchStatus === 'failed') {
     return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-red-50 text-red-600">Failed</span>
   }
@@ -34,7 +38,7 @@ function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialIt
   if (needsReview) {
     return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-amber-50 text-amber-700">Review</span>
   }
-  return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-blue-50 text-blue-700">Curated</span>
+  return null
 }
 
 // ─── Bulk action bar ──────────────────────────────────────────────────────────
