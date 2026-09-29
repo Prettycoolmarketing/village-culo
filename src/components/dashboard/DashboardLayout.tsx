@@ -319,7 +319,7 @@ export function DashboardLayout() {
                     <NavItem to="/dashboard/village/founders" label="Founder Management" icon={<Icon path={icons.curated} />} />
                   )}
                   {canAccessCapoSection(user?.role, 'emails') && (
-                    <NavItem to="/dashboard/village/emails" label="Email management" icon={<Icon path={icons.email} />} />
+                    <NavItem to="/dashboard/village/emails" label="Culo Members" icon={<Icon path={icons.email} />} />
                   )}
                 </>
               )}

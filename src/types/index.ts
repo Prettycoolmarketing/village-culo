@@ -495,6 +495,13 @@ export interface Founder {
   // you hear about us" answer collected later in Onboarding, not a signup
   // funnel tag captured at account-creation time.
   signupProduct?: 'village' | 'canva'
+  // True only once staff have wired up the real Canva Marketplace listing
+  // link and confirmed this signup actually came through it — signupProduct
+  // 'canva' alone (e.g. the existing /joincanva funnel) isn't that yet, so
+  // the Members list treats everyone as a plain Village member until this
+  // is explicitly set. Never set anywhere yet; flip it on per-founder (or
+  // wire up the real webhook) once the Marketplace funnel is live.
+  canvaMarketplaceVerified?: boolean
   // The Canva user's own stable id (decoded client-side from their Canva
   // JWT in culo-starter's app.tsx) — present only when this founder arrived
   // via the "Continue in The Culo Village" link inside the Canva app

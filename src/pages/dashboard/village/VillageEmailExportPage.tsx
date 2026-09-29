@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getFounders, deleteFounderAccount, getFounder } from '../../../services/founders'
+import { getFounders, getFounder } from '../../../services/founders'
 import { getStories, getStory } from '../../../services/stories'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
@@ -31,9 +31,9 @@ export function VillageEmailExportPage() {
 
       <div className="mb-6">
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Email Lists</h1>
+        <h1 className="text-2xl font-bold text-[#2D2A26]">Culo Members</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">
-          Export CSVs for outreach and send campaigns to your subscriber list.
+          Total Village Members: {getFounders().length}
         </p>
       </div>
 
@@ -68,21 +68,7 @@ export function VillageEmailExportPage() {
 // cache-side hide.
 
 function MembersPanel() {
-  const [tick, setTick] = useState(0)
-  void tick
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
   const sorted = [...getFounders()].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-
-  async function handleDelete(f: (typeof sorted)[number]) {
-    setError(null)
-    setDeletingId(f.id)
-    const result = await deleteFounderAccount(f.id)
-    setDeletingId(null)
-    if (!result.success) { setError(result.error ?? 'Could not delete this account. Try again.'); return }
-    setTick(t => t + 1)
-  }
 
   function handleExport() {
     const rows = sorted.map(f => ({
@@ -109,47 +95,50 @@ function MembersPanel() {
           Export CSV
         </button>
       </div>
-      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
       {sorted.length === 0 ? (
         <p className="text-sm text-[#9CA3AF]">No members yet.</p>
       ) : (
         <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
           {sorted.map(f => {
-            const isCanva = f.signupProduct === 'canva'
-            const hasPaid = !!f.creativeSubscription?.stripeSubscriptionId
+            // Canva tag is intentionally NOT based on signupProduct alone —
+            // see canvaMarketplaceVerified's own comment. Until staff wire
+            // up the real Marketplace funnel and set it, everyone (Canva
+            // /joincanva signups included) shows as a plain Village member.
+            const isCreatives = !!f.creativeSubscription?.stripeSubscriptionId
+            const isUpgraded  = !!f.archiveUnlocked
+            const isCanva     = !!f.canvaMarketplaceVerified
             return (
               <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.signupEmail ?? f.name}</p>
-                    {isCanva && (
-                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#EBF2F8] text-[#3E6E92]">
-                        Canva{hasPaid ? ' · paid' : ''}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-[#9CA3AF]">
-                    {new Date(f.createdAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    {f.passwordSet && ' · password set'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <p className="text-sm font-semibold text-[#2D2A26] truncate min-w-0">{f.signupEmail ?? f.name}</p>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* Baseline tag every member gets — Upgraded/Creatives
+                      stack alongside it, never replace it. */}
+                  <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">
+                    Ideas Member
+                  </span>
+                  {isUpgraded && (
+                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">
+                      Upgraded
+                    </span>
+                  )}
+                  {isCreatives && (
+                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#EBF2F8] text-[#3E6E92]">
+                      Creatives
+                    </span>
+                  )}
+                  {isCanva && (
+                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">
+                      Canva
+                    </span>
+                  )}
                   <a
                     href={`/founders/${f.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[10px] text-[#C86A43] hover:underline"
+                    className="text-[10px] font-semibold text-[#C86A43] hover:underline ml-2"
                   >
                     View ↗
                   </a>
-                  <ConfirmButton
-                    label="Delete"
-                    confirmLabel="Yes, delete"
-                    message={`Delete ${f.name}'s login too?`}
-                    onConfirm={() => void handleDelete(f)}
-                    disabled={deletingId === f.id}
-                    className="text-[10px] text-red-500 hover:text-red-600 transition-colors"
-                  />
                 </div>
               </div>
             )

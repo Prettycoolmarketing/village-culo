@@ -85,7 +85,6 @@ export function VillageCreativeMembersPage() {
                     <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.signupEmail ?? f.name}</p>
                     <p className="text-[10px] text-[#9CA3AF]">
                       {sub.tier ?? 'unassigned tier'}
-                      {sub.trialEnd && ` · trial ends ${new Date(sub.trialEnd).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}`}
                       {sub.feedbackSubmittedAt && ' · feedback submitted'}
                     </p>
                   </div>
