@@ -1,4 +1,5 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
+import { getFounder } from './founders'
 import { slugify } from '../utils/slugify'
 import type { Story, StoryFilter } from '../types'
 
@@ -35,7 +36,17 @@ export function getStories(filter?: StoryFilter): Story[] {
   if (filter.topicId)    result = result.filter(s => s.topics.some(t => t.id === filter.topicId))
   if (filter.industryId) result = result.filter(s => s.industry.id === filter.industryId)
   if (filter.contentType) result = result.filter(s => s.contentTypes.includes(filter.contentType!))
-  if (filter.publicOnly) result = result.filter(s => s.status === 'published' || s.status === 'featured')
+  // An unclaimed curated founder's auto-published article has no real
+  // photo/logo of its own (just the shared Culo brand fallback) — fine on
+  // its own article page (see StoryDetailPage), but obviously thin next to
+  // real founders' own photos in a showcase grid like /join or /stories.
+  // getStory/getStoryBySlug (a direct link, not a listing) are untouched,
+  // so the article itself stays reachable either way.
+  if (filter.publicOnly) result = result.filter(s => {
+    if (s.status !== 'published' && s.status !== 'featured') return false
+    const f = getFounder(s.founderId)
+    return !f || f.profileStatus !== 'village-curated' || !!f.userId
+  })
   if (filter.seriesId)   result = result.filter(s => s.seriesId === filter.seriesId)
   if (filter.featured !== undefined) result = result.filter(s => s.featured === filter.featured)
   if (filter.status)     result = result.filter(s => s.status === filter.status)

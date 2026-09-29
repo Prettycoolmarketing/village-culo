@@ -1,6 +1,53 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Founder } from '../../types'
 import { InnerContainer } from '../layout/PageContainer'
+
+// This page (and especially a curated founder's auto-published articles)
+// is seen by plenty of people who aren't the founder — the claim button
+// used to assume they were and send everyone straight to the claim form.
+// Clicking now asks first: yes routes to claim the existing profile, no
+// routes to start a brand-new one instead of landing on someone else's
+// claim form. Shared by both the hero CTA (FounderProfilePage) and
+// ClaimProfileBanner's own button below, so the ask-first behaviour can't
+// drift between the two.
+export function AreYouThisFounderCTA({ founder, initialLabel, initialClassName }: {
+  founder: Founder
+  initialLabel: string
+  initialClassName: string
+}) {
+  const [asked, setAsked] = useState(false)
+
+  if (!asked) {
+    return (
+      <button onClick={() => setAsked(true)} className={initialClassName}>
+        {initialLabel}
+      </button>
+    )
+  }
+
+  return (
+    <div className="bg-surface border border-border rounded-2xl p-5 max-w-md">
+      <p className="font-body text-sm font-semibold text-charcoal mb-3">
+        Are you {founder.name}?
+      </p>
+      <div className="flex flex-wrap gap-3">
+        <Link
+          to={`/claim/${founder.slug}`}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+        >
+          Yes, claim my free profile
+        </Link>
+        <Link
+          to="/onboarding"
+          className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-charcoal text-sm font-semibold rounded-xl hover:border-primary hover:text-primary transition-colors"
+        >
+          No, publish my story free
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 // Shown on both a curated founder's own profile page (just above the
 // evidence strip) and on their auto-published articles (same spot, just
@@ -25,12 +72,11 @@ export function ClaimProfileBanner({ founder }: { founder: Founder }) {
             </p>
           </div>
           <div className="flex flex-col items-start sm:items-end gap-2.5 flex-shrink-0">
-            <Link
-              to={`/claim/${founder.slug}`}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] transition-colors"
-            >
-              Is this you? Claim this profile →
-            </Link>
+            <AreYouThisFounderCTA
+              founder={founder}
+              initialLabel="Is this you? Claim this profile →"
+              initialClassName="inline-flex items-center gap-2 px-6 py-3 bg-[#3E6E92] text-white text-sm font-semibold rounded-xl hover:bg-[#345c7a] transition-colors"
+            />
             {/* The banner text above already promises "claim it or request
                 removal" — this is that actual link, not just a claim to
                 have one. Pre-fills the message so CAPO gets the founder's

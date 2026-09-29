@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { normalizeUrl } from '../utils/url'
 import { getFounders } from '../services/founders'
-import type { Founder } from '../types'
 import { getBusiness, getBusinesses } from '../services/businesses'
 import { recommendationService, publisherPartnerProfileService } from '../services/partnership'
 import { importedContentService } from '../services/importedContent'
@@ -26,7 +25,7 @@ import { BusinessCard } from '../components/cards/BusinessCard'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
-import { ClaimProfileBanner } from '../components/ui/ClaimProfileBanner'
+import { ClaimProfileBanner, AreYouThisFounderCTA } from '../components/ui/ClaimProfileBanner'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { formatLocationFull } from '../utils/location'
 
@@ -187,50 +186,6 @@ function getRelatedFounders(founderId: string, industryId: string, locationId: s
     .sort((a, b) => b.score - a.score)
     .slice(0, 3)
     .map(({ founder }) => founder)
-}
-
-// The hero CTA on a curated profile used to assume the visitor IS the
-// founder ("Claim your profile to publish instantly") — but this page,
-// and especially the articles built from it, are seen by plenty of
-// people who aren't. Clicking now asks first, and routes accordingly:
-// the actual founder claims the existing profile; anyone else goes to
-// start their own from scratch instead of landing on someone else's
-// claim form.
-function AreYouThisFounderCTA({ founder }: { founder: Founder }) {
-  const [asked, setAsked] = useState(false)
-
-  if (!asked) {
-    return (
-      <button
-        onClick={() => setAsked(true)}
-        className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-      >
-        Claim your profile to publish instantly
-      </button>
-    )
-  }
-
-  return (
-    <div className="bg-surface border border-border rounded-2xl p-5 max-w-md">
-      <p className="font-body text-sm font-semibold text-charcoal mb-3">
-        Are you {founder.name}?
-      </p>
-      <div className="flex flex-wrap gap-3">
-        <Link
-          to={`/claim/${founder.slug}`}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-        >
-          Yes, claim my free profile
-        </Link>
-        <Link
-          to="/onboarding"
-          className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-charcoal text-sm font-semibold rounded-xl hover:border-primary hover:text-primary transition-colors"
-        >
-          No, publish my story free
-        </Link>
-      </div>
-    </div>
-  )
 }
 
 // ─── Founder Profile ─────────────────────────────────────────────────────────────
@@ -709,7 +664,11 @@ export function FounderProfilePage() {
                 claiming/joining instead of the Canva creation flow. */}
             <div className="mt-7">
               {isUnclaimedCurated ? (
-                <AreYouThisFounderCTA founder={founder} />
+                <AreYouThisFounderCTA
+                  founder={founder}
+                  initialLabel="Claim your profile to publish instantly"
+                  initialClassName="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                />
               ) : (
                 <CreateWithCuloCTA variant="button" size="lg" label="Continue your story with CULO Creatives exclusively in Canva" />
               )}

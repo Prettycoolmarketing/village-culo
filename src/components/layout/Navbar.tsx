@@ -191,7 +191,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
                     to="/onboarding"
                     className="whitespace-nowrap px-4 py-2 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1815] transition-colors"
                   >
-                    Become a Publisher
+                    Publish My Story Free
                   </Link>
                 </>
               )}
@@ -273,7 +273,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
                     onClick={() => setMobileOpen(false)}
                     className="block px-3 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl text-center hover:bg-[#1a1815] transition-colors"
                   >
-                    Become a Publisher
+                    Publish My Story Free
                   </Link>
                 </>
               ))}
