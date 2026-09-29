@@ -319,6 +319,11 @@ export function StoryDetailPage() {
   const prevEpisode = seriesIndex > 0 ? seriesEpisodes[seriesIndex - 1] : undefined
   const nextEpisode = seriesIndex >= 0 && seriesIndex < seriesEpisodes.length - 1 ? seriesEpisodes[seriesIndex + 1] : undefined
   const sourceImport = story.importedContentId ? importedContentService.get(story.importedContentId) : undefined
+  // An unclaimed curated founder hasn't claimed this article as their own
+  // writing yet — "Originally published on X, View original, Feature in
+  // CULO Village" reads as if they're actively cross-posting/promoting
+  // it themselves, which isn't true until they claim the profile.
+  const isUnclaimedCuratedStory = founder?.profileStatus === 'village-curated' && !founder?.userId
   const approvedRecs = recommendationService.getAll({ storyId: story.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
 
@@ -552,8 +557,12 @@ export function StoryDetailPage() {
                 ))}
               </div>
 
-              {/* Original source attribution */}
-              {sourceImport && (
+              {/* Original source attribution — not shown for an unclaimed
+                  curated founder's article: "Originally published on X /
+                  View original / Feature in CULO Village" reads as the
+                  founder actively cross-posting their own writing, which
+                  isn't true until they've actually claimed the profile. */}
+              {sourceImport && !isUnclaimedCuratedStory && (
                 <p className="text-sm text-muted mb-6">
                   Originally published on{' '}
                   <a
@@ -570,7 +579,7 @@ export function StoryDetailPage() {
 
               {/* CTA + any additional links + the standalone "join" CTA */}
               <div className="flex flex-wrap gap-3">
-                {story.ctaLabel && story.ctaUrl && (
+                {story.ctaLabel && story.ctaUrl && !isUnclaimedCuratedStory && (
                   <a
                     href={normalizeUrl(story.ctaUrl)}
                     target="_blank"
@@ -599,12 +608,14 @@ export function StoryDetailPage() {
                 ))}
                 {/* Not story-specific — a standing invitation for any visitor
                     reading a founder's story to join and build their own. */}
-                <Link
-                  to="/onboarding"
-                  className="inline-flex items-center gap-2 px-6 py-3 border border-border text-charcoal font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
-                >
-                  Feature in CULO Village
-                </Link>
+                {!isUnclaimedCuratedStory && (
+                  <Link
+                    to="/onboarding"
+                    className="inline-flex items-center gap-2 px-6 py-3 border border-border text-charcoal font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
+                  >
+                    Feature in CULO Village
+                  </Link>
+                )}
               </div>
             </div>
           </InnerContainer>
