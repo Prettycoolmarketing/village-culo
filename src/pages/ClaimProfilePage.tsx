@@ -314,9 +314,27 @@ function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<t
           <h1 className="font-heading text-2xl font-semibold text-charcoal mb-2">
             Claim {founder.name}'s profile
           </h1>
-          <p className="font-body text-sm text-muted mb-8 leading-relaxed">
+          <p className="font-body text-sm text-muted mb-5 leading-relaxed">
             Create your account below and everything already on your profile (bio, stories, businesses) will be waiting, fully editable.
           </p>
+          {/* What they're actually joining, spelled out — the form below
+              only asks for an email and password, which undersells what's
+              on the other side of it without this. Same free-10 offer as
+              the main join flow (see JoinVillagePage/MarketingLandingPage). */}
+          <ul className="flex flex-col gap-2 mb-8 bg-surface rounded-xl border border-border p-4">
+            {[
+              'Free membership, forever — no credit card required',
+              'Your first 10 articles published free, on us',
+              'Full control to edit, add or remove anything on your profile',
+            ].map(item => (
+              <li key={item} className="flex items-start gap-2 font-body text-sm text-charcoal/80">
+                <svg className="w-4 h-4 text-[#5E6B4A] mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                {item}
+              </li>
+            ))}
+          </ul>
           <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-4">
             <div>
               <label className="block font-body text-sm font-medium text-charcoal mb-1.5">Full name</label>
