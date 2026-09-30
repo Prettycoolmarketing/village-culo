@@ -1655,7 +1655,18 @@ export function DashboardProfilePage() {
                 // but never trust that alone to keep a locked piece from
                 // being published without paying for it.
                 const publishable = items.filter(i => unlockedIds.has(i.id))
-                if (!draft || publishable.length === 0) return
+                if (publishable.length === 0) return
+                // `draft` is a local editable copy of the profile that only
+                // exists once its own useState/useEffect has resolved — on
+                // a freshly loaded page there's a brief window where it's
+                // still null. That used to silently fall through and never
+                // build a real Story at all while still flipping the
+                // status label to "Published" (see handleRowStatusChange's
+                // own note below) — currentFounder is always fresh, so
+                // falling back to it here closes that window instead of
+                // just erroring out of a click that should have worked.
+                const founderForPublish = draft ?? currentFounder
+                if (!founderForPublish) { setSaveError('Your profile hasn\'t finished loading yet — try again in a moment.'); return }
                 setReadyBulkPublishing(true)
                 setSaveError(null)
                 for (const item of publishable) {
@@ -1666,7 +1677,7 @@ export function DashboardProfilePage() {
                   // that point on ever moved to Published. One item failing
                   // now just reports an error and moves on to the rest.
                   try {
-                    const story = buildStoryFromImport(item, draft)
+                    const story = buildStoryFromImport(item, founderForPublish)
                     const result = await publishStoryCore(story)
                     if (result.success) { await importedContentService.updateStatus(item.id, 'published'); continue }
                     if (result.limitKind) { setLimitModal(result.limitKind); break }
@@ -1691,9 +1702,18 @@ export function DashboardProfilePage() {
                   setSaveError('This piece is part of your locked archive — unlock it before publishing.')
                   return
                 }
-                if (!draft || status !== 'published' && status !== 'featured') {
+                // Moving to draft/archived never needs a Story built — only
+                // the publishing branch below does, and that's the one
+                // that actually needs a real founder record (see
+                // publishItems' identical founderForPublish note).
+                if (status !== 'published' && status !== 'featured') {
                   await importedContentService.updateStatus(item.id, status)
                   setImportedTick(t => t + 1)
+                  return
+                }
+                const founderForPublish = draft ?? currentFounder
+                if (!founderForPublish) {
+                  setSaveError('Your profile hasn\'t finished loading yet — try again in a moment.')
                   return
                 }
                 if (item.relatedStoryId) {
@@ -1701,7 +1721,7 @@ export function DashboardProfilePage() {
                   if (existing) await updateStory({ ...existing, status })
                   await importedContentService.updateStatus(item.id, status)
                 } else if (isReadyToPublish(item)) {
-                  const story = buildStoryFromImport(item, draft)
+                  const story = buildStoryFromImport(item, founderForPublish)
                   story.status = status
                   const result = await publishStoryCore(story)
                   if (!result.success) {
