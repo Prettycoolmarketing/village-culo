@@ -3,3 +3,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Slow left-to-right shimmer for "Loading an article..." on the /join/setup
+   research wait — a gradient sweeping across the text reads as "still
+   working" without a spinner competing with the welcome copy around it. */
+@keyframes text-wave {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.text-wave {
+  background: linear-gradient(90deg, #C86A43 0%, #C86A43 35%, #f0b696 50%, #C86A43 65%, #C86A43 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-wave 2.8s linear infinite;
+}

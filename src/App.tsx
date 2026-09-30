@@ -41,6 +41,7 @@ import { LibraryDetailPage }  from './pages/LibraryDetailPage'
 import { OnboardingPage }    from './pages/OnboardingPage'
 import { JoinVillagePage }   from './pages/JoinVillagePage'
 import { JoinConfirmPage }   from './pages/JoinConfirmPage'
+import { JoinSetupPage }     from './pages/JoinSetupPage'
 import { JoinOfferPage }     from './pages/JoinOfferPage'
 import { JoinCanvaPaidPage } from './pages/JoinCanvaPaidPage'
 import { MarketingLandingPage }    from './pages/marketing/MarketingLandingPage'
@@ -188,6 +189,7 @@ export default function App() {
               AuthContext.signUp's redirectPath) — set password first, before
               ever reaching the dashboard. */}
           <Route path="/join/confirm" element={<JoinConfirmPage />} />
+          <Route path="/join/setup" element={<JoinSetupPage />} />
           {/* The pricing lock-in + simplified profile step, styled like the
               founder profile they're building. */}
           <Route path="/join/offer" element={<JoinOfferPage />} />

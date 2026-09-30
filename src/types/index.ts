@@ -502,6 +502,15 @@ export interface Founder {
   // is explicitly set. Never set anywhere yet; flip it on per-founder (or
   // wire up the real webhook) once the Marketplace funnel is live.
   canvaMarketplaceVerified?: boolean
+  // Self-serve /join signups used to land with name = the email's own local
+  // part and an empty bio — nothing for a brand-new visitor to actually see
+  // on their profile. This drives the /join/setup capture step (name + one
+  // content link) and the loading state on /dashboard/welcome while that
+  // link is researched into a real bio + first article, same pipeline
+  // curated founders go through — just run automatically instead of
+  // waiting on a staff member to trigger it. Undefined for every curated
+  // founder and every founder who joined before this existed.
+  onboardingStatus?: 'needs_setup' | 'researching' | 'ready' | 'confirmed'
   // The Canva user's own stable id (decoded client-side from their Canva
   // JWT in culo-starter's app.tsx) — present only when this founder arrived
   // via the "Continue in The Culo Village" link inside the Canva app

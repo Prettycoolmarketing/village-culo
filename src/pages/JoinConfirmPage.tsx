@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
-import { ensureJoinedFounder } from '../services/joinFlow'
+import { ensureJoinedFounder, needsOnboardingSetup } from '../services/joinFlow'
 import { getFounder, updateFounder } from '../services/founders'
 import { supabase } from '../lib/supabase'
 import { Navbar } from '../components/layout/Navbar'
@@ -84,13 +84,14 @@ export function JoinConfirmPage() {
       return
     }
 
-    if (founderId) {
-      const founder = getFounder(founderId)
-      if (founder) await updateFounder({ ...founder, passwordSet: true })
+    let founder = founderId ? getFounder(founderId) : null
+    if (founder) {
+      await updateFounder({ ...founder, passwordSet: true })
+      founder = { ...founder, passwordSet: true }
     }
 
     setSubmitting(false)
-    navigate('/dashboard/welcome', { replace: true })
+    navigate(needsOnboardingSetup(founder) ? '/join/setup' : '/dashboard/welcome', { replace: true })
   }
 
   if (!ready) {

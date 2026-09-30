@@ -1,5 +1,6 @@
 import { readCache, writeEntity, writeEntityBatch, deleteEntity, deleteEntityBatch, type WriteResult } from '../lib/entityStore'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { slugify } from '../utils/slugify'
 import type { Founder, FounderFilter } from '../types'
 
 const KEY = 'founders'
@@ -23,6 +24,19 @@ function toRow(f: Founder, userId: string) {
 
 function live(): Founder[] {
   return readCache<Founder>(KEY)
+}
+
+// Shared by joinFlow's initial signup slug and /join/setup's re-slug once a
+// founder's real name is known — a clean name-based slug by default, only
+// falling back to a numeric suffix ("-2", "-3"...) when that exact slug is
+// genuinely already taken by a different founder, rather than always
+// tacking on a random 4-char suffix regardless of whether one was needed.
+export function uniqueFounderSlug(name: string, excludeFounderId?: string): string {
+  const base = slugify(name) || 'founder'
+  const taken = new Set(getFounders().filter(f => f.id !== excludeFounderId).map(f => f.slug))
+  let slug = base
+  for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`
+  return slug
 }
 
 export function getFounders(filter?: FounderFilter): Founder[] {

@@ -1,10 +1,9 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { store } from '../lib/store'
-import { updateFounder, getFounders } from './founders'
+import { updateFounder, uniqueFounderSlug } from './founders'
 import { linkOwnFounder } from './currentFounder'
 import { UNSET_LOCATION } from '../data/locations'
 import { UNSET_INDUSTRY } from '../data/industries'
-import { slugify } from '../utils/slugify'
 import type { Founder } from '../types'
 
 // Shared by JoinVillagePage (immediate-session case, e.g. Supabase's "Confirm
@@ -47,6 +46,15 @@ export interface JoinOptions {
  * directly rather than trusting the local cache, since that cache is empty
  * on a fresh device.
  */
+// Canva-funnel founders land on their own trial-focused welcome and never
+// see the Village "how it works" pitch at all (see DashboardWelcomePage's
+// isCanvaFounder branch) — the empty-profile problem this solves doesn't
+// apply to them the same way, so only a plain /join signup gets routed
+// through the capture step.
+export function needsOnboardingSetup(founder: Founder | null | undefined): boolean {
+  return !!founder && founder.onboardingStatus === 'needs_setup' && founder.signupProduct !== 'canva'
+}
+
 export async function ensureJoinedFounder(userId: string, email: string, source: 'village' | 'canva', options: JoinOptions = {}): Promise<string | null> {
   const { canvaUserId, passwordAlreadySet, stripeSeed } = options
 
@@ -72,18 +80,9 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
 
   const now = new Date()
   const founderId = crypto.randomUUID()
-  // A random 4-char suffix used to get tacked on here unconditionally
-  // (culovillage.com/founders/bec-ha9h) even though a collision on the
-  // email's own local part is rare — only add a suffix when the plain
-  // slug is actually already taken, and make it a readable "-2"/"-3"
-  // rather than random characters when it is.
-  const baseSlug = slugify(email.split('@')[0] || 'founder')
-  const takenSlugs = new Set(getFounders().map(f => f.slug))
-  let slug = baseSlug
-  for (let n = 2; takenSlugs.has(slug); n++) slug = `${baseSlug}-${n}`
   const founder: Founder = {
     id: founderId,
-    slug,
+    slug: uniqueFounderSlug(email.split('@')[0] || 'founder'),
     name: email.split('@')[0] || 'New Founder',
     bio: '',
     avatar: '/placeholders/village-founder.svg',
@@ -103,6 +102,7 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
     signupEmail: email,
     passwordSet: !!passwordAlreadySet,
     canvaUserId,
+    onboardingStatus: 'needs_setup',
     // Every new self-serve signup — /join, /joincanva, or the in-app
     // Stripe upsell alike — gets the same Standard $25/mo tier now. The
     // old "free until 2027-01-01" collaborator cohort is no longer granted
