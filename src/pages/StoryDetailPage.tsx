@@ -325,6 +325,14 @@ export function StoryDetailPage() {
   const prevEpisode = seriesIndex > 0 ? seriesEpisodes[seriesIndex - 1] : undefined
   const nextEpisode = seriesIndex >= 0 && seriesIndex < seriesEpisodes.length - 1 ? seriesEpisodes[seriesIndex + 1] : undefined
   const sourceImport = story.importedContentId ? importedContentService.get(story.importedContentId) : undefined
+  // Unlike YouTube (real thumbnail pulled from the URL) or a plain article
+  // link (nothing to show), a podcast genuinely has no per-episode artwork
+  // available to pull — the shared Culo brand photo is the honest best
+  // option there, and it earns the full top hero banner treatment rather
+  // than being skipped, since "no hero at all" was really about not
+  // showing a broken-looking blank instead of a real image, not about
+  // denying every platform a hero just because this one has no art.
+  const isBrandFallbackPodcast = !hasRealCoverImage && sourceImport?.sourcePlatform === 'podcast'
   // An unclaimed curated founder hasn't claimed this article as their own
   // writing yet — "Originally published on X, View original, Feature in
   // CULO Village" reads as if they're actively cross-posting/promoting
@@ -434,9 +442,12 @@ export function StoryDetailPage() {
       <section aria-labelledby="story-title">
         {/* Cover image — skipped for a vertical video, which already fills
             the frame; a wide banner above it would just repeat a cropped,
-            lower-quality version of the same shot. Also skipped entirely
-            when there's no real thumbnail (see hasRealCoverImage). */}
-        {!isVerticalVideo && hasRealCoverImage && (
+            lower-quality version of the same shot. Also skipped when
+            there's no real thumbnail (see hasRealCoverImage) — except a
+            podcast, which gets the brand-photo hero anyway (see
+            isBrandFallbackPodcast) since there's genuinely no per-episode
+            art to have pulled instead. */}
+        {!isVerticalVideo && (hasRealCoverImage || isBrandFallbackPodcast) && (
           <div className="relative h-64 sm:h-80 md:h-96 overflow-hidden bg-charcoal">
             <CoverImage
               src={story.coverImage}
@@ -462,7 +473,7 @@ export function StoryDetailPage() {
               {/* No hero image means the badges never got their usual spot
                   overlaid on it — shown here instead, same as vertical
                   video already does. */}
-              {(isVerticalVideo || !hasRealCoverImage) && (
+              {(isVerticalVideo || (!hasRealCoverImage && !isBrandFallbackPodcast)) && (
                 <div className="flex flex-wrap gap-2 mb-4" aria-label="Content formats">
                   {contentBadges}
                 </div>
