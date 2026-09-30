@@ -135,6 +135,12 @@ export function buildDraftImport(founderId: string, url: string): ImportedConten
     sourcePlatform: platform,
     originalUrl:    url,
     embedUrl,
+    // A real YouTube video has a real thumbnail sitting right there in the
+    // URL — pulling it here means a curated founder's YouTube-sourced
+    // article gets their actual video frame instead of always falling
+    // back to the generic Culo brand photo (the case with no thumbnail
+    // pulled at all, e.g. a podcast/article link).
+    thumbnailUrl:   platform === 'youtube' ? youtubeThumbnailUrl(url) : undefined,
     title:          `Imported from ${PLATFORM_LABELS[platform]}`,
     topics:         [],
     locations:      [],
