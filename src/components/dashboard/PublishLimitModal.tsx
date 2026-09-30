@@ -9,7 +9,7 @@ import type { Founder } from '../../types'
 // terracotta primary CTA, charcoal secondary, gold "best value" tag,
 // olive only for a done/confirmed state. Never green.
 
-const SUPPORT = 'support@prettycoolmarketing.com'
+const SUPPORT = 'connect@culovillage.com'
 
 export function PublishLimitModal({
   open,

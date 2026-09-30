@@ -43,6 +43,6 @@ serve(async (req) => {
 
     return page("You're unsubscribed", `${email} won't receive any more newsletters from The Culo Village. Sorry to see you go.`)
   } catch (err) {
-    return page('Something went wrong', err instanceof Error ? err.message : 'Please try again, or email support@prettycoolmarketing.com.')
+    return page('Something went wrong', err instanceof Error ? err.message : 'Please try again, or email connect@culovillage.com.')
   }
 })

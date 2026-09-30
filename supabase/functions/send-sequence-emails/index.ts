@@ -66,7 +66,7 @@ serve(async (req) => {
         const branded = emailLayout('The Culo Village: Brisbane, Australia', step.bodyHtml, unsubscribeUrl)
         // EMAIL_FROM is a noreply address with no monitored inbox — reply_to
         // gives recipients a real address to write back to instead of a bounce.
-        const result = await sendEmail(enrollment.email, step.subject, branded, 'support@prettycoolmarketing.com')
+        const result = await sendEmail(enrollment.email, step.subject, branded, 'connect@culovillage.com')
         if (result.ok) { sentDays.add(step.day); sent++ }
       }
 

@@ -5,7 +5,7 @@
 //
 // Requires two Supabase secrets to actually send anything:
 //   RESEND_API_KEY  — from resend.com's dashboard
-//   EMAIL_FROM      — a verified sender, e.g. "CULO Village <hello@culovillage.com>"
+//   EMAIL_FROM      — a verified sender, e.g. "CULO Village <connect@culovillage.com>"
 // Silently no-ops (logs a warning, returns ok:false) when either is missing,
 // so a claim/invite flow never fails just because email isn't configured yet.
 //

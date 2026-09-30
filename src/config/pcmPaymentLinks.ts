@@ -24,7 +24,7 @@ export interface PcmOffer {
 export const PCM_TIER2_LINK = 'https://buy.stripe.com/00weVe5rPbJ94iCdj983C0t' // "Social Media Service" $3,000 AUD / month
 export const PCM_TIER3_LINK = 'https://buy.stripe.com/bJe5kEbQdfZp4iC3Iz83C0u' // "Content Creator Full Service" $3,888 AUD / month
 
-export const PCM_SUPPORT_EMAIL = 'support@prettycoolmarketing.com'
+export const PCM_SUPPORT_EMAIL = 'connect@culovillage.com'
 
 export const PCM_OFFERS: Record<PcmOffer['id'], PcmOffer> = {
   tier2: {

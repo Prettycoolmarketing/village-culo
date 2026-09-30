@@ -275,7 +275,7 @@ export function SpeakerPage() {
                     Connect on LinkedIn ↗
                   </a>
                 )}
-                <a href="mailto:support@prettycoolmarketing.com?subject=Speaking%20%2F%20Press%20enquiry"
+                <a href="mailto:connect@culovillage.com?subject=Speaking%20%2F%20Press%20enquiry"
                   className="inline-flex items-center gap-2 px-5 py-2.5 border border-border text-charcoal text-sm font-semibold rounded-xl hover:border-primary hover:text-primary transition-colors">
                   Book me for a podcast, panel or event →
                 </a>

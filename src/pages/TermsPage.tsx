@@ -233,8 +233,8 @@ export function TermsPage() {
 
           <p className="mt-12 pt-6 border-t border-border font-body text-sm text-muted">
             Questions? Email{' '}
-            <a href="mailto:support@prettycoolmarketing.com" className="text-primary font-medium hover:underline">
-              support@prettycoolmarketing.com
+            <a href="mailto:connect@culovillage.com" className="text-primary font-medium hover:underline">
+              connect@culovillage.com
             </a>
             .
           </p>

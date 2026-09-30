@@ -109,7 +109,7 @@ export function JoinCanvaPaidPage() {
             <p className="font-body text-sm text-muted leading-relaxed mb-6">{loadError}</p>
             <p className="font-body text-sm text-muted">
               Your payment still went through — email{' '}
-              <a href="mailto:support@prettycoolmarketing.com" className="text-primary underline">support@prettycoolmarketing.com</a>{' '}
+              <a href="mailto:connect@culovillage.com" className="text-primary underline">connect@culovillage.com</a>{' '}
               and we'll get your account sorted.
             </p>
           </div>

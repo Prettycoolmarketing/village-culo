@@ -148,7 +148,7 @@ export function DashboardArchiveFoundPage() {
           </a>
         ) : (
           <a
-            href={`mailto:support@prettycoolmarketing.com?subject=${encodeURIComponent(`Archive unlock — ${totalCount} pieces (${founder.name})`)}`}
+            href={`mailto:connect@culovillage.com?subject=${encodeURIComponent(`Archive unlock — ${totalCount} pieces (${founder.name})`)}`}
             className="group flex flex-col justify-center gap-3 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl p-12 transition-colors"
           >
             <p className="text-lg font-semibold text-[#C86A43] group-hover:text-white/80 uppercase tracking-wide transition-colors">Waiting to be unlocked</p>
@@ -196,7 +196,7 @@ export function DashboardArchiveFoundPage() {
             </a>
           ) : (
             <a
-              href={`mailto:support@prettycoolmarketing.com?subject=${encodeURIComponent(`Archive unlock — publish ${ARCHIVE_UNLOCK_SUBSET_5000_COUNT} of ${totalCount} (${founder.name})`)}`}
+              href={`mailto:connect@culovillage.com?subject=${encodeURIComponent(`Archive unlock — publish ${ARCHIVE_UNLOCK_SUBSET_5000_COUNT} of ${totalCount} (${founder.name})`)}`}
               className="flex items-center justify-center gap-2 w-full px-6 py-4 bg-white hover:bg-[#FBF1EB] border border-[#E8E4DD] rounded-2xl text-base font-semibold text-[#2D2A26] transition-colors"
             >
               Or publish just your {ARCHIVE_UNLOCK_SUBSET_5000_COUNT.toLocaleString()} most-ready pieces — ${ARCHIVE_UNLOCK_SUBSET_5000_PRICE} AUD once →
@@ -241,7 +241,7 @@ export function DashboardArchiveFoundPage() {
           </a>
         ) : (
           <a
-            href={`mailto:support@prettycoolmarketing.com?subject=${encodeURIComponent(`Archive unlock — ${totalCount} pieces (${founder.name})`)}`}
+            href={`mailto:connect@culovillage.com?subject=${encodeURIComponent(`Archive unlock — ${totalCount} pieces (${founder.name})`)}`}
             className="mt-6 flex items-center justify-center w-full px-8 py-6 bg-[#FBF1EB] hover:bg-[#C86A43] border-2 border-[#C86A43]/20 rounded-2xl text-xl font-semibold text-[#C86A43] hover:text-white transition-colors"
           >
             Get a quote — {tier.priceLabel} →

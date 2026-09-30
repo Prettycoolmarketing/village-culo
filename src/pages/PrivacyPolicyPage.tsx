@@ -85,7 +85,7 @@ export function PrivacyPolicyPage() {
             1988 (Cth) and the Australian Privacy Principles.
           </p>
           <p className="font-body text-sm text-muted mb-10">
-            Contact: <a href="mailto:support@prettycoolmarketing.com" className="text-primary underline">support@prettycoolmarketing.com</a>
+            Contact: <a href="mailto:connect@culovillage.com" className="text-primary underline">connect@culovillage.com</a>
             {' '}· Website: <a href="https://prettycoolmarketing.com/culo" target="_blank" rel="noopener noreferrer" className="text-primary underline">prettycoolmarketing.com/culo</a>
           </p>
 
@@ -194,7 +194,7 @@ export function PrivacyPolicyPage() {
               ]}
             />
             <p className="mt-3">To request deletion of all your data, email:{' '}
-              <a href="mailto:support@prettycoolmarketing.com" className="text-primary underline">support@prettycoolmarketing.com</a>
+              <a href="mailto:connect@culovillage.com" className="text-primary underline">connect@culovillage.com</a>
             </p>
           </Clause>
 
@@ -308,7 +308,7 @@ export function PrivacyPolicyPage() {
               'Unsubscribe from communications',
             ]} />
             <p>To exercise any of these rights:{' '}
-              <a href="mailto:support@prettycoolmarketing.com" className="text-primary underline">support@prettycoolmarketing.com</a>
+              <a href="mailto:connect@culovillage.com" className="text-primary underline">connect@culovillage.com</a>
             </p>
           </Clause>
 
@@ -327,7 +327,7 @@ export function PrivacyPolicyPage() {
           <div className="pt-6 border-t border-border">
             <p className="font-body text-sm text-muted">
               Contact Pretty Cool Marketing — Australia ·{' '}
-              <a href="mailto:support@prettycoolmarketing.com" className="text-primary underline">support@prettycoolmarketing.com</a>
+              <a href="mailto:connect@culovillage.com" className="text-primary underline">connect@culovillage.com</a>
               {' '}·{' '}
               <a href="https://prettycoolmarketing.com/culo" target="_blank" rel="noopener noreferrer" className="text-primary underline">prettycoolmarketing.com/culo</a>
             </p>
