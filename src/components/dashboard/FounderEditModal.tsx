@@ -789,6 +789,7 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
   const [current, setCurrent] = useState(founder)
   const [tick, setTick] = useState(0)
   const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState<string | null>(null)
   const articleCount = importedContentService.getAll({ founderId: founder.id }).length
 
   // Edit is what actually triggers a background research run (see
@@ -818,13 +819,28 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
 
   async function handlePublish() {
     setPublishing(true)
+    setPublishError(null)
     const result = await updateFounder({ ...current, status: 'published' })
-    if (result.success) await publishFounderArticles(current)
-    setPublishing(false)
-    if (result.success) {
+    if (!result.success) {
+      setPublishing(false)
+      setPublishError(result.error ?? 'Could not publish. Try again.')
+      return
+    }
+    // Cascading the articles is a real API/DB call too — a failure here
+    // shouldn't look like the whole Publish silently did nothing, even
+    // though the founder's own status did save successfully.
+    try {
+      await publishFounderArticles(current)
+    } catch (err) {
+      setPublishing(false)
+      setPublishError(err instanceof Error ? `Founder published, but articles failed: ${err.message}` : 'Founder published, but articles failed to publish.')
       setCurrent(prev => ({ ...prev, status: 'published' }))
       onChanged()
+      return
     }
+    setPublishing(false)
+    setCurrent(prev => ({ ...prev, status: 'published' }))
+    onChanged()
   }
 
   return (
@@ -874,6 +890,9 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
             >
               Preview ↗
             </Link>
+            {publishError && (
+              <p className="text-xs text-red-600 font-medium max-w-[220px]" role="alert">{publishError}</p>
+            )}
             <button
               onClick={onClose}
               className="text-[#9CA3AF] hover:text-[#2D2A26] transition-colors text-xl leading-none px-1"
