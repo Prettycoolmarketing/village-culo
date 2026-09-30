@@ -25,7 +25,7 @@ import { BusinessCard } from '../components/cards/BusinessCard'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
-import { AreYouThisFounderCTA, ClaimPitchSection } from '../components/ui/ClaimProfileBanner'
+import { AreYouThisFounderCTA, ClaimPitchBox, ClaimProfileBanner } from '../components/ui/ClaimProfileBanner'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { formatLocationFull } from '../utils/location'
 
@@ -734,6 +734,7 @@ export function FounderProfilePage() {
             <div className="flex flex-col gap-10">
               {importsSection}
               {isUnclaimedCurated && exploreFurtherSection}
+              {isUnclaimedCurated && <ClaimPitchBox founder={founder} />}
             </div>
           </InnerContainer>
         </div>
@@ -1123,9 +1124,11 @@ export function FounderProfilePage() {
         </InnerContainer>
       </div>
 
-      {/* Bottom-of-page claim pitch — black box + blue claim banner, the
-          very last thing on the page, right above the site's dark footer. */}
-      <ClaimPitchSection founder={founder} />
+      {/* Blue claim banner — the very last thing on the page, right above
+          the site's dark footer. The black-box pitch itself lives up in
+          the "From Around the Web" section instead (see ClaimPitchBox
+          above), not stacked here too. */}
+      <ClaimProfileBanner founder={founder} />
 
     </main>
   )

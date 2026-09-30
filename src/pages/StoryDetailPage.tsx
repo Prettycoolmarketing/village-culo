@@ -25,7 +25,7 @@ import { VillageIntelligenceBlock } from '../components/ui/VillageIntelligenceBl
 import { CreateWithCuloCTA } from '../components/ui/CreateWithCuloCTA'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { InnerContainer }   from '../components/layout/PageContainer'
-import { ClaimPitchSection } from '../components/ui/ClaimProfileBanner'
+import { ClaimPitchBox, ClaimProfileBanner } from '../components/ui/ClaimProfileBanner'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import type { ContentType, Story } from '../types'
 import { normalizeUrl, isDirectAudioUrl } from '../utils/url'
@@ -1029,10 +1029,12 @@ export function StoryDetailPage() {
                 </section>
               )}
 
-              {/* Create with CULO CTA — an unclaimed curated founder's
-                  article gets the bigger claim pitch at the true bottom of
-                  the page instead (see ClaimPitchSection), not this too. */}
-              {!isUnclaimedCuratedStory && (
+              {/* An unclaimed curated founder's article gets the bigger
+                  claim pitch here instead, in the same content column as
+                  the article itself — not the small Canva banner. */}
+              {isUnclaimedCuratedStory ? (
+                founder && <ClaimPitchBox founder={founder} />
+              ) : (
                 <CreateWithCuloCTA
                   variant="banner"
                   label="Create content from your messy thoughts and raw footage"
@@ -1179,10 +1181,11 @@ export function StoryDetailPage() {
         </InnerContainer>
       </div>
 
-      {/* Black-box claim pitch + blue banner, same as the founder's own
-          profile page — sits right above the site's dark footer, the very
-          last thing on the article page. */}
-      {founder && <ClaimPitchSection founder={founder} />}
+      {/* The blue claim banner — sits right above the site's dark footer,
+          the very last thing on the article page. The black-box pitch
+          itself is up in the content column instead (see ClaimPitchBox
+          above), not stacked here too. */}
+      {founder && <ClaimProfileBanner founder={founder} />}
 
     </main>
   )
