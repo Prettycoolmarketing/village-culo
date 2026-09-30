@@ -13,10 +13,15 @@ const CULO_CANVA_URL = 'https://www.culovillage.com/how-culo-canva'
 
 // ─── Welcome tab ────────────────────────────────────────────────────────────
 
-function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: string }) {
+function WelcomeTab() {
   return (
     <div className="flex flex-col gap-6">
       <div>
+        {/* The app itself is still in the last stretch of Canva review — a
+            "Create with CULO in Canva" button here would send someone
+            straight at something that isn't actually live yet. Until it
+            clears, this tab is for learning what's coming, not using it. */}
+        <p className="text-sm font-bold uppercase tracking-wide text-[#C86A43] mb-2">Coming soon!</p>
         <p className="text-xl font-semibold text-[#2D2A26] mb-6">How to edit your raw footage</p>
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-charcoal">
           <iframe
@@ -31,12 +36,12 @@ function WelcomeTab({ hasAccess, joinUrl }: { hasAccess: boolean; joinUrl: strin
 
       <div className="flex sm:justify-end">
         <a
-          href={hasAccess ? CULO_CANVA_URL : joinUrl}
+          href={CULO_CANVA_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="flex justify-center sm:inline-flex items-center gap-2 px-6 py-4 sm:py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors w-full sm:w-auto sm:shrink-0"
         >
-          {hasAccess ? 'Create with CULO in Canva' : 'Resubscribe — $25/month'}
+          What to expect…
         </a>
       </div>
     </div>
@@ -194,7 +199,7 @@ export function DashboardCreativesPage() {
 
       <Tabs tabs={TABS} active={tab} onChange={setTab} className="mb-6" />
 
-      {tab === 'welcome' && <WelcomeTab hasAccess={hasAccess} joinUrl={upgradeUrl} />}
+      {tab === 'welcome' && <WelcomeTab />}
       {tab === 'feedback' && (
         <FeedbackTab
           founderId={founder.id}
