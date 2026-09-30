@@ -989,14 +989,19 @@ export function StoryDetailPage() {
                   just one fewer near-identical section on the page. */}
               <FeaturedInSection items={storyFeaturedIn} headingId="story-featured-in-heading" />
 
-              {/* Related stories */}
-              {related.length > 0 && (
+              {/* Explore the Village — cross-founder, topic-matched content,
+                  not a real relationship to this specific founder, so it's
+                  skipped entirely for an unclaimed curated founder's own
+                  article (same reasoning as Related Founders/Connected To
+                  on their profile page) and named honestly rather than
+                  "Related Stories" for everyone else. */}
+              {!isUnclaimedCuratedStory && related.length > 0 && (
                 <section aria-labelledby="related-stories-heading">
                   <h2
                     id="related-stories-heading"
                     className="font-heading text-2xl font-semibold text-charcoal mb-6"
                   >
-                    Related Stories
+                    Explore the Village
                   </h2>
                   <ul
                     className="grid grid-cols-1 sm:grid-cols-2 gap-5"

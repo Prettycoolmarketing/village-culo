@@ -105,25 +105,23 @@ export function ClaimProfileBanner({ founder }: { founder: Founder }) {
 export function ClaimPitchBox({ founder }: { founder: Founder }) {
   if (founder.profileStatus !== 'village-curated' || founder.userId) return null
   return (
-    <div className="bg-[#EBF2F8] rounded-2xl p-4 sm:p-6">
-      <div className="bg-charcoal rounded-2xl px-6 py-10 sm:px-10 sm:py-14 text-center">
-        <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-          Is this your profile?
-        </p>
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-5 leading-tight max-w-xl mx-auto">
-          Publish your previously posted content across platforms as individual web articles for AI discovery
-          instantly, thanks to CULO.
-        </h2>
-        <p className="font-body text-base text-white/70 leading-relaxed mb-8 max-w-xl mx-auto">
-          Your first 10 articles are on us! Optional upgrade to edit your raw footage with Culo Creatives in Canva!
-        </p>
-        <div className="flex justify-center">
-          <AreYouThisFounderCTA
-            founder={founder}
-            initialLabel="Claim your profile to publish instantly"
-            initialClassName="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
-          />
-        </div>
+    <div className="bg-charcoal rounded-2xl px-6 py-10 sm:px-10 sm:py-14 text-center">
+      <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+        Is this your profile?
+      </p>
+      <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-5 leading-tight max-w-xl mx-auto">
+        Publish your previously posted content across platforms as individual web articles for AI discovery
+        instantly, thanks to CULO.
+      </h2>
+      <p className="font-body text-base text-white/70 leading-relaxed mb-8 max-w-xl mx-auto">
+        Your first 10 articles are on us! Optional upgrade to edit your raw footage with Culo Creatives in Canva!
+      </p>
+      <div className="flex justify-center">
+        <AreYouThisFounderCTA
+          founder={founder}
+          initialLabel="Claim your profile to publish instantly"
+          initialClassName="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+        />
       </div>
     </div>
   )

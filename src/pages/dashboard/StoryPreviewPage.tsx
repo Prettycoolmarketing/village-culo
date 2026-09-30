@@ -119,16 +119,25 @@ export function StoryPreviewPage() {
               )}
 
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-body text-muted mb-6">
-                <Link
-                  to={`/founders/${founder.slug}`}
-                  className="flex items-center gap-2 hover:text-primary transition-colors font-medium text-charcoal"
-                  aria-label={`View ${founder.name}'s profile`}
-                >
-                  <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
-                    <img src={founder.avatar} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-muted font-normal">By</span> {founder.name}
-                </Link>
+                {founder.profileStatus === 'village-curated' && !founder.userId ? (
+                  <Link
+                    to={`/founders/${founder.slug}`}
+                    className="hover:text-primary transition-colors font-medium text-charcoal"
+                  >
+                    <span className="text-muted font-normal">Written by Culo</span> about {founder.name}
+                  </Link>
+                ) : (
+                  <Link
+                    to={`/founders/${founder.slug}`}
+                    className="flex items-center gap-2 hover:text-primary transition-colors font-medium text-charcoal"
+                    aria-label={`View ${founder.name}'s profile`}
+                  >
+                    <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                      <img src={founder.avatar} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-muted font-normal">By</span> {founder.name}
+                  </Link>
+                )}
                 {business && (
                   <Link to={`/businesses/${business.slug}`} className="hover:text-primary transition-colors">
                     {business.name}
