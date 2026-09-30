@@ -46,13 +46,13 @@ export interface JoinOptions {
  * directly rather than trusting the local cache, since that cache is empty
  * on a fresh device.
  */
-// Canva-funnel founders land on their own trial-focused welcome and never
-// see the Village "how it works" pitch at all (see DashboardWelcomePage's
-// isCanvaFounder branch) — the empty-profile problem this solves doesn't
-// apply to them the same way, so only a plain /join signup gets routed
-// through the capture step.
+// Every self-serve signup gets a real profile built, Canva-sourced or not —
+// today's /joincanva is just /join?source=canva under the hood, and even
+// the real Canva Marketplace funnel (once live) still runs this same
+// research, just with a Canva-specific banner added on top of the welcome
+// page rather than skipping the village profile entirely.
 export function needsOnboardingSetup(founder: Founder | null | undefined): boolean {
-  return !!founder && founder.onboardingStatus === 'needs_setup' && founder.signupProduct !== 'canva'
+  return !!founder && founder.onboardingStatus === 'needs_setup'
 }
 
 export async function ensureJoinedFounder(userId: string, email: string, source: 'village' | 'canva', options: JoinOptions = {}): Promise<string | null> {

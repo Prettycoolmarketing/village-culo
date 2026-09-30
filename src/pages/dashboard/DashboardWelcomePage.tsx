@@ -119,6 +119,9 @@ export function DashboardWelcomePage() {
               ? "You're all set, jump back into Canva to keep creating."
               : 'Start your 14-day free trial to turn your raw footage into finished blogs, carousels and reels, right inside Canva.'}
           </p>
+          {liveFounder?.onboardingStatus === 'researching' && (
+            <p className="text-2xl sm:text-3xl font-bold text-wave mb-6">Loading an article from your public-facing information…</p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             {CREATIVES_STEPS.map((s, i) => (
               <div key={s.title}>
