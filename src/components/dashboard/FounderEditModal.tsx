@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { Founder } from '../../types'
 import type { ImportedContent, ImportedContentStatus } from '../../types/importedContent'
 import { updateFounder, getFounder } from '../../services/founders'
+import { getBusiness, deleteBusiness } from '../../services/businesses'
 import { importedContentService } from '../../services/importedContent'
 import { getStory, updateStory } from '../../services/stories'
 import { buildStoryFromImport, publishStoryCore, publishFounderArticles } from '../../services/publishStory'
@@ -661,6 +662,25 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
   const [saving, setSaving]       = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved]         = useState(false)
+  const [removingBusiness, setRemovingBusiness] = useState(false)
+
+  // Curated batches often bring in a business alongside the founder even
+  // when there's not enough real content behind it to justify its own
+  // page (see DEFAULT_IMPORT_OPTIONS' createBusinesses comment) — this is
+  // the undo for when staff spot one of those too-thin ones after the
+  // fact. Deletes the business outright rather than just clearing the
+  // founder's link to it, since a curated business with nothing else
+  // pointing at it has no reason to keep existing as an orphaned row.
+  const attachedBusiness = founder.businessId ? getBusiness(founder.businessId) : undefined
+  async function handleRemoveBusiness() {
+    if (!attachedBusiness) return
+    setRemovingBusiness(true)
+    await deleteBusiness(attachedBusiness.id)
+    const next = { ...founder, businessId: '' }
+    const result = await updateFounder(next)
+    setRemovingBusiness(false)
+    if (result.success) onSaved(next)
+  }
 
   // Research runs in the background (see the Edit button in Bulk Import)
   // and, when it verifies a founder's own real profile, fills it in on the
@@ -773,6 +793,16 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           {saving ? 'Saving…' : 'Save changes'}
         </button>
         {saved && <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>}
+        {attachedBusiness && (
+          <ConfirmButton
+            label={removingBusiness ? 'Removing…' : `Remove business (${attachedBusiness.name})`}
+            confirmLabel="Remove it"
+            message="Delete this business?"
+            disabled={removingBusiness}
+            onConfirm={() => void handleRemoveBusiness()}
+            className="ml-auto text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+          />
+        )}
       </div>
     </div>
   )
