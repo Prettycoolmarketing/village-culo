@@ -127,8 +127,9 @@ export function VillageCuratedFoundersPage() {
   // research/audit dropdown). This tab takes its name instead, since this
   // list — filtered to curated founders only, see `founders` below — is
   // effectively what "the editorial queue" now means.
-  const [pageTab, setPageTab]     = useState<'founders' | 'imports'>(
+  const [pageTab, setPageTab]     = useState<'founders' | 'published' | 'imports'>(
     searchParams.get('tab') === 'imports' ? 'imports'
+    : searchParams.get('tab') === 'published' ? 'published'
     : !canSeeFounders ? 'imports' : 'founders',
   )
   const [tick, setTick]           = useState(0)
@@ -215,7 +216,7 @@ export function VillageCuratedFoundersPage() {
 
   // Filter + sort
   const filtered = useMemo(() => {
-    let list = [...founders]
+    let list = [...(pageTab === 'published' ? publishedFounders : founders)]
 
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -252,7 +253,7 @@ export function VillageCuratedFoundersPage() {
     list.sort((a, b) => (a.researchStatus === 'failed' ? 1 : 0) - (b.researchStatus === 'failed' ? 1 : 0))
 
     return list
-  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, founders, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder])
+  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, founders, publishedFounders, pageTab, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder])
 
   // Bulk operations — one Supabase upsert/delete + one cache rewrite per batch,
   // not one round-trip per founder (see Sprint 19B-Fix audit for the O(n²) bug
@@ -364,16 +365,17 @@ export function VillageCuratedFoundersPage() {
       <Tabs
         tabs={[
           ...(canSeeFounders ? [{ key: 'founders', label: 'Editorial Queue' }] : []),
+          ...(canSeeFounders ? [{ key: 'published', label: 'Published', badge: publishedFounders.length }] : []),
           ...(canSeeImports ? [{ key: 'imports', label: 'Bulk Import' }] : []),
         ]}
         active={pageTab}
-        onChange={key => setPageTab(key as 'founders' | 'imports')}
+        onChange={key => setPageTab(key as 'founders' | 'published' | 'imports')}
         className="mb-6"
       />
 
       {pageTab === 'imports' && canSeeImports && <VillageBulkImportPage embedded />}
 
-      {pageTab === 'founders' && canSeeFounders && (
+      {(pageTab === 'founders' || pageTab === 'published') && canSeeFounders && (
       <>
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-3 mb-6">
