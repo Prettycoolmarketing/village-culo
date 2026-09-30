@@ -216,7 +216,9 @@ export function VillageCuratedFoundersPage() {
 
   // Filter + sort
   const filtered = useMemo(() => {
-    let list = [...(pageTab === 'published' ? publishedFounders : founders)]
+    // Published founders have their own tab now — the queue itself is only
+    // ever the ones still needing work.
+    let list = [...(pageTab === 'published' ? publishedFounders : curatedDraftFounders)]
 
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -246,14 +248,22 @@ export function VillageCuratedFoundersPage() {
       return 0
     })
 
-    // Failed research sinks to the bottom regardless of the chosen sort —
-    // it needs attention, not a spot mixed in wherever its created date or
-    // name happens to land. Array.sort is stable, so this second pass only
-    // moves failed rows down without disturbing the order above otherwise.
-    list.sort((a, b) => (a.researchStatus === 'failed' ? 1 : 0) - (b.researchStatus === 'failed' ? 1 : 0))
+    // Queue order regardless of the chosen sort: needs-review on top (the
+    // actual work waiting on staff), failed research at the very bottom
+    // (needs attention, but nothing to review yet), everything else in the
+    // middle. Array.sort is stable, so this second pass only reorders by
+    // that priority without disturbing the order above within each group.
+    const priority = (f: Founder): number => {
+      if (f.researchStatus === 'failed') return 2
+      const items = editorialItemsAll.filter(i => i.founder_id === f.id)
+      const needsReview = f.researchStatus === 'researching'
+        || items.some(i => i.editorial_status === 'review' || i.editorial_status === 'pending' || i.editorial_status === 'reject')
+      return needsReview ? 0 : 1
+    }
+    list.sort((a, b) => priority(a) - priority(b))
 
     return list
-  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, founders, publishedFounders, pageTab, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder])
+  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, curatedDraftFounders, publishedFounders, pageTab, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder, editorialItemsAll])
 
   // Bulk operations — one Supabase upsert/delete + one cache rewrite per batch,
   // not one round-trip per founder (see Sprint 19B-Fix audit for the O(n²) bug
