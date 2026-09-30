@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useDictation } from '../../hooks/useDictation'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
-import { BrandBriefEditor } from '../../components/dashboard/BrandBriefEditor'
 import { SourceIcon } from '../../components/ui/SourceIcon'
 import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { useAuth } from '../../contexts/AuthContext'
@@ -1494,14 +1493,6 @@ export function DashboardImportContentPage() {
   const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const canUseVoiceRewrite = canUseRewrite(user?.role) || VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const founder = getFounder(founderId)
-  // Local, instant copy of the brief — getFounder() is a plain synchronous
-  // store read, not React state, so without this the textarea's value prop
-  // never actually changed after typing or uploading a file: the save to
-  // Supabase went through fine, but nothing re-rendered this component with
-  // the new text, so a file upload looked like it silently did nothing.
-  // Keeping it local (not synced to a slow network round-trip on every
-  // keystroke) also means typing itself never lags waiting on the backend.
-  const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => founder?.voiceBrief)
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [sources, setSources]   = useState<ConnectedSource[]>([])
@@ -1654,29 +1645,12 @@ export function DashboardImportContentPage() {
       {/* Connect a channel or feed */}
       {!draft && (
         <div>
-          {/* Voice & Insight Briefs — back above the import connectors,
-              where they started. BrandBriefEditor carries its own heading
-              and description now, so this wrapper no longer needs its
-              own duplicate copy on top of it. */}
-          {founder && (
-            <div className="mt-4 sm:mt-6 mb-8 pb-8 border-b border-[#E8E4DD]">
-              <BrandBriefEditor
-                value={voiceBriefDraft}
-                updatedAt={founder.voiceBriefUpdatedAt}
-                founderName={founder.name}
-                onChange={v => {
-                  setVoiceBriefDraft(v)
-                  const now = new Date().toISOString()
-                  void updateFounder({
-                    ...founder,
-                    voiceBrief: v, voiceBriefUpdatedAt: now,
-                    insightBrief: v, insightBriefUpdatedAt: now,
-                  })
-                }}
-              />
-            </div>
-          )}
-
+          {/* Voice & Insight Briefs moved to Profile → Expertise — this used
+              to be the first thing a founder saw before they could import
+              anything, when it's genuinely optional now (research/CAPO
+              rewrites/caption imports already do most of that work). An
+              optional add-on shouldn't sit in front of the actual import
+              action. */}
           <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web pages in the CULO Village for structured discovery</p>
           {/* A real 2-column grid with each card explicitly placed by row,
               not two independent flex columns — flex columns have no idea

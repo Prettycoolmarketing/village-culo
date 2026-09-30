@@ -3,7 +3,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { canAccessCapoSection, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
+import { getFounder } from '../../services/founders'
 import { SetPasswordModal } from './SetPasswordModal'
+import { OnboardingReadyModal } from './OnboardingReadyModal'
 import type { ReactNode } from 'react'
 
 // ─── Icon helpers ───────────────────────────────────────────────────────────────
@@ -152,6 +154,19 @@ export function DashboardLayout() {
     setPasswordModalDismissed(true)
   }
   const showSetPasswordModal = !!founder && !!founder.signupProduct && founder.passwordSet === false && !passwordModalDismissed
+
+  // Dashboard-wide, not page-specific — /join/setup's research runs in the
+  // background and a founder who didn't sit on Welcome waiting for it may
+  // already be on Import Content or anywhere else by the time it's ready.
+  // Only polls while there's an actual reason to (someone mid-research).
+  const [onboardingTick, setOnboardingTick] = useState(0)
+  useEffect(() => {
+    if (founder?.onboardingStatus !== 'researching') return
+    const interval = setInterval(() => setOnboardingTick(t => t + 1), 2500)
+    return () => clearInterval(interval)
+  }, [founder?.onboardingStatus])
+  const liveFounder = founder ? getFounder(founder.id) ?? founder : founder
+  void onboardingTick
   // Closed by default on mobile — the sidebar only becomes an overlay drawer
   // below the md breakpoint; on desktop the responsive classes below make it
   // static and always visible regardless of this state.
@@ -184,6 +199,7 @@ export function DashboardLayout() {
   return (
     <div className="flex h-screen bg-[#F3F7FA] overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {showSetPasswordModal && <SetPasswordModal onClose={dismissPasswordModal} />}
+      {liveFounder?.onboardingStatus === 'ready' && <OnboardingReadyModal founder={liveFounder} />}
 
       {/* Mobile top bar — hamburger + brand mark, hidden on desktop where the
           sidebar is already always visible. */}

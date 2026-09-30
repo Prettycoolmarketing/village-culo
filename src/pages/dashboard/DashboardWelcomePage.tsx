@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
-import { getFounder, updateFounder } from '../../services/founders'
+import { getFounder } from '../../services/founders'
 import { hasCreativeAccess } from '../../utils/creativeAccess'
 import { STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
-import { importedContentService } from '../../services/importedContent'
 
 // TODO: swap for the real "open CULO Creatives in Canva" URL once the app
 // clears Canva review (the app's own listing/deep-link URL from the Canva
@@ -221,9 +220,10 @@ export function DashboardWelcomePage() {
         </div>
       )}
 
-      {liveFounder?.onboardingStatus === 'ready' && (
-        <OnboardingReadyCard founder={liveFounder} />
-      )}
+      {/* What happens once that's ready is a dashboard-wide popup (see
+          OnboardingReadyModal in DashboardLayout), not this page specifically
+          — by the time research finishes, a founder who didn't sit and wait
+          may well have already moved on to Import Content or anywhere else. */}
 
       {/* Every section below spans the full width of the content pane (not
           boxed into a narrower max-width column) but keeps its own rounded
@@ -302,63 +302,6 @@ export function DashboardWelcomePage() {
             </Link>
           )}
         </div>
-      </section>
-    </div>
-  )
-}
-
-// The result of /join/setup's capture link — shown once, right where the
-// loading line was, before the normal "How The Culo Village Works" pitch
-// below it. Bio is already live on the founder record by this point (see
-// runOnboardingResearch — bio is treated as final the moment it's written,
-// same as the curated pipeline), but the article stays an unpublished
-// ImportedContent draft: "Publish" below is a real, deliberate click, not
-// something that happened to them while they read a welcome page.
-function OnboardingReadyCard({ founder }: { founder: NonNullable<ReturnType<typeof getCurrentFounder>> }) {
-  const [dismissed, setDismissed] = useState(false)
-  const draftArticle = importedContentService.getAll({ founderId: founder.id })[0]
-
-  if (dismissed) return null
-
-  async function handleContinue() {
-    await updateFounder({ ...founder, onboardingStatus: 'confirmed' })
-    setDismissed(true)
-  }
-
-  const hasBio = !!founder.bio?.trim()
-
-  return (
-    <div className="px-8 sm:px-12">
-      <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-1">
-          {hasBio ? "Here's your profile" : "We couldn't find much yet"}
-        </h2>
-        {hasBio ? (
-          <>
-            <p className="text-sm text-[#9CA3AF] mb-6">{founder.name} · /founders/{founder.slug}</p>
-            <p className="text-sm text-[#6B7280] leading-relaxed whitespace-pre-line max-w-2xl mb-6">{founder.bio}</p>
-            {draftArticle && (
-              <div className="rounded-xl bg-[#FBF1EB] px-5 py-4 mb-6 max-w-2xl">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#C86A43] mb-1">First article, ready to publish</p>
-                <p className="text-sm font-semibold text-[#2D2A26]">{draftArticle.title}</p>
-              </div>
-            )}
-            <p className="text-sm text-[#6B7280] mb-6 max-w-2xl">
-              Looks right? Continue to your dashboard to publish it, or edit anything first — it's all yours to change.
-            </p>
-          </>
-        ) : (
-          <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
-            That link didn't give us enough to write from. No problem — import your previously posted content
-            to be republished as individual web articles instead.
-          </p>
-        )}
-        <button
-          onClick={() => void handleContinue()}
-          className="text-base font-semibold px-6 py-3 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
-        >
-          {hasBio ? 'Looks good, continue' : 'Continue to my dashboard'}
-        </button>
       </section>
     </div>
   )
