@@ -33,7 +33,12 @@ function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialIt
   // item (e.g. the audit never got a chance to auto-approve before staff
   // published anyway) shouldn't keep showing "Review" on something that's
   // actually live. Checked first, before Failed/Review, so it always wins.
+  // Once the founder claims the profile, "Published" stops being accurate —
+  // it's their profile now, not a curated one staff is still tending.
   if (founder.status === 'published') {
+    if (founder.profileStatus === 'claimed') {
+      return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#3E6E92]/10 text-[#3E6E92]">Claimed</span>
+    }
     return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#5E6B4A]/10 text-[#5E6B4A]">Published</span>
   }
   if (founder.researchStatus === 'failed') {
@@ -184,7 +189,9 @@ export function VillageCuratedFoundersPage() {
   // own dashboard, and isn't part of what staff need to bulk-review/publish/
   // research here. Scoping the base dataset itself (not just a sub-tab)
   // means every stat, filter and bulk action below is already curated-only.
-  const founders  = getFounders().filter(f => f.profileStatus === 'village-curated' || f.profileStatus === 'claim-pending')
+  // 'claimed' stays in — otherwise a founder who claims a published profile
+  // just vanishes from the Published tab instead of showing as Claimed.
+  const founders  = getFounders().filter(f => f.profileStatus === 'village-curated' || f.profileStatus === 'claim-pending' || f.profileStatus === 'claimed')
   const businesses = getBusinesses()
   const claims    = founderClaimService.getAll()
 

@@ -33,13 +33,14 @@ export function VillageEmailExportPage() {
         <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Village Staff</p>
         <h1 className="text-2xl font-bold text-[#2D2A26]">Culo Members</h1>
         <p className="text-sm text-[#6B7280] mt-0.5">
-          Total Village Members: {getFounders().length}
+          Total Village Members: {getFounders().filter(isRealMember).length}
         </p>
       </div>
 
       <Tabs
         tabs={[
           { key: 'members',     label: 'Members' },
+          { key: 'curated',     label: 'Curated' },
           { key: 'subscribers', label: 'Subscribers' },
           { key: 'campaigns',   label: 'Newsletter' },
           { key: 'sequences',   label: 'Sequences' },
@@ -50,12 +51,20 @@ export function VillageEmailExportPage() {
       />
 
       {pageTab === 'members' && <MembersPanel />}
+      {pageTab === 'curated' && <MembersPanel curatedOnly />}
       {pageTab === 'subscribers' && <SubscribersPanel />}
       {pageTab === 'campaigns' && <CampaignsPanel />}
       {pageTab === 'sequences' && <SequencesPanel />}
 
     </div>
   )
+}
+
+// A village-curated/claim-pending founder isn't a member — nobody signed up,
+// staff (or an import) created the profile on their behalf. "Members" means
+// someone actually went through /join and has a real login.
+function isRealMember(f: ReturnType<typeof getFounders>[number]) {
+  return f.profileStatus !== 'village-curated' && f.profileStatus !== 'claim-pending'
 }
 
 // ─── Members panel — every /join-flow signup, one list ─────────────────────
@@ -67,8 +76,10 @@ export function VillageEmailExportPage() {
 // and the actual login (see delete-founder-account) — not just a
 // cache-side hide.
 
-function MembersPanel() {
-  const sorted = [...getFounders()].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
+  const sorted = [...getFounders()]
+    .filter(f => (curatedOnly ? !isRealMember(f) : isRealMember(f)))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   function handleExport() {
     const rows = sorted.map(f => ({
@@ -111,11 +122,6 @@ function MembersPanel() {
               <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <p className="text-sm font-semibold text-[#2D2A26] truncate min-w-0">{f.signupEmail ?? f.name}</p>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Baseline tag every member gets — Upgraded/Creatives
-                      stack alongside it, never replace it. */}
-                  <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">
-                    Ideas Member
-                  </span>
                   {isUpgraded && (
                     <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">
                       Upgraded
