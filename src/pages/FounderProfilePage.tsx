@@ -728,7 +728,10 @@ export function FounderProfilePage() {
               centering this block would shift its own left edge inward,
               throwing it out of line with everything above it. */}
           <InnerContainer>
-            <div className="max-w-5xl flex flex-col gap-10">
+            {/* No max-w-5xl — the claim pitch box further down the page
+                uses the full InnerContainer width, and a narrower cap here
+                made the 3-article grid look out of line with it. */}
+            <div className="flex flex-col gap-10">
               {importsSection}
               {isUnclaimedCurated && exploreFurtherSection}
             </div>

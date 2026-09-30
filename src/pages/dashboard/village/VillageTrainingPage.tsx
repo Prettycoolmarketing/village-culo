@@ -59,6 +59,21 @@ Before filling in a LinkedIn link or email, confirm it's genuinely the same pers
 
 Prioritise information found through the original podcast/YouTube episode itself (show notes, episode description, host's own links) over a generic web search — that's a stronger, more reliable connection than a name search turning up someone who just happens to share a name.`
 
+// What research actually arrives as varies a lot — sometimes a fully
+// written profile like the mission-context examples above, sometimes just
+// a name and a LinkedIn link Gia found in five minutes. This prompt is
+// deliberately generic about that: it never names a specific person, so it
+// works unchanged whatever shape the research happens to be in, and it's
+// explicit that ChatGPT/Claude should work with whatever's actually given
+// rather than inventing detail to fill the shape out.
+const CONVERT_TO_BULK_IMPORT_PROMPT = `Convert this research into CULO Village's bulk-import format. The input might be a fully researched profile with rich detail, or it might be as sparse as just a name and a LinkedIn link — work with whatever is actually given, and never invent or guess a detail that isn't in the source.
+
+Output ONLY valid JSON matching this exact shape:
+
+{ "batchName": "...", "founders": [ { "fullName": "...", "headline": "...", "bio": "...", "city": "...", "state": "...", "country": "Australia", "website": "...", "linkedinUrl": "...", "youtubeUrl": "...", "podcastUrl": "...", "topics": ["..."], "industries": ["..."], "businesses": [{"name":"...","website":"...","description":"..."}], "content": [{"title":"...","url":"...","platform":"youtube","description":"..."}] } ] }
+
+Required: fullName. Put every real fact you're given into bio. Everything else is optional — only include a field if the input actually has that information, and leave it out rather than guessing. One founder object per person, always inside the founders array — never a bare object, even for a single person.`
+
 const SOURCE_PROMPT = `Search recent episodes of [podcast name] for guests who are real Australian founders or business owners running their own company or practice.
 
 For each one, add a new row to this sheet with: their full name, the specific episode link they appeared on, their LinkedIn profile URL, their Instagram URL, their YouTube channel if they have one, and their business name.
@@ -539,6 +554,13 @@ export function VillageTrainingPage() {
             the Village, through Bulk Import (linked below). This is the point where a name on a spreadsheet
             becomes a real, live, curated profile page.
           </p>
+          <p>
+            Bulk Import needs a specific JSON shape, not raw research — if what you have is a research
+            write-up (or anything else that isn't already in that shape), paste it to ChatGPT or Claude with
+            this prompt first. It works whether the research is rich and detailed or just a name and a
+            LinkedIn link — it only fills in what's actually there, nothing guessed.
+          </p>
+          <CopyPromptButton text={CONVERT_TO_BULK_IMPORT_PROMPT} label="Copy the convert-to-bulk-import prompt" />
         </SubSection>
 
         <SubSection title="Step 5 — Check over each imported profile">

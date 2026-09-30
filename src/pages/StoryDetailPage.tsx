@@ -483,7 +483,14 @@ export function StoryDetailPage() {
 
               {/* Meta row */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-body text-muted mb-6">
-                {founder && (
+                {founder && isUnclaimedCuratedStory ? (
+                  <Link
+                    to={`/founders/${founder.slug}`}
+                    className="hover:text-primary transition-colors font-medium text-charcoal"
+                  >
+                    <span className="text-muted font-normal">Written by Culo</span> about {founder.name}
+                  </Link>
+                ) : founder && (
                   <Link
                     to={`/founders/${founder.slug}`}
                     className="flex items-center gap-2 hover:text-primary transition-colors font-medium text-charcoal"

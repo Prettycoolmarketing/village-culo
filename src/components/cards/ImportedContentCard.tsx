@@ -224,7 +224,7 @@ export function ImportedContentCard({ content, compact = false, intel, size = 'd
             {isUnclaimedCurated ? (
               <AreYouThisFounderCTA
                 founder={founder!}
-                initialLabel="Publish your story in The Culo Village — free"
+                initialLabel="Publish your story, Free!"
                 initialClassName="font-body text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors flex items-center gap-1.5"
               />
             ) : (
@@ -235,7 +235,7 @@ export function ImportedContentCard({ content, compact = false, intel, size = 'd
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Publish your story in The Culo Village — free
+                Publish your story, Free!
               </Link>
             )}
           </div>
