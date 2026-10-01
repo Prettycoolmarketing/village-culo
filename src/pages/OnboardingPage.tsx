@@ -8,6 +8,7 @@ import { updateFounder } from '../services/founders'
 import { updateBusiness } from '../services/businesses'
 import { updateService } from '../services/serviceOfferings'
 import { MediaUpload } from '../components/ui/MediaUpload'
+import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { locations } from '../data/locations'
 import { industries } from '../data/industries'
 import { topics } from '../data/topics'
@@ -314,9 +315,10 @@ function AccountStep({ onDone }: { onDone: () => void }) {
     return (
       <div className="text-center max-w-md mx-auto">
         <h2 className="font-heading text-xl font-bold text-charcoal mb-3">Check your email</h2>
-        <p className="font-body text-sm text-muted leading-relaxed">
+        <p className="font-body text-sm text-muted leading-relaxed mb-6">
           We sent a confirmation link to <span className="font-medium text-charcoal">{email}</span>. Click it, then come back here to keep going.
         </p>
+        <WebmailButtons />
       </div>
     )
   }
