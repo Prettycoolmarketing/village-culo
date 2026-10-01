@@ -27,7 +27,17 @@ export function getBusinesses(filter?: BusinessFilter): Business[] {
   if (filter.publicOnly) result = result.filter(b =>
     (b.status === 'published' || b.status === 'featured') &&
     b.name.trim().length > 0 &&
-    (() => { const f = getFounder(b.founderId); return !f || f.status === 'published' || f.status === 'featured' })()
+    (() => {
+      const f = getFounder(b.founderId)
+      if (!f) return true
+      // A curated batch often brings a business in alongside the founder
+      // even when there's nothing real behind it yet (see
+      // DEFAULT_IMPORT_OPTIONS' createBusinesses comment) — it has no
+      // business reading as a real, standalone page until the founder has
+      // actually claimed their profile.
+      if (f.profileStatus === 'village-curated' && !f.userId) return false
+      return f.status === 'published' || f.status === 'featured'
+    })()
   )
   if (filter.featured !== undefined) result = result.filter(b => b.featured === filter.featured)
   // Curated businesses (featuredOrder set) come first, in that order; everyone

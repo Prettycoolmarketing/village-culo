@@ -117,7 +117,7 @@ export function VillagePage() {
         leading with it.
       */}
       <section className="bg-charcoal relative overflow-hidden" aria-labelledby="creatives-heading">
-        <InnerContainer className="pt-20 pb-16 md:pt-28 md:pb-20">
+        <InnerContainer className="pt-28 pb-16 md:pt-28 md:pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
@@ -131,11 +131,6 @@ export function VillagePage() {
                 into one public founder profile built for discovery across people, search engines and AI.
               </p>
               <HomeInstantJoin />
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 mt-5">
-                <Link to="/archive" className="inline-block text-base sm:text-lg font-semibold text-white hover:text-primary transition-colors underline underline-offset-4 decoration-white/30 hover:decoration-primary">
-                  Explore the Village
-                </Link>
-              </div>
               <p className="font-body text-sm text-white/50 mt-6 max-w-xl mx-auto lg:mx-0">
                 Already creating content? CULO helps make sure it doesn't disappear into the feed.
               </p>

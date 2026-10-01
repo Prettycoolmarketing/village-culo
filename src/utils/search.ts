@@ -28,23 +28,34 @@ export function searchVillage(query: string): SearchResults {
   const allEvents     = getEvents()
   const libraryItems  = getLibraryItems()
 
+  // Build ID → object maps for cross-type lookups
+  const founderMap  = new Map(allFounders.map(f  => [f.id,  f]))
+  const businessMap = new Map(allBusinesses.map(b => [b.id, b]))
+
+  // A curated batch often brings a business in alongside the founder even
+  // when there's nothing real behind it yet (see DEFAULT_IMPORT_OPTIONS'
+  // createBusinesses comment) — fine to keep on the founder record, but it
+  // has no business reading as a real, standalone business page in a
+  // public browse/search surface until the founder has actually claimed
+  // their profile.
+  function isRealBusiness(b: Business): boolean {
+    const f = founderMap.get(b.founderId)
+    return !f || f.profileStatus !== 'village-curated' || !!f.userId
+  }
+
   // Empty query — return everything so Archive doubles as a full browser
   if (!query.trim()) {
     return {
       stories:    allStories.filter(s => s.status !== 'archived'),
       founders:   allFounders.filter(f => f.status !== 'archived'),
       ideas:      publicIdeas,
-      businesses: allBusinesses.filter(b => b.status !== 'archived'),
+      businesses: allBusinesses.filter(b => b.status !== 'archived' && isRealBusiness(b)),
       events:     [...allEvents],
       library:    libraryItems.filter(l => l.status !== 'archived'),
     }
   }
 
   const q = query.trim().toLowerCase()
-
-  // Build ID → object maps for cross-type lookups
-  const founderMap  = new Map(allFounders.map(f  => [f.id,  f]))
-  const businessMap = new Map(allBusinesses.map(b => [b.id, b]))
 
   return {
     stories: allStories.filter(s => {
@@ -83,7 +94,7 @@ export function searchVillage(query: string): SearchResults {
     }),
 
     businesses: allBusinesses.filter(b => {
-      if (b.status === 'archived') return false
+      if (b.status === 'archived' || !isRealBusiness(b)) return false
       const f = founderMap.get(b.founderId)
       return searchable([
         b.name, b.tagline, b.description,

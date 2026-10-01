@@ -157,7 +157,7 @@ export function JoinVillagePage() {
           own hero. Copy + form on the left, hero photo on the right, so the
           image isn't just decoration stacked below — it sits right where
           the eye lands next. */}
-      <section className="bg-charcoal py-20 md:py-28" aria-labelledby="join-heading">
+      <section className="bg-charcoal pt-28 pb-16 md:py-28" aria-labelledby="join-heading">
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
@@ -402,7 +402,7 @@ export function JoinVillagePage() {
           now sitting below the screenshot grid instead of above it. */}
       <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="how-heading">
         <InnerContainer>
-          <div className="max-w-2xl mb-12">
+          <div className="max-w-2xl mb-14 md:mb-12">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
               How it works
             </p>
@@ -411,13 +411,13 @@ export function JoinVillagePage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
             {STEPS.map((s, i) => (
               <div key={s.title}>
-                <div className="rounded-xl overflow-hidden border border-border mb-4 bg-surface">
+                <div className="rounded-xl overflow-hidden border border-border mb-6 md:mb-4 bg-surface">
                   <img src={s.image} alt={`${s.title} — screenshot of CULO Creatives in Canva`} className="w-full h-auto" loading="lazy" />
                 </div>
-                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary font-heading font-bold flex items-center justify-center mb-4">
+                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary font-heading font-bold flex items-center justify-center mb-6 md:mb-4">
                   {i + 1}
                 </div>
                 <p className="font-heading text-xl font-semibold text-charcoal mb-3">{s.title}</p>
