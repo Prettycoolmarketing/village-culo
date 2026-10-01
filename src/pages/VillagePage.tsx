@@ -151,34 +151,6 @@ export function VillagePage() {
         </InnerContainer>
       </section>
 
-      {/* ── 1b. Your work is already everywhere ───────────────────────────────
-        Short connective section between the signup pitch and the Hero
-        search/stats widget — makes the "bring it together" idea concrete
-        before the Hero's own "Every founder has a story" framing.
-      */}
-      <section className="bg-background" aria-labelledby="bring-together-heading">
-        <InnerContainer className="py-14 md:py-20">
-          <div className="max-w-3xl">
-            <h2 id="bring-together-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-6 leading-tight">
-              Your work is already everywhere. CULO brings it together.
-            </h2>
-            <p className="font-body text-lg text-muted leading-relaxed mb-2">
-              You don't need to start another blog or recreate years of content.
-            </p>
-            <p className="font-body text-lg text-muted leading-relaxed mb-6">
-              The Culo Village connects the work you've already put into the world and turns it into a growing
-              public body of work around you.
-            </p>
-            <p className="font-body text-sm font-semibold text-charcoal uppercase tracking-wide mb-2">
-              Social posts · Podcasts · Videos · Articles · Businesses · Expertise
-            </p>
-            <p className="font-body text-base text-primary font-semibold">
-              → One connected founder profile
-            </p>
-          </div>
-        </InnerContainer>
-      </section>
-
       {/* ── 2. Hero ─────────────────────────────────────────────────────────── */}
       {/*
         Headline, search bar and popular topic pills.
