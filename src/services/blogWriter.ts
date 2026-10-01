@@ -87,7 +87,7 @@ export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Prom
 }
 
 export interface GeneratedSearchAnswer {
-  status: 'ready' | 'insufficient_source'
+  status: 'ready' | 'insufficient_source' | 'no_unused_question'
   note?: string
   primaryQuestion?: string
   relatedQuestions?: string[]
@@ -96,17 +96,24 @@ export interface GeneratedSearchAnswer {
   seoTitle?: string
   seoDescription?: string
   slug?: string
-  culoConnectionMade?: boolean
+  primaryTopic?: string
+  secondaryTopics?: string[]
+  sourceUsed?: string
+  culoRelevant?: boolean
 }
 
 // Turns one of Shakas's own clips/transcripts into a standalone
 // search-answer article — see generate-search-answer's own prompt for the
 // exact logic. Shakas-only / CAPO-only feature (gated at the call site),
-// not a general founder tool.
+// not a general founder tool. usedQuestions is every primaryQuestion a
+// past run already produced for this founder (Founder.usedSearchQuestions)
+// — the rotation logic itself lives in the prompt, but sending this list is
+// what makes "never repeat" actually enforceable rather than hopeful.
 export async function generateSearchAnswerArticle(input: {
   founderName: string
   sourceText: string
   platform?: string
+  usedQuestions?: string[]
 }): Promise<{ result?: GeneratedSearchAnswer; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
   const { data, error } = await supabase.functions.invoke<{ result?: GeneratedSearchAnswer; error?: string }>(

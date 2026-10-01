@@ -511,6 +511,12 @@ export interface Founder {
   // waiting on a staff member to trigger it. Undefined for every curated
   // founder and every founder who joined before this existed.
   onboardingStatus?: 'needs_setup' | 'researching' | 'ready' | 'confirmed'
+  // "Rewrite as a Culo Article" (see generate-search-answer) sends this
+  // list back to the model on every run so it picks an unused primary
+  // question instead of drifting toward the same few angles — grows by
+  // one each time the button succeeds. Never pruned/deduped by hand;
+  // the model is told to treat it as the full history.
+  usedSearchQuestions?: string[]
   // The Canva user's own stable id (decoded client-side from their Canva
   // JWT in culo-starter's app.tsx) — present only when this founder arrived
   // via the "Continue in The Culo Village" link inside the Canva app

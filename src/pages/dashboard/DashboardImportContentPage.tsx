@@ -965,23 +965,37 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       setSearchAnswerError('Nothing to work from yet — this needs a transcript, caption or diary note first.')
       return
     }
+    const founder = getFounder(draft.founderId)
     setSearchAnswering(true)
     setSearchAnswerError(null)
     setSearchAnswerResult(null)
     const { result, error } = await generateSearchAnswerArticle({
-      founderName: 'Shakas Designer',
+      founderName: founder?.name ?? 'Shakas Designer',
       sourceText,
       platform: draft.sourcePlatform,
+      usedQuestions: founder?.usedSearchQuestions ?? [],
     })
     setSearchAnswering(false)
     if (error) { setSearchAnswerError(error); return }
-    if (!result || result.status === 'insufficient_source' || !result.article) {
-      setSearchAnswerError(result?.note ? `Not enough to answer a real question yet — ${result.note}` : 'Not enough here yet to answer a real search question.')
+    if (!result || result.status !== 'ready' || !result.article) {
+      setSearchAnswerError(
+        result?.status === 'no_unused_question'
+          ? `Every angle this clip supports has already been used — ${result.note ?? 'try another clip.'}`
+          : result?.note
+            ? `Not enough to answer a real question yet — ${result.note}`
+            : 'Not enough here yet to answer a real search question.'
+      )
       return
     }
     setSearchAnswerResult(result)
     if (result.headline) field('title', result.headline)
     field('description', normalizeBlogSpacing(result.article))
+    // Rotation only actually works if this list grows — the prompt alone
+    // can't enforce "never repeat" without the caller feeding back what's
+    // already been used.
+    if (founder && result.primaryQuestion) {
+      void updateFounder({ ...founder, usedSearchQuestions: [...(founder.usedSearchQuestions ?? []), result.primaryQuestion] })
+    }
   }
 
   // Dictation — the browser's own free, local speech-to-text (Web Speech
@@ -1185,11 +1199,13 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
             {!!searchAnswerResult.relatedQuestions?.length && (
               <p><span className="font-semibold text-[#2D2A26]">Related:</span> {searchAnswerResult.relatedQuestions.join(' · ')}</p>
             )}
+            <p><span className="font-semibold text-[#2D2A26]">Topics:</span> {[searchAnswerResult.primaryTopic, ...(searchAnswerResult.secondaryTopics ?? [])].filter(Boolean).join(' · ')}</p>
             <p><span className="font-semibold text-[#2D2A26]">SEO title:</span> {searchAnswerResult.seoTitle}</p>
             <p><span className="font-semibold text-[#2D2A26]">Meta description:</span> {searchAnswerResult.seoDescription}</p>
             <p><span className="font-semibold text-[#2D2A26]">Slug:</span> {searchAnswerResult.slug}</p>
-            <p className={searchAnswerResult.culoConnectionMade ? 'text-[#5E6B4A] font-semibold' : 'text-[#9CA3AF]'}>
-              {searchAnswerResult.culoConnectionMade ? '✓ Ties back to CULO' : 'No forced CULO tie-in — left out on purpose'}
+            <p><span className="font-semibold text-[#2D2A26]">Source used:</span> {searchAnswerResult.sourceUsed}</p>
+            <p className={searchAnswerResult.culoRelevant ? 'text-[#5E6B4A] font-semibold' : 'text-[#9CA3AF]'}>
+              {searchAnswerResult.culoRelevant ? '✓ Ties back to CULO' : 'No forced CULO tie-in — left out on purpose'}
             </p>
           </div>
         )}
