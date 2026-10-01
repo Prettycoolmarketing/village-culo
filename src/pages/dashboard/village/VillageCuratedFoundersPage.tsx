@@ -395,7 +395,7 @@ export function VillageCuratedFoundersPage() {
       {(pageTab === 'founders' || pageTab === 'published') && canSeeFounders && (
       <>
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
           { label: 'Total',         value: founders.length,                color: 'text-[#C86A43]' },
           { label: 'Awaiting review', value: curatedDraftFounders.length,  color: 'text-amber-600' },
@@ -504,8 +504,12 @@ export function VillageCuratedFoundersPage() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden">
+      {/* Table — a fixed 12-column grid like this doesn't survive a phone
+          screen (every cell squeezes past readable), so it scrolls
+          sideways on mobile at a fixed minimum width instead of squishing.
+          Desktop never notices since it's already wider than the min. */}
+      <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden overflow-x-auto">
+      <div className="min-w-[880px]">
         {/* Header */}
         <div className="grid grid-cols-12 gap-3 px-5 py-2.5 bg-[#F8F5F0] border-b border-[#E8E4DD]">
           <div className="col-span-1 flex items-center">
@@ -657,6 +661,7 @@ export function VillageCuratedFoundersPage() {
             })}
           </div>
         )}
+      </div>
       </div>
 
       {bulkError && (
