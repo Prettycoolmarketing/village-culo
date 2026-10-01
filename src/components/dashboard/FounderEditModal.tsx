@@ -4,6 +4,7 @@ import type { Founder } from '../../types'
 import type { ImportedContent, ImportedContentStatus } from '../../types/importedContent'
 import { updateFounder, getFounder } from '../../services/founders'
 import { getBusiness, deleteBusiness } from '../../services/businesses'
+import { relationshipService } from '../../services/relationships'
 import { importedContentService } from '../../services/importedContent'
 import { getStory, updateStory } from '../../services/stories'
 import { buildStoryFromImport, publishStoryCore, publishFounderArticles } from '../../services/publishStory'
@@ -675,6 +676,13 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
   async function handleRemoveBusiness() {
     if (!attachedBusiness) return
     setRemovingBusiness(true)
+    // deleteBusiness only ever removes the businesses row itself — any
+    // "mentions" edges a published story built pointing at this business
+    // (see relationshipSync.ts) would otherwise sit in the relationships
+    // table forever pointing at nothing.
+    await Promise.all(
+      relationshipService.getRelated('business', attachedBusiness.id).map(r => relationshipService.remove(r.id))
+    )
     await deleteBusiness(attachedBusiness.id)
     const next = { ...founder, businessId: '' }
     const result = await updateFounder(next)
