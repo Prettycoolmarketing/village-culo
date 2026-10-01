@@ -76,19 +76,11 @@ export function VillageHQOverviewPage() {
   const businesses   = getBusinesses()
   const stories      = getStories()
   const allContent   = importedContentService.getAll()
-  const allClaims    = founderClaimService.getAll()
   const pendingClaims = founderClaimService.getPending()
   const batches      = importBatchService.getAll()
 
-  const claimPending = founders.filter(f => f.profileStatus === 'claim-pending')
-
   const publishedStories = stories.filter(s => s.status === 'published' || s.status === 'featured')
   const publicContent    = allContent.filter(c => c.visibility === 'public')
-
-  // Emails available (unique emails from claim requests)
-  const emails = [...new Set(allClaims.map(c => c.requesterEmail.toLowerCase()).filter(Boolean))]
-
-  const totalImported = batches.reduce((sum, b) => sum + b.created, 0)
 
   // ── Admin/owner-only analytics (merged in from the former standalone
   // Village Analytics page — kept behind the same 'analytics' permission it
@@ -236,23 +228,16 @@ export function VillageHQOverviewPage() {
 
       <section className="mb-8">
         <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Operations</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <StatCard label="Pending Claims"    value={pendingClaims.length}  color={pendingClaims.length > 0 ? 'text-amber-600' : 'text-[#2D2A26]'} to="/dashboard/village/founders" />
-          <StatCard label="Claim Pending"     value={claimPending.length}   color="text-amber-600"  to="/dashboard/village/founders" />
           <StatCard label="Import Batches"    value={batches.length}        color="text-[#2D2A26]"  to="/dashboard/village/founders?tab=imports" />
-          <StatCard label="Via Bulk Import"   value={totalImported}         color="text-[#2D2A26]"  to="/dashboard/village/founders?tab=imports" />
         </div>
       </section>
 
-      <section className="mb-8">
-        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Export</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Emails Available"  value={emails.length}         color="text-[#5E6B4A]"  to="/dashboard/village/emails" />
-          <StatCard label="Claim Requests"    value={allClaims.length}      color="text-[#2D2A26]"  to="/dashboard/village/emails" />
-          <StatCard label="Total All Content" value={allContent.length + publishedStories.length + businesses.length} color="text-[#2D2A26]" />
-          <StatCard label="Public Founders"   value={founders.filter(f => f.status === 'published' || f.status === 'featured').length} color="text-[#2D2A26]" />
-        </div>
-      </section>
+      {/* Export used to also show here as its own stat-card section
+          (Emails Available, Claim Requests, Total All Content, Public
+          Founders) — fully redundant with the actual Export tab right next
+          to this one, which already does that job properly. */}
 
       {/* Everything below here is admin/owner only — same 'analytics'
           permission the standalone page always required. */}
