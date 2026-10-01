@@ -721,7 +721,11 @@ export function FounderProfilePage() {
           brand-new curated profile. A founder with real Stories/Featured
           picks gets those first, and this comes after as supplementary
           instead, nested in the normal content column (see further down). */}
-      {!hasRealStories && importsSection && (
+      {/* isUnclaimedCurated alone (no imports yet) still needs this block —
+          otherwise a brand-new curated founder with zero articles imported
+          so far never gets the claim pitch box at all, since it used to be
+          nested entirely inside the imports-only gate below. */}
+      {!hasRealStories && (importsSection || isUnclaimedCurated) && (
         <div className="pt-14 md:pt-16">
           {/* No mx-auto — the bio/CTA content above (max-w-4xl, no auto
               margin) starts flush at the container's left edge, and
