@@ -20,7 +20,7 @@ import { dailyRotatingSlice } from '../utils/rotation'
 // own space, since this is embedded partway down the homepage, not a
 // dedicated page. Tagged source=canva — see the section comment above.
 function HomeInstantJoin() {
-  const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit } = useInstantJoin('canva')
+  const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit } = useInstantJoin('village')
 
   if (alreadyMember) {
     return (
@@ -55,7 +55,7 @@ function HomeInstantJoin() {
         disabled={submitting}
         className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
       >
-        {submitting ? 'Joining…' : 'Join the Village'}
+        {submitting ? 'Joining…' : 'Create your founder profile'}
       </button>
       {error && <p className="font-body text-sm text-red-400 w-full">{error}</p>}
     </form>
@@ -106,32 +106,39 @@ export function VillagePage() {
         Skip to main content
       </a>
 
-      {/* ── 1. CULO Creatives ────────────────────────────────────────────────
+      {/* ── 1. Village hero / signup ──────────────────────────────────────────
         Full-bleed and hero-scale (matching /how-culo-canva). Instant email
         capture right here — no click-through to /join needed first — so
         anyone landing on culovillage.com can start immediately. Tagged
-        source=canva, since this whole section is specifically the Creatives
-        pitch: it's the funnel into the Canva-first Welcome experience, same
-        as the in-app "Continue in The Culo Village" button.
+        source=village now (not canva) — this section pitches the Village
+        itself, not Culo Creatives, so a signup here should land on the
+        plain Village welcome, not the Canva-first one. The Creatives pitch
+        has its own dedicated section further down the page instead of
+        leading with it.
       */}
       <section className="bg-charcoal relative overflow-hidden" aria-labelledby="creatives-heading">
         <InnerContainer className="pt-20 pb-16 md:pt-28 md:pb-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Free to join · Culo Creatives optional add-on
+                Free to join
               </p>
               <h2 id="creatives-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                Republish your posts as individual web articles for AI discoverability.
+                Turn everything you've already created into a body of work people can discover.
               </h2>
               <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
-                Publish in the Village for free, then use Culo Creatives — coming soon, exclusively in Canva — to
-                turn your messy thoughts and raw footage into different formats of social media content.
+                The Culo Village connects your podcasts, videos, social posts, articles, businesses and expertise
+                into one public founder profile built for discovery across people, search engines and AI.
               </p>
               <HomeInstantJoin />
-              <Link to="/join" className="inline-block text-base sm:text-lg font-semibold text-white hover:text-primary transition-colors mt-5 underline underline-offset-4 decoration-white/30 hover:decoration-primary">
-                Learn more about CULO Creatives in Canva →
-              </Link>
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 mt-5">
+                <Link to="/archive" className="inline-block text-base sm:text-lg font-semibold text-white hover:text-primary transition-colors underline underline-offset-4 decoration-white/30 hover:decoration-primary">
+                  Explore the Village
+                </Link>
+              </div>
+              <p className="font-body text-sm text-white/50 mt-6 max-w-xl mx-auto lg:mx-0">
+                Already creating content? CULO helps make sure it doesn't disappear into the feed.
+              </p>
             </div>
             <div className="relative hidden lg:block">
               <img
@@ -144,12 +151,67 @@ export function VillagePage() {
         </InnerContainer>
       </section>
 
+      {/* ── 1b. Your work is already everywhere ───────────────────────────────
+        Short connective section between the signup pitch and the Hero
+        search/stats widget — makes the "bring it together" idea concrete
+        before the Hero's own "Every founder has a story" framing.
+      */}
+      <section className="bg-background" aria-labelledby="bring-together-heading">
+        <InnerContainer className="py-14 md:py-20">
+          <div className="max-w-3xl">
+            <h2 id="bring-together-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-6 leading-tight">
+              Your work is already everywhere. CULO brings it together.
+            </h2>
+            <p className="font-body text-lg text-muted leading-relaxed mb-2">
+              You don't need to start another blog or recreate years of content.
+            </p>
+            <p className="font-body text-lg text-muted leading-relaxed mb-6">
+              The Culo Village connects the work you've already put into the world and turns it into a growing
+              public body of work around you.
+            </p>
+            <p className="font-body text-sm font-semibold text-charcoal uppercase tracking-wide mb-2">
+              Social posts · Podcasts · Videos · Articles · Businesses · Expertise
+            </p>
+            <p className="font-body text-base text-primary font-semibold">
+              → One connected founder profile
+            </p>
+          </div>
+        </InnerContainer>
+      </section>
+
       {/* ── 2. Hero ─────────────────────────────────────────────────────────── */}
       {/*
         Headline, search bar and popular topic pills.
         The front door to the Village — sets the editorial tone.
       */}
       <HeroWidget />
+
+      {/* ── 2b. Culo Creatives ─────────────────────────────────────────────────
+        Its own dedicated pitch now, rather than leading the homepage with
+        it — the Village itself is the free, available-now product; Creatives
+        is the coming-soon, Canva-exclusive add-on, so it reads as a bonus
+        once someone's already sold on the Village, not the first thing
+        they see.
+      */}
+      <section className="bg-charcoal" aria-labelledby="creatives-section-heading">
+        <InnerContainer className="py-14 md:py-20">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 id="creatives-section-heading" className="font-heading text-3xl sm:text-4xl font-bold text-white mb-4">
+              Create what comes next with Culo Creatives
+            </h2>
+            <p className="font-body text-sm font-semibold text-primary uppercase tracking-widest mb-4">
+              Coming soon, exclusively inside Canva
+            </p>
+            <p className="font-body text-lg text-white/70 leading-relaxed mb-8">
+              Turn your messy thoughts and raw footage into different formats of social media content, then
+              connect that work back into your growing body of work in The Culo Village.
+            </p>
+            <Link to="/join" className="inline-block text-base sm:text-lg font-semibold text-white hover:text-primary transition-colors underline underline-offset-4 decoration-white/30 hover:decoration-primary">
+              Learn more about Culo Creatives in Canva →
+            </Link>
+          </div>
+        </InnerContainer>
+      </section>
 
       {/* ── 3. Today's Highlights ───────────────────────────────────────────── */}
       {/*

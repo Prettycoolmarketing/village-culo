@@ -78,9 +78,16 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
           </h1>
 
           {/* Subheadline */}
-          <p className="font-body text-lg md:text-xl text-muted leading-relaxed max-w-xl mb-10">
-            Explore stories, ideas, businesses and people publishing real knowledge through CULO.
+          <p className="font-body text-lg md:text-xl text-muted leading-relaxed max-w-xl mb-6">
+            Explore founders through the ideas, experiences, businesses and knowledge they've already shared.
           </p>
+
+          <Link
+            to="/founders"
+            className="inline-block text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors mb-10 underline underline-offset-4 decoration-primary/30 hover:decoration-[#b05a35]"
+          >
+            Explore founders →
+          </Link>
 
           {/* Search */}
           <form
