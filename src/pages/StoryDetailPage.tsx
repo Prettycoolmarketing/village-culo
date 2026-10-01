@@ -390,15 +390,6 @@ export function StoryDetailPage() {
         .slice(0, 3)
     : []
 
-  // Related founders from intel
-  const intelRelatedFounders = intel
-    ? intel.relatedFounderIds
-        .map(id => getFounders({ publicOnly: true }).find(f => f.id === id))
-        .filter((f): f is NonNullable<typeof f> => !!f && f.id !== story.founderId)
-        .slice(0, 3)
-    : []
-
-
   return (
     <main className="min-h-screen bg-background">
 
@@ -936,46 +927,6 @@ export function StoryDetailPage() {
                     {relatedImports.map(item => (
                       <ImportedContentCard key={item.id} content={item} />
                     ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Related founders from intel — skipped for an unclaimed
-                  curated founder's article, same reasoning as their own
-                  profile page: a shared-topic overlap with an unrelated
-                  real founder isn't a real connection for a profile
-                  nobody's actually claimed yet. */}
-              {!(founder?.profileStatus === 'village-curated' && !founder?.userId) && intelRelatedFounders.length > 0 && (
-                <section aria-labelledby="related-founders-intel-heading">
-                  <h2
-                    id="related-founders-intel-heading"
-                    className="font-heading text-2xl font-semibold text-charcoal mb-6"
-                  >
-                    Related Founders
-                  </h2>
-                  <div className="flex flex-col gap-3">
-                    {intelRelatedFounders.map(f => {
-                      const fBiz = getBusiness(f.businessId)
-                      return (
-                        <Link
-                          key={f.id}
-                          to={`/founders/${f.slug}`}
-                          className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-sm transition-all group"
-                          aria-label={`View ${f.name}'s profile`}
-                        >
-                          <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden bg-primary/10 ring-2 ring-border">
-                            {f.avatar
-                              ? <img src={f.avatar} alt="" className="w-full h-full object-cover" loading="lazy" />
-                              : <span className="flex items-center justify-center h-full text-primary font-heading text-sm font-semibold">{f.name[0]}</span>
-                            }
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-body text-sm font-semibold text-charcoal group-hover:text-primary transition-colors truncate">{f.name}</p>
-                            <p className="font-body text-xs text-muted truncate">{fBiz?.name ?? f.industry.name}</p>
-                          </div>
-                        </Link>
-                      )
-                    })}
                   </div>
                 </section>
               )}
