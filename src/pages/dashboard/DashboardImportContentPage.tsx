@@ -19,8 +19,8 @@ import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
 import { enrichImportedContent, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
-import { canUseRewrite } from '../../utils/permissions'
-import { generateBlogFromVoiceBrief, extractFaqsAI } from '../../services/blogWriter'
+import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
+import { generateBlogFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, type GeneratedSearchAnswer } from '../../services/blogWriter'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { MediaUpload, inferKindFromUrl } from '../../components/ui/MediaUpload'
 import {
@@ -875,13 +875,17 @@ interface EditFormProps {
   onSave: () => void
   onCancel: () => void
   canRewrite?: boolean
+  // Shakas's own account + CAPO staff only (see call site) — turns this
+  // piece's own clip/transcript into a standalone search-answer article
+  // (see generate-search-answer). Not a general founder feature yet.
+  canSearchAnswer?: boolean
   // Shown right next to Save — on a long form the "Saved ✓" flash up near
   // the title (still there too) scrolls out of view the moment someone
   // hits Save down here, so it looked like nothing happened.
   savedFlash?: boolean
 }
 
-export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false, savedFlash = false }: EditFormProps) {
+export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false, canSearchAnswer = false, savedFlash = false }: EditFormProps) {
   const { listening, toggle: toggleDictationBase } = useDictation()
   const [rewriting, setRewriting] = useState(false)
   const [rewriteError, setRewriteError] = useState<string | null>(null)
@@ -943,6 +947,41 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     if (blogBeforeRewrite === null) return
     field('description', blogBeforeRewrite)
     setBlogBeforeRewrite(null)
+  }
+
+  // Turns this clip/transcript into a standalone search-answer article —
+  // see generate-search-answer's prompt. Title and Blog get replaced with
+  // the generated headline/article; the primary + related questions and
+  // SEO suggestions are shown alongside rather than silently stored
+  // anywhere, since there's no dedicated field for them yet on
+  // ImportedContent — staff carry the SEO fields over to the Story by hand
+  // when they publish it.
+  const [searchAnswering, setSearchAnswering] = useState(false)
+  const [searchAnswerError, setSearchAnswerError] = useState<string | null>(null)
+  const [searchAnswerResult, setSearchAnswerResult] = useState<GeneratedSearchAnswer | null>(null)
+  async function handleSearchAnswer() {
+    const sourceText = draft.transcriptText?.trim() || draft.description?.trim() || draft.diaryNote?.trim()
+    if (!sourceText) {
+      setSearchAnswerError('Nothing to work from yet — this needs a transcript, caption or diary note first.')
+      return
+    }
+    setSearchAnswering(true)
+    setSearchAnswerError(null)
+    setSearchAnswerResult(null)
+    const { result, error } = await generateSearchAnswerArticle({
+      founderName: 'Shakas Designer',
+      sourceText,
+      platform: draft.sourcePlatform,
+    })
+    setSearchAnswering(false)
+    if (error) { setSearchAnswerError(error); return }
+    if (!result || result.status === 'insufficient_source' || !result.article) {
+      setSearchAnswerError(result?.note ? `Not enough to answer a real question yet — ${result.note}` : 'Not enough here yet to answer a real search question.')
+      return
+    }
+    setSearchAnswerResult(result)
+    if (result.headline) field('title', result.headline)
+    field('description', normalizeBlogSpacing(result.article))
   }
 
   // Dictation — the browser's own free, local speech-to-text (Web Speech
@@ -1127,8 +1166,33 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
               ↺ Undo rewrite
             </button>
           )}
+          {canSearchAnswer && (
+            <button
+              type="button"
+              onClick={() => void handleSearchAnswer()}
+              disabled={searchAnswering}
+              className="text-sm font-bold px-5 py-3 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
+            >
+              {searchAnswering ? 'Writing…' : '🔍 Rewrite as a Culo Article'}
+            </button>
+          )}
         </div>
         {rewriteError && <p className="text-xs text-red-600">{rewriteError}</p>}
+        {searchAnswerError && <p className="text-xs text-red-600">{searchAnswerError}</p>}
+        {searchAnswerResult && (
+          <div className="rounded-xl border border-[#E8E4DD] bg-[#FBF8F4] px-4 py-3 text-xs text-[#4B4845] space-y-1.5">
+            <p><span className="font-semibold text-[#2D2A26]">Primary question:</span> {searchAnswerResult.primaryQuestion}</p>
+            {!!searchAnswerResult.relatedQuestions?.length && (
+              <p><span className="font-semibold text-[#2D2A26]">Related:</span> {searchAnswerResult.relatedQuestions.join(' · ')}</p>
+            )}
+            <p><span className="font-semibold text-[#2D2A26]">SEO title:</span> {searchAnswerResult.seoTitle}</p>
+            <p><span className="font-semibold text-[#2D2A26]">Meta description:</span> {searchAnswerResult.seoDescription}</p>
+            <p><span className="font-semibold text-[#2D2A26]">Slug:</span> {searchAnswerResult.slug}</p>
+            <p className={searchAnswerResult.culoConnectionMade ? 'text-[#5E6B4A] font-semibold' : 'text-[#9CA3AF]'}>
+              {searchAnswerResult.culoConnectionMade ? '✓ Ties back to CULO' : 'No forced CULO tie-in — left out on purpose'}
+            </p>
+          </div>
+        )}
         {listening && <span className="text-xs text-red-500 font-medium">Listening…</span>}
         {(draft.description ?? '').trim().length > 0 && (
           <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
@@ -1493,6 +1557,13 @@ export function DashboardImportContentPage() {
   const isHighVolume = HIGH_VOLUME_IMPORT_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const canUseVoiceRewrite = canUseRewrite(user?.role) || VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const founder = getFounder(founderId)
+  // Shakas's own account, logged into her own dashboard, or any CAPO staff
+  // member managing content on her behalf — not a general founder feature
+  // yet, so it's gated by exact email/slug rather than the broader rewrite
+  // permission above.
+  const canSearchAnswer = founder?.slug === 'shakas-designer'
+    || user?.email?.trim().toLowerCase() === 'support@prettycoolmarketing.com'
+    || hasAnyCapoAccess(user?.role)
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [sources, setSources]   = useState<ConnectedSource[]>([])
@@ -1744,6 +1815,7 @@ export function DashboardImportContentPage() {
             onSave={() => void handleSave()}
             onCancel={handleCancel}
             canRewrite={canUseVoiceRewrite}
+            canSearchAnswer={canSearchAnswer}
             savedFlash={savedFlash}
           />
         </div>

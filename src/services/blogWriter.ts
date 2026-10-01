@@ -86,6 +86,38 @@ export async function generateBlogFromVoiceBrief(input: GenerateBlogInput): Prom
   return { blog }
 }
 
+export interface GeneratedSearchAnswer {
+  status: 'ready' | 'insufficient_source'
+  note?: string
+  primaryQuestion?: string
+  relatedQuestions?: string[]
+  headline?: string
+  article?: string
+  seoTitle?: string
+  seoDescription?: string
+  slug?: string
+  culoConnectionMade?: boolean
+}
+
+// Turns one of Shakas's own clips/transcripts into a standalone
+// search-answer article — see generate-search-answer's own prompt for the
+// exact logic. Shakas-only / CAPO-only feature (gated at the call site),
+// not a general founder tool.
+export async function generateSearchAnswerArticle(input: {
+  founderName: string
+  sourceText: string
+  platform?: string
+}): Promise<{ result?: GeneratedSearchAnswer; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
+  const { data, error } = await supabase.functions.invoke<{ result?: GeneratedSearchAnswer; error?: string }>(
+    'generate-search-answer', { body: input },
+  )
+  if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
+  if (data?.error) return { error: data.error }
+  if (!data?.result) return { error: 'AI returned nothing usable' }
+  return { result: data.result }
+}
+
 export interface GeneratedBio {
   status: 'ready' | 'insufficient_source'
   note?: string
