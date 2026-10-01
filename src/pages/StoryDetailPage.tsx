@@ -634,16 +634,6 @@ export function StoryDetailPage() {
                     {link.label}
                   </a>
                 ))}
-                {/* Not story-specific — a standing invitation for any visitor
-                    reading a founder's story to join and build their own. */}
-                {!isUnclaimedCuratedStory && (
-                  <Link
-                    to="/onboarding"
-                    className="inline-flex items-center gap-2 px-6 py-3 border border-border text-charcoal font-medium rounded-xl hover:border-primary hover:text-primary transition-colors"
-                  >
-                    Feature in CULO Village
-                  </Link>
-                )}
               </div>
             </div>
           </InnerContainer>
