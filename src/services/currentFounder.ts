@@ -81,7 +81,17 @@ async function finalizeClaimOwnership(founder: Founder, userId: string): Promise
   if (founder.claimedByUserId === userId) return
   if (claimFinalizeAttempted.has(founder.id)) return
   claimFinalizeAttempted.add(founder.id)
-  void updateFounder({ ...founder, claimedByUserId: userId })
+  // ClaimProfilePage's own profileStatus: 'claimed' write happens before a
+  // session exists (the visitor hasn't signed up yet at that point in the
+  // form), so it silently fails RLS and gets lost regardless of whether
+  // they ever confirm their email — confirmed via Olivia Therese staying
+  // stuck on 'village-curated' despite having claimed and confirmed. This
+  // runs with a real, now-authenticated session, so it's the point that
+  // actually sticks — never downgrades an already-further-along status.
+  const profileStatus = (founder.profileStatus === 'village-curated' || founder.profileStatus === 'claim-pending')
+    ? 'claimed' as const
+    : founder.profileStatus
+  void updateFounder({ ...founder, claimedByUserId: userId, profileStatus })
   if (!isSupabaseConfigured || !supabase) return
   try {
     await supabase.rpc('link_claimed_founder', { p_founder_id: founder.id })
