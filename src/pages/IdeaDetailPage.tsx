@@ -243,7 +243,7 @@ export function IdeaDetailPage() {
                     Founders whose stories and experiences connect to this idea.
                   </p>
                   <FounderGrid
-                    filter={{ ids: idea.relatedFounderIds }}
+                    filter={{ ids: idea.relatedFounderIds, publicOnly: true }}
                     columns={2}
                     cardVariant="default"
                     emptyTitle="No founders linked yet"
@@ -265,7 +265,7 @@ export function IdeaDetailPage() {
                     Businesses whose founders have explored or demonstrated this idea.
                   </p>
                   <BusinessGrid
-                    filter={{ ids: idea.relatedBusinessIds }}
+                    filter={{ ids: idea.relatedBusinessIds, publicOnly: true }}
                     columns={2}
                     cardVariant="default"
                     emptyTitle="No businesses linked yet"
@@ -343,7 +343,7 @@ export function IdeaDetailPage() {
                         <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1.5">Connected Stories</dt>
                         <dd className="space-y-1">
                           {idea.relatedStoryIds.map(id => {
-                            const s = getStories().find(x => x.id === id)
+                            const s = getStories({ publicOnly: true }).find(x => x.id === id)
                             return s ? (
                               <div key={id}>
                                 <Link
@@ -365,7 +365,7 @@ export function IdeaDetailPage() {
                         <dd className="space-y-1">
                           {idea.relatedFounderIds.map(id => {
                             const f = getFounder(id)
-                            return f ? (
+                            return f && (f.status === 'published' || f.status === 'featured') ? (
                               <div key={id}>
                                 <Link
                                   to={`/founders/${f.slug}`}
@@ -385,7 +385,7 @@ export function IdeaDetailPage() {
                         <dt className="text-muted text-xs font-medium uppercase tracking-wide mb-1.5">Connected Businesses</dt>
                         <dd className="space-y-1">
                           {idea.relatedBusinessIds.map(id => {
-                            const b = getBusinesses().find(x => x.id === id)
+                            const b = getBusinesses({ publicOnly: true }).find(x => x.id === id)
                             return b ? (
                               <div key={id}>
                                 <Link

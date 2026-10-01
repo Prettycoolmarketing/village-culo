@@ -13,15 +13,15 @@ const popularTopics = topics
   .slice(0, 8)
 
 // Real counts, not the placeholder numbers this widget shipped with —
-// matches the same "not archived" definition /archive already uses, so this
-// never again disagrees with the page a click on any of these leads to.
+// publicOnly so a draft/curated-not-yet-published item never inflates what
+// a visitor is told exists, matching the same definition Archive uses.
 function villageStats() {
   return [
-    { count: getStories().filter(s => s.status !== 'archived').length,    label: 'Stories',    href: '/stories' },
-    { count: getFounders().filter(f => f.status !== 'archived').length,   label: 'Founders',   href: '/founders' },
-    { count: getBusinesses().filter(b => b.status !== 'archived').length, label: 'Businesses', href: '/businesses' },
-    { count: getIdeas({ publicOnly: true }).length,                       label: 'Ideas',      href: '/ideas' },
-    { count: locations.length,                                           label: 'Locations',  href: '/map' },
+    { count: getStories({ publicOnly: true }).length,    label: 'Stories',    href: '/stories' },
+    { count: getFounders({ publicOnly: true }).length,   label: 'Founders',   href: '/founders' },
+    { count: getBusinesses({ publicOnly: true }).length, label: 'Businesses', href: '/businesses' },
+    { count: getIdeas({ publicOnly: true }).length,      label: 'Ideas',      href: '/ideas' },
+    { count: locations.length,                           label: 'Locations', href: '/map' },
   ]
 }
 

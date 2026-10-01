@@ -43,13 +43,22 @@ export function searchVillage(query: string): SearchResults {
     return !f || f.profileStatus !== 'village-curated' || !!f.userId
   }
 
+  // "not archived" alone isn't "published" — a draft only ever reached this
+  // local cache via an admin/owner RLS pull in the first place (an
+  // anonymous visitor's own cache never has it), but a CAPO staff member's
+  // own browsing session does, so Archive must still filter it out itself
+  // rather than leaning on RLS to have already done it.
+  function isPublic(item: { status: string }): boolean {
+    return item.status === 'published' || item.status === 'featured'
+  }
+
   // Empty query — return everything so Archive doubles as a full browser
   if (!query.trim()) {
     return {
-      stories:    allStories.filter(s => s.status !== 'archived'),
-      founders:   allFounders.filter(f => f.status !== 'archived'),
+      stories:    allStories.filter(isPublic),
+      founders:   allFounders.filter(isPublic),
       ideas:      publicIdeas,
-      businesses: allBusinesses.filter(b => b.status !== 'archived' && isRealBusiness(b)),
+      businesses: allBusinesses.filter(b => isPublic(b) && isRealBusiness(b)),
       events:     [...allEvents],
       library:    libraryItems.filter(l => l.status !== 'archived'),
     }
@@ -59,7 +68,7 @@ export function searchVillage(query: string): SearchResults {
 
   return {
     stories: allStories.filter(s => {
-      if (s.status === 'archived') return false
+      if (!isPublic(s)) return false
       const f = founderMap.get(s.founderId)
       const b = businessMap.get(s.businessId)
       return searchable([
@@ -73,7 +82,7 @@ export function searchVillage(query: string): SearchResults {
     }),
 
     founders: allFounders.filter(f => {
-      if (f.status === 'archived') return false
+      if (!isPublic(f)) return false
       const b = businessMap.get(f.businessId)
       return searchable([
         f.name, f.bio,
@@ -94,7 +103,7 @@ export function searchVillage(query: string): SearchResults {
     }),
 
     businesses: allBusinesses.filter(b => {
-      if (b.status === 'archived' || !isRealBusiness(b)) return false
+      if (!isPublic(b) || !isRealBusiness(b)) return false
       const f = founderMap.get(b.founderId)
       return searchable([
         b.name, b.tagline, b.description,

@@ -132,7 +132,7 @@ export function VillagePage() {
               </p>
               <HomeInstantJoin />
               <p className="font-body text-sm text-white/50 mt-6 max-w-xl mx-auto lg:mx-0">
-                Already creating content? CULO helps make sure it doesn't disappear into the feed.
+                Culo Creatives in Canva is Coming to make editing and publishing content easier.
               </p>
             </div>
             <div className="relative hidden lg:block">

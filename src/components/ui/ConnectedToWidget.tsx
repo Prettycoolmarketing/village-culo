@@ -36,7 +36,7 @@ export function ConnectedToWidget({ items, headingId, className = '' }: Connecte
   // way, so they keep the compact link-row style.
   const storyItems = items.filter(i => i.entityType === 'story')
   const otherItems = items.filter(i => i.entityType !== 'story')
-  const stories = storyItems.length > 0 ? getStories() : []
+  const stories = storyItems.length > 0 ? getStories({ publicOnly: true }) : []
 
   return (
     <section aria-labelledby={headingId} className={className}>
