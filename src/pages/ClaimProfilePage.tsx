@@ -301,7 +301,7 @@ function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<t
         <div className="max-w-md text-center">
           <h1 className="font-heading text-2xl font-semibold text-charcoal mb-3">Almost there</h1>
           <p className="font-body text-muted leading-relaxed mb-6">
-            Check <strong>{email}</strong> for a confirmation link — once you click it, your {founder.name} profile will be waiting for you, fully editable.
+            Check <strong>{email}</strong> for a confirmation link — once you click it, your founder profile will be fully editable for you to continue publishing your story.
           </p>
           <WebmailButtons />
         </div>
