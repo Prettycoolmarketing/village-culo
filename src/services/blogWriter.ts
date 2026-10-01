@@ -113,6 +113,8 @@ export async function generateSearchAnswerArticle(input: {
   founderName: string
   sourceText: string
   platform?: string
+  voiceBrief?: string
+  insightBrief?: string
   usedQuestions?: string[]
 }): Promise<{ result?: GeneratedSearchAnswer; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }

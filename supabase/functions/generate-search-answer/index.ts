@@ -29,10 +29,15 @@ const CORS_HEADERS = {
 
 interface RequestBody {
   founderName: string
-  // The clip/transcript/caption this article is built from — the only
-  // allowed source of fact, argument and experience.
+  // The clip/transcript/caption that anchors this article's topic and
+  // real-world example — see SOURCE FIDELITY: legitimate source material,
+  // but not the only one.
   sourceText: string
   platform?: string
+  // Her own documented story/beliefs/experience — an equally legitimate
+  // source of her real opinion as the clip itself, see SOURCE FIDELITY.
+  voiceBrief?: string
+  insightBrief?: string
   // Every primarySearchQuestion a past run already used for this founder —
   // see Founder.usedSearchQuestions. The model picks an unused angle.
   usedQuestions?: string[]
@@ -298,12 +303,16 @@ FACTUAL RESEARCH
 Where the article includes current claims about platforms, search engines, AI behaviour, SEO, social media, Substack, LinkedIn, Google, ChatGPT, Canva or other changing products, only state claims you are genuinely confident are accurate as of a recent, reputable understanding of these systems — if uncertain, keep the claim general rather than specific. Keep Shakas's opinions clearly separate from externally-grounded fact.
 
 SOURCE FIDELITY
-Do not invent personal experiences, opinions or claims for Shakas. Use the supplied transcript or source to understand what Shakas actually believes. Existing CULO bio/profile context may be used only when genuinely relevant — never add unrelated biography for SEO.
+Do not invent personal experiences, opinions or claims for Shakas — but "the source" is broader than just the clip's own caption/transcript. You have three legitimate sources of her real, already-established opinions and experience, and may draw on any of them:
+1. The clip/transcript itself.
+2. Her VOICE & BRAND BRIEF, if supplied — her own documented story, beliefs, experience and how she explains things. This is exactly as legitimate a source as the transcript, not a fallback.
+3. Her INSIGHT BRIEF, if supplied — her own source-checked bank of what she genuinely believes/knows/teaches.
+Treat the clip as the trigger and topic anchor for the article, not the only place you're allowed to find her actual opinion. If the clip itself is thin (a promotional caption, a short description with no real stated opinion) but her Voice/Insight Brief genuinely covers a Topic Bank question the clip's subject connects to, write the article from the brief, using the clip as the real-world example/context it provides. Only return "insufficient_source" when NONE of the three sources together give you enough to honestly answer a real question — not just because the clip's own caption alone was thin.
 
 CULO PLACEMENT
 The Culo Village should only appear when it genuinely helps answer the question. Some articles can mention CULO strongly, some should mention it briefly, some should not mention it at all. The article must remain useful even if every promotional reference were removed. Set culoRelevant to whether you genuinely included a CULO tie-in (true) or correctly left it out (false) — never force one just to set this true.
 
-If the source material does not contain enough real information to answer a worthwhile, genuinely unused search question, return status "insufficient_source" with a one-sentence note on what's missing. Do not create a weak, generic article just to have something to show.
+If none of the three sources together contain enough real information to answer a worthwhile, genuinely unused search question, return status "insufficient_source" with a one-sentence note on what's missing. Do not create a weak, generic article just to have something to show.
 
 Respond with ONLY a JSON object, no markdown fences, no commentary:
 {
@@ -338,7 +347,9 @@ serve(async (req) => {
       `\nPREVIOUSLY USED QUESTIONS (never choose one of these again):\n${
         body.usedQuestions?.length ? body.usedQuestions.map(q => `- ${q}`).join('\n') : '(none yet)'
       }`,
-      `\nSOURCE CLIP/TRANSCRIPT:\n${body.sourceText}`,
+      `\nSOURCE CLIP/TRANSCRIPT (the topic anchor):\n${body.sourceText}`,
+      body.voiceBrief?.trim() ? `\nHER VOICE & BRAND BRIEF (an equally legitimate source of her real opinion/experience):\n${body.voiceBrief}` : undefined,
+      body.insightBrief?.trim() ? `\nHER INSIGHT BRIEF (what she genuinely believes/knows/teaches):\n${body.insightBrief}` : undefined,
     ].filter(Boolean).join('\n')
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {

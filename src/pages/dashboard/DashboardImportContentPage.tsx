@@ -973,6 +973,8 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       founderName: founder?.name ?? 'Shakas Designer',
       sourceText,
       platform: draft.sourcePlatform,
+      voiceBrief: founder?.voiceBrief,
+      insightBrief: founder?.insightBrief,
       usedQuestions: founder?.usedSearchQuestions ?? [],
     })
     setSearchAnswering(false)
