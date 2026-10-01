@@ -17,12 +17,12 @@ const GRID_ROW_1 = ['/join/grid-1.jpg', '/join/grid-2.jpg', '/join/grid-3.jpg']
 const GRID_ROW_2 = ['/join/grid-4.jpg', '/join/grid-5.jpg', '/join/grid-6.jpg']
 
 const OUTPUT_FORMATS = [
-  { emoji: '📖', label: 'Blogs', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
-  { emoji: '✍️', label: 'Carousels', desc: 'Pulls the strongest ideas from your footage and turns them into swipeable slides ready to design and publish.' },
-  { emoji: '🗣️', label: 'Talking Head Reels', desc: 'Your talking-head footage cleaned up with subtitles, hooks and captions so it is ready to post.' },
-  { emoji: '🎙️', label: 'Voice Over Reels', desc: 'Your words layered over your own footage and shaped into a short-form story.' },
-  { emoji: '🎥', label: 'Vlog Behind The Scenes Reels', desc: 'The in-between moments, the process and the stuff you probably filmed without knowing what to do with it yet.' },
-  { emoji: '⚡', label: 'Quick Rhythm Reels', desc: 'Short, fast-paced edits with strong opening hooks and tighter cuts built for attention.' },
+  { emoji: '📖', label: 'Blogs', desc: 'Turns what you actually said into a structured written story with a clear beginning, middle and point.' },
+  { emoji: '✍️', label: 'Carousels', desc: 'Pulls the strongest ideas from your footage and turns them into swipeable content ready to design and publish.' },
+  { emoji: '🗣️', label: 'Talking Head Reels', desc: 'Turns your talking-head footage into social-ready content with subtitles, hooks and captions.' },
+  { emoji: '🎙️', label: 'Voice Over Reels', desc: 'Shapes your words into short-form stories layered over your own footage.' },
+  { emoji: '🎥', label: 'Vlog Behind The Scenes Reels', desc: 'Turns your process, behind-the-scenes moments and everyday footage into content with a clear story.' },
+  { emoji: '⚡', label: 'Quick Rhythm Reels', desc: 'Creates short, fast-paced edits with strong opening hooks and tighter cuts built to hold attention.' },
 ]
 
 // Same "How it works" steps as CreativesPage's "Tell your story" section —
@@ -33,27 +33,27 @@ const STEPS = [
     title: 'Answer a few personalised questions',
     image: '/creatives/step-1-about-you.jpg',
     bullets: [
-      <>Complete the <strong className="text-charcoal font-semibold">About You</strong> section with a few quick details about your business and brand.</>,
-      <>CULO uses that to generate personalised questions in <strong className="text-charcoal font-semibold">Shape Your Idea</strong>.</>,
-      <>Your answers shape the hooks, captions, blogs, carousels and Quick Rhythm reels CULO creates.</>,
+      <>Complete the <strong className="text-charcoal font-semibold">About You</strong> section with a few quick details about your business, expertise and brand.</>,
+      <>CULO uses that information to generate personalised questions inside <strong className="text-charcoal font-semibold">Shape Your Idea</strong>.</>,
+      <>Your answers help shape the hooks, captions, blogs, carousels and Quick Rhythm reels CULO creates.</>,
     ],
   },
   {
     title: 'Upload your raw footage',
     image: '/creatives/step-2-uploading-media.jpg',
     bullets: [
-      <>Upload your footage into the right Media Library section: B-roll, Talking Head, Voice Over, Vlog or Photos.</>,
-      <><strong className="text-charcoal font-semibold">B-roll</strong> becomes background footage for Voice Over reels, or rotates silently in Quick Rhythm reels.</>,
-      <><strong className="text-charcoal font-semibold">Talking Head, Voice Over</strong> and <strong className="text-charcoal font-semibold">Vlog</strong> clips merge into a reel with subtitles, a hook and a caption.</>,
-      <><strong className="text-charcoal font-semibold">Photos</strong> merge into a carousel slideshow.</>,
+      <>Upload your existing footage into the relevant Media Library section: B-roll, Talking Head, Voice Over, Vlog or Photos.</>,
+      <><strong className="text-charcoal font-semibold">B-roll</strong> can become background footage for Voice Over content or rotate through Quick Rhythm reels.</>,
+      <><strong className="text-charcoal font-semibold">Talking Head, Voice Over</strong> and <strong className="text-charcoal font-semibold">Vlog</strong> clips can be structured into reels with subtitles, hooks and captions.</>,
+      <><strong className="text-charcoal font-semibold">Photos</strong> can be turned into carousel content.</>,
     ],
   },
   {
     title: 'Get social media ready content back',
     image: '/creatives/step-3-ready-to-post.jpg',
     bullets: [
-      <>Ready to post content across Quick Rhythm, Voice Over, Talking Head and Vlog Style formats.</>,
-      <>Every reel comes subtitled, hooked and captioned, straight out of Canva.</>,
+      <>Create ready-to-post content across Quick Rhythm, Voice Over, Talking Head and Vlog Style formats.</>,
+      <>Your reels can come back with subtitles, hooks and captions, ready to finish and publish directly from Canva.</>,
     ],
   },
 ]
@@ -162,16 +162,16 @@ export function JoinVillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                {isCanva ? 'Culo Creatives in Canva' : 'Join The Culo Village'}
+                Join The Culo Village
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
                 Access Culo Creatives<br />
                 Exclusively In Canva
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
-                {isCanva
-                  ? "Turn your messy thoughts and raw footage into structured blogs, carousels and reels — try it free for 14 days, right inside Canva."
-                  : "It's time to turn your messy thoughts and raw footage into structured social media posts in Canva. Join the Culo Village first to republish what you've already posted as articles, structured for discovery across the web."}
+                Turn the content you've already created into a discoverable body of work in The Culo Village, then
+                use Culo Creatives inside Canva to turn your messy thoughts and raw footage into structured social
+                media content.
               </p>
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
                 <input
@@ -196,7 +196,7 @@ export function JoinVillagePage() {
                 The Culo Village is free, forever · Culo Creatives in Canva: 14-day free trial, then $25 AUD/month · No spam emails
               </p>
               <Link to="/join?source=canva" className="inline-block font-body text-sm font-semibold text-white hover:text-primary transition-colors mt-4 underline underline-offset-4 decoration-white/30 hover:decoration-primary">
-                Learn more about CULO Creatives in Canva →
+                Learn more about Culo Creatives in Canva →
               </Link>
             </div>
             <img
@@ -248,23 +248,27 @@ export function JoinVillagePage() {
                 What is The Culo Village?
               </p>
               <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-                Republish everything you've already posted, structured for AI search.
+                Turn everything you've already created into a body of work people can discover.
               </h2>
               <p className="font-body text-base text-muted leading-relaxed mb-4">
-                The Culo Village is a joint publishing house. We help founders restructure their previously
-                posted content from across platforms and republish each piece as its own webpage, so AI and
-                search can find you.
+                The Culo Village is a founder publishing network that brings together the content, ideas,
+                businesses and expertise you've already shared across the internet.
+              </p>
+              <p className="font-body text-base text-muted leading-relaxed mb-4">
+                Republish your social posts, podcast appearances, videos, articles and other existing content as
+                individual web stories connected to your founder profile, creating one growing body of work
+                designed for discovery across people, search engines and AI.
               </p>
               <p className="font-body text-base text-muted leading-relaxed mb-8">
-                Membership is free, forever, and your first 10 articles are on us. Culo Creatives, the editing
-                tool inside Canva covered next, is a separate optional add-on — a 14-day free trial, then
-                $25 AUD/month.
+                Membership is free, forever, and your first 10 published stories are included. Culo Creatives,
+                the editing tool inside Canva covered next, is a separate optional add-on with a 14-day free
+                trial, then $25 AUD/month.
               </p>
               <a href="#join-heading" className="inline-flex items-center gap-2 text-primary font-body text-sm font-semibold hover:text-[#b05a35] transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" />
                 </svg>
-                Join to be discovered
+                Create your founder profile
               </a>
             </div>
             <a
@@ -354,19 +358,20 @@ export function JoinVillagePage() {
                 What is CULO Creatives in Canva?
               </p>
               <h2 id="what-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-                Edit your raw footage in one workspace
+                Turn your raw footage into social media content in one workspace.
               </h2>
               <p className="font-body text-base text-muted leading-relaxed mb-4">
-                Culo Creatives is a design platform exclusively available in Canva helping founders edit their
-                messy thoughts and raw footage into different formats of reels, carousels, captions and blogs
-                for easy, humanised, storytelling, content.
+                Culo Creatives is a content creation tool available exclusively inside Canva that helps founders
+                turn messy thoughts and raw footage into reels, carousels, captions and blogs built around what
+                they actually know, say and experience.
+              </p>
+              <p className="font-body text-base text-muted leading-relaxed mb-4">
+                A founder can have an incredible business and years of knowledge, but consistently turning that
+                expertise into useful content takes time.
               </p>
               <p className="font-body text-base text-muted leading-relaxed">
-                A founder can have an amazing business and be genuinely talented and knowledgeable. But without
-                consistent content that speaks to their audience with purposeful hooks, subtitles and captions,
-                managed in one easy workspace, scheduled across every platform, and back-linked to their
-                website and articles, they'll struggle with visibility and with keeping up with the demands of
-                closed platform algorithms.
+                Culo Creatives helps structure your ideas, footage and stories into different content formats
+                with hooks, subtitles and captions, all inside the Canva workspace you already use.
               </p>
             </div>
           </div>
@@ -436,9 +441,13 @@ export function JoinVillagePage() {
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
             Every founder has a story worth finding.
           </h2>
+          <p className="font-body text-base text-muted leading-relaxed mb-2 max-w-xl mx-auto">
+            Create with Culo Creatives, publish your existing and future work in The Culo Village, then share
+            your stories wherever your audience already finds you.
+          </p>
           <p className="font-body text-base text-muted leading-relaxed mb-8 max-w-xl mx-auto">
-            Edit with Culo Creatives, publish in the Village, then share your articles on LinkedIn for
-            maximum visibility and credibility online.
+            Instead of letting your best ideas disappear into individual feeds, build a connected body of work
+            around who you are, what you know and what you've built.
           </p>
           <a
             href="#join-heading"
@@ -454,7 +463,9 @@ export function JoinVillagePage() {
           /join funnel soon (keeping its "Creatives" label in the nav). */}
       <section className="py-16 md:py-20" aria-labelledby="output-heading">
         <InnerContainer>
-          <h2 id="output-heading" className="sr-only">What Culo Creatives turns your footage into</h2>
+          <h2 id="output-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal text-center leading-tight mb-10">
+            What Culo Creatives turns your footage into
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {OUTPUT_FORMATS.map(f => (
               <div key={f.label} className="bg-surface border border-border rounded-2xl p-6">
@@ -486,15 +497,18 @@ export function JoinVillagePage() {
         <InnerContainer className="relative">
           <div className="max-w-2xl mx-auto text-center mb-12">
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-              Explore the village
+              Explore the Village
             </p>
             <h2 id="explore-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-4">
-              Incredible founders sharing their knowledge and expertise online
+              Incredible founders building a body of work from the knowledge they already share online.
             </h2>
+            <p className="font-body text-base text-muted leading-relaxed mb-4">
+              Every founder in The Culo Village gets a public profile connecting who they are, what they've
+              built and the stories, ideas and expertise they've already shared.
+            </p>
             <p className="font-body text-base text-muted leading-relaxed">
-              Every founder in the Village gets their own profile, a real published article for every piece of
-              content they bring in, and a home their expertise can actually be found from — by people searching,
-              and by AI systems like ChatGPT.
+              Each piece of content can become its own published story, creating a growing body of work
+              designed to be discovered by people, search engines and AI.
             </p>
           </div>
           <StoryGrid
