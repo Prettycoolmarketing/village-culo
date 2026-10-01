@@ -25,7 +25,8 @@ import { publisherPartnerProfileService, affiliateLinkService } from '../../serv
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentStatus } from '../../types/importedContent'
-import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle } from '../../services/blogWriter'
+import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
 import { getMedia } from '../../services/media'
@@ -885,6 +886,7 @@ export function DashboardProfilePage() {
   const [importedSaveError, setImportedSaveError] = useState<string | null>(null)
   const [importedSavedFlash, setImportedSavedFlash] = useState(false)
   const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
+  const [culoArticleProgress, setCuloArticleProgress] = useState<{ done: number; total: number } | null>(null)
   const [importedTick, setImportedTick] = useState(0)
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
   const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
@@ -1878,6 +1880,58 @@ export function DashboardProfilePage() {
                 setImportedTick(t => t + 1)
               }
 
+              // Bulk version of the single-item "Rewrite as a Culo Article"
+              // button — CAPO's own path for working through a founder's
+              // whole archive (select all 88, run once, then go back and
+              // personalise each one by hand). Deliberately sequential, not
+              // Promise.all: the rotation logic only works if each call
+              // sees the question the previous call in this SAME batch just
+              // used, not just what was already used before the batch
+              // started — so usedQuestions has to grow between calls, not
+              // just get re-read from a stale founder snapshot per item.
+              async function handleCuloArticleSelected() {
+                if (!draft) return
+                const ids = Array.from(readyChecked).filter(id => unlockedIds.has(id))
+                if (ids.length === 0) return
+                setCuloArticleProgress({ done: 0, total: ids.length })
+                let usedQuestions = [...(getFounder(draft.id)?.usedSearchQuestions ?? [])]
+                let held = 0
+                for (let i = 0; i < ids.length; i++) {
+                  if (i > 0) await new Promise(r => setTimeout(r, 1500))
+                  const item = importedContentService.get(ids[i]!)
+                  const sourceText = item?.transcriptText?.trim() || item?.description?.trim() || item?.diaryNote?.trim()
+                  if (item && sourceText) {
+                    const liveFounder = getFounder(draft.id)
+                    const { result } = await generateSearchAnswerArticle({
+                      founderName: liveFounder?.name ?? draft.name,
+                      sourceText,
+                      platform: item.sourcePlatform,
+                      voiceBrief: liveFounder?.voiceBrief,
+                      insightBrief: liveFounder?.insightBrief,
+                      usedQuestions,
+                    })
+                    if (result?.status === 'ready' && result.article && result.headline) {
+                      await importedContentService.upsert({
+                        ...item,
+                        title: result.headline,
+                        description: normalizeBlogSpacing(result.article),
+                      })
+                      if (result.primaryQuestion) {
+                        usedQuestions = [...usedQuestions, result.primaryQuestion]
+                        if (liveFounder) await updateFounder({ ...liveFounder, usedSearchQuestions: usedQuestions })
+                      }
+                    } else {
+                      held++
+                    }
+                  }
+                  setCuloArticleProgress({ done: i + 1, total: ids.length })
+                }
+                setReadyChecked(new Set())
+                setCuloArticleProgress(null)
+                setSaveError(held > 0 ? `${held} item${held === 1 ? '' : 's'} had no real question left to answer and ${held === 1 ? 'was' : 'were'} left as-is — write those by hand.` : null)
+                setImportedTick(t => t + 1)
+              }
+
               return (
                 <div>
                   {/* Bulk publish (both this tab and the raw imported list
@@ -1983,6 +2037,18 @@ export function DashboardProfilePage() {
                           {importedRegenProgress
                             ? `Rewriting ${importedRegenProgress.done}/${importedRegenProgress.total}…`
                             : `Rewrite ${readyChecked.size} with Voice Brief`}
+                        </button>
+                      )}
+                      {canSearchAnswer && (
+                        <button
+                          onClick={() => void handleCuloArticleSelected()}
+                          disabled={!!culoArticleProgress}
+                          title="Turns every selected clip into its own search-answer article — go back and personalise each one afterward"
+                          className="px-3 py-2 bg-[#2D2A26] text-white text-xs font-bold rounded-lg hover:bg-[#1a1815] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                        >
+                          {culoArticleProgress
+                            ? `Writing ${culoArticleProgress.done}/${culoArticleProgress.total}…`
+                            : `🔍 Rewrite ${readyChecked.size} as Culo Articles`}
                         </button>
                       )}
                     </div>
