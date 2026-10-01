@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { canUseRewrite } from '../../utils/permissions'
+import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { updateFounder, deleteFounder, getFounder } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
@@ -760,6 +760,11 @@ export function DashboardProfilePage() {
   const location = useLocation()
   const welcomeBack = Boolean((location.state as { welcomeBack?: boolean } | null)?.welcomeBack)
   const currentFounder = getCurrentFounder(user)
+  // Same gate as DashboardImportContentPage's own EditForm usage — Shakas's
+  // own account or CAPO staff only, not a general founder feature yet.
+  const canSearchAnswer = currentFounder?.slug === 'shakas-designer'
+    || user?.email?.trim().toLowerCase() === 'support@prettycoolmarketing.com'
+    || hasAnyCapoAccess(user?.role)
   const [draft, setDraft]   = useState<Founder | null>(() => {
     if (!currentFounder) return null
     const saved = loadDraft<Founder>(`culo_v1_profile_draft_${currentFounder.id}`)
@@ -2154,6 +2159,7 @@ export function DashboardProfilePage() {
                       onSave={() => void handleSaveAdvancedEdit()}
                       onCancel={handleCancelAdvancedEdit}
                       canRewrite={canUseVoiceRewrite}
+                      canSearchAnswer={canSearchAnswer}
                       savedFlash={importedSavedFlash}
                     />
                   </div>
