@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { getFounder, updateFounder } from '../../services/founders'
 import { importedContentService } from '../../services/importedContent'
 import type { Founder } from '../../types'
@@ -57,12 +58,13 @@ export function OnboardingReadyModal({ founder }: { founder: Founder }) {
               That link didn't give us enough to write from. No problem — import your previously posted content
               to be republished as individual web articles instead.
             </p>
-            <button
+            <Link
+              to="/dashboard/import-content"
               onClick={() => void dismiss(false)}
-              className="w-full text-sm font-semibold px-5 py-3 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+              className="block w-full text-center text-sm font-semibold px-5 py-3 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
             >
-              Got it
-            </button>
+              Import your content
+            </Link>
           </>
         )}
       </div>
