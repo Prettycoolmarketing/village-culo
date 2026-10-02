@@ -310,7 +310,7 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
 
 // ─── Connect your website ────────────────────────────────────────────────────
 
-function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
+function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
   const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -396,7 +396,6 @@ function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: {
           ))}
         </div>
       )}
-      <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />
     </div>
   )
 }
@@ -1763,7 +1762,6 @@ export function DashboardImportContentPage() {
               <WebsiteConnectForm
                 founderId={founderId}
                 isHighVolume={isHighVolume}
-                sources={sources.filter(s => s.sourceType === 'website-rss')}
                 onConnected={() => { loadSources(); reportImported(1) }}
               />
             </div>
