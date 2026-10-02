@@ -984,17 +984,34 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       return
     }
     setSearchAnswerResult(result)
-    if (result.headline) field('title', result.headline)
-    // seoDescription is the closest existing box this has a real home in —
-    // there's no dedicated SEO field on ImportedContent, but it reads fine
-    // as the short line under the title.
-    if (result.seoDescription) field('subtitle', result.seoDescription)
-    field('description', normalizeBlogSpacing(result.article))
+    // Every field() call reads a full {...draft, key: value} snapshot off
+    // the SAME stale `draft` closure — calling it several times in a row
+    // doesn't accumulate, each call just overwrites the last with its own
+    // copy of the old draft. Title and Blog were silently reverting to
+    // their pre-rewrite values because of exactly this: only whichever
+    // field() call happened to apply last actually stuck. Building one
+    // merged object and committing it in a single onChange fixes that.
     const resultTopics = [result.primaryTopic, ...(result.secondaryTopics ?? [])].filter((t): t is string => !!t)
+    const isPlaceholderTitle = /^Imported from /i.test(draft.title.trim())
+    const preservedOriginalTitle = !isPlaceholderTitle && draft.title.trim() ? draft.title.trim() : undefined
+    onChange({
+      ...draft,
+      title: result.headline || draft.title,
+      // The original post's own title (when it was a real one, not the
+      // generic "Imported from X" placeholder) moves to Subtitle instead
+      // of being thrown away — the new headline takes its spot in Title.
+      subtitle: preservedOriginalTitle ?? draft.subtitle,
+      description: normalizeBlogSpacing(result.article),
+      topics: resultTopics.length > 0 ? Array.from(new Set([...draft.topics, ...resultTopics])) : draft.topics,
+    })
     if (resultTopics.length > 0) {
-      field('topics', Array.from(new Set([...draft.topics, ...resultTopics])))
       setTopicsText(t => [...new Set([...parseList(t), ...resultTopics])].join(', '))
     }
+    // Village Intelligence used to need a manual Re-analyse click after a
+    // rewrite this size — the content just changed completely, so there's
+    // no reason to wait for someone to notice and trigger it themselves.
+    // Same mechanism "Shape these as Q&A" already uses.
+    setShapeTrigger(t => t + 1)
     // Rotation only actually works if this list grows — the prompt alone
     // can't enforce "never repeat" without the caller feeding back what's
     // already been used.

@@ -1912,10 +1912,15 @@ export function DashboardProfilePage() {
                     })
                     if (result?.status === 'ready' && result.article && result.headline) {
                       const resultTopics = [result.primaryTopic, ...(result.secondaryTopics ?? [])].filter((t): t is string => !!t)
+                      const isPlaceholderTitle = /^Imported from /i.test(item.title.trim())
+                      const preservedOriginalTitle = !isPlaceholderTitle && item.title.trim() ? item.title.trim() : undefined
                       await importedContentService.upsert({
                         ...item,
                         title: result.headline,
-                        subtitle: result.seoDescription || item.subtitle,
+                        // The original post's own title (when it's a real
+                        // one, not the generic "Imported from X" placeholder)
+                        // moves to Subtitle instead of being discarded.
+                        subtitle: preservedOriginalTitle ?? item.subtitle,
                         description: normalizeBlogSpacing(result.article),
                         topics: resultTopics.length > 0 ? Array.from(new Set([...item.topics, ...resultTopics])) : item.topics,
                       })
