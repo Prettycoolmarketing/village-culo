@@ -459,7 +459,7 @@ export function CanvaImportCard({
         </div>
         {!expanded && (
           <button type="button" onClick={() => void handleBrowseClick()} disabled={!canProceed}
-            className="w-full sm:w-auto text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors shrink-0">
+            className="w-full sm:w-auto text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 transition-colors shrink-0">
             {buttonLabel}
           </button>
         )}
@@ -473,7 +473,7 @@ export function CanvaImportCard({
             <div className="flex items-center gap-3 mb-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-xs text-amber-800 flex-1">Your Village login needs refreshing — this isn't your Canva connection.</p>
               <button type="button" onClick={() => void handleReconnectSession()} disabled={reconnecting}
-                className="shrink-0 px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#B15C38] disabled:opacity-50 transition-colors">
+                className="shrink-0 px-3 py-1.5 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 transition-colors">
                 {reconnecting ? 'Retrying…' : 'Retry save'}
               </button>
             </div>
@@ -485,7 +485,7 @@ export function CanvaImportCard({
 
           {connected === false && (
             <button type="button" onClick={() => void startCanvaConnect(founderId)}
-              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#B15C38] transition-colors">
+              className="px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
               Connect Canva
             </button>
           )}

@@ -293,7 +293,7 @@ function PublisherDiscoveryProfile({ founderId }: {
             placeholder="Their affiliate link"
             className="flex-1 px-2 py-2 text-xs border border-[#E8E4DD] rounded-lg focus:outline-none focus:border-[#C86A43]" />
           <button onClick={() => void handleAddAffiliateLink()} disabled={!newAffiliateBusinessName.trim() || !newAffiliateUrl.trim()}
-            className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] disabled:opacity-40 transition-colors shrink-0">
+            className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-40 transition-colors shrink-0">
             Add
           </button>
         </div>
@@ -2613,7 +2613,7 @@ export function DashboardProfilePage() {
                   <p className="text-[11px] text-[#9CA3AF]">Pull real questions and answers straight from your bio and published stories.</p>
                   <button type="button"
                     onClick={() => setFaqSuggestions(suggestFaqsFromFounder(draft, founderStories, founderBusinesses))}
-                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors">
+                    className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors">
                     Suggest FAQs
                   </button>
                 </div>

@@ -102,7 +102,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
         </div>
         {!expanded && (
           <button type="button" onClick={() => setExpanded(true)}
-            className="w-full sm:w-auto text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#B15C38] transition-colors shrink-0">
+            className="w-full sm:w-auto text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shrink-0">
             Import archive
           </button>
         )}

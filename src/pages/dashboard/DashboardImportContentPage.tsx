@@ -1275,7 +1275,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         {listening && <span className="text-xs text-red-500 font-medium">Listening…</span>}
         {(draft.description ?? '').trim().length > 0 && (
           <button type="button" onClick={() => setShapeTrigger(t => t + 1)}
-            className="px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#B15C38] transition-colors">
+            className="px-4 py-2 text-sm font-semibold text-white bg-[#C86A43] rounded-lg hover:bg-[#b05a35] transition-colors">
             Shape these as Q&A to boost your online presence
           </button>
         )}
