@@ -2286,6 +2286,7 @@ export function DashboardProfilePage() {
                     key={editingStory.id}
                     story={editingStory}
                     canRewrite={canUseVoiceRewrite}
+                    canSearchAnswer={canSearchAnswer}
                     onSave={() => setImportedTick(t => t + 1)}
                     onDelete={() => { closeStoryEditor(); setImportedTick(t => t + 1) }}
                     onClose={closeStoryEditor}

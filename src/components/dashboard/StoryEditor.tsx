@@ -5,7 +5,7 @@ import { villageContentIntelligenceService, storyToInput } from '../../services/
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { getBusinesses } from '../../services/businesses'
 import { getFounder, updateFounder } from '../../services/founders'
-import { generateBlogFromVoiceBrief, extractFaqsAI } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, type GeneratedSearchAnswer } from '../../services/blogWriter'
 import { importedContentService } from '../../services/importedContent'
 import { fallbackSummary } from '../../services/publishStory'
 import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
@@ -55,8 +55,9 @@ function deriveContentTypes(d: Story): ContentType[] {
   return [...new Set([...preserved, ...auto])]
 }
 
-export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = false }: {
+export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = false, canSearchAnswer = false }: {
   canRewrite?: boolean
+  canSearchAnswer?: boolean
   story: Story
   onSave: (s: Story) => void
   onDelete: (s: Story) => void
@@ -236,6 +237,64 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     if (blogBeforeRewrite === null) return
     set('blog', blogBeforeRewrite)
     setBlogBeforeRewrite(null)
+  }
+
+  // Rewrite as a Culo Article — same feature as Advanced Edit's (Imported
+  // Content's) EditForm, just missing here before because this editor is
+  // the only edit surface for anything already published. Source text
+  // prefers the original import's own transcript/caption (truer to what was
+  // actually said) and falls back to the story's current Blog text for
+  // stories with no linked import (self-published, or the import since
+  // deleted).
+  const [searchAnswering, setSearchAnswering] = useState(false)
+  const [searchAnswerError, setSearchAnswerError] = useState<string | null>(null)
+  const [searchAnswerResult, setSearchAnswerResult] = useState<GeneratedSearchAnswer | null>(null)
+  async function handleSearchAnswer() {
+    const sourceImport = draft.importedContentId ? importedContentService.get(draft.importedContentId) : undefined
+    const sourceText = sourceImport?.transcriptText?.trim() || sourceImport?.description?.trim() || draft.blog?.trim()
+    if (!sourceText) {
+      setSearchAnswerError('Nothing to work from yet — this needs a Blog, transcript or caption first.')
+      return
+    }
+    const founder = getFounder(draft.founderId)
+    setSearchAnswering(true)
+    setSearchAnswerError(null)
+    setSearchAnswerResult(null)
+    const { result, error } = await generateSearchAnswerArticle({
+      founderName: founder?.name ?? 'Shakas Designer',
+      sourceText,
+      platform: sourceImport?.sourcePlatform,
+      voiceBrief: founder?.voiceBrief,
+      insightBrief: founder?.insightBrief,
+      usedQuestions: founder?.usedSearchQuestions ?? [],
+    })
+    setSearchAnswering(false)
+    if (error) { setSearchAnswerError(error); return }
+    if (!result || result.status !== 'ready' || !result.article) {
+      setSearchAnswerError(
+        result?.status === 'no_unused_question'
+          ? `Every angle this supports has already been used — ${result.note ?? 'try a different story.'}`
+          : result?.note
+            ? `Not enough to answer a real question yet — ${result.note}`
+            : 'Not enough here yet to answer a real search question.'
+      )
+      return
+    }
+    setSearchAnswerResult(result)
+    const isPlaceholderTitle = /^Imported from /i.test(draft.title.trim())
+    const preservedOriginalTitle = !isPlaceholderTitle && draft.title.trim() ? draft.title.trim() : undefined
+    setBlogBeforeRewrite(draft.blog ?? null)
+    setDraft(prev => ({
+      ...prev,
+      title: result.headline || prev.title,
+      subtitle: preservedOriginalTitle ?? prev.subtitle,
+      blog: normalizeBlogSpacing(result.article!),
+    }))
+    setSaved(false)
+    void runDetection(result.article)
+    if (founder && result.primaryQuestion) {
+      void updateFounder({ ...founder, usedSearchQuestions: [...(founder.usedSearchQuestions ?? []), result.primaryQuestion] })
+    }
   }
 
   // Dictation — the browser's own free, local speech-to-text (Web Speech
@@ -470,6 +529,16 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
                   Keep this page open — don't close it or click away while it's rewriting
                 </span>
               )}
+              {canSearchAnswer && (
+                <button
+                  type="button"
+                  onClick={() => void handleSearchAnswer()}
+                  disabled={searchAnswering}
+                  className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FBF1EB] text-[#C86A43] hover:bg-[#C86A43]/10 disabled:opacity-50 transition-colors"
+                >
+                  {searchAnswering ? 'Writing…' : '🔍 Rewrite as a Culo Article'}
+                </button>
+              )}
               {blogBeforeRewrite !== null && (
                 <button
                   type="button"
@@ -482,6 +551,18 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
               {listening && <span className="text-xs text-red-500 font-medium">Listening…</span>}
             </div>
             {rewriteError && <p className="text-xs text-red-600 mb-2">{rewriteError}</p>}
+            {searchAnswerError && <p className="text-xs text-red-600 mb-2">{searchAnswerError}</p>}
+            {searchAnswerResult && (
+              <div className="text-xs text-[#6B7280] bg-[#F8F5F0] border border-[#E8E4DD] rounded-lg p-3 mb-2 space-y-1">
+                <p><span className="font-semibold text-[#2D2A26]">Primary question:</span> {searchAnswerResult.primaryQuestion}</p>
+                {!!searchAnswerResult.relatedQuestions?.length && (
+                  <p><span className="font-semibold text-[#2D2A26]">Related:</span> {searchAnswerResult.relatedQuestions.join(' · ')}</p>
+                )}
+                <p className={searchAnswerResult.culoRelevant ? 'text-[#5E6B4A] font-semibold' : 'text-[#9CA3AF]'}>
+                  {searchAnswerResult.culoRelevant ? '✓ Ties back to CULO' : 'No forced CULO tie-in — left out on purpose'}
+                </p>
+              </div>
+            )}
             <textarea
               value={draft.blog ?? ''}
               onChange={e => set('blog', e.target.value || undefined)}
