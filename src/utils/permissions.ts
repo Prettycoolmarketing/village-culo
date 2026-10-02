@@ -18,7 +18,7 @@ import type { UserRole } from '../contexts/AuthContext'
 export type CapoSection =
   | 'overview' | 'founders' | 'imports' | 'claims' | 'emails'
   | 'featured' | 'analytics' | 'settings' | 'team' | 'editorial' | 'partners'
-  | 'usage' | 'creativeFeedback' | 'pcm'
+  | 'usage' | 'creativeFeedback' | 'pcm' | 'leadSources'
 
 const ADMIN: UserRole[] = ['admin', 'owner']
 const CAPO_AND_ADMIN: UserRole[] = ['editor', 'admin', 'owner']
@@ -38,6 +38,10 @@ export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
   usage:            ADMIN,
   creativeFeedback: ADMIN,
   pcm:              CAPO_AND_ADMIN,
+  // Same tier as Bulk Import — scraped lead data is sensitive enough
+  // (third-party personal information, real provider spend) to keep
+  // admin-only while this is still an unproven MVP1 test tool.
+  leadSources:      ADMIN,
 }
 
 export function canAccessCapoSection(role: UserRole | undefined, section: CapoSection): boolean {

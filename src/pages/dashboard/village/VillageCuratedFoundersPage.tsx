@@ -11,6 +11,7 @@ import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import { FounderEditModal } from '../../../components/dashboard/FounderEditModal'
 import { VillageBulkImportPage } from './VillageBulkImportPage'
+import { LeadSourcesPage } from './LeadSourcesPage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 import { getAllEditorialItems, type EditorialItemRow } from '../../../services/editorialItems'
@@ -117,6 +118,7 @@ export function VillageCuratedFoundersPage() {
   const { user } = useAuth()
   const canSeeFounders = canAccessCapoSection(user?.role, 'founders')
   const canSeeImports  = canAccessCapoSection(user?.role, 'imports')
+  const canSeeLeadSources = canAccessCapoSection(user?.role, 'leadSources')
   // Deleting an account (not just a curated profile) gets a tighter bar
   // than the founders section itself — matches the edge function's own
   // admin/owner check, this is just so the button isn't shown to editors
@@ -132,8 +134,9 @@ export function VillageCuratedFoundersPage() {
   // research/audit dropdown). This tab takes its name instead, since this
   // list — filtered to curated founders only, see `founders` below — is
   // effectively what "the editorial queue" now means.
-  const [pageTab, setPageTab]     = useState<'founders' | 'published' | 'imports'>(
+  const [pageTab, setPageTab]     = useState<'founders' | 'published' | 'imports' | 'leadSources'>(
     searchParams.get('tab') === 'imports' ? 'imports'
+    : searchParams.get('tab') === 'leadSources' ? 'leadSources'
     : searchParams.get('tab') === 'published' ? 'published'
     : !canSeeFounders ? 'imports' : 'founders',
   )
@@ -384,13 +387,15 @@ export function VillageCuratedFoundersPage() {
           ...(canSeeFounders ? [{ key: 'founders', label: 'Editorial Queue' }] : []),
           ...(canSeeFounders ? [{ key: 'published', label: 'Published', badge: publishedFounders.length }] : []),
           ...(canSeeImports ? [{ key: 'imports', label: 'Bulk Import' }] : []),
+          ...(canSeeLeadSources ? [{ key: 'leadSources', label: 'Lead Sources' }] : []),
         ]}
         active={pageTab}
-        onChange={key => setPageTab(key as 'founders' | 'published' | 'imports')}
+        onChange={key => setPageTab(key as 'founders' | 'published' | 'imports' | 'leadSources')}
         className="mb-6"
       />
 
       {pageTab === 'imports' && canSeeImports && <VillageBulkImportPage embedded />}
+      {pageTab === 'leadSources' && canSeeLeadSources && <LeadSourcesPage embedded />}
 
       {(pageTab === 'founders' || pageTab === 'published') && canSeeFounders && (
       <>
