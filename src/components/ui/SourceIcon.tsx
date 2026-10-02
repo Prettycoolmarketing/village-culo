@@ -1,7 +1,7 @@
 // Small brand-colour icon shown beside each connector/platform's name —
 // purely visual, no new source types implied. Inline SVGs, not external
 // image requests, so the page never depends on a logo asset that might 404.
-export type SourcePlatform = 'youtube' | 'instagram' | 'canva' | 'website' | 'podcast' | 'vimeo' | 'linkedin' | 'tiktok' | string
+export type SourcePlatform = 'youtube' | 'instagram' | 'meta' | 'canva' | 'website' | 'podcast' | 'vimeo' | 'linkedin' | 'tiktok' | string
 
 export function SourceIcon({ platform, size = 'md' }: { platform: SourcePlatform; size?: 'sm' | 'md' | 'lg' }) {
   const box = size === 'lg' ? 'w-11 h-11 rounded-xl' : size === 'sm' ? 'w-7 h-7 rounded-lg' : 'w-9 h-9 rounded-xl'
@@ -20,6 +20,19 @@ export function SourceIcon({ platform, size = 'md' }: { platform: SourcePlatform
       <div className={common} style={{ background: 'linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7)' }}>
         <svg className={`${icon} text-white`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
           <rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      </div>
+    )
+  }
+  if (platform === 'meta') {
+    // The Instagram/Facebook export uses Meta's own combined Accounts
+    // Centre now (both platforms' data, one flow) — Meta's infinity-loop
+    // mark reads correctly for that, instead of the Instagram-only
+    // gradient icon implying this is Instagram-specific.
+    return (
+      <div className={`${common} bg-[#0866FF]`}>
+        <svg className={`${icon} text-white`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+          <path d="M6 12c0-3 1.8-5 4-5s3.3 2.2 4 4c.7 1.8 2 4 4 4s4-2 4-5-1.8-5-4-5-3.3 2.2-4 4c-.7 1.8-2 4-4 4s-4-2-4-5" />
         </svg>
       </div>
     )

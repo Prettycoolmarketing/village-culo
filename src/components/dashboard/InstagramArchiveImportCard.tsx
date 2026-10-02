@@ -92,11 +92,11 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
     <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-8 h-full">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-4">
-          <SourceIcon platform="instagram" size="lg" />
+          <SourceIcon platform="meta" size="lg" />
           <div>
-            <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram archive</p>
+            <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram/Facebook posts</p>
             <p className="text-sm text-[#9CA3AF] mt-0.5">
-              Bring years of Instagram posts into your Village library with captions, dates and media kept together.
+              Follow the steps to publish as web articles.
             </p>
           </div>
         </div>
@@ -133,15 +133,15 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
           </button>
 
           {showInstructions && (
-            <div className="mb-4 bg-[#F8F5F0] rounded-lg p-5">
+            <div className="mb-4 bg-[#EBF2F8] rounded-lg p-5">
               <p className="text-xs text-[#6B7280] leading-relaxed mb-3">
-                Instagram emails you the file — that part can't be skipped. On the page below:
+                Instagram will email you a file to upload to Culo.
               </p>
               <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside space-y-2 mb-4">
-                <li>Tap <span className="font-medium text-[#2D2A26]">Download or transfer information → Create export</span>.</li>
-                <li>Under <span className="font-medium text-[#2D2A26]">Customise information</span>, clear everything, then tick <span className="font-medium text-[#2D2A26]">Media</span> only.</li>
-                <li>Set format to <span className="font-medium text-[#2D2A26]">JSON</span>, then tap <span className="font-medium text-[#2D2A26]">Start exporting</span>.</li>
-                <li>Instagram emails you when it's ready — download the .zip and drop it in the box below.</li>
+                <li>Tap <span className="font-medium text-[#2D2A26]">Download → Create export</span>.</li>
+                <li>Under <span className="font-medium text-[#2D2A26]">Customise information</span>, clear everything, then tick <span className="font-semibold text-[#C86A43] bg-[#FBF1EB] px-1 rounded">Media only</span>.</li>
+                <li>Set format to <span className="font-semibold text-[#C86A43] bg-[#FBF1EB] px-1 rounded">JSON</span>, then tap <span className="font-medium text-[#2D2A26]">Start exporting</span>.</li>
+                <li>Download the .zip from email and drop it in the box below.</li>
               </ol>
               <a
                 href="https://accountscenter.instagram.com/info_and_permissions/"
