@@ -371,14 +371,22 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
       const existing = getStory(item.relatedStoryId)
       if (existing) await updateStory({ ...existing, status })
       await importedContentService.updateStatus(item.id, status)
-    } else if ((status === 'published' || status === 'featured') && isReadyToPublish(item)) {
-      const story = buildStoryFromImport(item, founder)
-      story.status = status
-      const result = await publishStoryCore(story)
-      if (!result.success) {
-        setPublishError(result.error ?? 'Could not publish. Please try again.')
+    } else if (status === 'published' || status === 'featured') {
+      // Used to fall through to the bare updateStatus below when
+      // isReadyToPublish was false (no title yet) — that flipped the badge
+      // to "Published" with no Story ever built and no error shown,
+      // identical to the bug already fixed on the founder-side dropdowns.
+      if (isReadyToPublish(item)) {
+        const story = buildStoryFromImport(item, founder)
+        story.status = status
+        const result = await publishStoryCore(story)
+        if (!result.success) {
+          setPublishError(result.error ?? 'Could not publish. Please try again.')
+        } else {
+          await importedContentService.updateStatus(item.id, status)
+        }
       } else {
-        await importedContentService.updateStatus(item.id, status)
+        setPublishError('Give this a real title before publishing it.')
       }
     } else {
       await importedContentService.updateStatus(item.id, status)

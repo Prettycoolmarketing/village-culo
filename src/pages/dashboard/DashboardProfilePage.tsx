@@ -2164,15 +2164,52 @@ export function DashboardProfilePage() {
               async function handleSaveAdvancedEdit() {
                 if (!importedEditDraft) return
                 setImportedSaveError(null)
-                const result = await importedContentService.upsert(importedEditDraft)
+                // The Status field right here in Advanced Edit used to just
+                // get saved onto ImportedContent directly, same bug as the
+                // compact row dropdown before it was fixed: flipping this
+                // to Published never built a Story, so it showed as live
+                // here while nothing actually existed on the public site.
+                let itemToSave = importedEditDraft
+                const goingLive = importedEditDraft.status === 'published' || importedEditDraft.status === 'featured'
+                if (goingLive) {
+                  const founderForPublish = draft ?? currentFounder
+                  if (!founderForPublish) {
+                    setImportedSaveError('Your profile hasn\'t finished loading yet — try again in a moment.')
+                    return
+                  }
+                  if (importedEditDraft.relatedStoryId) {
+                    const existing = getStory(importedEditDraft.relatedStoryId)
+                    if (existing) await updateStory({ ...existing, status: importedEditDraft.status })
+                  } else if (isReadyToPublish(importedEditDraft)) {
+                    const story = buildStoryFromImport(importedEditDraft, founderForPublish)
+                    story.status = importedEditDraft.status
+                    const result = await publishStoryCore(story)
+                    if (!result.success) {
+                      setImportedSaveError(result.error ?? 'Could not publish. Please try again.')
+                      return
+                    }
+                    itemToSave = { ...importedEditDraft, relatedStoryId: story.id }
+                  } else {
+                    setImportedSaveError('Give this a real title before publishing it.')
+                    return
+                  }
+                } else if (importedEditDraft.relatedStoryId) {
+                  // Moving an already-published piece back to draft/archived —
+                  // the Story's own status has to follow, not just this record's.
+                  const existing = getStory(importedEditDraft.relatedStoryId)
+                  if (existing && existing.status !== importedEditDraft.status) {
+                    await updateStory({ ...existing, status: importedEditDraft.status })
+                  }
+                }
+                const result = await importedContentService.upsert(itemToSave)
                 if (!result.success) {
                   setImportedSaveError(result.error ?? 'Save failed. Please try again.')
                   return
                 }
-                const input = importedContentToInput(importedEditDraft)
+                const input = importedContentToInput(itemToSave)
                 const intel = villageContentIntelligenceService.analyse(input)
                 void villageContentIntelligenceService.upsert(intel)
-                if (importedEditDraft.relatedStoryId) await syncImportEditsToStory(importedEditDraft)
+                if (itemToSave.relatedStoryId) await syncImportEditsToStory(itemToSave)
                 setImportedSavedFlash(true)
                 setTimeout(() => setImportedSavedFlash(false), 2000)
                 setImportedTick(t => t + 1)

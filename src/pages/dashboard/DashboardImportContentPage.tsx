@@ -7,14 +7,14 @@ import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getFounder, updateFounder } from '../../services/founders'
-import { getStory } from '../../services/stories'
+import { getStory, updateStory } from '../../services/stories'
 import {
   importedContentService,
   PLATFORM_LABELS,
   PLATFORM_COLORS,
   youtubeThumbnailUrl,
 } from '../../services/importedContent'
-import { syncImportEditsToStory } from '../../services/publishStory'
+import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
 import { enrichImportedContent, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
@@ -1625,20 +1625,53 @@ export function DashboardImportContentPage() {
   async function handleSave() {
     if (!draft) return
     setSaveError(null)
-    const result = await importedContentService.upsert(draft)
+    // Status here used to just get saved onto ImportedContent directly —
+    // flipping it to Published never built a Story, so it showed live in
+    // this editor while nothing actually existed on the public site.
+    let itemToSave = draft
+    const goingLive = draft.status === 'published' || draft.status === 'featured'
+    if (goingLive) {
+      if (!founder) {
+        setSaveError('Your profile hasn\'t finished loading yet — try again in a moment.')
+        return
+      }
+      if (draft.relatedStoryId) {
+        const existing = getStory(draft.relatedStoryId)
+        if (existing) await updateStory({ ...existing, status: draft.status })
+      } else if (isReadyToPublish(draft)) {
+        const story = buildStoryFromImport(draft, founder)
+        story.status = draft.status
+        const result = await publishStoryCore(story)
+        if (!result.success) {
+          setSaveError(result.error ?? 'Could not publish. Please try again.')
+          return
+        }
+        itemToSave = { ...draft, relatedStoryId: story.id }
+      } else {
+        setSaveError('Give this a real title before publishing it.')
+        return
+      }
+    } else if (draft.relatedStoryId) {
+      const existing = getStory(draft.relatedStoryId)
+      if (existing && existing.status !== draft.status) {
+        await updateStory({ ...existing, status: draft.status })
+      }
+    }
+    const result = await importedContentService.upsert(itemToSave)
     if (!result.success) {
       setSaveError(result.error ?? 'Save failed. Please try again.')
       return
     }
     // Village should do the work first — analyse on every save, not just once
     // published, so the review screen always has fresh suggestions to show.
-    const input = importedContentToInput(draft)
+    const input = importedContentToInput(itemToSave)
     const intel = villageContentIntelligenceService.analyse(input)
     void villageContentIntelligenceService.upsert(intel)
     // Already published from this import? Push the edit through to the live
     // story too — otherwise "Edit your story" silently only touches the
     // import record and the founder's edit never actually shows up.
-    if (draft.relatedStoryId) await syncImportEditsToStory(draft)
+    if (itemToSave.relatedStoryId) await syncImportEditsToStory(itemToSave)
+    if (itemToSave !== draft) setDraft(itemToSave)
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 2000)
   }
