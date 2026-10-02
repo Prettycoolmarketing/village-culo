@@ -134,26 +134,24 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
 
           {showInstructions && (
             <div className="mb-4 bg-[#F8F5F0] rounded-lg p-5">
-              <p className="text-xs font-semibold text-[#2D2A26] mb-3">In the Instagram app or on instagram.com:</p>
-              <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside space-y-3">
-                <li>Go to <span className="font-medium text-[#2D2A26]">Settings → Accounts Centre → Your information and permissions</span>.</li>
-                <li>Select the Instagram account you want to republish for visibility.</li>
-                <li>Tap <span className="font-medium text-[#2D2A26]">Export to device</span>.</li>
-                <li>Click <span className="font-medium text-[#2D2A26]">"Customise information"</span>.</li>
-                <li>Click <span className="font-medium text-[#2D2A26]">"Clear all"</span> on all sections.</li>
-                <li>Re-tick <span className="font-medium text-[#2D2A26]">"Media"</span> only — that's all our importer reads.</li>
-                <li>Click <span className="font-medium text-[#2D2A26]">Save</span>.</li>
-                <li>Set <span className="font-medium text-[#2D2A26]">Format: JSON</span> (not HTML — we can't read HTML exports).</li>
-                <li>Set <span className="font-medium text-[#2D2A26]">Media quality: High</span>.</li>
-                <li>Tap <span className="font-medium text-[#2D2A26]">"Start Exporting"</span>.</li>
-                <li>Instagram will email you when your file is ready — this can take anywhere from a few minutes to a day.</li>
-                <li>Open that email (or go back to Accounts Centre → Your activity → Download or transfer information) and download the <span className="font-medium text-[#2D2A26]">.zip</span> file to your device.</li>
-                <li>Come back to this page and drag that .zip file into the box below, or click Browse files to select it.</li>
-              </ol>
+              <p className="text-xs text-[#6B7280] leading-relaxed mb-4">
+                Instagram emails you a download link, not us — there's no way to skip that part. Tap below to jump
+                straight to the right settings page, choose <span className="font-medium text-[#2D2A26]">Media only</span>,
+                format <span className="font-medium text-[#2D2A26]">JSON</span>, then come back and drop the .zip
+                they email you into the box below.
+              </p>
+              <a
+                href="https://accountscenter.instagram.com/info_and_permissions/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+              >
+                Open Instagram export page ↗
+              </a>
               <div className="flex justify-end mt-4">
                 <button type="button" onClick={() => setShowInstructions(false)}
                   className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] transition-colors">
-                  Hide instructions
+                  Hide
                 </button>
               </div>
             </div>
