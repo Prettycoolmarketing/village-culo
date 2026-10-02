@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { ensureJoinedFounder, needsOnboardingSetup } from '../services/joinFlow'
 import { getFounder, updateFounder } from '../services/founders'
 import { supabase } from '../lib/supabase'
+import { JoinProgress } from '../components/ui/JoinProgress'
 import { Navbar } from '../components/layout/Navbar'
 
 // Where the Supabase email-confirmation link actually lands (see
@@ -107,6 +108,7 @@ export function JoinConfirmPage() {
       <Navbar />
       <main className="min-h-screen bg-background flex items-center justify-center px-6 py-24">
         <div className="max-w-sm w-full">
+          <JoinProgress step={1} />
           <h1 className="font-heading text-2xl font-bold text-charcoal mb-2 text-center">You're confirmed</h1>
           <p className="font-body text-sm text-muted text-center mb-8">
             Set a password so you can log back in next time.

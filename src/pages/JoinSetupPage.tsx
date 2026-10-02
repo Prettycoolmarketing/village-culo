@@ -5,6 +5,7 @@ import { getCurrentFounder } from '../services/currentFounder'
 import { updateFounder, uniqueFounderSlug } from '../services/founders'
 import { runOnboardingResearch } from '../services/onboardingResearch'
 import { Navbar } from '../components/layout/Navbar'
+import { JoinProgress } from '../components/ui/JoinProgress'
 
 // The step /join used to skip entirely — name defaulted to the email's own
 // local part and bio started blank, so a brand-new founder's profile had
@@ -66,6 +67,7 @@ export function JoinSetupPage() {
       <Navbar />
       <main className="min-h-screen bg-background flex items-center justify-center px-6 py-24">
         <div className="max-w-sm w-full">
+          <JoinProgress step={2} />
           <h1 className="font-heading text-2xl font-bold text-charcoal mb-2 text-center">Let's build your profile</h1>
           <p className="font-body text-sm text-muted text-center mb-8">
             Your name, and one link CULO can research — your YouTube channel, podcast, Instagram, TikTok or LinkedIn.

@@ -5,6 +5,7 @@ import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounder } from '../../services/founders'
 import { hasCreativeAccess } from '../../utils/creativeAccess'
 import { STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
+import { JoinProgress } from '../../components/ui/JoinProgress'
 
 // TODO: swap for the real "open CULO Creatives in Canva" URL once the app
 // clears Canva review (the app's own listing/deep-link URL from the Canva
@@ -120,7 +121,10 @@ export function DashboardWelcomePage() {
               : 'Start your 14-day free trial to turn your raw footage into finished blogs, carousels and reels, right inside Canva.'}
           </p>
           {liveFounder?.onboardingStatus === 'researching' && (
-            <p className="text-2xl sm:text-3xl font-bold text-wave mb-6">Loading an article from your public-facing information…</p>
+            <div className="mb-6">
+              <JoinProgress step={3} />
+              <p className="text-2xl sm:text-3xl font-bold text-wave">Loading an article from your public-facing information…</p>
+            </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             {CREATIVES_STEPS.map((s, i) => (
@@ -225,6 +229,7 @@ export function DashboardWelcomePage() {
 
       {liveFounder?.onboardingStatus === 'researching' && (
         <div className="px-8 sm:px-12">
+          <JoinProgress step={3} />
           <p className="text-2xl sm:text-3xl font-bold text-wave">Loading an article from your public-facing information…</p>
         </div>
       )}

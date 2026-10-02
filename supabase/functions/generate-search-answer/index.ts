@@ -317,16 +317,20 @@ TOPIC BANK
 ${TOPIC_BANK}
 
 ARTICLE DEPTH
-Aim for approximately 900-1,600 words when the source supports that depth. Do not add filler to reach a word count. If the question can be comprehensively answered in less, keep it shorter.
+Most questions are fully answered in 900-1,100 strong words. Only go up to roughly 1,400 when the question genuinely needs a framework plus a wide spread of examples to be useful. Never pad to hit a word count — if you notice yourself restating the same point (e.g. "experience is content", "founders think they need new ideas") in more than one place, cut all but the strongest version and spend the words on examples and practical substance instead.
 
 ARTICLE STRUCTURE
-Headline: use the actual search question or a very close natural-language version.
-Opening: answer the question immediately in 1-3 paragraphs. Do not hide the answer until the end.
-Then cover: why this question matters; what is actually happening; the advantages; the disadvantages or limitations; what founders should realistically do; examples or scenarios where useful; Shakas's perspective or experience from the source; how the answer changes depending on the founder or business; a practical recommendation; where relevant, how CULO solves part of the problem.
-Conclusion: directly answer the original question again and leave the reader with a clear recommendation.
+Headline: the actual search question, worded naturally.
+Direct answer: answer the question in 2-3 sentences, immediately. Do not build up to it. Follow with one short paragraph of context, then move straight into substance — do not spend a paragraph restating the answer before earning its keep with specifics.
+What this looks like in practice: a short section giving 5-8 concrete, varied examples of how this question plays out across DIFFERENT kinds of founders/businesses (e.g. a consultant, an agency founder, a product founder, a tradesperson, a SaaS founder, a community founder, a creator, a service/lifestyle business) — not all drawn from Shakas's own world. Keep each example to 1-2 sentences: a specific situation and what it becomes. This section is what makes the article useful to a stranger searching the question, not just a Shakas story — prioritise it over general argument.
+A practical framework: where the question suits it, give the reader a short, usable method (a numbered list of 3-5 questions or steps they can apply themselves right now) rather than only an argument. Not every question needs this — use it when the question is fundamentally a "how do I..." rather than a "should I..." or "is X true" question.
+Shakas's own example: ONE real example from the source material (the clip, her Voice Brief or her Insight Brief), used once, briefly, as proof/illustration of the framework or point above — not as the spine the whole article hangs on. If the source is about one specific story (e.g. a trip, a launch, a client), use it here and do not keep returning to it elsewhere in the article.
+Nuance: a short, honest section on the limitation, exception, or "this doesn't mean X" side of the answer — avoid false balance, but a real caveat makes the article more trustworthy than one-sided advocacy.
+Where CULO fits: see CULO PLACEMENT below for exactly how to frame this — it is two distinct products solving two distinct problems, not one generic plug.
+Conclusion: a short, direct recommendation — what the reader should actually do. Do not restate the opening answer again; move the reader forward instead of circling back.
 
 SEARCH AND AI WRITING RULES
-Write for humans first. Use the main question naturally throughout the article. Include clear subheadings (as plain lines of text, not markdown #, since this renders as plain text) that answer related questions. Answer closely related questions where useful. Use plain language. Avoid keyword stuffing.
+Write for humans first. Use the main question naturally throughout the article. Every subheading must itself be phrased as a real, searchable question (e.g. "How do you turn an experience into content?" not "What is actually happening") — plain lines of text, not markdown #, since this renders as plain text. These subheadings are themselves related-search-question coverage, so treat choosing them as part of answering the brief, not decoration. Use plain language. Avoid keyword stuffing.
 
 Do not claim that publishing in The Culo Village guarantees Google rankings, ChatGPT mentions or AI recommendations. Use wording such as "helps create clearer public context", "makes the information easier to discover and understand", "creates structured, crawlable webpages", "can contribute to a stronger public digital footprint". Do not write "this will make ChatGPT recommend you", "you will rank", or "AI will find you".
 
@@ -341,7 +345,11 @@ Do not invent personal experiences, opinions or claims for Shakas — but "the s
 Treat the clip as the trigger and topic anchor for the article, not the only place you're allowed to find her actual opinion. If the clip itself is thin (a promotional caption, a short description with no real stated opinion) but her Voice/Insight Brief genuinely covers a Topic Bank question the clip's subject connects to, write the article from the brief, using the clip as the real-world example/context it provides. Only return "insufficient_source" when NONE of the three sources together give you enough to honestly answer a real question — not just because the clip's own caption alone was thin.
 
 CULO PLACEMENT
-Within the body of the article (the "how CULO solves part of the problem" point in the structure above), The Culo Village should only appear when it genuinely helps answer the question. Some articles can mention CULO strongly there, some should mention it briefly, some should not mention it at all. The article must remain useful even if every promotional reference were removed. Set culoRelevant to whether you genuinely included a CULO tie-in in the body (true) or correctly left it out (false) — never force one just to set this true.
+CULO is two separate products solving two separate problems, and when you mention it, frame it as exactly that distinction rather than one generic plug:
+1. Extraction/creation problem: a founder has lived or made something useful but hasn't turned it into content yet. Culo Creatives (built inside Canva) is what helps structure raw material — footage, thoughts, expertise — into usable formats.
+2. Permanence/discoverability problem: a founder DID turn something into a post or reel, but it's already buried a few months later with no lasting home. The Culo Village is what gives that resulting work a permanent, individually-discoverable webpage.
+A natural bridge between the two, when you use it: creating the content is only half the problem — what happens to it after it's published is the other half.
+Only bring this in within the body where it genuinely helps answer the question, and only name the ONE of the two problems (or the bridge between them) that's actually relevant to this specific question — do not force both into every article. Some articles should mention CULO briefly, some not at all in the body. The article must remain useful even if every promotional reference were removed. Set culoRelevant to whether you genuinely included a CULO tie-in in the body (true) or correctly left it out (false) — never force one just to set this true.
 
 Do not write your own closing call-to-action inviting the reader to join The Culo Village or try Culo Creatives — a standard closing CTA for both is appended automatically after your article. End the article itself with the conclusion only.
 
