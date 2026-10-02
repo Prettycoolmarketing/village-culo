@@ -411,8 +411,12 @@ export function DashboardLayout() {
       </aside>
 
       {/* ── Main content — pt-14 on mobile clears the fixed hamburger bar;
-          md:pt-0 removes that once the sidebar is back in normal flow. ──── */}
-      <main ref={mainRef} className="flex-1 overflow-y-auto pt-14 md:pt-0">
+          md:pt-0 removes that once the sidebar is back in normal flow.
+          pb-20 on mobile stops the last bit of every page's content
+          butting right against the bottom of the screen (worse with a
+          phone's own home-indicator/browser-chrome eating into that space);
+          md:pb-0 removes it once there's no mobile chrome to clear. ──── */}
+      <main ref={mainRef} className="flex-1 overflow-y-auto pt-14 pb-20 md:pt-0 md:pb-0">
         <Outlet />
       </main>
     </div>

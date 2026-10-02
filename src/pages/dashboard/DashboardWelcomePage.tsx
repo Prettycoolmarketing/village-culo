@@ -191,7 +191,13 @@ export function DashboardWelcomePage() {
               ))}
             </div>
           </Link>
-          <div className="flex flex-col sm:items-end gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-4">
+            <Link
+              to="/dashboard/profile?tab=content&contentSubTab=published"
+              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+            >
+              Manage articles
+            </Link>
             <Link
               to="/dashboard/import-content"
               className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
@@ -255,7 +261,13 @@ export function DashboardWelcomePage() {
             ))}
           </div>
         </Link>
-        <div className="flex flex-col sm:items-end gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-4">
+          <Link
+            to="/dashboard/profile?tab=content&contentSubTab=published"
+            className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+          >
+            Manage articles
+          </Link>
           <Link
             to="/dashboard/import-content"
             className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
