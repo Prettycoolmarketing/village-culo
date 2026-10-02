@@ -90,6 +90,59 @@ const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
 // resolve-by-URL-or-name flow never reliably found a real feed, so it's
 // gone rather than left as a broken "Find my podcast" button.
 
+// A plain, always-clickable button that opens this for the actual link
+// entry — the inline input+button pairs used to sit there with the button
+// disabled (greyed out, not-allowed cursor) until something was typed next
+// to it, which read as a broken/dead button rather than an invitation to
+// click it.
+function AddLinkModal({ title, placeholder, hint, submitLabel = 'Add link', onSubmit, onClose }: {
+  title: string
+  placeholder: string
+  hint?: string
+  submitLabel?: string
+  onSubmit: (value: string) => void
+  onClose: () => void
+}) {
+  const [value, setValue] = useState('')
+  function submit() {
+    if (!value.trim()) return
+    onSubmit(value.trim())
+  }
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl max-w-sm w-full p-6"
+        onClick={e => e.stopPropagation()}
+        style={{ fontFamily: "'DM Sans', sans-serif" }}
+      >
+        <p className="text-base font-semibold text-[#2D2A26] mb-1">{title}</p>
+        {hint && <p className="text-xs text-[#9CA3AF] mb-3">{hint}</p>}
+        <input
+          type="text"
+          autoFocus
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') submit() }}
+          placeholder={placeholder}
+          className="w-full px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors mb-4"
+        />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={submit}
+            disabled={!value.trim()}
+            className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitLabel}
+          </button>
+          <button onClick={onClose} className="text-sm text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
   return (
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
@@ -124,13 +177,16 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
   const [editableTitle, setEditableTitle] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [showLinkModal, setShowLinkModal] = useState(false)
 
-  async function handleResolve() {
-    if (!url.trim()) return
+  async function handleResolve(rawUrl: string) {
+    if (!rawUrl.trim()) return
+    setUrl(rawUrl)
+    setShowLinkModal(false)
     setStep('resolving')
     setError(null)
     try {
-      const result = await resolveEpisode(url.trim())
+      const result = await resolveEpisode(rawUrl.trim())
       setEpisode(result)
       setEditableTitle(result.title)
       setStep('review')
@@ -171,15 +227,22 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
       {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
 
       {step === 'input' && (
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input type="url" value={url} onChange={e => setUrl(e.target.value)}
-            placeholder="https://open.spotify.com/episode/... or https://podcasts.apple.com/.../id...?i=..."
-            className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors" />
-          <button onClick={() => void handleResolve()} disabled={!url.trim()}
-            className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0">
-            Add episode
-          </button>
-        </div>
+        <button
+          onClick={() => setShowLinkModal(true)}
+          className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] transition-colors"
+        >
+          Add episode
+        </button>
+      )}
+      {showLinkModal && (
+        <AddLinkModal
+          title="Add a podcast episode"
+          hint="Paste a Spotify or Apple Podcasts episode link."
+          placeholder="https://open.spotify.com/episode/... or https://podcasts.apple.com/.../id...?i=..."
+          submitLabel="Add episode"
+          onSubmit={url => void handleResolve(url)}
+          onClose={() => setShowLinkModal(false)}
+        />
       )}
 
       {step === 'resolving' && <p className="text-xs text-[#9CA3AF]">Looking up that episode…</p>}
@@ -250,12 +313,12 @@ function ConnectedSourcesSection({ sources, isHighVolume, onChanged }: { sources
 // ─── Connect your YouTube channel ────────────────────────────────────────────
 
 function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
-  const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showLinkModal, setShowLinkModal] = useState(false)
 
-  async function handleConnect() {
-    if (!value.trim()) return
+  async function handleConnect(value: string) {
+    setShowLinkModal(false)
     setBusy(true)
     setError(null)
     try {
@@ -264,7 +327,6 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
       if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
       await connectedSourcesService.upsert(source)
       await scanSource(source)
-      setValue('')
       onConnected()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not connect this channel.')
@@ -282,22 +344,22 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
       <p className="text-sm text-[#9CA3AF] mb-4">
         Bring your YouTube back catalogue into the Village and turn old videos into new stories,
       </p>
-      <div className="flex flex-col sm:flex-row gap-2">
-        <input
-          type="text"
-          value={value}
-          onChange={e => setValue(e.target.value)}
+      <button
+        onClick={() => setShowLinkModal(true)}
+        disabled={busy}
+        className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+      >
+        {busy ? 'Connecting…' : 'Connect channel'}
+      </button>
+      {showLinkModal && (
+        <AddLinkModal
+          title="Connect your YouTube channel"
           placeholder={SOURCE_TYPE_HINTS.youtube}
-          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+          submitLabel="Connect channel"
+          onSubmit={value => void handleConnect(value)}
+          onClose={() => setShowLinkModal(false)}
         />
-        <button
-          onClick={() => void handleConnect()}
-          disabled={busy || !value.trim()}
-          className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-        >
-          {busy ? 'Connecting…' : 'Connect channel'}
-        </button>
-      </div>
+      )}
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
       {!isHighVolume && (
         <p className="text-[11px] text-[#9CA3AF] mt-2">
@@ -312,23 +374,22 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
 // ─── Connect your website ────────────────────────────────────────────────────
 
 function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
-  const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [candidates, setCandidates] = useState<WebsiteFeedCandidate[]>([])
+  const [showLinkModal, setShowLinkModal] = useState(false)
 
   async function connectWithFeedUrl(feedUrl: string, label: string) {
     const source = newConnectedSource(founderId, 'website-rss', label, { feedUrl })
     if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
     await connectedSourcesService.upsert(source)
     await scanSource(source)
-    setValue('')
     setCandidates([])
     onConnected()
   }
 
-  async function handleConnect() {
-    if (!value.trim()) return
+  async function handleConnect(value: string) {
+    setShowLinkModal(false)
     setBusy(true)
     setError(null)
     setCandidates([])
@@ -364,22 +425,22 @@ function WebsiteConnectForm({ founderId, isHighVolume, sources, onConnected }: {
         the Village. Perfect if you've ever been featured in another company's article and want that
         work traced back to you.
       </p>
-      <div className="flex flex-col sm:flex-row gap-2">
-        <input
-          type="text"
-          value={value}
-          onChange={e => setValue(e.target.value)}
+      <button
+        onClick={() => setShowLinkModal(true)}
+        disabled={busy}
+        className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+      >
+        {busy ? 'Connecting…' : 'Connect website'}
+      </button>
+      {showLinkModal && (
+        <AddLinkModal
+          title="Connect your website or blog"
           placeholder="Paste your website URL"
-          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+          submitLabel="Connect website"
+          onSubmit={value => void handleConnect(value)}
+          onClose={() => setShowLinkModal(false)}
         />
-        <button
-          onClick={() => void handleConnect()}
-          disabled={busy || !value.trim()}
-          className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-        >
-          {busy ? 'Connecting…' : 'Connect website'}
-        </button>
-      </div>
+      )}
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
       {candidates.length > 0 && (
         <div className="mt-3 space-y-1.5">
@@ -1650,20 +1711,6 @@ export function DashboardImportContentPage() {
   return (
     <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-[1600px]'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* Header — the 4-step "how it works" walkthrough that used to live
-          here duplicated the one on the Welcome page; kept just the
-          summary line, since a founder reaching this page already knows
-          why they're here. */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#2D2A26]">Transfer your work into the village for visibility</h1>
-        <p className="text-sm text-[#6B7280] mt-1.5 leading-relaxed">
-          Your best ideas are probably already out there. Connect your YouTube, podcast or blog and CULO
-          will bring your existing posted content into one place, restructured for your ultimate
-          visibility. Connected sources stay embedded from the original, your Instagram archive is
-          brought in and hosted here so it can be published properly.
-        </p>
-      </div>
-
       {/* Real numbers only, straight from this founder's own sources/imports —
           no invented storage quota or "of N available" ceiling. Hidden
           entirely until there's at least one connected source — a fresh
@@ -1740,7 +1787,7 @@ export function DashboardImportContentPage() {
               rewrites/caption imports already do most of that work). An
               optional add-on shouldn't sit in front of the actual import
               action. */}
-          <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web pages in the CULO Village for structured discovery</p>
+          <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web articles for structured discovery</p>
           {/* A real 2-column grid with each card explicitly placed by row,
               not two independent flex columns — flex columns have no idea
               how tall the other column's cards are, so a taller YouTube
