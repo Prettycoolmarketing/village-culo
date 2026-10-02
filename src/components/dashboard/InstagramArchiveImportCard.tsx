@@ -30,6 +30,8 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
   const expanded = controlledExpanded ?? uncontrolledExpanded
   const setExpanded = onExpandedChange ?? setUncontrolledExpanded
   const [showInstructions, setShowInstructions] = useState(true)
+  const [showUpload, setShowUpload] = useState(false)
+  const [showPrivacyNote, setShowPrivacyNote] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -121,12 +123,6 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
               </p>
             </div>
           )}
-          <p className="text-xs text-[#6B7280] mb-4">
-            Nothing goes public from this.
-            <br />
-            Everything lands as a private draft in Content, and only publishes once you review it and choose to
-            publish it yourself.
-          </p>
           <button type="button" onClick={() => setShowInstructions(v => !v)}
             className="text-base font-semibold text-[#C86A43] hover:underline mb-4">
             {showInstructions ? 'Hide' : 'How do I export my Instagram archive?'}
@@ -134,10 +130,10 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
 
           {showInstructions && (
             <div className="mb-4 bg-[#EBF2F8] rounded-lg p-5">
-              <p className="text-xs text-[#6B7280] leading-relaxed mb-3">
+              <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
                 Instagram will email you a file to upload to Culo.
               </p>
-              <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside space-y-2 mb-4">
+              <ol className="text-sm text-[#6B7280] leading-relaxed list-decimal list-inside space-y-2.5 mb-4">
                 <li>Tap <span className="font-medium text-[#2D2A26]">Download → Create export</span>.</li>
                 <li>Under <span className="font-medium text-[#2D2A26]">Customise information</span>, clear everything, then tick <span className="font-semibold text-[#C86A43] bg-[#FBF1EB] px-1 rounded">Media only</span>.</li>
                 <li>Set format to <span className="font-semibold text-[#C86A43] bg-[#FBF1EB] px-1 rounded">JSON</span>, then tap <span className="font-medium text-[#2D2A26]">Start exporting</span>.</li>
@@ -192,6 +188,14 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
                 </p>
               )}
             </div>
+          ) : !showUpload ? (
+            <button
+              type="button"
+              onClick={() => setShowUpload(true)}
+              className="w-full px-4 py-3 bg-[#2D2A26] text-white text-sm font-semibold rounded-lg hover:bg-[#1a1815] transition-colors"
+            >
+              Upload file
+            </button>
           ) : (
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true) }}
@@ -207,6 +211,21 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
               <p className="text-[10px] text-[#9CA3AF] mt-3">ZIP only</p>
             </div>
           )}
+
+          <div className="mt-4 pt-3 border-t border-[#F3EDE6]">
+            <button type="button" onClick={() => setShowPrivacyNote(v => !v)}
+              className="text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
+              {showPrivacyNote ? 'Hide' : 'What happens to this once imported?'}
+            </button>
+            {showPrivacyNote && (
+              <p className="text-xs text-[#9CA3AF] leading-relaxed mt-2">
+                Nothing goes public from this.
+                <br />
+                Everything lands as a private draft in Content, and only publishes once you review it and choose to
+                publish it yourself.
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>
