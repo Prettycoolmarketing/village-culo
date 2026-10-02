@@ -98,8 +98,7 @@ function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: 
         <p className="text-base font-semibold text-[#2D2A26]">Add a podcast episode</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Paste a Spotify or Apple Podcasts episode link to bring that episode into the Village, embed the
-        original player and add your story around it.
+        Paste a Spotify or Apple Podcasts episode link to bring that episode into the Village as a shareable blog.
       </p>
 
       <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
@@ -280,7 +279,7 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
         <p className="text-base font-semibold text-[#2D2A26]">Connect YouTube</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Bring your YouTube back catalogue into the Village and turn old videos into new stories,
+        Turn your YouTube videos into searchable blogs.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -359,9 +358,7 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
         <p className="text-base font-semibold text-[#2D2A26]">Connect your blogs</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Paste your website or blog link and CULO will find your feed and bring your existing posts into
-        the Village. Perfect if you've ever been featured in another company's article and want that
-        work traced back to you.
+        Been featured on someone else's blog? Connect the source and we'll structure it back to you.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
