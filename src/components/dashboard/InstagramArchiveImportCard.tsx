@@ -134,12 +134,15 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
 
           {showInstructions && (
             <div className="mb-4 bg-[#F8F5F0] rounded-lg p-5">
-              <p className="text-xs text-[#6B7280] leading-relaxed mb-4">
-                Instagram emails you a download link, not us — there's no way to skip that part. Tap below to jump
-                straight to the right settings page, choose <span className="font-medium text-[#2D2A26]">Media only</span>,
-                format <span className="font-medium text-[#2D2A26]">JSON</span>, then come back and drop the .zip
-                they email you into the box below.
+              <p className="text-xs text-[#6B7280] leading-relaxed mb-3">
+                Instagram emails you the file — that part can't be skipped. On the page below:
               </p>
+              <ol className="text-xs text-[#6B7280] leading-relaxed list-decimal list-inside space-y-2 mb-4">
+                <li>Tap <span className="font-medium text-[#2D2A26]">Download or transfer information → Create export</span>.</li>
+                <li>Under <span className="font-medium text-[#2D2A26]">Customise information</span>, clear everything, then tick <span className="font-medium text-[#2D2A26]">Media</span> only.</li>
+                <li>Set format to <span className="font-medium text-[#2D2A26]">JSON</span>, then tap <span className="font-medium text-[#2D2A26]">Start exporting</span>.</li>
+                <li>Instagram emails you when it's ready — download the .zip and drop it in the box below.</li>
+              </ol>
               <a
                 href="https://accountscenter.instagram.com/info_and_permissions/"
                 target="_blank"
