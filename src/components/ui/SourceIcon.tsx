@@ -28,11 +28,13 @@ export function SourceIcon({ platform, size = 'md' }: { platform: SourcePlatform
     // The Instagram/Facebook export uses Meta's own combined Accounts
     // Centre now (both platforms' data, one flow) — Meta's infinity-loop
     // mark reads correctly for that, instead of the Instagram-only
-    // gradient icon implying this is Instagram-specific.
+    // gradient icon implying this is Instagram-specific. A filled,
+    // crossing-loop glyph (not a thin stroked outline) — a thin outline
+    // read as nothing like the real mark.
     return (
-      <div className={`${common} bg-[#0866FF]`}>
-        <svg className={`${icon} text-white`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-          <path d="M6 12c0-3 1.8-5 4-5s3.3 2.2 4 4c.7 1.8 2 4 4 4s4-2 4-5-1.8-5-4-5-3.3 2.2-4 4c-.7 1.8-2 4-4 4s-4-2-4-5" />
+      <div className={`${common} bg-white border border-[#E8E4DD]`}>
+        <svg className={icon} viewBox="0 0 640 512" fill="#0082FB">
+          <path d="M484.4 96C407.7 96 349.4 164.2 320 208.5C290.6 164.2 232.3 96 155.6 96C69.75 96 0 165.1 0 250.9C0 336.6 69.75 405.8 155.6 405.8C232.3 405.8 290.6 337.6 320 293.3C349.4 337.6 407.7 405.8 484.4 405.8C570.3 405.8 640 336.6 640 250.9C640 165.1 570.3 96 484.4 96zM155.6 320.8C116.5 320.8 84.75 289.2 84.75 250.9C84.75 212.6 116.5 181 155.6 181C194.5 181 228.9 214.6 260.6 250.9C230.1 285.6 194.6 320.8 155.6 320.8zM484.4 320.8C445.4 320.8 409.9 285.6 379.4 250.9C411.1 214.6 445.5 181 484.4 181C523.5 181 555.3 212.6 555.3 250.9C555.3 289.2 523.5 320.8 484.4 320.8z" />
         </svg>
       </div>
     )
