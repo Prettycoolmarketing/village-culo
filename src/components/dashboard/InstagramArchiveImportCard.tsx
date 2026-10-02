@@ -19,17 +19,11 @@ import { SourceIcon } from '../ui/SourceIcon'
 // Voice Brief" on whatever a founder actually selects (naturally their free
 // 10 first, or anything after they unlock the rest).
 
-export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, expanded: controlledExpanded, onExpandedChange }: {
+export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported }: {
   founderId: string
   voiceBrief?: string
   onImported: (count: number) => void
-  expanded?: boolean
-  onExpandedChange?: (expanded: boolean) => void
 }) {
-  const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false)
-  const expanded = controlledExpanded ?? uncontrolledExpanded
-  const setExpanded = onExpandedChange ?? setUncontrolledExpanded
-  const [showInstructions, setShowInstructions] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
   const [showPrivacyNote, setShowPrivacyNote] = useState(false)
   const [dragOver, setDragOver] = useState(false)
@@ -92,71 +86,58 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
 
   return (
     <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-8 h-full">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-4">
-          <SourceIcon platform="meta" size="lg" />
-          <div>
-            <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram/Facebook posts</p>
-            <p className="text-sm text-[#9CA3AF] mt-0.5">
-              Follow the steps to publish as web articles.
-            </p>
-          </div>
+      <div className="flex items-center gap-4 mb-2">
+        <SourceIcon platform="meta" size="lg" />
+        <div>
+          <p className="text-base font-semibold text-[#2D2A26]">Import your Instagram/Facebook posts</p>
+          <p className="text-sm text-[#9CA3AF] mt-0.5">
+            Follow the steps to publish as web articles.
+          </p>
         </div>
-        {!expanded && (
-          <button type="button" onClick={() => setExpanded(true)}
-            className="w-full sm:w-auto text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors shrink-0">
-            Import archive
-          </button>
-        )}
       </div>
 
-      {expanded && (
-        <div className="mt-3">
-          {!voiceBrief?.trim() && (
-            <div className="mb-4 bg-[#FBF1EB] border border-[#F0DDD2] rounded-xl px-4 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Tip: add your Voice &amp; Brand Brief above first</p>
-              <p className="text-xs text-[#6B7280] leading-relaxed">
-                You can import your archive right now either way, original captions come across as-is.
-                <br />
-                Add a brief and you can turn any piece into a real, distinct blog written in your own voice
-                afterward, right from Content.
-              </p>
-            </div>
-          )}
-          <button type="button" onClick={() => setShowInstructions(v => !v)}
-            className="text-base font-semibold text-[#C86A43] hover:underline mb-4">
-            {showInstructions ? 'Hide' : 'How do I export my Instagram archive?'}
+      <div className="mt-3">
+        {!voiceBrief?.trim() && (
+          <div className="mb-4 bg-[#FBF1EB] border border-[#F0DDD2] rounded-xl px-4 py-4">
+            <p className="text-sm font-semibold text-[#2D2A26] mb-1">Tip: add your Voice &amp; Brand Brief above first</p>
+            <p className="text-xs text-[#6B7280] leading-relaxed">
+              You can import your archive right now either way, original captions come across as-is.
+              <br />
+              Add a brief and you can turn any piece into a real, distinct blog written in your own voice
+              afterward, right from Content.
+            </p>
+          </div>
+        )}
+
+        <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
+          Instagram will email you a file to upload to Culo.
+        </p>
+        <ol className="text-sm text-[#6B7280] leading-relaxed list-decimal list-inside space-y-2.5 mb-4">
+          <li>Tap <span className="font-medium text-[#2D2A26]">Download → Create export</span>.</li>
+          <li>Under <span className="font-medium text-[#2D2A26]">Customise information</span>, clear everything, then tick <span className="font-semibold text-[#C86A43] bg-[#FBF1EB] px-1 rounded">Media only</span>.</li>
+          <li>Set format to <span className="font-semibold text-[#C86A43] bg-[#FBF1EB] px-1 rounded">JSON</span>, then tap <span className="font-medium text-[#2D2A26]">Start exporting</span>.</li>
+          <li>Download the .zip from email and upload it below.</li>
+        </ol>
+
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <button
+            type="button"
+            onClick={() => setShowUpload(v => !v)}
+            className="px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white text-sm font-semibold hover:bg-[#1a1815] transition-colors"
+          >
+            Upload file
           </button>
+          <a
+            href="https://accountscenter.instagram.com/info_and_permissions/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] transition-colors"
+          >
+            Open Instagram export page ↗
+          </a>
+        </div>
 
-          {showInstructions && (
-            <div className="mb-4 bg-[#EBF2F8] rounded-lg p-5">
-              <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
-                Instagram will email you a file to upload to Culo.
-              </p>
-              <ol className="text-sm text-[#6B7280] leading-relaxed list-decimal list-inside space-y-2.5 mb-4">
-                <li>Tap <span className="font-medium text-[#2D2A26]">Download → Create export</span>.</li>
-                <li>Under <span className="font-medium text-[#2D2A26]">Customise information</span>, clear everything, then tick <span className="font-semibold text-[#C86A43] bg-[#FBF1EB] px-1 rounded">Media only</span>.</li>
-                <li>Set format to <span className="font-semibold text-[#C86A43] bg-[#FBF1EB] px-1 rounded">JSON</span>, then tap <span className="font-medium text-[#2D2A26]">Start exporting</span>.</li>
-                <li>Download the .zip from email and drop it in the box below.</li>
-              </ol>
-              <a
-                href="https://accountscenter.instagram.com/info_and_permissions/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
-              >
-                Open Instagram export page ↗
-              </a>
-              <div className="flex justify-end mt-4">
-                <button type="button" onClick={() => setShowInstructions(false)}
-                  className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] transition-colors">
-                  Hide
-                </button>
-              </div>
-            </div>
-          )}
-
-          {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+        {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
 
           {stage ? (
             <div className="flex items-center justify-center gap-2.5 px-4 py-6">
@@ -188,15 +169,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
                 </p>
               )}
             </div>
-          ) : !showUpload ? (
-            <button
-              type="button"
-              onClick={() => setShowUpload(true)}
-              className="w-full px-4 py-3 bg-[#2D2A26] text-white text-sm font-semibold rounded-lg hover:bg-[#1a1815] transition-colors"
-            >
-              Upload file
-            </button>
-          ) : (
+          ) : showUpload ? (
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
@@ -210,7 +183,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
               </label>
               <p className="text-[10px] text-[#9CA3AF] mt-3">ZIP only</p>
             </div>
-          )}
+          ) : null}
 
           <div className="mt-4 pt-3 border-t border-[#F3EDE6]">
             <button type="button" onClick={() => setShowPrivacyNote(v => !v)}
@@ -226,8 +199,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported, 
               </p>
             )}
           </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
