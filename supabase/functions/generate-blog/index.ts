@@ -9,6 +9,35 @@
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 
+// Claude's own JSON mode reliably produces real, raw newline characters
+// inside multi-paragraph string values (the blog body especially) — valid
+// as the model's intent, but invalid JSON syntax (string content must
+// escape control characters as \n, not contain a literal one), throwing
+// "Bad control character in string literal" on JSON.parse. Walks the raw
+// text once, escaping control characters ONLY when inside a string
+// (tracked via unescaped quotes), leaving the JSON structure untouched.
+function sanitizeJsonControlChars(input: string): string {
+  let result = ''
+  let inString = false
+  let escaped = false
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i]!
+    if (!inString) {
+      if (ch === '"') inString = true
+      result += ch
+      continue
+    }
+    if (escaped) { result += ch; escaped = false; continue }
+    if (ch === '\\') { result += ch; escaped = true; continue }
+    if (ch === '"') { inString = false; result += ch; continue }
+    if (ch === '\n') { result += '\\n'; continue }
+    if (ch === '\r') { result += '\\r'; continue }
+    if (ch === '\t') { result += '\\t'; continue }
+    result += ch
+  }
+  return result
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -365,7 +394,7 @@ serve(async (req) => {
 
     // Strip accidental markdown fences even though the prompt asks for none.
     const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
-    const parsed = JSON.parse(cleaned) as GeneratedBlog
+    const parsed = JSON.parse(sanitizeJsonControlChars(cleaned)) as GeneratedBlog
 
     return new Response(JSON.stringify({ blog: parsed }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
