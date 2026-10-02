@@ -341,7 +341,9 @@ Do not invent personal experiences, opinions or claims for Shakas — but "the s
 Treat the clip as the trigger and topic anchor for the article, not the only place you're allowed to find her actual opinion. If the clip itself is thin (a promotional caption, a short description with no real stated opinion) but her Voice/Insight Brief genuinely covers a Topic Bank question the clip's subject connects to, write the article from the brief, using the clip as the real-world example/context it provides. Only return "insufficient_source" when NONE of the three sources together give you enough to honestly answer a real question — not just because the clip's own caption alone was thin.
 
 CULO PLACEMENT
-The Culo Village should only appear when it genuinely helps answer the question. Some articles can mention CULO strongly, some should mention it briefly, some should not mention it at all. The article must remain useful even if every promotional reference were removed. Set culoRelevant to whether you genuinely included a CULO tie-in (true) or correctly left it out (false) — never force one just to set this true.
+Within the body of the article (the "how CULO solves part of the problem" point in the structure above), The Culo Village should only appear when it genuinely helps answer the question. Some articles can mention CULO strongly there, some should mention it briefly, some should not mention it at all. The article must remain useful even if every promotional reference were removed. Set culoRelevant to whether you genuinely included a CULO tie-in in the body (true) or correctly left it out (false) — never force one just to set this true.
+
+Do not write your own closing call-to-action inviting the reader to join The Culo Village or try Culo Creatives — a standard closing CTA for both is appended automatically after your article. End the article itself with the conclusion only.
 
 If none of the three sources together contain enough real information to answer a worthwhile, genuinely unused search question, return status "insufficient_source" with a one-sentence note on what's missing. Do not create a weak, generic article just to have something to show.
 
@@ -411,6 +413,17 @@ serve(async (req) => {
 
     const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
     const parsed = JSON.parse(sanitizeJsonControlChars(cleaned)) as GeneratedSearchAnswer
+
+    // culoRelevant governs whether the model's own body organically ties
+    // the question's actual answer back to CULO — that stays honest and
+    // conditional, never forced. But the two product CTAs at the very end
+    // are deliberately NOT left to the model's discretion each run: every
+    // ready article gets both, appended here in code, so staff get a
+    // consistent, guaranteed close instead of whatever the model happened
+    // to decide that time.
+    if (parsed.status === 'ready' && parsed.article) {
+      parsed.article = `${parsed.article}\n\nJoin The Culo Village to republish your own existing content as web articles for discovery, built from the work you've already done.\n\nStart with Culo Creatives in Canva to shape your raw footage into content like this one.`
+    }
 
     return new Response(JSON.stringify({ result: parsed }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

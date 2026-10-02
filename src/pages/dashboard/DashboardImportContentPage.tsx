@@ -985,7 +985,16 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     }
     setSearchAnswerResult(result)
     if (result.headline) field('title', result.headline)
+    // seoDescription is the closest existing box this has a real home in —
+    // there's no dedicated SEO field on ImportedContent, but it reads fine
+    // as the short line under the title.
+    if (result.seoDescription) field('subtitle', result.seoDescription)
     field('description', normalizeBlogSpacing(result.article))
+    const resultTopics = [result.primaryTopic, ...(result.secondaryTopics ?? [])].filter((t): t is string => !!t)
+    if (resultTopics.length > 0) {
+      field('topics', Array.from(new Set([...draft.topics, ...resultTopics])))
+      setTopicsText(t => [...new Set([...parseList(t), ...resultTopics])].join(', '))
+    }
     // Rotation only actually works if this list grows — the prompt alone
     // can't enforce "never repeat" without the caller feeding back what's
     // already been used.

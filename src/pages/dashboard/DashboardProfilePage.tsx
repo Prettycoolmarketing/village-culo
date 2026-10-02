@@ -1911,10 +1911,13 @@ export function DashboardProfilePage() {
                       usedQuestions,
                     })
                     if (result?.status === 'ready' && result.article && result.headline) {
+                      const resultTopics = [result.primaryTopic, ...(result.secondaryTopics ?? [])].filter((t): t is string => !!t)
                       await importedContentService.upsert({
                         ...item,
                         title: result.headline,
+                        subtitle: result.seoDescription || item.subtitle,
                         description: normalizeBlogSpacing(result.article),
+                        topics: resultTopics.length > 0 ? Array.from(new Set([...item.topics, ...resultTopics])) : item.topics,
                       })
                       if (result.primaryQuestion) {
                         usedQuestions = [...usedQuestions, result.primaryQuestion]
