@@ -12,6 +12,7 @@ import { runFounderResearch } from '../../services/editorialResearch'
 import { writeProfileBio, writeSourceArticle, runAudit, approveAllPassing, getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../services/editorialItems'
 import { importedContentService, buildDraftImport } from '../../services/importedContent'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
+import { convertSpreadsheetToVIF } from '../../services/spreadsheetImport'
 import type { Founder } from '../../types'
 
 // Nobody's got a "name" field in the system today — email is all a staff
@@ -200,23 +201,45 @@ export function DashboardBulkImportPage() {
   const [fileName, setFileName] = useState<string | null>(null)
   const [pasteOpen, setPasteOpen] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [converting, setConverting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ── File upload — the normal path. Reads the .json Claude/ChatGPT/Sellable
   // produced straight off disk instead of asking staff to open it and paste
-  // the contents in by hand.
+  // the contents in by hand. A .csv skips the "ask Claude elsewhere, paste
+  // the JSON back in" step entirely — the raw spreadsheet goes straight to
+  // the convert-spreadsheet-to-vif edge function, which does the column
+  // mapping itself; everything from here on (Validate, Import) runs on the
+  // result exactly like a hand-built VIF JSON file would.
   function handleFile(file: File) {
     setFileError(null)
-    if (!file.name.toLowerCase().endsWith('.json')) {
-      setFileError('That doesn\'t look like a .json file — pick the file the Village Import Format was saved as.')
+    const isJson = file.name.toLowerCase().endsWith('.json')
+    const isCsv = file.name.toLowerCase().endsWith('.csv')
+    if (!isJson && !isCsv) {
+      setFileError('That doesn\'t look like a .json or .csv file.')
       return
     }
     const reader = new FileReader()
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : ''
+      if (isJson) {
+        setFileName(file.name)
+        setRaw(text)
+        setParseError(null)
+        return
+      }
       setFileName(file.name)
-      setRaw(text)
-      setParseError(null)
+      setConverting(true)
+      void convertSpreadsheetToVIF(text, file.name.replace(/\.csv$/i, '')).then(result => {
+        setConverting(false)
+        if (result.error) {
+          setFileError(`Could not convert that spreadsheet: ${result.error}`)
+          setFileName(null)
+          return
+        }
+        setRaw(JSON.stringify(result.vif, null, 2))
+        setParseError(null)
+      })
     }
     reader.onerror = () => setFileError('Could not read that file — try again.')
     reader.readAsText(file)
@@ -493,11 +516,16 @@ export function DashboardBulkImportPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".json,application/json"
+              accept=".json,application/json,.csv,text/csv"
               className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
             />
-            {fileName ? (
+            {converting ? (
+              <>
+                <p className="text-sm font-semibold text-[#C86A43]">Converting {fileName}…</p>
+                <p className="text-xs text-[#6B7280] mt-1">Mapping your spreadsheet's columns into Village Import Format — a moment.</p>
+              </>
+            ) : fileName ? (
               <>
                 <p className="text-sm font-semibold text-[#5E6B4A]">✓ {fileName}</p>
                 <p className="text-xs text-[#6B7280] mt-1">Loaded — hit Validate JSON below to continue.</p>
@@ -512,7 +540,7 @@ export function DashboardBulkImportPage() {
             ) : (
               <>
                 <p className="text-sm font-semibold text-[#2D2A26] mb-1">Add your founder batch file</p>
-                <p className="text-xs text-[#6B7280] mb-4">A Village Import Format .json file — from Claude, ChatGPT or Sellable.</p>
+                <p className="text-xs text-[#6B7280] mb-4">A Village Import Format .json file, or a .csv spreadsheet — either converts and validates the same way.</p>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
