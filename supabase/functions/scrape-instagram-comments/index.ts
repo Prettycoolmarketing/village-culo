@@ -7,11 +7,16 @@
 // later decision, not built yet.
 //
 // Provider is isolated behind this one function so it can be swapped
-// without touching the frontend — today it's the apidojo Instagram
-// Comments Scraper actor on Apify (pay-per-result, ~$0.50/1,000 comments),
-// chosen for price and a documented input/output shape, not because it's
-// the only option. See CULO_Scrape_Founder_Qualification_Technical_Spec.md
-// section 23/25 for the adapter reasoning.
+// without touching the frontend — now the official `apify/instagram-scraper`
+// actor (~$2.30/1,000 comments), switched from the cheaper apidojo one
+// after real testing showed every URL capping at ~10 comments regardless
+// of maxItems requested. That cap turned out to be the Apify ACCOUNT'S
+// Free plan (one page of comments per post, ~15), not the actor — so this
+// switch alone won't lift it; a paid Apify plan (Starter, $29/mo) is what
+// actually removes the per-post page cap. Still switching because this is
+// Apify's own first-party actor with a documented, more reliable output
+// shape. See CULO_Scrape_Founder_Qualification_Technical_Spec.md section
+// 23/25 for the adapter reasoning.
 //
 // Deploy: supabase functions deploy scrape-instagram-comments --no-verify-jwt
 
@@ -23,7 +28,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const APIFY_ACTOR_ID = 'apidojo~instagram-comments-scraper'
+const APIFY_ACTOR_ID = 'apify~instagram-scraper'
 
 interface RequestBody {
   url: string
@@ -56,12 +61,13 @@ function normalizeUrl(raw: string): string {
 }
 
 interface ApifyCommentItem {
-  message?: string
-  createdAt?: string
-  likeCount?: number
-  user?: {
+  text?: string
+  timestamp?: string
+  likesCount?: number
+  ownerUsername?: string
+  owner?: {
     username?: string
-    fullName?: string
+    full_name?: string | null
   }
 }
 
@@ -81,11 +87,11 @@ serve(async (req) => {
     const maxItems = body?.maxItems && body.maxItems > 0 ? Math.min(body.maxItems, 1000) : 200
 
     const res = await fetch(
-      `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/run-sync-get-dataset-items?token=${apiKey}`,
+      `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/run-sync-get-dataset-items?token=${apiKey}&timeout=180`,
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ startUrls: [sourceUrl], maxItems }),
+        body: JSON.stringify({ resultsType: 'comments', directUrls: [sourceUrl], resultsLimit: maxItems }),
       },
     )
 
@@ -96,16 +102,19 @@ serve(async (req) => {
 
     const items = await res.json() as ApifyCommentItem[]
     const comments: LeadComment[] = items
-      .filter(item => item.user?.username)
-      .map(item => ({
-        displayName: item.user?.fullName?.trim() || item.user!.username!,
-        handle: item.user!.username!,
-        profileUrl: `https://www.instagram.com/${item.user!.username}/`,
-        commentText: item.message ?? '',
-        sourceUrl,
-        likeCount: item.likeCount,
-        createdAt: item.createdAt,
-      }))
+      .filter(item => (item.ownerUsername || item.owner?.username))
+      .map(item => {
+        const username = (item.ownerUsername || item.owner!.username)!
+        return {
+          displayName: item.owner?.full_name?.trim() || username,
+          handle: username,
+          profileUrl: `https://www.instagram.com/${username}/`,
+          commentText: item.text ?? '',
+          sourceUrl,
+          likeCount: item.likesCount,
+          createdAt: item.timestamp,
+        }
+      })
 
     return new Response(JSON.stringify({ comments, totalFromProvider: items.length }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

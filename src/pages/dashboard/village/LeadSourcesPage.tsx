@@ -29,6 +29,13 @@ export function LeadSourcesPage({ embedded = false }: { embedded?: boolean } = {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [comments, setComments] = useState<LeadComment[] | null>(null)
+  // A real page of comments is mostly one-word noise ("edit", "Edit
+  // please") repeated by dozens of different accounts — this lets staff
+  // either hide that noise or isolate it (e.g. filter TO "claude" to find
+  // the real intent-signal commenters). Client-side only, over whatever's
+  // already been fetched — no extra provider spend to re-filter.
+  const [filterWord, setFilterWord] = useState('')
+  const [filterMode, setFilterMode] = useState<'exclude' | 'include'>('exclude')
 
   async function handleTest() {
     if (!url.trim()) { setError('Paste an Instagram post or Reel URL first.'); return }
@@ -40,6 +47,14 @@ export function LeadSourcesPage({ embedded = false }: { embedded?: boolean } = {
     if (result.error) { setError(result.error); return }
     setComments(result.comments ?? [])
   }
+
+  const word = filterWord.trim().toLowerCase()
+  const filteredComments = comments && word
+    ? comments.filter(c => {
+        const hasWord = c.commentText.toLowerCase().includes(word)
+        return filterMode === 'include' ? hasWord : !hasWord
+      })
+    : comments
 
   return (
     <div className={embedded ? '' : 'p-8 max-w-5xl'} style={embedded ? undefined : { fontFamily: "'DM Sans', sans-serif" }}>
@@ -73,21 +88,49 @@ export function LeadSourcesPage({ embedded = false }: { embedded?: boolean } = {
 
         {comments && (
           <div className="mt-6">
+            {comments.length > 0 && (
+              <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                <input
+                  type="text"
+                  value={filterWord}
+                  onChange={e => setFilterWord(e.target.value)}
+                  placeholder="Filter by word in comment (e.g. edit, claude)…"
+                  className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+                />
+                <div className="flex rounded-lg border border-[#E8E4DD] overflow-hidden shrink-0">
+                  <button
+                    onClick={() => setFilterMode('exclude')}
+                    className={`px-3 py-2 text-xs font-semibold transition-colors ${filterMode === 'exclude' ? 'bg-[#C86A43] text-white' : 'bg-white text-[#6B7280] hover:bg-[#F3EDE6]'}`}
+                  >
+                    Hide matches
+                  </button>
+                  <button
+                    onClick={() => setFilterMode('include')}
+                    className={`px-3 py-2 text-xs font-semibold transition-colors ${filterMode === 'include' ? 'bg-[#C86A43] text-white' : 'bg-white text-[#6B7280] hover:bg-[#F3EDE6]'}`}
+                  >
+                    Only matches
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-semibold text-[#2D2A26]">
-                {comments.length} commenter{comments.length === 1 ? '' : 's'} returned
+                {filteredComments!.length} commenter{filteredComments!.length === 1 ? '' : 's'}
+                {word ? ` shown (of ${comments.length})` : ' returned'}
               </p>
-              {comments.length > 0 && (
+              {filteredComments!.length > 0 && (
                 <button
-                  onClick={() => downloadCSV(leadsToCSV(comments), `lead-sources-${new Date().toISOString().slice(0, 10)}.csv`)}
+                  onClick={() => downloadCSV(leadsToCSV(filteredComments!), `lead-sources-${new Date().toISOString().slice(0, 10)}.csv`)}
                   className="text-xs font-semibold px-3 py-2 rounded-lg text-[#6B7280] bg-[#F3EDE6] hover:bg-[#E8E4DD] transition-colors"
                 >
                   Download CSV
                 </button>
               )}
             </div>
-            {comments.length === 0 ? (
-              <p className="text-sm text-[#9CA3AF]">No accessible comments were found for this source.</p>
+            {filteredComments!.length === 0 ? (
+              <p className="text-sm text-[#9CA3AF]">
+                {comments.length === 0 ? 'No accessible comments were found for this source.' : 'No comments match that filter.'}
+              </p>
             ) : (
               <div className="border border-[#E8E4DD] rounded-xl overflow-hidden overflow-x-auto">
                 <table className="w-full text-sm">
@@ -100,7 +143,7 @@ export function LeadSourcesPage({ embedded = false }: { embedded?: boolean } = {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8E4DD]">
-                    {comments.map((c, i) => (
+                    {filteredComments!.map((c, i) => (
                       <tr key={i}>
                         <td className="px-4 py-2.5 font-medium text-[#2D2A26] whitespace-nowrap">{c.displayName}</td>
                         <td className="px-4 py-2.5 whitespace-nowrap">
