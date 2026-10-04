@@ -84,18 +84,18 @@ export function MarketingLandingPage() {
         }
         right={
           <div className="bg-surface border border-border rounded-2xl p-8 shadow-lg flex flex-col gap-3">
-            <p className="font-heading text-2xl md:text-3xl font-bold text-charcoal text-center mb-2">Work with us!</p>
+            <p className="font-heading text-2xl md:text-3xl font-bold text-charcoal text-center mb-2">See our rates</p>
             <button
               onClick={() => go(PUBLISHING)}
               className="px-5 py-3 bg-primary text-white text-sm font-semibold rounded-xl text-center hover:bg-[#b05a35] transition-colors"
             >
-              Publishing Service
+              Publishing Service pricing
             </button>
             <button
               onClick={() => go(SOCIAL)}
               className="px-5 py-3 bg-charcoal text-white text-sm font-semibold rounded-xl text-center hover:bg-[#1a1815] transition-colors"
             >
-              Social Media Partnership
+              Social Media Partnership pricing
             </button>
           </div>
         }
@@ -121,14 +121,14 @@ export function MarketingLandingPage() {
               kicker="Publishing Service"
               title="Turn your back catalogue into a founder library"
               paragraphs={PUBLISHING_BODY}
-              cta="See the Publishing Service"
+              cta="See Publishing Service rates"
               onClick={() => go(PUBLISHING)}
             />
             <OfferCard
               kicker="Social Media Partnership"
               title="We run the content with you"
               paragraphs={SOCIAL_BODY}
-              cta="See the Social Media Partnerships"
+              cta="See Social Media Partnership rates"
               onClick={() => go(SOCIAL)}
               dark
             />
@@ -147,9 +147,10 @@ export function MarketingLandingPage() {
 
       {/* ── All five services — arch cards, same doorway shape as a Village
           Story card, so this still reads as the Village rather than a
-          generic pricing table. No prices here on purpose — get your
-          quote/get started is the CTA everywhere on this page; the actual
-          number comes once we know what's involved. */}
+          generic pricing table. No prices shown directly on the card on
+          purpose (the actual number depends on what's involved) — but every
+          CTA says "See pricing" rather than something vague like "Get
+          started", so it's clear giving your details gets you the rate. */}
       <section className="py-16 md:py-20 bg-surface border-t border-border">
         <InnerContainer>
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-charcoal mb-3 leading-tight text-center">
@@ -180,7 +181,7 @@ export function MarketingLandingPage() {
                       {s.includes.social && <span className="text-[10px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Socials run</span>}
                       {s.includes.shoots && <span className="text-[10px] px-2 py-0.5 rounded bg-[#EBF2F8] text-charcoal">Shoot every 4 weeks</span>}
                     </div>
-                    <span className="font-body text-sm font-semibold text-primary mt-4 group-hover:underline">Get started →</span>
+                    <span className="font-body text-sm font-semibold text-primary mt-4 group-hover:underline">See pricing →</span>
                   </div>
                 </button>
               )
@@ -212,13 +213,13 @@ export function MarketingLandingPage() {
                 onClick={() => go(PUBLISHING)}
                 className="px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
               >
-                Publishing Service
+                See Publishing Service rates
               </button>
               <button
                 onClick={() => go(SOCIAL)}
                 className="px-6 py-3 bg-charcoal text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] transition-colors"
               >
-                Social Media Partnership
+                See Social Media Partnership rates
               </button>
             </div>
           </div>
