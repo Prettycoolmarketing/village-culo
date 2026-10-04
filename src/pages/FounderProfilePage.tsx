@@ -514,13 +514,12 @@ export function FounderProfilePage() {
           <InnerContainer>
             <div className="flex flex-col gap-6 pt-14 sm:pt-16 -mt-2 sm:-mt-3">
               <div className="flex flex-col sm:flex-row sm:items-end gap-6">
-                {/* A curated profile was never given a real photo — Avatar's
-                    own fallback is the Culo mark, which reads as a real
-                    (if generic) profile photo rather than what this
-                    actually is: a profile nobody's claimed or photographed
-                    yet. Cleaner to show no image at all here than a
-                    placeholder that implies there is one. */}
-                {(founder.avatar || founder.profileStatus !== 'village-curated') && (
+                {/* No real photo yet reads as no avatar at all here, same
+                    as FounderCard — a placeholder icon implies there's a
+                    photo when there isn't, whether this founder is still
+                    unclaimed/curated or has claimed their profile without
+                    uploading one themselves. */}
+                {founder.avatar && !founder.avatar.includes('/placeholders/') && (
                   <Avatar src={founder.avatar} alt={founder.name} size="xl"
                     className="ring-4 ring-surface shadow-lg flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 text-3xl" />
                 )}

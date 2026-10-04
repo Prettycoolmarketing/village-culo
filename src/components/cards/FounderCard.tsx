@@ -48,11 +48,13 @@ interface FounderCardProps {
 export function FounderCard({ founder, business, variant = 'default', className = '' }: FounderCardProps) {
   const founderUrl = `/founders/${founder.slug}`
   const businessUrl = business ? `/businesses/${business.slug}` : undefined
-  // An unclaimed curated profile was never given a real photo — showing the
-  // Culo-mark fallback anywhere it appears (not just on the founder's own
-  // profile page, which already handles this) reads as a real photo exists
-  // when it doesn't. No avatar at all for these, on any card variant.
-  const showAvatar = !!founder.avatar || founder.profileStatus !== 'village-curated' || !!founder.userId
+  // No real photo yet reads as no avatar at all — not a placeholder icon —
+  // on every card variant, whether the founder is still unclaimed/curated
+  // or has claimed their profile but hasn't uploaded a photo themselves.
+  // Previously only unclaimed curated founders got this treatment, which
+  // left a claimed founder with no photo showing a placeholder icon other
+  // founders without one didn't.
+  const showAvatar = !!founder.avatar && !founder.avatar.includes('/placeholders/')
 
   // ─── Featured variant — hero row style ──────────────────────────────────────
   if (variant === 'featured') {
