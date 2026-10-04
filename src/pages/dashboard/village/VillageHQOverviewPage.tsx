@@ -123,7 +123,18 @@ export function VillageHQOverviewPage() {
   const maxTop = topTopics[0]?.count ?? 1
 
   const pcmClients = getPcmClients()
-  const canvaMembers = joinedViaJoinFlow.filter(f => f.signupProduct === 'canva').length
+  // "Canva members" used to mean "came in through the ?source=canva doorway
+  // of /join" (signupProduct) — that's a funnel-source tag set at signup,
+  // not proof anyone ever actually touched Culo Creatives, so it was
+  // counting plain Village sign-ups right alongside real Creatives members.
+  // True membership is creativeSubscription existing at all (mirrors
+  // VillageCreativeMembersPage.tsx's own `members` filter, the one place
+  // this was already done correctly). Funnel-source tracking (signupProduct)
+  // stays below under its own "Join Funnel" section instead of being
+  // blended into what reads as a membership count.
+  const creativeMembers = founders.filter(f => !!f.creativeSubscription)
+  const activeCreativeMembers   = creativeMembers.filter(f => f.creativeSubscription?.status === 'active').length
+  const trialingCreativeMembers = creativeMembers.filter(f => f.creativeSubscription?.status === 'trial').length
 
   const [tab, setTab] = useState('village')
   const canSeeEmails = canAccessCapoSection(user?.role, 'emails')
@@ -186,20 +197,25 @@ export function VillageHQOverviewPage() {
 
       {tab === 'creatives' && (
         <>
+        <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Real Culo Creatives Members</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <StatCard label="Canva members" value={canvaMembers} />
-          <StatCard label="Locked-in collaborators" value={lockedInCollaborators} />
-          <StatCard label="From Canva Marketplace" value={fromCanva.length} />
-          <StatCard label="From the Village" value={fromVillage.length} />
+          <StatCard label="Creatives Members" value={creativeMembers.length} to="/dashboard/village/creative-members" />
+          <StatCard label="Active"            value={activeCreativeMembers} color="text-[#5E6B4A]" />
+          <StatCard label="Trialing"          value={trialingCreativeMembers} />
+          <StatCard label="Locked-in collaborators" value={lockedInCollaborators} to="/dashboard/village/creative-feedback" />
         </div>
         {canSeeAnalytics && (
           <section className="mb-8">
-            <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">CULO Creatives Join Funnel</p>
+            {/* Funnel-source tracking only — who clicked through which door
+                at signup, NOT who actually became a Creatives member. Kept
+                separate from the real-member stats above on purpose, so
+                this never gets read as a membership count again. */}
+            <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-3">Join Funnel (signup source, not membership)</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatCard label="Joined via /join"  value={joinedViaJoinFlow.length}   color="text-[#2D2A26]" to="/dashboard/village/founders" />
               <StatCard label="Password Set"      value={passwordSetCount}           color="text-[#2D2A26]" sub={`of ${joinedViaJoinFlow.length} joined`} />
-              <StatCard label="Locked In $19/mo"  value={lockedInCollaborators}      color="text-[#5E6B4A]" to="/dashboard/village/creative-feedback" />
-              <StatCard label="From Canva"        value={fromCanva.length}          color="text-[#2D2A26]" sub={`vs ${fromVillage.length} from Village`} />
+              <StatCard label="From Canva doorway"   value={fromCanva.length}        color="text-[#2D2A26]" sub={`vs ${fromVillage.length} from Village`} />
+              <StatCard label="From Village doorway" value={fromVillage.length}      color="text-[#2D2A26]" />
             </div>
           </section>
         )}
