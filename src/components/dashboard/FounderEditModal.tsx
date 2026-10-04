@@ -589,7 +589,6 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
   const [writing, setWriting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const autoTriggered = useRef(false)
-  const autoSynced = useRef(false)
 
   if (!loaded) {
     void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
@@ -622,13 +621,18 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
     if (result.item?.draft_content?.body) void persistBio(result.item.draft_content.body)
   }
 
+  // Only auto-persists the very first time a bio gets written (inside
+  // handleWrite itself, from the auto-trigger below) — NOT on every modal
+  // open. A prior version also re-persisted bioItem here unconditionally
+  // whenever the modal loaded an already-existing draft, which silently
+  // overwrote the real bio with this old editorial-table draft every time
+  // staff reopened Edit, even after they'd since hand-edited the bio
+  // directly (that manual edit never touches this draft row, so it just
+  // sat there ready to clobber the next edit). "Rewrite from research"
+  // below is the only way to intentionally push a draft into the bio now.
   if (ledger && !bioItem && !writing && !autoTriggered.current) {
     autoTriggered.current = true
     void handleWrite()
-  }
-  if (bioItem && !autoSynced.current) {
-    autoSynced.current = true
-    void persistBio(bioItem.draft_content?.body ?? '')
   }
 
   if (!ledger && !bioItem) return null
