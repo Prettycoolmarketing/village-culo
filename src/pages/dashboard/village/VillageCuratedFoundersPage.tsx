@@ -614,23 +614,6 @@ export function VillageCuratedFoundersPage() {
                       </button>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-                      {/* Curated only ever applies to a profile admin built
-                          from the imported JSON list — no real account
-                          exists yet (no userId). A founder who came through
-                          the actual /join flow has a real account from the
-                          moment they signed up; there's nothing to "curate"
-                          about them. */}
-                      {!f.userId && (!f.profileStatus || f.profileStatus === 'village-curated') && (
-                        <button
-                          onClick={() => void founderClaimService.markCurated(f.id).then(result => {
-                            if (!result.success) { alert(result.error ?? 'Could not update. Please try again.'); return }
-                            refresh()
-                          })}
-                          className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
-                        >
-                          {!f.profileStatus ? 'Set Curated' : 'Re-curate'}
-                        </button>
-                      )}
                       {/* Copy this curated profile's public link to send to
                           the real founder so they can claim it — only makes
                           sense before they actually have (claimed). */}
