@@ -33,6 +33,22 @@ export const config = {
 const SUPABASE_URL = 'https://vptbswxntuycbgqnduab.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_TMC5OCu3gczdMXgjoqmGnA_3W2BbJpe'
 const SITE_NAME = 'CULO Village'
+const SITE_ORIGIN = 'https://www.culovillage.com'
+// Used whenever a page has no real photo/cover of its own — a link preview
+// with no image at all reads as broken on LinkedIn/Slack/etc; the brand
+// mark is at least recognisable and consistent, same fallback the app's
+// own React pages already use for a founder with no cover photo.
+const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/assets/culo-brand-cover.png`
+
+// og:image (and most crawlers' image handling generally) requires an
+// absolute URL — a founder/story cover saved as a relative app path
+// (e.g. '/assets/culo-brand-cover.png') would otherwise resolve against
+// the crawler's own notion of "current page," not this site.
+function absUrl(src) {
+  if (!src) return undefined
+  if (/^https?:\/\//i.test(src)) return src
+  return `${SITE_ORIGIN}${src.startsWith('/') ? '' : '/'}${src}`
+}
 
 // Mirrors src/data/topics.ts (name + description only — `count` isn't
 // needed for a crawler snapshot). Topics aren't a Supabase table: they're
@@ -111,9 +127,14 @@ async function fetchRowById(table, id, extraFilter = '') {
   return rows[0]?.data ?? null
 }
 
-function renderDocument({ title, description, path, ogType, jsonLd, bodyHtml }) {
-  const canonical = `https://www.culovillage.com${path}`
+function renderDocument({ title, description, path, ogType, jsonLd, bodyHtml, image }) {
+  const canonical = `${SITE_ORIGIN}${path}`
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME
+  // Falls back to the brand mark rather than omitting the tag entirely —
+  // this is the actual bug being fixed: no og:image at all (for any route)
+  // meant every shared link, on LinkedIn/Facebook/Slack/etc, showed no
+  // preview image, not even a generic branded one.
+  const ogImage = absUrl(image) || DEFAULT_OG_IMAGE
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -126,6 +147,13 @@ function renderDocument({ title, description, path, ogType, jsonLd, bodyHtml }) 
 <meta property="og:title" content="${escapeHtml(title || SITE_NAME)}" />
 <meta property="og:description" content="${escapeHtml((description || '').slice(0, 200))}" />
 <meta property="og:url" content="${escapeHtml(canonical)}" />
+<meta property="og:image" content="${escapeHtml(ogImage)}" />
+<meta property="og:image:secure_url" content="${escapeHtml(ogImage)}" />
+<meta property="og:site_name" content="${escapeHtml(SITE_NAME)}" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="${escapeHtml(title || SITE_NAME)}" />
+<meta name="twitter:description" content="${escapeHtml((description || '').slice(0, 200))}" />
+<meta name="twitter:image" content="${escapeHtml(ogImage)}" />
 ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : ''}
 </head>
 <body>
@@ -206,7 +234,7 @@ ${businesses.length > 0 ? `<section>\n<h2>Businesses</h2>\n${linkList(businesses
       // Village" here. Passing undefined lets it fall back to the bare
       // site name, while the H1 above still reads "CULO Village".
       const html = renderDocument({
-        title: undefined, description, path: '/', ogType: 'website', jsonLd, bodyHtml,
+        title: undefined, description, path: '/', ogType: 'website', jsonLd, bodyHtml, image: undefined,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -298,7 +326,7 @@ ${bookingUrl ? `<li><a href="${escapeHtml(bookingUrl)}">Book a 30-minute call</a
 </article>`
       const html = renderDocument({
         title: `${founder.name.trim()} — Speaker & Press`, description: `${founder.name.trim()} — founder of ${businesses.map((b: any) => b.name.trim()).join(', ')}.`,
-        path: '/speaker', ogType: 'profile', jsonLd, bodyHtml,
+        path: '/speaker', ogType: 'profile', jsonLd, bodyHtml, image: founder.avatar,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -330,7 +358,7 @@ ${textToParagraphs(story.blog)}
 </article>`
       const html = renderDocument({
         title: story.title, description: story.summary || story.blog, path: url.pathname,
-        ogType: 'article', jsonLd, bodyHtml,
+        ogType: 'article', jsonLd, bodyHtml, image: story.coverImage || author?.avatar,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -381,7 +409,7 @@ ${linksHtml.length > 0 ? `<nav><h2>Find ${escapeHtml(founder.name)}</h2><ul>\n${
 </article>`
       const html = renderDocument({
         title: founder.name, description: founder.bio, path: url.pathname,
-        ogType: 'profile', jsonLd, bodyHtml,
+        ogType: 'profile', jsonLd, bodyHtml, image: founder.avatar,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -419,7 +447,7 @@ ${bizLinksHtml.length > 0 ? `<nav><h2>Find ${escapeHtml(biz.name)}</h2><ul>\n${b
 </article>`
       const html = renderDocument({
         title: biz.name, description: biz.description || biz.tagline, path: url.pathname,
-        ogType: 'website', jsonLd, bodyHtml,
+        ogType: 'website', jsonLd, bodyHtml, image: biz.logo,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -442,7 +470,7 @@ ${idea.quote ? `<blockquote>${escapeHtml(idea.quote)}</blockquote>` : ''}
 </article>`
       const html = renderDocument({
         title: idea.title, description: idea.description, path: url.pathname,
-        ogType: 'article', jsonLd, bodyHtml,
+        ogType: 'article', jsonLd, bodyHtml, image: undefined,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -464,7 +492,7 @@ ${series.description ? `<p>${escapeHtml(series.description)}</p>` : ''}
 </article>`
       const html = renderDocument({
         title: series.title, description: series.description, path: url.pathname,
-        ogType: 'article', jsonLd, bodyHtml,
+        ogType: 'article', jsonLd, bodyHtml, image: series.coverImage,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -488,7 +516,7 @@ ${textToParagraphs(feature.intro)}
 </article>`
       const html = renderDocument({
         title: feature.title, description: feature.dek || feature.intro, path: url.pathname,
-        ogType: 'article', jsonLd, bodyHtml,
+        ogType: 'article', jsonLd, bodyHtml, image: feature.coverImage,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -517,7 +545,7 @@ ${item.why ? `<p>${escapeHtml(item.why)}</p>` : ''}
 </article>`
       const html = renderDocument({
         title: item.title, description: item.description, path: url.pathname,
-        ogType: 'product', jsonLd, bodyHtml,
+        ogType: 'product', jsonLd, bodyHtml, image: item.coverImage,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
@@ -564,7 +592,7 @@ ${matching.map(s => `<li><a href="/stories/${escapeHtml(s.slug)}">${escapeHtml(s
 </article>`
       const html = renderDocument({
         title: name, description, path: url.pathname,
-        ogType: 'website', jsonLd, bodyHtml,
+        ogType: 'website', jsonLd, bodyHtml, image: undefined,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }

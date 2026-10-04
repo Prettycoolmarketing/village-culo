@@ -265,7 +265,11 @@ export function StoryDetailPage() {
     description: story ? deriveSeoDescription(story.summary, story.blog) : undefined,
     keywords:    intel?.seoKeywords.slice(0, 15),
     ogType:      'article',
-    ogImage:     story?.coverImage,
+    // A story with no cover of its own used to just omit og:image entirely
+    // (usePageMeta only writes the tag when given one) — falls back to the
+    // founder's own photo, then the brand mark, so a shared link never has
+    // no preview image at all.
+    ogImage:     story?.coverImage || founder?.avatar || '/assets/culo-brand-cover.png',
     jsonLd:      story && (story.status === 'published' || story.status === 'featured') ? {
       '@context':      'https://schema.org',
       '@type':         'Article',

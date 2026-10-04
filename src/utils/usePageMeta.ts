@@ -60,17 +60,24 @@ export function usePageMeta(options: PageMetaOptions) {
 
     addLink('canonical', canonical)
 
+    // og:image (and most crawlers generally) requires an absolute URL — a
+    // relative app path like '/assets/culo-brand-cover.png' would otherwise
+    // get written to the tag as-is and resolve against nothing.
+    const absImage = options.ogImage
+      ? (/^https?:\/\//i.test(options.ogImage) ? options.ogImage : `${window.location.origin}${options.ogImage}`)
+      : undefined
+
     addMeta('og:site_name', SITE_NAME, 'property')
     addMeta('og:type', options.ogType ?? 'website', 'property')
     addMeta('og:url', canonical, 'property')
     addMeta('og:title', title, 'property')
     if (desc) addMeta('og:description', desc, 'property')
-    if (options.ogImage) addMeta('og:image', options.ogImage, 'property')
+    if (absImage) addMeta('og:image', absImage, 'property')
 
-    addMeta('twitter:card', options.ogImage ? 'summary_large_image' : 'summary')
+    addMeta('twitter:card', absImage ? 'summary_large_image' : 'summary')
     addMeta('twitter:title', title)
     if (desc) addMeta('twitter:description', desc)
-    if (options.ogImage) addMeta('twitter:image', options.ogImage)
+    if (absImage) addMeta('twitter:image', absImage)
 
     if (options.jsonLd) addJsonLd(options.jsonLd)
 
