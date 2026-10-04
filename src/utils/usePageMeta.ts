@@ -11,6 +11,11 @@ export interface PageMetaOptions {
   ogType?: 'website' | 'article' | 'profile'
   ogImage?: string
   jsonLd?: Record<string, unknown> | null
+  // Set true for pages that are too thin right now to be worth a search
+  // engine surfacing them over a stronger page (e.g. Library while it only
+  // has a couple of items) — keeps the page live for visitors but asks
+  // crawlers not to index/rank it until there's enough on it.
+  noindex?: boolean
 }
 
 function cleanup() {
@@ -59,6 +64,8 @@ export function usePageMeta(options: PageMetaOptions) {
     }
 
     addLink('canonical', canonical)
+
+    if (options.noindex) addMeta('robots', 'noindex, follow')
 
     // og:image (and most crawlers generally) requires an absolute URL — a
     // relative app path like '/assets/culo-brand-cover.png' would otherwise

@@ -20,7 +20,7 @@ const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const SITE_URL              = Deno.env.get('SITE_URL') ?? 'https://village-culo.vercel.app'
 
-const STATIC_ROUTES = ['/', '/founders', '/stories', '/ideas', '/mercato', '/map', '/noticeboard', '/archive', '/expertise', '/library', '/speaker']
+const STATIC_ROUTES = ['/', '/founders', '/stories', '/ideas', '/mercato', '/map', '/noticeboard', '/archive', '/expertise', '/speaker']
 
 // Keep in sync with MIN_SOURCE_PLATFORM_STORIES in src/pages/SourcePlatformPage.tsx —
 // a Collection page never goes in the sitemap while it's this thin (see Village
@@ -29,6 +29,12 @@ const STATIC_ROUTES = ['/', '/founders', '/stories', '/ideas', '/mercato', '/map
 // static taxonomy data (data/expertise.ts etc.), which isn't reachable from
 // here, so they're deliberately not included yet.
 const MIN_SOURCE_PLATFORM_STORIES = 3
+
+// Same "avoid thin pages" principle, applied to /library itself — kept out
+// of STATIC_ROUTES below (added back once it has enough items; mirrors
+// MIN_INDEXABLE_ITEMS in src/pages/LibraryPage.tsx, which also sets
+// noindex on the page itself while it's this thin).
+const MIN_LIBRARY_ITEMS = 3
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
 
@@ -45,19 +51,33 @@ async function fetchSlugs<T = Row>(table: string, select = 'data, updated_at'): 
   return data as T[]
 }
 
+// library_items doesn't use the published/featured status model other
+// tables do (statuses are things like coming-soon, available, pre-order —
+// see LibraryPage/middleware's "hide only archived" rule) — so it needs
+// its own query rather than fetchSlugs' published/featured filter.
+async function fetchLibrarySlugs(): Promise<Row[]> {
+  const { data, error } = await supabase
+    .from('library_items')
+    .select('data, updated_at')
+    .neq('status', 'archived')
+  if (error || !data) return []
+  return data as Row[]
+}
+
 function urlEntry(loc: string, lastmod?: string): string {
   return `  <url>\n    <loc>${loc}</loc>${lastmod ? `\n    <lastmod>${lastmod.slice(0, 10)}</lastmod>` : ''}\n  </url>`
 }
 
 serve(async () => {
   try {
-    const [stories, founders, businesses, ideas, importedContent, editorial] = await Promise.all([
+    const [stories, founders, businesses, ideas, importedContent, editorial, libraryItems] = await Promise.all([
       fetchSlugs<StoryRow>('stories'),
       fetchSlugs('founders'),
       fetchSlugs('businesses'),
       fetchSlugs('ideas'),
       fetchSlugs<ImportedContentRow>('imported_content', 'id, data'),
       fetchSlugs('editorial_features'),
+      fetchLibrarySlugs(),
     ])
 
     // Source-by-platform Collection pages (/from/:platform) — only once a
@@ -70,14 +90,20 @@ serve(async () => {
     }
     const richPlatforms = [...platformCounts.entries()].filter(([, count]) => count >= MIN_SOURCE_PLATFORM_STORIES).map(([platform]) => platform)
 
+    const libraryIsRich = libraryItems.length >= MIN_LIBRARY_ITEMS
+
     const entries: string[] = [
       ...STATIC_ROUTES.map(r => urlEntry(`${SITE_URL}${r}`)),
+      ...(libraryIsRich ? [urlEntry(`${SITE_URL}/library`)] : []),
       ...stories.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/stories/${r.data.slug}`, r.updated_at)),
       ...founders.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/founders/${r.data.slug}`, r.updated_at)),
       ...businesses.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/businesses/${r.data.slug}`, r.updated_at)),
       ...ideas.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/ideas/${r.data.slug}`, r.updated_at)),
       ...richPlatforms.map(p => urlEntry(`${SITE_URL}/from/${p}`)),
       ...editorial.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/editorial/${r.data.slug}`, r.updated_at)),
+      // Individual library item pages stay listed even while the hub page
+      // doesn't — a real item is still worth indexing on its own.
+      ...libraryItems.filter(r => r.data.slug).map(r => urlEntry(`${SITE_URL}/library/${r.data.slug}`, r.updated_at)),
     ]
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>`

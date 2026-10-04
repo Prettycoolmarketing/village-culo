@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { usePageTitle } from '../utils/usePageTitle'
+import { usePageMeta } from '../utils/usePageMeta'
 import { StoryGrid }         from '../widgets/StoryGrid'
 import { FilterBar }         from '../components/ui/FilterBar'
 import { InnerContainer }    from '../components/layout/PageContainer'
@@ -43,7 +43,14 @@ const topicOptions = [
 // ─── Stories Page ──────────────────────────────────────────────────────────────
 
 export function StoriesPage() {
-  usePageTitle('Stories')
+  // Previously just usePageTitle — no meta description of its own, so
+  // search/AI results fell back to the generic homepage description and
+  // Stories couldn't be told apart from thinner pages like Library. This
+  // is the main content hub, so it gets the strongest, most specific one.
+  usePageMeta({
+    title: 'Stories',
+    description: 'Real founder stories from across Australia — behind-the-scenes lessons, wins and setbacks, told by the people who built the business, not written about them.',
+  })
   const [searchParams, setSearchParams] = useSearchParams()
   const [filtersOpen, setFiltersOpen] = useState(() => searchParams.toString().length > 0)
 

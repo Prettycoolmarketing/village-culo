@@ -24,7 +24,7 @@
 
 export const config = {
   matcher: [
-    '/', '/speaker', '/stories/:slug', '/founders/:slug', '/businesses/:slug',
+    '/', '/speaker', '/stories', '/library', '/stories/:slug', '/founders/:slug', '/businesses/:slug',
     '/ideas/:slug', '/series/:slug', '/editorial/:slug', '/library/:slug',
     '/topics/:slug',
   ],
@@ -39,6 +39,11 @@ const SITE_ORIGIN = 'https://www.culovillage.com'
 // mark is at least recognisable and consistent, same fallback the app's
 // own React pages already use for a founder with no cover photo.
 const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/assets/culo-brand-cover.png`
+// Mirrors MIN_INDEXABLE_ITEMS in src/pages/LibraryPage.tsx and
+// MIN_LIBRARY_ITEMS in supabase/functions/sitemap — the Library hub asks
+// crawlers not to index it below this count, so it can't keep outranking
+// the real content hub (Stories) while it only has a couple of items.
+const MIN_LIBRARY_ITEMS = 3
 
 // og:image (and most crawlers' image handling generally) requires an
 // absolute URL — a founder/story cover saved as a relative app path
@@ -144,7 +149,7 @@ async function fetchRowById(table, id, extraFilter = '') {
   return rows[0]?.data ?? null
 }
 
-function renderDocument({ title, description, path, ogType, jsonLd, bodyHtml, image }) {
+function renderDocument({ title, description, path, ogType, jsonLd, bodyHtml, image, noindex = false }) {
   const canonical = `${SITE_ORIGIN}${path}`
   const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME
   // Falls back to the brand mark rather than omitting the tag entirely —
@@ -159,7 +164,7 @@ function renderDocument({ title, description, path, ogType, jsonLd, bodyHtml, im
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${escapeHtml(fullTitle)}</title>
 <meta name="description" content="${escapeHtml((description || '').slice(0, 160))}" />
-<link rel="canonical" href="${escapeHtml(canonical)}" />
+${noindex ? '<meta name="robots" content="noindex, follow" />\n' : ''}<link rel="canonical" href="${escapeHtml(canonical)}" />
 <meta property="og:type" content="${ogType}" />
 <meta property="og:title" content="${escapeHtml(title || SITE_NAME)}" />
 <meta property="og:description" content="${escapeHtml((description || '').slice(0, 200))}" />
@@ -252,6 +257,63 @@ ${businesses.length > 0 ? `<section>\n<h2>Businesses</h2>\n${linkList(businesses
       // site name, while the H1 above still reads "CULO Village".
       const html = renderDocument({
         title: undefined, description, path: '/', ogType: 'website', jsonLd, bodyHtml, image: undefined,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    // /stories and /library — previously neither was in `matcher` at all,
+    // so a non-JS crawler landing on either saw the bare index.html shell
+    // and fell back to its generic site-wide description. That's exactly
+    // what made Google show the Library hub (thin, one item) with the same
+    // description as the homepage, with no stronger Stories page to
+    // differentiate against. Stories is the real content hub and gets a
+    // description written to stand on its own; Library is explicitly asked
+    // not to be indexed while it's this thin (mirrors MIN_INDEXABLE_ITEMS
+    // in src/pages/LibraryPage.tsx and MIN_LIBRARY_ITEMS in the sitemap
+    // function).
+    if (url.pathname === '/stories') {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/stories?select=data&status=in.(published,featured)&order=created_at.desc&limit=30`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
+      )
+      const stories: any[] = res.ok ? (await res.json()).map((r: any) => r.data) : []
+      const title = 'Stories'
+      const description = 'Real founder stories from across Australia — behind-the-scenes lessons, wins and setbacks, told by the people who built the business, not written about them.'
+      const jsonLd = {
+        '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description,
+        url: `${SITE_ORIGIN}/stories`,
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(title)}</h1>
+<p>${escapeHtml(description)}</p>
+${stories.length > 0 ? `<ul>\n${stories.map((s: any) => `<li><a href="/stories/${escapeHtml(s.slug)}">${escapeHtml(s.title)}</a>${s.summary ? ` — ${escapeHtml(s.summary)}` : ''}</li>`).join('\n')}\n</ul>` : ''}
+</article>`
+      const html = renderDocument({ title, description, path: '/stories', ogType: 'website', jsonLd, bodyHtml, image: undefined })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    if (url.pathname === '/library') {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/library_items?select=data&status=neq.archived&order=created_at.desc&limit=30`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
+      )
+      const items: any[] = res.ok ? (await res.json()).map((r: any) => r.data) : []
+      const title = 'Library'
+      const description = 'Workbooks, guides, templates and courses published by founders through CULO Village.'
+      const jsonLd = {
+        '@context': 'https://schema.org', '@type': 'CollectionPage', name: title, description,
+        url: `${SITE_ORIGIN}/library`,
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(title)}</h1>
+<p>${escapeHtml(description)}</p>
+${items.length > 0 ? `<ul>\n${items.map((i: any) => `<li><a href="/library/${escapeHtml(i.slug)}">${escapeHtml(i.title)}</a></li>`).join('\n')}\n</ul>` : ''}
+</article>`
+      const html = renderDocument({
+        title, description, path: '/library', ogType: 'website', jsonLd, bodyHtml, image: undefined,
+        noindex: items.length < MIN_LIBRARY_ITEMS,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }

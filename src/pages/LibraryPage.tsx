@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { usePageTitle } from '../utils/usePageTitle'
+import { usePageMeta } from '../utils/usePageMeta'
 import { Link } from 'react-router-dom'
 import { productTypeLabel, statusLabel } from '../data/library'
 import { getLibraryItems } from '../services/library'
@@ -27,14 +27,24 @@ const PRODUCT_TYPES: { value: ProductType | ''; label: string }[] = [
 
 // ─── Library Page ───────────────────────────────────────────────────────────────
 
-export function LibraryPage() {
-  usePageTitle('Library')
+// Mirrors MIN_SOURCE_PLATFORM_STORIES in the sitemap function — a page
+// this thin shouldn't outrank Stories (or get surfaced ahead of it) in
+// search/AI results, so it's asked not to be indexed until it has enough
+// real items on it.
+const MIN_INDEXABLE_ITEMS = 3
 
+export function LibraryPage() {
   const [query,       setQuery]       = useState('')
   const [productType, setProductType] = useState<ProductType | ''>('')
   const [status,      setStatus]      = useState<LibraryStatus | ''>('')
 
   const libraryItems = getLibraryItems()
+
+  usePageMeta({
+    title: 'Library',
+    description: 'Workbooks, guides, templates and courses published by founders through CULO Village.',
+    noindex: libraryItems.filter(i => i.status !== 'archived').length < MIN_INDEXABLE_ITEMS,
+  })
 
   const filtered = libraryItems.filter(item => {
     if (item.status === 'archived') return false
