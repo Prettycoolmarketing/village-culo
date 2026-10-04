@@ -295,7 +295,6 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
 }) {
   const [writingArticle, setWritingArticle] = useState(false)
   const [articleError, setArticleError] = useState<string | null>(null)
-  const autoTriggeredArticle = useRef(false)
 
   // Stage 2 (Writer) for this specific article — matched to the founder's
   // evidence ledger by imported_content_id first (set when Stage 1 was
@@ -326,11 +325,10 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
     }
   }
 
-  if (founder.evidenceLedger && !editorialItem && !writingArticle && !autoTriggeredArticle.current) {
-    autoTriggeredArticle.current = true
-    void handleWriteArticle()
-  }
-
+  // Deliberately no auto-trigger here — same lesson as BioDraftBlock above:
+  // opening this row/modal must never write into the real title/description
+  // on its own. "Write Culo article from research" below is the only way
+  // in.
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(item.title)
@@ -580,15 +578,17 @@ function ArticlesTab({ founder, tick, bump }: { founder: Founder; tick: number; 
 // Stage 2 (Writer) for the bio specifically — lives with the Bio field it
 // writes into, not with the research/audit control panel in Bulk Import.
 // Needs a completed evidence ledger to run (Stage 1, run from Bulk Import).
-// Auto-writes the moment research exists and nothing's been drafted yet —
-// so opening this modal after research already shows a written bio to
-// read, rather than one more manual click before there's anything to see.
+// Deliberately does NOT auto-write or auto-persist anything just from the
+// modal being opened (see git history for two rounds of that — both wrote
+// into the real bio field with zero clicks, the second time overwriting a
+// founder's own just-pasted bio the moment Edit was reopened on them).
+// Opening Edit must only ever show what's already there; writing from
+// research is exclusively the explicit button below.
 function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUseBio: (body: string) => void; onSaved: (f: Founder) => void }) {
   const [items, setItems] = useState<EditorialItemRow[]>([])
   const [loaded, setLoaded] = useState(false)
   const [writing, setWriting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const autoTriggered = useRef(false)
 
   if (!loaded) {
     void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
@@ -599,12 +599,10 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
   const bioItem = items.find(i => i.type === 'profile_bio')
 
   // Writes straight into the real founder record, not just this open
-  // modal's Bio textarea — the earlier version only updated local state,
-  // so the founder's real bio never changed until someone happened to
-  // press "Save changes" too, and the public/preview page kept showing
-  // the old bio indefinitely. This workflow trusts research + audit to be
-  // accurate, so the draft IS the bio the moment it's written. Founders/
-  // staff can still hand-edit the Bio field afterwards as normal.
+  // modal's Bio textarea — only ever called from the explicit button
+  // below, never automatically. Founders/staff can still hand-edit the
+  // Bio field afterwards as normal, and that edit is now safe: nothing
+  // here will silently overwrite it again.
   async function persistBio(body: string) {
     onUseBio(body)
     const next = { ...founder, bio: body }
@@ -619,20 +617,6 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
     if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
     setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
     if (result.item?.draft_content?.body) void persistBio(result.item.draft_content.body)
-  }
-
-  // Only auto-persists the very first time a bio gets written (inside
-  // handleWrite itself, from the auto-trigger below) — NOT on every modal
-  // open. A prior version also re-persisted bioItem here unconditionally
-  // whenever the modal loaded an already-existing draft, which silently
-  // overwrote the real bio with this old editorial-table draft every time
-  // staff reopened Edit, even after they'd since hand-edited the bio
-  // directly (that manual edit never touches this draft row, so it just
-  // sat there ready to clobber the next edit). "Rewrite from research"
-  // below is the only way to intentionally push a draft into the bio now.
-  if (ledger && !bioItem && !writing && !autoTriggered.current) {
-    autoTriggered.current = true
-    void handleWrite()
   }
 
   if (!ledger && !bioItem) return null
