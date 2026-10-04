@@ -622,7 +622,10 @@ export function VillageCuratedFoundersPage() {
                           about them. */}
                       {!f.userId && (!f.profileStatus || f.profileStatus === 'village-curated') && (
                         <button
-                          onClick={() => { founderClaimService.markCurated(f.id); refresh() }}
+                          onClick={() => void founderClaimService.markCurated(f.id).then(result => {
+                            if (!result.success) { alert(result.error ?? 'Could not update. Please try again.'); return }
+                            refresh()
+                          })}
                           className="text-[10px] text-[#9CA3AF] hover:text-[#C86A43] transition-colors"
                         >
                           {!f.profileStatus ? 'Set Curated' : 'Re-curate'}
@@ -641,7 +644,10 @@ export function VillageCuratedFoundersPage() {
                       )}
                       {f.profileStatus === 'claimed' && (
                         <button
-                          onClick={() => { founderClaimService.markVerified(f.id); refresh() }}
+                          onClick={() => void founderClaimService.markVerified(f.id).then(result => {
+                            if (!result.success) { alert(result.error ?? 'Could not update. Please try again.'); return }
+                            refresh()
+                          })}
                           className="text-[10px] text-[#C86A43] hover:underline"
                         >
                           Verify

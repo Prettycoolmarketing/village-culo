@@ -143,22 +143,28 @@ export const founderClaimService = {
     return result
   },
 
-  markVerified(founderId: string): void {
+  // Both return the write's own promise now — the caller's refresh() used
+  // to fire immediately after a bare void call, reading the cache before
+  // the network upsert actually landed (writeEntity only updates the local
+  // cache after its await resolves, see entityStore.ts), so the button
+  // visually did nothing until some unrelated refresh happened to catch it
+  // later. Await this before refreshing.
+  async markVerified(founderId: string): Promise<WriteResult> {
     const founder = getFounder(founderId)
-    if (founder) void updateFounder({ ...founder, profileStatus: 'verified' })
+    if (!founder) return { success: false, error: 'Founder not found' }
+    return updateFounder({ ...founder, profileStatus: 'verified' })
   },
 
-  markCurated(founderId: string, curatedBy = 'CULO Village'): void {
+  async markCurated(founderId: string, curatedBy = 'CULO Village'): Promise<WriteResult> {
     const founder = getFounder(founderId)
-    if (founder) {
-      void updateFounder({
-        ...founder,
-        profileStatus: 'village-curated',
-        curatedBy,
-        curatedAt: new Date().toISOString(),
-        isClaimable: true,
-      })
-    }
+    if (!founder) return { success: false, error: 'Founder not found' }
+    return updateFounder({
+      ...founder,
+      profileStatus: 'village-curated',
+      curatedBy,
+      curatedAt: new Date().toISOString(),
+      isClaimable: true,
+    })
   },
 }
 
