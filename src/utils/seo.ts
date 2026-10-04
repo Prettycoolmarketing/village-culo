@@ -20,8 +20,20 @@ export function deriveSeoTitle(title: string): string {
   return clean.length <= budget ? `${clean}${SITE_SUFFIX}` : `${truncateAtWord(clean, budget)}${SITE_SUFFIX}`
 }
 
-/** ~155 chars — prefers the human-written summary, falls back to the blog body. */
+// LinkedIn (and most other platforms) flags a meta description under 100
+// characters as too thin to show a real preview — a short, punchy summary
+// (the kind a founder is actively encouraged to write) was failing that
+// check on its own even though there's plenty more real content to draw
+// from. Pads a short summary out with the start of the blog body rather
+// than replacing it outright, so the founder's own wording still leads.
+const MIN_DESCRIPTION_LENGTH = 100
+
+/** ~155 chars — prefers the human-written summary, falls back to (or pads with) the blog body. */
 export function deriveSeoDescription(summary: string | undefined, blog: string | undefined): string {
-  const source = (summary && summary.trim().length > 0) ? summary : (blog ?? '')
-  return truncateAtWord(source, 155)
+  const cleanSummary = summary?.trim() ?? ''
+  const cleanBlog = blog?.trim() ?? ''
+  if (!cleanSummary) return truncateAtWord(cleanBlog, 155)
+  if (cleanSummary.length >= MIN_DESCRIPTION_LENGTH) return truncateAtWord(cleanSummary, 155)
+  const padding = cleanBlog && !cleanBlog.startsWith(cleanSummary) ? ` ${cleanBlog}` : ''
+  return truncateAtWord(`${cleanSummary}${padding}`, 155)
 }

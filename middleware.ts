@@ -50,6 +50,23 @@ function absUrl(src) {
   return `${SITE_ORIGIN}${src.startsWith('/') ? '' : '/'}${src}`
 }
 
+// LinkedIn (and most other platforms) flags a meta description under 100
+// characters as too thin for a real preview — a short, punchy Summary (the
+// kind a founder is actively encouraged to write) was failing that on its
+// own despite there being plenty more real content in the Blog to draw
+// from. Pads a short summary out with the blog body rather than replacing
+// it, so the founder's own wording still leads. Mirrors
+// src/utils/seo.ts's deriveSeoDescription — duplicated, not imported,
+// since this file can't reach into the React src tree.
+function padDescription(summary, blog) {
+  const cleanSummary = (summary || '').trim()
+  const cleanBlog = (blog || '').trim()
+  if (!cleanSummary) return cleanBlog
+  if (cleanSummary.length >= 100) return cleanSummary
+  const padding = cleanBlog && !cleanBlog.startsWith(cleanSummary) ? ` ${cleanBlog}` : ''
+  return `${cleanSummary}${padding}`
+}
+
 // Mirrors src/data/topics.ts (name + description only — `count` isn't
 // needed for a crawler snapshot). Topics aren't a Supabase table: they're
 // this curated list plus whatever slug/name a founder types onto their own
@@ -357,7 +374,7 @@ ${story.summary ? `<p>${escapeHtml(story.summary)}</p>` : ''}
 ${textToParagraphs(story.blog)}
 </article>`
       const html = renderDocument({
-        title: story.title, description: story.summary || story.blog, path: url.pathname,
+        title: story.title, description: padDescription(story.summary, story.blog), path: url.pathname,
         ogType: 'article', jsonLd, bodyHtml, image: story.coverImage || author?.avatar,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
