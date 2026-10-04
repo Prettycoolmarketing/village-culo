@@ -357,12 +357,12 @@ export function FounderProfilePage() {
   // several would reads as withholding when there's nothing else to see.
   // With just one, show it in full. 1 article: one wide, prominent card.
   // 2 or 3: an evenly-split row, each still bigger than the plain list
-  // treatment. 4+: back to a stacked single column — a grid stops reading
-  // as considered once it doesn't fill evenly.
+  // treatment. 4+: a proper wrapping 3-per-row grid, same column count
+  // every row rather than trailing off into a single stacked column.
   const importsLayoutClass =
     publicImports.length === 2 ? 'grid grid-cols-1 sm:grid-cols-2 gap-6' :
     publicImports.length === 3 ? 'grid grid-cols-1 sm:grid-cols-3 gap-6' :
-    'flex flex-col gap-4'
+    'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
   const importsCardSize = publicImports.length === 1 ? 'featured' : publicImports.length <= 3 ? 'large' : 'default'
   const importsSection = publicImports.length > 0 && (
     <section aria-labelledby="founder-imports-heading">

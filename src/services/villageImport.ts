@@ -1,7 +1,7 @@
 import { slugify } from '../utils/slugify'
 import { getFounderBySlug, getFounderByLinkedIn, getFounderByInstagram, normalizeLinkedInUrl, normalizeInstagramUrl, updateFounder } from './founders'
 import { getBusinessBySlug, updateBusiness } from './businesses'
-import { importedContentService, buildDraftImport } from './importedContent'
+import { importedContentService, buildDraftImport, detectPlatform, youtubeThumbnailUrl } from './importedContent'
 import { importedContentToInput, villageContentIntelligenceService } from './villageIntelligence'
 import { buildStoryFromImport, publishStoryCore } from './publishStory'
 import type { WriteResult } from '../lib/entityStore'
@@ -1012,6 +1012,13 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
             // must never silently revert it.
             title:      existingMatch ? draft.title : itemTitle,
             description: existingMatch ? draft.description : (c.description || generatedItemBody || draft.description),
+            // Re-derived from the URL every import, not just on first
+            // insert — an existing row saved before a URL-shape fix (or
+            // from before this ran at all) otherwise carries its missing
+            // thumbnail forward forever on every re-import, with nothing
+            // to self-heal it. Never clobbers a thumbnail that's already
+            // there (e.g. one staff set by hand).
+            thumbnailUrl: draft.thumbnailUrl ?? (detectPlatform(c.url) === 'youtube' ? youtubeThumbnailUrl(c.url) : undefined),
             businessId: contentBizId ?? (primaryBusinessId || undefined),
             status:     contentStatus,
             visibility: contentStatus === 'published' || contentStatus === 'featured' ? 'public' : 'private',
