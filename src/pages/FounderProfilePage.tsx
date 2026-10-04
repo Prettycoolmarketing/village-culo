@@ -1093,8 +1093,8 @@ export function FounderProfilePage() {
                             aria-label={`View ${related.name}'s profile`}
                           >
                             <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden bg-primary/10 ring-2 ring-border">
-                              {related.avatar ? (
-                                <img src={related.avatar} alt="" className="w-full h-full object-cover" loading="lazy" />
+                              {related.avatar && !related.avatar.includes('/placeholders/') ? (
+                                <img src={related.avatar} alt="" className="w-full h-full object-cover object-top" loading="lazy" />
                               ) : (
                                 <span className="flex items-center justify-center h-full text-primary font-heading text-sm font-semibold">
                                   {related.name[0]}

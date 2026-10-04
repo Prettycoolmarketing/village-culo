@@ -1090,6 +1090,26 @@ export function DashboardProfilePage() {
     setSaved(false)
   }
 
+  // A founder adding their own real photo for the first time is exactly the
+  // signal that their profile is no longer bare — auto-promotes them into
+  // Featured Founders (FoundersPage.tsx's featured:true row) instead of
+  // requiring a separate staff step to notice and flip it manually. Only
+  // fires on the empty/placeholder → real transition, never the reverse —
+  // removing a photo later shouldn't silently un-feature someone.
+  function handleAvatarChange(value: string) {
+    setDraft(prev => {
+      if (!prev) return prev
+      const hadRealAvatar = !!prev.avatar && !prev.avatar.includes('/placeholders/')
+      const hasRealAvatar = !!value && !value.includes('/placeholders/')
+      return {
+        ...prev,
+        avatar: value,
+        featured: !hadRealAvatar && hasRealAvatar ? true : prev.featured,
+      }
+    })
+    setSaved(false)
+  }
+
   // Single place that toggles a story's featured status — used by both the
   // "Featured stories" picker below and the per-story "Feature" button in
   // Content. Those used to write to two different, unrelated fields
@@ -1200,9 +1220,9 @@ export function DashboardProfilePage() {
           <Field label="Profile Photo" hint="Square, min 400×400px.">
             <MediaUpload
               value={draft.avatar.includes('/placeholders/') ? undefined : draft.avatar}
-              onChange={v => set('avatar', v)}
+              onChange={handleAvatarChange}
               label="Upload photo"
-              aspect="wide"
+              aspect="square"
               uploadOptions={{ founderId: draft.id, usageType: 'profile-photo' }}
             />
           </Field>
@@ -1338,7 +1358,7 @@ export function DashboardProfilePage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-8 pt-8 pb-5 shrink-0">
           <div className="flex items-center gap-4">
             {draft.avatar && draft.avatar !== '/placeholders/village-founder.svg' && (
-              <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover bg-[#F3EDE6]" />
+              <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover object-top bg-[#F3EDE6]" />
             )}
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-[#2D2A26]">{draft.name}</h1>

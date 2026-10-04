@@ -902,7 +902,7 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
         <div className="flex items-start justify-between gap-4 mb-5">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-11 h-11 rounded-full bg-[#F3EDE6] flex-shrink-0 flex items-center justify-center text-[#C86A43] text-sm font-bold overflow-hidden">
-              {current.avatar ? <img src={current.avatar} alt="" className="w-full h-full object-cover" /> : current.name[0]}
+              {current.avatar && !current.avatar.includes('/placeholders/') ? <img src={current.avatar} alt="" className="w-full h-full object-cover object-top" /> : current.name[0]}
             </div>
             <div className="min-w-0">
               <p className="text-lg font-bold text-[#2D2A26] truncate">{current.name}</p>
