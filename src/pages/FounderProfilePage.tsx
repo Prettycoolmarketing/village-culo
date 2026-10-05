@@ -351,7 +351,8 @@ export function FounderProfilePage() {
   // shape even once Publish has turned their articles into real Stories —
   // "Stories by X" reads as if they're here writing/publishing themselves,
   // which isn't true until they've actually claimed the profile.
-  const hasRealStories = !isUnclaimedCurated && getStories({ founderId: founder.id, publicOnly: true }).length > 0
+  const founderStoryCount = getStories({ founderId: founder.id, publicOnly: true }).length
+  const hasRealStories = !isUnclaimedCurated && founderStoryCount > 0
   const heroImage = founder.coverImage || (isUnclaimedCurated ? '/assets/culo-brand-cover.png' : undefined)
 
   // A single curated article often IS the entire page for a brand-new
@@ -369,7 +370,7 @@ export function FounderProfilePage() {
   const importsSection = publicImports.length > 0 && (
     <section aria-labelledby="founder-imports-heading">
       <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-        From Around the Web
+        Articles Written by CULO
       </h2>
       <div className={importsLayoutClass}>
         {publicImports.slice(0, 5).map(item => (
@@ -782,8 +783,15 @@ export function FounderProfilePage() {
                   sortBlogsFirst
                   hideKey="founder-profile"
                   limit={6}
-                  columns={2}
-                  cardVariant="vertical"
+                  // A single story squeezed into a half-width grid cell
+                  // reads as thin/unfinished — the same "one item gets the
+                  // wide, prominent treatment" rule the Imports section
+                  // below already applies (see importsCardSize) now
+                  // applies here too, so a founder with exactly one
+                  // published story (like Elle Kress) gets a real, full-
+                  // width card instead of a small thumbnail.
+                  columns={founderStoryCount === 1 ? 1 : 2}
+                  cardVariant={founderStoryCount === 1 ? 'horizontal' : 'vertical'}
                   showSummary
                   showFounder={false}
                   showTopics
