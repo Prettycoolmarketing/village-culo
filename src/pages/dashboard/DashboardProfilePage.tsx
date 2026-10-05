@@ -841,6 +841,16 @@ export function DashboardProfilePage() {
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
   const [publishedBulkBusy, setPublishedBulkBusy] = useState(false)
   const [readyBulkPublishing, setReadyBulkPublishing] = useState(false)
+  // Guards against the exact race that caused a published item to show up
+  // twice: the per-row status <select> had no disabled/busy state, so a
+  // second trigger on the same item (another click on the dropdown, or the
+  // bulk "Publish in the Village" button firing while a row's own publish
+  // was still in flight) could both read the item's still-stale
+  // relatedStoryId === undefined and each independently build and publish
+  // a separate Story for it. Tracks which item IDs currently have a
+  // publish in progress so a second trigger on the same item is ignored
+  // instead of racing.
+  const [publishingIds, setPublishingIds] = useState<Set<string>>(new Set())
   const [limitModal, setLimitModal] = useState<null | 'imported' | 'self'>(null)
   const [editingStoryId, setEditingStoryId] = useState<string | null>(() => searchParams.get('storyId'))
   const [editingImportedId, setEditingImportedId] = useState<string | null>(null)
@@ -1685,8 +1695,11 @@ export function DashboardProfilePage() {
               async function publishItems(items: ImportedContent[]) {
                 // Defence in depth — locked rows have no checkbox in the UI,
                 // but never trust that alone to keep a locked piece from
-                // being published without paying for it.
-                const publishable = items.filter(i => unlockedIds.has(i.id))
+                // being published without paying for it. Also skips
+                // anything already mid-publish via the per-row dropdown —
+                // same race this whole guard exists to close, the other
+                // direction (see handleRowStatusChange's publishingIds note).
+                const publishable = items.filter(i => unlockedIds.has(i.id) && !publishingIds.has(i.id))
                 if (publishable.length === 0) return
                 // `draft` is a local editable copy of the profile that only
                 // exists once its own useState/useEffect has resolved — on
@@ -1701,6 +1714,7 @@ export function DashboardProfilePage() {
                 if (!founderForPublish) { setSaveError('Your profile hasn\'t finished loading yet — try again in a moment.'); return }
                 setReadyBulkPublishing(true)
                 setSaveError(null)
+                setPublishingIds(prev => new Set([...prev, ...publishable.map(i => i.id)]))
                 for (const item of publishable) {
                   // A thrown exception here (a network hiccup, anything
                   // unexpected inside publishStoryCore) used to escape this
@@ -1720,6 +1734,11 @@ export function DashboardProfilePage() {
                 }
                 setReadyChecked(new Set())
                 setReadyBulkPublishing(false)
+                setPublishingIds(prev => {
+                  const next = new Set(prev)
+                  publishable.forEach(i => next.delete(i.id))
+                  return next
+                })
                 setImportedTick(t => t + 1)
               }
 
@@ -1730,6 +1749,14 @@ export function DashboardProfilePage() {
               // Story behind it, leaving nothing actually live anywhere on
               // the site despite the badge.
               async function handleRowStatusChange(item: ImportedContent, status: ImportedContentStatus) {
+                // A second trigger on this same item while the first is
+                // still in flight (double-click, or the bulk publish button
+                // firing on an overlapping selection) used to race past
+                // this point before relatedStoryId was set, each building
+                // and publishing its own separate Story — the duplicate
+                // "published twice" bug. Ignored outright rather than
+                // queued, since the in-flight call already covers it.
+                if (publishingIds.has(item.id)) return
                 if ((status === 'published' || status === 'featured') && !unlockedIds.has(item.id)) {
                   setSaveError('This piece is part of your locked archive — unlock it before publishing.')
                   return
@@ -1748,6 +1775,8 @@ export function DashboardProfilePage() {
                   setSaveError('Your profile hasn\'t finished loading yet — try again in a moment.')
                   return
                 }
+                setPublishingIds(prev => new Set(prev).add(item.id))
+                try {
                 if (item.relatedStoryId) {
                   const existing = getStory(item.relatedStoryId)
                   if (existing) await updateStory({ ...existing, status })
@@ -1764,6 +1793,9 @@ export function DashboardProfilePage() {
                   }
                 } else {
                   setSaveError('Give this a real title before publishing it.')
+                }
+                } finally {
+                  setPublishingIds(prev => { const next = new Set(prev); next.delete(item.id); return next })
                 }
                 setImportedTick(t => t + 1)
               }
@@ -2122,6 +2154,7 @@ export function DashboardProfilePage() {
                                 onAdvancedEdit={() => openInImported(item.id)}
                                 onDelete={() => handleReadyDelete(item.id)}
                                 onStatusChange={status => void handleRowStatusChange(item, status)}
+                                publishing={publishingIds.has(item.id)}
                               />
                             ))}
                           </div>

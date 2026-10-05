@@ -1515,6 +1515,7 @@ export function SavedRow({
   onAdvancedEdit,
   onDelete,
   onStatusChange,
+  publishing = false,
 }: {
   item: ImportedContent
   checked: boolean
@@ -1522,6 +1523,11 @@ export function SavedRow({
   onAdvancedEdit: () => void
   onDelete: () => void
   onStatusChange: (status: ImportedContentStatus) => void
+  // True while a publish triggered elsewhere (this row, or the bulk
+  // publish button) is still in flight for this item — see
+  // DashboardProfilePage's publishingIds guard. Disables the status
+  // control so a second trigger can't race the first.
+  publishing?: boolean
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const ready = isReadyToPublish(item)
@@ -1602,6 +1608,7 @@ export function SavedRow({
       })()}
       <select
         value={item.status}
+        disabled={publishing}
         onChange={e => {
           const next = e.target.value as ImportedContentStatus
           const goingLive = (next === 'published' || next === 'featured')
@@ -1609,7 +1616,7 @@ export function SavedRow({
           if (goingLive && !window.confirm('Publish this to the live Village site? It will be publicly visible immediately.')) return
           onStatusChange(next)
         }}
-        className={`text-sm font-medium px-4 py-2.5 rounded-lg border-0 focus:outline-none cursor-pointer shrink-0 ${statusColors[item.status]}`}
+        className={`text-sm font-medium px-4 py-2.5 rounded-lg border-0 focus:outline-none cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-wait ${statusColors[item.status]}`}
       >
         {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
