@@ -28,6 +28,8 @@ import { InnerContainer } from '../components/layout/PageContainer'
 import { AreYouThisFounderCTA, ClaimPitchBox, ClaimProfileBanner } from '../components/ui/ClaimProfileBanner'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { formatLocationFull } from '../utils/location'
+import { slugify } from '../utils/slugify'
+import { MIN_TOPIC_STORIES } from './TopicPage'
 
 // ─── Social icons ────────────────────────────────────────────────────────────────
 
@@ -399,14 +401,35 @@ export function FounderProfilePage() {
     .filter(shelf => shelf.episodes.length > 0)
 
   // ── Village Intelligence — aggregate across all content ───────────────────
+  // `locations` (cities/regions AI-extracted from content) used to render
+  // as plain chips here too — dropped entirely. These are incidental
+  // mentions anywhere in a founder's content (a client's city, a place
+  // they once visited), not where the founder is based, and nothing
+  // distinguished them from the founder's real, correct location shown in
+  // the hero above. A Griffith/Sydney founder whose content happened to
+  // mention London once ended up with a "London" badge on her own page —
+  // confusing at best, and actively wrong-looking at worst.
   const aggregatedIntel = founderIntelRecords.length > 0 ? {
     topics:    [...new Set(founderIntelRecords.flatMap(r => r.primaryTopics))].slice(0, 10),
-    locations: [...new Set(founderIntelRecords.flatMap(r => [...r.cities, ...r.regions]))].slice(0, 8),
     questions: [...new Set(founderIntelRecords.flatMap(r => [...r.searchQuestions, ...r.geoQuestions]))].slice(0, 6),
     lessons:   [...new Set(founderIntelRecords.flatMap(r => r.lessons))].slice(0, 4),
     relatedFounderIds:   [...new Set(founderIntelRecords.flatMap(r => r.relatedFounderIds))].filter(id => id !== founder.id).slice(0, 3),
     relatedBusinessIds:  [...new Set(founderIntelRecords.flatMap(r => r.relatedBusinessIds))].slice(0, 3),
   } : null
+
+  // A topic chip is only worth showing as a link once it's a real page
+  // worth landing on (TopicPage itself refuses to render below this many
+  // stories — see MIN_TOPIC_STORIES) — otherwise it's dead weight, same
+  // complaint as the locations chips above, just not as visibly wrong.
+  // Below threshold it still shows as plain text rather than disappearing,
+  // since the word itself ("technology", "business"...) is still a real,
+  // true signal about the founder even without a page behind it yet.
+  const publishedStories = getStories({ publicOnly: true })
+  function richTopicSlug(label: string): string | null {
+    const slug = slugify(label)
+    const count = publishedStories.filter(s => s.topics.some(t => t.slug === slug)).length
+    return count >= MIN_TOPIC_STORIES ? slug : null
+  }
 
   // Extracted so it can render in two different spots depending on
   // isUnclaimedCurated (see below) rather than being duplicated — an
@@ -414,37 +437,27 @@ export function FounderProfilePage() {
   // this rendering inside the normal 2/3+1/3 grid left it floating oddly
   // to the right of a near-empty main column; it belongs with the
   // full-width "From Around the Web" block instead for that case.
-  const exploreFurtherSection = aggregatedIntel && (aggregatedIntel.topics.length > 0 || aggregatedIntel.locations.length > 0) && (
+  const exploreFurtherSection = aggregatedIntel && aggregatedIntel.topics.length > 0 && (
     <section aria-labelledby="founder-explore-heading">
       <h2 id="founder-explore-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-        Explore Further
+        Topics Covered
       </h2>
 
-      {aggregatedIntel.topics.length > 0 && (
-        <div className="mb-4">
-          <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Topics covered</p>
-          <div className="flex flex-wrap gap-1.5">
-            {aggregatedIntel.topics.map(t => (
-              <span key={t} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary">
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {aggregatedIntel.locations.length > 0 && (
-        <div>
-          <p className="font-body text-[10px] font-medium text-muted uppercase tracking-wide mb-2">Locations</p>
-          <div className="flex flex-wrap gap-1.5">
-            {aggregatedIntel.locations.map(l => (
-              <span key={l} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-border text-charcoal/70">
-                {l}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-1.5">
+        {aggregatedIntel.topics.map(t => {
+          const slug = richTopicSlug(t)
+          return slug ? (
+            <Link key={t} to={`/topics/${slug}`}
+              className="font-body text-xs px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary hover:bg-secondary/20 transition-colors">
+              {t}
+            </Link>
+          ) : (
+            <span key={t} className="font-body text-xs px-2.5 py-0.5 rounded-full bg-secondary/10 text-secondary">
+              {t}
+            </span>
+          )
+        })}
+      </div>
     </section>
   )
 
