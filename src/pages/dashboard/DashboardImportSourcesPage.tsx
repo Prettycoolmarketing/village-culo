@@ -34,6 +34,11 @@ function ConnectForm({ founderId, onConnected }: { founderId: string; onConnecte
         : { feedUrl: value.trim() }
       const label = type === 'youtube' ? value.trim() : new URL(value.trim()).hostname
       const source = newConnectedSource(founderId, type, label, config)
+      // This page's copy ("Paste your blog's RSS feed URL") only ever
+      // invites a founder's own blog, unlike DashboardImportContentPage's
+      // "Been featured on someone else's blog?" flow — safe to default to
+      // self-authored here. See thirdPartyAuthored in connectedSources.ts.
+      if (type === 'website-rss') source.ownContent = true
       await connectedSourcesService.upsert(source)
       await scanSource(source)
       setValue('')

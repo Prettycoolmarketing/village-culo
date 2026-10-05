@@ -54,6 +54,12 @@ export interface ConnectedSource {
   // Manual pause (status stays 'idle'/'error' otherwise) — a paused source
   // is skipped by both manual "Scan now" and any future recurring sync.
   autoSyncPaused?: boolean
+  // Only meaningful for website-rss, set from WebsiteConnectForm's "This is
+  // my own blog" mode — a website-rss source defaults to third-party
+  // authorship otherwise (see draftFrom in connectedSources.ts and
+  // safeStoryBody in publishStory.ts), since the form's default framing is
+  // "featured on someone else's blog."
+  ownContent?: boolean
 }
 
 export interface ConnectedSourceFilter {

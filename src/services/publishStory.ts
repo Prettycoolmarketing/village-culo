@@ -210,6 +210,24 @@ export function fallbackSummary(text: string | undefined): string {
   return `${(lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim()}…`
 }
 
+// A raw-scraped third-party article body (website-rss "featured on someone
+// else's blog" imports — see thirdPartyAuthored on ImportedContent) must
+// never become a published Story's full body text unless it's actually
+// been through an AI rewrite first. Without this gate, a founder could
+// connect a journalist's blog, never touch "Rewrite with AI", and publish
+// that journalist's copyrighted article text verbatim to an indexable
+// public page under their own byline — exactly the risk a copyright audit
+// flagged in this codebase. Self-authored content (the founder's own
+// blog/YouTube/podcast/Instagram) is unaffected; this only clamps the one
+// risky case.
+function safeStoryBody(item: ImportedContent, fullDescription: string): string {
+  if (!item.thirdPartyAuthored || item.descriptionRewrittenAt) return fullDescription
+  const excerpt = fullDescription.slice(0, 280).trim()
+  const truncated = fullDescription.length > 280
+  const linkLine = item.originalUrl ? `\n\nRead the full piece at ${item.originalUrl}` : ''
+  return `${excerpt}${truncated ? '…' : ''}${linkLine}`
+}
+
 function uniqueSlug(base: string): string {
   const slug = base || `story-${Date.now()}`
   const existingSlugs = new Set(getStories().map(s => s.slug))
@@ -284,7 +302,7 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
   // transcript silently had no effect on the published story.
   const fullDescription = item.description || item.diaryNote || item.transcriptText
     || (contentType === 'blog' ? item.autoSummary : undefined) || ''
-  if (fullDescription) story.blog = normalizeBlogSpacing(fullDescription)
+  if (fullDescription) story.blog = normalizeBlogSpacing(safeStoryBody(item, fullDescription))
 
   // Independent checks (not else-if) — a multi-format item like a Canva
   // Reel+blog group needs both story.reelUrl AND story.blog set together.
@@ -385,7 +403,7 @@ export async function syncImportEditsToStory(item: ImportedContent): Promise<voi
     subtitle: item.subtitle || story.subtitle,
     summary: item.subtitle || item.autoSummary || story.summary || fallbackSummary(item.description),
     coverImage: item.thumbnailUrl || story.coverImage,
-    blog: fullDescription ? normalizeBlogSpacing(fullDescription) : story.blog,
+    blog: fullDescription ? normalizeBlogSpacing(safeStoryBody(item, fullDescription)) : story.blog,
     partnerId: item.partnerId ?? story.partnerId,
     ctaLabel: item.ctaLabel || (item.sourcePlatform === 'canva' ? '' : story.ctaLabel),
     ctaUrl: item.ctaUrl || (item.sourcePlatform === 'canva' ? '' : story.ctaUrl),

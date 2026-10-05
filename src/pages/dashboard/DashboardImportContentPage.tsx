@@ -31,6 +31,7 @@ import { connectedSourcesService, newConnectedSource, scanSource } from '../../s
 import { resolveChannelId } from '../../services/connectors/youtube'
 import { resolveEpisode, type ResolvedEpisode } from '../../services/episodeResolve'
 import { resolveWebsiteFeed, type WebsiteFeedCandidate } from '../../services/websiteResolve'
+import { importMentionArticle } from '../../services/mentionImport'
 import type {
   ImportedContent,
   ImportedContentStatus,
@@ -310,13 +311,24 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
 // ─── Connect your website ────────────────────────────────────────────────────
 
 function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
+  // Two different things were sharing one form: a founder's OWN blog
+  // (fine as a feed — it's their own writing, pulled in wholesale) and
+  // "I was featured on someone else's blog" (a single article, usually on
+  // a site the founder doesn't control and can't be expected to find an
+  // RSS feed for). The feed-discovery flow below only really works for
+  // the first case. "mention" mode is the real fix for the second: no
+  // feed needed, and the result is a CULO-written piece ABOUT the
+  // mention, never a copy of the source's own text — see mentionImport.ts.
+  const [mode, setMode] = useState<'blog' | 'mention'>('mention')
   const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [candidates, setCandidates] = useState<WebsiteFeedCandidate[]>([])
+  const [mentionDone, setMentionDone] = useState(false)
 
   async function connectWithFeedUrl(feedUrl: string, label: string) {
     const source = newConnectedSource(founderId, 'website-rss', label, { feedUrl })
+    source.ownContent = true
     if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
     await connectedSourcesService.upsert(source)
     await scanSource(source)
@@ -325,7 +337,7 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
     onConnected()
   }
 
-  async function handleConnect() {
+  async function handleConnectBlog() {
     if (!value.trim()) { setError('Paste a link first.'); return }
     setBusy(true)
     setError(null)
@@ -351,6 +363,25 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
     }
   }
 
+  async function handleImportMention() {
+    if (!value.trim()) { setError('Paste the article link first.'); return }
+    const founder = getFounder(founderId)
+    if (!founder) { setError('Could not find your founder profile.'); return }
+    setBusy(true)
+    setError(null)
+    setMentionDone(false)
+    try {
+      await importMentionArticle(founderId, founder.name, value.trim())
+      setValue('')
+      setMentionDone(true)
+      onConnected()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not import this article.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
       <div className="flex items-center gap-4 mb-2">
@@ -358,24 +389,44 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
         <p className="text-base font-semibold text-[#2D2A26]">Connect your blogs</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Been featured on someone else's blog? Connect the source and we'll structure it back to you.
+        Been featured on someone else's blog? Paste the article link and we'll write an original piece about
+        it, with a link back to the original.
       </p>
+      <div className="flex gap-1 mb-3 bg-[#F8F5F0] rounded-lg p-1 w-fit">
+        <button
+          onClick={() => { setMode('mention'); setError(null); setMentionDone(false) }}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${mode === 'mention' ? 'bg-white text-[#2D2A26] shadow-sm' : 'text-[#9CA3AF]'}`}
+        >
+          I was featured somewhere
+        </button>
+        <button
+          onClick={() => { setMode('blog'); setError(null); setCandidates([]) }}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${mode === 'blog' ? 'bg-white text-[#2D2A26] shadow-sm' : 'text-[#9CA3AF]'}`}
+        >
+          This is my own blog
+        </button>
+      </div>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
           value={value}
           onChange={e => setValue(e.target.value)}
-          placeholder="Paste your website URL"
+          placeholder={mode === 'mention' ? 'Paste the direct article URL' : 'Paste your website URL'}
           className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <button
-          onClick={() => void handleConnect()}
+          onClick={() => void (mode === 'mention' ? handleImportMention() : handleConnectBlog())}
           className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] transition-colors shrink-0"
         >
-          {busy ? 'Connecting…' : 'Connect website'}
+          {busy ? (mode === 'mention' ? 'Writing…' : 'Connecting…') : (mode === 'mention' ? 'Write this up' : 'Connect website')}
         </button>
       </div>
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+      {mentionDone && (
+        <p className="text-xs text-[#5E6B4A] font-medium mt-2">
+          Added as a draft below — review it, then publish whenever you're ready.
+        </p>
+      )}
       {candidates.length > 0 && (
         <div className="mt-3 space-y-1.5">
           <p className="text-xs text-[#9CA3AF]">Found {candidates.length} feeds on that site — which one?</p>
@@ -930,6 +981,11 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     }
     setBlogBeforeRewrite(draft.description ?? '')
     field('description', normalizeBlogSpacing(result.blog.blog))
+    // Marks this description as AI-written rather than raw source text —
+    // see safeStoryBody in publishStory.ts, which won't let a
+    // thirdPartyAuthored item's raw scraped text become a published
+    // Story's body, but does allow it once it's actually been rewritten.
+    field('descriptionRewrittenAt', new Date().toISOString())
     // The AI's own subtitle is a genuine short summary distinct from the
     // full blog — without saving it too, Summary later falls back to
     // dumping the entire blog text in as "the summary" (see
@@ -940,6 +996,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
   function handleUndoRewrite() {
     if (blogBeforeRewrite === null) return
     field('description', blogBeforeRewrite)
+    field('descriptionRewrittenAt', undefined)
     setBlogBeforeRewrite(null)
   }
 
@@ -1002,6 +1059,9 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       // of being thrown away — the new headline takes its spot in Title.
       subtitle: preservedOriginalTitle ?? draft.subtitle,
       description: normalizeBlogSpacing(result.article),
+      // See handleRewriteBlog's identical marker and safeStoryBody in
+      // publishStory.ts.
+      descriptionRewrittenAt: new Date().toISOString(),
       topics: resultTopics.length > 0 ? Array.from(new Set([...draft.topics, ...resultTopics])) : draft.topics,
     })
     if (resultTopics.length > 0) {

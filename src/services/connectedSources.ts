@@ -107,10 +107,17 @@ function itemKeys(item: NormalizedImportItem): string[] {
   return keys
 }
 
-function draftFrom(founderId: string, sourceId: string, platform: ImportedContent['sourcePlatform'], item: NormalizedImportItem): ImportedContent {
+function draftFrom(founderId: string, sourceId: string, platform: ImportedContent['sourcePlatform'], item: NormalizedImportItem, ownContent?: boolean): ImportedContent {
   return {
     id: crypto.randomUUID(),
     founderId,
+    // website-rss is the one connector type that doesn't imply the
+    // founder's own voice — WebsiteConnectForm's whole framing is "Been
+    // featured on someone else's blog?", so unlike a founder's own
+    // YouTube/podcast/Instagram, this defaults to third-party authorship
+    // unless the founder explicitly connected it as their own blog. See
+    // safeStoryBody in publishStory.ts for what this actually gates.
+    thirdPartyAuthored: platform === 'website' && !ownContent ? true : undefined,
     sourcePlatform: platform,
     originalUrl: item.originalUrl,
     embedUrl: item.embedUrl,
@@ -162,7 +169,7 @@ export async function scanSource(source: ConnectedSource): Promise<ScanResult> {
     const platform = PLATFORM_BY_SOURCE_TYPE[source.sourceType]
     const unseen = items.filter(item => !itemKeys(item).some(k => seen.has(k)))
     const toImport = unseen.slice(0, remainingToday)
-    const drafts = toImport.map(item => draftFrom(source.founderId, source.id, platform, item))
+    const drafts = toImport.map(item => draftFrom(source.founderId, source.id, platform, item, source.ownContent))
 
     await Promise.all(drafts.map(d => importedContentService.upsert(d)))
     // Village does the work first — analyse every connector-discovered draft

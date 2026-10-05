@@ -35,6 +35,22 @@ export interface ImportedContent {
   locations: string[]
   originalAuthor?: string
   canonicalUrl?: string
+
+  // Set true for content someone ELSE wrote (a journalist's piece, another
+  // blog's feature) rather than the founder's own writing — defaults to
+  // true for anything connected through WebsiteConnectForm's "Connect your
+  // blogs / Been featured on someone else's blog?" flow (see
+  // connectedSources.ts), since that form's whole framing assumes
+  // third-party authorship unless the founder says otherwise. Gates
+  // publishStory.ts from putting the raw scraped description straight into
+  // a published Story's body — see descriptionRewrittenAt below.
+  thirdPartyAuthored?: boolean
+  // Set whenever `description` has actually passed through an AI rewrite
+  // (Rewrite with AI / Rewrite as a Culo Article / the mention_article
+  // Writer) rather than being raw feed/scrape text. A thirdPartyAuthored
+  // item without this can't become a published Story's full body — see
+  // publishStory.ts's fullDescription gate.
+  descriptionRewrittenAt?: string
   visibility: ImportedContentVisibility
 
   // Set once this import has been turned into a published Story via the Story

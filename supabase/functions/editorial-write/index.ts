@@ -41,17 +41,34 @@ interface SourceAssessment {
   source_date?: string
 }
 
+interface MentionSource {
+  url: string
+  title: string
+  siteName: string
+  excerpt: string
+}
+
 interface RequestBody {
-  type: 'profile_bio' | 'source_article'
+  type: 'profile_bio' | 'source_article' | 'mention_article'
   founderName: string
   // First-name style after first reference — a founder's own stated
   // preference (confirmed directly this session), not a default choice.
   firstName: string
-  claims: EvidenceClaim[]
+  // Required for profile_bio/source_article (the curated Bulk Import
+  // pipeline, built on a full Stage-1 Evidence Ledger). mention_article
+  // skips the ledger entirely — see below.
+  claims?: EvidenceClaim[]
   // Only for type = 'source_article' — which specific source this piece is
   // about. The writer still sees every claim for context, but the article
   // must centre on this source, not retell the whole profile.
   targetSource?: SourceAssessment
+  // Only for type = 'mention_article' — the founder-facing "I was featured
+  // on someone else's blog" self-service path (see resolve-article and
+  // WebsiteConnectForm's single-article mode). No Evidence Ledger exists
+  // for this path — just one scraped excerpt from one page — so this is a
+  // deliberately lighter version of source_article: write from this one
+  // excerpt alone, never copying its sentences.
+  mentionSource?: MentionSource
 }
 
 const SHARED_RULES = `You are the Culo Journalist, the writing stage of Culo's editorial engine for The Culo Village.
@@ -109,23 +126,50 @@ If a claim used in this article is "attributed_statement," keep it attributed th
   "claim_ids_used": ["the exact claim strings from the ledger that this article actually drew on, for the Auditor's own reference"]
 }`
 
+const MENTION_ARTICLE_PROMPT = `${SHARED_RULES}
+
+TASK: the founder was featured or mentioned on someone else's website — not their own content. You're given ONE excerpt from that page (title, site name, URL, excerpt), not an Evidence Ledger. Write one real, original piece (roughly 150-300 words, 2-4 paragraphs) in your own words about this appearance — what the piece is, what it covers, why it's worth noting. This is reporting ABOUT the mention for {firstName}'s own Village page, not a copy or close paraphrase of the source.
+
+HARD RULE — do not copy: never reuse a run of more than about 5 consecutive words from the excerpt. Describe what it says; do not quote it except for one short (under 10 word) direct quote if something is genuinely worth quoting exactly, clearly marked as a quote. If the excerpt doesn't give you enough to say something substantive and specific, write a shorter, honest piece rather than padding with generic phrases — never invent detail the excerpt doesn't support.
+
+Credit the source by name naturally in the piece (e.g. "In a piece on {siteName}..." / "{siteName} featured...") — the reader will also see a direct link back to the original separately, so you don't need to restate the URL.
+
+{
+  "title": "a real, specific 5-12 word title for this piece",
+  "body": "the piece, 2-4 paragraphs separated by \\n\\n, first reference full name then first name throughout"
+}`
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
 
   try {
     const body = await req.json() as RequestBody
-    if (!body?.founderName || !body?.claims?.length) throw new Error('founderName and claims are required')
+    if (!body?.founderName) throw new Error('founderName is required')
+    if (body.type === 'mention_article') {
+      if (!body.mentionSource?.excerpt) throw new Error('mentionSource is required for mention_article')
+    } else if (!body.claims?.length) {
+      throw new Error('claims are required')
+    }
     if (body.type === 'source_article' && !body.targetSource) throw new Error('targetSource is required for source_article')
 
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!apiKey) throw new Error('Editorial writing is not configured yet')
 
-    const systemPrompt = (body.type === 'profile_bio' ? PROFILE_BIO_PROMPT : SOURCE_ARTICLE_PROMPT)
-      .replace(/\{firstName\}/g, body.firstName)
+    const systemPrompt = (
+      body.type === 'profile_bio' ? PROFILE_BIO_PROMPT
+      : body.type === 'mention_article' ? MENTION_ARTICLE_PROMPT
+      : SOURCE_ARTICLE_PROMPT
+    ).replace(/\{firstName\}/g, body.firstName)
 
-    const ledgerText = JSON.stringify(body.claims, null, 2)
-    const targetSourceText = body.targetSource ? `\n\nTARGET SOURCE FOR THIS ARTICLE:\n${JSON.stringify(body.targetSource, null, 2)}` : ''
-    const userText = `Founder: ${body.founderName}\n\nEVIDENCE LEDGER (only source of fact — never invent beyond this):\n${ledgerText}${targetSourceText}`
+    let userText: string
+    if (body.type === 'mention_article') {
+      const m = body.mentionSource!
+      userText = `Founder: ${body.founderName}\n\nSOURCE PAGE (an excerpt — this is everything known about the mention; write from this alone, never copy its sentences):\nSite: ${m.siteName}\nURL: ${m.url}\nPage title: ${m.title}\nExcerpt:\n${m.excerpt}`
+    } else {
+      const ledgerText = JSON.stringify(body.claims, null, 2)
+      const targetSourceText = body.targetSource ? `\n\nTARGET SOURCE FOR THIS ARTICLE:\n${JSON.stringify(body.targetSource, null, 2)}` : ''
+      userText = `Founder: ${body.founderName}\n\nEVIDENCE LEDGER (only source of fact — never invent beyond this):\n${ledgerText}${targetSourceText}`
+    }
 
     const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 529])
     async function callAnthropic(): Promise<Response> {
