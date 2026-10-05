@@ -683,7 +683,7 @@ export function FounderProfilePage() {
                   initialClassName="inline-flex items-center gap-2 px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 />
               ) : (
-                <CreateWithCuloCTA variant="button" size="lg" label="Continue your story with CULO Creatives exclusively in Canva" />
+                <CreateWithCuloCTA variant="button" size="lg" label="Publish your content in The Culo Village" />
               )}
             </div>
 
