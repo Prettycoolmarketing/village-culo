@@ -79,6 +79,13 @@ function isRealMember(f: ReturnType<typeof getFounders>[number]) {
 function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
   const sorted = [...getFounders()]
     .filter(f => (curatedOnly ? !isRealMember(f) : isRealMember(f)))
+    // Curated founders include ones still mid-research/draft, never
+    // actually live on the public site — this list is meant for outreach
+    // to real, visible profiles, not a staff worklist of everything in
+    // progress. Only applies to the Curated tab; real /join members are
+    // always live the moment they sign up, so this filter would be a
+    // no-op there anyway.
+    .filter(f => !curatedOnly || f.status === 'published' || f.status === 'featured')
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   function handleExport() {
