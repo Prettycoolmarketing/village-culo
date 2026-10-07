@@ -169,8 +169,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // can send them to sign in / reset instead of "check your email".
     const alreadyRegistered = !error && !data.session && Array.isArray(data.user?.identities) && data.user!.identities!.length === 0
     const rawMsg = error?.message?.trim()
+    // This used to say "If you already have one, sign in instead" — wrong
+    // and misleading for this branch specifically. alreadyRegistered above
+    // is the ONLY reliable signal Supabase gives for "this email already
+    // has an account" (confirmed directly: a real new signup attempt for a
+    // brand-new email hit this exact branch and showed that text, which
+    // sent someone looking for an account that never existed). An opaque/
+    // malformed error here just means the signup call failed for some
+    // other real reason we can't see — never assume which.
     const friendly = rawMsg && (rawMsg === '{}' || rawMsg.startsWith('{') || /non-2xx/i.test(rawMsg))
-      ? 'Something went wrong creating your account. If you already have one, sign in instead.'
+      ? 'Something went wrong creating your account. Please try again in a moment — if it keeps happening, contact support.'
       : rawMsg ?? null
     return {
       error:              friendly,

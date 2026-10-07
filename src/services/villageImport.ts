@@ -1075,6 +1075,28 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
         }
       }
 
+      // sourceLinks (LinkedIn profile, company "about" page, etc.) used to
+      // only ever end up as plain text inside claimNotes (see
+      // buildSupplementaryNotes) — never real ImportedContent rows. That
+      // meant runFounderResearch's `sources` array (built from
+      // importedContentService.getAll({ founderId })) was empty for any
+      // curated founder whose JSON gave sourceLinks but no `content` array
+      // — the Researcher had to blindly re-discover from web search alone
+      // everything the curator had already found and verified, often
+      // finding less. Created as drafts here, same as `content` items,
+      // purely so research has real URLs to read — never auto-published,
+      // never shown as "articles" anywhere a founder/visitor would see them
+      // unless staff deliberately publishes one later.
+      if (f.sourceLinks && f.sourceLinks.length > 0) {
+        const existingUrls = new Set(importedContentService.getAll({ founderId }).map(c => c.originalUrl))
+        for (const link of f.sourceLinks) {
+          if (!link || !isValidUrl(link) || existingUrls.has(link)) continue
+          const draft = buildDraftImport(founderId, link)
+          draft.title = `${displayName} — source`
+          await writeWithRetry(() => importedContentService.upsert(draft))
+        }
+      }
+
       created.push({ id: founderId, name: displayName, slug: resolvedSlug })
     } catch (err) {
       errors.push({

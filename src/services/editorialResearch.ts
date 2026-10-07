@@ -43,6 +43,14 @@ export async function runFounderResearch(founderId: string): Promise<ResearchRes
     business ? `Runs ${business.name}${business.description ? ` (${business.description})` : ''}` : undefined,
     founder.industry?.name ? `Industry: ${founder.industry.name}` : undefined,
     founder.location?.name ? `Based in ${founder.location.name}, ${founder.location.state}` : undefined,
+    // A village-curated founder's real original bio, key facts and other
+    // pre-compiled detail lives here (see buildSupplementaryNotes in
+    // villageImport.ts) — founder.bio itself is only ever the short
+    // CULO-voiced template, not what the curator actually gathered. Without
+    // this, the Researcher started from almost nothing for a curated
+    // founder and had to rediscover from web search alone everything
+    // already handed to it at import time, often finding less.
+    founder.claimNotes?.trim() ? `Curator-provided background: ${founder.claimNotes.trim()}` : undefined,
   ].filter(Boolean).join('. ')
 
   await updateFounder({ ...founder, researchStatus: 'researching', researchRequestedAt: new Date().toISOString() })
