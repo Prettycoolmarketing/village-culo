@@ -4,7 +4,7 @@ import { slugify } from '../../utils/slugify'
 import { getFounders, updateFounder } from '../../services/founders'
 import { getBusinesses, getBusinessBySlug, updateBusiness } from '../../services/businesses'
 import { buildStoryFromImport, publishStoryCore } from '../../services/publishStory'
-import { runFounderResearch } from '../../services/editorialResearch'
+import { runFullEditorialPipeline } from '../../services/editorialPipeline'
 import {
   importedContentService,
   buildDraftImport,
@@ -337,12 +337,13 @@ export function DashboardCuratedFounderBuilderPage() {
       }
     }
 
-    // Fire-and-forget, same as Bulk Import's auto-research — a single
-    // curated founder created here used to need a staff member to
-    // separately open Edit and press "Research this founder" by hand
-    // afterward. Not awaited: research can take a while, and the
-    // completion screen (step 3) shouldn't sit blocked on it.
-    void runFounderResearch(founderId)
+    // Fire-and-forget, same as Bulk Import's fully-automated pipeline — a
+    // single curated founder created here used to need a staff member to
+    // separately open Edit and manually run research, then the bio
+    // write, then audit it, by hand. Not awaited: this can take a while
+    // (research + bio + one article per valid source, each audited), and
+    // the completion screen (step 3) shouldn't sit blocked on it.
+    void runFullEditorialPipeline(founderId)
 
     setResult({ founderId, founderSlug: slug.trim(), founderName: name.trim(), importCount, intelCount })
     setSaving(false)

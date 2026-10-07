@@ -303,6 +303,17 @@ export function DashboardBulkImportPage() {
       setResult(res)
       setSelectedForPipeline(new Set(res.created.map(f => f.id)))
       setStep(3)
+      // Was a separate manual "Run selected" press every time, even with
+      // Step 2's "create editorial content" checkbox already on — fully
+      // automated now: research/write/audit kicks off the moment import
+      // finishes, so a founder's ready to review by the time anyone opens
+      // Curated Founders, not sitting there blank waiting for someone to
+      // remember to press Run. Still gated on that same checkbox (real
+      // metered API spend), just no longer needs a second confirmation
+      // click on top of it.
+      if (createEditorialContent && res.created.length > 0) {
+        void handleRunEditorialPipeline(res.created.map(f => f.id), res.created)
+      }
     } catch (err) {
       setImportError(err instanceof Error ? err.message : 'Import failed. Please try again.')
     } finally {
@@ -323,9 +334,16 @@ export function DashboardBulkImportPage() {
   // the "run selected" button and each row's individual "Run" button.
   // Nothing here publishes anything; Approve is still a separate step
   // (either per item, or "Confirm all" once the run below finishes).
-  async function handleRunEditorialPipeline(targetIds: string[]) {
-    if (!result) return
-    const targets = result.created.filter(f => targetIds.includes(f.id))
+  // sourceFounders lets handleImport kick this off with the just-returned
+  // import result directly — calling this right after setResult() would
+  // otherwise read `result` from a stale closure (React hasn't applied
+  // that state update yet), silently no-op on the `if (!result) return`
+  // guard below, and the "automated, no separate click" behaviour would
+  // quietly do nothing on the very first import of a session.
+  async function handleRunEditorialPipeline(targetIds: string[], sourceFounders?: VIFImportResult['created']) {
+    const source = sourceFounders ?? result?.created
+    if (!source) return
+    const targets = source.filter(f => targetIds.includes(f.id))
     setPipelineRunning(true)
     setPipelineDone(false)
     setPipelineProgress({ done: 0, total: targets.length, note: '' })
