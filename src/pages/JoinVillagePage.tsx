@@ -165,12 +165,12 @@ export function JoinVillagePage() {
                 Join The Culo Village
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
-                Access Culo Creatives<br />
-                Exclusively In Canva
+                Raw Footage And Content<br />
+                Spread Across Platforms?
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
-                Turn the content you've already created into a discoverable body of work in The Culo Village, then
-                use Culo Creatives inside Canva to turn your messy thoughts and raw footage into structured social
+                The Culo Village brings what you've already created together into one discoverable body of work,
+                then Culo Creatives inside Canva turns your messy thoughts and raw footage into structured social
                 media content.
               </p>
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
