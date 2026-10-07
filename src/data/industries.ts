@@ -46,6 +46,7 @@ export const industries: Industry[] = [
   { id: 'home-services',    slug: 'home-services',    name: 'Home Services & Trades' },
   { id: 'logistics',        slug: 'logistics',        name: 'Logistics & Transport' },
   { id: 'sustainability',   slug: 'sustainability',   name: 'Sustainability & Environment' },
+  { id: 'entrepreneurship', slug: 'entrepreneurship', name: 'Entrepreneurship' },
 ]
 
 export const getIndustry = (id: string) => industries.find(i => i.id === id)
