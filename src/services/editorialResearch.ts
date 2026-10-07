@@ -55,44 +55,59 @@ export async function runFounderResearch(founderId: string): Promise<ResearchRes
 
   await updateFounder({ ...founder, researchStatus: 'researching', researchRequestedAt: new Date().toISOString() })
 
-  const { data, error } = await supabase.functions.invoke<{ ledger?: EvidenceLedger; error?: string }>(
-    'editorial-research',
-    {
-      body: {
-        founderId,
-        founderName: founder.name,
-        existingBio: founder.bio,
-        identityHints: identityHints || undefined,
-        sources,
+  // Everything from here on is wrapped — researchStatus was just set to
+  // 'researching' above, and that's a DB write, not local state. If the
+  // invoke call below throws instead of returning a clean {error} (which
+  // happens when the request gets aborted — closing the tab or navigating
+  // away mid-research, a real thing staff do while a run takes a while),
+  // nothing without this catch would ever reset it. The founder was left
+  // permanently stuck showing "Researching…" with the button disabled on
+  // every future page load, for anyone who'd ever navigated away mid-run —
+  // this is "the research button isn't working," confirmed.
+  try {
+    const { data, error } = await supabase.functions.invoke<{ ledger?: EvidenceLedger; error?: string }>(
+      'editorial-research',
+      {
+        body: {
+          founderId,
+          founderName: founder.name,
+          existingBio: founder.bio,
+          identityHints: identityHints || undefined,
+          sources,
+        },
       },
-    },
-  )
+    )
 
-  if (error || data?.error || !data?.ledger) {
-    const message = data?.error || (error instanceof Error ? error.message : 'Research failed.')
+    if (error || data?.error || !data?.ledger) {
+      const message = data?.error || (error instanceof Error ? error.message : 'Research failed.')
+      await updateFounder({ ...founder, researchStatus: 'failed' })
+      return { success: false, error: message }
+    }
+
+    // Only ever fills in a platform the founder doesn't already have a
+    // value for — never overwrites something already there, whether
+    // that's a real claimed founder's own entry or an earlier research
+    // run's own find.
+    const verified = data.ledger.verified_profiles
+    const profileFields = {
+      linkedin: founder.linkedin || verified?.linkedin,
+      instagram: founder.instagram || verified?.instagram,
+      youtube: founder.youtube || verified?.youtube,
+      tiktok: founder.tiktok || verified?.tiktok,
+      podcast: founder.podcast || verified?.podcast,
+    }
+
+    await updateFounder({
+      ...founder,
+      ...profileFields,
+      researchStatus: 'done',
+      researchCompletedAt: new Date().toISOString(),
+      evidenceLedger: data.ledger,
+    })
+
+    return { success: true, ledger: data.ledger }
+  } catch (err) {
     await updateFounder({ ...founder, researchStatus: 'failed' })
-    return { success: false, error: message }
+    return { success: false, error: err instanceof Error ? err.message : 'Research failed.' }
   }
-
-  // Only ever fills in a platform the founder doesn't already have a value
-  // for — never overwrites something already there, whether that's a real
-  // claimed founder's own entry or an earlier research run's own find.
-  const verified = data.ledger.verified_profiles
-  const profileFields = {
-    linkedin: founder.linkedin || verified?.linkedin,
-    instagram: founder.instagram || verified?.instagram,
-    youtube: founder.youtube || verified?.youtube,
-    tiktok: founder.tiktok || verified?.tiktok,
-    podcast: founder.podcast || verified?.podcast,
-  }
-
-  await updateFounder({
-    ...founder,
-    ...profileFields,
-    researchStatus: 'done',
-    researchCompletedAt: new Date().toISOString(),
-    evidenceLedger: data.ledger,
-  })
-
-  return { success: true, ledger: data.ledger }
 }
