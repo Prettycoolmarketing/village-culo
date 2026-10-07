@@ -110,8 +110,7 @@ export function ClaimPitchBox({ founder }: { founder: Founder }) {
         Is this your profile?
       </p>
       <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-5 leading-tight max-w-xl mx-auto">
-        Publish your previously posted content across platforms as individual web articles for AI discovery
-        instantly, thanks to CULO.
+        Structure your content into web articles
       </h2>
       <p className="font-body text-base text-white/70 leading-relaxed mb-8 max-w-xl mx-auto">
         Your first 10 articles are on us! Optional upgrade to edit your raw footage with Culo Creatives in Canva!

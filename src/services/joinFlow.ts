@@ -121,14 +121,33 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
   if (!result.success) return null
   void linkOwnFounder(founderId)
 
-  // Sequence A = Village joiners, Sequence B = Canva Creatives joiners.
-  // Fire-and-forget — a nurture enrollment failing must never block signup.
-  // Safe even before either sequence has content: it just enrolls now, and
-  // the daily sender picks everyone up automatically once steps exist.
+  // Sequence A = every Village joiner, general welcome nurture — fine to
+  // start the moment someone signs up, regardless of source. Fire-and-
+  // forget: a nurture enrollment failing must never block signup. Safe
+  // even before the sequence has content: it just enrolls now, and the
+  // daily sender picks everyone up automatically once steps exist.
+  //
+  // Sequence B = Culo Creatives nurture — used to also enroll here
+  // whenever source === 'canva', meaning just landing via a Canva-tagged
+  // join link (no payment at all) triggered "you upgraded to Creatives"
+  // emails. Confirmed bug: a founder who never paid got a Creatives email
+  // anyway. stripe-creatives-webhook's checkout.session.completed already
+  // enrolls in Sequence B correctly, gated on a REAL completed Stripe
+  // checkout — but since enrollment is idempotent per sequence+email, this
+  // premature signup-time enrollment was winning the race and silently
+  // turning that later, correct enrollment into a no-op. Only the
+  // stripeSeed case (JoinCanvaPaidPage — payment genuinely already
+  // happened via Stripe before this account existed) enrolls in B here;
+  // every other canva-sourced signup waits for the webhook.
   if (isSupabaseConfigured && supabase) {
     void supabase.functions.invoke('enroll-email-sequence', {
-      body: { sequenceId: source === 'canva' ? 'B' : 'A', email, name: founder.name, source },
+      body: { sequenceId: 'A', email, name: founder.name, source },
     }).catch(() => { /* best-effort */ })
+    if (stripeSeed) {
+      void supabase.functions.invoke('enroll-email-sequence', {
+        body: { sequenceId: 'B', email, name: founder.name, source: 'canva-paid' },
+      }).catch(() => { /* best-effort */ })
+    }
   }
 
   return founderId

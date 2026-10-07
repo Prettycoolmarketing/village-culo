@@ -1,13 +1,19 @@
 // CULO Village — send-sequence-emails Edge Function
 //
 // Cron-invoked once a day (see migration 030). For every active enrollment,
-// works out how many days have passed since it started and sends any step
-// whose day has arrived and hasn't been sent yet. An enrollment moves to
-// 'completed' once every step in its sequence has gone out. Every send goes
-// through the same branded layout + real unsubscribe link as send-campaign
-// (034_email_unsubscribes) — an unsubscribed address is skipped entirely
-// rather than just not clicking a link that didn't exist. Deliberately
-// simple otherwise: no batching/backoff.
+// works out how many days have passed since it started and sends the single
+// NEXT unsent step whose day has arrived — never every due step at once.
+// That matters whenever an enrollment is already several days old by the
+// time this first picks it up (the cron wasn't running yet, or ran late) —
+// sending every backlogged step in one run dumps a whole sequence on
+// someone in one sitting instead of the drip it's meant to be. One step per
+// enrollment per run naturally paces it back out, a day at a time, same as
+// if the cron had been running on schedule the whole time. An enrollment
+// moves to 'completed' once every step in its sequence has gone out. Every
+// send goes through the same branded layout + real unsubscribe link as
+// send-campaign (034_email_unsubscribes) — an unsubscribed address is
+// skipped entirely rather than just not clicking a link that didn't exist.
+// Deliberately simple otherwise: no batching/backoff.
 //
 // Deploy: supabase functions deploy send-sequence-emails --no-verify-jwt
 
@@ -60,14 +66,16 @@ serve(async (req) => {
       const daysElapsed = Math.floor((Date.now() - new Date(enrollment.startedAt).getTime()) / MS_PER_DAY)
       const sentDays = new Set(enrollment.sentDays ?? [])
       const dueSteps = sequence.steps.filter(s => s.day <= daysElapsed && !sentDays.has(s.day)).sort((a, b) => a.day - b.day)
+      // Only the earliest due-and-unsent step — see the file header note.
+      const nextStep = dueSteps[0]
 
-      for (const step of dueSteps) {
+      if (nextStep) {
         const unsubscribeUrl = `${SUPABASE_URL}/functions/v1/unsubscribe-email?email=${encodeURIComponent(enrollment.email)}`
-        const branded = emailLayout('The Culo Village: Brisbane, Australia', step.bodyHtml, unsubscribeUrl)
+        const branded = emailLayout('The Culo Village: Brisbane, Australia', nextStep.bodyHtml, unsubscribeUrl)
         // EMAIL_FROM is a noreply address with no monitored inbox — reply_to
         // gives recipients a real address to write back to instead of a bounce.
-        const result = await sendEmail(enrollment.email, step.subject, branded, 'connect@culovillage.com')
-        if (result.ok) { sentDays.add(step.day); sent++ }
+        const result = await sendEmail(enrollment.email, nextStep.subject, branded, 'connect@culovillage.com')
+        if (result.ok) { sentDays.add(nextStep.day); sent++ }
       }
 
       const allSent = sequence.steps.every(s => sentDays.has(s.day))
