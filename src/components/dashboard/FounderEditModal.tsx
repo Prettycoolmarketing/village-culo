@@ -528,7 +528,7 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
           ) : !writingArticle && (
             <button
               onClick={() => void handleWriteArticle()}
-              className="text-xs font-semibold text-[#3E6E92] hover:underline"
+              className="text-sm font-semibold text-white bg-[#3E6E92] hover:bg-[#335a78] px-4 py-2 rounded-lg transition-colors"
             >
               Write Culo article from research
             </button>
