@@ -134,10 +134,11 @@ export function VillageCuratedFoundersPage() {
   // research/audit dropdown). This tab takes its name instead, since this
   // list — filtered to curated founders only, see `founders` below — is
   // effectively what "the editorial queue" now means.
-  const [pageTab, setPageTab]     = useState<'founders' | 'published' | 'imports' | 'leadSources'>(
+  const [pageTab, setPageTab]     = useState<'founders' | 'published' | 'claimed' | 'imports' | 'leadSources'>(
     searchParams.get('tab') === 'imports' ? 'imports'
     : searchParams.get('tab') === 'leadSources' ? 'leadSources'
     : searchParams.get('tab') === 'published' ? 'published'
+    : searchParams.get('tab') === 'claimed' ? 'claimed'
     : !canSeeFounders ? 'imports' : 'founders',
   )
   const [tick, setTick]           = useState(0)
@@ -223,12 +224,13 @@ export function VillageCuratedFoundersPage() {
 
   const curatedDraftFounders = useMemo(() => founders.filter(f => f.status === 'draft'), [founders])
   const publishedFounders    = useMemo(() => founders.filter(f => f.status !== 'draft'), [founders])
+  const claimedFounders      = useMemo(() => founders.filter(f => f.profileStatus === 'claimed'), [founders])
 
   // Filter + sort
   const filtered = useMemo(() => {
     // Published founders have their own tab now — the queue itself is only
     // ever the ones still needing work.
-    let list = [...(pageTab === 'published' ? publishedFounders : curatedDraftFounders)]
+    let list = [...(pageTab === 'published' ? publishedFounders : pageTab === 'claimed' ? claimedFounders : curatedDraftFounders)]
 
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -273,7 +275,7 @@ export function VillageCuratedFoundersPage() {
     list.sort((a, b) => priority(a) - priority(b))
 
     return list
-  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, curatedDraftFounders, publishedFounders, pageTab, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder, editorialItemsAll])
+  }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, curatedDraftFounders, publishedFounders, claimedFounders, pageTab, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder, editorialItemsAll])
 
   // Bulk operations — one Supabase upsert/delete + one cache rewrite per batch,
   // not one round-trip per founder (see Sprint 19B-Fix audit for the O(n²) bug
@@ -384,20 +386,21 @@ export function VillageCuratedFoundersPage() {
 
       <Tabs
         tabs={[
+          ...(canSeeImports ? [{ key: 'imports', label: 'Bulk Import' }] : []),
           ...(canSeeFounders ? [{ key: 'founders', label: 'Editorial Queue' }] : []),
           ...(canSeeFounders ? [{ key: 'published', label: 'Published', badge: publishedFounders.length }] : []),
-          ...(canSeeImports ? [{ key: 'imports', label: 'Bulk Import' }] : []),
+          ...(canSeeFounders ? [{ key: 'claimed', label: 'Claimed', badge: claimedFounders.length }] : []),
           ...(canSeeLeadSources ? [{ key: 'leadSources', label: 'Lead Sources' }] : []),
         ]}
         active={pageTab}
-        onChange={key => setPageTab(key as 'founders' | 'published' | 'imports' | 'leadSources')}
+        onChange={key => setPageTab(key as 'founders' | 'published' | 'claimed' | 'imports' | 'leadSources')}
         className="mb-6"
       />
 
       {pageTab === 'imports' && canSeeImports && <VillageBulkImportPage embedded />}
       {pageTab === 'leadSources' && canSeeLeadSources && <LeadSourcesPage embedded />}
 
-      {(pageTab === 'founders' || pageTab === 'published') && canSeeFounders && (
+      {(pageTab === 'founders' || pageTab === 'published' || pageTab === 'claimed') && canSeeFounders && (
       <>
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
