@@ -76,6 +76,44 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
       store.update<Founder>('founders', founder)
       return founder.id
     }
+
+    // A curated/claim-pending founder with this exact claimEmail already
+    // exists — this person has a real profile (bio, published articles)
+    // waiting for them, they just signed up directly via /join instead of
+    // using the claim link/form. Without this check, the code below would
+    // silently create a second, blank founder and orphan all of that —
+    // confirmed happened for real (tibo@tap4change.org): his curated
+    // profile's ~9 articles and bio sat on the old record while this exact
+    // path built him an empty "tibo-roumagoux" one. Reusing
+    // link_claimed_founder (migration 032) here converges ownership the
+    // same way the claim form's own flow does (see finalizeClaimOwnership
+    // in currentFounder.ts) rather than duplicating that logic.
+    const { data: matchResult } = await supabase.functions.invoke<{ founderId: string | null }>(
+      'find-curated-match', { body: { email: email.trim() } },
+    )
+    if (matchResult?.founderId) {
+      try {
+        await supabase.rpc('link_claimed_founder', { p_founder_id: matchResult.founderId })
+        const { data: linked } = await supabase.from('founders').select('data').eq('id', matchResult.founderId).maybeSingle()
+        if (linked?.data) {
+          let founder = linked.data as Founder
+          // RPC only ever touches claimedByUserId + profiles.founder_id —
+          // this write is safe now (auth.uid() matches claimedByUserId as
+          // of the line above, so founders_auth_update's RLS allows it).
+          if (founder.profileStatus === 'village-curated' || founder.profileStatus === 'claim-pending') {
+            const result = await updateFounder({ ...founder, profileStatus: 'claimed' })
+            if (result.success) founder = { ...founder, profileStatus: 'claimed' }
+          }
+          store.update<Founder>('founders', founder)
+          void linkOwnFounder(founder.id)
+          return founder.id
+        }
+      } catch {
+        // RPC requires auth.email() to match claimEmail server-side — if it
+        // doesn't (e.g. race/typo), fall through to the normal new-founder
+        // path rather than blocking signup entirely.
+      }
+    }
   }
 
   const now = new Date()
