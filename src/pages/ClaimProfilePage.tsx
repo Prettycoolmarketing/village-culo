@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
-import { getFounders, updateFounder } from '../services/founders'
+import { getFounders } from '../services/founders'
 import { founderClaimService } from '../services/founderClaim'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { InnerContainer } from '../components/layout/PageContainer'
@@ -131,7 +131,7 @@ export function ClaimProfilePage() {
   // other visitor lands on the same instant form; matchClaimEmail() decides
   // at submit time whether they go straight to their dashboard or fall back
   // to the review queue.
-  return <InstantClaimForm founder={founder} skipVerification={claimKeyState === 'valid'} />
+  return <InstantClaimForm founder={founder} skipVerification={claimKeyState === 'valid'} claimKey={key ?? undefined} />
 }
 
 // Loose matching for a claimant with no exact verified claimEmail on file —
@@ -190,7 +190,7 @@ function matchClaimEmail(email: string, founder: ReturnType<typeof getFounders>[
 // founder claimed with this email, so getCurrentFounder()'s existing
 // claimEmail-match (see services/currentFounder.ts) picks it up the moment
 // they land in the dashboard.
-function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<typeof getFounders>[number]; skipVerification: boolean }) {
+function InstantClaimForm({ founder, skipVerification, claimKey }: { founder: ReturnType<typeof getFounders>[number]; skipVerification: boolean; claimKey?: string }) {
   const navigate = useNavigate()
   const { signUp } = useAuth()
   const [name, setName]           = useState('')
@@ -248,16 +248,25 @@ function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<t
 
     setSubmitting(true)
     try {
-      await updateFounder({
-        ...founder,
-        profileStatus: 'claimed',
-        claimedAt: new Date().toISOString(),
-        claimEmail: email.trim(),
-        isClaimable: false,
-        claimNotes: match === 'likely'
-          ? `Instant-claimed by ${name.trim()} <${email.trim()}> — soft match (name/domain), not an exact verified email. Worth a quick look.`
-          : founder.claimNotes,
-      })
+      // Was a direct client-side updateFounder() call — silently failed
+      // every time (confirmed via a real claimant whose claimEmail was
+      // still null afterward): the visitor has no session yet at this
+      // point, and founders' UPDATE RLS only allows admins or the
+      // founder's own already-linked user. Moved server-side (service
+      // role, re-checks the match itself rather than trusting the client)
+      // — see claim-founder-profile.
+      if (!isSupabaseConfigured || !supabase) {
+        setError('Claiming is not available right now. Please try again shortly.')
+        return
+      }
+      const { data: claimResult, error: claimError } = await supabase.functions.invoke<{ success?: boolean; error?: string }>(
+        'claim-founder-profile',
+        { body: { founderId: founder.id, name: name.trim(), email: email.trim(), key: skipVerification ? claimKey : undefined } },
+      )
+      if (claimError || claimResult?.error || !claimResult?.success) {
+        setError(claimResult?.error || (claimError instanceof Error ? claimError.message : 'Could not claim this profile. Please try again.'))
+        return
+      }
       const { error: signUpError, needsConfirmation: needsConf, alreadyRegistered } = await signUp(email.trim(), password, '/dashboard/welcome')
       if (alreadyRegistered) {
         setAlreadyHasAccount(true)
