@@ -382,6 +382,14 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     if (isNowLive && !toSave.publishedAt) {
       toSave = { ...toSave, publishedAt: new Date().toISOString() }
     }
+    // Only the founder's own dashboard uses this editor (confirmed — no
+    // other component renders it) — any save here is a real founder edit.
+    // Once set, "Written by Culo" stops being accurate for this specific
+    // piece, regardless of how many other Culo-written pieces this founder
+    // hasn't touched yet.
+    if (toSave.writtenByCulo && !toSave.founderEditedAt) {
+      toSave = { ...toSave, founderEditedAt: new Date().toISOString() }
+    }
     const result = await updateStory(toSave)
     setSaving(false)
     if (result.success) {

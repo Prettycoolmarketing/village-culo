@@ -287,6 +287,11 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     status: 'published',
     featured: false,
     publishingSource: item.sourcePlatform === 'canva' ? 'canva-api' : 'website-import',
+    // descriptionRewrittenAt already marks exactly this — set whenever the
+    // description actually came from the editorial Writer (see
+    // safeStoryBody's copyright gate), not raw scraped/imported text. Same
+    // signal, reused: a story whose body Culo actually wrote should say so.
+    writtenByCulo: !!item.descriptionRewrittenAt,
     createdAt: nowIso,
     updatedAt: nowIso,
     publishedAt: nowIso,

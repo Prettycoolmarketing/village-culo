@@ -337,11 +337,15 @@ export function StoryDetailPage() {
   // showing a broken-looking blank instead of a real image, not about
   // denying every platform a hero just because this one has no art.
   const isBrandFallbackPodcast = !hasRealCoverImage && sourceImport?.sourcePlatform === 'podcast'
-  // An unclaimed curated founder hasn't claimed this article as their own
-  // writing yet — "Originally published on X, View original, Feature in
-  // CULO Village" reads as if they're actively cross-posting/promoting
-  // it themselves, which isn't true until they claim the profile.
-  const isUnclaimedCuratedStory = founder?.profileStatus === 'village-curated' && !founder?.userId
+  // Per-story, not per-founder: a founder who has claimed their profile but
+  // never touched THIS particular piece still hasn't written it — Culo did,
+  // via the editorial pipeline (see writtenByCulo in publishStory.ts) — so
+  // "Written by Culo" stays accurate here even after they claim. The OR
+  // keeps the original founder-level case too: an unclaimed curated founder
+  // hasn't claimed anything as their own writing yet, so every article of
+  // theirs reads this way regardless of the writtenByCulo flag reaching it.
+  const isCuloWrittenStory = !!story.writtenByCulo && !story.founderEditedAt
+  const isUnclaimedCuratedStory = isCuloWrittenStory || (founder?.profileStatus === 'village-curated' && !founder?.userId)
   const approvedRecs = recommendationService.getAll({ storyId: story.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
 

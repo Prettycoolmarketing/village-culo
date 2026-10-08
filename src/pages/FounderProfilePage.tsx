@@ -342,6 +342,17 @@ export function FounderProfilePage() {
   const isUnclaimedCurated = founder.profileStatus === 'village-curated' && !founder.userId
   const villageMemberCount = isUnclaimedCurated ? getFounders({ publicOnly: true }).length : 0
 
+  // A Story this founder never actually wrote isn't "Stories by X" just
+  // because they've claimed the profile — Culo wrote it (see writtenByCulo
+  // in publishStory.ts), and it stays that way, per-article, until the
+  // founder's own edit stamps founderEditedAt (see StoryEditor.tsx). These
+  // get pulled out of "Stories by X" entirely and shown alongside the
+  // imported "Articles Written by CULO" instead, regardless of the
+  // founder's overall claimed status.
+  const allFounderStories = getStories({ founderId: founder.id, publicOnly: true })
+  const culoWrittenStories = allFounderStories.filter(s => s.writtenByCulo && !s.founderEditedAt)
+  const founderOwnStories = allFounderStories.filter(s => !(s.writtenByCulo && !s.founderEditedAt))
+
   // A curated founder with no real published Stories yet has nothing else
   // to lead with — "From Around the Web" is the whole page, so it should
   // come first. A founder with real Stories/Featured picks already has a
@@ -351,7 +362,7 @@ export function FounderProfilePage() {
   // shape even once Publish has turned their articles into real Stories —
   // "Stories by X" reads as if they're here writing/publishing themselves,
   // which isn't true until they've actually claimed the profile.
-  const founderStoryCount = getStories({ founderId: founder.id, publicOnly: true }).length
+  const founderStoryCount = founderOwnStories.length
   const hasRealStories = !isUnclaimedCurated && founderStoryCount > 0
   const heroImage = founder.coverImage || (isUnclaimedCurated ? '/assets/culo-brand-cover.png' : undefined)
 
@@ -367,11 +378,23 @@ export function FounderProfilePage() {
     publicImports.length === 3 ? 'grid grid-cols-1 sm:grid-cols-3 gap-6' :
     'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
   const importsCardSize = publicImports.length === 1 ? 'featured' : publicImports.length <= 3 ? 'large' : 'default'
-  const importsSection = publicImports.length > 0 && (
+  const importsSection = (publicImports.length > 0 || culoWrittenStories.length > 0) && (
     <section aria-labelledby="founder-imports-heading">
       <h2 id="founder-imports-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
         Articles Written by CULO
       </h2>
+      {/* Culo-written Stories render first, alongside the plain imported
+          articles — same section, same heading, since both mean the same
+          thing to a reader: Culo wrote this, not the founder. */}
+      {culoWrittenStories.length > 0 && (
+        <StoryGrid
+          stories={culoWrittenStories}
+          columns={culoWrittenStories.length === 1 ? 1 : 2}
+          cardVariant={culoWrittenStories.length === 1 ? 'horizontal' : 'vertical'}
+          showFounder={false}
+          className="mb-6"
+        />
+      )}
       <div className={importsLayoutClass}>
         {publicImports.slice(0, 10).map(item => (
           <ImportedContentCard key={item.id} content={item} size={importsCardSize} founder={founder} />
@@ -780,6 +803,7 @@ export function FounderProfilePage() {
                     ? undefined
                     : `Blogs, reels and carousels published by ${founder.name} through CULO Village.`}
                   filter={{ founderId: founder.id, publicOnly: true }}
+                  excludeIds={culoWrittenStories.map(s => s.id)}
                   sortBlogsFirst
                   hideKey="founder-profile"
                   limit={6}

@@ -745,6 +745,21 @@ export interface Story {
   status: Status
   featured: boolean
   publishingSource?: PublishingSource
+  // Set true when this Story's blog/title came from the Culo editorial
+  // pipeline (writeSourceArticle, see editorialPipeline.ts), not the
+  // founder's own writing. Drives "Written by Culo" vs the founder's own
+  // byline on StoryDetailPage, and which section a founder's page groups
+  // it under (FounderProfilePage: "Articles Written by Culo" vs "Stories
+  // by X"). Claiming the profile alone used to flip this for every story
+  // at once — wrong, since a founder who claims but hasn't touched a
+  // specific piece yet hasn't actually written anything; this tracks it
+  // per-article instead.
+  writtenByCulo?: boolean
+  // Set the moment the FOUNDER (not staff) saves any change to a story
+  // that has writtenByCulo true — once they've edited it, it could say
+  // anything, so it's no longer honest to credit Culo for it. Only ever
+  // set, never cleared.
+  founderEditedAt?: string
   createdAt: string
   updatedAt: string
   // When this story first actually went live (status became published/

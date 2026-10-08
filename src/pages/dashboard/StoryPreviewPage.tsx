@@ -119,7 +119,7 @@ export function StoryPreviewPage() {
               )}
 
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-body text-muted mb-6">
-                {founder.profileStatus === 'village-curated' && !founder.userId ? (
+                {(story.writtenByCulo && !story.founderEditedAt) || (founder.profileStatus === 'village-curated' && !founder.userId) ? (
                   <Link
                     to={`/founders/${founder.slug}`}
                     className="hover:text-primary transition-colors font-medium text-charcoal"
