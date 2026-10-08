@@ -11,8 +11,23 @@ export const store = {
     }
   },
 
+  // Not wrapped before: an admin/CAPO session caches the WHOLE platform's
+  // rows for tables like stories/imported_content (RLS has no per-user
+  // scope for that role), which can run well past mobile Safari's much
+  // smaller per-origin localStorage quota (often ~5MB vs desktop Chrome's
+  // much larger one) — a real, confirmed-plausible cause of "content only
+  // showing 1" on a phone logged in as the admin account specifically.
+  // Before this, that quota error threw straight out of setItem, which
+  // left the write half-done and could leave stale/partial data in place
+  // silently. Doesn't fix the underlying "cache everything" architecture
+  // not scaling to a whole-platform admin pull on mobile, but at least
+  // fails loud (one console error) instead of silently corrupting state.
   set<T>(key: string, items: T[]): void {
-    localStorage.setItem(PREFIX + key, JSON.stringify(items))
+    try {
+      localStorage.setItem(PREFIX + key, JSON.stringify(items))
+    } catch (err) {
+      console.error(`[store] Failed to cache "${key}" (${items.length} items) — likely storage quota exceeded.`, err)
+    }
   },
 
   update<T extends { id: string }>(key: string, item: T): void {

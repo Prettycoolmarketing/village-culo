@@ -608,23 +608,23 @@ export function VillageCuratedFoundersPage() {
                     {f.podcast   && <span title="Podcast"   className="w-1.5 h-1.5 rounded-full bg-purple-400"  />}
                     {f.tiktok    && <span title="TikTok"    className="w-1.5 h-1.5 rounded-full bg-neutral-500" />}
                   </div>
-                  <div className="col-span-2 flex flex-wrap gap-1">
+                  {/* This column is only 2/12 of an already-tight 880px
+                      table (see the min-w comment above) — two more full
+                      pill badges wrapped onto 2-3 lines here, making rows
+                      tall and messy on top of the sideways scroll mobile
+                      already needs. A single compact text line under the
+                      status pill instead, no wrapping pills. */}
+                  <div className="col-span-2 flex flex-col gap-0.5">
                     <SimpleStatus founder={f} items={editorialItemsAll.filter(i => i.founder_id === f.id)} />
-                    {contentCount > 0 && (
-                      <span
-                        title={`${contentCount} imported item${contentCount !== 1 ? 's' : ''}`}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#9CA3AF]/10 text-[#6B7280]"
+                    {(contentCount > 0 || publishedCount > 0) && (
+                      <p
+                        title={`${contentCount} imported item${contentCount !== 1 ? 's' : ''}, ${publishedCount} published article${publishedCount !== 1 ? 's' : ''}`}
+                        className="text-[10px] text-[#9CA3AF] whitespace-nowrap"
                       >
-                        Imported
-                      </span>
-                    )}
-                    {publishedCount > 0 && (
-                      <span
-                        title={`${publishedCount} published article${publishedCount !== 1 ? 's' : ''}`}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#C86A43]/10 text-[#C86A43]"
-                      >
-                        {publishedCount} published
-                      </span>
+                        {contentCount > 0 && 'Imported'}
+                        {contentCount > 0 && publishedCount > 0 && ' · '}
+                        {publishedCount > 0 && `${publishedCount} published`}
+                      </p>
                     )}
                   </div>
                   <div className="col-span-3 flex items-center justify-between gap-2">
