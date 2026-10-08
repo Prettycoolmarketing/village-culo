@@ -15,6 +15,7 @@ import { LeadSourcesPage } from './LeadSourcesPage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 import { getAllEditorialItems, type EditorialItemRow } from '../../../services/editorialItems'
+import { getStories } from '../../../services/stories'
 import { runFullEditorialPipeline } from '../../../services/editorialPipeline'
 import { publishFounderArticles } from '../../../services/publishStory'
 
@@ -220,6 +221,16 @@ export function VillageCuratedFoundersPage() {
     const all = importedContentService.getAll()
     const counts = new Map<string, number>()
     for (const c of all) counts.set(c.founderId, (counts.get(c.founderId) ?? 0) + 1)
+    return counts
+  }, [tick])
+
+  // "Imported" + a published count, at a glance per row, without opening
+  // anything — the lightweight version of being able to peek at a member's
+  // content (see VillageCreativeMembersPage for the subscription-focused
+  // list; this is "do they have real content, and how much of it is live").
+  const publishedCountByFounder = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const s of getStories({ publicOnly: true })) counts.set(s.founderId, (counts.get(s.founderId) ?? 0) + 1)
     return counts
   }, [tick])
 
@@ -555,6 +566,7 @@ export function VillageCuratedFoundersPage() {
             {filtered.map(f => {
               const biz          = businesses.find(b => b.founderId === f.id)
               const contentCount = contentCountByFounder.get(f.id) ?? 0
+              const publishedCount = publishedCountByFounder.get(f.id) ?? 0
               const hasEmail     = claimEmailByFounder.has(f.id)
               const isSelected   = selected.has(f.id)
 
@@ -598,6 +610,22 @@ export function VillageCuratedFoundersPage() {
                   </div>
                   <div className="col-span-2 flex flex-wrap gap-1">
                     <SimpleStatus founder={f} items={editorialItemsAll.filter(i => i.founder_id === f.id)} />
+                    {contentCount > 0 && (
+                      <span
+                        title={`${contentCount} imported item${contentCount !== 1 ? 's' : ''}`}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#9CA3AF]/10 text-[#6B7280]"
+                      >
+                        Imported
+                      </span>
+                    )}
+                    {publishedCount > 0 && (
+                      <span
+                        title={`${publishedCount} published article${publishedCount !== 1 ? 's' : ''}`}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#C86A43]/10 text-[#C86A43]"
+                      >
+                        {publishedCount} published
+                      </span>
+                    )}
                   </div>
                   <div className="col-span-3 flex items-center justify-between gap-2">
                     {isLockedFromViewer(f) ? (
