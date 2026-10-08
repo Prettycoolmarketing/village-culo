@@ -146,8 +146,16 @@ export function StoryCard({
           {/* CTA — links into the Village article itself, not out to the
               original external source. A prominent button on a card is
               exactly where you don't want to hand the visitor off the site
-              before they've even read the story. */}
-          {showCTA && story.ctaLabel && story.ctaUrl && (
+              before they've even read the story. Used to also require
+              story.ctaLabel/ctaUrl to be set, which has nothing to do with
+              this link's actual destination (always storyUrl) — it's the
+              founder's "View original" source link, which Canva-sourced
+              stories deliberately leave blank (see buildStoryFromImport:
+              ctaLabel/ctaUrl default to '' when sourcePlatform is
+              'canva', since there's no real external source to send
+              anyone to). That silently hid this button on every
+              Canva-originated story, confirmed on a real published one. */}
+          {showCTA && (
             <Link
               to={storyUrl}
               className="mt-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
@@ -268,7 +276,10 @@ export function StoryCard({
               </span>
             </div>
           )}
-          {showCTA && story.ctaLabel && story.ctaUrl && (
+          {/* Same fix as the vertical variant above — not gated on
+              story.ctaLabel/ctaUrl, which is unrelated to this link's
+              destination (always storyUrl). */}
+          {showCTA && (
             <Link
               to={storyUrl}
               className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-[#b05a35] transition-colors"
