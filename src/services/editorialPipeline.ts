@@ -8,7 +8,7 @@
 // start to finish and reports what happened, for a caller that only cares
 // about one founder at a time.
 
-import { getFounder } from './founders'
+import { getFounder, updateFounder } from './founders'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { normalizeBlogSpacing } from '../utils/blogFormatting'
 import { runFounderResearch } from './editorialResearch'
@@ -37,11 +37,21 @@ export async function runFullEditorialPipeline(founderId: string): Promise<Pipel
     return { researched: false, bioWritten: false, articlesWritten: 0, error: research.error ?? 'Research failed.' }
   }
 
+  // Confirmed real bug: this only ever wrote the researched bio into the
+  // editorial_items DRAFT table, auditing it there — never into the
+  // founder's actual `bio` field. A founder published straight after
+  // running this still showed the old generic curatedBio template, since
+  // nothing had copied the real researched bio across (same persistBio
+  // step FounderEditModal's BioDraftBlock does manually — this is that,
+  // automatic, so Publish has something real to publish without a
+  // separate manual step in between).
   let bioWritten = false
   const bioResult = await writeProfileBio(founderId)
-  if (bioResult.success && bioResult.item) {
+  if (bioResult.success && bioResult.item?.draft_content?.body) {
     const audited = await runAudit(bioResult.item)
     bioWritten = audited.success
+    const latest = getFounder(founderId) ?? founder
+    await updateFounder({ ...latest, bio: bioResult.item.draft_content.body })
   }
 
   let articlesWritten = 0

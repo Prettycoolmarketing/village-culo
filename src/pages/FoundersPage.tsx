@@ -45,10 +45,14 @@ export function FoundersPage() {
     ...(activeLocation !== 'all' && { locationId: activeLocation }),
     ...(activeIndustry !== 'all' && { industryId: activeIndustry }),
     ...(activeTopic    !== 'all' && { topicId:    activeTopic    }),
+    // Was captured into state and never actually used anywhere — the
+    // search box filtered nothing at all. Confirmed: searching a real
+    // founder's name left the full, unfiltered list exactly as it was.
+    ...(searchQuery.trim()    && { searchQuery }),
   }
 
   const matchCount = getFounders(filter).length
-  const hasActiveFilter = activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all'
+  const hasActiveFilter = activeLocation !== 'all' || activeIndustry !== 'all' || activeTopic !== 'all' || !!searchQuery.trim()
   const featuredFounders = getFounders({ featured: true, publicOnly: true })
   // "All Founders" excludes anyone already shown in "Featured Founders"
   // above, to avoid repeating the same few people twice. But when every

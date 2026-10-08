@@ -860,6 +860,8 @@ export interface FounderFilter {
   featured?: boolean
   publicOnly?: boolean
   limit?: number
+  // Matched against name/bio (case-insensitive substring) — see getFounders.
+  searchQuery?: string
 }
 
 export interface BusinessFilter {

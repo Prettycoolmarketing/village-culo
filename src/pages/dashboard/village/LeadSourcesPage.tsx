@@ -54,7 +54,20 @@ function SearchTab({ onSaved }: { onSaved: () => void }) {
     const result = await testInstagramCommentImport(url.trim())
     setLoading(false)
     if (result.error) { setError(result.error); return }
-    setComments(result.comments ?? [])
+    const found = result.comments ?? []
+    setComments(found)
+    // Was manual-only ("+ Save to Leads" per row / "Save all") — results
+    // disappeared for good the moment you searched again or left the page,
+    // so forgetting to press Save before either of those lost them
+    // outright, with "I didn't press save" as the whole explanation.
+    // Every real commenter found now lands in the persistent Leads tab
+    // automatically; the manual save controls stay for re-saving after a
+    // filter narrows the list, not as the only way in.
+    if (found.length > 0) {
+      void saveSourcedLeads(found).then(r => {
+        if (r.success) { setSavedHandles(new Set(found.map(c => c.handle))); onSaved() }
+      })
+    }
   }
 
   async function handleSaveOne(c: LeadComment) {
