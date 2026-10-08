@@ -679,14 +679,21 @@ export function validateVIF(pkg: VillageImportPackage): VIFValidationResult {
     const errors: string[] = []
     const warnings: string[] = []
 
-    const displayName = f.preferredName?.trim() || f.fullName?.trim() || `Founder ${i + 1}`
+    // fullName wins over preferredName for the actual name/slug —
+    // preferredName ("Carolyn") is a first-name-only field meant for
+    // addressing someone informally in prose, not a substitute full name.
+    // Using it here meant a curated founder's real name/slug/profile only
+    // ever showed their first name ("Carolyn" instead of "Carolyn
+    // Breeze") whenever the JSON included both, which VIF batches
+    // generally do.
+    const displayName = f.fullName?.trim() || f.preferredName?.trim() || `Founder ${i + 1}`
 
     if (!f.fullName?.trim()) errors.push('fullName is required')
     if (!f.bio?.trim()) warnings.push('bio is missing — profile will have no description')
     if (!f.city && !f.state) warnings.push('No location — will default to Australia')
     if (!f.industries || f.industries.length === 0) warnings.push('No industry — will use first available industry')
 
-    const baseSlug = f.slug?.trim() || slugify(f.preferredName?.trim() || f.fullName?.trim() || `founder-${i}`)
+    const baseSlug = f.slug?.trim() || slugify(f.fullName?.trim() || f.preferredName?.trim() || `founder-${i}`)
     let resolvedSlug = baseSlug
     if (slugsTaken.has(resolvedSlug) || !!getFounderBySlug(resolvedSlug)) {
       if (slugsTaken.has(resolvedSlug)) {
@@ -777,7 +784,8 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
   const topicsPool: Topic[] = [...ALL_TOPICS]
 
   for (const f of pkg.founders) {
-    const displayName = f.preferredName?.trim() || f.fullName?.trim() || 'Unknown'
+    // See the matching note in validateVIF above — fullName must win here too.
+    const displayName = f.fullName?.trim() || f.preferredName?.trim() || 'Unknown'
 
     try {
       // Identity match — LinkedIn or Instagram first, since either
