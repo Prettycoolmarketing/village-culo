@@ -373,18 +373,18 @@ export function FounderProfilePage() {
         Articles Written by CULO
       </h2>
       <div className={importsLayoutClass}>
-        {publicImports.slice(0, 5).map(item => (
+        {publicImports.slice(0, 10).map(item => (
           <ImportedContentCard key={item.id} content={item} size={importsCardSize} founder={founder} />
         ))}
       </div>
-      {publicImports.length > 5 && (
+      {publicImports.length > 10 && (
         <details className="group mt-4">
           <summary className="cursor-pointer list-none text-sm font-semibold text-primary hover:underline">
             <span className="group-open:hidden">View all {publicImports.length} →</span>
             <span className="hidden group-open:inline">Show fewer</span>
           </summary>
           <div className="flex flex-col gap-4 mt-4">
-            {publicImports.slice(5).map(item => (
+            {publicImports.slice(10).map(item => (
               <ImportedContentCard key={item.id} content={item} founder={founder} />
             ))}
           </div>
