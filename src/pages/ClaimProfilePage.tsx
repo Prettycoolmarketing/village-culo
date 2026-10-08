@@ -199,6 +199,12 @@ function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<t
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]         = useState('')
   const [needsConfirmation, setNeedsConfirmation] = useState(false)
+  // Confirmed real bug, not hypothetical: a founder (tibo@tap4change.org)
+  // hit this exact message — "sign in instead" — on a page with no sign-in
+  // link or form anywhere on it ("there's nowhere to login"). Dedicated
+  // state instead of the generic `error` string so the render side can
+  // show a real link, not just unreachable advice.
+  const [alreadyHasAccount, setAlreadyHasAccount] = useState(false)
   const [submittedForReview, setSubmittedForReview] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -254,7 +260,7 @@ function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<t
       })
       const { error: signUpError, needsConfirmation: needsConf, alreadyRegistered } = await signUp(email.trim(), password, '/dashboard/welcome')
       if (alreadyRegistered) {
-        setError('An account already exists for this email — sign in instead, and your profile will connect automatically.')
+        setAlreadyHasAccount(true)
         return
       }
       if (signUpError) {
@@ -383,6 +389,19 @@ function InstantClaimForm({ founder, skipVerification }: { founder: ReturnType<t
               />
             </div>
             {error && <p className="font-body text-sm text-red-600">{error}</p>}
+            {alreadyHasAccount && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                <p className="font-body text-sm text-amber-800 mb-2">
+                  An account already exists for this email — sign in instead, and this profile will connect to it automatically.
+                </p>
+                <Link
+                  to="/dashboard/login"
+                  className="inline-block font-body text-sm font-semibold text-primary hover:underline"
+                >
+                  Sign in →
+                </Link>
+              </div>
+            )}
             <button
               type="submit"
               disabled={submitting}
