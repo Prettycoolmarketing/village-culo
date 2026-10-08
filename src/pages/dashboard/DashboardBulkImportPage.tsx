@@ -855,16 +855,24 @@ export function DashboardBulkImportPage() {
           )}
 
           {/* Optional editorial pipeline — only offered when the Step 2
-              checkbox was on, and only ever runs on an explicit click here,
-              never automatically. Selection defaults to everyone just
-              imported (see setSelectedForPipeline in handleImport); uncheck
-              any founder below to leave them out, or use their own row's
-              "Run" button to fire just one at a time. */}
+              checkbox was on. Now fires automatically the moment import
+              finishes (see handleImport) — the button below is only for
+              re-running a specific selection afterward (e.g. retrying
+              failures), not the first run anymore. Selection defaults to
+              everyone just imported (see setSelectedForPipeline in
+              handleImport); uncheck any founder below to leave them out,
+              or use their own row's "Run" button to fire just one at a
+              time. Made deliberately large and hard to miss — this used to
+              be easy to click away from mid-run (the work itself keeps
+              running in the background regardless, but there was nothing
+              telling staff that, so navigating to Curated Profiles before
+              it actually finished looked like the research had silently
+              failed to show up). */}
           {createEditorialContent && result.created.length > 0 && (
-            <div className="bg-[#3E6E92]/5 border border-[#3E6E92]/20 rounded-xl px-5 py-4">
-              <p className="text-sm font-bold text-[#2D2A26] mb-1">Culo editorial content</p>
-              <p className="text-xs text-[#6B7280] mb-3">
-                Research, write and audit a bio for each checked founder below — plus an article for every real source found, whether it was a link on the spreadsheet or one Culo discovered itself. This uses real API calls and can take a while for a large batch.
+            <div className="bg-[#3E6E92]/5 border-2 border-[#3E6E92]/30 rounded-xl px-6 py-5">
+              <p className="text-base font-bold text-[#2D2A26] mb-1.5">Culo editorial content</p>
+              <p className="text-sm text-[#6B7280] mb-4">
+                Research, write and audit a bio for each checked founder below — plus an article for every real source found, whether it was a link on the spreadsheet or one Culo discovered itself. This uses real API calls and can take a while for a large batch — stay on this page and watch it finish here rather than clicking through to Curated Profiles; the result will be waiting there once this says Done.
               </p>
               {!pipelineRunning && (() => {
                 const failedIds = result.created
@@ -891,11 +899,21 @@ export function DashboardBulkImportPage() {
                 )
               })()}
               {pipelineProgress && (pipelineRunning || pipelineDone) && (
-                <div className={pipelineRunning ? '' : 'mt-1'}>
-                  <p className="text-xs font-semibold text-[#2D2A26] mb-1">
-                    {pipelineDone ? 'Done' : `Working…`} ({pipelineProgress.done}/{pipelineProgress.total})
-                  </p>
-                  <p className="text-xs text-[#6B7280]">{pipelineProgress.note}</p>
+                <div className={pipelineRunning ? 'bg-white rounded-lg px-4 py-3 border border-[#3E6E92]/20' : 'mt-2'}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-sm font-bold text-[#2D2A26]">
+                      {pipelineDone ? '✓ Done' : 'Working…'} ({pipelineProgress.done}/{pipelineProgress.total})
+                    </p>
+                  </div>
+                  {!pipelineDone && pipelineProgress.total > 0 && (
+                    <div className="h-2 bg-[#E8E4DD] rounded-full overflow-hidden mb-2">
+                      <div
+                        className="h-full bg-[#3E6E92] transition-all duration-500"
+                        style={{ width: `${Math.round((pipelineProgress.done / pipelineProgress.total) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                  <p className="text-sm text-[#6B7280]">{pipelineProgress.note}</p>
                 </div>
               )}
               {pipelineDone && (
