@@ -383,8 +383,9 @@ export function DashboardCuratedFounderBuilderPage() {
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const profileUrl  = result ? `${origin}/founders/${result.founderSlug}` : ''
   const claimUrl    = result ? `${origin}/claim/${result.founderSlug}` : ''
+  const outreachFirstName = result ? (result.founderName.trim().split(/\s+/)[0] ?? result.founderName) : ''
   const outreachMsg = result
-    ? `Hi ${result.founderName}!\n\nI came across your work and added you to CULO Village — a curated directory of Australian founder stories and businesses.\n\nYour public profile is live here: ${profileUrl}\n\nIf you'd like to claim it, edit your details, or start creating content (reels, carousels, blogs) with CULO, you can do that here: ${claimUrl}\n\nIt's completely free to claim. Happy to help you get set up — let me know!`
+    ? `Hey ${outreachFirstName}!\n\nI came across your work and added you to The Culo Village a curated directory of Australian founder stories and businesses!\n\nYour public profile is live here: ${profileUrl}\n\nIf you'd like to claim it, import your content from across platforms to publish as web articles or start creating content with CULO in Canva, you can do that here: ${claimUrl}\n\nIt's completely free to claim. Happy to help you get set up! let me know!\n\nIf you'd rather not be listed, just reply No Thanks and I'll remove your profile! no hard feelings.`
     : ''
 
   // ── Render ────────────────────────────────────────────────────────────────────
