@@ -1386,9 +1386,15 @@ export function DashboardProfilePage() {
             {/* Content, Businesses and Partners each save themselves inline —
                 this button only ever touches founder-profile fields (Profile,
                 FAQ, Settings), so it only shows there. Showing it everywhere
-                made it look like it should save whatever tab you were on. */}
+                made it look like it should save whatever tab you were on.
+                hidden lg:flex — the bottom bar further down is this same
+                button's mobile equivalent; the comment down there already
+                said as much ("this second one is just noise" on desktop)
+                but nothing was actually hiding this top one on mobile, so
+                both rendered at once — confirmed, the real cause of "two
+                Save Changes sections" on mobile. */}
             {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
-              <>
+              <div className="hidden lg:flex items-center gap-3">
                 {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
                 {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
                 <button
@@ -1398,7 +1404,7 @@ export function DashboardProfilePage() {
                 >
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -1414,7 +1420,7 @@ export function DashboardProfilePage() {
       {/* Tabs — Content is reached from its own sidebar link now and shows
           only the content section, not the rest of the profile's tabs. */}
       {tab !== 'content' && (
-        <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-8" />
+        <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-8" stackOnMobile />
       )}
 
       {/* Tab content */}

@@ -9,16 +9,23 @@ interface TabsProps {
   active: string
   onChange: (key: string) => void
   className?: string
+  // Default (false) keeps every existing usage of this shared component
+  // exactly as it was — horizontal, scrolling sideways on narrow screens.
+  // Profile's own tab row opts into this instead: full-width stacked
+  // buttons on mobile only, back to the normal horizontal row at md+.
+  stackOnMobile?: boolean
 }
 
-export function Tabs({ tabs, active, onChange, className = '' }: TabsProps) {
+export function Tabs({ tabs, active, onChange, className = '', stackOnMobile = false }: TabsProps) {
   return (
-    <div className={`flex gap-1.5 border-b border-[#E8E4DD] pb-3 overflow-x-auto shrink-0 ${className}`}>
+    <div className={`flex ${stackOnMobile ? 'flex-col md:flex-row' : ''} gap-1.5 border-b border-[#E8E4DD] pb-3 ${stackOnMobile ? 'md:overflow-x-auto' : 'overflow-x-auto'} shrink-0 ${className}`}>
       {tabs.map(tab => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold whitespace-nowrap rounded-lg transition-colors ${
+            stackOnMobile ? 'w-full md:w-auto justify-between md:justify-center' : ''
+          } ${
             active === tab.key
               ? 'bg-[#C86A43] text-white'
               : 'text-[#6B7280] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
