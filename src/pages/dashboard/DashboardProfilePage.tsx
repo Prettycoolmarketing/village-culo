@@ -900,6 +900,13 @@ export function DashboardProfilePage() {
   const [importedTick, setImportedTick] = useState(0)
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
   const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
+  // Rendering every published story at once was fine for a founder with a
+  // handful of them, but an account with hundreds (confirmed: the admin's
+  // own founder record has 260+) means hundreds of rows — each with an
+  // image, checkbox and action buttons — all mounting at once. A phone's
+  // weaker CPU/memory can make that read as "my content isn't showing" at
+  // all rather than just slow, where desktop just about gets away with it.
+  const [publishedVisibleCount, setPublishedVisibleCount] = useState(50)
   const [activeSeriesId, setActiveSeriesId] = useState<string | null>(null)
   const [addingSeries, setAddingSeries] = useState(false)
   const [newSeriesTitle, setNewSeriesTitle] = useState('')
@@ -2441,7 +2448,7 @@ export function DashboardProfilePage() {
                     </div>
                   </div>
                   <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-                  {sortedStories.map(story => {
+                  {sortedStories.slice(0, publishedVisibleCount).map(story => {
                     const isLive = story.status === 'published' || story.status === 'featured'
                     return (
                       <div key={story.id} className="w-full flex items-center gap-4 px-5 py-4 hover:bg-[#FBF8F4] transition-colors">
@@ -2512,6 +2519,14 @@ export function DashboardProfilePage() {
                     )
                   })}
                   </div>
+                  {sortedStories.length > publishedVisibleCount && (
+                    <button
+                      onClick={() => setPublishedVisibleCount(n => n + 50)}
+                      className="w-full mt-3 py-2.5 text-sm font-semibold text-[#C86A43] bg-white border border-[#E8E4DD] rounded-lg hover:border-[#C86A43]/40 transition-colors"
+                    >
+                      Load more ({sortedStories.length - publishedVisibleCount} remaining)
+                    </button>
+                  )}
                 </>
               )
             })()}

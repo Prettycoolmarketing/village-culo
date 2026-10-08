@@ -11,20 +11,24 @@ interface TabsProps {
   className?: string
   // Default (false) keeps every existing usage of this shared component
   // exactly as it was — horizontal, scrolling sideways on narrow screens.
-  // Profile's own tab row opts into this instead: full-width stacked
-  // buttons on mobile only, back to the normal horizontal row at md+.
+  // Profile's own tab row opts into this instead. A full-width single-
+  // column stack (one row per tab) was tried first, but with 6 tabs that's
+  // ~240px of buttons before any real content shows on a phone — reads as
+  // the tab bar "blocking" the profile below it. A 2-column grid on mobile
+  // keeps the same easy-to-tap full-width targets in roughly a third of
+  // the height, back to the normal horizontal row at md+.
   stackOnMobile?: boolean
 }
 
 export function Tabs({ tabs, active, onChange, className = '', stackOnMobile = false }: TabsProps) {
   return (
-    <div className={`flex ${stackOnMobile ? 'flex-col md:flex-row' : ''} gap-1.5 border-b border-[#E8E4DD] pb-3 ${stackOnMobile ? 'md:overflow-x-auto' : 'overflow-x-auto'} shrink-0 ${className}`}>
+    <div className={`${stackOnMobile ? 'grid grid-cols-2 md:flex' : 'flex'} gap-1.5 border-b border-[#E8E4DD] pb-3 ${stackOnMobile ? 'md:overflow-x-auto' : 'overflow-x-auto'} shrink-0 ${className}`}>
       {tabs.map(tab => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold whitespace-nowrap rounded-lg transition-colors ${
-            stackOnMobile ? 'w-full md:w-auto justify-between md:justify-center' : ''
+          className={`flex items-center gap-1.5 px-2 md:px-4 py-2 text-xs md:text-sm font-semibold rounded-lg transition-colors ${
+            stackOnMobile ? 'w-full md:w-auto justify-center whitespace-normal text-center md:whitespace-nowrap' : 'whitespace-nowrap'
           } ${
             active === tab.key
               ? 'bg-[#C86A43] text-white'

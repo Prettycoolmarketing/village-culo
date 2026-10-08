@@ -223,8 +223,15 @@ export function DashboardWelcomePage() {
       <div className="px-8 sm:px-12">
         <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
         <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl">
-          Import your content from multiple channels to republish as web articles.
+          Import your content from multiple channels to republish as web articles, then edit your raw footage
+          with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
         </p>
+        <Link
+          to="/dashboard/import-content"
+          className="inline-flex mt-4 text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+        >
+          Import your content now
+        </Link>
       </div>
 
       {liveFounder?.onboardingStatus === 'researching' && (
