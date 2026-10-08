@@ -8,7 +8,7 @@ import { SearchInput } from '../ui/SearchInput'
 // reached through search, widgets and internal links rather than the navbar,
 // same as any large content site.
 const primaryLinks = [
-  { to: '/join',  label: 'Join Culo Creatives',  exact: false },
+  { to: '/join',  label: 'Join Culo',  exact: false },
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/businesses',    label: 'Businesses', exact: false },
   { to: '/stories',    label: 'Stories',    exact: false },

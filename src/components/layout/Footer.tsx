@@ -9,7 +9,7 @@ const sections = [
   {
     heading: 'Discover',
     links: [
-      { to: '/join', label: 'Join Culo Creatives'  },
+      { to: '/join', label: 'Join Culo'  },
       { to: '/founders',  label: 'Founders'   },
       { to: '/businesses',   label: 'Businesses' },
       { to: '/stories',   label: 'Stories'    },

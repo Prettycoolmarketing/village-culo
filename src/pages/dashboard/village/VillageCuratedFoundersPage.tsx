@@ -15,7 +15,7 @@ import { LeadSourcesPage } from './LeadSourcesPage'
 import { useAuth } from '../../../contexts/AuthContext'
 import { canAccessCapoSection } from '../../../utils/permissions'
 import { getAllEditorialItems, type EditorialItemRow } from '../../../services/editorialItems'
-import { runFounderResearch } from '../../../services/editorialResearch'
+import { runFullEditorialPipeline } from '../../../services/editorialPipeline'
 import { publishFounderArticles } from '../../../services/publishStory'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
@@ -80,13 +80,16 @@ function BulkBar({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2D2A26] rounded-2xl px-5 py-3 flex items-center gap-4 shadow-2xl">
       <p className="text-xs font-semibold text-white whitespace-nowrap">
-        {researching && researchProgress ? `Researching… (${researchProgress.done}/${researchProgress.total})` : `${selected.size} of ${total} selected`}
+        {researching && researchProgress ? `Researching & writing… (${researchProgress.done}/${researchProgress.total})` : `${selected.size} of ${total} selected`}
       </p>
       <div className="flex items-center gap-2">
         {/* Runs (or re-runs, for anything failed/unresearched in the
-            selection) Stage 1 research — works on any selection, not just
-            failed ones, so this is also how staff kick off research on a
-            batch that was just imported. Skips anything already mid-run. */}
+            selection) the full pipeline — research, bio write + audit, one
+            article write + audit per valid source — not just Stage 1
+            research. Works on any selection, not just failed ones, so
+            this is also how staff kick off the whole thing on a batch
+            that was just imported (the only place that does now — see
+            runResearchSelected). Skips anything already mid-run. */}
         <button
           onClick={onResearch}
           disabled={researching}
@@ -310,20 +313,24 @@ export function VillageCuratedFoundersPage() {
     refresh()
   }
 
-  // Runs (or re-runs) Stage 1 research for whatever's selected — covers a
-  // freshly imported batch with no research yet, a mix of failed ones to
-  // retry, or both at once, all from this list directly (staff often
-  // notice status here first, via the pipeline pill on each row) instead
-  // of needing to go back to the import screen. Skips anything already
-  // mid-run so re-clicking a selection that includes in-progress founders
-  // doesn't fire a second overlapping request for them.
+  // Runs (or re-runs) the FULL pipeline — research, bio write + audit, one
+  // article write + audit per valid source — for whatever's selected.
+  // Used to only run Stage 1 research here, leaving staff to separately
+  // open each founder's Edit and press "Write from research" by hand; this
+  // is now the one place that triggers the whole thing, replacing the
+  // old Bulk Import results-screen panel entirely (see
+  // DashboardBulkImportPage, which no longer triggers research/writing at
+  // all, auto or manual). Covers a freshly imported batch with no research
+  // yet, a mix of failed ones to retry, or both at once. Skips anything
+  // already mid-run so re-clicking a selection that includes in-progress
+  // founders doesn't fire a second overlapping request for them.
   async function runResearchSelected(ids: Set<string>) {
     const targets = Array.from(ids).filter(id => getFounder(id)?.researchStatus !== 'researching')
     if (targets.length === 0) return
     setResearching(true)
     setResearchProgress({ done: 0, total: targets.length })
     for (let i = 0; i < targets.length; i++) {
-      await runFounderResearch(targets[i]!)
+      await runFullEditorialPipeline(targets[i]!)
       setResearchProgress({ done: i + 1, total: targets.length })
     }
     setResearching(false)
