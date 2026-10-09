@@ -306,6 +306,7 @@ export function DashboardCuratedFounderBuilderPage() {
         businessId: linkedBusinessId || undefined,
         status: link.status,
         visibility: link.status === 'published' ? 'public' : 'private',
+        staffCreated: true,
       }
 
       // Setting status here used to only ever label the row "published"

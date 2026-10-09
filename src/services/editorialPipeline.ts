@@ -60,6 +60,7 @@ export async function runFullEditorialPipeline(founderId: string): Promise<Pipel
     let matchedContent = founderContent.find(c => c.originalUrl === source.url)
     if (!matchedContent) {
       const created = buildDraftImport(founderId, source.url)
+      created.staffCreated = true
       const createResult = await importedContentService.upsert(created)
       if (createResult.success) {
         matchedContent = created

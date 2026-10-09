@@ -22,6 +22,7 @@ export async function runOnboardingResearch(founderId: string, link: string): Pr
   await updateFounder({ ...seed, onboardingStatus: 'researching' })
 
   const draft = buildDraftImport(founderId, link)
+  draft.staffCreated = true
   await importedContentService.upsert(draft)
 
   const research = await runFounderResearch(founderId)

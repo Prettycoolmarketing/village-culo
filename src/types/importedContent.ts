@@ -51,6 +51,20 @@ export interface ImportedContent {
   // item without this can't become a published Story's full body — see
   // publishStory.ts's fullDescription gate.
   descriptionRewrittenAt?: string
+  // Set true when this row didn't come from the founder themselves using
+  // their own Import Content connectors — either CAPO staff created it
+  // (bulk JSON curation's content[]/sourceLinks, the Curated Founder
+  // Builder, Spotlight, a mention article, the staff-triggered editorial
+  // pipeline) or it's a fully-automated system write with no founder
+  // action behind it (the one-link onboarding auto-research a brand-new
+  // self-serve signup never had to touch Import Content for). Every
+  // curated founder gets at least a few of these automatically (sourceLinks
+  // alone guarantees it) — without this, Founder Management's "Imported"
+  // badge showed on literally every curated founder regardless of whether
+  // they'd ever touched Import Content themselves, which is what it's
+  // actually meant to signal. Left unset (falsy) on anything created
+  // through a founder's own self-serve import flow.
+  staffCreated?: boolean
   visibility: ImportedContentVisibility
 
   // Set once this import has been turned into a published Story via the Story

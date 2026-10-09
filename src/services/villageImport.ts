@@ -1033,6 +1033,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
             topics:     c.topics ?? [],
             locations:  c.locations ?? [],
             publishedAt: c.publishedAt,
+            staffCreated: true,
           }
           const contentResult = await writeWithRetry(() => importedContentService.upsert(item))
           if (!contentResult.success) {
@@ -1101,6 +1102,7 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
           if (!link || !isValidUrl(link) || existingUrls.has(link)) continue
           const draft = buildDraftImport(founderId, link)
           draft.title = `${displayName} — source`
+          draft.staffCreated = true
           await writeWithRetry(() => importedContentService.upsert(draft))
         }
       }

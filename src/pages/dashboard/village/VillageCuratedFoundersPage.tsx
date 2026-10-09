@@ -224,6 +224,21 @@ export function VillageCuratedFoundersPage() {
     return counts
   }, [tick])
 
+  // Separate from contentCountByFounder above (which the existing "Has
+  // Content"/search-subtitle uses deliberately count everything, staff-
+  // curated included, for a full audit view) — this one backs the
+  // "Imported" badge specifically, which is supposed to mean "this founder
+  // has used their own Import Content page". Every curated founder gets at
+  // least a few staff-created rows automatically (sourceLinks alone
+  // guarantees it), which is exactly why that badge was showing on every
+  // single one of them regardless of whether they'd done anything at all.
+  const founderAddedCountByFounder = useMemo(() => {
+    const all = importedContentService.getAll().filter(c => !c.staffCreated)
+    const counts = new Map<string, number>()
+    for (const c of all) counts.set(c.founderId, (counts.get(c.founderId) ?? 0) + 1)
+    return counts
+  }, [tick])
+
   // "Imported" + a published count, at a glance per row, without opening
   // anything — the lightweight version of being able to peek at a member's
   // content (see VillageCreativeMembersPage for the subscription-focused
@@ -566,6 +581,7 @@ export function VillageCuratedFoundersPage() {
             {filtered.map(f => {
               const biz          = businesses.find(b => b.founderId === f.id)
               const contentCount = contentCountByFounder.get(f.id) ?? 0
+              const founderAddedCount = founderAddedCountByFounder.get(f.id) ?? 0
               const publishedCount = publishedCountByFounder.get(f.id) ?? 0
               const hasEmail     = claimEmailByFounder.has(f.id)
               const isSelected   = selected.has(f.id)
@@ -616,13 +632,13 @@ export function VillageCuratedFoundersPage() {
                       status pill instead, no wrapping pills. */}
                   <div className="col-span-2 flex flex-col gap-0.5">
                     <SimpleStatus founder={f} items={editorialItemsAll.filter(i => i.founder_id === f.id)} />
-                    {(contentCount > 0 || publishedCount > 0) && (
+                    {(founderAddedCount > 0 || publishedCount > 0) && (
                       <p
-                        title={`${contentCount} imported item${contentCount !== 1 ? 's' : ''}, ${publishedCount} published article${publishedCount !== 1 ? 's' : ''}`}
+                        title={`${founderAddedCount} item${founderAddedCount !== 1 ? 's' : ''} the founder imported themselves, ${publishedCount} published article${publishedCount !== 1 ? 's' : ''}`}
                         className="text-[10px] text-[#9CA3AF] whitespace-nowrap"
                       >
-                        {contentCount > 0 && 'Imported'}
-                        {contentCount > 0 && publishedCount > 0 && ' · '}
+                        {founderAddedCount > 0 && 'Imported'}
+                        {founderAddedCount > 0 && publishedCount > 0 && ' · '}
                         {publishedCount > 0 && `${publishedCount} published`}
                       </p>
                     )}
