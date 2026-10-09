@@ -237,7 +237,7 @@ export function DashboardWelcomePage() {
       <div className="px-0 md:px-8 lg:px-12">
         <Link
           to="/dashboard/import-content"
-          className="flex md:inline-flex w-full md:w-auto justify-center mt-4 text-base md:text-sm font-semibold px-5 py-3 md:py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+          className="flex md:inline-flex w-full md:w-auto justify-center mt-4 text-base md:text-sm font-semibold px-5 py-3 md:py-2.5 rounded-lg text-[#C86A43] hover:text-[#b05a35] hover:underline transition-colors"
         >
           Import your content now
         </Link>

@@ -1906,7 +1906,7 @@ export function DashboardImportContentPage() {
                 published, under the Create with Culo Creative box) is a
                 dense table built for desktop — on mobile, point to desktop
                 instead of linking into it. */}
-            <p className="md:hidden text-lg font-bold text-[#9CA3AF]">
+            <p className="md:hidden text-center text-xl font-bold text-[#9CA3AF]">
               See content on your computer
             </p>
           </div>

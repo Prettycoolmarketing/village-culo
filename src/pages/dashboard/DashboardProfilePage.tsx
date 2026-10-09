@@ -1370,9 +1370,14 @@ export function DashboardProfilePage() {
       )}
 
       {/* Page header — hidden on Content, which is a focused view of just
-          your imported/published items, not the rest of the profile. */}
+          your imported/published items, not the rest of the profile.
+          Hidden on mobile entirely now too: pinned above the scroll area,
+          it stayed in view the whole time you scrolled the page below it —
+          moved to a mobile-only equivalent at the top of the scrollable
+          content instead (see right after the scroll container opens
+          below), so it scrolls away with everything else. */}
       {tab !== 'content' && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-8 pt-8 pb-5 shrink-0">
+        <div className="hidden md:flex md:flex-row md:items-center md:justify-between gap-3 px-8 pt-8 pb-5 shrink-0">
           <div className="flex items-center gap-4">
             {draft.avatar && draft.avatar !== '/placeholders/village-founder.svg' && (
               <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover object-top bg-[#F3EDE6]" />
@@ -1438,6 +1443,25 @@ export function DashboardProfilePage() {
 
       {/* Tab content */}
       <div className={`flex-1 overflow-y-auto px-8 py-6 ${tab === 'content' ? 'pt-8' : ''}`}>
+
+        {/* Mobile-only equivalent of the header above (hidden md:flex there) —
+            part of the scrollable content now, not pinned above it. */}
+        {tab !== 'content' && (
+          <div className="flex md:hidden items-center gap-4 mb-6">
+            {draft.avatar && draft.avatar !== '/placeholders/village-founder.svg' && (
+              <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover object-top bg-[#F3EDE6]" />
+            )}
+            <h1 className="text-xl font-bold text-[#2D2A26] flex-1">{draft.name}</h1>
+            <a
+              href={`/founders/${draft.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 px-3 py-2 text-sm text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
+            >
+              View on site ↗
+            </a>
+          </div>
+        )}
 
         {/* ── Overview (Profile) ───────────────────────────────────────── */}
         {tab === 'overview' && (
@@ -3028,19 +3052,23 @@ export function DashboardProfilePage() {
           </div>
         )}
 
-      </div>
+        {/* Mobile save bar — was pinned below the scroll area (a fixed
+            sibling after this container closed), staying in view no
+            matter how far you'd scrolled. Moved inside the scroll flow
+            instead, as the last thing in the content, so it scrolls away
+            like everything else above it. lg:hidden unchanged — desktop's
+            top Save button (in the header above) already covers this. */}
+        {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
+          <div className="lg:hidden flex items-center gap-3 mt-8 pt-5 border-t border-[#E8E4DD]">
+            <button onClick={handleSave} disabled={saving} className="px-5 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
+              {saving ? 'Saving…' : 'Save Changes'}
+            </button>
+            {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
+            {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
+          </div>
+        )}
 
-      {/* Bottom save bar — mobile only; on desktop the top Save button is
-          always in view, so this second one is just noise. */}
-      {(tab === 'overview' || tab === 'expertise' || tab === 'settings') && (
-        <div className="lg:hidden flex items-center gap-3 px-8 py-4 border-t border-[#E8E4DD] bg-white shrink-0">
-          <button onClick={handleSave} disabled={saving} className="px-5 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-60 transition-colors">
-            {saving ? 'Saving…' : 'Save Changes'}
-          </button>
-          {saved && <p className="text-sm text-green-600 font-medium">Saved ✓</p>}
-          {saveError && <p className="text-sm text-red-600 font-medium">{saveError}</p>}
-        </div>
-      )}
+      </div>
 
       {editingLibraryItem && (
         <LibraryItemEditModal
