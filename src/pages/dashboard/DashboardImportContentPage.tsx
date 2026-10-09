@@ -1899,9 +1899,16 @@ export function DashboardImportContentPage() {
               straight to Ready to Publish — what's actually actionable —
               not the raw list itself. */}
           <div className="mt-6 pt-6 pb-10 border-t border-[#E8E4DD]">
-            <Link to="/dashboard/profile?tab=content&contentSubTab=ready" className="text-2xl font-bold text-[#C86A43] hover:underline">
+            <Link to="/dashboard/profile?tab=content&contentSubTab=ready" className="hidden md:inline text-2xl font-bold text-[#C86A43] hover:underline">
               View everything you've imported so far
             </Link>
+            {/* That Content tab (ready to publish / needs more value /
+                published, under the Create with Culo Creative box) is a
+                dense table built for desktop — on mobile, point to desktop
+                instead of linking into it. */}
+            <p className="md:hidden text-lg font-bold text-[#9CA3AF]">
+              See content on your computer
+            </p>
           </div>
         </div>
       )}

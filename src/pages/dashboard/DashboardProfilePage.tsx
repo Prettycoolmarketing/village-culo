@@ -1425,9 +1425,15 @@ export function DashboardProfilePage() {
       )}
 
       {/* Tabs — Content is reached from its own sidebar link now and shows
-          only the content section, not the rest of the profile's tabs. */}
+          only the content section, not the rest of the profile's tabs.
+          Hidden on mobile entirely: Profile is the only tab mobile shows
+          anything real for (see the overview tab body above), so a
+          switcher to five other tabs that all say "use desktop" is just
+          noise there. */}
       {tab !== 'content' && (
-        <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-8" stackOnMobile />
+        <div className="hidden md:block">
+          <Tabs tabs={TABS} active={tab} onChange={setTab} className="px-8" stackOnMobile />
+        </div>
       )}
 
       {/* Tab content */}
@@ -1452,7 +1458,7 @@ export function DashboardProfilePage() {
             </a>
 
             {businessAutoDrafted && (
-              <p className="text-xs text-[#C86A43] font-medium -mt-2">
+              <p className="hidden md:block text-xs text-[#C86A43] font-medium -mt-2">
                 CULO drafted some of your business details from your MD file — check the Businesses tab and edit anything that's off.
               </p>
             )}
@@ -1462,26 +1468,30 @@ export function DashboardProfilePage() {
               {renderIdentityFields(draft)}
             </div>
 
-            {/* Featured stories now live in one place — the "Feature"
-                button on each story in Content — instead of duplicated here
-                as a second, separate picker writing to the same underlying
-                selection (see toggleFeaturedStory). A quick link there
-                instead of a second control that could drift out of sync
-                with it again. */}
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-[#2D2A26]">Featured stories</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Choose what's featured on your public profile — and potentially on the main Culo Village — from the Feature button on each story.</p>
+            {/* Businesses, the stat-link grid and the Creatives banner are
+                all navigation to somewhere else in the dashboard — on
+                mobile, Profile is the whole page (see the mobile-only
+                block right below instead of this), so none of that
+                applies; just the identity fields above. */}
+            <div className="hidden md:block">
+              {/* Featured stories now live in one place — the "Feature"
+                  button on each story in Content — instead of duplicated here
+                  as a second, separate picker writing to the same underlying
+                  selection (see toggleFeaturedStory). A quick link there
+                  instead of a second control that could drift out of sync
+                  with it again. */}
+              <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#2D2A26]">Featured stories</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">Choose what's featured on your public profile — and potentially on the main Culo Village — from the Feature button on each story.</p>
+                </div>
+                <Link to="/dashboard/profile?tab=content&contentSubTab=published" className="shrink-0 text-sm font-semibold text-[#C86A43] hover:underline">
+                  Go to Content →
+                </Link>
               </div>
-              <Link to="/dashboard/profile?tab=content&contentSubTab=published" className="shrink-0 text-sm font-semibold text-[#C86A43] hover:underline">
-                Go to Content →
-              </Link>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {/* Businesses drops out on mobile — 5 across was too cramped
-                  for "Businesses" to fit without wrapping; it's still one
-                  tap away from Profile's own Businesses tab. */}
+            <div className="hidden md:grid grid-cols-2 sm:grid-cols-5 gap-3">
               <Link to="/dashboard/profile?tab=businesses" className="hidden sm:block bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderBusinesses.length}</p>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Businesses</p>
@@ -1507,7 +1517,7 @@ export function DashboardProfilePage() {
             {/* Culo Creatives — same dark banner as the top of Content. */}
             <Link
               to="/dashboard/creatives"
-              className="block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
+              className="hidden md:block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
                 <p className="font-heading text-2xl font-semibold text-white leading-snug">
@@ -1519,6 +1529,15 @@ export function DashboardProfilePage() {
                 </span>
               </div>
             </Link>
+
+            {/* Mobile-only stand-in for everything hidden above (Featured
+                stories, the stat grid, Creatives) — Profile is meant to be
+                the whole page on a phone; this is the one thing at the
+                bottom of it, pointing people to desktop for anything else. */}
+            <div className="md:hidden bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 text-center">
+              <p className="text-sm font-semibold text-[#2D2A26]">Want to update more, or publish content?</p>
+              <p className="text-xs text-[#9CA3AF] mt-1">The mobile view is limited to your profile basics — switch to desktop to manage businesses, publish content and everything else.</p>
+            </div>
 
           </div>
         )}
@@ -1539,7 +1558,23 @@ export function DashboardProfilePage() {
           const liveVoiceBrief = getFounder(draft.id)?.voiceBrief
           const liveInsightBrief = getFounder(draft.id)?.insightBrief
           return (
-          <div className="flex flex-col gap-5">
+          <>
+            {/* Every entry point into this tab (sidebar nav, the old
+                Featured-stories/stat-grid links on Overview, Import
+                Content's "view everything") led here on mobile too — a
+                dense multi-select table with inline image/checkbox/action
+                rows per story, never designed for a phone screen ("all the
+                videos were messy" — confirmed real complaint). Rather than
+                chase every entry point, gate the tab body itself: mobile
+                gets one clear message instead of the real UI below it. */}
+            <div className="flex md:hidden flex-col items-center text-center gap-3 bg-white rounded-2xl border border-[#E8E4DD] px-6 py-10">
+              <p className="text-base font-semibold text-[#2D2A26]">See your content on your computer</p>
+              <p className="text-sm text-[#6B7280] max-w-xs">
+                Managing and publishing your content works best on a bigger screen — switch to desktop to view,
+                edit and publish what you've imported.
+              </p>
+            </div>
+          <div className="hidden md:flex md:flex-col gap-5">
             {draft.pcmManaged && !draft.pcmGateOpen && (() => {
               const svc = draft.pcmService
               const line = svc === 'social' ? 'Your account manager is setting up your social media.'
@@ -2630,6 +2665,7 @@ export function DashboardProfilePage() {
               )
             })()}
           </div>
+          </>
           )
         })()}
 

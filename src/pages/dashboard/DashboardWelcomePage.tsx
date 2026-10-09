@@ -226,9 +226,18 @@ export function DashboardWelcomePage() {
           Import your content from multiple channels to republish as web articles, then edit your raw footage
           with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
         </p>
+      </div>
+
+      {/* On mobile only, the button spans edge-to-edge the same as the
+          "How The Culo Village Works" box right below it (which has no
+          horizontal inset of its own, unlike this heading block) — needs
+          its own wrapper with no px to actually line up with that box's
+          outer edges, not just its inner text. Reverts to the original
+          compact inline button at md+, where this was already fine. */}
+      <div className="px-0 md:px-8 lg:px-12">
         <Link
           to="/dashboard/import-content"
-          className="inline-flex mt-4 text-sm font-semibold px-5 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+          className="flex md:inline-flex w-full md:w-auto justify-center mt-4 text-base md:text-sm font-semibold px-5 py-3 md:py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
         >
           Import your content now
         </Link>
