@@ -38,6 +38,16 @@ function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialIt
   // Once the founder claims the profile, "Published" stops being accurate —
   // it's their profile now, not a curated one staff is still tending.
   if (founder.status === 'published') {
+    // 'verified' is a distinct, further step past 'claimed' (see the
+    // "Verify" action below) - clicking it used to make the founder vanish
+    // from this whole page entirely, because nothing here ever checked for
+    // it (confirmed real: happened to Tibo, and before him Olivia). Treated
+    // everywhere else in the app as claimed-or-better (ClaimProfilePage,
+    // VillageHQOverviewPage, EmailExportPanel) - given its own pill here
+    // too, not just folded into "Claimed", so staff can actually see it.
+    if (founder.profileStatus === 'verified') {
+      return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#5E6B4A]/10 text-[#5E6B4A]">Verified</span>
+    }
     if (founder.profileStatus === 'claimed') {
       return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#3E6E92]/10 text-[#3E6E92]">Claimed</span>
     }
@@ -192,14 +202,18 @@ export function VillageCuratedFoundersPage() {
     refresh()
   }
 
-  // This whole page manages CULO's own curated batch — a real founder who's
-  // claimed and verified their profile manages it themselves through their
-  // own dashboard, and isn't part of what staff need to bulk-review/publish/
-  // research here. Scoping the base dataset itself (not just a sub-tab)
-  // means every stat, filter and bulk action below is already curated-only.
-  // 'claimed' stays in — otherwise a founder who claims a published profile
-  // just vanishes from the Published tab instead of showing as Claimed.
-  const founders  = getFounders().filter(f => f.profileStatus === 'village-curated' || f.profileStatus === 'claim-pending' || f.profileStatus === 'claimed')
+  // This whole page manages CULO's own curated batch. 'claimed' stays in —
+  // otherwise a founder who claims a published profile just vanishes from
+  // the Published tab instead of showing as Claimed. 'verified' stays in
+  // for the same reason: it used to be left out on the theory that a
+  // verified founder fully self-manages from here on and doesn't need
+  // staff's tools anymore — but every other page that checks profileStatus
+  // (ClaimProfilePage, VillageHQOverviewPage, EmailExportPanel) already
+  // treats 'verified' as claimed-or-better, not as "hide this founder
+  // entirely". Leaving it out here just meant clicking the "Verify" action
+  // made the founder silently vanish from this whole page with zero
+  // warning — confirmed real, happened to both Tibo and (earlier) Olivia.
+  const founders  = getFounders().filter(f => f.profileStatus === 'village-curated' || f.profileStatus === 'claim-pending' || f.profileStatus === 'claimed' || f.profileStatus === 'verified')
   const businesses = getBusinesses()
   const claims    = founderClaimService.getAll()
 
@@ -280,7 +294,7 @@ export function VillageCuratedFoundersPage() {
 
   const curatedDraftFounders = useMemo(() => founders.filter(f => f.status === 'draft'), [founders])
   const publishedFounders    = useMemo(() => founders.filter(f => f.status !== 'draft'), [founders])
-  const claimedFounders      = useMemo(() => founders.filter(f => f.profileStatus === 'claimed'), [founders])
+  const claimedFounders      = useMemo(() => founders.filter(f => f.profileStatus === 'claimed' || f.profileStatus === 'verified'), [founders])
 
   // Filter + sort
   const filtered = useMemo(() => {
@@ -713,15 +727,19 @@ export function VillageCuratedFoundersPage() {
                         </button>
                       )}
                       {f.profileStatus === 'claimed' && (
-                        <button
-                          onClick={() => void founderClaimService.markVerified(f.id).then(result => {
+                        <ConfirmButton
+                          label="Verify"
+                          confirmLabel="Yes, verify"
+                          message="Marks this founder as verified."
+                          onConfirm={() => void founderClaimService.markVerified(f.id).then(result => {
                             if (!result.success) { alert(result.error ?? 'Could not update. Please try again.'); return }
                             refresh()
                           })}
                           className="text-[10px] text-[#C86A43] hover:underline"
-                        >
-                          Verify
-                        </button>
+                        />
+                      )}
+                      {f.profileStatus === 'verified' && (
+                        <span className="text-[10px] font-semibold text-[#5E6B4A]">Verified ✓</span>
                       )}
                       {canDeleteAccounts && (
                         <ConfirmButton
