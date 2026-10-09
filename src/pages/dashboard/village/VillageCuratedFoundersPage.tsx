@@ -46,7 +46,7 @@ function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialIt
     // VillageHQOverviewPage, EmailExportPanel) - given its own pill here
     // too, not just folded into "Claimed", so staff can actually see it.
     if (founder.profileStatus === 'verified') {
-      return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#5E6B4A]/10 text-[#5E6B4A]">Verified</span>
+      return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-purple-100 text-purple-700">Verified</span>
     }
     if (founder.profileStatus === 'claimed') {
       return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#3E6E92]/10 text-[#3E6E92]">Claimed</span>
@@ -739,7 +739,7 @@ export function VillageCuratedFoundersPage() {
                         />
                       )}
                       {f.profileStatus === 'verified' && (
-                        <span className="text-[10px] font-semibold text-[#5E6B4A]">Verified ✓</span>
+                        <span className="text-[10px] font-semibold text-purple-700">Verified ✓</span>
                       )}
                       {canDeleteAccounts && (
                         <ConfirmButton
