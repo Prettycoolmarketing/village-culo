@@ -258,7 +258,12 @@ export function CanvaImportCard({
     // page instead of playing a video — exactly the wrong thing to
     // publish. Blocking here guarantees a founder either gets the real
     // video or a clear error, never a silent Canva-link fallback.
-    const exportVideo = contentTypeHint?.includes('reel') || (asType === 'reel' && indices.length === 1)
+    // Reel + Caption: click the slide to use as the video, then click a
+    // second slide next to it for the caption — the video always exports
+    // from the FIRST one picked (indices[0], same as a plain one-slide
+    // Reel), the second is caption-text only, never part of the video.
+    const isReelWithCaption = asType === 'reel' && indices.length === 2
+    const exportVideo = contentTypeHint?.includes('reel') || (asType === 'reel' && (indices.length === 1 || isReelWithCaption))
     let reelVideoUrl: string | undefined
     let videoExportError: string | null = null
     if (exportVideo) {
@@ -291,11 +296,15 @@ export function CanvaImportCard({
     // A single group can mix slides from more than one imported design now,
     // so this fetches per-design (the export API is scoped that way) and
     // stitches the answers back together in the founder's selection order.
+    // Reel + Caption pulls text from the caption slide only (indices[1]) —
+    // the reel slide itself (indices[0]) is a video, its own "text" (if
+    // any) isn't the caption the founder actually wrote for this piece.
+    const textIndices = isReelWithCaption ? [indices[1]!] : indices
     const slideTexts: string[] = []
     setBusy(true)
     setStage('Reading the text off your slides…')
-    for (const designId of [...new Set(indices.map(i => result.designIds[i]))]) {
-      const pagesForDesign = indices
+    for (const designId of [...new Set(textIndices.map(i => result.designIds[i]))]) {
+      const pagesForDesign = textIndices
         .filter(i => result.designIds[i] === designId)
         .map(i => result.pageNumbers[i] ?? i + 1)
       try {
@@ -583,6 +592,16 @@ export function CanvaImportCard({
                       title={selected.size !== 1 ? 'Select exactly one slide to save it as a Reel' : undefined}
                       className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors">
                       Save as Reel
+                    </button>
+                    {/* Click the Reel slide first, then the slide next to
+                        it with the caption text you actually want — the
+                        video still exports from whichever was clicked
+                        first (indices[0]), the second is caption-only
+                        (see isReelWithCaption in handleUse). */}
+                    <button type="button" onClick={() => void handleUse('reel')} disabled={selected.size !== 2 || busy}
+                      title={selected.size !== 2 ? 'Click the Reel slide, then the slide with your caption text' : undefined}
+                      className="px-4 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 transition-colors">
+                      Save as Reel with Caption
                     </button>
                     {selected.size > 1 && (
                       <button type="button" onClick={() => void handleUseSeparate()} disabled={busy}
