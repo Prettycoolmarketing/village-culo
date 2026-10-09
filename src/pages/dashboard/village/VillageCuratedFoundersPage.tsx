@@ -224,6 +224,33 @@ export function VillageCuratedFoundersPage() {
     return counts
   }, [tick])
 
+  // Catches the exact failure mode that happened for real with Tibo: a
+  // curated founder signs up through plain /join instead of using their
+  // claim link, and (before that gap was closed — see ensureJoinedFounder)
+  // ends up with a second, blank founder record under their real account
+  // while their actual curated profile sits untouched and unclaimed. That
+  // second record's profileStatus is never 'village-curated'/'claim-pending'
+  // (it's a normal self-serve signup), so it never shows up in `founders`
+  // above — this checks the FULL list for a same-name match with a real
+  // linked account, so staff can catch and merge it before it's noticed by
+  // the founder complaining their content "isn't there".
+  const duplicateWarningByFounder = useMemo(() => {
+    void tick
+    const all = getFounders()
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const warnings = new Map<string, string>()
+    for (const f of all) {
+      if (f.profileStatus !== 'village-curated' && f.profileStatus !== 'claim-pending') continue
+      const fNorm = normalize(f.name)
+      if (!fNorm) continue
+      const match = all.find(o => o.id !== f.id && (o.userId || o.claimedByUserId) && normalize(o.name) === fNorm)
+      if (match) {
+        warnings.set(f.id, `Possible duplicate — "${match.name}" (/${match.slug}) already has a real account signed up separately. This profile (${f.slug}) is still unclaimed.`)
+      }
+    }
+    return warnings
+  }, [tick])
+
   // Separate from contentCountByFounder above (which the existing "Has
   // Content"/search-subtitle uses deliberately count everything, staff-
   // curated included, for a full audit view) — this one backs the
@@ -585,9 +612,10 @@ export function VillageCuratedFoundersPage() {
               const publishedCount = publishedCountByFounder.get(f.id) ?? 0
               const hasEmail     = claimEmailByFounder.has(f.id)
               const isSelected   = selected.has(f.id)
+              const duplicateWarning = duplicateWarningByFounder.get(f.id)
 
               return (
-                <div key={f.id} className={`grid grid-cols-12 gap-3 px-5 py-3.5 items-center transition-colors ${isSelected ? 'bg-[#C86A43]/5' : 'hover:bg-[#F8F5F0]'}`}>
+                <div key={f.id} className={`grid grid-cols-12 gap-3 px-5 py-3.5 items-center transition-colors ${isSelected ? 'bg-[#C86A43]/5' : duplicateWarning ? 'bg-red-50' : 'hover:bg-[#F8F5F0]'}`}>
                   <div className="col-span-1">
                     {!isProtectedFounder(f) && (
                       <input
@@ -613,6 +641,11 @@ export function VillageCuratedFoundersPage() {
                         {hasEmail && ' · ✉'}
                         {f.signupProduct && ` · via ${f.signupProduct === 'canva' ? 'Canva' : 'Village'}`}
                       </p>
+                      {duplicateWarning && (
+                        <p className="text-[10px] font-semibold text-red-600 mt-0.5" title={duplicateWarning}>
+                          ⚠ Possible duplicate account
+                        </p>
+                      )}
                     </div>
                   </div>
                   <p className="col-span-2 text-xs text-[#6B7280] truncate">{f.industry.name}</p>
