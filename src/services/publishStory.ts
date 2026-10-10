@@ -193,6 +193,10 @@ const PLATFORM_CONTENT_TYPE: Record<ImportedContentPlatform, ContentType> = {
   linkedin:  'social-post',
   website:   'blog',
   canva:     'carousel',
+  // Mixed photos/videos per memory — reel when a specific item has one
+  // (see contentTypeHint on the built ImportedContent itself, which wins
+  // over this generic fallback), carousel-style blog otherwise.
+  snapchat:  'blog',
 }
 
 // A genuinely short summary, never the whole blog dumped in as-is. Used

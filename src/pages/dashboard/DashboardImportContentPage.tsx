@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useDictation } from '../../hooks/useDictation'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
+import { SnapchatArchiveImportCard } from '../../components/dashboard/SnapchatArchiveImportCard'
 import { SourceIcon } from '../../components/ui/SourceIcon'
 import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { useAuth } from '../../contexts/AuthContext'
@@ -1903,6 +1904,13 @@ export function DashboardImportContentPage() {
                 founderId={founderId}
                 isHighVolume={isHighVolume}
                 onConnected={() => { loadSources(); reportImported(1) }}
+              />
+            </div>
+
+            <div className="lg:col-start-1 lg:row-start-3">
+              <SnapchatArchiveImportCard
+                founderId={founderId}
+                onImported={count => reportImported(count)}
               />
             </div>
           </div>

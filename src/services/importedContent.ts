@@ -113,6 +113,7 @@ export const PLATFORM_LABELS: Record<ImportedContentPlatform, string> = {
   podcast:   'Podcast',
   website:   'Website',
   canva:     'Canva',
+  snapchat:  'Snapchat',
 }
 
 export const PLATFORM_COLORS: Record<ImportedContentPlatform, string> = {
@@ -124,6 +125,7 @@ export const PLATFORM_COLORS: Record<ImportedContentPlatform, string> = {
   podcast:   'bg-purple-100 text-purple-700',
   website:   'bg-[#F3EDE6] text-[#6B7280]',
   canva:     'bg-cyan-100 text-cyan-700',
+  snapchat:  'bg-yellow-100 text-yellow-700',
 }
 
 export function buildDraftImport(founderId: string, url: string): ImportedContent {

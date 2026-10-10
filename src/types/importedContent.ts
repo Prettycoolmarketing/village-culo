@@ -9,6 +9,7 @@ export type ImportedContentPlatform =
   | 'podcast'
   | 'website'
   | 'canva'
+  | 'snapchat'
 
 export type ImportedContentStatus = 'draft' | 'published' | 'featured' | 'archived'
 export type ImportedContentVisibility = 'private' | 'discoverable' | 'public'
