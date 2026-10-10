@@ -46,7 +46,13 @@ export function getFounders(filter?: FounderFilter): Founder[] {
   if (filter.locationId) result = result.filter(f => f.location.id === filter.locationId)
   if (filter.industryId) result = result.filter(f => f.industry.id === filter.industryId)
   if (filter.topicId)    result = result.filter(f => f.topics.some(t => t.id === filter.topicId))
-  if (filter.publicOnly) result = result.filter(f => f.status === 'published' || f.status === 'featured')
+  // A real bio is the one minimum bar for actually being in the Village —
+  // a self-serve signup who never writes/connects/imports anything (e.g.
+  // someone who only ever wanted Culo Creatives, not a public profile)
+  // should never surface here even if their status somehow reaches
+  // published/featured. Confirmed safe: no currently-published founder
+  // has an empty bio today, so this changes nothing for anyone real yet.
+  if (filter.publicOnly) result = result.filter(f => (f.status === 'published' || f.status === 'featured') && !!f.bio?.trim())
   if (filter.featured !== undefined) result = result.filter(f => f.featured === filter.featured)
   if (filter.searchQuery?.trim()) {
     const q = filter.searchQuery.trim().toLowerCase()

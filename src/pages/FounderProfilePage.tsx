@@ -303,6 +303,15 @@ export function FounderProfilePage() {
   // dashboard's own "Preview (not public yet)" link for every draft, the
   // one case this branch exists to serve.
   if (!founder) return <FounderNotFound slug={slug ?? ''} />
+  // Same minimum bar as getFounders({ publicOnly: true }) (see
+  // services/founders.ts) — a published founder with no real bio at all
+  // (never wrote/connected/imported anything) shouldn't have a working
+  // public page just because status reached published/featured somehow.
+  // Doesn't affect previewing your own still-draft profile — draft status
+  // means RLS already kept this from reaching an anonymous visitor at all.
+  if ((founder.status === 'published' || founder.status === 'featured') && !founder.bio?.trim()) {
+    return <FounderNotFound slug={slug ?? ''} />
+  }
   // Real FAQs the founder actually wrote (Profile > FAQ tab) — this used to
   // read from a parallel fake FAQ system that had no connection to what
   // founders could edit, so answering FAQs in the dashboard never showed up
