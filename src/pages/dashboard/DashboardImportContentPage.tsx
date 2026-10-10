@@ -1773,7 +1773,10 @@ export function DashboardImportContentPage() {
           no invented storage quota or "of N available" ceiling. Hidden
           entirely until there's at least one connected source — a fresh
           founder with nothing imported yet doesn't need three boxes of
-          zeroes/"Never" before they've done anything. */}
+          zeroes/"Never" before they've done anything. Hidden on mobile
+          entirely now too — connecting sources itself moved to desktop-
+          only there (see the mobile notice right below the heading), so
+          stats about sources already connected are moot on a phone. */}
       {!draft && sources.length > 0 && (() => {
         const itemsImported = importedContentService.getAll({ founderId }).length
         const lastScan = sources.reduce<string | undefined>((latest, s) => {
@@ -1781,7 +1784,7 @@ export function DashboardImportContentPage() {
           return !latest || s.lastScannedAt > latest ? s.lastScannedAt : latest
         }, undefined)
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="hidden md:grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div className="flex items-center justify-between gap-3 bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <div>
                 <p className="text-xs text-[#9CA3AF]">Sources connected</p>
@@ -1846,6 +1849,20 @@ export function DashboardImportContentPage() {
               optional add-on shouldn't sit in front of the actual import
               action. */}
           <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web articles for structured discovery</p>
+
+          {/* Mobile-only notice, replacing the actual connector cards below
+              (hidden on mobile — see their wrapper's hidden md:grid). Real
+              reason, not just general mobile-simplification: Instagram's
+              connect button sends the browser to Instagram's own login
+              page to authorize, and on mobile that's a full navigation
+              away with no reliable way back to Culo afterward (confirmed
+              real complaint) — unlike desktop, where it's a popup/new tab
+              that closes itself back to this page when done. */}
+          <div className="md:hidden bg-white rounded-xl border border-[#E8E4DD] px-6 py-10 mb-6 text-center">
+            <p className="text-base font-semibold text-[#2D2A26]">Open Culo on desktop</p>
+            <p className="text-sm text-[#9CA3AF] mt-1">Follow the instructions to import your content simply.</p>
+          </div>
+
           {/* A real 2-column grid with each card explicitly placed by row,
               not two independent flex columns — flex columns have no idea
               how tall the other column's cards are, so a taller YouTube
@@ -1854,7 +1871,7 @@ export function DashboardImportContentPage() {
               Placing cards by grid row means row 1's height is driven by
               whichever of YouTube/Instagram is taller, row 2 by whichever
               of Podcast/Blog is taller, and so on — top edges always align. */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
+          <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
             <div className="lg:col-start-1 lg:row-start-1">
               <YouTubeConnectForm
                 founderId={founderId}

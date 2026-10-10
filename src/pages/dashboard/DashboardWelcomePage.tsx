@@ -204,7 +204,7 @@ export function DashboardWelcomePage() {
             </Link>
             <Link
               to="/dashboard/import-content"
-              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
+              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl text-[#C86A43] hover:text-[#b05a35] hover:underline transition-colors w-full sm:w-auto"
             >
               Import your content into The Village
             </Link>
@@ -301,9 +301,10 @@ export function DashboardWelcomePage() {
       {/* ── How Culo Creatives Works ──────────────────────────────────────── */}
       <section className="w-full bg-white rounded-2xl border border-[#E8E4DD] px-8 py-8 sm:px-12 sm:py-10">
         <Link to="/dashboard/creatives" className="group block">
-          <h2 className="text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-4 group-hover:text-[#C86A43] transition-colors">
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-1 group-hover:text-[#C86A43] transition-colors">
             How Culo Creatives Works <span className="text-[#C86A43] text-lg font-normal">→</span>
           </h2>
+          <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-white bg-[#9CA3AF] px-2 py-0.5 rounded-full mb-4">Coming Soon</span>
           <p className="text-sm text-[#6B7280] leading-relaxed max-w-2xl mb-6">
             Culo Creatives is the Canva app that turns your raw footage and messy thoughts into finished
             blogs, carousels and reels — exclusively in Canva, in your own brand. Once it's made, you check
