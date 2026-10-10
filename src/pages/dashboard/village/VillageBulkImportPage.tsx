@@ -89,8 +89,14 @@ export function VillageBulkImportPage({ embedded = false }: { embedded?: boolean
   const totalContent  = batches.reduce((s, b) => s + b.contentCreated, 0)
   const totalIntel    = batches.reduce((s, b) => s + b.intelGenerated, 0)
 
+  // Embedded inside Founder Management's own max-w-5xl page, this still
+  // inherited the full width of it — a batch row's name on the far left
+  // and its delete button on the far right, with a wide empty gap between,
+  // reads as the page sprawling rather than a tidy list. max-w-3xl keeps
+  // it readable without changing anything for the standalone
+  // /dashboard/bulk-import route.
   return (
-    <div className={embedded ? '' : 'p-8 max-w-5xl'} style={embedded ? undefined : { fontFamily: "'DM Sans', sans-serif" }}>
+    <div className={embedded ? 'max-w-3xl' : 'p-8 max-w-5xl'} style={embedded ? undefined : { fontFamily: "'DM Sans', sans-serif" }}>
       {!embedded && <CapoBackLink />}
 
       {/* Header */}

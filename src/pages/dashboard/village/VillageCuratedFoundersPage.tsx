@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getFounders, getFounder, updateFoundersBatch, deleteFoundersBatch, deleteFounderAccount } from '../../../services/founders'
 import { getCurrentFounder } from '../../../services/currentFounder'
@@ -18,6 +18,7 @@ import { getAllEditorialItems, type EditorialItemRow } from '../../../services/e
 import { getStories } from '../../../services/stories'
 import { runFullEditorialPipeline } from '../../../services/editorialPipeline'
 import { publishFounderArticles } from '../../../services/publishStory'
+import { getSourcedLeads } from '../../../services/sourcedLeads'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
@@ -156,6 +157,14 @@ export function VillageCuratedFoundersPage() {
     : !canSeeFounders ? 'imports' : 'founders',
   )
   const [tick, setTick]           = useState(0)
+  // So the Lead Sources tab shows a count the moment any lead comes
+  // through, without having to click into it first — same idea as the
+  // Claimed tab's own badge just above it.
+  const [leadsCount, setLeadsCount] = useState(0)
+  useEffect(() => {
+    if (!canSeeLeadSources) return
+    void getSourcedLeads().then(leads => setLeadsCount(leads.length))
+  }, [canSeeLeadSources, tick])
   // Research/write/audit status per founder — shown right here, not only
   // in Bulk Import's own session view, since this list is where staff
   // actually come back to review and publish. Re-fetched whenever tick
@@ -464,7 +473,7 @@ export function VillageCuratedFoundersPage() {
           ...(canSeeFounders ? [{ key: 'founders', label: 'Editorial Queue' }] : []),
           ...(canSeeFounders ? [{ key: 'published', label: 'Published', badge: publishedFounders.length }] : []),
           ...(canSeeFounders ? [{ key: 'claimed', label: 'Claimed', badge: claimedFounders.length }] : []),
-          ...(canSeeLeadSources ? [{ key: 'leadSources', label: 'Lead Sources' }] : []),
+          ...(canSeeLeadSources ? [{ key: 'leadSources', label: 'Lead Sources', badge: leadsCount }] : []),
         ]}
         active={pageTab}
         onChange={key => setPageTab(key as 'founders' | 'published' | 'claimed' | 'imports' | 'leadSources')}
@@ -662,14 +671,21 @@ export function VillageCuratedFoundersPage() {
                       )}
                     </div>
                   </div>
-                  <p className="col-span-2 text-xs text-[#6B7280] truncate">{f.industry.name}</p>
+                  {/* Editorial Queue is a name-then-decide list — "just the
+                      name with view page or publish", not every column the
+                      Published/Claimed tabs find useful — industry and
+                      platform dots stay empty (but keep their grid spans,
+                      so the row doesn't have to be laid out differently
+                      per tab) rather than showing staff detail that's not
+                      what this particular tab is for. */}
+                  <p className="col-span-2 text-xs text-[#6B7280] truncate">{pageTab === 'founders' ? '' : f.industry.name}</p>
                   <div className="col-span-1 flex gap-1 justify-center">
-                    {f.youtube   && <span title="YouTube"   className="w-1.5 h-1.5 rounded-full bg-red-400"      />}
-                    {f.instagram && <span title="Instagram" className="w-1.5 h-1.5 rounded-full bg-pink-400"     />}
-                    {f.linkedin  && <span title="LinkedIn"  className="w-1.5 h-1.5 rounded-full bg-blue-400"     />}
-                    {f.website   && <span title="Website"   className="w-1.5 h-1.5 rounded-full bg-[#C86A43]"   />}
-                    {f.podcast   && <span title="Podcast"   className="w-1.5 h-1.5 rounded-full bg-purple-400"  />}
-                    {f.tiktok    && <span title="TikTok"    className="w-1.5 h-1.5 rounded-full bg-neutral-500" />}
+                    {pageTab !== 'founders' && f.youtube   && <span title="YouTube"   className="w-1.5 h-1.5 rounded-full bg-red-400"      />}
+                    {pageTab !== 'founders' && f.instagram && <span title="Instagram" className="w-1.5 h-1.5 rounded-full bg-pink-400"     />}
+                    {pageTab !== 'founders' && f.linkedin  && <span title="LinkedIn"  className="w-1.5 h-1.5 rounded-full bg-blue-400"     />}
+                    {pageTab !== 'founders' && f.website   && <span title="Website"   className="w-1.5 h-1.5 rounded-full bg-[#C86A43]"   />}
+                    {pageTab !== 'founders' && f.podcast   && <span title="Podcast"   className="w-1.5 h-1.5 rounded-full bg-purple-400"  />}
+                    {pageTab !== 'founders' && f.tiktok    && <span title="TikTok"    className="w-1.5 h-1.5 rounded-full bg-neutral-500" />}
                   </div>
                   {/* This column is only 2/12 of an already-tight 880px
                       table (see the min-w comment above) — two more full
@@ -715,6 +731,20 @@ export function VillageCuratedFoundersPage() {
                       </button>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                      {/* Editorial Queue's whole point is review-then-publish
+                          one at a time — the only way to do that before was
+                          the bulk action bar, which needs a checkbox ticked
+                          first. A direct per-row Publish button is what
+                          "should just be the name with view page or
+                          publish" actually meant. */}
+                      {pageTab === 'founders' && f.status === 'draft' && (
+                        <button
+                          onClick={() => void publishSelected(new Set([f.id]))}
+                          className="text-[10px] font-semibold px-2 py-1 bg-[#5E6B4A] text-white rounded-lg hover:bg-[#4a5538] transition-colors"
+                        >
+                          Publish
+                        </button>
+                      )}
                       {/* Copy this curated profile's public link to send to
                           the real founder so they can claim it — only makes
                           sense before they actually have (claimed). */}
