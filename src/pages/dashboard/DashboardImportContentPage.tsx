@@ -17,6 +17,7 @@ import {
 } from '../../services/importedContent'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
+import { needsArchiveUpgrade } from '../../utils/archiveUnlock'
 import { enrichImportedContent, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
@@ -1828,11 +1829,18 @@ export function DashboardImportContentPage() {
             {justImportedCount} {justImportedCount === 1 ? 'item' : 'items'} imported. Review and publish it from Content.
           </p>
           <Link
-            to={
-              !founder?.archiveUnlocked && importedContentService.getAll({ founderId }).length > ARCHIVE_UNLOCK_FREE_COUNT
+            to={(() => {
+              const totalCount = importedContentService.getAll({ founderId }).length
+              // Also sends an already-unlocked founder back here once their
+              // archive has grown past the tier they actually paid for —
+              // previously they'd sail straight through to Content forever
+              // on whatever tier they unlocked first, however much more
+              // they imported afterward. See needsArchiveUpgrade.
+              const needsUpgrade = needsArchiveUpgrade(founder, totalCount)
+              return (!founder?.archiveUnlocked && totalCount > ARCHIVE_UNLOCK_FREE_COUNT) || needsUpgrade
                 ? '/dashboard/archive-found'
                 : '/dashboard/profile?tab=content&contentSubTab=ready'
-            }
+            })()}
             className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
           >
             Go to Content →

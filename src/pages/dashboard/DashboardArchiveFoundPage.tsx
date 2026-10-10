@@ -31,11 +31,21 @@ export function DashboardArchiveFoundPage() {
   const unlocked = allImported.filter(i => unlockedIds.has(i.id))
   const locked = allImported.filter(i => !unlockedIds.has(i.id))
 
-  // Nothing to sell — either already unlocked, or the whole archive already
-  // fits inside the free preview. Straight to Content instead.
-  if (hasArchiveAccess(founder) || locked.length === 0) {
+  // Nothing to sell — locked is already computed from getUnlockedImportedIds,
+  // which now actually enforces archivePublishLimit (see utils/archiveUnlock),
+  // so this alone correctly covers both real cases: never paid but fits
+  // inside the free preview, or paid before and still within what that
+  // payment covers. Used to also bypass on hasArchiveAccess(founder) alone —
+  // that let anyone who'd EVER paid any tier sail through here forever
+  // afterward regardless of how much more they went on to import.
+  if (locked.length === 0) {
     return <Navigate to="/dashboard/profile?tab=content&contentSubTab=ready" replace />
   }
+
+  // Already unlocked once, but has since grown past what that payment
+  // covers — same page, different framing: this is the next tier, not a
+  // first-time pitch.
+  const isUpgrade = hasArchiveAccess(founder)
 
   const tier = getArchiveTier(totalCount)
   const previewMock = unlocked[0]
@@ -47,10 +57,14 @@ export function DashboardArchiveFoundPage() {
 
   return (
     <div className="p-8 sm:pt-14" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-      <p className="text-sm font-semibold text-[#C86A43] uppercase tracking-widest mb-3">We found your story</p>
+      <p className="text-sm font-semibold text-[#C86A43] uppercase tracking-widest mb-3">
+        {isUpgrade ? 'Your archive has grown' : 'We found your story'}
+      </p>
       <h1 className="text-2xl sm:text-3xl font-bold text-[#2D2A26] mb-6 leading-tight">
-        We have detected <span className="text-4xl sm:text-5xl text-[#C86A43]">{totalCount}</span>{' '}
-        piece{totalCount === 1 ? '' : 's'} of your story
+        {isUpgrade
+          ? <>You've imported past what you unlocked — <span className="text-4xl sm:text-5xl text-[#C86A43]">{totalCount}</span> pieces now</>
+          : <>We have detected <span className="text-4xl sm:text-5xl text-[#C86A43]">{totalCount}</span> piece{totalCount === 1 ? '' : 's'} of your story</>
+        }
       </h1>
 
       <Link
