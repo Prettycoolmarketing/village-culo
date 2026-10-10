@@ -52,15 +52,14 @@ serve(async (req) => {
     })
     if (insertError) throw new Error(insertError.message)
 
-    // Waitlist is specifically for CULO Creatives in Canva — enroll into
-    // sequence B (Canva Creatives joiners). Best-effort, never blocks the
-    // waitlist signup itself.
-    try {
-      await admin.from('email_sequence_enrollments').insert({
-        id: crypto.randomUUID(), sequence_id: 'B', email,
-        data: { sequenceId: 'B', email, name: entry.name, source: entry.source, startedAt: entry.createdAt, sentDays: [], status: 'active' },
-      })
-    } catch { /* best-effort */ }
+    // Used to also enroll into sequence B (Canva Creatives joiners) here —
+    // wrong, the same mistake already fixed in the real signup flow
+    // (joinFlow.ts): B is the "you've started/paid for Creatives" nurture,
+    // gated on an actual Stripe checkout (see stripe-creatives-webhook).
+    // Joining this waitlist means someone is just curious, not a customer
+    // yet — confirmed real, 3 people got the full "you upgraded" sequence
+    // off nothing but a waitlist signup. No enrollment here at all until
+    // there's a real "you're on the waitlist" sequence to put them in.
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
