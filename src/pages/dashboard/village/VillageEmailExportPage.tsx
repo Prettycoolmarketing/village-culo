@@ -10,9 +10,21 @@ import { emailSequencesService, emailSequenceEnrollmentsService, type EmailSeque
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import { toCSV, downloadCSV, splitName } from '../../../utils/emailExport'
 import { bodyTextToHtml, bodyHtmlToText } from '../../../utils/emailBody'
+import { syncUserDataFromSupabase } from '../../../lib/sync'
 
 export function VillageEmailExportPage() {
   const [pageTab, setPageTab] = useState('members')
+  // getFounders() reads purely from the local cache, which is only ever
+  // populated at login/app-mount — on a phone, especially a CAPO staff
+  // session caching the WHOLE platform's rows, that write can silently
+  // fail or just be from a stale previous session (confirmed real:
+  // "the data on my mobile for culo members isn't correct"). This page is
+  // staff-only by definition, so a fresh pull on every visit is safe and
+  // makes the numbers here actually match the live database instead of
+  // whatever happened to already be sitting in local storage.
+  const [syncTick, setSyncTick] = useState(0)
+  void syncTick
+  useEffect(() => { void syncUserDataFromSupabase(true).then(() => setSyncTick(t => t + 1)) }, [])
 
   // Waitlist signups still fold into Subscribers automatically — no longer
   // running a public waitlist tab/flow (people get added manually now), but
