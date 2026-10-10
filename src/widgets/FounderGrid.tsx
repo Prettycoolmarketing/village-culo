@@ -5,6 +5,7 @@ import { FounderCard } from '../components/cards/FounderCard'
 import { EmptyState } from '../components/ui/EmptyState'
 import { SectionHeading } from '../components/layout/PageContainer'
 import { dailyRotatingSlice } from '../utils/rotation'
+import { hasRealAvatar } from '../utils/realMedia'
 
 interface FounderGridProps {
   filter?: FounderFilter
@@ -70,7 +71,11 @@ export function FounderGrid({
     founders = [...founders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   }
   if (rotate && limit) {
-    founders = dailyRotatingSlice(founders, limit)
+    // The spotlight rotation specifically (not the plain directory) -
+    // explicitly never wanted to fill up "Featured Founders" with the
+    // generic Culo logo just because a founder hasn't uploaded a real
+    // photo yet. Showing fewer (or none, briefly) beats showing that.
+    founders = dailyRotatingSlice(founders.filter(hasRealAvatar), limit)
   } else if (limit) {
     founders = founders.slice(0, limit)
   }

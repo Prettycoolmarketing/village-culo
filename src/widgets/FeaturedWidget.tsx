@@ -12,6 +12,7 @@ import { SectionHeading } from '../components/layout/PageContainer'
 import { contentTypeLabel, formatDate } from '../utils/slugify'
 import { normalizeUrl } from '../utils/url'
 import { dailyRotatingPick } from '../utils/rotation'
+import { hasRealAvatar, hasRealCoverImage } from '../utils/realMedia'
 
 interface FeaturedWidgetProps {
   heading?: string
@@ -31,10 +32,14 @@ export function FeaturedWidget({
   // through that pool (dailyRotatingPick), not a fixed first item — this
   // used to always show the same story/founder/etc. forever regardless of
   // the label.
-  const featuredStory = dailyRotatingPick(getStories({ publicOnly: true, featured: true }))
-    ?? dailyRotatingPick(getStories({ publicOnly: true }))
-  const featuredFounder = dailyRotatingPick(getFounders({ publicOnly: true, featured: true }))
-    ?? dailyRotatingPick(getFounders({ publicOnly: true }))
+  // Never spotlights the generic Culo logo/avatar as "Story/Founder of the
+  // Day" just because a real one got marked featured before uploading a
+  // real photo — filtered before the pick, not after, so the rotation
+  // still cycles properly through whoever actually qualifies.
+  const featuredStory = dailyRotatingPick(getStories({ publicOnly: true, featured: true }).filter(hasRealCoverImage))
+    ?? dailyRotatingPick(getStories({ publicOnly: true }).filter(hasRealCoverImage))
+  const featuredFounder = dailyRotatingPick(getFounders({ publicOnly: true, featured: true }).filter(hasRealAvatar))
+    ?? dailyRotatingPick(getFounders({ publicOnly: true }).filter(hasRealAvatar))
   const featuredBusiness = dailyRotatingPick(getBusinesses({ publicOnly: true, featured: true }))
     ?? dailyRotatingPick(getBusinesses({ publicOnly: true }))
   const featuredIdea = dailyRotatingPick(getIdeas({ publicOnly: true, featured: true }))

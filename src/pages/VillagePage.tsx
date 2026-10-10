@@ -14,6 +14,7 @@ import { filterEvents }              from '../utils/filters'
 import { InnerContainer }            from '../components/layout/PageContainer'
 import { getStories } from '../services/stories'
 import { dailyRotatingSlice } from '../utils/rotation'
+import { hasRealCoverImage } from '../utils/realMedia'
 
 // Compact inline variant of the same signup mechanic JoinVillagePage uses —
 // no full-page takeover here, just inline feedback within this section's
@@ -210,7 +211,13 @@ export function VillagePage() {
           // top of /stories. /stories itself stays plain newest-first (best
           // for SEO/crawl consistency); only this homepage preview rotates.
           stories={dailyRotatingSlice(
-            [...getStories({ publicOnly: true })].sort((a, b) => (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)).slice(0, 18),
+            [...getStories({ publicOnly: true })]
+              // Same reasoning as FeaturedWidget/FounderGrid's rotate — the
+              // homepage preview shouldn't fill up with the generic Culo
+              // logo just because a story hasn't gotten a real cover
+              // image yet. The plain /stories listing is unaffected.
+              .filter(hasRealCoverImage)
+              .sort((a, b) => (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)).slice(0, 18),
             6
           )}
           hideKey="homepage"
