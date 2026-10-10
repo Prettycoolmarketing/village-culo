@@ -1,23 +1,28 @@
+import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { getCurrentFounder } from '../services/currentFounder'
-import { COLLABORATOR_PAYMENT_LINK, STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../config/paymentLinks'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
+import { ComingSoonModal } from '../components/ui/ComingSoonModal'
 
-// The step after JoinConfirmPage's set-password screen. Payment is the
-// actual point of this page (see the launch plan) — the Village option
-// underneath is deliberately a quiet escape hatch, not a co-equal choice,
-// so it doesn't visually compete with the $19/month offer. Profile details
-// aren't captured here at all; a founder who skips can fill those in
-// anytime from their dashboard.
+// The step after JoinConfirmPage's set-password screen. Used to send
+// straight to real Stripe checkout — Creatives isn't open for new
+// signups yet, so the CTA now opens a Coming Soon modal instead (see
+// ComingSoonModal). The Village option underneath is deliberately a
+// quiet escape hatch, not a co-equal choice. Profile details aren't
+// captured here at all; a founder who skips can fill those in anytime
+// from their dashboard.
 
 export function JoinOfferPage() {
   usePageMeta({ title: 'Start creating', ogType: 'website' })
   const { user, loading } = useAuth()
   const founder = getCurrentFounder(user)
+  // Declared before the early returns below (rules of hooks) even though
+  // it's only rendered once there's a real founder.
+  const [showComingSoon, setShowComingSoon] = useState(false)
 
   // AuthContext's session restore is async — on a fresh page load (a
   // redeploy, a refresh, opening the link again) `user` starts out null
@@ -41,7 +46,6 @@ export function JoinOfferPage() {
   // Collaborator cohort (free until 2027-01-01) keep that deal. See
   // ensureJoinedFounder.
   const isStandardTier = founder.creativeSubscription?.tier === 'standard'
-  const paymentUrl = buildPaymentUrl(isStandardTier ? STANDARD_PAYMENT_LINK : COLLABORATOR_PAYMENT_LINK, founder.id, user?.email)
   const alreadyLockedIn = !!founder.creativeSubscription?.stripeSubscriptionId
 
   return (
@@ -63,50 +67,34 @@ export function JoinOfferPage() {
             <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
               Welcome to The Culo Village
             </p>
-            {isStandardTier ? (
-              <>
-                <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
-                  Try Culo Creatives in Canva free for 14 days
-                </h1>
-                <p className="font-body text-base font-semibold text-charcoal max-w-xl mx-auto mb-3">
-                  $25 AUD/month after your trial
-                </p>
-                <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
-                  Start your 14-day free trial now — no charge today. After your trial ends, continue for
-                  <strong className="text-charcoal"> $25 AUD/month</strong>, cancel anytime.
-                </p>
-              </>
-            ) : (
-              <>
-                <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
-                  Free access to Culo Creatives in Canva until January 1, 2027
-                </h1>
-                <p className="font-body text-base font-semibold text-charcoal max-w-xl mx-auto mb-3">
-                  Founding rate, locked in
-                </p>
-                <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
-                  Start using Culo Creatives in Canva free now and secure the <strong className="text-charcoal">$19 AUD/month</strong> founding
-                  rate before the standard price moves to $25.
-                  <br /><br />
-                  You won't be charged until 1 January 2027. After that, your $19 rate stays in place for as long
-                  as you keep your subscription active.
-                </p>
-              </>
-            )}
+            {/* The old $19/month "founding rate" copy is gone — that rate
+                is becoming a discount code handed out individually
+                (waitlist + existing Village members once Creatives is
+                live), not something anyone sees as a selectable price
+                here. A founder already locked into that legacy Stripe
+                subscription still sees their real existing plan below,
+                unchanged — this is just the new-offer copy for everyone
+                else, and Creatives isn't open for new signups yet either
+                way (see the Coming Soon modal on the CTA). */}
+            <h1 id="offer-heading" className="font-heading text-3xl sm:text-4xl font-bold text-charcoal mb-4 leading-tight max-w-2xl mx-auto">
+              Culo Creatives in Canva
+            </h1>
+            <p className="font-body text-base text-muted max-w-xl mx-auto leading-relaxed mb-8">
+              Turn your raw footage and messy thoughts into finished blogs, carousels and reels, right inside
+              Canva. Coming soon — we'll let you know the moment it's open.
+            </p>
             {alreadyLockedIn ? (
               <p className="font-heading text-lg font-semibold text-charcoal">
-                {isStandardTier ? "You're on the $25/month plan ✓" : "You're locked in at $19/month AUD ✓"}
+                {isStandardTier ? "You're on the $25/month plan ✓" : "You're locked in at your founding rate ✓"}
               </p>
             ) : (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <a
-                  href={paymentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setShowComingSoon(true)}
                   className="inline-flex px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
                 >
-                  {isStandardTier ? 'Start my 14-day free trial' : 'Secure the $19/month founding rate'}
-                </a>
+                  Try Culo Creatives in Canva
+                </button>
                 {/* Deliberately quieter than the orange CTA — the site's
                     established dark/secondary button, not a co-equal
                     high-contrast choice, since this is the less-likely path. */}
@@ -118,6 +106,7 @@ export function JoinOfferPage() {
                 </Link>
               </div>
             )}
+            <ComingSoonModal open={showComingSoon} onClose={() => setShowComingSoon(false)} />
           </InnerContainer>
         </section>
 

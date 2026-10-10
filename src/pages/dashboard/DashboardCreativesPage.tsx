@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { creativeFeedbackService } from '../../services/creativeFeedback'
-import { STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
 import { hasCreativeAccess } from '../../utils/creativeAccess'
 import { Tabs, type DashTab } from '../../components/dashboard/Tabs'
+import { ComingSoonModal } from '../../components/ui/ComingSoonModal'
 
 // TODO: swap for the real "open CULO Creatives in Canva" URL once the app
 // clears Canva review — placeholder for now, same as CreateWithCuloCTA and
@@ -61,17 +61,19 @@ function WelcomeTab() {
 function FeedbackTab({
   founderId,
   hasAccess,
-  upgradeUrl,
   alreadySubmitted,
 }: {
   founderId: string
   hasAccess: boolean
-  upgradeUrl: string
   alreadySubmitted: boolean
 }) {
   const [answer, setAnswer] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Culo Creatives itself isn't live yet — "Upgrade" used to send straight
+  // to real Stripe checkout for a tool that just says "Coming soon!" once
+  // paid for. Shows the same Coming Soon notice instead until it's ready.
+  const [showComingSoon, setShowComingSoon] = useState(false)
 
   async function handleSubmit() {
     if (!answer.trim()) return
@@ -93,14 +95,13 @@ function FeedbackTab({
           <p className="text-sm text-[#6B7280] mb-4 leading-relaxed">
             Upgrade to CULO Creatives for $25/month to keep creating in Canva.
           </p>
-          <a
-            href={upgradeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => setShowComingSoon(true)}
             className="inline-flex px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
           >
             Upgrade — $25/month
-          </a>
+          </button>
+          <ComingSoonModal open={showComingSoon} onClose={() => setShowComingSoon(false)} />
         </div>
       )}
 
@@ -164,8 +165,6 @@ export function DashboardCreativesPage() {
   const alreadySubmitted = !!subscription?.feedbackSubmittedAt
   const hasAccess = hasCreativeAccess(subscription)
 
-  const upgradeUrl = buildPaymentUrl(STANDARD_PAYMENT_LINK, founder?.id ?? '', user?.email)
-
   // AuthContext's session restore is async — user/founder are briefly null
   // on a fresh page load (direct URL visit, refresh, redeploy) before that
   // resolves. Returning null immediately during that window rendered this
@@ -204,7 +203,6 @@ export function DashboardCreativesPage() {
         <FeedbackTab
           founderId={founder.id}
           hasAccess={hasAccess}
-          upgradeUrl={upgradeUrl}
           alreadySubmitted={alreadySubmitted}
         />
       )}

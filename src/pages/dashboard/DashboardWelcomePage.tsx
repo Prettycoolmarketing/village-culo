@@ -3,15 +3,8 @@ import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounder } from '../../services/founders'
-import { hasCreativeAccess } from '../../utils/creativeAccess'
-import { STANDARD_PAYMENT_LINK, buildPaymentUrl } from '../../config/paymentLinks'
 import { JoinProgress } from '../../components/ui/JoinProgress'
-
-// TODO: swap for the real "open CULO Creatives in Canva" URL once the app
-// clears Canva review (the app's own listing/deep-link URL from the Canva
-// Developer Portal) — placeholder for now, same as CreateWithCuloCTA and
-// DashboardCreativesPage's own CULO_CANVA_URL before this.
-const REAL_CANVA_APP_URL = 'https://www.culovillage.com/how-culo-canva'
+import { ComingSoonModal } from '../../components/ui/ComingSoonModal'
 
 // Landing spot for orientation and promotion — everything that used to be
 // bolted onto Publish or Import Content (How it works, what the Voice Brief
@@ -68,6 +61,10 @@ export function DashboardWelcomePage() {
   // which doesn't re-render this component on its own until something here
   // asks for a fresh read. Only polls while there's actually a reason to.
   const [tick, setTick] = useState(0)
+  // Culo Creatives isn't live yet — every button that used to send someone
+  // straight to Stripe checkout or the (still-placeholder) Canva app URL
+  // now shows this instead, until it's actually ready.
+  const [showComingSoon, setShowComingSoon] = useState(false)
   useEffect(() => {
     if (founder?.onboardingStatus !== 'researching') return
     const interval = setInterval(() => setTick(t => t + 1), 2500)
@@ -92,12 +89,6 @@ export function DashboardWelcomePage() {
     return <Navigate to="/join/setup" replace />
   }
 
-  const canUseCreatives = hasCreativeAccess(founder?.creativeSubscription)
-  // Same tier check as JoinOfferPage — every new signup is the Standard
-  // $25/mo tier now; only founders who signed up under the old Collaborator
-  // cohort still see $19/month.
-  const isStandardTier = founder?.creativeSubscription?.tier === 'standard'
-
   // Canva-sourced founders (joined via /joincanva) skip the Village-first
   // "how it works" welcome entirely — they came here wanting Canva, not to
   // learn about republishing old content. Their whole point of landing here
@@ -107,7 +98,6 @@ export function DashboardWelcomePage() {
   const isCanvaFounder = founder?.signupProduct === 'canva'
   const hasBilling = !!founder?.creativeSubscription?.stripeSubscriptionId
   if (isCanvaFounder) {
-    const trialUrl = buildPaymentUrl(STANDARD_PAYMENT_LINK, founder?.id ?? '', user?.email)
     return (
       <div className="p-8 sm:pt-12 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
         {/* Heading now lives inside the white box, same treatment as "How
@@ -155,14 +145,13 @@ export function DashboardWelcomePage() {
             </div>
           </div>
           <div className="flex flex-col sm:items-end gap-4 pt-4">
-            <a
-              href={hasBilling ? REAL_CANVA_APP_URL : trialUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => setShowComingSoon(true)}
               className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
             >
               {hasBilling ? 'Open Culo Creatives in Canva' : 'Start my 14 day free trial in Canva'}
-            </a>
+            </button>
+            <ComingSoonModal open={showComingSoon} onClose={() => setShowComingSoon(false)} />
           </div>
         </section>
 
@@ -323,21 +312,18 @@ export function DashboardWelcomePage() {
           </div>
         </Link>
         <div className="flex flex-col sm:items-end gap-4 pt-4">
-          {canUseCreatives ? (
-            <Link
-              to="/dashboard/creatives"
-              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
-            >
-              Create with Culo Creatives in Canva
-            </Link>
-          ) : (
-            <Link
-              to="/dashboard/creatives"
-              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
-            >
-              Get Culo Creatives in Canva — {isStandardTier ? '$25/month' : 'lock in $19/month'}
-            </Link>
-          )}
+          {/* Both used to read differently depending on canUseCreatives,
+              one of them naming the now-removed $19/month legacy rate
+              (becoming a discount code later, not a visible price) — same
+              single label either way now; the Creatives page itself (and
+              its own Coming Soon modal on the upgrade button) is where
+              that distinction actually matters, not here. */}
+          <Link
+            to="/dashboard/creatives"
+            className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+          >
+            Create with Culo Creatives in Canva
+          </Link>
         </div>
       </section>
     </div>
