@@ -55,7 +55,13 @@ export async function runFullEditorialPipeline(founderId: string): Promise<Pipel
   }
 
   let articlesWritten = 0
-  const validSources = research.ledger.source_assessments.filter(s => s.source_valid)
+  // Capped at 3 — confirmed real, a founder with a lot of valid sources
+  // (Christie Whitehill: 9) got an article written for every single one,
+  // which is both real AI spend per source and more than anyone actually
+  // needs to review before publishing. Takes the first 3 as the ledger
+  // returns them (already ranked by the Researcher), not a random subset.
+  const MAX_ARTICLES = 3
+  const validSources = research.ledger.source_assessments.filter(s => s.source_valid).slice(0, MAX_ARTICLES)
   for (const source of validSources) {
     let matchedContent = founderContent.find(c => c.originalUrl === source.url)
     if (!matchedContent) {
