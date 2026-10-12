@@ -184,6 +184,24 @@ ${bodyHtml}
 </html>`
 }
 
+// Every "row not found" branch below used to just `return` with nothing,
+// falling through to the plain SPA rewrite — which Vercel always serves
+// with a 200 status (vercel.json rewrites everything unmatched to
+// index.html, no server routing to 404 from). For a crawler specifically
+// (the only audience this middleware ever runs for — see the BOT_UA gate
+// below), that's a real page confirmed real in Google Search Console as
+// "Soft 404": a dead/renamed/mistyped slug returning 200 with no real
+// content reads as broken, not as a clean 404. A genuine 404 status here
+// fixes it for every crawler recrawl going forward.
+function notFoundResponse(path) {
+  const html = renderDocument({
+    title: 'Page not found', description: 'This page doesn’t exist or is no longer available.',
+    path, ogType: 'website', jsonLd: undefined, bodyHtml: '<h1>Page not found</h1><p>This page doesn’t exist or is no longer available.</p>',
+    image: undefined, noindex: true,
+  })
+  return new Response(html, { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' } })
+}
+
 function textToParagraphs(text) {
   return (text || '')
     .split(/\n{2,}/)
@@ -325,7 +343,7 @@ ${items.length > 0 ? `<ul>\n${items.map((i: any) => `<li><a href="/library/${esc
     // domain she operates, all corroborating each other as one identity.
     if (url.pathname === '/speaker') {
       const founder = await fetchPublicRow('founders', 'shakas-designer', '&status=in.(published,featured)')
-      if (!founder) return
+      if (!founder) return notFoundResponse(url.pathname)
       const [bizRes, storiesCountRes, importsCountRes, bookingRes] = await Promise.all([
         fetch(`${SUPABASE_URL}/rest/v1/businesses?select=data&founder_id=eq.${founder.id ? encodeURIComponent(founder.id) : ''}`,
           { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }),
@@ -412,7 +430,7 @@ ${bookingUrl ? `<li><a href="${escapeHtml(bookingUrl)}">Book a 30-minute call</a
 
     if (section === 'stories' && slug) {
       const story = await fetchPublicRow('stories', slug, '&status=in.(published,featured)')
-      if (!story) return
+      if (!story) return notFoundResponse(url.pathname)
       // A story with no visible author link is a dead end for the exact
       // chain that actually matters for AI/answer-engine discovery: story
       // -> the founder who wrote it -> their LinkedIn (see founders section
@@ -444,7 +462,7 @@ ${textToParagraphs(story.blog)}
 
     if (section === 'founders' && slug) {
       const founder = await fetchPublicRow('founders', slug, '&status=in.(published,featured)')
-      if (!founder) return
+      if (!founder) return notFoundResponse(url.pathname)
       // sameAs is the field an AI/answer engine actually reads to attach a
       // real LinkedIn (or other profile) URL to this person — without it,
       // a bot sees a name and a bio with no way to know a LinkedIn even
@@ -495,7 +513,7 @@ ${linksHtml.length > 0 ? `<nav><h2>Find ${escapeHtml(founder.name)}</h2><ul>\n${
 
     if (section === 'businesses' && slug) {
       const biz = await fetchPublicRow('businesses', slug, '&status=in.(published,featured)')
-      if (!biz) return
+      if (!biz) return notFoundResponse(url.pathname)
       const bizSameAs = [
         biz.instagram, biz.linkedin,
         ...(Array.isArray(biz.socialLinks) ? biz.socialLinks.map((l: any) => l?.url) : []),
@@ -533,7 +551,7 @@ ${bizLinksHtml.length > 0 ? `<nav><h2>Find ${escapeHtml(biz.name)}</h2><ul>\n${b
 
     if (section === 'ideas' && slug) {
       const idea = await fetchPublicRow('ideas', slug, '&status=in.(published,featured)')
-      if (!idea) return
+      if (!idea) return notFoundResponse(url.pathname)
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'CreativeWork',
@@ -556,7 +574,7 @@ ${idea.quote ? `<blockquote>${escapeHtml(idea.quote)}</blockquote>` : ''}
 
     if (section === 'series' && slug) {
       const series = await fetchPublicRow('series', slug, '&status=eq.published')
-      if (!series) return
+      if (!series) return notFoundResponse(url.pathname)
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'CreativeWorkSeries',
@@ -578,7 +596,7 @@ ${series.description ? `<p>${escapeHtml(series.description)}</p>` : ''}
 
     if (section === 'editorial' && slug) {
       const feature = await fetchPublicRow('editorial_features', slug, '&status=eq.published')
-      if (!feature) return
+      if (!feature) return notFoundResponse(url.pathname)
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Article',
@@ -606,7 +624,7 @@ ${textToParagraphs(feature.intro)}
       // show on the site) — mirrors LibraryPage/LibraryDetailPage's own
       // "hide only archived" rule, since LibraryStatus has no 'published'.
       const item = await fetchPublicRow('library_items', slug, '&status=neq.archived')
-      if (!item) return
+      if (!item) return notFoundResponse(url.pathname)
       const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Product',
@@ -646,7 +664,7 @@ ${item.why ? `<p>${escapeHtml(item.why)}</p>` : ''}
         .map(r => r.data)
         .filter(s => Array.isArray(s.topics) && s.topics.some((t: any) => t?.slug === slug))
 
-      if (!curated && matching.length === 0) return // matches TopicPage's own NotFound gate
+      if (!curated && matching.length === 0) return notFoundResponse(url.pathname) // matches TopicPage's own NotFound gate
 
       const name = curated?.name ?? matching[0].topics.find((t: any) => t.slug === slug)?.name ?? slug
       const description = curated?.description || `Founder stories in CULO Village about ${name}.`
