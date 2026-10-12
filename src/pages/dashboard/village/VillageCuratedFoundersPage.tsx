@@ -207,10 +207,6 @@ export function VillageCuratedFoundersPage() {
   const [selected, setSelected]   = useState<Set<string>>(new Set())
   const [researching, setResearching] = useState(false)
   const [researchProgress, setResearchProgress] = useState<{ done: number; total: number } | null>(null)
-  // Separate from the bulk `researching` state above — a single row's
-  // own "Research & Rewrite" button, so running one founder doesn't show
-  // every other row as busy too.
-  const [rowResearching, setRowResearching] = useState<Set<string>>(new Set())
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
   void tick
@@ -426,14 +422,6 @@ export function VillageCuratedFoundersPage() {
     }
     setResearching(false)
     setResearchProgress(null)
-    refresh()
-  }
-
-  async function runResearchSingle(id: string) {
-    if (getFounder(id)?.researchStatus === 'researching') return
-    setRowResearching(prev => new Set([...prev, id]))
-    await runFullEditorialPipeline(id)
-    setRowResearching(prev => { const next = new Set(prev); next.delete(id); return next })
     refresh()
   }
 
@@ -754,21 +742,6 @@ export function VillageCuratedFoundersPage() {
                       </button>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-                      {/* Direct per-row trigger instead of relying on
-                          checkbox + the bulk Research action (still there,
-                          still works) or the JSON-upload auto-pipeline
-                          (unreliable right after a fresh import — see the
-                          stale-cache research bug) — one click, no
-                          selecting first. */}
-                      {pageTab === 'founders' && (
-                        <button
-                          onClick={() => void runResearchSingle(f.id)}
-                          disabled={rowResearching.has(f.id) || f.researchStatus === 'researching'}
-                          className="text-[10px] font-semibold px-2 py-1 bg-[#2D2A26] text-white rounded-lg hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
-                        >
-                          {rowResearching.has(f.id) || f.researchStatus === 'researching' ? 'Researching…' : 'Research & Rewrite'}
-                        </button>
-                      )}
                       {/* Copy this curated profile's public link to send to
                           the real founder so they can claim it — only makes
                           sense before they actually have (claimed). */}
