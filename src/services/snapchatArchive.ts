@@ -22,10 +22,29 @@
 // copy themselves, same as a bare link import.
 
 import JSZip from 'jszip'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { mediaUploadsService } from './mediaUploads'
 import { getFounder } from './founders'
 import { getBusiness } from './businesses'
 import type { ImportedContent } from '../types/importedContent'
+
+// A browser's own fetch() can't reach Snapchat's signed per-memory
+// download links at all — Snapchat doesn't send the CORS header this
+// site's origin would need, so every such request fails silently
+// (confirmed real: a 589-item import completed with 0 rows saved, every
+// single fetch blocked the same way). Routed through fetch-remote-media
+// instead, which runs the actual fetch server-side where CORS doesn't
+// apply.
+async function fetchRemoteMedia(url: string): Promise<Blob | null> {
+  if (!isSupabaseConfigured || !supabase) return null
+  try {
+    const { data, error } = await supabase.functions.invoke<Blob>('fetch-remote-media', { body: { url } })
+    if (error || !data) return null
+    return data instanceof Blob ? data : new Blob([data])
+  } catch {
+    return null
+  }
+}
 
 export interface ParsedSnapchatMemory {
   isVideo: boolean
@@ -168,13 +187,11 @@ export async function buildImportedContentFromSnapchat(
       const entry = zip.file(memory.zipPath)
       blob = entry ? await entry.async('blob') : null
     } else if (memory.downloadUrl) {
-      try {
-        const response = await fetch(memory.downloadUrl)
-        if (response.ok) blob = await response.blob()
-      } catch {
-        // Signed Snapchat link didn't resolve from here (expired, or needs
-        // a logged-in Snapchat session) — counted, not silently dropped.
-      }
+      // Signed Snapchat link genuinely expired/invalid still comes back
+      // null here and gets counted as a failed download, not silently
+      // dropped — now via the server-side proxy, not a direct browser
+      // fetch (see fetchRemoteMedia above for why that never worked).
+      blob = await fetchRemoteMedia(memory.downloadUrl)
     }
 
     if (!blob) { failedDownloads++; continue }

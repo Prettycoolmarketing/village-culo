@@ -125,3 +125,86 @@ export async function safeFetchText(inputUrl: string, opts: SafeFetchOptions = {
 
   throw new SafeFetchError('Too many redirects.')
 }
+
+/**
+ * Same SSRF/redirect/size/timeout protections as safeFetchText, for a
+ * binary response (an image/video) instead of text — a founder's archive
+ * export can hand this a third-party signed download link (Snapchat
+ * Memories, etc.) that a browser's own fetch() can't reach at all due to
+ * CORS; running it server-side here has no such restriction.
+ */
+export async function safeFetchBinary(inputUrl: string, opts: SafeFetchOptions = {}): Promise<{ bytes: Uint8Array; contentType: string }> {
+  const { maxRedirects, maxBytes, timeoutMs, headers } = { ...DEFAULTS, ...opts }
+
+  let current = inputUrl
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    let parsed: URL
+    try {
+      parsed = new URL(current)
+    } catch {
+      throw new SafeFetchError('That URL is not valid.')
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new SafeFetchError('Only http and https URLs are supported.')
+    }
+    if (isBlockedHost(parsed.hostname)) {
+      throw new SafeFetchError('That address can’t be fetched.')
+    }
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+    let res: Response
+    try {
+      res = await fetch(parsed.toString(), {
+        headers: { 'User-Agent': 'CULOVillageFeedFetcher/1.0', ...headers },
+        redirect: 'manual',
+        signal: controller.signal,
+      })
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw new SafeFetchError('That request took too long to respond.')
+      }
+      throw new SafeFetchError('Could not reach that address.')
+    } finally {
+      clearTimeout(timeout)
+    }
+
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location')
+      if (!location) throw new SafeFetchError('That address redirected without a destination.')
+      current = new URL(location, parsed).toString()
+      continue
+    }
+
+    if (!res.ok) {
+      throw new SafeFetchError(`That address responded with ${res.status}.`)
+    }
+
+    const lengthHeader = res.headers.get('content-length')
+    if (lengthHeader && Number(lengthHeader) > maxBytes) {
+      throw new SafeFetchError('That response was too large.')
+    }
+
+    const contentType = res.headers.get('content-type') ?? 'application/octet-stream'
+    const reader = res.body?.getReader()
+    if (!reader) return { bytes: new Uint8Array(await res.arrayBuffer()), contentType }
+    const chunks: Uint8Array[] = []
+    let total = 0
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > maxBytes) {
+        void reader.cancel()
+        throw new SafeFetchError('That response was too large.')
+      }
+      chunks.push(value)
+    }
+    const combined = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) { combined.set(chunk, offset); offset += chunk.byteLength }
+    return { bytes: combined, contentType }
+  }
+
+  throw new SafeFetchError('Too many redirects.')
+}
