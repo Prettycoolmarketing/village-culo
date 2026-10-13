@@ -127,12 +127,19 @@ export function VillageHQOverviewPage() {
   // of /join" (signupProduct) — that's a funnel-source tag set at signup,
   // not proof anyone ever actually touched Culo Creatives, so it was
   // counting plain Village sign-ups right alongside real Creatives members.
-  // True membership is creativeSubscription existing at all (mirrors
-  // VillageCreativeMembersPage.tsx's own `members` filter, the one place
-  // this was already done correctly). Funnel-source tracking (signupProduct)
-  // stays below under its own "Join Funnel" section instead of being
-  // blended into what reads as a membership count.
-  const creativeMembers = founders.filter(f => !!f.creativeSubscription)
+  // Then just checking creativeSubscription existing at all turned out to
+  // be the exact same mistake one level down: every self-serve signup gets
+  // a placeholder {status:'trial'} object automatically the moment they
+  // join (see ensureJoinedFounder) whether or not Creatives means anything
+  // to them yet — confirmed real, not a real trial at all until the Canva
+  // pathway is actually live. Real membership is a real Stripe
+  // subscription attached (stripeSubscriptionId), nothing less — same bar
+  // VillageCreativeMembersPage.tsx's own `lockedIn` already used
+  // correctly, now the definition of membership there too, not just a
+  // side stat. Funnel-source tracking (signupProduct) stays below under
+  // its own "Join Funnel" section instead of being blended into what
+  // reads as a membership count.
+  const creativeMembers = founders.filter(f => !!f.creativeSubscription?.stripeSubscriptionId)
   const activeCreativeMembers   = creativeMembers.filter(f => f.creativeSubscription?.status === 'active').length
   const trialingCreativeMembers = creativeMembers.filter(f => f.creativeSubscription?.status === 'trial').length
 

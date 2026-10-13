@@ -33,7 +33,11 @@ function StatusPill({ status }: { status: string }) {
 }
 
 export function VillageCreativeMembersPage() {
-  const members = getFounders().filter(f => !!f.creativeSubscription)
+  // Every self-serve signup gets a placeholder {status:'trial'}
+  // creativeSubscription object automatically, whether or not Creatives
+  // means anything to them yet (confirmed real, not an actual trial right
+  // now) — a real member needs a real Stripe subscription attached.
+  const members = getFounders().filter(f => !!f.creativeSubscription?.stripeSubscriptionId)
   const sorted = [...members].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   const active      = members.filter(m => m.creativeSubscription?.status === 'active')

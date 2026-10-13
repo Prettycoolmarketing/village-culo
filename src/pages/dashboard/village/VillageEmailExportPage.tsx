@@ -137,10 +137,22 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
             const isCreatives = !!f.creativeSubscription?.stripeSubscriptionId
             const isUpgraded  = !!f.archiveUnlocked
             const isCanva     = !!f.canvaMarketplaceVerified
+            // Where this member actually is right now — a fresh signup
+            // (like joshuavlara@gmail.com) shows as "Needs setup" rather
+            // than just appearing in the list with no indication of
+            // whether they ever finished joining.
+            const memberStatus =
+              f.onboardingStatus === 'needs_setup' ? { label: 'Needs setup', cls: 'bg-amber-50 text-amber-700' } :
+              f.onboardingStatus === 'researching' ? { label: 'Researching', cls: 'bg-amber-50 text-amber-700' } :
+              f.status === 'published' || f.status === 'featured' ? { label: 'Published', cls: 'bg-[#5E6B4A]/10 text-[#5E6B4A]' } :
+              { label: 'Draft', cls: 'bg-[#F3EDE6] text-[#9CA3AF]' }
             return (
               <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <p className="text-sm font-semibold text-[#2D2A26] truncate min-w-0">{f.signupEmail ?? f.name}</p>
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${memberStatus.cls}`}>
+                    {memberStatus.label}
+                  </span>
                   {isUpgraded && (
                     <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">
                       Upgraded
