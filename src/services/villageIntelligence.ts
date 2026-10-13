@@ -507,7 +507,12 @@ function runAnalysis(input: AnalysisInput, existingId?: string): VillageContentI
   const events      = extractEvents(text)
   const problems    = extractProblems(text)
   const solutions   = extractSolutions(text)
-  const lessons     = extractLessons(text, input.keyMoments)
+  // The AI rewrite's own genuine lesson is real, context-aware understanding
+  // of this specific piece — lead with it over the crude keyword-marker scan
+  // below (which only catches sentences containing words like "learned" or
+  // "lesson"), rather than discarding it in favour of a weaker guess at the
+  // same thing.
+  const lessons     = [...new Set([input.aiInsight, ...extractLessons(text, input.keyMoments)].filter((l): l is string => !!l))].slice(0, 5)
   const opps        = extractOpportunitySignals(text)
 
   const intent       = classifyByMap(text, INTENT_MAP)
@@ -515,7 +520,13 @@ function runAnalysis(input: AnalysisInput, existingId?: string): VillageContentI
   const emotionalTone= classifyByMap(text, TONE_MAP)
 
   const geoQuestions    = generateGeoQuestions(input, primaryTopics, people, businesses, locs.cities)
-  const searchQuestions = generateSearchQuestions(input, primaryTopics, businesses, locs.cities)
+  // Same idea as lessons above: the AI already worked out a real, specific
+  // primary question (and related ones) with full context of this piece —
+  // lead with those over the template generator below (e.g. "${topic} tips
+  // from ${city}"), which has no real understanding of what the piece
+  // actually answers.
+  const aiDrivenQuestions = [input.aiPrimaryQuestion, ...(input.aiQuestions ?? [])].filter((q): q is string => !!q)
+  const searchQuestions = [...new Set([...aiDrivenQuestions, ...generateSearchQuestions(input, primaryTopics, businesses, locs.cities)])].slice(0, 8)
   const seoKeywords     = buildSeoKeywords(input, primaryTopics, businesses, locs.cities)
   const geoKeywords     = buildGeoKeywords(input, primaryTopics, businesses, locs.cities)
   const canonicalTopics = primaryTopics.slice(0, 3)
@@ -593,6 +604,9 @@ export function importedContentToInput(item: ImportedContent): AnalysisInput {
     keyMoments:           item.keyMoments,
     peopleMentions:       item.peopleMentions,
     businessMentions:     item.businessMentions,
+    aiInsight:            item.aiInsight,
+    aiPrimaryQuestion:    item.aiPrimaryQuestion,
+    aiQuestions:          item.aiQuestions,
   }
 }
 

@@ -995,17 +995,38 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         return
       }
       setBlogBeforeRewrite(draft.description ?? '')
-      field('description', normalizeBlogSpacing(result.blog.blog))
-      // Marks this description as AI-written rather than raw source text —
-      // see safeStoryBody in publishStory.ts, which won't let a
-      // thirdPartyAuthored item's raw scraped text become a published
-      // Story's body, but does allow it once it's actually been rewritten.
-      field('descriptionRewrittenAt', new Date().toISOString())
-      // The AI's own subtitle is a genuine short summary distinct from the
-      // full blog — without saving it too, Summary later falls back to
-      // dumping the entire blog text in as "the summary" (see
-      // buildStoryFromImport). Never overwrites one the founder already wrote.
-      if (result.blog.subtitle && !draft.subtitle?.trim()) field('subtitle', result.blog.subtitle)
+      // One merged onChange rather than several sequential field() calls —
+      // field() spreads {...draft, [key]: value} off the same closed-over
+      // draft every time, so calling it repeatedly in a row doesn't
+      // accumulate: only whichever call happens to land last actually
+      // sticks, the same bug handleSearchAnswer below was already fixed for.
+      onChange({
+        ...draft,
+        description: normalizeBlogSpacing(result.blog.blog),
+        // Marks this description as AI-written rather than raw source text —
+        // see safeStoryBody in publishStory.ts, which won't let a
+        // thirdPartyAuthored item's raw scraped text become a published
+        // Story's body, but does allow it once it's actually been rewritten.
+        descriptionRewrittenAt: new Date().toISOString(),
+        // The AI's own subtitle is a genuine short summary distinct from the
+        // full blog — without saving it too, Summary later falls back to
+        // dumping the entire blog text in as "the summary" (see
+        // buildStoryFromImport). Never overwrites one the founder already wrote.
+        subtitle: result.blog.subtitle && !draft.subtitle?.trim() ? result.blog.subtitle : draft.subtitle,
+        // Carry the AI's own real insight/questions onto the item itself so
+        // Village Intelligence's Re-analyse can use them (see
+        // runAnalysis/importedContentToInput) instead of re-deriving a
+        // weaker version from scratch with keyword heuristics — otherwise
+        // this real understanding the rewrite just produced gets discarded.
+        aiInsight: result.blog.insight ?? draft.aiInsight,
+        aiPrimaryQuestion: result.blog.primaryQuestion ?? draft.aiPrimaryQuestion,
+        aiQuestions: result.blog.questions?.length ? result.blog.questions : draft.aiQuestions,
+      })
+      // Re-run Village Intelligence immediately so Re-analyse's output is
+      // already using the above the moment the rewrite lands, the same way
+      // Rewrite as a Culo Article already does — a founder shouldn't have
+      // to know to click Re-analyse themselves after this.
+      setShapeTrigger(t => t + 1)
     } catch (err) {
       setRewriteError(err instanceof Error ? err.message : 'Rewrite failed unexpectedly — please try again.')
     } finally {

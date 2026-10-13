@@ -89,4 +89,12 @@ export interface AnalysisInput {
   keyMoments?: string[]
   peopleMentions?: string[]
   businessMentions?: string[]
+  // The AI rewrite's own genuine insight/questions, when this content has
+  // been through Rewrite with AI or Rewrite as a Culo Article — see
+  // ImportedContent.aiInsight/aiPrimaryQuestion/aiQuestions. Used by
+  // runAnalysis to lead with the AI's real, context-aware answer instead of
+  // purely the keyword/template heuristics below.
+  aiInsight?: string
+  aiPrimaryQuestion?: string
+  aiQuestions?: string[]
 }

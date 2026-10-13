@@ -52,6 +52,18 @@ export interface ImportedContent {
   // item without this can't become a published Story's full body — see
   // publishStory.ts's fullDescription gate.
   descriptionRewrittenAt?: string
+  // Carried over from the AI rewrite's own response (generate-blog /
+  // generate-search-answer) rather than discarded once the rewrite lands in
+  // Blog — Village Intelligence's "Re-analyse" used to re-derive questions
+  // and the core lesson from scratch via crude keyword/template heuristics
+  // (e.g. "${topic} tips from ${city}") even right after the AI had already
+  // worked out a genuine, specific primary question and insight with full
+  // context. Feeding these back in lets Re-analyse use the AI's own real
+  // answer instead of a weaker guess at the same thing — see
+  // importedContentToInput and runAnalysis in villageIntelligence.ts.
+  aiInsight?: string
+  aiPrimaryQuestion?: string
+  aiQuestions?: string[]
   // Set true when this row didn't come from the founder themselves using
   // their own Import Content connectors — either CAPO staff created it
   // (bulk JSON curation's content[]/sourceLinks, the Curated Founder
