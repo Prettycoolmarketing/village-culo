@@ -351,19 +351,19 @@ export function DashboardLayout() {
               {canAccessCapoSection(user?.role, 'overview') && <SectionLabel label="ADMIN" large />}
 
               {(canAccessCapoSection(user?.role, 'overview')
-                || canAccessCapoSection(user?.role, 'usage')
                 || canAccessCapoSection(user?.role, 'creativeFeedback')) && (
                 <>
-                  {/* Village Overview now also holds Culo Creatives'
-                      Members/Feedback rather than those living in their own
-                      separate section — one place for "how's the Village
-                      doing", not three. */}
+                  {/* The separate Creatives "Members" nav item (used to sit
+                      here, above Feedback) is gone — Culo Members (under
+                      Founder Management) is the one place to track every
+                      member now, Creatives-subscribed or not. A real
+                      Creatives member still shows up there (tagged
+                      "Creatives"), and still counts correctly in the Culo
+                      Creatives tab's own stats below — just not a second,
+                      separate member list to keep in sync. */}
                   <SectionLabel label="Village Overview" />
                   {canAccessCapoSection(user?.role, 'overview') && (
                     <NavItem to="/dashboard/village" label="Village Overview" icon={<Icon path={icons.hq} />} />
-                  )}
-                  {canAccessCapoSection(user?.role, 'usage') && (
-                    <NavItem to="/dashboard/village/creative-members" label="Members" icon={<Icon path={icons.curated} />} hint="Culo Creatives" />
                   )}
                   {canAccessCapoSection(user?.role, 'creativeFeedback') && (
                     <NavItem to="/dashboard/village/creative-feedback" label="Feedback" icon={<Icon path={icons.email} />} hint="Culo Creatives" />
