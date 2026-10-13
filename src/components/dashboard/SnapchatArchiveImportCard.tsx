@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { parseSnapchatArchiveFile, buildImportedContentFromSnapchat } from '../../services/snapchatArchive'
 import { importedContentService } from '../../services/importedContent'
 import { SourceIcon } from '../ui/SourceIcon'
+import { getFounder } from '../../services/founders'
+import { hashFile, findPriorImport, recordImportHash } from '../../utils/archiveFileHash'
 
 // Same shape as InstagramArchiveImportCard — upload Snapchat's "My Data"
 // export, every Memory becomes its own private draft piece. Snapchat's
@@ -22,6 +24,7 @@ export function SnapchatArchiveImportCard({ founderId, onImported }: {
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ imported: number; failedDownloads: number } | null>(null)
+  const [pendingDuplicate, setPendingDuplicate] = useState<{ file: File; hash: string; importedAt: string } | null>(null)
 
   // Same risk as the Instagram importer — hundreds of memories, each
   // fetched/uploaded one at a time, can take a while. beforeunload
@@ -38,11 +41,26 @@ export function SnapchatArchiveImportCard({ founderId, onImported }: {
     if (!file) return
     setError(null)
     setResult(null)
+    setPendingDuplicate(null)
     if (!file.name.toLowerCase().endsWith('.zip')) {
       setError('That doesn’t look like a ZIP file — export your data from Snapchat and upload that file.')
       return
     }
 
+    setStage('Checking file…')
+    const hash = await hashFile(file)
+    const prior = findPriorImport(getFounder(founderId), 'snapchat', hash)
+    setStage(null)
+    if (prior) {
+      setPendingDuplicate({ file, hash, importedAt: prior.importedAt })
+      return
+    }
+
+    await processFile(file, hash)
+  }
+
+  async function processFile(file: File, hash: string) {
+    setPendingDuplicate(null)
     setStage('Reading archive…')
 
     try {
@@ -64,6 +82,7 @@ export function SnapchatArchiveImportCard({ founderId, onImported }: {
 
       setStage(null)
       setResult({ imported, failedDownloads })
+      void recordImportHash(founderId, 'snapchat', hash)
       if (uploadErrors.length > 0) {
         setError(
           `${uploadErrors.length} file${uploadErrors.length === 1 ? '' : 's'} couldn't upload (likely too large) — ` +
@@ -125,6 +144,29 @@ export function SnapchatArchiveImportCard({ founderId, onImported }: {
         </div>
 
         {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+
+        {pendingDuplicate && (
+          <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg mb-3 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-amber-800">
+              You already fully imported this exact file on {new Date(pendingDuplicate.importedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.
+              Importing it again will just re-check everything the same way — duplicates get skipped automatically either way.
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => void processFile(pendingDuplicate.file, pendingDuplicate.hash)}
+                className="text-xs font-semibold px-3 py-1.5 bg-[#2D2A26] text-white rounded-lg hover:bg-[#1a1815] transition-colors"
+              >
+                Import anyway
+              </button>
+              <button
+                onClick={() => setPendingDuplicate(null)}
+                className="text-xs font-semibold px-3 py-1.5 text-[#6B7280] hover:text-[#2D2A26] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {stage ? (
           <div>

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { parseInstagramArchiveFile, buildImportedContentFromArchive } from '../../services/instagramArchive'
 import { importedContentService } from '../../services/importedContent'
 import { SourceIcon } from '../ui/SourceIcon'
+import { getFounder } from '../../services/founders'
+import { hashFile, findPriorImport, recordImportHash } from '../../utils/archiveFileHash'
 
 // Bring in a whole Instagram export ZIP at once — posts, reels and stories
 // each become their own ImportedContent (carousels keep every photo, in
@@ -30,6 +32,10 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported }
   const [stage, setStage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ imported: number; skipped: number; duplicates: number } | null>(null)
+  // Set when the uploaded file's fingerprint matches one already fully
+  // imported for this founder — holds the file so "Import anyway" can
+  // still go ahead without re-picking it.
+  const [pendingDuplicate, setPendingDuplicate] = useState<{ file: File; hash: string; importedAt: string } | null>(null)
 
   // A real archive import of hundreds of pieces takes long enough that
   // closing or refreshing the tab mid-way is a genuine risk, not a
@@ -48,11 +54,31 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported }
     if (!file) return
     setError(null)
     setResult(null)
+    setPendingDuplicate(null)
     if (!file.name.toLowerCase().endsWith('.zip')) {
       setError('That doesn’t look like a ZIP file — export your archive as JSON/ZIP from Instagram and upload that file.')
       return
     }
 
+    // A cheap whole-file fingerprint check before touching its contents at
+    // all — recognises "you've already fully imported this exact file"
+    // instantly instead of re-checking every post against the duplicate
+    // set again, which is what a re-upload of a large export did before
+    // this existed. Never blocks — just asks first.
+    setStage('Checking file…')
+    const hash = await hashFile(file)
+    const prior = findPriorImport(getFounder(founderId), 'instagram', hash)
+    setStage(null)
+    if (prior) {
+      setPendingDuplicate({ file, hash, importedAt: prior.importedAt })
+      return
+    }
+
+    await processFile(file, hash)
+  }
+
+  async function processFile(file: File, hash: string) {
+    setPendingDuplicate(null)
     setStage('Reading archive…')
 
     try {
@@ -78,6 +104,7 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported }
 
       setStage(null)
       setResult({ imported, skipped: posts.length - imported - duplicates, duplicates })
+      void recordImportHash(founderId, 'instagram', hash)
       if (uploadErrors.length > 0) {
         setError(
           `${uploadErrors.length} file${uploadErrors.length === 1 ? '' : 's'} couldn't upload (likely too large for the current storage limit) — ` +
@@ -151,6 +178,29 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported }
         </div>
 
         {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+
+        {pendingDuplicate && (
+          <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg mb-3 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-amber-800">
+              You already fully imported this exact file on {new Date(pendingDuplicate.importedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.
+              Importing it again will just re-check everything the same way — duplicates get skipped automatically either way.
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => void processFile(pendingDuplicate.file, pendingDuplicate.hash)}
+                className="text-xs font-semibold px-3 py-1.5 bg-[#2D2A26] text-white rounded-lg hover:bg-[#1a1815] transition-colors"
+              >
+                Import anyway
+              </button>
+              <button
+                onClick={() => setPendingDuplicate(null)}
+                className="text-xs font-semibold px-3 py-1.5 text-[#6B7280] hover:text-[#2D2A26] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
           {stage ? (
             <div>

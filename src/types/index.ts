@@ -567,6 +567,14 @@ export interface Founder {
   selfPublishedFreeCount?: number    // new/self-composed pieces published against the free 10
   paidPublishCreditsGranted?: number // total credits bought via Publishing Packs (never expires)
   paidPublishCreditsUsed?: number    // credits spent
+
+  // ── Archive import file fingerprints (Instagram/Snapchat archive imports) ──
+  // A fingerprint of the exact uploaded zip, recorded once an import of it
+  // finishes — lets the import card recognise "you've already fully
+  // imported this exact file" instantly (one hash comparison) instead of
+  // re-checking every single item against the duplicate set again, which
+  // is what a re-upload of the same large export did before this existed.
+  importedArchiveHashes?: { platform: 'instagram' | 'snapchat'; hash: string; importedAt: string }[]
   // True while Pretty Cool Marketing is fulfilling this founder's content
   // as a paid service — all self-serve publish limits, meters and upsells
   // are bypassed; publishing volume is tracked as a service deliverable in
