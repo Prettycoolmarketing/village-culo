@@ -930,9 +930,14 @@ interface EditFormProps {
   // the title (still there too) scrolls out of view the moment someone
   // hits Save down here, so it looked like nothing happened.
   savedFlash?: boolean
+  // Disables both Save buttons while a save is in flight. Without this a
+  // double-click (or clicking Save, then Save again before the first
+  // request resolves) could publish the same item as two separate Story
+  // rows — confirmed in production as triplicate "published" stories.
+  saving?: boolean
 }
 
-export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false, canSearchAnswer = false, savedFlash = false }: EditFormProps) {
+export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false, canSearchAnswer = false, savedFlash = false, saving = false }: EditFormProps) {
   const { listening, toggle: toggleDictationBase } = useDictation()
   const [rewriting, setRewriting] = useState(false)
   const [rewriteError, setRewriteError] = useState<string | null>(null)
@@ -1178,9 +1183,9 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         >
           {draft.relatedStoryId ? 'View published story →' : 'Preview →'}
         </a>
-        <button onClick={onSave}
-          className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
-          Save Changes
+        <button onClick={onSave} disabled={saving}
+          className="shrink-0 px-4 py-2 bg-[#C86A43] text-white text-xs font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-wait transition-colors">
+          {saving ? 'Saving…' : 'Save Changes'}
         </button>
         {savedFlash && <span className="shrink-0 text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>}
       </div>
@@ -1475,9 +1480,9 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
 
         {/* Save / Cancel */}
         <div className="flex items-center gap-3">
-          <button onClick={onSave}
-            className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors">
-            Save Changes
+          <button onClick={onSave} disabled={saving}
+            className="px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] disabled:opacity-50 disabled:cursor-wait transition-colors">
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
           <button onClick={onCancel}
             className="px-4 py-2.5 text-sm text-[#6B7280] hover:text-[#2D2A26] transition-colors">
@@ -1690,6 +1695,7 @@ export function DashboardImportContentPage() {
   const [sources, setSources]   = useState<ConnectedSource[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
   const [savedFlash, setSavedFlash] = useState(false)
+  const [advancedSaving, setAdvancedSaving] = useState(false)
   // Set the moment any connector below reports a successful import — swaps
   // in a "go review it" prompt instead of also duplicating the full list of
   // everything ever imported here (that list lives in Profile → Content now).
@@ -1723,8 +1729,10 @@ export function DashboardImportContentPage() {
   // link and re-find their place after every single save. It now only
   // closes on an explicit Cancel/X, which sends them back to the list.
   async function handleSave() {
-    if (!draft) return
+    if (!draft || advancedSaving) return
+    setAdvancedSaving(true)
     setSaveError(null)
+    try {
     // Status here used to just get saved onto ImportedContent directly —
     // flipping it to Published never built a Story, so it showed live in
     // this editor while nothing actually existed on the public site.
@@ -1774,6 +1782,9 @@ export function DashboardImportContentPage() {
     if (itemToSave !== draft) setDraft(itemToSave)
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 2000)
+    } finally {
+      setAdvancedSaving(false)
+    }
   }
 
   function handleCancel() {
@@ -1991,6 +2002,7 @@ export function DashboardImportContentPage() {
             canRewrite={canUseVoiceRewrite}
             canSearchAnswer={canSearchAnswer}
             savedFlash={savedFlash}
+            saving={advancedSaving}
           />
         </div>
       )}

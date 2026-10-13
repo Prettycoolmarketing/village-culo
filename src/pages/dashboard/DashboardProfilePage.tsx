@@ -895,6 +895,7 @@ export function DashboardProfilePage() {
   const [importedEditDraft, setImportedEditDraft] = useState<ImportedContent | null>(null)
   const [importedSaveError, setImportedSaveError] = useState<string | null>(null)
   const [importedSavedFlash, setImportedSavedFlash] = useState(false)
+  const [importedAdvancedSaving, setImportedAdvancedSaving] = useState(false)
   const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
   const [culoArticleProgress, setCuloArticleProgress] = useState<{ done: number; total: number } | null>(null)
   const [importedTick, setImportedTick] = useState(0)
@@ -2331,8 +2332,10 @@ export function DashboardProfilePage() {
               // Now Save just saves; the panel only closes on an explicit
               // Cancel, the X, or clicking outside it.
               async function handleSaveAdvancedEdit() {
-                if (!importedEditDraft) return
+                if (!importedEditDraft || importedAdvancedSaving) return
+                setImportedAdvancedSaving(true)
                 setImportedSaveError(null)
+                try {
                 // The Status field right here in Advanced Edit used to just
                 // get saved onto ImportedContent directly, same bug as the
                 // compact row dropdown before it was fixed: flipping this
@@ -2375,6 +2378,14 @@ export function DashboardProfilePage() {
                   setImportedSaveError(result.error ?? 'Save failed. Please try again.')
                   return
                 }
+                // Write the newly-created relatedStoryId back into the draft
+                // that drives this modal. Without this, a second Save click
+                // (while the modal is still open) saw no relatedStoryId and
+                // published a brand-new Story all over again — confirmed in
+                // production as the same item going live 3 times over.
+                if (itemToSave.relatedStoryId !== importedEditDraft.relatedStoryId) {
+                  setImportedEditDraft(itemToSave)
+                }
                 const input = importedContentToInput(itemToSave)
                 const intel = villageContentIntelligenceService.analyse(input)
                 void villageContentIntelligenceService.upsert(intel)
@@ -2382,6 +2393,9 @@ export function DashboardProfilePage() {
                 setImportedSavedFlash(true)
                 setTimeout(() => setImportedSavedFlash(false), 2000)
                 setImportedTick(t => t + 1)
+                } finally {
+                  setImportedAdvancedSaving(false)
+                }
               }
 
               return (
@@ -2436,6 +2450,7 @@ export function DashboardProfilePage() {
                       canRewrite={canUseVoiceRewrite}
                       canSearchAnswer={canSearchAnswer}
                       savedFlash={importedSavedFlash}
+                      saving={importedAdvancedSaving}
                     />
                   </div>
                 </div>
