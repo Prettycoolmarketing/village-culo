@@ -12,6 +12,7 @@
 // caption text Instagram DOES export becomes the title/subtitle/blog.
 
 import JSZip from 'jszip'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { mediaUploadsService } from './mediaUploads'
 import { getFounder } from './founders'
 import { getBusiness } from './businesses'
@@ -55,6 +56,28 @@ function archiveDedupeKey(titleLine: string, timestamp: number): string {
   const normalized = titleLine.trim().toLowerCase().replace(/\s+/g, ' ')
   const day = new Date(timestamp * 1000).toISOString().slice(0, 10)
   return `${normalized}|${day}`
+}
+
+// Queries Supabase directly for this founder's existing Instagram-sourced
+// imports, rather than trusting the local cache (see the real-duplicate
+// bug this fixes, noted where this is called). Falls back to the local
+// cache only if Supabase isn't configured at all (dev mode).
+async function fetchFreshInstagramDedupeKeys(founderId: string): Promise<string[]> {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase
+      .from('imported_content')
+      .select('data')
+      .eq('founder_id', founderId)
+      .eq('data->>sourcePlatform', 'instagram')
+    if (!error && data) {
+      return (data.map(r => r.data as ImportedContent))
+        .filter(i => !!i.publishedAt)
+        .map(i => archiveDedupeKey(i.title, new Date(i.publishedAt!).getTime() / 1000))
+    }
+  }
+  return importedContentService.getAll({ founderId })
+    .filter(i => i.sourcePlatform === 'instagram' && i.publishedAt)
+    .map(i => archiveDedupeKey(i.title, new Date(i.publishedAt!).getTime() / 1000))
 }
 
 function normalizeEntries(raw: unknown, kind: InstagramEntryKind): ParsedInstagramPost[] {
@@ -281,11 +304,14 @@ export async function buildImportedContentFromArchive(
   // prior Instagram import, or a Facebook one that came in through this
   // same importer), plus every item built during this pass — catches a
   // cross-posted duplicate against past imports and within this one batch.
-  const seenKeys = new Set(
-    importedContentService.getAll({ founderId })
-      .filter(i => i.sourcePlatform === 'instagram' && i.publishedAt)
-      .map(i => archiveDedupeKey(i.title, new Date(i.publishedAt!).getTime() / 1000))
-  )
+  //
+  // Queried fresh from Supabase here, NOT importedContentService.getAll()
+  // (the local cache) — confirmed real, a stale cache let 588 already-
+  // imported pieces look "new" on a re-upload and get saved a second time,
+  // because the cache this founder's browser had didn't yet contain
+  // everything actually in the database. A duplicate-check that trusts a
+  // cache that can silently fall behind isn't a real duplicate-check.
+  const seenKeys = new Set(await fetchFreshInstagramDedupeKeys(founderId))
 
   // Used only as a fallback title when Instagram's export had no caption to
   // pull from (the raw-media-file path) — real captions always win.
