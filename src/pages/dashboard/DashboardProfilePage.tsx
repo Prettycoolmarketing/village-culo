@@ -24,6 +24,7 @@ import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
+import { pullVisibleRowsForFounder } from '../../lib/entityStore'
 import type { ImportedContentStatus } from '../../types/importedContent'
 import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle } from '../../services/blogWriter'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
@@ -898,6 +899,21 @@ export function DashboardProfilePage() {
   const [importedRegenProgress, setImportedRegenProgress] = useState<{ done: number; total: number } | null>(null)
   const [culoArticleProgress, setCuloArticleProgress] = useState<{ done: number; total: number } | null>(null)
   const [importedTick, setImportedTick] = useState(0)
+  // Content reads imported_content/stories purely from the local cache
+  // (importedContentService.getAll/getStories), which can be stale or
+  // just missing rows outright for an account with a lot of data (the
+  // same staleness issue behind a real duplicate-import bug fixed
+  // earlier). A fresh, founder-scoped pull every time Content actually
+  // opens means what's shown here always matches the database, not
+  // whatever happened to already be cached.
+  useEffect(() => {
+    if (tab !== 'content' || !draft?.id) return
+    const founderId = draft.id
+    void Promise.all([
+      pullVisibleRowsForFounder('imported_content', 'imported_content', founderId),
+      pullVisibleRowsForFounder('stories', 'stories', founderId),
+    ]).then(() => setImportedTick(t => t + 1))
+  }, [tab, draft?.id])
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
   const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
   // Rendering every published story at once was fine for a founder with a
