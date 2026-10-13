@@ -322,15 +322,19 @@ Most questions are fully answered in 900-1,100 strong words. Only go up to rough
 ARTICLE STRUCTURE
 Headline: the actual search question, worded naturally.
 Direct answer: answer the question in 2-3 sentences, immediately. Do not build up to it. Follow with one short paragraph of context, then move straight into substance — do not spend a paragraph restating the answer before earning its keep with specifics.
-What this looks like in practice: a short section giving 5-8 concrete, varied examples of how this question plays out across DIFFERENT kinds of founders/businesses (e.g. a consultant, an agency founder, a product founder, a tradesperson, a SaaS founder, a community founder, a creator, a service/lifestyle business) — not all drawn from Shakas's own world. Keep each example to 1-2 sentences: a specific situation and what it becomes. This section is what makes the article useful to a stranger searching the question, not just a Shakas story — prioritise it over general argument.
+What this looks like in practice: a short section giving 2-3 concrete, varied examples of how this question plays out across DIFFERENT kinds of founders/businesses (e.g. a consultant, an agency founder, a product founder, a tradesperson, a SaaS founder, a community founder, a creator, a service/lifestyle business) — not all drawn from Shakas's own world. Keep each example to 1-2 sentences: a specific situation and what it becomes. This section exists to make the article useful to a stranger searching the question, not just a Shakas story, but it is one supporting section among several, not the bulk of the article — do not let it crowd out the framework, her own example, or the nuance section below.
 A practical framework: where the question suits it, give the reader a short, usable method (a numbered list of 3-5 questions or steps they can apply themselves right now) rather than only an argument. Not every question needs this — use it when the question is fundamentally a "how do I..." rather than a "should I..." or "is X true" question.
 Shakas's own example: ONE real example from the source material (the clip, her Voice Brief or her Insight Brief), used once, briefly, as proof/illustration of the framework or point above — not as the spine the whole article hangs on. If the source is about one specific story (e.g. a trip, a launch, a client), use it here and do not keep returning to it elsewhere in the article.
 Nuance: a short, honest section on the limitation, exception, or "this doesn't mean X" side of the answer — avoid false balance, but a real caveat makes the article more trustworthy than one-sided advocacy.
 Where CULO fits: see CULO PLACEMENT below for exactly how to frame this — it is two distinct products solving two distinct problems, not one generic plug.
 Conclusion: a short, direct recommendation — what the reader should actually do. Do not restate the opening answer again; move the reader forward instead of circling back.
 
+VARY THE ORDER ACROSS ARTICLES: the six sections above (comparative examples, practical framework, Shakas's own example, nuance, where CULO fits, conclusion) do not have to run in that fixed sequence every time — only the headline and direct-answer opening are fixed. Decide, per article, whichever order genuinely reads best for that specific question: sometimes Shakas's own example works better placed right after the direct answer, before the comparative examples; sometimes the nuance section earns a spot earlier if the honest caveat IS the interesting part of the answer; sometimes the framework belongs before the examples instead of after. A reader encountering several of these articles side by side should notice different shapes, not the identical template with new words dropped in.
+
 SEARCH AND AI WRITING RULES
 Write for humans first. Use the main question naturally throughout the article. Every subheading must itself be phrased as a real, searchable question (e.g. "How do you turn an experience into content?" not "What is actually happening") — plain lines of text, not markdown #, since this renders as plain text. These subheadings are themselves related-search-question coverage, so treat choosing them as part of answering the brief, not decoration. Use plain language. Avoid keyword stuffing.
+
+Never use a literal double-quote character (") anywhere inside a JSON string value, including when quoting a phrase, a term, or something someone said (e.g. the "that's all" framework). Use single quotes (') for that instead. This output is parsed as strict JSON and an unescaped double quote inside a string breaks the parser, silently failing the whole generation.
 
 Do not claim that publishing in The Culo Village guarantees Google rankings, ChatGPT mentions or AI recommendations. Use wording such as "helps create clearer public context", "makes the information easier to discover and understand", "creates structured, crawlable webpages", "can contribute to a stronger public digital footprint". Do not write "this will make ChatGPT recommend you", "you will rank", or "AI will find you".
 
@@ -393,34 +397,57 @@ serve(async (req) => {
       body.insightBrief?.trim() ? `\nHER INSIGHT BRIEF (what she genuinely believes/knows/teaches):\n${body.insightBrief}` : undefined,
     ].filter(Boolean).join('\n')
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-5',
-        max_tokens: 6000,
-        thinking: { type: 'adaptive' },
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userContent }],
-      }),
-    })
-
-    if (!res.ok) {
-      const errText = await res.text()
-      throw new Error(`AI request failed (${res.status}): ${errText}`)
+    async function callAnthropic(): Promise<Response> {
+      return fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-5',
+          max_tokens: 6000,
+          thinking: { type: 'adaptive' },
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userContent }],
+        }),
+      })
     }
 
-    const data = await res.json()
-    const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
-    const raw = textBlock?.text?.trim()
-    if (!raw) throw new Error('AI returned no text')
+    // An unescaped double-quote inside a string value (e.g. the model
+    // quoting a phrase like "that's all" instead of using single quotes,
+    // despite the prompt rule against it) breaks JSON.parse outright — a
+    // real, intermittent failure confirmed in production. One extra full
+    // call is cheap next to silently failing the whole article generation.
+    async function generateOnce(): Promise<GeneratedSearchAnswer> {
+      const res = await callAnthropic()
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(`AI request failed (${res.status}): ${errText}`)
+      }
+      const data = await res.json()
+      const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
+      const raw = textBlock?.text?.trim()
+      if (!raw) throw new Error('AI returned no text')
+      const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+      return JSON.parse(sanitizeJsonControlChars(cleaned)) as GeneratedSearchAnswer
+    }
 
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
-    const parsed = JSON.parse(sanitizeJsonControlChars(cleaned)) as GeneratedSearchAnswer
+    let parsed: GeneratedSearchAnswer
+    try {
+      parsed = await generateOnce()
+    } catch (firstErr) {
+      if (!(firstErr instanceof SyntaxError)) throw firstErr
+      try {
+        parsed = await generateOnce()
+      } catch (secondErr) {
+        if (secondErr instanceof SyntaxError) {
+          throw new Error('The AI\'s response came back malformed twice in a row — please try Rewrite as a Culo Article again.')
+        }
+        throw secondErr
+      }
+    }
 
     // culoRelevant governs whether the model's own body organically ties
     // the question's actual answer back to CULO — that stays honest and

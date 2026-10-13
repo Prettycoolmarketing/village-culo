@@ -196,6 +196,8 @@ Structure (when there's enough to write): lived story first, lesson second. Open
 
 Aim directionally for roughly 70% lived story and personal perspective, 20% teaching that grows directly out of that specific story (not a generic add-on lesson), and at most 10% connecting to the founder's wider work/company — these are directional, not a formula to hit exactly. If the brief specifies different proportions or instructions, follow the brief.
 
+OPTIONAL COMPARATIVE EXAMPLES: for expertise_led, insight_led or question_led pieces only — never for story_led or personal pieces, where the story must stand alone — you may add 2-4 short comparative examples (1-2 sentences each) showing how the same lesson plays out for other kinds of founders or businesses (e.g. a consultant, a tradesperson, a product founder). These exist to generalise the lesson beyond this one piece, never to replace Shakas's own story as the spine of the article. Place them after her story and its teaching point, keep them brief and clearly secondary, and only include them when they genuinely add usefulness for a reader in a different business — do not force them into every eligible piece.
+
 Hard rules, regardless of what the brief says:
 - Never invent facts, dates, names, results, or events not present in the source material or the Insight Brief's own stated experience. This applies specifically to details of THIS piece — what happened, who was there, what was said, what it looked like.
 - Never invent precision that wasn't supplied: no specific revenue, customer counts, hours, percentages, dates, or outcomes unless that exact number appears in the source material. Prefer a true, vaguer description ("hours of manual work") over a specific invented one ("six hours of work").
@@ -204,6 +206,7 @@ Hard rules, regardless of what the brief says:
 - This is the founder's own voice, first person, throughout — the blog, the subtitle AND the insight. Never drift into third person ("she believes...", "her wider work", "she found...") anywhere in the output, even briefly, even in the subtitle. If the brief or Insight Brief is written in third person (as an extraction document often is), that's fine as reference material, but everything you output must still be first person unless explicitly instructed otherwise.
 - Write in full flowing paragraphs. Avoid copywriter-voice mannerisms: one-sentence paragraphs stacked for effect, manufactured "mic-drop" lines, constant rhetorical questions, and clichés like "here's the truth," "let that sink in," "nobody talks about this," "game changer," "this changes everything," or fake vulnerability.
 - Never use an em dash (—) anywhere in the output. If a pause or separation is needed between thoughts, use a full stop or a line break instead.
+- Never use a literal double-quote character (") anywhere inside a JSON string value, including when quoting a phrase, a term, dialogue, or something someone said (e.g. the "that's all" framework, or something a client said). Use single quotes (') for that instead. This output is parsed as strict JSON and an unescaped double quote inside a string breaks the parser, silently failing the whole generation.
 - Australian English spelling and vocabulary throughout: organise, personalise, optimise, recognise, analyse, realise, behaviour, favour, mum (never the American organize, personalize, optimize, recognize, analyze, realize, behavior, favor, mom).
 - Do not use these words or phrases anywhere in the output: "authenticity," "show up consistently," "valuable content," "find your voice," "in today's world," "game-changer," "journey," "unlock," "elevate," "transform your," "ever-evolving," "whether you're," "leverage," "level up."
 - No "Are you...?" openers. No "In conclusion." No sign-off that reads as a pitch or a generic call to action — end on the insight itself, not a CTA line (a real, founder-supplied call to action, if one exists in the brief, is the one exception).
@@ -380,21 +383,41 @@ serve(async (req) => {
       return lastResponse!
     }
 
-    const response = await callAnthropic()
-
-    if (!response.ok) {
-      const errText = await response.text()
-      throw new Error(`AI request failed (${response.status}): ${errText}`)
+    // An unescaped double-quote inside a string value (e.g. the model
+    // quoting a phrase like "that's all" instead of using single quotes,
+    // despite the prompt rule against it) breaks JSON.parse outright — a
+    // real, intermittent failure confirmed in production, not a client bug.
+    // One extra full call is cheap next to silently failing the founder's
+    // save; only give up and surface the raw parse error after a retry also
+    // fails this way.
+    async function generateOnce(): Promise<GeneratedBlog> {
+      const response = await callAnthropic()
+      if (!response.ok) {
+        const errText = await response.text()
+        throw new Error(`AI request failed (${response.status}): ${errText}`)
+      }
+      const data = await response.json()
+      const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
+      const raw = textBlock?.text?.trim()
+      if (!raw) throw new Error('AI returned no text')
+      const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+      return JSON.parse(sanitizeJsonControlChars(cleaned)) as GeneratedBlog
     }
 
-    const data = await response.json()
-    const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
-    const raw = textBlock?.text?.trim()
-    if (!raw) throw new Error('AI returned no text')
-
-    // Strip accidental markdown fences even though the prompt asks for none.
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
-    const parsed = JSON.parse(sanitizeJsonControlChars(cleaned)) as GeneratedBlog
+    let parsed: GeneratedBlog
+    try {
+      parsed = await generateOnce()
+    } catch (firstErr) {
+      if (!(firstErr instanceof SyntaxError)) throw firstErr
+      try {
+        parsed = await generateOnce()
+      } catch (secondErr) {
+        if (secondErr instanceof SyntaxError) {
+          throw new Error('The AI\'s response came back malformed twice in a row — please try Rewrite with AI again.')
+        }
+        throw secondErr
+      }
+    }
 
     return new Response(JSON.stringify({ blog: parsed }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
