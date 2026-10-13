@@ -192,24 +192,3 @@ export async function pullVisibleRows<T extends { id: string }>(table: string, c
 export function replaceCache<T extends { id: string }>(cacheKey: string, remote: T[]): void {
   store.set<T>(cacheKey, remote)
 }
-
-/**
- * Same idea as pullVisibleRows, scoped to one founder_id — for a page that
- * only cares about one founder's own rows (a founder's own Content tab,
- * say) rather than needing (or wanting) to pull/cache the whole table.
- * Confirmed real need: a CAPO/admin session's full-table cache for a table
- * like imported_content can grow large enough to silently fail to write
- * (localStorage quota) or just be stale by the time a founder's own Content
- * tab reads it, making genuinely-saved rows invisible there. Merges
- * (upserts) into the cache rather than replacing it, so this narrow pull
- * never wipes out other founders' rows a wider pullVisibleRows call already
- * cached.
- */
-export async function pullVisibleRowsForFounder<T extends { id: string }>(
-  table: string, cacheKey: string, founderId: string,
-): Promise<void> {
-  if (!supabase) return
-  const { data, error } = await supabase.from(table).select('data').eq('founder_id', founderId)
-  if (error || !data) return
-  store.updateMany<T>(cacheKey, data.map(r => r.data as T))
-}

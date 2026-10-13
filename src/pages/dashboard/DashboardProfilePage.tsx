@@ -24,7 +24,6 @@ import { FAQEditor } from '../../components/dashboard/FAQEditor'
 import { publisherPartnerProfileService, affiliateLinkService } from '../../services/partnership'
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
-import { pullVisibleRowsForFounder } from '../../lib/entityStore'
 import type { ImportedContentStatus } from '../../types/importedContent'
 import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle } from '../../services/blogWriter'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
@@ -35,7 +34,7 @@ import { locations } from '../../data/locations'
 import { industries } from '../../data/industries'
 import { topics as allTopics } from '../../data/topics'
 import { slugify } from '../../utils/slugify'
-import { isSupabaseConfigured } from '../../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../../lib/supabase'
 import { accountFeedbackService } from '../../services/accountFeedback'
 import { cancelCreativesSubscription } from '../../services/creativeSubscription'
 import { Tabs } from '../../components/dashboard/Tabs'
@@ -900,20 +899,36 @@ export function DashboardProfilePage() {
   const [culoArticleProgress, setCuloArticleProgress] = useState<{ done: number; total: number } | null>(null)
   const [importedTick, setImportedTick] = useState(0)
   // Content reads imported_content/stories purely from the local cache
-  // (importedContentService.getAll/getStories), which can be stale or
-  // just missing rows outright for an account with a lot of data (the
+  // (importedContentService.getAll/getStories) by default, which can be
+  // stale or missing rows outright for an account with a lot of data (the
   // same staleness issue behind a real duplicate-import bug fixed
-  // earlier). A fresh, founder-scoped pull every time Content actually
-  // opens means what's shown here always matches the database, not
-  // whatever happened to already be cached.
+  // earlier). Merging a fresh pull back into that SAME shared cache
+  // turned out not to be enough on its own — confirmed real: for this
+  // founder specifically, the shared cache (holding this founder's 1000+
+  // imports plus everything else a CAPO session caches platform-wide) is
+  // large enough that the write-back can silently exceed localStorage's
+  // quota and never actually persist, even though the fetch itself
+  // succeeded. Held in plain component state instead, bypassing
+  // localStorage entirely for Content's own display — nothing here can
+  // silently fail to show up because of a quota problem elsewhere.
+  const [freshFounderImported, setFreshFounderImported] = useState<ImportedContent[] | null>(null)
+  const [freshFounderStories, setFreshFounderStories] = useState<Story[] | null>(null)
   useEffect(() => {
-    if (tab !== 'content' || !draft?.id) return
+    if (tab !== 'content' || !draft?.id || !isSupabaseConfigured || !supabase) return
     const founderId = draft.id
+    // Also re-runs whenever importedTick bumps (every edit/publish/delete
+    // in this tab already does that) — keeps this founder-scoped snapshot
+    // current after a write, not just once when the tab first opens.
+    // Safe from a refetch loop: this effect only ever READS importedTick
+    // as a dependency, it never sets it itself.
     void Promise.all([
-      pullVisibleRowsForFounder('imported_content', 'imported_content', founderId),
-      pullVisibleRowsForFounder('stories', 'stories', founderId),
-    ]).then(() => setImportedTick(t => t + 1))
-  }, [tab, draft?.id])
+      supabase.from('imported_content').select('data').eq('founder_id', founderId),
+      supabase.from('stories').select('data').eq('founder_id', founderId),
+    ]).then(([importedRes, storiesRes]) => {
+      if (!importedRes.error && importedRes.data) setFreshFounderImported(importedRes.data.map(r => r.data as ImportedContent))
+      if (!storiesRes.error && storiesRes.data) setFreshFounderStories(storiesRes.data.map(r => r.data as Story))
+    })
+  }, [tab, draft?.id, importedTick])
   const [discoveryBizId, setDiscoveryBizId] = useState<string | null>(null)
   const [publishedSort, setPublishedSort] = useState<'newest' | 'oldest'>('newest')
   // Rendering every published story at once was fine for a founder with a
@@ -1093,7 +1108,10 @@ export function DashboardProfilePage() {
 
   // Relationships — everything this founder is connected to across the Village.
   const founderBusinesses = getBusinesses().filter(b => b.founderId === draft.id)
-  const founderStories    = getStories({ founderId: draft.id })
+  // Prefers the fresh, founder-scoped pull from Content's own effect above
+  // once it's landed — see freshFounderStories' own comment for why the
+  // cache alone isn't reliable enough here.
+  const founderStories    = freshFounderStories ?? getStories({ founderId: draft.id })
 
   async function handleRemoveFounderTopicFeature(key: string) {
     if (!key.startsWith('topic:')) return
@@ -1103,7 +1121,7 @@ export function DashboardProfilePage() {
   }
   // Only ideas still backed by a live, published story — an idea whose
   // source story was deleted or unpublished shouldn't keep showing here.
-  const publishedStoryIds = new Set(getStories({ founderId: draft.id, publicOnly: true }).map(s => s.id))
+  const publishedStoryIds = new Set(founderStories.filter(s => s.status === 'published' || s.status === 'featured').map(s => s.id))
   const founderIdeas      = getIdeas({ founderId: draft.id })
     .filter(i => i.relatedStoryIds.some(sid => publishedStoryIds.has(sid)))
   const founderLibrary    = getLibraryItems({ founderId: draft.id })
@@ -1585,7 +1603,7 @@ export function DashboardProfilePage() {
         {/* ── My Life's Work ───────────────────────────────────────────── */}
         {tab === 'content' && (() => {
           void importedTick
-          const allImportedForStats = importedContentService.getAll({ founderId: draft.id })
+          const allImportedForStats = freshFounderImported ?? importedContentService.getAll({ founderId: draft.id })
           const statsPlatforms = Array.from(new Set(allImportedForStats.map(i => i.sourcePlatform)))
           const isPublishedStat = (i: ImportedContent) => !!i.relatedStoryId || i.status === 'published' || i.status === 'featured'
           const publishedStatCount = allImportedForStats.filter(isPublishedStat).length
@@ -1736,7 +1754,7 @@ export function DashboardProfilePage() {
                 inside the raw Imported content list. */}
             {(contentSubTab === 'ready' || contentSubTab === 'review') && (() => {
               void importedTick
-              const allImported = importedContentService.getAll({ founderId: draft.id })
+              const allImported = freshFounderImported ?? importedContentService.getAll({ founderId: draft.id })
               // Two independent signals for "already published" — relatedStoryId
               // (set once a real Story exists behind it) and status itself —
               // checked together rather than trusting just one, so an item
