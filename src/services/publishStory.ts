@@ -367,10 +367,27 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
  * Story for a re-publish), just run once per still-draft item instead of
  * needing a click each.
  */
+// Below this, something is a stub/summary line, not a real article —
+// matches the excerpt length safeStoryBody already uses for the
+// copyright case. Only applied to staff-created content (research-
+// source stubs from villageImport.ts's sourceLinks, meant only to feed
+// the Researcher and explicitly "never auto-published... unless staff
+// deliberately publishes one later" per their own origin comment) — a
+// founder's own short real caption (a Reel, a Story) is never
+// staffCreated and is unaffected.
+const MIN_REAL_ARTICLE_LENGTH = 300
+
 export async function publishFounderArticles(founder: Founder): Promise<void> {
   void approveAllForFounder(founder.id)
+  // Confirmed real bug: a curated founder's research-source stubs (one-
+  // line summaries like "Tap4Change's post linking to a recorded
+  // interview...") were getting published as full "articles" the moment
+  // their profile got published/verified, since this only ever checked
+  // for a non-empty title, never whether there was an actual article
+  // behind it.
   const items = importedContentService.getAll({ founderId: founder.id })
     .filter(i => i.status === 'draft' && i.title.trim().length > 0)
+    .filter(i => !i.staffCreated || (i.description ?? '').trim().length >= MIN_REAL_ARTICLE_LENGTH)
   for (const item of items) {
     if (item.relatedStoryId) {
       const existing = getStory(item.relatedStoryId)
