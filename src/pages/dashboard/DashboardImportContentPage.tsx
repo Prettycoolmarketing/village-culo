@@ -1506,19 +1506,22 @@ export function isReadyToPublish(item: ImportedContent): boolean {
 // feed Posts almost always have one; this is what separates the two in
 // the Instagram sub-filter and what the one-click "auto-publish captioned"
 // action uses to decide what's safe to publish untouched.
-// Confirmed real: a caption that's just a string of @mentions/#hashtags
-// (a common Instagram repost/collab-tag pattern, e.g. "@chloetheunicorn
-// @irissource @vico85170") — or just "." — passed this as "ready" purely
-// because it was non-empty, when there's no actual substance behind it.
-// Strips tags/hashtags before checking length, so a genuinely short but
-// real caption ("Just joking but serious wtf") still counts, but a
-// caption that's only ever been a pile of handles correctly needs more
-// value instead of looking publish-ready.
+// Confirmed real, two rounds: first just a caption that's a pile of
+// @mentions/#hashtags with no real substance ("@chloetheunicorn
+// @irissource @vico85170"); then explicitly widened further — a genuine,
+// real one- or two-line caption ("Batching so fucking fast / The
+// internet won't know what hit it") is still too thin to count as an
+// article body, even though every word of it is real. Strips tags first
+// (so a caption that's ONLY handles doesn't get credit for their
+// length), then requires real substance well beyond a line or two —
+// applies across the board, not just the obvious junk case.
+const MIN_REAL_CAPTION_LENGTH = 150
+
 export function hasRealCaption(item: ImportedContent): boolean {
   const text = (item.description ?? '').trim()
   if (!text) return false
   const withoutTags = text.replace(/[@#]\S+/g, '').trim()
-  return withoutTags.length >= 20
+  return withoutTags.length >= MIN_REAL_CAPTION_LENGTH
 }
 
 export function SavedRow({
