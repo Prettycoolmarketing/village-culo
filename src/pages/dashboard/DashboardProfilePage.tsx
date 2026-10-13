@@ -965,7 +965,12 @@ export function DashboardProfilePage() {
       // on (Ready, Needs More Value, whatever) — it used to force a
       // dedicated "imported" tab just to host this popup, which is the
       // tab this comment used to describe before it was removed.
+      // Same stale-cache issue fixed elsewhere on this page — the cache
+      // lookup alone can miss a genuinely-saved item, which made "Edit
+      // your story" silently do nothing (confirmed real). Falls back to
+      // the fresh, founder-scoped pull Content's own effect keeps current.
       const item = importedContentService.get(editImportedId)
+        ?? freshFounderImported?.find(i => i.id === editImportedId)
       if (item) {
         setImportedEditDraft(item)
         setEditingImportedId(editImportedId)

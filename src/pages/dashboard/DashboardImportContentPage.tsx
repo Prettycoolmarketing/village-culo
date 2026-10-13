@@ -1506,8 +1506,19 @@ export function isReadyToPublish(item: ImportedContent): boolean {
 // feed Posts almost always have one; this is what separates the two in
 // the Instagram sub-filter and what the one-click "auto-publish captioned"
 // action uses to decide what's safe to publish untouched.
+// Confirmed real: a caption that's just a string of @mentions/#hashtags
+// (a common Instagram repost/collab-tag pattern, e.g. "@chloetheunicorn
+// @irissource @vico85170") — or just "." — passed this as "ready" purely
+// because it was non-empty, when there's no actual substance behind it.
+// Strips tags/hashtags before checking length, so a genuinely short but
+// real caption ("Just joking but serious wtf") still counts, but a
+// caption that's only ever been a pile of handles correctly needs more
+// value instead of looking publish-ready.
 export function hasRealCaption(item: ImportedContent): boolean {
-  return (item.description ?? '').trim().length > 0
+  const text = (item.description ?? '').trim()
+  if (!text) return false
+  const withoutTags = text.replace(/[@#]\S+/g, '').trim()
+  return withoutTags.length >= 20
 }
 
 export function SavedRow({
