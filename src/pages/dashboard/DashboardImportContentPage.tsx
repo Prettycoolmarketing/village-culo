@@ -959,45 +959,58 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     }
     setRewriting(true)
     setRewriteError(null)
-    const result = await generateBlogFromVoiceBrief({
-      voiceBrief: founder.voiceBrief,
-      insightBrief: founder.insightBrief,
-      founderName: founder.name,
-      caption: draft.description,
-      imageUrls: [...(draft.imageUrls ?? []), ...(draft.thumbnailUrl ? [draft.thumbnailUrl] : [])],
-      postedAt: draft.publishedAt,
-      platform: draft.sourcePlatform,
-    })
-    setRewriting(false)
-    if (result.error) {
-      setRewriteError(result.error)
-      return
+    // Previously had no try/catch at all — a thrown network error (dropped
+    // connection, CORS hiccup, anything generateBlogFromVoiceBrief didn't
+    // itself catch and turn into a {error} result) skipped straight past
+    // setRewriting(false) and every error message below, so the button just
+    // silently reverted to its resting state with nothing shown and the
+    // Blog field untouched. Confirmed live as "says Rewriting, then just
+    // stops." The finally block guarantees the button always comes back,
+    // and the catch guarantees something is always shown when it fails.
+    try {
+      const result = await generateBlogFromVoiceBrief({
+        voiceBrief: founder.voiceBrief,
+        insightBrief: founder.insightBrief,
+        founderName: founder.name,
+        caption: draft.description,
+        imageUrls: [...(draft.imageUrls ?? []), ...(draft.thumbnailUrl ? [draft.thumbnailUrl] : [])],
+        postedAt: draft.publishedAt,
+        platform: draft.sourcePlatform,
+      })
+      if (result.error) {
+        setRewriteError(result.error)
+        return
+      }
+      // insufficient_source is the AI correctly declining to invent detail
+      // that isn't actually there — a real, honest outcome, not a glitch. It
+      // used to fall through to the same generic "Could not rewrite this"
+      // message as an actual failure, which reads as "broken, try again" when
+      // the real fix is to give it more to work with.
+      if (result.blog?.status === 'insufficient_source' || !result.blog?.blog) {
+        setRewriteError(
+          result.blog?.note
+            ? `Not enough to go on yet — ${result.blog.note} Add more detail to the caption, or fill in more of your Brand Brief.`
+            : 'Not enough here yet to write something true and specific — add more detail to the caption, or fill in more of your Brand Brief.'
+        )
+        return
+      }
+      setBlogBeforeRewrite(draft.description ?? '')
+      field('description', normalizeBlogSpacing(result.blog.blog))
+      // Marks this description as AI-written rather than raw source text —
+      // see safeStoryBody in publishStory.ts, which won't let a
+      // thirdPartyAuthored item's raw scraped text become a published
+      // Story's body, but does allow it once it's actually been rewritten.
+      field('descriptionRewrittenAt', new Date().toISOString())
+      // The AI's own subtitle is a genuine short summary distinct from the
+      // full blog — without saving it too, Summary later falls back to
+      // dumping the entire blog text in as "the summary" (see
+      // buildStoryFromImport). Never overwrites one the founder already wrote.
+      if (result.blog.subtitle && !draft.subtitle?.trim()) field('subtitle', result.blog.subtitle)
+    } catch (err) {
+      setRewriteError(err instanceof Error ? err.message : 'Rewrite failed unexpectedly — please try again.')
+    } finally {
+      setRewriting(false)
     }
-    // insufficient_source is the AI correctly declining to invent detail
-    // that isn't actually there — a real, honest outcome, not a glitch. It
-    // used to fall through to the same generic "Could not rewrite this"
-    // message as an actual failure, which reads as "broken, try again" when
-    // the real fix is to give it more to work with.
-    if (result.blog?.status === 'insufficient_source' || !result.blog?.blog) {
-      setRewriteError(
-        result.blog?.note
-          ? `Not enough to go on yet — ${result.blog.note} Add more detail to the caption, or fill in more of your Brand Brief.`
-          : 'Not enough here yet to write something true and specific — add more detail to the caption, or fill in more of your Brand Brief.'
-      )
-      return
-    }
-    setBlogBeforeRewrite(draft.description ?? '')
-    field('description', normalizeBlogSpacing(result.blog.blog))
-    // Marks this description as AI-written rather than raw source text —
-    // see safeStoryBody in publishStory.ts, which won't let a
-    // thirdPartyAuthored item's raw scraped text become a published
-    // Story's body, but does allow it once it's actually been rewritten.
-    field('descriptionRewrittenAt', new Date().toISOString())
-    // The AI's own subtitle is a genuine short summary distinct from the
-    // full blog — without saving it too, Summary later falls back to
-    // dumping the entire blog text in as "the summary" (see
-    // buildStoryFromImport). Never overwrites one the founder already wrote.
-    if (result.blog.subtitle && !draft.subtitle?.trim()) field('subtitle', result.blog.subtitle)
   }
 
   function handleUndoRewrite() {
@@ -1027,63 +1040,73 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     setSearchAnswering(true)
     setSearchAnswerError(null)
     setSearchAnswerResult(null)
-    const { result, error } = await generateSearchAnswerArticle({
-      founderName: founder?.name ?? 'Shakas Designer',
-      sourceText,
-      platform: draft.sourcePlatform,
-      voiceBrief: founder?.voiceBrief,
-      insightBrief: founder?.insightBrief,
-      usedQuestions: founder?.usedSearchQuestions ?? [],
-    })
-    setSearchAnswering(false)
-    if (error) { setSearchAnswerError(error); return }
-    if (!result || result.status !== 'ready' || !result.article) {
-      setSearchAnswerError(
-        result?.status === 'no_unused_question'
-          ? `Every angle this clip supports has already been used — ${result.note ?? 'try another clip.'}`
-          : result?.note
-            ? `Not enough to answer a real question yet — ${result.note}`
-            : 'Not enough here yet to answer a real search question.'
-      )
-      return
-    }
-    setSearchAnswerResult(result)
-    // Every field() call reads a full {...draft, key: value} snapshot off
-    // the SAME stale `draft` closure — calling it several times in a row
-    // doesn't accumulate, each call just overwrites the last with its own
-    // copy of the old draft. Title and Blog were silently reverting to
-    // their pre-rewrite values because of exactly this: only whichever
-    // field() call happened to apply last actually stuck. Building one
-    // merged object and committing it in a single onChange fixes that.
-    const resultTopics = [result.primaryTopic, ...(result.secondaryTopics ?? [])].filter((t): t is string => !!t)
-    const isPlaceholderTitle = /^Imported from /i.test(draft.title.trim())
-    const preservedOriginalTitle = !isPlaceholderTitle && draft.title.trim() ? draft.title.trim() : undefined
-    onChange({
-      ...draft,
-      title: result.headline || draft.title,
-      // The original post's own title (when it was a real one, not the
-      // generic "Imported from X" placeholder) moves to Subtitle instead
-      // of being thrown away — the new headline takes its spot in Title.
-      subtitle: preservedOriginalTitle ?? draft.subtitle,
-      description: normalizeBlogSpacing(result.article),
-      // See handleRewriteBlog's identical marker and safeStoryBody in
-      // publishStory.ts.
-      descriptionRewrittenAt: new Date().toISOString(),
-      topics: resultTopics.length > 0 ? Array.from(new Set([...draft.topics, ...resultTopics])) : draft.topics,
-    })
-    if (resultTopics.length > 0) {
-      setTopicsText(t => [...new Set([...parseList(t), ...resultTopics])].join(', '))
-    }
-    // Village Intelligence used to need a manual Re-analyse click after a
-    // rewrite this size — the content just changed completely, so there's
-    // no reason to wait for someone to notice and trigger it themselves.
-    // Same mechanism "Shape these as Q&A" already uses.
-    setShapeTrigger(t => t + 1)
-    // Rotation only actually works if this list grows — the prompt alone
-    // can't enforce "never repeat" without the caller feeding back what's
-    // already been used.
-    if (founder && result.primaryQuestion) {
-      void updateFounder({ ...founder, usedSearchQuestions: [...(founder.usedSearchQuestions ?? []), result.primaryQuestion] })
+    // Same silent-failure gap as handleRewriteBlog had — no try/catch meant
+    // a thrown error (network blip, anything not already normalised to
+    // {error}) skipped setSearchAnswering(false) and every message below,
+    // so the button just reverted with nothing shown. See handleRewriteBlog
+    // for the confirmed live report this pattern caused.
+    try {
+      const { result, error } = await generateSearchAnswerArticle({
+        founderName: founder?.name ?? 'Shakas Designer',
+        sourceText,
+        platform: draft.sourcePlatform,
+        voiceBrief: founder?.voiceBrief,
+        insightBrief: founder?.insightBrief,
+        usedQuestions: founder?.usedSearchQuestions ?? [],
+      })
+      if (error) { setSearchAnswerError(error); return }
+      if (!result || result.status !== 'ready' || !result.article) {
+        setSearchAnswerError(
+          result?.status === 'no_unused_question'
+            ? `Every angle this clip supports has already been used — ${result.note ?? 'try another clip.'}`
+            : result?.note
+              ? `Not enough to answer a real question yet — ${result.note}`
+              : 'Not enough here yet to answer a real search question.'
+        )
+        return
+      }
+      setSearchAnswerResult(result)
+      // Every field() call reads a full {...draft, key: value} snapshot off
+      // the SAME stale `draft` closure — calling it several times in a row
+      // doesn't accumulate, each call just overwrites the last with its own
+      // copy of the old draft. Title and Blog were silently reverting to
+      // their pre-rewrite values because of exactly this: only whichever
+      // field() call happened to apply last actually stuck. Building one
+      // merged object and committing it in a single onChange fixes that.
+      const resultTopics = [result.primaryTopic, ...(result.secondaryTopics ?? [])].filter((t): t is string => !!t)
+      const isPlaceholderTitle = /^Imported from /i.test(draft.title.trim())
+      const preservedOriginalTitle = !isPlaceholderTitle && draft.title.trim() ? draft.title.trim() : undefined
+      onChange({
+        ...draft,
+        title: result.headline || draft.title,
+        // The original post's own title (when it was a real one, not the
+        // generic "Imported from X" placeholder) moves to Subtitle instead
+        // of being thrown away — the new headline takes its spot in Title.
+        subtitle: preservedOriginalTitle ?? draft.subtitle,
+        description: normalizeBlogSpacing(result.article),
+        // See handleRewriteBlog's identical marker and safeStoryBody in
+        // publishStory.ts.
+        descriptionRewrittenAt: new Date().toISOString(),
+        topics: resultTopics.length > 0 ? Array.from(new Set([...draft.topics, ...resultTopics])) : draft.topics,
+      })
+      if (resultTopics.length > 0) {
+        setTopicsText(t => [...new Set([...parseList(t), ...resultTopics])].join(', '))
+      }
+      // Village Intelligence used to need a manual Re-analyse click after a
+      // rewrite this size — the content just changed completely, so there's
+      // no reason to wait for someone to notice and trigger it themselves.
+      // Same mechanism "Shape these as Q&A" already uses.
+      setShapeTrigger(t => t + 1)
+      // Rotation only actually works if this list grows — the prompt alone
+      // can't enforce "never repeat" without the caller feeding back what's
+      // already been used.
+      if (founder && result.primaryQuestion) {
+        void updateFounder({ ...founder, usedSearchQuestions: [...(founder.usedSearchQuestions ?? []), result.primaryQuestion] })
+      }
+    } catch (err) {
+      setSearchAnswerError(err instanceof Error ? err.message : 'Rewrite failed unexpectedly — please try again.')
+    } finally {
+      setSearchAnswering(false)
     }
   }
 
