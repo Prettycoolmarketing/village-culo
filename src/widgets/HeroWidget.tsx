@@ -72,14 +72,15 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
             id="hero-heading"
             className="font-heading text-5xl sm:text-6xl md:text-7xl font-bold text-charcoal leading-[1.05] mb-6"
           >
-            Every founder<br />
-            has a story<br />
-            <span className="text-primary">worth finding.</span>
+            Raw Footage And Content<br />
+            <span className="text-primary">Spread Across Platforms?</span>
           </h1>
 
           {/* Subheadline */}
           <p className="font-body text-lg md:text-xl text-muted leading-relaxed max-w-xl mb-6">
-            Explore founders through the ideas, experiences, businesses and knowledge they've already shared.
+            The Culo Village brings what you've already created together into one discoverable body of work,
+            then Culo Creatives inside Canva turns your messy thoughts and raw footage into structured social
+            media content.
           </p>
 
           <Link
