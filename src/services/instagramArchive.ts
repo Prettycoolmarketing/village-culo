@@ -80,6 +80,27 @@ async function fetchFreshInstagramDedupeKeys(founderId: string): Promise<string[
     .map(i => archiveDedupeKey(i.title, new Date(i.publishedAt!).getTime() / 1000))
 }
 
+// Meta's own export tooling has a well-documented encoding bug: real
+// UTF-8 text (smart quotes, em-dashes, emoji) in the JSON file is written
+// out as if each of its raw UTF-8 bytes were a separate Latin-1
+// character — so "it's" (with a real ' character) comes through as
+// "itâ€™s" once read normally. Confirmed real: exactly this pattern in a
+// founder's actual imported captions. Reversing it is safe and
+// consistent either way: re-encode the (wrongly-decoded) string back to
+// raw bytes as Latin-1, then decode those bytes as UTF-8 — if the text
+// was never actually mis-encoded this way, the byte sequence won't be
+// valid UTF-8 and this throws, so the original text is kept untouched
+// rather than risking mangling genuinely-fine text.
+function fixMojibake(text: string): string {
+  if (!text) return text
+  try {
+    const bytes = Uint8Array.from([...text].map(c => c.charCodeAt(0) & 0xff))
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return text
+  }
+}
+
 function normalizeEntries(raw: unknown, kind: InstagramEntryKind): ParsedInstagramPost[] {
   if (!Array.isArray(raw)) return []
   const out: ParsedInstagramPost[] = []
@@ -93,11 +114,11 @@ function normalizeEntries(raw: unknown, kind: InstagramEntryKind): ParsedInstagr
     // that literal markup became the story's title, blog and (via slugify,
     // which drops the "&" and "#" but keeps the digits) its URL, e.g.
     // "there&#39;s" turning into the word "there39s" in the slug.
-    const caption = decodeHtmlEntities(
+    const caption = decodeHtmlEntities(fixMojibake(
       (typeof e.title === 'string' && e.title) ||
       (typeof mediaList[0]?.title === 'string' ? (mediaList[0]!.title as string) : '') ||
       ''
-    )
+    ))
 
     const timestamps = mediaList
       .map(m => (typeof m.creation_timestamp === 'number' ? m.creation_timestamp : undefined))

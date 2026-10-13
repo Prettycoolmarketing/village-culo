@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { importedContentService } from '../../services/importedContent'
 import { buildStoryFromImport } from '../../services/publishStory'
 import { getFounder } from '../../services/founders'
+import { supabase, isSupabaseConfigured } from '../../lib/supabase'
+import type { ImportedContent } from '../../types/importedContent'
 import { getBusiness } from '../../services/businesses'
 import { normalizeUrl, isDirectAudioUrl } from '../../utils/url'
 import { CoverImage } from '../../components/ui/CoverImage'
@@ -29,10 +32,36 @@ import { formatLocationLabel } from '../../utils/location'
 // preview, so those sections are left out rather than faked.
 export function StoryPreviewPage() {
   const { importId } = useParams<{ importId: string }>()
-  const item = importId ? importedContentService.get(importId) : undefined
+  const cachedItem = importId ? importedContentService.get(importId) : undefined
+  // The cache miss here is the exact same issue fixed on Content's own
+  // page: for an account with a lot of data, the local cache can be
+  // missing rows that are genuinely saved in the database (confirmed
+  // real — "Couldn't load a preview" on a story that really does exist).
+  // Falls back to a direct, fresh lookup by id instead of trusting the
+  // cache alone.
+  const [fetchedItem, setFetchedItem] = useState<ImportedContent | null>(null)
+  const [fetchDone, setFetchDone] = useState(false)
+  useEffect(() => {
+    if (cachedItem || !importId || !isSupabaseConfigured || !supabase) { setFetchDone(true); return }
+    setFetchDone(false)
+    void supabase.from('imported_content').select('data').eq('id', importId).maybeSingle().then(({ data }) => {
+      setFetchedItem(data ? (data.data as ImportedContent) : null)
+      setFetchDone(true)
+    })
+  }, [importId, cachedItem])
+
+  const item = cachedItem ?? fetchedItem ?? undefined
   const founder = item ? getFounder(item.founderId) : undefined
   const business = item?.businessId ? getBusiness(item.businessId) : undefined
   const story = item && founder ? buildStoryFromImport(item, founder) : undefined
+
+  if (!cachedItem && !fetchDone) {
+    return (
+      <div className="max-w-2xl mx-auto p-8 text-center">
+        <p className="text-sm text-[#9CA3AF]">Loading…</p>
+      </div>
+    )
+  }
 
   if (!item || !founder || !story) {
     return (
