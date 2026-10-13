@@ -94,7 +94,23 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
     (sum, i) => sum + i.relatedBusinessIds.length + i.relatedFounderIds.filter(fid => fid !== story.founderId).length, 0,
   )
 
-  const result = await updateStory(story)
+  // uniqueSlug (called when this story was built) checks the local cache
+  // for a free slug — fine normally, but that cache can be stale/missing
+  // rows for a high-volume account (the same issue behind several other
+  // fixes this session), so it can hand back a slug that's actually
+  // already taken in the real database. Confirmed real: "Write with Culo"
+  // hit this exact unique-constraint violation. Rather than trying to
+  // make every slug check perfectly fresh ahead of time, this just
+  // retries against the one source of truth that can't be stale — a real
+  // insert attempt — incrementing the slug each time a collision comes
+  // back, same suffix pattern uniqueSlug itself uses.
+  let result = await updateStory(story)
+  let retries = 0
+  while (!result.success && /stories_slug_unique_idx|duplicate key.*slug/i.test(result.error ?? '') && retries < 5) {
+    retries++
+    story = { ...story, slug: `${story.slug}-${Date.now().toString(36).slice(-4)}` }
+    result = await updateStory(story)
+  }
   if (!result.success) {
     return { success: false, error: result.error ?? 'Could not publish. Please try again.' }
   }
