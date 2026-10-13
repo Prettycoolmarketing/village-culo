@@ -26,9 +26,11 @@ const CORS_HEADERS = {
 }
 
 // Memory videos run bigger than the 5MB default other fetchers use —
-// generous enough for a real Snapchat video clip, capped so one bad link
-// can't tie up the function indefinitely.
-const MAX_BYTES = 80_000_000
+// raised to sit comfortably above Supabase Storage's own upload limit
+// (150MB as of this change), with headroom, rather than being the
+// bottleneck itself. Still capped so one bad link can't tie up the
+// function indefinitely.
+const MAX_BYTES = 200_000_000
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
@@ -41,7 +43,10 @@ serve(async (req) => {
       })
     }
 
-    const { bytes, contentType } = await safeFetchBinary(url.trim(), { maxBytes: MAX_BYTES, timeoutMs: 30_000 })
+    // A 200MB file genuinely takes longer to transfer than the old 30s
+    // allowed for — raised alongside MAX_BYTES so a real large-but-valid
+    // file doesn't get cut off mid-download.
+    const { bytes, contentType } = await safeFetchBinary(url.trim(), { maxBytes: MAX_BYTES, timeoutMs: 90_000 })
     return new Response(bytes, { headers: { ...CORS_HEADERS, 'Content-Type': contentType } })
   } catch (err) {
     const message = err instanceof SafeFetchError ? err.message : (err instanceof Error ? err.message : 'Could not fetch that file.')
