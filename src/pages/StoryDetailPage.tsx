@@ -230,7 +230,10 @@ export function StoryDetailPage() {
         <span
           key={type}
           className={`px-3 py-1 rounded-full text-xs font-medium ${
-            isVerticalVideo ? 'bg-primary/10 text-primary' : 'bg-surface/90 backdrop-blur-sm text-charcoal'
+            // isVerticalVideo's badges sit on the blue hero band below, not
+            // white — the old bg-primary/10 pink-on-orange tint read poorly
+            // there, so this variant is a translucent white pill instead.
+            isVerticalVideo ? 'bg-white/15 text-white backdrop-blur-sm' : 'bg-surface/90 backdrop-blur-sm text-charcoal'
           }`}
         >
           {contentTypeLabel(type)}
@@ -465,30 +468,60 @@ export function StoryDetailPage() {
           </div>
         )}
 
-        {/* Hero content */}
+        {/* Hero content — a vertical-video story gets a blue band behind
+            the tags/title/subtitle, then drops to the normal white
+            background from the meta row (author/date/CTAs) down. Everything
+            else (cover-image stories, landscape video) keeps the single
+            white hero it always had. */}
+        {isVerticalVideo && (
+          <div style={{ backgroundColor: '#3E6E92' }}>
+            <InnerContainer>
+              <div className="pt-12 sm:pt-16 pb-8">
+                <div className="flex flex-wrap gap-2 mb-4" aria-label="Content formats">
+                  {contentBadges}
+                </div>
+                <h1
+                  id="story-title"
+                  className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-3 max-w-4xl"
+                >
+                  {story.title}
+                </h1>
+                {story.subtitle && (
+                  <p className="font-body text-lg sm:text-xl text-white/80 leading-relaxed mt-3 max-w-2xl">
+                    {story.subtitle}
+                  </p>
+                )}
+              </div>
+            </InnerContainer>
+          </div>
+        )}
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
-            <div className="pt-12 sm:pt-16">
+            <div className={isVerticalVideo ? 'pt-8' : 'pt-12 sm:pt-16'}>
               {/* No hero image means the badges never got their usual spot
-                  overlaid on it — shown here instead, same as vertical
-                  video already does. */}
-              {(isVerticalVideo || (!hasRealCoverImage && !isBrandFallbackPodcast)) && (
+                  overlaid on it — shown here instead. Vertical video's tags
+                  already rendered on the blue band above. */}
+              {!isVerticalVideo && !hasRealCoverImage && !isBrandFallbackPodcast && (
                 <div className="flex flex-wrap gap-2 mb-4" aria-label="Content formats">
                   {contentBadges}
                 </div>
               )}
-              {/* H1 — full-width across the page, not boxed to the reading column below */}
-              <h1
-                id="story-title"
-                className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-charcoal leading-tight mb-3 max-w-4xl"
-              >
-                {story.title}
-              </h1>
-
-              {story.subtitle && (
-                <p className="font-body text-lg sm:text-xl text-muted leading-relaxed mt-3 mb-8 max-w-2xl">
-                  {story.subtitle}
-                </p>
+              {/* H1/subtitle — vertical video already rendered these on the
+                  blue band above; every other story renders them here. */}
+              {!isVerticalVideo && (
+                <>
+                  <h1
+                    id="story-title"
+                    className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-charcoal leading-tight mb-3 max-w-4xl"
+                  >
+                    {story.title}
+                  </h1>
+                  {story.subtitle && (
+                    <p className="font-body text-lg sm:text-xl text-muted leading-relaxed mt-3 mb-8 max-w-2xl">
+                      {story.subtitle}
+                    </p>
+                  )}
+                </>
               )}
 
               {/* Meta row */}
