@@ -1489,9 +1489,17 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       </div>
 
       {/* ── Village Intelligence Preview ───────────────────────────────────── */}
-      {shapeTrigger > 0 && (
-        <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onRemoveTopic={removeTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} shapeTrigger={shapeTrigger} />
-      )}
+      {/* Used to be gated behind shapeTrigger > 0, which only starts truthy
+          when the item already has 20+ words of description at mount time —
+          for anything shorter, the whole panel (including its own Re-analyse
+          button and the Q&A shaping output) simply never rendered until
+          something else happened to bump shapeTrigger first. Confirmed live
+          as the Re-analyse button missing from the Advanced Edit popup.
+          VillageIntelligencePreview already runs its own analysis on mount
+          regardless of shapeTrigger, so there's no real reason to hide it —
+          always render it, the same in both this page's own editor and
+          Advanced Edit. */}
+      <VillageIntelligencePreview key={draft.transcriptImportedAt ?? 'no-transcript'} draft={draft} onAddTopic={addTopic} onRemoveTopic={removeTopic} onAddLocation={addLocation} onAddFAQ={addFAQ} shapeTrigger={shapeTrigger} />
 
       {/* ── Publishing fields ──────────────────────────────────────────────── */}
       <div className="border-t border-[#E8E4DD] pt-5 mt-4">
