@@ -5,7 +5,7 @@ import { normalizeUrl, looksLikeChannelUrl, isDirectVideoUrl } from '../../utils
 // Shared video-content renderer — used on a Story's own page and on a
 // Founder's profile (Featured Video section) so both places play/link a
 // video identically instead of maintaining two copies.
-export function ReelContent({ reelUrl, title, summary, landscape = false, storyHref }: {
+export function ReelContent({ reelUrl, title, summary, landscape = false, storyHref, compact = false }: {
   reelUrl?: string
   title: string
   summary: string
@@ -18,6 +18,15 @@ export function ReelContent({ reelUrl, title, summary, landscape = false, storyH
   // the only sensible external option (there's no other article to send
   // them to).
   storyHref?: string
+  // For a narrow thumbnail-strip card (e.g. "More videos from this story",
+  // ~10rem wide) — sm:flex-row below switches to a side-by-side layout
+  // based on VIEWPORT width, not the container's actual width, so on a
+  // normal desktop viewport it forced a text column into a container with
+  // no room for one, squeezing the title to near-zero width and wrapping
+  // it one or two letters per line. compact keeps it stacked (video on
+  // top, short title below) regardless of viewport, and drops the
+  // separate CTA button since the whole card is already a link.
+  compact?: boolean
 }) {
   const isChannelLink = looksLikeChannelUrl(reelUrl)
   const isUploadedFile = isDirectVideoUrl(reelUrl)
@@ -26,7 +35,7 @@ export function ReelContent({ reelUrl, title, summary, landscape = false, storyH
   const platformLabel = platform ? PLATFORM_LABELS[platform] : 'the original platform'
 
   return (
-    <div className="flex flex-col sm:flex-row gap-6 items-start" aria-label="Video content">
+    <div className={`flex flex-col ${compact ? '' : 'sm:flex-row'} gap-6 items-start`} aria-label="Video content">
       {/* Only an actual Reel gets the vertical phone frame — a landscape
           video (YouTube, talking head) stretched into 9:16 is what was
           reading as blurry/cropped. */}
@@ -98,31 +107,35 @@ export function ReelContent({ reelUrl, title, summary, landscape = false, storyH
       </div>
 
       {/* Video context */}
-      <div className="flex-1 min-w-0">
-        <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Video</p>
-        <h3 className="font-heading text-xl font-semibold text-charcoal leading-snug mb-3">{title}</h3>
-        {summary && <p className="font-body text-base text-muted leading-relaxed mb-5">{summary}</p>}
-        {storyHref ? (
-          // A preview of another story (e.g. a founder profile's "Watch"
-          // list) — keeps the visitor on the Village reading that story,
-          // rather than routing them straight out to YouTube/Instagram/etc.
-          <Link
-            to={storyHref}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
-          >
-            Read the story →
-          </Link>
-        ) : reelUrl && !isUploadedFile && (
-          <a
-            href={normalizeUrl(reelUrl)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
-          >
-            {isChannelLink ? `Visit ${platformLabel} channel` : `Watch on ${platformLabel}`} ↗
-          </a>
-        )}
-      </div>
+      {compact ? (
+        title && <h3 className="font-heading text-xs font-medium text-charcoal leading-snug line-clamp-2 w-full">{title}</h3>
+      ) : (
+        <div className="flex-1 min-w-0">
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Video</p>
+          <h3 className="font-heading text-xl font-semibold text-charcoal leading-snug mb-3">{title}</h3>
+          {summary && <p className="font-body text-base text-muted leading-relaxed mb-5">{summary}</p>}
+          {storyHref ? (
+            // A preview of another story (e.g. a founder profile's "Watch"
+            // list) — keeps the visitor on the Village reading that story,
+            // rather than routing them straight out to YouTube/Instagram/etc.
+            <Link
+              to={storyHref}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
+            >
+              Read the story →
+            </Link>
+          ) : reelUrl && !isUploadedFile && (
+            <a
+              href={normalizeUrl(reelUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-charcoal/80 transition-colors"
+            >
+              {isChannelLink ? `Visit ${platformLabel} channel` : `Watch on ${platformLabel}`} ↗
+            </a>
+          )}
+        </div>
+      )}
     </div>
   )
 }

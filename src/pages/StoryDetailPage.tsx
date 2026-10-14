@@ -730,7 +730,7 @@ export function StoryDetailPage() {
                     <div className="flex gap-4 overflow-x-auto pb-1">
                       {story.additionalReelUrls.map((url, i) => (
                         <div key={i} className={effectiveReelUrl ? 'shrink-0 w-40' : 'shrink-0 w-full max-w-md'}>
-                          <ReelContent reelUrl={url} title={story.title} summary="" />
+                          <ReelContent reelUrl={url} title={story.title} summary="" compact={!!effectiveReelUrl} />
                         </div>
                       ))}
                     </div>
