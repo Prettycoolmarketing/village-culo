@@ -1,12 +1,19 @@
 import { getFounder, updateFounder } from '../services/founders'
 import type { Founder } from '../types'
 
-// SHA-256 of the raw file — cheap (no unzipping/parsing needed) and
-// unique enough to recognise "this is the exact same export I already
-// processed" before spending any time re-checking its contents.
+// Was a SHA-256 over the file's full byte content — correct, but "cheap"
+// turned out false for a real Snapchat/Instagram export: reading a
+// multi-hundred-MB-to-multi-GB zip into memory and hashing it in one
+// crypto.subtle.digest call could sit there for a long time with zero
+// progress feedback, which looked identical to a frozen tab. Confirmed
+// live as "Checking file…" never moving. Name + size + lastModified is
+// effectively unique for "is this the exact same export I already
+// uploaded" (two genuinely different archive exports matching on all
+// three is not a realistic collision) and is instant, no file reading
+// required at all.
 export async function hashFile(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer()
-  const digest = await crypto.subtle.digest('SHA-256', buffer)
+  const fingerprint = `${file.name}:${file.size}:${file.lastModified}`
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fingerprint))
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
