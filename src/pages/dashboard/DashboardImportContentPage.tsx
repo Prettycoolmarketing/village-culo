@@ -1000,8 +1000,15 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       // draft every time, so calling it repeatedly in a row doesn't
       // accumulate: only whichever call happens to land last actually
       // sticks, the same bug handleSearchAnswer below was already fixed for.
+      // No real title yet (blank, or still the generic "Imported from X"
+      // placeholder) — the AI's own generated title was being silently
+      // discarded in this exact case, the same gap handleSearchAnswer below
+      // already covers for its own rewrite. A real existing title is never
+      // overwritten.
+      const hasNoRealTitle = !draft.title?.trim() || /^Imported from /i.test(draft.title.trim())
       onChange({
         ...draft,
+        title: hasNoRealTitle && result.blog.title ? result.blog.title : draft.title,
         description: normalizeBlogSpacing(result.blog.blog),
         // Marks this description as AI-written rather than raw source text —
         // see safeStoryBody in publishStory.ts, which won't let a
