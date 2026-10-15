@@ -517,6 +517,12 @@ export interface Founder {
   // one each time the button succeeds. Never pruned/deduped by hand;
   // the model is told to treat it as the full history.
   usedSearchQuestions?: string[]
+  // Same idea, but tracking the actual argument each past article made
+  // rather than the question it answered — two different questions can
+  // still land on the identical underlying claim (confirmed live), which
+  // usedSearchQuestions alone can't catch since it only dedupes on the
+  // question text. Grows by one each time the button succeeds.
+  usedArticleThemes?: string[]
   // The Canva user's own stable id (decoded client-side from their Canva
   // JWT in culo-starter's app.tsx) — present only when this founder arrived
   // via the "Continue in The Culo Village" link inside the Canva app

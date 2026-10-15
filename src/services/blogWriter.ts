@@ -100,6 +100,10 @@ export interface GeneratedSearchAnswer {
   secondaryTopics?: string[]
   sourceUsed?: string
   culoRelevant?: boolean
+  // One sentence naming the article's actual underlying argument — see
+  // Founder.usedArticleThemes. Distinct from primaryQuestion: two different
+  // questions can still land on the same real claim.
+  coreArgument?: string
 }
 
 // Turns one of Shakas's own clips/transcripts into a standalone
@@ -109,6 +113,9 @@ export interface GeneratedSearchAnswer {
 // past run already produced for this founder (Founder.usedSearchQuestions)
 // — the rotation logic itself lives in the prompt, but sending this list is
 // what makes "never repeat" actually enforceable rather than hopeful.
+// usedThemes is the same idea for the actual argument made (Founder.
+// usedArticleThemes), catching a repeat that dodges usedQuestions by
+// answering a different question with the same underlying claim.
 export async function generateSearchAnswerArticle(input: {
   founderName: string
   sourceText: string
@@ -116,6 +123,7 @@ export async function generateSearchAnswerArticle(input: {
   voiceBrief?: string
   insightBrief?: string
   usedQuestions?: string[]
+  usedThemes?: string[]
 }): Promise<{ result?: GeneratedSearchAnswer; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
   const { data, error } = await supabase.functions.invoke<{ result?: GeneratedSearchAnswer; error?: string }>(

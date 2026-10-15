@@ -1081,6 +1081,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         voiceBrief: founder?.voiceBrief,
         insightBrief: founder?.insightBrief,
         usedQuestions: founder?.usedSearchQuestions ?? [],
+        usedThemes: founder?.usedArticleThemes ?? [],
       })
       if (error) { setSearchAnswerError(error); return }
       if (!result || result.status !== 'ready' || !result.article) {
@@ -1125,11 +1126,23 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
       // no reason to wait for someone to notice and trigger it themselves.
       // Same mechanism "Shape these as Q&A" already uses.
       setShapeTrigger(t => t + 1)
-      // Rotation only actually works if this list grows — the prompt alone
+      // Rotation only actually works if these lists grow — the prompt alone
       // can't enforce "never repeat" without the caller feeding back what's
-      // already been used.
-      if (founder && result.primaryQuestion) {
-        void updateFounder({ ...founder, usedSearchQuestions: [...(founder.usedSearchQuestions ?? []), result.primaryQuestion] })
+      // already been used. Both updates merged into one updateFounder call,
+      // not two separate ones off the same founder closure — two sequential
+      // calls would each spread from the same stale founder snapshot, so
+      // only whichever one lands last would actually stick (the same bug
+      // fixed elsewhere in this file for field()/onChange).
+      if (founder && (result.primaryQuestion || result.coreArgument)) {
+        void updateFounder({
+          ...founder,
+          usedSearchQuestions: result.primaryQuestion
+            ? [...(founder.usedSearchQuestions ?? []), result.primaryQuestion]
+            : founder.usedSearchQuestions,
+          usedArticleThemes: result.coreArgument
+            ? [...(founder.usedArticleThemes ?? []), result.coreArgument]
+            : founder.usedArticleThemes,
+        })
       }
     } catch (err) {
       setSearchAnswerError(err instanceof Error ? err.message : 'Rewrite failed unexpectedly — please try again.')

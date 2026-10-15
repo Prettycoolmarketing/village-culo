@@ -72,6 +72,15 @@ interface RequestBody {
   // Every primarySearchQuestion a past run already used for this founder —
   // see Founder.usedSearchQuestions. The model picks an unused angle.
   usedQuestions?: string[]
+  // Every coreArgument a past run already returned — see
+  // Founder.usedArticleThemes. Distinct from usedQuestions: two articles can
+  // answer two genuinely different questions and still land on the same
+  // underlying argument (confirmed live: "Not everyone sees your content
+  // the first time" and "How Do You Repurpose Content Without Sounding
+  // Repetitive?" were different questions that both opened on the identical
+  // "even your most engaged followers only see a fraction of what you post"
+  // claim). usedQuestions alone can't catch that; this can.
+  usedThemes?: string[]
 }
 
 interface GeneratedSearchAnswer {
@@ -88,6 +97,13 @@ interface GeneratedSearchAnswer {
   secondaryTopics?: string[]
   sourceUsed?: string
   culoRelevant?: boolean
+  // One sentence stating the actual underlying argument/claim this article
+  // hangs on (e.g. "reach and ownership are different problems" or "most
+  // engaged followers still only see a fraction of what gets posted") — not
+  // the headline or the question, the real thesis underneath it. Used to
+  // populate usedThemes for future calls so the same real argument doesn't
+  // get reused under a different question.
+  coreArgument?: string
 }
 
 const TOPIC_BANK = `FOUNDERS AND PERSONAL BRANDING
@@ -312,6 +328,8 @@ If several questions fit the source, choose the one that: 1) best matches what S
 
 If every suitable question for this source has already been used, return status "no_unused_question" with a note explaining why, rather than forcing a near-duplicate.
 
+DO NOT REPEAT AN ARGUMENT, EVEN UNDER A DIFFERENT QUESTION. You will also be given PREVIOUSLY USED THEMES below — each one the real underlying argument a past article already made. Two different questions can still land on the exact same claim (this has happened: two different questions both opened on "even your most engaged followers only see a fraction of what you post," making genuinely the same article twice). Before committing to an angle, check whether its actual thesis matches anything in that list, not just whether the question wording matches. If it does, pick a different angle on the source, or a different question entirely — never state that this is status "no_unused_question" just because the exact question is new; the test is the argument, not the question text.
+
 TOPIC BANK
 
 ${TOPIC_BANK}
@@ -351,6 +369,8 @@ Do not invent personal experiences, opinions or claims for Shakas — but "the s
 3. Her INSIGHT BRIEF, if supplied — her own source-checked bank of what she genuinely believes/knows/teaches.
 Treat the clip as the trigger and topic anchor for the article, not the only place you're allowed to find her actual opinion. If the clip itself is thin (a promotional caption, a short description with no real stated opinion) but her Voice/Insight Brief genuinely covers a Topic Bank question the clip's subject connects to, write the article from the brief, using the clip as the real-world example/context it provides. Only return "insufficient_source" when NONE of the three sources together give you enough to honestly answer a real question — not just because the clip's own caption alone was thin.
 
+ALIGN WITH HER NAMED FRAMEWORKS: before settling on the article's core argument, check whether the Insight Brief documents a named framework, method, or stated position of hers that this specific question genuinely connects to (e.g. the "that's all" workflow, her position on which old posts are worth rescuing, or any other framework actually written out in the Insight Brief). When one genuinely applies, build the article's answer around HER real framework, named and used as she actually describes it, rather than a generic answer that happens to sit in the same territory. Do not force a framework reference onto a question it doesn't genuinely fit, and never invent a framework or name one that isn't actually written in the Insight Brief — but when a real one is there and relevant, use it by name.
+
 CULO PLACEMENT
 CULO is two separate products solving two separate problems, and when you mention it, frame it as exactly that distinction rather than one generic plug:
 1. Extraction/creation problem: a founder has lived or made something useful but hasn't turned it into content yet. Culo Creatives (built inside Canva) is what helps structure raw material — footage, thoughts, expertise — into usable formats.
@@ -376,7 +396,8 @@ Respond with ONLY a JSON object, no markdown fences, no commentary:
   "primaryTopic": "only when ready — the Topic Bank category this question came from",
   "secondaryTopics": ["only when ready — up to 3 other Topic Bank categories this article genuinely also touches"],
   "sourceUsed": "only when ready — one line describing what in the source material this was built from",
-  "culoRelevant": true or false
+  "culoRelevant": true or false,
+  "coreArgument": "only when ready — one sentence stating the actual underlying argument/claim this article hangs on, not the headline or the question restated. This is checked against PREVIOUSLY USED THEMES on future runs, so state it precisely enough that a genuine repeat would be recognisable from it."
 }`
 
 serve(async (req) => {
@@ -394,6 +415,9 @@ serve(async (req) => {
       body.platform ? `SOURCE PLATFORM: ${body.platform}` : undefined,
       `\nPREVIOUSLY USED QUESTIONS (never choose one of these again):\n${
         body.usedQuestions?.length ? body.usedQuestions.map(q => `- ${q}`).join('\n') : '(none yet)'
+      }`,
+      `\nPREVIOUSLY USED THEMES (the real argument each past article made — never land on the same one under a different question):\n${
+        body.usedThemes?.length ? body.usedThemes.map(t => `- ${t}`).join('\n') : '(none yet)'
       }`,
       `\nSOURCE CLIP/TRANSCRIPT (the topic anchor):\n${body.sourceText}`,
       body.voiceBrief?.trim() ? `\nHER VOICE & BRAND BRIEF (an equally legitimate source of her real opinion/experience):\n${body.voiceBrief}` : undefined,
