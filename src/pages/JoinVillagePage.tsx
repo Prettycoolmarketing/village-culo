@@ -165,7 +165,7 @@ export function JoinVillagePage() {
                 Join The Culo Village
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
-                {isCanva ? <>Edit Your Raw Footage<br />Into Social Media Posts<br />In Canva</> : <>Structure All Your Posts<br />Into Web Articles<br />For Discovery</>}
+                {isCanva ? <>Edit Your Raw Footage<br />Into Social Media Posts<br />In Canva</> : <>Structure Your Posts<br />Into Web Articles<br />For Discovery</>}
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
                 The Culo Village republishes your social posts across YouTube, podcasts and Instagram archives —

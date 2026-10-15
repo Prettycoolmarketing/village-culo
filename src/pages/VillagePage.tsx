@@ -154,33 +154,6 @@ export function VillagePage() {
       */}
       <HeroWidget />
 
-      {/* ── 2b. Culo Creatives ─────────────────────────────────────────────────
-        Its own dedicated pitch now, rather than leading the homepage with
-        it — the Village itself is the free, available-now product; Creatives
-        is the coming-soon, Canva-exclusive add-on, so it reads as a bonus
-        once someone's already sold on the Village, not the first thing
-        they see.
-      */}
-      <section className="bg-charcoal" aria-labelledby="creatives-section-heading">
-        <InnerContainer className="py-14 md:py-20">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 id="creatives-section-heading" className="font-heading text-3xl sm:text-4xl font-bold text-white mb-4">
-              Create what comes next with Culo Creatives
-            </h2>
-            <p className="font-body text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-              Coming soon, exclusively inside Canva
-            </p>
-            <p className="font-body text-lg text-white/70 leading-relaxed mb-8">
-              Turn your messy thoughts and raw footage into different formats of social media content, then
-              connect that work back into your growing body of work in The Culo Village.
-            </p>
-            <Link to="/join" className="inline-block text-base sm:text-lg font-semibold text-white hover:text-primary transition-colors underline underline-offset-4 decoration-white/30 hover:decoration-primary">
-              Learn more about Culo Creatives in Canva →
-            </Link>
-          </div>
-        </InnerContainer>
-      </section>
-
       {/* ── 3. Today's Highlights ───────────────────────────────────────────── */}
       {/*
         Story of the Day, Founder of the Day, Idea of the Day,
