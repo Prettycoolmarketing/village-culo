@@ -15,6 +15,7 @@ import { getFeaturedIn } from '../services/relationships'
 import { importedContentService, PLATFORM_LABELS, detectPlatform } from '../services/importedContent'
 import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ReelContent } from '../components/ui/ReelContent'
+import { applyAffiliateLinks, type AffiliateLink } from '../utils/affiliateLinks'
 import { FounderCard }      from '../components/cards/FounderCard'
 import { BusinessCard }     from '../components/cards/BusinessCard'
 import { StoryCard }        from '../components/cards/StoryCard'
@@ -87,7 +88,7 @@ function StoryNotFound({ slug }: { slug: string }) {
 
 // ─── Blog content renderer ──────────────────────────────────────────────────────
 
-function BlogContent({ content }: { content: string }) {
+function BlogContent({ content, affiliateLinks }: { content: string; affiliateLinks?: AffiliateLink[] }) {
   // Converts markdown-lite blog text into semantic HTML blocks.
   // Handles: ## headings, **bold**, - list items, plain paragraphs, blank lines.
   const lines = content.split('\n')
@@ -99,7 +100,7 @@ function BlogContent({ content }: { content: string }) {
     if (listBuffer.length > 0) {
       elements.push(
         <ul key={key++} className="list-disc list-outside pl-5 space-y-1.5 my-4 font-body text-base text-charcoal/80 leading-relaxed">
-          {listBuffer.map((item, i) => <li key={i}>{item}</li>)}
+          {listBuffer.map((item, i) => <li key={i}>{applyAffiliateLinks(item, affiliateLinks)}</li>)}
         </ul>
       )
       listBuffer = []
@@ -131,7 +132,7 @@ function BlogContent({ content }: { content: string }) {
       flushList()
       elements.push(
         <p key={key++} className="font-body text-base text-charcoal/80 leading-relaxed my-3">
-          {line}
+          {applyAffiliateLinks(line, affiliateLinks)}
         </p>
       )
     }
@@ -655,7 +656,7 @@ export function StoryDetailPage() {
                 {story.blog && (
                   <div>
                     <h2 className="font-heading text-2xl font-semibold text-charcoal mb-5">Blog</h2>
-                    <BlogContent content={story.blog} />
+                    <BlogContent content={story.blog} affiliateLinks={founder?.affiliateLinks} />
                   </div>
                 )}
 

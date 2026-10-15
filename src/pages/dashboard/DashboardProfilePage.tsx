@@ -833,6 +833,8 @@ export function DashboardProfilePage() {
   // Cancel Creatives / Delete Profile — both a two-step "tell us why, then
   // confirm" flow rather than one click, so neither happens by accident.
   const [cancelFlowOpen, setCancelFlowOpen] = useState(false)
+  const [newAffiliateName, setNewAffiliateName] = useState('')
+  const [newAffiliateUrl, setNewAffiliateUrl] = useState('')
   const [cancelAnswer, setCancelAnswer] = useState('')
   const [cancelSubmitting, setCancelSubmitting] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
@@ -2976,6 +2978,64 @@ export function DashboardProfilePage() {
               >
                 Open Import Content →
               </Link>
+            </div>
+
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Affiliate Links</p>
+              <p className="text-xs text-[#9CA3AF] mb-3">
+                Add a name and a URL. Whenever that exact name appears in a published Blog, it's automatically
+                turned into a link — no need to touch the story itself, and it applies to stories you've already
+                published too.
+              </p>
+              <div className="flex flex-col gap-2 mb-3">
+                {(draft.affiliateLinks ?? []).map(link => (
+                  <div key={link.id} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg px-3 py-2">
+                    <span className="text-xs font-semibold text-[#2D2A26] shrink-0">{link.name}</span>
+                    <span className="text-xs text-[#6B7280] truncate flex-1">{link.url}</span>
+                    <button
+                      type="button"
+                      onClick={() => set('affiliateLinks', (draft.affiliateLinks ?? []).filter(l => l.id !== link.id))}
+                      className="shrink-0 text-xs font-semibold text-red-600 hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                {(draft.affiliateLinks ?? []).length === 0 && (
+                  <p className="text-xs text-[#9CA3AF] italic">No affiliate links yet.</p>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={newAffiliateName}
+                  onChange={e => setNewAffiliateName(e.target.value)}
+                  placeholder="Exact name, e.g. Billow Beach"
+                  className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-xs text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+                />
+                <input
+                  type="url"
+                  value={newAffiliateUrl}
+                  onChange={e => setNewAffiliateUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1 px-3 py-2 rounded-lg border border-[#E8E4DD] text-xs text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43]"
+                />
+                <button
+                  type="button"
+                  disabled={!newAffiliateName.trim() || !newAffiliateUrl.trim()}
+                  onClick={() => {
+                    set('affiliateLinks', [
+                      ...(draft.affiliateLinks ?? []),
+                      { id: `aff-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, name: newAffiliateName.trim(), url: newAffiliateUrl.trim() },
+                    ])
+                    setNewAffiliateName('')
+                    setNewAffiliateUrl('')
+                  }}
+                  className="shrink-0 text-xs font-semibold px-3 py-2 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-40 transition-colors"
+                >
+                  Add
+                </button>
+              </div>
             </div>
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">

@@ -523,6 +523,14 @@ export interface Founder {
   // usedSearchQuestions alone can't catch since it only dedupes on the
   // question text. Grows by one each time the button succeeds.
   usedArticleThemes?: string[]
+  // Name -> URL pairs set in Profile Settings. Whenever a blog body
+  // contains an exact match of `name` (case-sensitive, matched whole-word
+  // so it doesn't fire inside an unrelated longer word), that occurrence
+  // is rendered as a link to `url` — see applyAffiliateLinks in
+  // utils/affiliateLinks.ts. Applied at render time, not baked into the
+  // stored text, so adding/editing/removing an affiliate link here takes
+  // effect on every story immediately, including ones already published.
+  affiliateLinks?: { id: string; name: string; url: string }[]
   // The Canva user's own stable id (decoded client-side from their Canva
   // JWT in culo-starter's app.tsx) — present only when this founder arrived
   // via the "Continue in The Culo Village" link inside the Canva app
