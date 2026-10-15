@@ -352,6 +352,51 @@ export function SpeakerPage() {
         </InnerContainer>
       </Section>
 
+      {/* ── The "That's All" framework ───────────────────────────────────── */}
+      <Section>
+        <InnerContainer>
+          <div className="max-w-3xl">
+            <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">My framework</p>
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-5">The "That's All" Framework</h2>
+            <div className="font-body text-muted leading-relaxed space-y-4 mb-8">
+              <p>
+                "That's all" is my own name for my actual content workflow, because once it's set up, that
+                genuinely is all it takes. I called it that after years of trying to keep up with every
+                platform's own separate demands and finally landing on something that didn't need
+                reinventing every single day.
+              </p>
+              <p>It comes down to one filming session becoming blogs, reels and direct audience-speaking content, all traceable back to one real moment I actually lived or filmed.</p>
+            </div>
+
+            <ol className="space-y-5">
+              {[
+                { step: 'Film', text: 'I film from multiple angles throughout the day, shoot or event — broll and talking-head footage from one real moment.' },
+                { step: 'Edit', text: 'That raw footage gets edited in Culo Creatives, turning it into social posts with the hook on screen, subtitles and a caption written in my own real words.' },
+                { step: 'Publish', text: 'I bulk upload the edited videos to YouTube, then add that link into The Culo Village, which turns the video and caption into a permanent, searchable web article.' },
+                { step: 'Distribute', text: "Content360 connects the Village's RSS feed and schedules the rest of what Culo Creatives produced from the same footage — reels, voiceovers, vlogs and carousels — straight to LinkedIn and beyond." },
+                { step: 'Amplify', text: "I run ad spend behind whichever organic post actually performed best, pushing it out across every platform from one piece of proof, not a guess." },
+              ].map((item, i) => (
+                <li key={item.step} className="flex gap-4">
+                  <span className="font-heading text-xl font-bold text-primary/30 tabular-nums shrink-0" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <p className="font-heading text-base font-semibold text-charcoal mb-1">{item.step}</p>
+                    <p className="font-body text-sm text-muted leading-relaxed">{item.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+
+            <p className="font-body text-muted leading-relaxed mt-8">
+              This is the framework behind the talks above — a sustainable workflow that makes creating a lot
+              of content, and being found for it by search engines and AI, actually enjoyable instead of
+              exhausting.
+            </p>
+          </div>
+        </InnerContainer>
+      </Section>
+
       {/* ── Built from doing it, not just talking about it ──────────────── */}
       <Section>
         <InnerContainer>
