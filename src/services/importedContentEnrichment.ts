@@ -275,10 +275,19 @@ function buildDiaryNote(
   }
   const about = aboutSentences.length > 0 ? `\n\n${aboutSentences.join('\n\n')}` : ''
 
+  // A light, generic acquisition nudge on every faithfully-republished piece
+  // (no custom rewrite yet) — a reader who is themselves a founder sees
+  // exactly what this piece is doing (an Instagram post turned into a real
+  // webpage) and what to do about their own content, not just this one
+  // founder's story.
+  const cta = item.sourcePlatform === 'canva'
+    ? ''
+    : `\n\nPublish your ${platform.toLowerCase()} posts into The Culo Village to be seen as articles.`
+
   // Each fact on its own line with a blank line under it, not one dense
   // paragraph — matches how the rest of the Blog field reads once a founder
   // adds their own paragraphs, rather than reading like a single run-on note.
-  return `${lead}${/[.!?]$/.test(lead) ? '' : '.'}\n\n${context}${about}`
+  return `${lead}${/[.!?]$/.test(lead) ? '' : '.'}\n\n${context}${about}${cta}`
 }
 
 // ─── Auto summary builder ─────────────────────────────────────────────────────
