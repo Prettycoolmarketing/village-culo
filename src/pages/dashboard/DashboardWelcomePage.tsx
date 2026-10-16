@@ -205,6 +205,22 @@ export function DashboardWelcomePage() {
 
   return (
     <div className="p-8 sm:pt-12 flex flex-col gap-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+      {/* ── Welcome explainer video — first thing shown, right after
+          signup, before the founder reads a single line of "how it
+          works" text. Drop the real file in public/welcome/ as
+          village-welcome-explainer.mp4 and this picks it up automatically,
+          no code change needed. */}
+      <div className="px-8 sm:px-12">
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-[#2D2A26]">
+          <video
+            src="/welcome/village-welcome-explainer.mp4"
+            controls
+            preload="metadata"
+            className="absolute inset-0 w-full h-full object-contain bg-black"
+          />
+        </div>
+      </div>
+
       {/* ── Welcome ───────────────────────────────────────────────────────── */}
       {/* Matches the px-8 sm:px-12 inner padding every section below uses, so
           the heading text lines up with the box content instead of sitting
