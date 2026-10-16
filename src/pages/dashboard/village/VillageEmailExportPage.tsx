@@ -140,12 +140,26 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
             // Where this member actually is right now — a fresh signup
             // (like joshuavlara@gmail.com) shows as "Needs setup" rather
             // than just appearing in the list with no indication of
-            // whether they ever finished joining.
+            // whether they ever finished joining. 'ready' and 'confirmed'
+            // used to fall through to the generic status-based tags below,
+            // which collapsed two real, different states (bio/article
+            // written and waiting on them vs. actually done) into the same
+            // "Draft" a plain curated founder also shows as — confirmed
+            // live as a real gap when auditing a 3-of-5 self-serve
+            // follow-through drop-off.
             const memberStatus =
               f.onboardingStatus === 'needs_setup' ? { label: 'Needs setup', cls: 'bg-amber-50 text-amber-700' } :
               f.onboardingStatus === 'researching' ? { label: 'Researching', cls: 'bg-amber-50 text-amber-700' } :
+              f.onboardingStatus === 'ready' ? { label: 'Ready to confirm', cls: 'bg-blue-50 text-blue-700' } :
               f.status === 'published' || f.status === 'featured' ? { label: 'Published', cls: 'bg-[#5E6B4A]/10 text-[#5E6B4A]' } :
               { label: 'Draft', cls: 'bg-[#F3EDE6] text-[#9CA3AF]' }
+            // Separate from publish status — whether anyone's actually
+            // behind this profile with login access, vs. a curated profile
+            // nobody has claimed yet. Shown as its own small tag rather
+            // than folded into memberStatus since the two are genuinely
+            // different axes (a founder can be claimed AND still draft, or
+            // unclaimed AND already published).
+            const isClaimed = !!f.userId
             return (
               <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <p className="text-sm font-semibold text-[#2D2A26] truncate min-w-0">{f.signupEmail ?? f.name}</p>
@@ -153,6 +167,15 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                   <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${memberStatus.cls}`}>
                     {memberStatus.label}
                   </span>
+                  {/* Only the exception is worth a tag here — claimed is
+                      the normal case for almost every row, same reasoning
+                      as Upgraded/Creatives/Canva below only showing when
+                      true. */}
+                  {!isClaimed && (
+                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">
+                      Unclaimed
+                    </span>
+                  )}
                   {isUpgraded && (
                     <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">
                       Upgraded
