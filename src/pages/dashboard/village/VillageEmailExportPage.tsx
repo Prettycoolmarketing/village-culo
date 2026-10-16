@@ -125,6 +125,30 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
           Export CSV
         </button>
       </div>
+      {/* What each tag actually means — added directly because the tags
+          alone aren't self-explanatory (confirmed live: "I can't remember
+          what the tags are"). Same colours/order as memberStatus below, so
+          this stays a legend rather than its own source of truth to keep
+          in sync. */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-4 px-4 py-3 bg-[#F8F5F0] rounded-lg">
+        {[
+          { label: 'Needs setup', cls: 'bg-amber-50 text-amber-700', hint: 'signed up, hasn\'t submitted their one-link setup yet' },
+          { label: 'Researching', cls: 'bg-amber-50 text-amber-700', hint: 'link submitted, Culo is writing their bio/article now' },
+          { label: 'Ready to confirm', cls: 'bg-blue-50 text-blue-700', hint: 'bio/article written, waiting on them to come back and confirm' },
+          { label: 'Published', cls: 'bg-[#5E6B4A]/10 text-[#5E6B4A]', hint: 'profile is live on the public site' },
+          { label: 'Draft', cls: 'bg-[#F3EDE6] text-[#9CA3AF]', hint: 'profile exists but isn\'t published yet' },
+          { label: 'Unclaimed', cls: 'bg-red-50 text-red-700', hint: 'no login behind this profile (a curated founder who hasn\'t claimed it)' },
+          { label: 'Upgraded', cls: 'bg-[#FBF1EB] text-[#C86A43]', hint: 'has purchased an Archive Unlock' },
+          { label: 'Creatives', cls: 'bg-[#EBF2F8] text-[#3E6E92]', hint: 'has a real, paid Culo Creatives subscription' },
+        ].map(item => (
+          <span key={item.label} className="inline-flex items-center gap-1.5 text-xs text-[#6B7280]">
+            <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.cls}`}>
+              {item.label}
+            </span>
+            = {item.hint}
+          </span>
+        ))}
+      </div>
       {sorted.length === 0 ? (
         <p className="text-sm text-[#9CA3AF]">No members yet.</p>
       ) : (
