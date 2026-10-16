@@ -10,7 +10,9 @@ import { StoryGrid } from '../widgets/StoryGrid'
 // Resized/compressed from the original 1971x1430 PNG (~1MB) down to a
 // 1200px-wide JPEG (~100KB) — the raw screenshot was slow to load in the
 // hero, which is above the fold on first paint.
-const HERO_IMAGE = '/join/join-hero.jpg'
+// Swapped with VillagePage.tsx's top-section photo (was culo-canva-hero.png
+// on each side) — /join-hero.jpg now runs on the homepage instead.
+const HERO_IMAGE = '/creatives/culo-canva-hero.png'
 const HERO_IMAGE_CANVA = '/join/join-hero-canva.jpg'
 
 const GRID_ROW_1 = ['/join/grid-1.jpg', '/join/grid-2.jpg', '/join/grid-3.jpg']
@@ -234,6 +236,35 @@ export function JoinVillagePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ── 2 products, 1 marketing system — the ecosystem statement,
+          bridging the hero straight into "what is the Village" below.
+          Culo Creatives makes it, The Culo Village publishes/discovers it —
+          one combined system, not two separate pitches competing for
+          attention. */}
+      <section className="py-16 md:py-20 bg-background border-b border-border" aria-labelledby="ecosystem-heading">
+        <InnerContainer>
+          <h2 id="ecosystem-heading" className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-charcoal text-center leading-tight mb-14">
+            2 Products.<br className="sm:hidden" /> 1 Marketing System.
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-8 sm:gap-6 items-center max-w-4xl mx-auto">
+            <div className="text-center">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Create</p>
+              <p className="font-heading text-xl sm:text-2xl font-bold text-charcoal mb-2">Culo Creatives</p>
+              <p className="font-body text-sm text-muted leading-relaxed">Turns your raw footage and messy thoughts into finished content, inside Canva.</p>
+            </div>
+            <p className="font-heading text-3xl font-bold text-primary/30 text-center" aria-hidden="true">+</p>
+            <div className="text-center">
+              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">Publish &amp; Discover</p>
+              <p className="font-heading text-xl sm:text-2xl font-bold text-charcoal mb-2">The Culo Village</p>
+              <p className="font-body text-sm text-muted leading-relaxed">Gives everything you make a permanent, searchable home, connected back to you.</p>
+            </div>
+          </div>
+          <p className="font-body text-base text-muted text-center max-w-xl mx-auto mt-12">
+            Two separate problems, one repeatable workflow — not two tools competing for your attention.
+          </p>
+        </InnerContainer>
       </section>
 
       {/* ── What is The Culo Village — text left, a live scaled-down preview

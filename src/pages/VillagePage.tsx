@@ -138,7 +138,7 @@ export function VillagePage() {
             </div>
             <div className="relative hidden lg:block">
               <img
-                src="/creatives/culo-canva-hero.png"
+                src="/join/join-hero.jpg"
                 alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
                 className="w-full h-auto rounded-3xl"
               />
