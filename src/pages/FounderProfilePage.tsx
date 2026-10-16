@@ -359,8 +359,18 @@ export function FounderProfilePage() {
   // imported "Articles Written by CULO" instead, regardless of the
   // founder's overall claimed status.
   const allFounderStories = getStories({ founderId: founder.id, publicOnly: true })
-  const culoWrittenStories = allFounderStories.filter(s => s.writtenByCulo && !s.founderEditedAt)
-  const founderOwnStories = allFounderStories.filter(s => !(s.writtenByCulo && !s.founderEditedAt))
+  // An unclaimed founder (no userId at all) cannot possibly have personally
+  // written or edited anything themselves, regardless of whether the
+  // writtenByCulo flag happens to be set — confirmed live as a real bug: a
+  // batch of older curated stories never got writtenByCulo stamped true at
+  // creation time, which put them in founderOwnStories, which then never
+  // rendered anywhere because hasRealStories is forced false for an
+  // unclaimed founder. Treating every story as Culo-written for an
+  // unclaimed founder (not just ones where the flag is set) closes that gap
+  // instead of depending on every past and future curation path to have
+  // stamped the flag correctly.
+  const culoWrittenStories = allFounderStories.filter(s => isUnclaimedCurated || (s.writtenByCulo && !s.founderEditedAt))
+  const founderOwnStories = allFounderStories.filter(s => !isUnclaimedCurated && !(s.writtenByCulo && !s.founderEditedAt))
 
   // A curated founder with no real published Stories yet has nothing else
   // to lead with — "From Around the Web" is the whole page, so it should

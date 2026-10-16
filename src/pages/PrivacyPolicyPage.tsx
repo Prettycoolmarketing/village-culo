@@ -119,6 +119,7 @@ export function PrivacyPolicyPage() {
             <p>Imported content may include photos, videos, B-roll footage, talking head clips, voiceovers,
               vlog clips, long-form video files, and other creative media assets.</p>
             <p>Imported media is used solely to support your requested workflows inside CULO and Canva.</p>
+            <p>Instagram, Snapchat, and iCloud work differently — see Clause 10 for those.</p>
           </Clause>
 
           <Clause n="3" title="How We Use Your Information">
@@ -236,7 +237,33 @@ export function PrivacyPolicyPage() {
             </p>
           </Clause>
 
-          <Clause n="10" title="Canva Integration">
+          {/* Covers every "export your own data, then upload the zip" importer —
+              Instagram, Snapchat, iCloud, and any future one. This is a distinct,
+              stronger privacy position from Clauses 8–9 above: those involve a live
+              OAuth connection to the provider's API, this never does. Whenever a
+              new archive-import source is added to the app (see
+              src/components/dashboard/*ArchiveImportCard.tsx), add it to the list
+              below in the same call that ships the importer, not as an afterthought —
+              this clause is the one place that list needs to stay accurate. */}
+          <Clause n="10" title="Archive Imports (Instagram, Snapchat, iCloud)">
+            <p>CULO also lets you import content from an archive export file — currently Instagram,
+              Snapchat, and iCloud Photos, with more platforms added over time as the feature grows. For
+              these, CULO does not connect to your account on that platform at all.</p>
+            <p>You request your own data directly from the platform, using its own official export tool —
+              Instagram's "Download Your Information," Snapchat's "My Data," or Apple's "Request a copy of
+              your data" at privacy.apple.com. The platform sends the finished export to you. You then
+              choose to upload that file to CULO yourself.</p>
+            <p>We do not:</p>
+            <Bullets items={[
+              'Log in to your Instagram, Snapchat, or Apple/iCloud account',
+              'Request any API access, OAuth permission, or token from Meta, Snap, or Apple',
+              'Access anything beyond the specific file you choose to upload',
+            ]} />
+            <p>The uploaded archive is processed the same way as any other imported media described in
+              Clause 2, and is subject to the same retention rules in Clause 7.</p>
+          </Clause>
+
+          <Clause n="11" title="Canva Integration">
             <p>When using CULO through Canva, CULO interacts with Canva APIs to create assets, upload
               generated content, insert media into designs, and support editing and publishing workflows.
               Content added to your Canva design is also subject to Canva's own privacy policies.</p>
@@ -251,7 +278,7 @@ export function PrivacyPolicyPage() {
               Canva design content is shared with The Culo Village.</p>
           </Clause>
 
-          <Clause n="11" title="Third-Party Services">
+          <Clause n="12" title="Third-Party Services">
             <p>We share data only with the service providers listed below, solely to operate the app:</p>
             <DataTable
               headers={['Provider', 'Purpose', 'Privacy Policy']}
@@ -268,19 +295,19 @@ export function PrivacyPolicyPage() {
               party for marketing purposes.</p>
           </Clause>
 
-          <Clause n="12" title="Payments">
+          <Clause n="13" title="Payments">
             <p>If paid subscriptions or services are offered, payments are processed by third-party
               providers such as Stripe or Systeme.io. We do not store payment card details directly.</p>
           </Clause>
 
-          <Clause n="13" title="Cookies & Analytics">
+          <Clause n="14" title="Cookies & Analytics">
             <p>Our website and services may use cookies, analytics tools, and diagnostic systems to improve
               performance and understand usage. This may include browser and device information, usage
               patterns, referral sources, interaction metrics, and crash/error diagnostics. You may manage
               cookie settings via your browser.</p>
           </Clause>
 
-          <Clause n="14" title="Data Storage & Security">
+          <Clause n="15" title="Data Storage & Security">
             <p>We take reasonable technical and organisational steps to protect your information, including
               HTTPS encryption, access controls, credential protection, environment-based secrets
               management, secured storage infrastructure, authenticated API access, and controlled
@@ -288,7 +315,7 @@ export function PrivacyPolicyPage() {
             <p>No system can guarantee absolute security.</p>
           </Clause>
 
-          <Clause n="15" title="International Data Transfers">
+          <Clause n="16" title="International Data Transfers">
             <p>Our servers and third-party infrastructure are located in Australia and the United States.
               By using our services, you consent to your data being processed in these locations where
               permitted by law.</p>
@@ -297,7 +324,7 @@ export function PrivacyPolicyPage() {
               where services are purchased.</p>
           </Clause>
 
-          <Clause n="16" title="Your Rights">
+          <Clause n="17" title="Your Rights">
             <p>You may:</p>
             <Bullets items={[
               'Access the data we hold about you',
@@ -312,12 +339,12 @@ export function PrivacyPolicyPage() {
             </p>
           </Clause>
 
-          <Clause n="17" title="Children's Privacy">
+          <Clause n="18" title="Children's Privacy">
             <p>Our services are not intended for children under the age of 13. We do not knowingly collect
               personal information from children.</p>
           </Clause>
 
-          <Clause n="18" title="Changes to This Policy">
+          <Clause n="19" title="Changes to This Policy">
             <p>We may update this Privacy Policy from time to time. Updated versions will be published here
               and at prettycoolmarketing.com/privacypolicy with a revised effective date. Continued use of
               our services constitutes acceptance of updates. Material changes will be communicated via the
