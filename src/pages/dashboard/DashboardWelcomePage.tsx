@@ -217,25 +217,30 @@ export function DashboardWelcomePage() {
         </p>
       </div>
 
-      {/* On mobile only, the button spans edge-to-edge the same as the
-          "How The Culo Village Works" box right below it (which has no
-          horizontal inset of its own, unlike this heading block) — needs
-          its own wrapper with no px to actually line up with that box's
-          outer edges, not just its inner text. Reverts to the original
-          compact inline button at md+, where this was already fine. */}
+      {/* The real next step, made to look like one — this used to be a
+          plain text link easy to skip past, which is exactly why it wasn't
+          obvious someone should click through to Import next. Same mobile
+          full-bleed reasoning as before (lines up with the box below). */}
       <div className="px-0 md:px-8 lg:px-12">
         <Link
           to="/dashboard/import-content"
-          className="flex md:inline-flex w-full md:w-auto justify-center mt-4 text-base md:text-sm font-semibold px-5 py-3 md:py-2.5 rounded-lg text-[#C86A43] hover:text-[#b05a35] hover:underline transition-colors"
+          className="flex md:inline-flex w-full md:w-auto justify-center mt-4 text-base font-semibold px-6 py-4 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
         >
-          Import your content now
+          Import your content now →
         </Link>
       </div>
 
+      {/* Downgraded from a prominent "Loading…" block that read as
+          something blocking the page, to a small, calm status line — this
+          runs automatically in the background and was never actually
+          stopping anyone from importing content in the meantime, it just
+          looked like it was. */}
       {liveFounder?.onboardingStatus === 'researching' && (
         <div className="px-8 sm:px-12">
-          <JoinProgress step={3} />
-          <p className="text-2xl sm:text-3xl font-bold text-wave">Loading an article from your public-facing information…</p>
+          <p className="text-xs text-[#9CA3AF] flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
+            Culo is writing your first bio and article in the background — no need to wait, go ahead and start importing.
+          </p>
         </div>
       )}
 

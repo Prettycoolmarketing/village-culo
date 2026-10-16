@@ -82,12 +82,14 @@ export function JoinSetupPage() {
               placeholder="Your full name"
               className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
+            <label htmlFor="setup-social-link" className="sr-only">Social link</label>
             <input
+              id="setup-social-link"
               type="url"
               required
               value={link}
               onChange={e => setLink(e.target.value)}
-              placeholder="https://youtube.com/@yourname"
+              placeholder="Social link, e.g. instagram.com/yourname"
               className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
             {error && <p className="font-body text-sm text-red-600">{error}</p>}

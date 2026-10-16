@@ -170,9 +170,16 @@ export function JoinVillagePage() {
                 {isCanva ? <>Edit Your Raw Footage<br />Into Social Media Posts<br />In Canva</> : <>Structure Your Posts<br />Into Web Articles<br />For Discovery</>}
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
-                The Culo Village republishes your social posts across YouTube, podcasts and Instagram archives —
-                and Culo Creatives, coming soon to Canva, helps founders edit their raw footage into social
-                media formatted content.
+                {isCanva ? (
+                  <>The Culo Village republishes your social posts across YouTube, podcasts and Instagram archives —
+                  and Culo Creatives, coming soon to Canva, helps founders edit their raw footage into social
+                  media formatted content.</>
+                ) : (
+                  <>Everything you've already posted is disappearing the moment the feed moves on — buried,
+                  unsearchable, impossible for someone to find later even though it's still real, true and
+                  valuable. The Culo Village pulls your existing posts, videos and podcasts together into a
+                  permanent, searchable body of work connected back to your name.</>
+                )}
               </p>
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
                 <input
@@ -194,11 +201,19 @@ export function JoinVillagePage() {
               </form>
               {error && <p className="font-body text-sm text-red-400 text-center lg:text-left mt-3">{error}</p>}
               <p className="font-body text-xs text-white/40 mt-4">
-                The Culo Village is free, forever · Culo Creatives in Canva: 14-day free trial, then $25 AUD/month · No spam emails
+                The Culo Village is free, forever · No spam emails
               </p>
-              <Link to="/join?source=canva" className="inline-block font-body text-sm font-semibold text-white hover:text-primary transition-colors mt-4 underline underline-offset-4 decoration-white/30 hover:decoration-primary">
-                Learn more about Culo Creatives in Canva →
-              </Link>
+              {!isCanva && (
+                <div className="mt-5 inline-block text-left bg-white/5 border border-white/10 rounded-xl px-4 py-3 max-w-xl">
+                  <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-1">Bonus</p>
+                  <p className="font-body text-sm text-white/80 leading-relaxed">
+                    Join now and you'll be first in line to try Culo Creatives in Canva once it launches —{' '}
+                    <Link to="/join?source=canva" className="font-semibold text-white hover:text-primary transition-colors underline underline-offset-4 decoration-white/30 hover:decoration-primary">
+                      learn more →
+                    </Link>
+                  </p>
+                </div>
+              )}
             </div>
             <img
               src={isCanva ? HERO_IMAGE_CANVA : HERO_IMAGE}
