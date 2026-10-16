@@ -73,6 +73,15 @@ export function SourceIcon({ platform, size = 'md' }: { platform: SourcePlatform
       </div>
     )
   }
+  if (platform === 'icloud') {
+    return (
+      <div className={`${common} bg-[#3693F3]`}>
+        <svg className={`${icon} text-white`} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.5 10.1a5 5 0 00-9.6-1.9A4.5 4.5 0 005 12.5a4.5 4.5 0 004.5 4.5h9a3.6 3.6 0 00.3-7.2A4.5 4.5 0 0018.5 10.1z" />
+        </svg>
+      </div>
+    )
+  }
   if (platform === 'vimeo') {
     return (
       <div className={`${common} bg-[#1AB7EA]`}>

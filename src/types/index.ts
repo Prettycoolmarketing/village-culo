@@ -588,7 +588,7 @@ export interface Founder {
   // imported this exact file" instantly (one hash comparison) instead of
   // re-checking every single item against the duplicate set again, which
   // is what a re-upload of the same large export did before this existed.
-  importedArchiveHashes?: { platform: 'instagram' | 'snapchat'; hash: string; importedAt: string }[]
+  importedArchiveHashes?: { platform: 'instagram' | 'snapchat' | 'icloud'; hash: string; importedAt: string }[]
   // True while Pretty Cool Marketing is fulfilling this founder's content
   // as a paid service — all self-serve publish limits, meters and upsells
   // are bypassed; publishing volume is tracked as a service deliverable in

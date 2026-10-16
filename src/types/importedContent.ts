@@ -10,6 +10,7 @@ export type ImportedContentPlatform =
   | 'website'
   | 'canva'
   | 'snapchat'
+  | 'icloud'
 
 export type ImportedContentStatus = 'draft' | 'published' | 'featured' | 'archived'
 export type ImportedContentVisibility = 'private' | 'discoverable' | 'public'

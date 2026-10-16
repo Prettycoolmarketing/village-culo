@@ -114,6 +114,7 @@ export const PLATFORM_LABELS: Record<ImportedContentPlatform, string> = {
   website:   'Website',
   canva:     'Canva',
   snapchat:  'Snapchat',
+  icloud:    'iCloud',
 }
 
 export const PLATFORM_COLORS: Record<ImportedContentPlatform, string> = {
@@ -126,6 +127,7 @@ export const PLATFORM_COLORS: Record<ImportedContentPlatform, string> = {
   website:   'bg-[#F3EDE6] text-[#6B7280]',
   canva:     'bg-cyan-100 text-cyan-700',
   snapchat:  'bg-yellow-100 text-yellow-700',
+  icloud:    'bg-sky-100 text-sky-700',
 }
 
 export function buildDraftImport(founderId: string, url: string): ImportedContent {

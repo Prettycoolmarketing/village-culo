@@ -19,7 +19,7 @@ export async function hashFile(file: File): Promise<string> {
 
 export function findPriorImport(
   founder: Founder | undefined,
-  platform: 'instagram' | 'snapchat',
+  platform: 'instagram' | 'snapchat' | 'icloud',
   hash: string,
 ): { importedAt: string } | undefined {
   return founder?.importedArchiveHashes?.find(h => h.platform === platform && h.hash === hash)
@@ -27,7 +27,7 @@ export function findPriorImport(
 
 export async function recordImportHash(
   founderId: string,
-  platform: 'instagram' | 'snapchat',
+  platform: 'instagram' | 'snapchat' | 'icloud',
   hash: string,
 ): Promise<void> {
   const founder = getFounder(founderId)
