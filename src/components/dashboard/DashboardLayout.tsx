@@ -3,9 +3,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { canAccessCapoSection, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
-import { getFounder } from '../../services/founders'
+import { getFounder, updateFounder } from '../../services/founders'
 import { SetPasswordModal } from './SetPasswordModal'
-import { OnboardingReadyModal } from './OnboardingReadyModal'
 import type { ReactNode } from 'react'
 
 // ─── Icon helpers ───────────────────────────────────────────────────────────────
@@ -167,6 +166,23 @@ export function DashboardLayout() {
   }, [founder?.onboardingStatus])
   const liveFounder = founder ? getFounder(founder.id) ?? founder : founder
   void onboardingTick
+
+  // Used to be a hard, full-screen blocking modal here the moment research
+  // finished — no close button except its own two buttons, so it genuinely
+  // stopped a founder from doing anything else until they clicked one.
+  // Confirmed live as the wrong fix for the real problem: the bio and the
+  // draft article were already written and live/in Content with no gate at
+  // all by this point (see runOnboardingResearch) — the modal was never
+  // what controlled whether that data existed, it was just a popup sitting
+  // on top of it. Now it just quietly finishes the status transition in
+  // the background; the founder encounters their new bio and the new draft
+  // article naturally, the same way as anything else imported, with the
+  // same publish/delete controls Content already has — no popup, no
+  // separate "confirm" click required.
+  useEffect(() => {
+    if (liveFounder?.onboardingStatus !== 'ready') return
+    void updateFounder({ ...liveFounder, onboardingStatus: 'confirmed' })
+  }, [liveFounder])
   // Closed by default on mobile — the sidebar only becomes an overlay drawer
   // below the md breakpoint; on desktop the responsive classes below make it
   // static and always visible regardless of this state.
@@ -199,7 +215,6 @@ export function DashboardLayout() {
   return (
     <div className="flex h-screen bg-[#F3F7FA] overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       {showSetPasswordModal && <SetPasswordModal onClose={dismissPasswordModal} />}
-      {liveFounder?.onboardingStatus === 'ready' && <OnboardingReadyModal founder={liveFounder} />}
 
       {/* Mobile top bar — hamburger + brand mark, hidden on desktop where the
           sidebar is already always visible. */}

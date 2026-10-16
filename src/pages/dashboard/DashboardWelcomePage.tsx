@@ -245,10 +245,12 @@ export function DashboardWelcomePage() {
         </div>
       )}
 
-      {/* What happens once that's ready is a dashboard-wide popup (see
-          OnboardingReadyModal in DashboardLayout), not this page specifically
-          — by the time research finishes, a founder who didn't sit and wait
-          may well have already moved on to Import Content or anywhere else. */}
+      {/* No popup once research finishes — the bio and draft article are
+          already written with no gate at all (see runOnboardingResearch);
+          the founder just finds them naturally in Profile/Content, same as
+          anything else imported, with the same publish/delete controls.
+          DashboardLayout quietly finishes the status transition in the
+          background. */}
 
       {/* Every section below spans the full width of the content pane (not
           boxed into a narrower max-width column) but keeps its own rounded
