@@ -65,10 +65,20 @@ export function SourceIcon({ platform, size = 'md' }: { platform: SourcePlatform
     )
   }
   if (platform === 'snapchat') {
+    // A simple, recognisable ghost silhouette on Snapchat's real brand
+    // yellow (#FFFC00) — hand-drawn like every other icon in this
+    // component, rather than Snap Inc.'s own trademarked artwork (no
+    // official brand-asset source was confirmed, and several third-party
+    // "logo download" sites explicitly require permission to reproduce).
     return (
       <div className={`${common} bg-[#FFFC00]`}>
-        <svg className={icon} viewBox="0 0 24 24" fill="#000000">
-          <path d="M12 2c3 0 4.6 2.1 4.7 4.3l.1 2.1c.1.1.5.3 1 .3.6 0 1-.3 1.3-.3.4 0 .8.3.8.7 0 .5-.6.9-1.2 1.2-.1.1-.2.2-.2.4.1.6 1.4 2.9 3.8 3.3.2 0 .4.2.4.5 0 .7-1.1 1-1.9 1.2-.2.1-.2.2-.3.5-.1.3-.2.7-.3.9-.1.2-.3.2-.6.2h-.2c-.5 0-1.1-.1-1.9.1-.7.2-1.3.9-2.6.9-1.2 0-1.9-.7-2.6-.9-.8-.2-1.4-.1-1.9-.1h-.2c-.3 0-.5 0-.6-.2-.1-.2-.2-.6-.3-.9-.1-.3-.1-.4-.3-.5-.8-.2-1.9-.5-1.9-1.2 0-.3.2-.5.4-.5 2.4-.4 3.7-2.7 3.8-3.3 0-.2-.1-.3-.2-.4-.6-.3-1.2-.7-1.2-1.2 0-.4.4-.7.8-.7.3 0 .7.3 1.3.3.5 0 .9-.2 1-.3l.1-2.1C7.4 4.1 9 2 12 2z" />
+        <svg className={icon} viewBox="0 0 24 24">
+          <path
+            fill="#FFFFFF"
+            d="M12 3c-3.3 0-6 2.7-6 6v7.5c0 .5.4.8.8.5l1.2-1c.3-.2.7-.2 1 0l.8.6c.3.2.7.2 1 0l.8-.6c.3-.2.7-.2 1 0l.8.6c.3.2.7.2 1 0l.8-.6c.3-.2.7-.2 1 0l1.2 1c.4.3.8 0 .8-.5V9c0-3.3-2.7-6-6-6z"
+          />
+          <circle cx="9.5" cy="10" r="1" fill="#FFFC00" />
+          <circle cx="14.5" cy="10" r="1" fill="#FFFC00" />
         </svg>
       </div>
     )
