@@ -213,6 +213,9 @@ const PLATFORM_CONTENT_TYPE: Record<ImportedContentPlatform, ContentType> = {
   // (see contentTypeHint on the built ImportedContent itself, which wins
   // over this generic fallback), carousel-style blog otherwise.
   snapchat:  'blog',
+  // Same reasoning as snapchat above — mixed photos/videos per import,
+  // contentTypeHint on the item itself wins over this fallback.
+  icloud:    'blog',
 }
 
 // A genuinely short summary, never the whole blog dumped in as-is. Used

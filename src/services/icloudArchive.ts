@@ -20,7 +20,6 @@ import { getFounder } from './founders'
 import { getBusiness } from './businesses'
 import type { ImportedContent } from '../types/importedContent'
 
-const IMAGE_RE = /\.(jpe?g|png|heic|heif|webp)$/i
 const VIDEO_RE = /\.(mp4|mov|m4v)$/i
 const MEDIA_FILE_RE = /\.(jpe?g|png|heic|heif|webp|mp4|mov|m4v)$/i
 
