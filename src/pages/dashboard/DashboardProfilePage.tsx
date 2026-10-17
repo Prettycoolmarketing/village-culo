@@ -761,17 +761,21 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
 
   async function handleRun() {
     const raw = link.trim()
-    if (!raw) { setError('Paste a link first.'); return }
-    let url: URL
-    try {
-      url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`)
-    } catch {
-      setError('Enter a real link, e.g. instagram.com/yourname')
-      return
+    if (!raw) { setError('Add your most-used username or a link first.'); return }
+    // Same handle-or-link flexibility as /join/setup — "@n" is enough,
+    // runOnboardingResearch treats anything that isn't a real link as a
+    // bare handle and researches from that instead.
+    let identifier = raw
+    if (!raw.startsWith('@')) {
+      try {
+        identifier = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`).toString()
+      } catch {
+        // Not a parseable link either — fall through as a bare handle.
+      }
     }
     setRunning(true)
     setError(null)
-    await runOnboardingResearch(founder.id, url.toString())
+    await runOnboardingResearch(founder.id, identifier)
     setRunning(false)
     onDone()
   }
@@ -781,8 +785,8 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
       <div>
         <p className="text-sm font-semibold text-[#2D2A26]">No bio or articles yet</p>
         <p className="text-xs text-[#6B7280] mt-0.5 max-w-xl">
-          Paste one link — your YouTube channel, podcast, Instagram or LinkedIn — and Culo will research you and
-          write your bio and first article from it.
+          Add your most-known username — your YouTube channel, podcast, Instagram or LinkedIn — and Culo will
+          research you and write your bio and first article from it.
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-2">
@@ -790,7 +794,7 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
           type="text"
           value={link}
           onChange={e => setLink(e.target.value)}
-          placeholder="instagram.com/yourname"
+          placeholder="@yourusername, or a link to Instagram, YouTube, LinkedIn…"
           className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <button

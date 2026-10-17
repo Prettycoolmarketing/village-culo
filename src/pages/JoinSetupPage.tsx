@@ -11,11 +11,11 @@ import { JoinProgress } from '../components/ui/JoinProgress'
 // local part and bio started blank, so a brand-new founder's profile had
 // nothing on it until they went and filled it in themselves (most never
 // did). This is the first thing a new signup sees instead of the empty
-// dashboard: their real name, and one link CULO can actually research them
-// from, before anything about them goes live. Kicks off the same
-// research → write pipeline CAPO runs by hand for curated founders (see
-// runOnboardingResearch) and hands off to /dashboard/welcome's loading
-// state once that's running.
+// dashboard: their real name, and their most-known username or a link —
+// just "@n" is enough, no need to go find the exact URL. Kicks off the
+// same research → write pipeline CAPO runs by hand for curated founders
+// (see runOnboardingResearch) and hands off to /dashboard/welcome's
+// loading state once that's running.
 export function JoinSetupPage() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
@@ -59,18 +59,25 @@ export function JoinSetupPage() {
     e.preventDefault()
     if (!founder) return
     if (!name.trim()) { setError('Your name is required.'); return }
+    if (!link.trim()) { setError('Add your most-used username or a link.'); return }
     // A founder typing "instagram.com/name" with no scheme used to get
     // rejected outright after submitting — confirmed real friction on the
     // one step this whole funnel depends on. Auto-prepend https:// rather
-    // than making them notice and fix it themselves; only a genuinely
-    // unparseable value (not just a missing scheme) still errors.
+    // than making them notice and fix it themselves. And a founder
+    // shouldn't have to go find their exact URL at all — "@n" is enough;
+    // runOnboardingResearch treats anything that doesn't resolve to a real
+    // link as a bare handle instead and researches from that (LinkedIn
+    // included), same as it already does for a curated founder with no
+    // links at all.
     const rawLink = link.trim()
-    let url: URL
-    try {
-      url = new URL(/^https?:\/\//i.test(rawLink) ? rawLink : `https://${rawLink}`)
-    } catch {
-      setError('Enter a real link, e.g. instagram.com/yourname')
-      return
+    let identifier = rawLink
+    if (!rawLink.startsWith('@')) {
+      try {
+        identifier = new URL(/^https?:\/\//i.test(rawLink) ? rawLink : `https://${rawLink}`).toString()
+      } catch {
+        // Not a parseable link either — fall through and treat it as a
+        // bare handle/username instead of blocking submission on it.
+      }
     }
     setSubmitting(true)
     setError(null)
@@ -90,7 +97,7 @@ export function JoinSetupPage() {
     // writing + audit), and /dashboard/welcome's loading state is what
     // shows progress from here, polling onboardingStatus rather than this
     // page holding the founder on a spinner until it's done.
-    void runOnboardingResearch(founder.id, url.toString())
+    void runOnboardingResearch(founder.id, identifier)
     navigate('/dashboard/welcome', { replace: true })
   }
 
@@ -102,8 +109,8 @@ export function JoinSetupPage() {
           <JoinProgress step={2} />
           <h1 className="font-heading text-2xl font-bold text-charcoal mb-2 text-center">Let's build your profile</h1>
           <p className="font-body text-sm text-muted text-center mb-8">
-            Your name, and one link CULO can research — your YouTube channel, podcast, Instagram, TikTok or LinkedIn.
-            We'll write your bio and your first article from it.
+            We'll write your bio and first article — add your most-known username, then you can go ahead and
+            import your content.
           </p>
           <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-3">
             <input
@@ -114,14 +121,14 @@ export function JoinSetupPage() {
               placeholder="Your full name"
               className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
-            <label htmlFor="setup-social-link" className="sr-only">Social link</label>
+            <label htmlFor="setup-social-link" className="sr-only">Username or social link</label>
             <input
               id="setup-social-link"
-              type="url"
+              type="text"
               required
               value={link}
               onChange={e => setLink(e.target.value)}
-              placeholder="Social link, e.g. instagram.com/yourname"
+              placeholder="@yourusername, or a link to Instagram, YouTube, LinkedIn…"
               className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
             {error && <p className="font-body text-sm text-red-600">{error}</p>}
