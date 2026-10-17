@@ -1235,6 +1235,7 @@ export function DashboardProfilePage() {
       { key: 'library',       label: 'Digital Products' },
       { key: 'expertise',     label: 'FAQ'           },
       { key: 'discovery',     label: 'Discovery' },
+      { key: 'affiliate',     label: 'Affiliate Links' },
       { key: 'settings',      label: 'Settings'      },
     ] : []),
   ]
@@ -3073,50 +3074,52 @@ export function DashboardProfilePage() {
           </div>
         )}
 
-        {/* ── Settings: publishing preferences, account-level settings ────── */}
-        {tab === 'settings' && (
-          <div className="flex flex-col gap-4">
+        {/* ── Affiliate Links ──────────────────────────────────────────────── */}
+        {tab === 'affiliate' && (
+          <div className="flex flex-col gap-5">
             <TabIntro>
-              Account-level details and publishing preferences that don't affect how you're discovered,
-              just how your profile behaves.
+              Add a name and a URL. Whenever that exact name appears in a published Blog, it's automatically
+              turned into a link — no need to touch the story itself, and it applies to stories you've already
+              published too.
             </TabIntro>
 
-            {/* Hidden for now per request — re-enable by uncommenting.
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
-                <p className="text-xs text-[#9CA3AF] mt-0.5">Managed from Import Content, next to the imports it writes for.</p>
-              </div>
-              <Link
-                to="/dashboard/import-content"
-                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
-              >
-                Open Import Content →
-              </Link>
-            </div>
-            */}
-
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
-              <p className="text-sm font-semibold text-[#2D2A26] mb-1">Affiliate Links</p>
-              <p className="text-xs text-[#9CA3AF] mb-3">
-                Add a name and a URL. Whenever that exact name appears in a published Blog, it's automatically
-                turned into a link — no need to touch the story itself, and it applies to stories you've already
-                published too.
-              </p>
               <div className="flex flex-col gap-2 mb-3">
-                {(draft.affiliateLinks ?? []).map(link => (
-                  <div key={link.id} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg px-3 py-2">
-                    <span className="text-xs font-semibold text-[#2D2A26] shrink-0">{link.name}</span>
-                    <span className="text-xs text-[#6B7280] truncate flex-1">{link.url}</span>
-                    <button
-                      type="button"
-                      onClick={() => set('affiliateLinks', (draft.affiliateLinks ?? []).filter(l => l.id !== link.id))}
-                      className="shrink-0 text-xs font-semibold text-red-600 hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                {(draft.affiliateLinks ?? []).map(link => {
+                  // Same whole-word, case-sensitive match applyAffiliateLinks
+                  // actually uses at render time — this just counts how many
+                  // live published stories would get the link right now.
+                  const name = link.name.trim()
+                  let liveCount = 0
+                  if (name) {
+                    try {
+                      const pattern = new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`)
+                      liveCount = founderStories.filter(s =>
+                        (s.status === 'published' || s.status === 'featured') && s.blog && pattern.test(s.blog),
+                      ).length
+                    } catch {
+                      liveCount = 0
+                    }
+                  }
+                  return (
+                    <div key={link.id} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg px-3 py-2">
+                      <span className="text-xs font-semibold text-[#2D2A26] shrink-0">{link.name}</span>
+                      <span className="text-xs text-[#6B7280] truncate flex-1">{link.url}</span>
+                      <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        liveCount > 0 ? 'bg-[#5E6B4A]/10 text-[#5E6B4A]' : 'bg-[#E8E4DD] text-[#9CA3AF]'
+                      }`}>
+                        {liveCount > 0 ? `Live in ${liveCount} article${liveCount === 1 ? '' : 's'}` : 'Not live yet'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => set('affiliateLinks', (draft.affiliateLinks ?? []).filter(l => l.id !== link.id))}
+                        className="shrink-0 text-xs font-semibold text-red-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )
+                })}
                 {(draft.affiliateLinks ?? []).length === 0 && (
                   <p className="text-xs text-[#9CA3AF] italic">No affiliate links yet.</p>
                 )}
@@ -3153,6 +3156,31 @@ export function DashboardProfilePage() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── Settings: publishing preferences, account-level settings ────── */}
+        {tab === 'settings' && (
+          <div className="flex flex-col gap-4">
+            <TabIntro>
+              Account-level details and publishing preferences that don't affect how you're discovered,
+              just how your profile behaves.
+            </TabIntro>
+
+            {/* Hidden for now per request — re-enable by uncommenting.
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">Managed from Import Content, next to the imports it writes for.</p>
+              </div>
+              <Link
+                to="/dashboard/import-content"
+                className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+              >
+                Open Import Content →
+              </Link>
+            </div>
+            */}
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Founder ID</p>
