@@ -21,9 +21,8 @@ import { hashFile, findPriorImport, recordImportHash } from '../../utils/archive
 // Voice Brief" on whatever a founder actually selects (naturally their free
 // 10 first, or anything after they unlock the rest).
 
-export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported }: {
+export function InstagramArchiveImportCard({ founderId, onImported }: {
   founderId: string
-  voiceBrief?: string
   onImported: (count: number) => void
 }) {
   const [showUpload, setShowUpload] = useState(false)
@@ -137,18 +136,6 @@ export function InstagramArchiveImportCard({ founderId, voiceBrief, onImported }
       </div>
 
       <div className="mt-3">
-        {!voiceBrief?.trim() && (
-          <div className="mb-4 bg-[#FBF1EB] border border-[#F0DDD2] rounded-xl px-4 py-4">
-            <p className="text-sm font-semibold text-[#2D2A26] mb-1">Tip: add your Voice &amp; Brand Brief above first</p>
-            <p className="text-xs text-[#6B7280] leading-relaxed">
-              You can import your archive right now either way, original captions come across as-is.
-              <br />
-              Add a brief and you can turn any piece into a real, distinct blog written in your own voice
-              afterward, right from Content.
-            </p>
-          </div>
-        )}
-
         <p className="text-sm text-[#6B7280] leading-relaxed mb-3">
           Instagram will email you a file to upload to Culo.
         </p>

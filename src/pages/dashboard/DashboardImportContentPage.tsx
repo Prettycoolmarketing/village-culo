@@ -2169,7 +2169,6 @@ export function DashboardImportContentPage() {
             <div ref={instagramCardRef} className="lg:col-start-2 lg:row-start-1">
               <InstagramArchiveImportCard
                 founderId={founderId}
-                voiceBrief={canUseVoiceRewrite ? founder?.voiceBrief : undefined}
                 onImported={count => reportImported(count)}
               />
             </div>

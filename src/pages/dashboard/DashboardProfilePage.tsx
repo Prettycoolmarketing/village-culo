@@ -759,7 +759,7 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 // buried in the content-review tab. Also lists every link already brought
 // in through Import (every distinct ImportedContent source, any platform)
 // so it's obvious at a glance what Culo already has to work with.
-function ResumeResearchBanner({ founder, onDone, onSkip }: { founder: Founder; onDone: () => void; onSkip: () => void }) {
+function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
   const [name, setName] = useState(founder.name)
   const [link, setLink] = useState('')
   const [running, setRunning] = useState(false)
@@ -792,15 +792,6 @@ function ResumeResearchBanner({ founder, onDone, onSkip }: { founder: Founder; o
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <p className="text-lg font-bold text-[#2D2A26]">Optimise your bio and let Culo write about you</p>
-        <button
-          onClick={onSkip}
-          className="shrink-0 text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
-        >
-          I'll fill it out manually
-        </button>
-      </div>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
@@ -1238,13 +1229,19 @@ export function DashboardProfilePage() {
   const founderLibrary    = getLibraryItems({ founderId: draft.id })
   const founderMedia      = getMedia({ founderId: draft.id })
 
+  // Businesses/Digital Products/FAQ/Discovery/Settings stay hidden until
+  // there's an actual bio — nothing to manage yet for a founder who hasn't
+  // finished the one thing this tab is for (Overview/Identity), and five
+  // extra tabs just add noise to a profile that's still empty.
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
-    { key: 'businesses',    label: 'Businesses'    },
-    { key: 'library',       label: 'Digital Products' },
-    { key: 'expertise',     label: 'FAQ'           },
-    { key: 'discovery',     label: 'Discovery' },
-    { key: 'settings',      label: 'Settings'      },
+    ...(draft.bio?.trim() ? [
+      { key: 'businesses',    label: 'Businesses'    },
+      { key: 'library',       label: 'Digital Products' },
+      { key: 'expertise',     label: 'FAQ'           },
+      { key: 'discovery',     label: 'Discovery' },
+      { key: 'settings',      label: 'Settings'      },
+    ] : []),
   ]
 
   function set<K extends keyof Founder>(key: K, value: Founder[K]) {
@@ -1623,10 +1620,6 @@ export function DashboardProfilePage() {
                   const fresh = getFounder(draft.id)
                   if (fresh) setDraft(fresh)
                 }}
-                onSkip={() => {
-                  void updateFounder({ ...draft, researchPromptSkipped: true })
-                  setDraft({ ...draft, researchPromptSkipped: true })
-                }}
               />
             )}
 
@@ -1638,6 +1631,18 @@ export function DashboardProfilePage() {
             >
               View public profile ↗
             </a>
+
+            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && !draft.researchPromptSkipped && (
+              <button
+                onClick={() => {
+                  void updateFounder({ ...draft, researchPromptSkipped: true })
+                  setDraft({ ...draft, researchPromptSkipped: true })
+                }}
+                className="self-start text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors -mt-4"
+              >
+                I'll fill it out manually
+              </button>
+            )}
 
             {businessAutoDrafted && (
               <p className="hidden md:block text-xs text-[#C86A43] font-medium -mt-2">
