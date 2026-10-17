@@ -34,61 +34,71 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
   if (!seed) return
   await updateFounder({ ...seed, onboardingStatus: 'researching' })
 
-  const isLink = /^https?:\/\//i.test(identifier)
-  let draft = isLink ? buildDraftImport(founderId, identifier) : null
-  if (draft) {
-    draft.staffCreated = true
-    await importedContentService.upsert(draft)
-  } else {
-    const founderBeforeResearch = getFounder(founderId)
-    if (founderBeforeResearch) {
-      await updateFounder({
-        ...founderBeforeResearch,
-        claimNotes: [founderBeforeResearch.claimNotes, `Most known username/handle: ${identifier}`].filter(Boolean).join('. '),
-      })
-    }
-  }
-
-  const research = await runFounderResearch(founderId)
-  if (!research.success || !research.ledger) {
-    const founderAfter = getFounder(founderId)
-    if (founderAfter) await updateFounder({ ...founderAfter, onboardingStatus: 'ready' })
-    return
-  }
-
-  const bioResult = await writeProfileBio(founderId)
-  if (bioResult.success && bioResult.item) {
-    await runAudit(bioResult.item)
-    const bioText = bioResult.item.draft_content?.body
-    if (bioText) {
-      const founderNow = getFounder(founderId)
-      if (founderNow) await updateFounder({ ...founderNow, bio: bioText })
-    }
-  }
-
-  const validSources = research.ledger.source_assessments.filter(s => s.source_valid)
-  const primarySource = validSources.find(s => s.url === identifier) ?? validSources[0]
-  if (primarySource) {
-    // A handle never got a draft import built up front — build one now,
-    // from whichever real source research actually found.
-    if (!draft) {
-      draft = buildDraftImport(founderId, primarySource.url)
+  // Everything below this point was NOT wrapped — if writeSourceArticle,
+  // runAudit, or any other step threw, the whole function died silently
+  // and the founder stayed on onboardingStatus 'researching' forever, with
+  // no error, no recovery, and sometimes a half-built empty draft import
+  // left behind (confirmed real: a test signup's handle resolved to a
+  // source the writer choked on, leaving a "1 item imported" draft with no
+  // title/description and the founder stuck mid-research indefinitely).
+  // This guarantees onboardingStatus always reaches 'ready' — success or
+  // failure — the same resilience already applied to runFounderResearch's
+  // own researchStatus handling.
+  try {
+    const isLink = /^https?:\/\//i.test(identifier)
+    let draft = isLink ? buildDraftImport(founderId, identifier) : null
+    if (draft) {
       draft.staffCreated = true
       await importedContentService.upsert(draft)
-    }
-    const articleResult = await writeSourceArticle(founderId, draft.id, primarySource)
-    if (articleResult.success && articleResult.item) {
-      await runAudit(articleResult.item)
-      if (articleResult.item.draft_content?.body) {
-        await importedContentService.upsert({
-          ...draft,
-          title: articleResult.item.draft_content.title || draft.title,
-          description: normalizeBlogSpacing(articleResult.item.draft_content.body),
+    } else {
+      const founderBeforeResearch = getFounder(founderId)
+      if (founderBeforeResearch) {
+        await updateFounder({
+          ...founderBeforeResearch,
+          claimNotes: [founderBeforeResearch.claimNotes, `Most known username/handle: ${identifier}`].filter(Boolean).join('. '),
         })
       }
     }
-  }
 
-  const founderFinal = getFounder(founderId)
-  if (founderFinal) await updateFounder({ ...founderFinal, onboardingStatus: 'ready' })
+    const research = await runFounderResearch(founderId)
+    if (!research.success || !research.ledger) return
+
+    const bioResult = await writeProfileBio(founderId)
+    if (bioResult.success && bioResult.item) {
+      await runAudit(bioResult.item)
+      const bioText = bioResult.item.draft_content?.body
+      if (bioText) {
+        const founderNow = getFounder(founderId)
+        if (founderNow) await updateFounder({ ...founderNow, bio: bioText })
+      }
+    }
+
+    const validSources = research.ledger.source_assessments.filter(s => s.source_valid)
+    const primarySource = validSources.find(s => s.url === identifier) ?? validSources[0]
+    if (primarySource) {
+      // A handle never got a draft import built up front — build one now,
+      // from whichever real source research actually found.
+      if (!draft) {
+        draft = buildDraftImport(founderId, primarySource.url)
+        draft.staffCreated = true
+        await importedContentService.upsert(draft)
+      }
+      const articleResult = await writeSourceArticle(founderId, draft.id, primarySource)
+      if (articleResult.success && articleResult.item) {
+        await runAudit(articleResult.item)
+        if (articleResult.item.draft_content?.body) {
+          await importedContentService.upsert({
+            ...draft,
+            title: articleResult.item.draft_content.title || draft.title,
+            description: normalizeBlogSpacing(articleResult.item.draft_content.body),
+          })
+        }
+      }
+    }
+  } catch (err) {
+    console.error('runOnboardingResearch failed', err)
+  } finally {
+    const founderFinal = getFounder(founderId)
+    if (founderFinal) await updateFounder({ ...founderFinal, onboardingStatus: 'ready' })
+  }
 }
