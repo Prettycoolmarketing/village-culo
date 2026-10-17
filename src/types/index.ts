@@ -516,6 +516,12 @@ export interface Founder {
   // this-session hide, so skipping it once doesn't mean seeing it forever
   // on every future visit either.
   researchPromptSkipped?: boolean
+  // The yes/no prompt on Import ("join the Culo Creatives waitlist?") —
+  // answered once, never shown again either way. Only 'yes' shows as a tag
+  // on the Culo Members list (see VillageEmailExportPage); 'no' is just
+  // recorded so the prompt doesn't keep asking.
+  creativesWaitlistAnswer?: 'yes' | 'no'
+  creativesWaitlistAnsweredAt?: string
   // Set by notify-stuck-onboarding the one time it emails a founder who's
   // been sitting at onboardingStatus 'ready' for 24h+ without returning to
   // the dashboard — stops the same person getting this nudge every single

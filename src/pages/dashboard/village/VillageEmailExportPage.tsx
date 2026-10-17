@@ -148,6 +148,7 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
           { label: 'Unclaimed', cls: 'bg-red-50 text-red-700', hint: 'no login behind this profile (a curated founder who hasn\'t claimed it)' },
           { label: 'Upgraded', cls: 'bg-[#FBF1EB] text-[#C86A43]', hint: 'has purchased an Archive Unlock' },
           { label: 'Creatives', cls: 'bg-[#EBF2F8] text-[#3E6E92]', hint: 'has a real, paid Culo Creatives subscription' },
+          { label: 'Creatives waitlist', cls: 'bg-[#EBF2F8] text-[#3E6E92]', hint: 'said yes to the Culo Creatives waitlist prompt on Import' },
         ].map(item => (
           <span key={item.label} className="inline-flex items-center gap-1.5 text-xs text-[#6B7280]">
             <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.cls}`}>
@@ -192,9 +193,21 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
             // different axes (a founder can be claimed AND still draft, or
             // unclaimed AND already published).
             const isClaimed = !!f.userId
+            // Said yes to the "join the Culo Creatives waitlist?" prompt on
+            // Import — shown right next to the name rather than grouped
+            // with the status tags on the right, since it's about intent
+            // (do they want Creatives) not where they are in the funnel.
+            const onCreativesWaitlist = f.creativesWaitlistAnswer === 'yes'
             return (
               <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <p className="text-sm font-semibold text-[#2D2A26] truncate min-w-0">{f.signupEmail ?? f.name}</p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.signupEmail ?? f.name}</p>
+                  {onCreativesWaitlist && (
+                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#EBF2F8] text-[#3E6E92]">
+                      Creatives waitlist
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${memberStatus.cls}`}>
                     {memberStatus.label}

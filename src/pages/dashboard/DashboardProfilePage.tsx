@@ -1365,8 +1365,17 @@ export function DashboardProfilePage() {
   // there's an actual bio — nothing to manage yet for a founder who hasn't
   // finished the one thing this tab is for (Overview/Identity), and five
   // extra tabs just add noise to a profile that's still empty.
+  // The one article runOnboardingResearch writes (staffCreated, still a
+  // real draft — not the generic "Imported from X" placeholder, not yet
+  // decided either way). Its own tab, not buried in Content, so a fresh
+  // founder sees the yes/no decision as the obvious next thing rather
+  // than having to go find it.
+  const culoPendingArticle = importedContentService.getAll({ founderId: draft.id })
+    .find(i => i.staffCreated && i.status === 'draft' && isReadyToPublish(i))
+
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
+    ...(culoPendingArticle ? [{ key: 'culoArticle', label: "Culo's Article" }] : []),
     { key: 'businesses',    label: 'Businesses'    },
     { key: 'library',       label: 'Digital Products' },
     { key: 'expertise',     label: 'FAQ'           },
@@ -1378,6 +1387,37 @@ export function DashboardProfilePage() {
   function set<K extends keyof Founder>(key: K, value: Founder[K]) {
     setDraft(prev => prev ? { ...prev, [key]: value } : prev)
     setSaved(false)
+  }
+
+  // Yes publishes it exactly like any other ready-to-publish import (same
+  // buildStoryFromImport/publishStoryCore the Content tab's own quick-
+  // publish uses) — live on their account. No just archives the import so
+  // it's never published and this tab stops being a pending decision,
+  // without actually deleting what Culo wrote (still sits in Content under
+  // Needs More Value's archived filter if they ever want to revisit it).
+  const [culoArticleBusy, setCuloArticleBusy] = useState(false)
+  const [culoArticleError, setCuloArticleError] = useState<string | null>(null)
+  async function handleCuloArticleDecision(publish: boolean) {
+    if (!culoPendingArticle || !draft) return
+    setCuloArticleBusy(true)
+    setCuloArticleError(null)
+    try {
+      if (publish) {
+        const story = buildStoryFromImport(culoPendingArticle, draft)
+        const result = await publishStoryCore(story)
+        if (!result.success) {
+          setCuloArticleError(result.error ?? 'Could not publish. Please try again.')
+          return
+        }
+        await importedContentService.upsert({ ...culoPendingArticle, status: 'published', relatedStoryId: story.id })
+      } else {
+        await importedContentService.upsert({ ...culoPendingArticle, status: 'archived' })
+      }
+      setImportedTick(t => t + 1)
+      setTab('overview')
+    } finally {
+      setCuloArticleBusy(false)
+    }
   }
 
   // A founder adding their own real photo for the first time is exactly the
@@ -3028,6 +3068,42 @@ export function DashboardProfilePage() {
           </>
           )
         })()}
+
+        {/* ── Culo's Article — the one research writes, yes/no to publish ── */}
+        {tab === 'culoArticle' && culoPendingArticle && (
+          <div className="flex flex-col gap-5 max-w-3xl">
+            <TabIntro>
+              Culo researched you and wrote this article from what it found. Read it over — if it's good,
+              publish it live on your profile. If not, say no and it won't go anywhere.
+            </TabIntro>
+
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-6 py-6">
+              <h2 className="font-heading text-2xl font-bold text-[#2D2A26] mb-4">{culoPendingArticle.title}</h2>
+              <div className="text-sm text-[#2D2A26] leading-relaxed whitespace-pre-line max-h-[480px] overflow-y-auto pr-2">
+                {culoPendingArticle.description}
+              </div>
+            </div>
+
+            {culoArticleError && <p className="text-sm text-red-600">{culoArticleError}</p>}
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => void handleCuloArticleDecision(true)}
+                disabled={culoArticleBusy}
+                className="px-6 py-3 rounded-xl bg-[#5E6B4A] text-white text-sm font-bold hover:bg-[#4d5a3a] disabled:opacity-50 transition-colors"
+              >
+                {culoArticleBusy ? 'Publishing…' : 'Yes, publish this'}
+              </button>
+              <button
+                onClick={() => void handleCuloArticleDecision(false)}
+                disabled={culoArticleBusy}
+                className="px-6 py-3 rounded-xl border border-[#E8E4DD] text-[#6B7280] text-sm font-semibold hover:border-red-200 hover:text-red-600 disabled:opacity-50 transition-colors"
+              >
+                No, don't publish this
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Businesses ────────────────────────────────────────────────── */}
         {/* key=founderId forces a full remount when the signed-in founder

@@ -1913,6 +1913,12 @@ export function DashboardImportContentPage() {
   void tick
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
+  const [waitlistAnswer, setWaitlistAnswer] = useState<'yes' | 'no' | null>(null)
+  async function handleWaitlistAnswer(answer: 'yes' | 'no') {
+    setWaitlistAnswer(answer)
+    if (!founder) return
+    await updateFounder({ ...founder, creativesWaitlistAnswer: answer, creativesWaitlistAnsweredAt: new Date().toISOString() })
+  }
   const [sources, setSources]   = useState<ConnectedSource[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
   const [savedFlash, setSavedFlash] = useState(false)
@@ -2038,6 +2044,34 @@ export function DashboardImportContentPage() {
             Import your content from multiple channels to republish as web articles, then edit your raw footage
             with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
           </p>
+
+          {/* Answered once, never shown again either way — 'no' just
+              disappears with no message, 'yes' swaps in a short
+              confirmation that also keeps the funnel priority straight
+              (import still comes first, Creatives is a waitlist). */}
+          {!founder?.creativesWaitlistAnswer && !waitlistAnswer && (
+            <div className="flex items-center gap-3 mt-4">
+              <p className="text-sm font-semibold text-[#2D2A26]">Join the Culo Creatives waitlist?</p>
+              <button
+                onClick={() => void handleWaitlistAnswer('yes')}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => void handleWaitlistAnswer('no')}
+                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
+              >
+                No
+              </button>
+            </div>
+          )}
+          {(founder?.creativesWaitlistAnswer === 'yes' || waitlistAnswer === 'yes') && (
+            <p className="text-sm font-semibold text-[#5E6B4A] mt-4">
+              Turn your content into web articles first! You're on the list.
+            </p>
+          )}
+
           {founder?.onboardingStatus === 'researching' && (
             <p className="text-sm sm:text-base text-[#6B7280] flex items-center gap-2.5 mt-4">
               <span className="w-2 h-2 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
