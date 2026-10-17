@@ -44,9 +44,10 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
   // This guarantees onboardingStatus always reaches 'ready' — success or
   // failure — the same resilience already applied to runFounderResearch's
   // own researchStatus handling.
+  let draft: ReturnType<typeof buildDraftImport> | null = null
   try {
     const isLink = /^https?:\/\//i.test(identifier)
-    let draft = isLink ? buildDraftImport(founderId, identifier) : null
+    draft = isLink ? buildDraftImport(founderId, identifier) : null
     if (draft) {
       draft.staffCreated = true
       await importedContentService.upsert(draft)
@@ -98,6 +99,18 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
   } catch (err) {
     console.error('runOnboardingResearch failed', err)
   } finally {
+    // A draft that never actually got a written article (research failed,
+    // writeSourceArticle choked, or the whole thing threw) is just a
+    // placeholder with a generic "Imported from X" title and no real
+    // description — not worth leaving behind as a phantom "1 item" in
+    // Content with nothing in it to review. Clean it up rather than make a
+    // founder go find and delete junk themselves.
+    if (draft) {
+      const finalState = importedContentService.get(draft.id)
+      if (finalState && !finalState.description?.trim()) {
+        await importedContentService.delete(draft.id)
+      }
+    }
     const founderFinal = getFounder(founderId)
     if (founderFinal) await updateFounder({ ...founderFinal, onboardingStatus: 'ready' })
   }
