@@ -1779,18 +1779,18 @@ export function DashboardProfilePage() {
               )
             })()}
             <Link
-              to="/dashboard/import-content"
+              to="/how-culo-canva"
               className="block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
                 <div>
                   <p className="font-heading text-2xl font-semibold text-white leading-snug">
-                    Turn your previously posted content into structured web articles, built to be found by
-                    search and AI.
+                    CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
                   </p>
                 </div>
-                <span className="flex-shrink-0 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
-                  Import content
+                <span className="flex-shrink-0 flex flex-col items-center gap-0.5 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+                  Create with CULO in Canva
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Launching soon</span>
                 </span>
               </div>
             </Link>
