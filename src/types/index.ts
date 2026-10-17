@@ -511,6 +511,13 @@ export interface Founder {
   // waiting on a staff member to trigger it. Undefined for every curated
   // founder and every founder who joined before this existed.
   onboardingStatus?: 'needs_setup' | 'researching' | 'ready' | 'confirmed'
+  // Set by notify-stuck-onboarding the one time it emails a founder who's
+  // been sitting at onboardingStatus 'ready' for 24h+ without returning to
+  // the dashboard — stops the same person getting this nudge every single
+  // day forever. Cleared implicitly once onboardingStatus moves past
+  // 'ready' (DashboardLayout's auto-confirm effect), since there's nothing
+  // left to nudge about by then.
+  readyNudgeSentAt?: string
   // "Rewrite as a Culo Article" (see generate-search-answer) sends this
   // list back to the model on every run so it picks an unused primary
   // question instead of drifting toward the same few angles — grows by
