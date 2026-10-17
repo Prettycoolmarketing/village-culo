@@ -133,7 +133,7 @@ export function VillagePage() {
               </p>
               <HomeInstantJoin />
               <p className="font-body text-sm text-white/50 mt-6 max-w-xl mx-auto lg:mx-0">
-                Culo Creatives in Canva is coming soon, to make editing and publishing easier.
+                Culo Creatives in Canva is coming soon, to make editing raw footage into social media posts easy.
               </p>
             </div>
             {/* A real Village founder page, not a Creatives/Canva
