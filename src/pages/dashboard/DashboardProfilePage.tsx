@@ -1594,16 +1594,6 @@ export function DashboardProfilePage() {
               story and idea you publish gets connected back to.
             </TabIntro>
 
-            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && (
-              <ResumeResearchBanner
-                founder={draft}
-                onDone={() => {
-                  const fresh = getFounder(draft.id)
-                  if (fresh) setDraft(fresh)
-                }}
-              />
-            )}
-
             <a
               href={`/founders/${draft.slug}`}
               target="_blank"
@@ -1731,6 +1721,18 @@ export function DashboardProfilePage() {
               </p>
             </div>
           <div className="hidden md:flex md:flex-col gap-5">
+            {/* Lives here, not Overview/Identity — research doesn't matter
+                until there's content to review alongside it (the bio and
+                first article it writes both show up in this same tab). */}
+            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && (
+              <ResumeResearchBanner
+                founder={draft}
+                onDone={() => {
+                  const fresh = getFounder(draft.id)
+                  if (fresh) setDraft(fresh)
+                }}
+              />
+            )}
             {draft.pcmManaged && !draft.pcmGateOpen && (() => {
               const svc = draft.pcmService
               const line = svc === 'social' ? 'Your account manager is setting up your social media.'

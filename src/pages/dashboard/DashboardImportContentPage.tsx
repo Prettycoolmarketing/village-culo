@@ -1938,12 +1938,6 @@ export function DashboardImportContentPage() {
   if (!founder && user && user.role !== 'founder') {
     return <Navigate to="/dashboard/village/training" replace />
   }
-  // Landed here directly (bookmark, nav) without going through
-  // /join/setup first — send them there instead of a half-empty importer.
-  if (founder?.onboardingStatus === 'needs_setup') {
-    return <Navigate to="/join/setup" replace />
-  }
-
   // Save keeps the editor open — it used to close it and navigate away, so
   // a founder shaping Q&As or fixing up a caption had to reopen the deep
   // link and re-find their place after every single save. It now only
