@@ -61,9 +61,19 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
     } else {
       const founderBeforeResearch = getFounder(founderId)
       if (founderBeforeResearch) {
+        // Strip any prior handle note before appending the new one —
+        // without this, re-running research with a handle (testing it,
+        // trying a different one) appended a fresh duplicate every time
+        // instead of replacing it, confirmed real: claimNotes ended up
+        // with "Most known username/handle: X" repeated twice after just
+        // two runs.
+        const priorNotes = (founderBeforeResearch.claimNotes ?? '')
+          .split('. ')
+          .filter(note => !note.startsWith('Most known username/handle:'))
+          .join('. ')
         await updateFounder({
           ...founderBeforeResearch,
-          claimNotes: [founderBeforeResearch.claimNotes, `Most known username/handle: ${identifier}`].filter(Boolean).join('. '),
+          claimNotes: [priorNotes, `Most known username/handle: ${identifier}`].filter(Boolean).join('. '),
         })
       }
     }
