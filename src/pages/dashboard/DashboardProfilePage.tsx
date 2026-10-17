@@ -812,9 +812,40 @@ function ImportContentCTA() {
   )
 }
 
+// Shown only until a founder's actually published something — the old
+// /join/setup had a "Step 2 of 3" tracker, lost when that page stopped
+// being a forced gate. This replaces it on Profile instead, so a
+// brand-new founder with zero context still knows where they are in the
+// whole thing (not just this one page) and that there's more after
+// research — permanently gone once they've actually published, so it's
+// never clutter for an established founder.
+function OnboardingSteps({ researched, imported, published }: { researched: boolean; imported: boolean; published: boolean }) {
+  const steps = [
+    { label: 'Sign up', done: true },
+    { label: 'Research', done: researched },
+    { label: 'Import', done: imported },
+    { label: 'Publish', done: published },
+  ]
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      {steps.map((step, i) => (
+        <div key={step.label} className="flex items-center gap-2">
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            step.done ? 'bg-[#5E6B4A]/10 text-[#5E6B4A]' : 'bg-[#F3EDE6] text-[#9CA3AF]'
+          }`}>
+            {step.done ? '✓' : i + 1} {step.label}
+          </div>
+          {i < steps.length - 1 && <span className="w-4 h-px bg-[#E8E4DD] shrink-0" aria-hidden="true" />}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
   const [name, setName] = useState(founder.name)
   const [link, setLink] = useState('')
+  const [photo, setPhoto] = useState<string | undefined>(undefined)
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -822,9 +853,18 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
     const raw = link.trim()
     if (!name.trim()) { setError('Add your full name first.'); return }
     if (!raw) { setError('Add your most-used username or a link first.'); return }
+    // Name and photo save immediately here, same as Run research itself —
+    // one single action, not a separate trip to the page's own Save
+    // button. Research can write a bio and an article, but never a real
+    // photo, so collecting it right alongside the one other thing a
+    // founder has to supply by hand keeps this to one step instead of two.
+    const updates: Partial<Founder> = {}
     if (name.trim() !== founder.name) {
-      await updateFounder({ ...founder, name: name.trim(), slug: uniqueFounderSlug(name.trim(), founder.id) })
+      updates.name = name.trim()
+      updates.slug = uniqueFounderSlug(name.trim(), founder.id)
     }
+    if (photo) updates.avatar = photo
+    if (Object.keys(updates).length > 0) await updateFounder({ ...founder, ...updates })
     // Same handle-or-link flexibility as /join/setup — "@n" is enough,
     // runOnboardingResearch treats anything that isn't a real link as a
     // bare handle and researches from that instead.
@@ -846,30 +886,43 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
   return (
     <div className="flex flex-col gap-4">
       <p className="text-lg font-bold text-[#2D2A26]">Let's write your bio and a CULO article to build your online presence</p>
-      <div className="flex flex-col sm:flex-row gap-2">
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="Your full name"
-          className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
-        />
-        <input
-          type="text"
-          value={link}
-          onChange={e => setLink(e.target.value)}
-          placeholder="@yourusername"
-          className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
-        />
-        <button
-          onClick={() => void handleRun()}
-          disabled={running}
-          className="px-6 py-3 rounded-xl bg-[#C86A43] text-white text-sm font-bold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0"
-        >
-          {running ? 'Researching…' : 'Run research'}
-        </button>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="shrink-0">
+          <MediaUpload
+            value={photo}
+            onChange={v => setPhoto(v || undefined)}
+            label="Add a photo"
+            aspect="square"
+            uploadOptions={{ founderId: founder.id, usageType: 'profile-photo' }}
+          />
+        </div>
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Your full name"
+              className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+            />
+            <input
+              type="text"
+              value={link}
+              onChange={e => setLink(e.target.value)}
+              placeholder="@yourusername"
+              className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+            />
+          </div>
+          <button
+            onClick={() => void handleRun()}
+            disabled={running}
+            className="px-6 py-3 rounded-xl bg-[#C86A43] text-white text-sm font-bold hover:bg-[#b05a35] disabled:opacity-50 transition-colors self-start"
+          >
+            {running ? 'Researching…' : 'Run research'}
+          </button>
+          {error && <p className="text-xs text-red-600">{error}</p>}
+        </div>
       </div>
-      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   )
 }
@@ -1675,6 +1728,14 @@ export function DashboardProfilePage() {
         {tab === 'overview' && (
           <div className="flex flex-col gap-6">
 
+            {!founderStories.some(s => s.status === 'published' || s.status === 'featured') && (
+              <OnboardingSteps
+                researched={!!draft.bio?.trim()}
+                imported={importedContentService.getAll({ founderId: draft.id }).length > 0}
+                published={false}
+              />
+            )}
+
             {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && !draft.researchPromptSkipped && (
               <ResumeResearchBanner
                 founder={draft}
@@ -1714,6 +1775,21 @@ export function DashboardProfilePage() {
                   uploadOptions={{ founderId: draft.id, usageType: 'profile-photo' }}
                 />
               </div>
+            )}
+
+            {/* Points at Import, not "go read your article" — the goal
+                right after research isn't to admire one draft, it's to
+                keep the funnel moving: bio done, now bring the rest of
+                their content in. Hides itself once they've actually
+                imported more than just research's own one article. */}
+            {draft.bio?.trim() && draft.onboardingStatus !== 'researching' && importedContentService.getAll({ founderId: draft.id }).length <= 1 && (
+              <Link
+                to="/dashboard/import-content"
+                className="block bg-[#5E6B4A]/10 border border-[#5E6B4A]/20 rounded-xl px-5 py-4 hover:border-[#5E6B4A]/40 transition-colors"
+              >
+                <p className="text-sm font-semibold text-[#5E6B4A]">Your bio and first article are ready ✓</p>
+                <p className="text-xs text-[#6B7280] mt-0.5">Now import the rest of your content from YouTube, podcasts, Instagram and more →</p>
+              </Link>
             )}
 
             <a
@@ -1804,10 +1880,16 @@ export function DashboardProfilePage() {
             {/* Mobile-only stand-in for everything hidden above (Featured
                 stories, the stat grid, Creatives) — Profile is meant to be
                 the whole page on a phone; this is the one thing at the
-                bottom of it, pointing people to desktop for anything else. */}
-            <div className="md:hidden bg-white rounded-xl border border-[#E8E4DD] px-5 py-5 text-center">
-              <p className="text-sm font-semibold text-[#2D2A26]">Want to update more, or publish content?</p>
-              <p className="text-xs text-[#9CA3AF] mt-1">The mobile view is limited to your profile basics — switch to desktop to manage businesses, publish content and everything else.</p>
+                bottom of it, pointing people to desktop for anything else.
+                Leads with the actual reason to switch (how many articles
+                their own archive could become), not a generic "more
+                features on desktop" line. */}
+            <div className="md:hidden bg-white rounded-xl border border-[#E8E4DD] px-5 py-6 text-center">
+              <p className="text-base font-bold text-[#2D2A26]">Your bio and first article are the start</p>
+              <p className="text-sm text-[#6B7280] mt-2 leading-relaxed">
+                Switch to a desktop to import your archive as individual web articles — you could end up with
+                200+ articles written about you, one for every post you've ever shared.
+              </p>
             </div>
 
           </div>
