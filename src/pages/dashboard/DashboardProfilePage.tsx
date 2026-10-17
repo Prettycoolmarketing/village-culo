@@ -759,6 +759,37 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 // buried in the content-review tab. Also lists every link already brought
 // in through Import (every distinct ImportedContent source, any platform)
 // so it's obvious at a glance what Culo already has to work with.
+// A rough estimate, not a guarantee — research genuinely varies run to run
+// (how much a web search actually turns up). Counting down from a real
+// timestamp (researchRequestedAt, set the moment runFounderResearch
+// actually starts) means a reload mid-run still shows accurate time left
+// instead of restarting the countdown from scratch.
+const RESEARCH_ESTIMATE_SECONDS = 90
+
+function ResearchingIndicator({ requestedAt }: { requestedAt?: string }) {
+  const [, forceTick] = useState(0)
+  useEffect(() => {
+    const interval = setInterval(() => forceTick(t => t + 1), 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const elapsed = requestedAt ? Math.floor((Date.now() - new Date(requestedAt).getTime()) / 1000) : 0
+  const remaining = Math.max(0, RESEARCH_ESTIMATE_SECONDS - elapsed)
+
+  return (
+    <div className="bg-[#F8F5F0] border border-[#E8E4DD] rounded-xl px-5 py-4 flex items-center gap-3">
+      <span className="w-2.5 h-2.5 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
+      <div>
+        <p className="text-sm font-semibold text-[#2D2A26]">Culo is researching and writing your bio and first article</p>
+        <p className="text-xs text-[#9CA3AF] mt-0.5">
+          {remaining > 0 ? `About ${remaining}s left` : 'Almost done'} — you can keep using the rest of the
+          dashboard in the meantime, this will fill in on its own.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
   const [name, setName] = useState(founder.name)
   const [link, setLink] = useState('')
@@ -1249,14 +1280,12 @@ export function DashboardProfilePage() {
   // extra tabs just add noise to a profile that's still empty.
   const TABS = [
     { key: 'overview',      label: 'Profile'       },
-    ...(draft.bio?.trim() ? [
-      { key: 'businesses',    label: 'Businesses'    },
-      { key: 'library',       label: 'Digital Products' },
-      { key: 'expertise',     label: 'FAQ'           },
-      { key: 'discovery',     label: 'Discovery' },
-      { key: 'affiliate',     label: 'Affiliate Links' },
-      { key: 'settings',      label: 'Settings'      },
-    ] : []),
+    { key: 'businesses',    label: 'Businesses'    },
+    { key: 'library',       label: 'Digital Products' },
+    { key: 'expertise',     label: 'FAQ'           },
+    { key: 'discovery',     label: 'Discovery' },
+    { key: 'affiliate',     label: 'Affiliate Links' },
+    { key: 'settings',      label: 'Settings'      },
   ]
 
   function set<K extends keyof Founder>(key: K, value: Founder[K]) {
@@ -1624,10 +1653,6 @@ export function DashboardProfilePage() {
         {tab === 'overview' && (
           <div className="flex flex-col gap-6">
 
-            <h2 className="text-xl font-bold text-[#2D2A26]">
-              Your name, photo, bio and the basics that make up who you are
-            </h2>
-
             {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && !draft.researchPromptSkipped && (
               <ResumeResearchBanner
                 founder={draft}
@@ -1644,13 +1669,7 @@ export function DashboardProfilePage() {
                 happening. This replaces it for as long as research is
                 actually running, so the page never goes quiet on them. */}
             {!draft.bio?.trim() && draft.onboardingStatus === 'researching' && (
-              <div className="bg-[#F8F5F0] border border-[#E8E4DD] rounded-xl px-5 py-4 flex items-center gap-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
-                <div>
-                  <p className="text-sm font-semibold text-[#2D2A26]">Culo is researching and writing your bio and first article</p>
-                  <p className="text-xs text-[#9CA3AF] mt-0.5">Usually takes a minute or two — you can keep using the rest of the dashboard in the meantime, this will fill in on its own.</p>
-                </div>
-              </div>
+              <ResearchingIndicator requestedAt={draft.researchRequestedAt} />
             )}
 
             <a
@@ -1662,17 +1681,6 @@ export function DashboardProfilePage() {
               View public profile ↗
             </a>
 
-            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && !draft.researchPromptSkipped && (
-              <button
-                onClick={() => {
-                  void updateFounder({ ...draft, researchPromptSkipped: true })
-                  setDraft({ ...draft, researchPromptSkipped: true })
-                }}
-                className="self-start text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors -mt-4"
-              >
-                I'll fill it out manually
-              </button>
-            )}
 
             {businessAutoDrafted && (
               <p className="hidden md:block text-xs text-[#C86A43] font-medium -mt-2">
