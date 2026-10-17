@@ -2015,15 +2015,15 @@ export function DashboardImportContentPage() {
           merged box now, since Import is the only real thing a founder
           does here while Culo Creatives isn't live yet. */}
       {!draft && (
-        <div className="mb-6">
-          <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
-          <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl">
+        <div className="mb-8">
+          <h1 className="font-heading text-4xl sm:text-5xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
+          <p className="text-base sm:text-lg text-[#6B7280] mt-3 max-w-2xl">
             Import your content from multiple channels to republish as web articles, then edit your raw footage
             with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
           </p>
           {founder?.onboardingStatus === 'researching' && (
-            <p className="text-xs text-[#9CA3AF] flex items-center gap-2 mt-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
+            <p className="text-sm sm:text-base text-[#6B7280] flex items-center gap-2.5 mt-4">
+              <span className="w-2 h-2 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
               Culo is writing your first bio and article in the background — no need to wait, go ahead and start importing.
             </p>
           )}
