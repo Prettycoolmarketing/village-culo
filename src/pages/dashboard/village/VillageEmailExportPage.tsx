@@ -7,11 +7,11 @@ import { waitlistService } from '../../../services/waitlist'
 import { emailSubscribersService, type EmailSubscriber } from '../../../services/emailSubscribers'
 import { emailCampaignsService, type EmailCampaign, type CampaignSendStats } from '../../../services/emailCampaigns'
 import { emailSequencesService, emailSequenceEnrollmentsService, type EmailSequence, type EmailSequenceStep, type EmailSequenceEnrollment } from '../../../services/emailSequences'
+import { emailNudgeTemplatesService, type EmailNudgeTemplate } from '../../../services/emailNudgeTemplates'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import { toCSV, downloadCSV, splitName } from '../../../utils/emailExport'
 import { bodyTextToHtml, bodyHtmlToText } from '../../../utils/emailBody'
 import { syncUserDataFromSupabase } from '../../../lib/sync'
-import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
 
 export function VillageEmailExportPage() {
   const [pageTab, setPageTab] = useState('members')
@@ -806,30 +806,68 @@ function SequencesPanel() {
 // and timing on each. New-signup alerts to staff are separate again (see
 // notify-new-signup): instant, not a daily condition check, so there's
 // nothing to configure or manually trigger for that one here.
-const NUDGE_TYPES: { key: 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt'; title: string; when: string; subject: string }[] = [
-  { key: 'needsSetupNudgeSentAt', title: 'Needs setup', when: '24h+ after signup, still hasn\'t submitted /join/setup', subject: 'One thing left to finish setting up' },
-  { key: 'readyNudgeSentAt', title: 'Ready to confirm', when: '24h+ after research finished, never reopened the dashboard', subject: 'Your profile is ready and waiting' },
-  { key: 'importNudgeSentAt', title: 'Imported nothing', when: '48h+ after onboarding fully done, zero content imported', subject: 'Your old posts are still sitting there, disappearing' },
-  { key: 'publishNudgeSentAt', title: 'Ready to publish, untouched', when: '72h+ since a real draft article was imported, still unpublished', subject: "You've got articles ready to go live" },
-]
+//
+// Subject/body are editable here the same way a Sequence step is —
+// pulled from email_nudge_templates (046), saved back through the same
+// service, picked up by send-nudges on its next run (or immediately via
+// "Send nudges now"). "when" (the trigger timing) is a code fact, not
+// content, so it's not editable — it lives in send-nudges itself.
+const NUDGE_WHEN: Record<EmailNudgeTemplate['id'], string> = {
+  needsSetupNudgeSentAt: "24h+ after signup, still hasn't submitted /join/setup",
+  readyNudgeSentAt: '24h+ after research finished, never reopened the dashboard',
+  importNudgeSentAt: '48h+ after onboarding fully done, zero content imported',
+  publishNudgeSentAt: '72h+ since a real draft article was imported, still unpublished',
+}
+// {{bioBlock}} only ever gets filled in for the ready-to-confirm nudge —
+// see send-nudges. Shown so staff editing a template knows what's
+// available to use, rather than guessing at placeholder names.
+const NUDGE_PLACEHOLDERS: Record<EmailNudgeTemplate['id'], string[]> = {
+  needsSetupNudgeSentAt: ['{{name}}'],
+  readyNudgeSentAt: ['{{name}}', '{{bioBlock}}'],
+  importNudgeSentAt: ['{{name}}'],
+  publishNudgeSentAt: ['{{name}}'],
+}
 
 function NudgesPanel() {
   const founders = getFounders()
+  const [templates, setTemplates] = useState<EmailNudgeTemplate[]>(emailNudgeTemplatesService.getAll())
+  const [loading, setLoading] = useState(true)
+  const [editingTemplate, setEditingTemplate] = useState<EmailNudgeTemplate | null>(null)
+  const [bodyDraft, setBodyDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [result, setResult] = useState<string | null>(null)
+
+  useEffect(() => {
+    void emailNudgeTemplatesService.refresh().then(() => {
+      setTemplates(emailNudgeTemplatesService.getAll())
+      setLoading(false)
+    })
+  }, [])
+
+  function startEdit(template: EmailNudgeTemplate) {
+    setEditingTemplate(template)
+    setBodyDraft(bodyHtmlToText(template.bodyHtml))
+  }
+
+  function saveTemplate() {
+    if (!editingTemplate) return
+    const finalTemplate = { ...editingTemplate, bodyHtml: bodyTextToHtml(bodyDraft) }
+    void emailNudgeTemplatesService.save(finalTemplate).then(() => {
+      setTemplates(emailNudgeTemplatesService.getAll())
+      setEditingTemplate(null)
+    })
+  }
 
   function sendNow() {
     setSending(true)
     setResult(null)
-    void (async () => {
-      if (!isSupabaseConfigured || !supabase) { setResult('Not available in this environment.'); setSending(false); return }
-      const { data, error } = await supabase.functions.invoke<{ ok?: boolean; notified?: number; error?: string }>('send-nudges', { body: {} })
+    void emailNudgeTemplatesService.sendNow().then(res => {
       setSending(false)
-      if (error) { setResult(error.message); return }
-      if (data?.error) { setResult(data.error); return }
-      setResult(`Sent ${data?.notified ?? 0} nudge${data?.notified === 1 ? '' : 's'}.`)
-    })()
+      setResult(res.success ? `Sent ${res.sent ?? 0} nudge${res.sent === 1 ? '' : 's'}.` : res.error ?? 'Could not send.')
+    })
   }
+
+  if (loading) return <p className="text-sm text-[#9CA3AF]">Loading…</p>
 
   return (
     <div>
@@ -847,20 +885,49 @@ function NudgesPanel() {
       </div>
       {result && <p className="text-xs text-[#6B7280] mb-4">{result}</p>}
 
+      {editingTemplate && (
+        <div className="bg-white rounded-xl border border-[#E8E4DD] p-4 mb-6">
+          <p className="text-sm font-bold text-[#2D2A26] mb-3">Edit "{editingTemplate.title}"</p>
+          <p className="text-[10px] text-[#9CA3AF] mb-2">Available placeholders: {NUDGE_PLACEHOLDERS[editingTemplate.id].join(', ')}</p>
+          <input
+            type="text"
+            value={editingTemplate.subject}
+            onChange={e => setEditingTemplate({ ...editingTemplate, subject: e.target.value })}
+            placeholder="Subject line"
+            className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] mb-2 focus:outline-none focus:border-[#C86A43]"
+          />
+          <textarea
+            value={bodyDraft}
+            onChange={e => setBodyDraft(e.target.value)}
+            rows={8}
+            placeholder="Write it exactly like a normal email — separate paragraphs with a blank line. It's automatically turned into a properly formatted email when you save."
+            className="w-full px-3 py-2 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] resize-y focus:outline-none focus:border-[#C86A43]"
+          />
+          <div className="flex items-center gap-2 mt-3">
+            <button onClick={saveTemplate} className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors">Save</button>
+            <button onClick={() => setEditingTemplate(null)} className="text-xs font-semibold px-3 py-2 rounded-lg text-[#6B7280] bg-[#F3EDE6] hover:bg-[#E8E4DD] transition-colors">Cancel</button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
-        {NUDGE_TYPES.map(type => {
-          const sentCount = founders.filter(f => !!(f as unknown as Record<string, unknown>)[type.key]).length
+        {templates.map(template => {
+          const sentCount = founders.filter(f => !!(f as unknown as Record<string, unknown>)[template.id]).length
           return (
-            <div key={type.key} className="px-4 py-3">
+            <button
+              key={template.id}
+              onClick={() => startEdit(template)}
+              className="w-full text-left px-4 py-3 hover:bg-[#FBF8F4] transition-colors"
+            >
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[#2D2A26]">{type.title}</p>
+                <p className="text-sm font-semibold text-[#2D2A26]">{template.title}</p>
                 <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">
                   {sentCount} sent total
                 </span>
               </div>
-              <p className="text-xs text-[#9CA3AF] mt-0.5">{type.when}</p>
-              <p className="text-xs text-[#6B7280] mt-1">Subject: "{type.subject}"</p>
-            </div>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">{NUDGE_WHEN[template.id]}</p>
+              <p className="text-xs text-[#6B7280] mt-1">Subject: "{template.subject}"</p>
+            </button>
           )
         })}
       </div>

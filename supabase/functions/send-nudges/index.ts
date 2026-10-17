@@ -7,6 +7,13 @@
 // once (a dedicated *NudgeSentAt field per condition, same idempotency
 // pattern throughout this codebase's email functions).
 //
+// Subject/body for each nudge live in email_nudge_templates (046), not
+// hardcoded here — editable from the Nudges tab the same way a Sequence
+// step is, no code deploy needed to change a sentence. Supported
+// placeholders: {{name}} and, ready-to-confirm only, {{bioBlock}} (the
+// founder's bio rendered as its own styled block, or empty string if they
+// don't have one yet).
+//
 // The four conditions, and exactly when each fires relative to the
 // founder's own timeline:
 //
@@ -37,6 +44,8 @@ const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const STAFF_DIGEST_EMAIL = 'support@prettycoolmarketing.com'
 const HOUR = 60 * 60 * 1000
 
+type NudgeField = 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt'
+
 interface FounderData {
   name?: string
   signupEmail?: string
@@ -48,14 +57,10 @@ interface FounderData {
   publishNudgeSentAt?: string
 }
 interface FounderRow { id: string; updated_at: string; data: FounderData }
+interface NudgeTemplate { title: string; subject: string; bodyHtml: string }
 
-async function send(admin: ReturnType<typeof createClient>, founder: FounderRow, field: keyof FounderData, subject: string, bodyHtml: string): Promise<boolean> {
-  const email = founder.data.signupEmail
-  if (!email) return false
-  const result = await sendEmail(email, subject, emailLayout('The Culo Village: Brisbane, Australia', bodyHtml), 'connect@culovillage.com')
-  if (!result.ok) return false
-  await admin.from('founders').update({ data: { ...founder.data, [field]: new Date().toISOString() } }).eq('id', founder.id)
-  return true
+function render(template: string, vars: Record<string, string>): string {
+  return Object.entries(vars).reduce((text, [key, value]) => text.replaceAll(`{{${key}}}`, value), template)
 }
 
 serve(async (req) => {
@@ -66,9 +71,26 @@ serve(async (req) => {
     const now = Date.now()
     const stuckFor = (updatedAt: string) => now - new Date(updatedAt).getTime()
 
-    const { data: allFounders, error: fErr } = await admin.from('founders').select('id, updated_at, data')
+    const [{ data: allFounders, error: fErr }, { data: templateRows, error: tErr }] = await Promise.all([
+      admin.from('founders').select('id, updated_at, data'),
+      admin.from('email_nudge_templates').select('id, data'),
+    ])
     if (fErr) throw new Error(fErr.message)
+    if (tErr) throw new Error(tErr.message)
     const founders = (allFounders ?? []).map(r => r as unknown as FounderRow)
+    const templates = new Map<string, NudgeTemplate>((templateRows ?? []).map(r => [r.id as string, r.data as NudgeTemplate]))
+
+    async function sendNudge(founder: FounderRow, field: NudgeField, vars: Record<string, string>): Promise<boolean> {
+      const template = templates.get(field)
+      const email = founder.data.signupEmail
+      if (!template || !email) return false
+      const subject = render(template.subject, vars)
+      const bodyHtml = render(template.bodyHtml, vars)
+      const result = await sendEmail(email, subject, emailLayout('The Culo Village: Brisbane, Australia', bodyHtml), 'connect@culovillage.com')
+      if (!result.ok) return false
+      await admin.from('founders').update({ data: { ...founder.data, [field]: new Date().toISOString() } }).eq('id', founder.id)
+      return true
+    }
 
     const notified: Record<string, string[]> = { needsSetup: [], ready: [], importedNothing: [], publishUntouched: [] }
 
@@ -77,9 +99,7 @@ serve(async (req) => {
       if (f.data.onboardingStatus !== 'needs_setup' || f.data.needsSetupNudgeSentAt) continue
       if (stuckFor(f.updated_at) < 24 * HOUR) continue
       const name = f.data.name || 'there'
-      const ok = await send(admin, f, 'needsSetupNudgeSentAt', 'One thing left to finish setting up',
-        `<p>Hey ${name},</p><p>You're almost there — we just need one link (a video, a podcast, an Instagram post, anywhere your content already lives) and we'll write your first real bio and article from it. Takes two minutes.</p><p><a href="https://www.culovillage.com/join/setup">Finish setting up →</a></p><p>With love,<br/>Shakas</p>`)
-      if (ok) notified.needsSetup.push(`${name} <${f.data.signupEmail}>`)
+      if (await sendNudge(f, 'needsSetupNudgeSentAt', { name })) notified.needsSetup.push(`${name} <${f.data.signupEmail}>`)
     }
 
     // 2. Ready to confirm, 24h+ (the original notify-stuck-onboarding condition)
@@ -88,9 +108,8 @@ serve(async (req) => {
       if (stuckFor(f.updated_at) < 24 * HOUR) continue
       const name = f.data.name || 'there'
       const bio = f.data.bio?.trim()
-      const ok = await send(admin, f, 'readyNudgeSentAt', 'Your profile is ready and waiting',
-        `<p>Hey ${name},</p><p>The link you gave us when you signed up has already been researched — your bio is written and your first article is drafted, both waiting for you.</p>${bio ? `<div style="background:#F8F5F0;border-radius:12px;padding:16px 20px;margin:20px 0;"><p style="font-size:13px;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Your bio</p><p style="margin:0;white-space:pre-line;">${bio}</p></div>` : ''}<p>Have a read, fix anything that's not quite right, and then import the rest of what you've already posted so it stops disappearing into the feed:</p><p><a href="https://www.culovillage.com/dashboard/import-content">Import your content →</a></p><p>With love,<br/>Shakas</p>`)
-      if (ok) notified.ready.push(`${name} <${f.data.signupEmail}>`)
+      const bioBlock = bio ? `<div style="background:#F8F5F0;border-radius:12px;padding:16px 20px;margin:20px 0;"><p style="font-size:13px;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px;">Your bio</p><p style="margin:0;white-space:pre-line;">${bio}</p></div>` : ''
+      if (await sendNudge(f, 'readyNudgeSentAt', { name, bioBlock })) notified.ready.push(`${name} <${f.data.signupEmail}>`)
     }
 
     // 3. Confirmed, 48h+, zero imports
@@ -101,9 +120,7 @@ serve(async (req) => {
       for (const f of confirmedCandidates) {
         if (hasImports.has(f.id)) continue
         const name = f.data.name || 'there'
-        const ok = await send(admin, f, 'importNudgeSentAt', 'Your old posts are still sitting there, disappearing',
-          `<p>Hey ${name},</p><p>Your profile's live, but none of your old content has been brought in yet. This is the part that actually matters most — your previous posts, turned into individual web articles that stay findable long after the feed moves on.</p><p><a href="https://www.culovillage.com/dashboard/import-content">Import your content →</a></p><p>With love,<br/>Shakas</p>`)
-        if (ok) notified.importedNothing.push(`${name} <${f.data.signupEmail}>`)
+        if (await sendNudge(f, 'importNudgeSentAt', { name })) notified.importedNothing.push(`${name} <${f.data.signupEmail}>`)
       }
     }
 
@@ -130,9 +147,7 @@ serve(async (req) => {
         const oldest = oldestDraftByFounder.get(f.id)
         if (oldest === undefined || now - oldest < 72 * HOUR) continue
         const name = f.data.name || 'there'
-        const ok = await send(admin, f, 'publishNudgeSentAt', "You've got articles ready to go live",
-          `<p>Hey ${name},</p><p>You've got pieces sitting ready to publish and nobody's seeing them yet. Takes one click each to go live.</p><p><a href="https://www.culovillage.com/dashboard/profile?tab=content&contentSubTab=ready">Review and publish →</a></p><p>With love,<br/>Shakas</p>`)
-        if (ok) notified.publishUntouched.push(`${name} <${f.data.signupEmail}>`)
+        if (await sendNudge(f, 'publishNudgeSentAt', { name })) notified.publishUntouched.push(`${name} <${f.data.signupEmail}>`)
       }
     }
 

@@ -3,7 +3,6 @@ import { useDictation } from '../../hooks/useDictation'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { SnapchatArchiveImportCard } from '../../components/dashboard/SnapchatArchiveImportCard'
-import { ICloudArchiveImportCard } from '../../components/dashboard/iCloudArchiveImportCard'
 import { SourceIcon } from '../../components/ui/SourceIcon'
 import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { useAuth } from '../../contexts/AuthContext'
@@ -253,9 +252,17 @@ function ConnectedSourcesSection({ sources, isHighVolume, onChanged }: { sources
 // ─── Connect your YouTube channel ────────────────────────────────────────────
 
 function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
+  // Same "own content vs. a single mention" split as WebsiteConnectForm —
+  // a founder's own channel is a wholesale feed, but a guest-episode
+  // appearance on someone ELSE's channel isn't theirs to connect as a
+  // feed. "episode" mode reuses the mention_article writer (same as
+  // "I was featured somewhere" on websites): one original piece about
+  // that appearance, with a link back to the episode.
+  const [mode, setMode] = useState<'channel' | 'episode'>('channel')
   const [value, setValue] = useState('')
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [episodeDone, setEpisodeDone] = useState(false)
 
   async function handleConnect() {
     if (!value.trim()) { setError('Paste a link first.'); return }
@@ -276,6 +283,25 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
     }
   }
 
+  async function handleImportEpisode() {
+    if (!value.trim()) { setError('Paste the episode link first.'); return }
+    const founder = getFounder(founderId)
+    if (!founder) { setError('Could not find your founder profile.'); return }
+    setBusy(true)
+    setError(null)
+    setEpisodeDone(false)
+    try {
+      await importMentionArticle(founderId, founder.name, value.trim())
+      setValue('')
+      setEpisodeDone(true)
+      onConnected()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not import this episode.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6 h-full">
       <div className="flex items-center gap-4 mb-2">
@@ -283,30 +309,49 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
         <p className="text-base font-semibold text-[#2D2A26]">Connect YouTube</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Turn your YouTube videos into searchable blogs.
+        {mode === 'channel' ? 'Turn your YouTube videos into searchable blogs.' : "Been a guest on someone else's channel? Paste the episode link and we'll write an original piece about it, with a link back to the episode."}
       </p>
+      <div className="flex gap-1 mb-3 bg-[#F8F5F0] rounded-lg p-1 w-fit">
+        <button
+          onClick={() => { setMode('channel'); setError(null); setEpisodeDone(false) }}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${mode === 'channel' ? 'bg-white text-[#2D2A26] shadow-sm' : 'text-[#9CA3AF]'}`}
+        >
+          This is my channel
+        </button>
+        <button
+          onClick={() => { setMode('episode'); setError(null) }}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${mode === 'episode' ? 'bg-white text-[#2D2A26] shadow-sm' : 'text-[#9CA3AF]'}`}
+        >
+          I was featured — this is an episode
+        </button>
+      </div>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
           value={value}
           onChange={e => setValue(e.target.value)}
-          placeholder={SOURCE_TYPE_HINTS.youtube}
+          placeholder={mode === 'channel' ? SOURCE_TYPE_HINTS.youtube : 'Paste the direct episode URL'}
           className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <button
-          onClick={() => void handleConnect()}
+          onClick={() => void (mode === 'channel' ? handleConnect() : handleImportEpisode())}
           className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] transition-colors shrink-0"
         >
-          {busy ? 'Connecting…' : 'Connect channel'}
+          {busy ? (mode === 'channel' ? 'Connecting…' : 'Writing…') : (mode === 'channel' ? 'Connect channel' : 'Write this up')}
         </button>
       </div>
       {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
-      {!isHighVolume && (
+      {episodeDone && (
+        <p className="text-xs text-[#5E6B4A] font-medium mt-2">
+          Added as a draft below — review it, then publish whenever you're ready.
+        </p>
+      )}
+      {mode === 'channel' && !isHighVolume && (
         <p className="text-[11px] text-[#9CA3AF] mt-2">
           Once these are in, tell the real story behind each one — what happened, what you learned — for visibility that actually means something.
         </p>
       )}
-      <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />
+      {mode === 'channel' && <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />}
     </div>
   )
 }
@@ -2020,12 +2065,14 @@ export function DashboardImportContentPage() {
               />
             </div>
 
+            {/* Hidden for now per request — re-enable by uncommenting.
             <div className="lg:col-start-2 lg:row-start-3">
               <ICloudArchiveImportCard
                 founderId={founderId}
                 onImported={count => reportImported(count)}
               />
             </div>
+            */}
           </div>
 
           {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
