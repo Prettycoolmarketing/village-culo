@@ -33,7 +33,10 @@ import { setConnectPrefill } from '../utils/connectPrefill'
 export async function runOnboardingResearch(founderId: string, identifier: string): Promise<void> {
   const seed = getFounder(founderId)
   if (!seed) return
-  await updateFounder({ ...seed, onboardingStatus: 'researching' })
+  // Cleared here, not just set on failure below — a retry with a better
+  // link/handle should stop showing the old "couldn't find you" message
+  // the moment it starts running again, not just once it succeeds.
+  await updateFounder({ ...seed, onboardingStatus: 'researching', researchFoundNothing: false })
 
   // Everything below this point was NOT wrapped — if writeSourceArticle,
   // runAudit, or any other step threw, the whole function died silently
@@ -46,6 +49,7 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
   // failure — the same resilience already applied to runFounderResearch's
   // own researchStatus handling.
   let draft: ReturnType<typeof buildDraftImport> | null = null
+  let foundValidSource = false
   try {
     const isLink = /^https?:\/\//i.test(identifier)
     draft = isLink ? buildDraftImport(founderId, identifier) : null
@@ -92,6 +96,7 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
     }
 
     const validSources = research.ledger.source_assessments.filter(s => s.source_valid)
+    foundValidSource = validSources.length > 0
 
     // Research often turns up more than the one link a founder typed —
     // their YouTube channel, their podcast — even when they only gave a
@@ -142,6 +147,13 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
       }
     }
     const founderFinal = getFounder(founderId)
-    if (founderFinal) await updateFounder({ ...founderFinal, onboardingStatus: 'ready' })
+    if (founderFinal) {
+      // Genuinely nothing to show for this run — no real source found,
+      // and no bio got written either (writeProfileBio also declines to
+      // write from nothing). Flag it instead of leaving an empty bio that
+      // looks indistinguishable from "never tried yet."
+      const foundNothing = !foundValidSource && !founderFinal.bio?.trim()
+      await updateFounder({ ...founderFinal, onboardingStatus: 'ready', researchFoundNothing: foundNothing })
+    }
   }
 }

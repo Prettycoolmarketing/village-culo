@@ -1788,6 +1788,22 @@ export function DashboardProfilePage() {
               />
             )}
 
+            {/* Research genuinely found no trustworthy match for the name/
+                handle given — never fabricate a bio from nothing, say so
+                honestly instead. Clears itself the moment a new run starts
+                (see runOnboardingResearch), so retrying with a real link
+                doesn't still show the old failure underneath it. */}
+            {draft.researchFoundNothing && !draft.bio?.trim() && draft.onboardingStatus !== 'researching' && (
+              <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-xl px-5 py-4">
+                <p className="text-sm font-semibold text-[#2D2A26]">Unable to locate you</p>
+                <p className="text-xs text-[#6B7280] mt-0.5">
+                  Culo couldn't find a real match for that name/handle — please complete your profile and
+                  import your content, or try again below with a real link to your YouTube, Instagram,
+                  LinkedIn or podcast.
+                </p>
+              </div>
+            )}
+
             {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && !draft.researchPromptSkipped && (
               <ResumeResearchBanner
                 founder={draft}

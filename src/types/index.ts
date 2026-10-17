@@ -516,6 +516,13 @@ export interface Founder {
   // this-session hide, so skipping it once doesn't mean seeing it forever
   // on every future visit either.
   researchPromptSkipped?: boolean
+  // Set when runOnboardingResearch's web search finds zero trustworthy
+  // sources for the name/handle given — never fabricate a bio from
+  // nothing (see the session that decided this), show an honest "couldn't
+  // find you" message and let them retry with a real link/handle instead.
+  // Cleared at the start of every research run so a retry doesn't still
+  // show the old failure after a new run succeeds.
+  researchFoundNothing?: boolean
   // The yes/no prompt on Import ("join the Culo Creatives waitlist?") —
   // answered once, never shown again either way. Only 'yes' shows as a tag
   // on the Culo Members list (see VillageEmailExportPage); 'no' is just
