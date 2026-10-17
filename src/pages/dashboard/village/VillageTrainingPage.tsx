@@ -150,6 +150,7 @@ function Section({ id, title, children }: { id?: string; title: string; children
 const NAV_ITEMS = [
   { id: 'what-is-village', label: 'What the Village is' },
   { id: 'sections-guide', label: 'What each section is for' },
+  { id: 'signup-funnel', label: 'The signup funnel & emails' },
   { id: 'responsibilities', label: 'Your responsibilities' },
   { id: 'workflow', label: 'Building your founder list' },
   { id: 'where-to', label: 'Where to do this' },
@@ -361,6 +362,14 @@ export function VillageTrainingPage() {
             Sequence B nurture emails in the meantime, since that's a different system with a different
             purpose (encouraging them toward paying, not a general broadcast).
           </p>
+          <p>
+            <strong className="text-[#2D2A26]">Nudges</strong> are a third, separate kind of automatic email —
+            unlike a Sequence (which fires on elapsed days no matter what the founder actually did), a Nudge
+            only fires because a founder is genuinely stuck at a specific point (see the funnel section below
+            for exactly which point triggers which Nudge, and when). Each founder can only ever get a given
+            Nudge once. Subject and body for every Nudge are editable right there on the Nudges tab, the same
+            way a Sequence step is — no code change needed to fix a sentence.
+          </p>
         </SubSection>
 
         <SubSection title="Leads">
@@ -383,6 +392,95 @@ export function VillageTrainingPage() {
             what's still outstanding. This is the tool you'll use constantly once a lead becomes a client —
             it's where you track whether the work the client is paying for is actually getting done on
             schedule.
+          </p>
+        </SubSection>
+      </Section>
+
+      <Section id="signup-funnel" title="The signup funnel, every URL, and when an email actually fires">
+        <p>
+          This is the exact path a real signup walks through, start to finish — every page they land on, and
+          the precise moment each automatic email (Sequence or Nudge) sends relative to where they are in it.
+          Useful for testing: open each URL yourself, move a test account through the states below, and you
+          should see the matching email land.
+        </p>
+
+        <SubSection title="1. Join → culovillage.com/join">
+          <p>
+            Entry point. A Village signup and a Canva Creatives signup both start here — which one they are
+            is just <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">signupProduct</code> on the
+            founder record, not a separate flow.
+          </p>
+          <p>
+            <strong className="text-[#2D2A26]">Email fires instantly, not on a daily batch:</strong> the
+            moment the account is created, they're enrolled into Sequence A (Village) or Sequence B (Canva)
+            and that sequence's first step (day 0) sends within seconds — see
+            enroll-email-sequence. You (support@) also get an instant staff alert the moment anyone signs up,
+            via notify-new-signup — not a daily digest, that one's immediate too.
+          </p>
+        </SubSection>
+
+        <SubSection title="2. Setup → culovillage.com/join/setup">
+          <p>
+            One link capture (a video, podcast, Instagram post — anywhere their content already lives) so we
+            can research them and write their first bio/article. onboardingStatus moves to{' '}
+            <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">researching</code> once submitted.
+          </p>
+          <p>
+            <strong className="text-[#2D2A26]">Nudge: "Needs setup"</strong> — fires if they're still sitting
+            at <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">needs_setup</code> (never submitted
+            this page) 24 hours after signup. One-time only, checked daily at 9:30pm UTC by send-nudges.
+          </p>
+        </SubSection>
+
+        <SubSection title="3. Dashboard, while research runs → culovillage.com/dashboard">
+          <p>
+            Research happens in the background — nothing blocks them, there's no popup to dismiss. Once the
+            bio and first article are drafted, onboardingStatus becomes{' '}
+            <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">ready</code>, and it silently flips to{' '}
+            <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">confirmed</code> the next time they
+            open the dashboard (see DashboardLayout) — no confirm button, no barrier.
+          </p>
+          <p>
+            <strong className="text-[#2D2A26]">Nudge: "Ready to confirm"</strong> — fires if they're still at{' '}
+            <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">ready</code> (research finished, but
+            they never reopened the dashboard for it to auto-progress) 24 hours after research finished.
+            Includes their actual bio in the email. Same daily 9:30pm UTC check.
+          </p>
+        </SubSection>
+
+        <SubSection title="4. Import → culovillage.com/dashboard/import-content">
+          <p>
+            Where they connect YouTube, Instagram, Snapchat, their own blog/website, or a single "I was
+            featured" mention, to bring in everything they've already posted.
+          </p>
+          <p>
+            <strong className="text-[#2D2A26]">Nudge: "Imported nothing"</strong> — fires once onboarding is
+            fully <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">confirmed</code> for 48 hours
+            with zero imported content rows. Same daily 9:30pm UTC check.
+          </p>
+        </SubSection>
+
+        <SubSection title="5. Review & publish → culovillage.com/dashboard/profile?tab=content&contentSubTab=ready">
+          <p>
+            Every import lands as a draft here first — nothing goes live without a click. Keep/discard a
+            draft the same way from this screen; that review step is the only "confirmation" that actually
+            exists now, nothing blocks them from reaching it.
+          </p>
+          <p>
+            <strong className="text-[#2D2A26]">Nudge: "Ready to publish, untouched"</strong> — fires once a
+            real draft (not a placeholder title) has been sitting unpublished for 72 hours, and they have zero
+            published/featured stories yet. Same daily 9:30pm UTC check.
+          </p>
+        </SubSection>
+
+        <SubSection title="To test any of this yourself">
+          <p>
+            Sign up as a test account at <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">/join</code>,
+            then from Founder Management edit that founder's <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">onboardingStatus</code>{' '}
+            and <code className="text-xs bg-[#F3EDE6] px-1 py-0.5 rounded">updated_at</code> directly to simulate
+            "stuck 24h/48h/72h" instead of actually waiting. Then use the <strong className="text-[#2D2A26]">"Send
+            nudges now"</strong> button on the Nudges tab (or "Send due emails now" on Sequences) to trigger that
+            day's run immediately rather than waiting for the 9pm/9:30pm UTC cron.
           </p>
         </SubSection>
       </Section>

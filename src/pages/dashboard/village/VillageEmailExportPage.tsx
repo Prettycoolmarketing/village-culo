@@ -93,7 +93,12 @@ function isRealMember(f: ReturnType<typeof getFounders>[number]) {
 
 function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
   const sorted = [...getFounders()]
-    .filter(f => (curatedOnly ? !isRealMember(f) : isRealMember(f)))
+    // Curated means "we curated this profile at some point" (f.curatedBy),
+    // not "still unclaimed" — a founder who claims a curated profile still
+    // shows here so staff can track the ones that started as outreach, in
+    // addition to showing in the main Culo Members list below. curatedBy
+    // is set once at curation time and never cleared by founderClaim.
+    .filter(f => (curatedOnly ? !!f.curatedBy : isRealMember(f)))
     // Curated founders include ones still mid-research/draft, never
     // actually live on the public site — this list is meant for outreach
     // to real, visible profiles, not a staff worklist of everything in
