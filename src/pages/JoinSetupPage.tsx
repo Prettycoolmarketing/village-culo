@@ -38,8 +38,19 @@ export function JoinSetupPage() {
     e.preventDefault()
     if (!founder) return
     if (!name.trim()) { setError('Your name is required.'); return }
+    // A founder typing "instagram.com/name" with no scheme used to get
+    // rejected outright after submitting — confirmed real friction on the
+    // one step this whole funnel depends on. Auto-prepend https:// rather
+    // than making them notice and fix it themselves; only a genuinely
+    // unparseable value (not just a missing scheme) still errors.
+    const rawLink = link.trim()
     let url: URL
-    try { url = new URL(link.trim()) } catch { setError('Enter a real link, starting with https://'); return }
+    try {
+      url = new URL(/^https?:\/\//i.test(rawLink) ? rawLink : `https://${rawLink}`)
+    } catch {
+      setError('Enter a real link, e.g. instagram.com/yourname')
+      return
+    }
     setSubmitting(true)
     setError(null)
 

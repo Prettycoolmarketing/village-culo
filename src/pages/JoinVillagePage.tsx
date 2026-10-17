@@ -97,11 +97,11 @@ export function JoinVillagePage() {
   // ensureJoinedFounder), so pricing copy below is unified, not branched.
   usePageMeta(isCanva ? {
     title: 'Culo Creatives in Canva',
-    description: 'Try Culo Creatives in Canva free for 14 days — turn your raw footage into finished blogs, carousels and reels.',
+    description: 'Culo Creatives in Canva, coming soon — turn your raw footage into finished blogs, carousels and reels. Join the waitlist for first access.',
     ogType: 'website',
   } : {
     title: 'Culo In Canva',
-    description: 'Join the CULO Village — republish your content, and try Culo Creatives in Canva free for 14 days.',
+    description: 'Join the CULO Village — republish your content, and be first in line for Culo Creatives in Canva, coming soon.',
     ogType: 'website',
   })
 

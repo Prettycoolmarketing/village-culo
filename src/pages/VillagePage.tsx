@@ -133,16 +133,39 @@ export function VillagePage() {
               </p>
               <HomeInstantJoin />
               <p className="font-body text-sm text-white/50 mt-6 max-w-xl mx-auto lg:mx-0">
-                Culo Creatives in Canva is Coming to make editing and publishing content easier.
+                Culo Creatives in Canva is coming soon, to make editing and publishing easier.
               </p>
             </div>
-            <div className="relative hidden lg:block">
-              <img
-                src="/join/join-hero.jpg"
-                alt="CULO Creatives inside Canva — turn your expertise into structured content in Canva, then publish in the Village for discovery"
-                className="w-full h-auto rounded-3xl"
-              />
-            </div>
+            {/* A real Village founder page, not a Creatives/Canva
+                screenshot — this section is deliberately pitching the
+                Village itself (see the section comment above), so the
+                image next to that copy should actually be the Village,
+                same live-preview pattern /join uses for its own "What is
+                The Culo Village" section. */}
+            <a
+              href="https://www.culovillage.com/founders/shakas-designer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative hidden lg:block rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-white hover:shadow-2xl transition-shadow"
+              aria-label="See an example CULO Village founder page (opens in a new tab)"
+            >
+              <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F3EDE6] border-b border-border">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-300" />
+                <span className="ml-3 text-[10px] text-muted truncate font-body">culovillage.com/founders/shakas-designer</span>
+              </div>
+              <div className="relative overflow-hidden" style={{ aspectRatio: '4 / 3' }}>
+                <iframe
+                  src="https://www.culovillage.com/founders/shakas-designer"
+                  title="Example CULO Village founder page"
+                  className="absolute top-0 left-0 border-0 pointer-events-none"
+                  style={{ width: '250%', height: '250%', transform: 'scale(0.4)', transformOrigin: 'top left' }}
+                  loading="lazy"
+                  tabIndex={-1}
+                />
+              </div>
+            </a>
           </div>
         </InnerContainer>
       </section>

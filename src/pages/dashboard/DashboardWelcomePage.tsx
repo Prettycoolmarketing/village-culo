@@ -149,9 +149,9 @@ export function DashboardWelcomePage() {
               onClick={() => setShowComingSoon(true)}
               className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
             >
-              {hasBilling ? 'Open Culo Creatives in Canva' : 'Start my 14 day free trial in Canva'}
+              {hasBilling ? 'Check Culo Creatives status' : 'Join the Culo Creatives waitlist'}
             </button>
-            <ComingSoonModal open={showComingSoon} onClose={() => setShowComingSoon(false)} />
+            <ComingSoonModal open={showComingSoon} onClose={() => setShowComingSoon(false)} hasBilling={hasBilling} />
           </div>
         </section>
 
@@ -229,6 +229,15 @@ export function DashboardWelcomePage() {
         >
           Import your content now →
         </Link>
+        {/* Importing only actually works on desktop (see
+            DashboardImportContentPage's own md:hidden fallback) — this
+            used to send a mobile visitor straight into that dead end with
+            no warning beforehand, confirmed as a real drop-off risk right
+            on the one step this funnel most depends on. Mobile-only, so
+            desktop visitors (most of the time) never see irrelevant text. */}
+        <p className="md:hidden text-xs text-[#9CA3AF] text-center mt-2 px-8">
+          Importing needs a desktop browser — come back on your computer when you're ready for this step.
+        </p>
       </div>
 
       {/* Downgraded from a prominent "Loading…" block that read as

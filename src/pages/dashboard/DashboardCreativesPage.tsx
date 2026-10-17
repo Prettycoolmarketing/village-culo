@@ -99,7 +99,7 @@ function FeedbackTab({
             onClick={() => setShowComingSoon(true)}
             className="inline-flex px-5 py-2.5 bg-[#C86A43] text-white text-sm font-semibold rounded-lg hover:bg-[#b05a35] transition-colors"
           >
-            Upgrade — $25/month
+            Join the Culo Creatives waitlist
           </button>
           <ComingSoonModal open={showComingSoon} onClose={() => setShowComingSoon(false)} />
         </div>
