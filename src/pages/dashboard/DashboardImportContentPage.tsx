@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useDictation } from '../../hooks/useDictation'
 import { Link, Navigate, useSearchParams, useNavigate } from 'react-router-dom'
+import { consumeConnectPrefill } from '../../utils/connectPrefill'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { SnapchatArchiveImportCard } from '../../components/dashboard/SnapchatArchiveImportCard'
 import { SourceIcon } from '../../components/ui/SourceIcon'
@@ -336,6 +337,14 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
   const [error, setError] = useState<string | null>(null)
   const [episodeDone, setEpisodeDone] = useState(false)
 
+  // A YouTube link typed into Profile's research box, or one research
+  // itself found while looking the founder up, shows up here pre-filled
+  // once — no need to go find and retype a link Culo already has.
+  useEffect(() => {
+    const prefill = consumeConnectPrefill(founderId, 'youtube')
+    if (prefill) setValue(prefill)
+  }, [founderId])
+
   async function handleConnect() {
     if (!value.trim()) { setError('Paste a link first.'); return }
     setBusy(true)
@@ -445,6 +454,14 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
   const [error, setError] = useState<string | null>(null)
   const [candidates, setCandidates] = useState<WebsiteFeedCandidate[]>([])
   const [mentionDone, setMentionDone] = useState(false)
+
+  // A site link typed into Profile's research box, or one research itself
+  // found while looking the founder up, is their own site — pre-fill it
+  // here in "my own blog" mode, once, instead of making them retype it.
+  useEffect(() => {
+    const prefill = consumeConnectPrefill(founderId, 'website')
+    if (prefill) { setValue(prefill); setMode('blog') }
+  }, [founderId])
 
   async function connectWithFeedUrl(feedUrl: string, label: string) {
     const source = newConnectedSource(founderId, 'website-rss', label, { feedUrl })

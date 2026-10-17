@@ -1,8 +1,9 @@
 import { getFounder, updateFounder } from './founders'
 import { runFounderResearch } from './editorialResearch'
 import { writeProfileBio, writeSourceArticle, runAudit } from './editorialItems'
-import { importedContentService, buildDraftImport } from './importedContent'
+import { importedContentService, buildDraftImport, detectPlatform } from './importedContent'
 import { normalizeBlogSpacing } from '../utils/blogFormatting'
+import { setConnectPrefill } from '../utils/connectPrefill'
 
 // Runs the exact research → write → audit pipeline CAPO staff already
 // trigger by hand for curated founders (see DashboardBulkImportPage's "run
@@ -51,6 +52,12 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
     if (draft) {
       draft.staffCreated = true
       await importedContentService.upsert(draft)
+      // Prefill Import's matching connect form straight away with
+      // whatever was typed — don't wait on research succeeding first.
+      const typedPlatform = detectPlatform(identifier)
+      if (typedPlatform === 'youtube' || typedPlatform === 'podcast' || typedPlatform === 'website') {
+        setConnectPrefill(founderId, typedPlatform, identifier)
+      }
     } else {
       const founderBeforeResearch = getFounder(founderId)
       if (founderBeforeResearch) {
@@ -75,6 +82,19 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
     }
 
     const validSources = research.ledger.source_assessments.filter(s => s.source_valid)
+
+    // Research often turns up more than the one link a founder typed —
+    // their YouTube channel, their podcast — even when they only gave a
+    // LinkedIn or Instagram link. Stash whichever of those it found as a
+    // one-time prefill for Import's connect forms, so a founder doesn't
+    // have to go find and retype a link Culo already has.
+    for (const source of validSources) {
+      const platform = detectPlatform(source.url)
+      if (platform === 'youtube' || platform === 'podcast' || platform === 'website') {
+        setConnectPrefill(founderId, platform, source.url)
+      }
+    }
+
     const primarySource = validSources.find(s => s.url === identifier) ?? validSources[0]
     if (primarySource) {
       // A handle never got a draft import built up front — build one now,
