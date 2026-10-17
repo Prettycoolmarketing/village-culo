@@ -43,7 +43,6 @@ import { RelationshipsPanel } from '../../components/dashboard/RelationshipsPane
 import { BusinessDiscoveryProfile, BusinessProgramsTab } from '../../components/dashboard/BusinessWorkspace'
 import { StoryEditor } from '../../components/dashboard/StoryEditor'
 import { LibraryItemEditModal } from '../../components/dashboard/LibraryItemEditModal'
-import { BrandBriefEditor } from '../../components/dashboard/BrandBriefEditor'
 import { getFounderAppearsOn, getBusinessAppearsOn } from '../../utils/appearsOn'
 import { loadDraft, saveDraft, clearDraft } from '../../utils/draftAutosave'
 import { suggestFaqsFromFounder } from '../../services/founderEnrichment'
@@ -857,10 +856,6 @@ export function DashboardProfilePage() {
     return () => clearTimeout(timer)
   }, [authLoading, currentFounder, syncTick])
   const [editingLibraryItem, setEditingLibraryItem] = useState<LibraryItem | null>(null)
-  // Same self-contained persist-on-change pattern as it had on Import
-  // Content, just relocated — see the Expertise tab's Voice & Brand Brief
-  // section below for why it moved off that page.
-  const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => currentFounder?.voiceBrief)
   // draft's useState initializer above only ever runs once, on this
   // component's first mount — switching accounts without a full page
   // reload (log out, log back in as someone else, in the same tab) left
@@ -2939,12 +2934,7 @@ export function DashboardProfilePage() {
         {/* ── FAQ ──────────────────────────────────────────────────────────── */}
         {tab === 'expertise' && (
           <div className="flex flex-col gap-5">
-            {/* Used to sit above the import connectors on Import Content —
-                the first thing a founder saw before they could bring
-                anything in, when it's genuinely optional (research/CAPO
-                rewrites/caption imports already do most of that work).
-                Moved here as an available add-on for anyone who wants a
-                more personal voice, not a barrier before importing. */}
+            {/* Hidden for now per request — re-enable by uncommenting.
             {draft && (
               <div className="pb-5 border-b border-[#E8E4DD]">
                 <BrandBriefEditor
@@ -2960,6 +2950,7 @@ export function DashboardProfilePage() {
                 />
               </div>
             )}
+            */}
 
             <TabIntro>
               Real questions people ask you, with real answers, written in plain text so people, search
@@ -3090,6 +3081,7 @@ export function DashboardProfilePage() {
               just how your profile behaves.
             </TabIntro>
 
+            {/* Hidden for now per request — re-enable by uncommenting.
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-[#2D2A26]">Voice &amp; Brand Brief</p>
@@ -3102,6 +3094,7 @@ export function DashboardProfilePage() {
                 Open Import Content →
               </Link>
             </div>
+            */}
 
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Affiliate Links</p>
