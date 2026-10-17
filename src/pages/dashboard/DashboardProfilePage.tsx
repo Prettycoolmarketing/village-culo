@@ -16,6 +16,7 @@ import { getSeriesList, getSeriesEpisodes, createSeries, saveSeries } from '../.
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
 import type { ImportedContent } from '../../types/importedContent'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
+import { detectBrandMentions } from '../../services/brandMentions'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { DictationMicButton } from '../../components/ui/DictationMicButton'
@@ -791,6 +792,7 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
 
   return (
     <div className="flex flex-col gap-4">
+      <p className="text-lg font-bold text-[#2D2A26]">Let's write your bio and a CULO article to build your online presence</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
           type="text"
@@ -915,6 +917,9 @@ export function DashboardProfilePage() {
   const [cancelFlowOpen, setCancelFlowOpen] = useState(false)
   const [newAffiliateName, setNewAffiliateName] = useState('')
   const [newAffiliateUrl, setNewAffiliateUrl] = useState('')
+  const [detectedBrands, setDetectedBrands] = useState<string[] | null>(null)
+  const [detectingBrands, setDetectingBrands] = useState(false)
+  const [detectBrandsError, setDetectBrandsError] = useState<string | null>(null)
   const [cancelAnswer, setCancelAnswer] = useState('')
   const [cancelSubmitting, setCancelSubmitting] = useState(false)
   const [cancelError, setCancelError] = useState<string | null>(null)
@@ -3155,6 +3160,76 @@ export function DashboardProfilePage() {
                   Add
                 </button>
               </div>
+            </div>
+
+            {/* On-demand only — a real AI call over every published
+                article, never run automatically. Surfaces real brand/
+                product names already mentioned in a founder's own writing
+                that aren't affiliate links yet, so they don't have to go
+                hunting through their own articles to remember what's
+                already name-dropped in there. */}
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4">
+              <div className="flex items-center justify-between gap-3 mb-1">
+                <p className="text-sm font-semibold text-[#2D2A26]">Brands mentioned in your articles</p>
+                <button
+                  type="button"
+                  disabled={detectingBrands}
+                  onClick={() => {
+                    setDetectingBrands(true)
+                    setDetectBrandsError(null)
+                    void (async () => {
+                      const publishedText = founderStories
+                        .filter(s => (s.status === 'published' || s.status === 'featured') && s.blog)
+                        .map(s => s.blog)
+                        .join('\n\n')
+                      if (!publishedText.trim()) {
+                        setDetectedBrands([])
+                        setDetectingBrands(false)
+                        return
+                      }
+                      try {
+                        const brands = await detectBrandMentions(publishedText, draft.name, founderBusinesses.map(b => b.name))
+                        setDetectedBrands(brands)
+                      } catch (err) {
+                        setDetectBrandsError(err instanceof Error ? err.message : 'Could not scan your articles.')
+                      } finally {
+                        setDetectingBrands(false)
+                      }
+                    })()
+                  }}
+                  className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
+                >
+                  {detectingBrands ? 'Scanning…' : 'Scan my articles'}
+                </button>
+              </div>
+              <p className="text-xs text-[#9CA3AF] mb-3">
+                Finds real brand/product names already mentioned in your published articles that aren't
+                affiliate links yet.
+              </p>
+              {detectBrandsError && <p className="text-xs text-red-600 mb-2">{detectBrandsError}</p>}
+              {detectedBrands && (() => {
+                const existingNames = new Set((draft.affiliateLinks ?? []).map(l => l.name.trim().toLowerCase()))
+                const suggestions = detectedBrands.filter(b => !existingNames.has(b.trim().toLowerCase()))
+                if (suggestions.length === 0) {
+                  return <p className="text-xs text-[#9CA3AF] italic">Nothing new found — every brand mentioned is already a link, or nothing real turned up.</p>
+                }
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    {suggestions.map(brand => (
+                      <div key={brand} className="flex items-center gap-2 bg-[#F8F5F0] rounded-lg px-3 py-2">
+                        <span className="text-xs font-semibold text-[#2D2A26] flex-1">{brand}</span>
+                        <button
+                          type="button"
+                          onClick={() => setNewAffiliateName(brand)}
+                          className="shrink-0 text-xs font-semibold text-[#C86A43] hover:underline"
+                        >
+                          Add this affiliate link
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
           </div>
         )}
