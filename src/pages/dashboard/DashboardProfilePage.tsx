@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-do
 import { useAuth } from '../../contexts/AuthContext'
 import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
+import { runOnboardingResearch } from '../../services/onboardingResearch'
 import { updateFounder, deleteFounder, getFounder } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './DashboardImportContentPage'
@@ -746,10 +747,69 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 // FAQEditor is now the shared components/dashboard/FAQEditor.tsx — used here
 // and under each Service in the Business workspace.
 
+// A founder's URL is meant to be captured on /join/setup, which kicks off
+// runOnboardingResearch automatically — by the time someone reaches
+// Profile, bio and a first article should already be written. This is the
+// fallback for whenever that didn't happen (skipped setup some other way,
+// research failed silently, a curated/imported founder with no research
+// ever run) — same pipeline, triggered by hand instead of hidden behind a
+// loading screen.
+function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
+  const [link, setLink] = useState('')
+  const [running, setRunning] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleRun() {
+    const raw = link.trim()
+    if (!raw) { setError('Paste a link first.'); return }
+    let url: URL
+    try {
+      url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`)
+    } catch {
+      setError('Enter a real link, e.g. instagram.com/yourname')
+      return
+    }
+    setRunning(true)
+    setError(null)
+    await runOnboardingResearch(founder.id, url.toString())
+    setRunning(false)
+    onDone()
+  }
+
+  return (
+    <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-xl px-5 py-5 flex flex-col gap-3">
+      <div>
+        <p className="text-sm font-semibold text-[#2D2A26]">No bio or articles yet</p>
+        <p className="text-xs text-[#6B7280] mt-0.5 max-w-xl">
+          Paste one link — your YouTube channel, podcast, Instagram or LinkedIn — and Culo will research you and
+          write your bio and first article from it.
+        </p>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          value={link}
+          onChange={e => setLink(e.target.value)}
+          placeholder="instagram.com/yourname"
+          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+        />
+        <button
+          onClick={() => void handleRun()}
+          disabled={running}
+          className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0"
+        >
+          {running ? 'Researching…' : 'Resume research'}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  )
+}
+
 // ─── DashboardProfilePage ──────────────────────────────────────────────────────
 
 export function DashboardProfilePage() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   // "Rewrite with AI" for a whole blog is real per-call spend, so it's a
   // CAPO-staff tool now — founders dictate (free) or use the auto-drafted
   // Bio instead. (The old email allowlist still opens it for named testers.)
@@ -770,6 +830,18 @@ export function DashboardProfilePage() {
     const saved = loadDraft<Founder>(`culo_v1_profile_draft_${currentFounder.id}`)
     return saved ?? { ...currentFounder }
   })
+  // Same sync-timing fix as DashboardCreativesPage: getCurrentFounder reads
+  // the local cache, which syncUserDataFromSupabase populates in the
+  // background and isn't awaited by AuthContext's own `loading` flag. A
+  // founder who genuinely has a profile could still hit the "no profile"
+  // state below on a fresh tab/reload before that sync lands. Poll for up
+  // to ~10s before trusting "no founder" as real.
+  const [syncTick, setSyncTick] = useState(0)
+  useEffect(() => {
+    if (authLoading || currentFounder || syncTick >= 20) return
+    const timer = setTimeout(() => setSyncTick(t => t + 1), 500)
+    return () => clearTimeout(timer)
+  }, [authLoading, currentFounder, syncTick])
   const [editingLibraryItem, setEditingLibraryItem] = useState<LibraryItem | null>(null)
   // Same self-contained persist-on-change pattern as it had on Import
   // Content, just relocated — see the Expertise tab's Voice & Brand Brief
@@ -1099,12 +1171,20 @@ export function DashboardProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft?.id, getFounder(draft?.id ?? '')?.voiceBrief])
 
+  if (!draft && (authLoading || syncTick < 20)) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#C86A43] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
   if (!draft) {
     return (
-      <div className="p-8 flex items-center justify-center py-20">
+      <div className="min-h-[60vh] flex items-center justify-center p-8">
         <a
           href="/onboarding"
-          className="inline-flex items-center px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+          className="inline-flex items-center px-10 py-5 bg-primary text-white text-xl font-semibold rounded-2xl hover:bg-[#b05a35] transition-colors"
         >
           Build your profile
         </a>
@@ -1513,6 +1593,16 @@ export function DashboardProfilePage() {
               Your name, photo, bio and the basics that make up who you are — the identity every business,
               story and idea you publish gets connected back to.
             </TabIntro>
+
+            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && (
+              <ResumeResearchBanner
+                founder={draft}
+                onDone={() => {
+                  const fresh = getFounder(draft.id)
+                  if (fresh) setDraft(fresh)
+                }}
+              />
+            )}
 
             <a
               href={`/founders/${draft.slug}`}

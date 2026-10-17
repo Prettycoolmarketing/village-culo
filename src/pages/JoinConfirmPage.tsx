@@ -44,6 +44,17 @@ export function JoinConfirmPage() {
       setEmail(user.email ?? '')
       const id = await ensureJoinedFounder(user.id, user.email ?? '', source, { canvaUserId })
       setFounderId(id)
+      // Re-opening a confirm-email link (an old one still sitting in an
+      // inbox, or a duplicate Supabase sent) used to show "Set your
+      // password" again every time, with no check for whether this account
+      // already has one — confusing for someone who's already fully set up
+      // and possibly already logged into the dashboard in another tab.
+      // Skip straight past it when there's nothing left to do here.
+      const founder = id ? getFounder(id) : null
+      if (founder?.passwordSet) {
+        navigate(needsOnboardingSetup(founder) ? '/join/setup' : '/dashboard/import-content', { replace: true })
+        return
+      }
       setReady(true)
     }
 
@@ -92,7 +103,7 @@ export function JoinConfirmPage() {
     }
 
     setSubmitting(false)
-    navigate(needsOnboardingSetup(founder) ? '/join/setup' : '/dashboard/welcome', { replace: true })
+    navigate(needsOnboardingSetup(founder) ? '/join/setup' : '/dashboard/import-content', { replace: true })
   }
 
   if (!ready) {
