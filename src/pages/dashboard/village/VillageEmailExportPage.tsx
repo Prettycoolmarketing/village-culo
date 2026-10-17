@@ -11,6 +11,7 @@ import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import { toCSV, downloadCSV, splitName } from '../../../utils/emailExport'
 import { bodyTextToHtml, bodyHtmlToText } from '../../../utils/emailBody'
 import { syncUserDataFromSupabase } from '../../../lib/sync'
+import { supabase, isSupabaseConfigured } from '../../../lib/supabase'
 
 export function VillageEmailExportPage() {
   const [pageTab, setPageTab] = useState('members')
@@ -56,6 +57,7 @@ export function VillageEmailExportPage() {
           { key: 'subscribers', label: 'Subscribers' },
           { key: 'campaigns',   label: 'Newsletter' },
           { key: 'sequences',   label: 'Sequences' },
+          { key: 'nudges',      label: 'Nudges' },
         ]}
         active={pageTab}
         onChange={setPageTab}
@@ -67,6 +69,7 @@ export function VillageEmailExportPage() {
       {pageTab === 'subscribers' && <SubscribersPanel />}
       {pageTab === 'campaigns' && <CampaignsPanel />}
       {pageTab === 'sequences' && <SequencesPanel />}
+      {pageTab === 'nudges' && <NudgesPanel />}
 
     </div>
   )
@@ -790,6 +793,81 @@ function SequencesPanel() {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+// ─── Nudges panel — one-off emails triggered by a founder's own state ──────
+// Distinct from Sequences: a sequence fires on elapsed days since signup
+// regardless of what the founder actually did. A nudge fires because of a
+// specific stuck condition (sat at a status too long, has untouched
+// content sitting there) and only ever sends once per founder per
+// condition — see send-nudges' own header comment for the exact trigger
+// and timing on each. New-signup alerts to staff are separate again (see
+// notify-new-signup): instant, not a daily condition check, so there's
+// nothing to configure or manually trigger for that one here.
+const NUDGE_TYPES: { key: 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt'; title: string; when: string; subject: string }[] = [
+  { key: 'needsSetupNudgeSentAt', title: 'Needs setup', when: '24h+ after signup, still hasn\'t submitted /join/setup', subject: 'One thing left to finish setting up' },
+  { key: 'readyNudgeSentAt', title: 'Ready to confirm', when: '24h+ after research finished, never reopened the dashboard', subject: 'Your profile is ready and waiting' },
+  { key: 'importNudgeSentAt', title: 'Imported nothing', when: '48h+ after onboarding fully done, zero content imported', subject: 'Your old posts are still sitting there, disappearing' },
+  { key: 'publishNudgeSentAt', title: 'Ready to publish, untouched', when: '72h+ since a real draft article was imported, still unpublished', subject: "You've got articles ready to go live" },
+]
+
+function NudgesPanel() {
+  const founders = getFounders()
+  const [sending, setSending] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+
+  function sendNow() {
+    setSending(true)
+    setResult(null)
+    void (async () => {
+      if (!isSupabaseConfigured || !supabase) { setResult('Not available in this environment.'); setSending(false); return }
+      const { data, error } = await supabase.functions.invoke<{ ok?: boolean; notified?: number; error?: string }>('send-nudges', { body: {} })
+      setSending(false)
+      if (error) { setResult(error.message); return }
+      if (data?.error) { setResult(data.error); return }
+      setResult(`Sent ${data?.notified ?? 0} nudge${data?.notified === 1 ? '' : 's'}.`)
+    })()
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-[#6B7280]">
+          Runs automatically every day at 9:30pm UTC (7:30am Brisbane). Each founder only ever gets a given nudge once.
+        </p>
+        <button
+          onClick={sendNow}
+          disabled={sending}
+          className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
+        >
+          {sending ? 'Sending…' : 'Send nudges now'}
+        </button>
+      </div>
+      {result && <p className="text-xs text-[#6B7280] mb-4">{result}</p>}
+
+      <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
+        {NUDGE_TYPES.map(type => {
+          const sentCount = founders.filter(f => !!(f as unknown as Record<string, unknown>)[type.key]).length
+          return (
+            <div key={type.key} className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-[#2D2A26]">{type.title}</p>
+                <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#F3EDE6] text-[#6B7280]">
+                  {sentCount} sent total
+                </span>
+              </div>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">{type.when}</p>
+              <p className="text-xs text-[#6B7280] mt-1">Subject: "{type.subject}"</p>
+            </div>
+          )
+        })}
+      </div>
+
+      <p className="text-xs text-[#9CA3AF] mt-4">
+        Separately, you get an instant staff alert the moment anyone signs up — not a daily batch, see notify-new-signup.
+      </p>
     </div>
   )
 }

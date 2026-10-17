@@ -186,6 +186,12 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
         body: { sequenceId: 'B', email, name: founder.name, source: 'canva-paid' },
       }).catch(() => { /* best-effort */ })
     }
+    // Staff alert — fires right now, not on the next daily nudge batch,
+    // same "don't make it wait on a cron" reasoning as the welcome email
+    // fix above.
+    void supabase.functions.invoke('notify-new-signup', {
+      body: { founderId, name: founder.name, email, source },
+    }).catch(() => { /* best-effort */ })
   }
 
   return founderId

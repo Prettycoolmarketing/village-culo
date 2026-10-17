@@ -518,6 +518,16 @@ export interface Founder {
   // 'ready' (DashboardLayout's auto-confirm effect), since there's nothing
   // left to nudge about by then.
   readyNudgeSentAt?: string
+  // Same one-time-only pattern as readyNudgeSentAt, for the other nudge
+  // conditions send-nudges checks — see that function's header comment for
+  // each trigger's exact timing.
+  needsSetupNudgeSentAt?: string
+  importNudgeSentAt?: string
+  publishNudgeSentAt?: string
+  // Set the one time notify-new-signup emails staff about this specific
+  // signup — guards against the function being called twice for the same
+  // founder (retries, double-clicks) rather than a recurring check.
+  signupAlertSentAt?: string
   // "Rewrite as a Culo Article" (see generate-search-answer) sends this
   // list back to the model on every run so it picks an unused primary
   // question instead of drifting toward the same few angles — grows by
