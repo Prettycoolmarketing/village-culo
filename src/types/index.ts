@@ -511,6 +511,11 @@ export interface Founder {
   // waiting on a staff member to trigger it. Undefined for every curated
   // founder and every founder who joined before this existed.
   onboardingStatus?: 'needs_setup' | 'researching' | 'ready' | 'confirmed'
+  // Set when a founder dismisses the "let's optimise your profile" prompt
+  // on Profile Overview (see ResumeResearchBanner) — permanent, not just a
+  // this-session hide, so skipping it once doesn't mean seeing it forever
+  // on every future visit either.
+  researchPromptSkipped?: boolean
   // Set by notify-stuck-onboarding the one time it emails a founder who's
   // been sitting at onboardingStatus 'ready' for 24h+ without returning to
   // the dashboard — stops the same person getting this nudge every single

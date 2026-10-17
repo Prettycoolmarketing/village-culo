@@ -759,7 +759,7 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 // buried in the content-review tab. Also lists every link already brought
 // in through Import (every distinct ImportedContent source, any platform)
 // so it's obvious at a glance what Culo already has to work with.
-function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
+function ResumeResearchBanner({ founder, onDone, onSkip }: { founder: Founder; onDone: () => void; onSkip: () => void }) {
   const [name, setName] = useState(founder.name)
   const [link, setLink] = useState('')
   const [running, setRunning] = useState(false)
@@ -799,13 +799,21 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
   }
 
   return (
-    <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-xl px-5 py-5 flex flex-col gap-3">
-      <div>
-        <p className="text-sm font-semibold text-[#2D2A26]">No bio or articles yet</p>
-        <p className="text-xs text-[#6B7280] mt-0.5 max-w-xl">
-          Add your full name and your most-known username — your YouTube channel, podcast, Instagram or
-          LinkedIn — and Culo will research you and write your bio and first article from it.
-        </p>
+    <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-2xl px-6 py-6 flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-lg font-bold text-[#2D2A26]">Let's optimise your profile and write your first Culo article!</p>
+          <p className="text-sm text-[#6B7280] mt-1.5 max-w-xl">
+            Add your full name and your most-known username — YouTube, podcast, Instagram or LinkedIn — and
+            Culo will research you, write your bio, and draft your first article from it. Takes a minute.
+          </p>
+        </div>
+        <button
+          onClick={onSkip}
+          className="shrink-0 text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+        >
+          Skip
+        </button>
       </div>
       <div className="flex flex-col sm:flex-row gap-2">
         <input
@@ -813,19 +821,19 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
           value={name}
           onChange={e => setName(e.target.value)}
           placeholder="Your full name"
-          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+          className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <input
           type="text"
           value={link}
           onChange={e => setLink(e.target.value)}
-          placeholder="@yourusername, or a link to Instagram, YouTube, LinkedIn…"
-          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+          placeholder="@yourusername"
+          className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
         />
         <button
           onClick={() => void handleRun()}
           disabled={running}
-          className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0"
+          className="px-6 py-3 rounded-xl bg-[#C86A43] text-white text-sm font-bold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0"
         >
           {running ? 'Researching…' : 'Run research'}
         </button>
@@ -1642,12 +1650,16 @@ export function DashboardProfilePage() {
               story and idea you publish gets connected back to.
             </TabIntro>
 
-            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && (
+            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && !draft.researchPromptSkipped && (
               <ResumeResearchBanner
                 founder={draft}
                 onDone={() => {
                   const fresh = getFounder(draft.id)
                   if (fresh) setDraft(fresh)
+                }}
+                onSkip={() => {
+                  void updateFounder({ ...draft, researchPromptSkipped: true })
+                  setDraft({ ...draft, researchPromptSkipped: true })
                 }}
               />
             )}
