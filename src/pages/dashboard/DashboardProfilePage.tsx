@@ -765,14 +765,6 @@ function ResumeResearchBanner({ founder, onDone, onSkip }: { founder: Founder; o
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const importedLinks = Array.from(
-    new Map(
-      importedContentService.getAll({ founderId: founder.id })
-        .filter(i => i.originalUrl)
-        .map(i => [i.originalUrl, i]),
-    ).values(),
-  )
-
   async function handleRun() {
     const raw = link.trim()
     if (!name.trim()) { setError('Add your full name first.'); return }
@@ -799,20 +791,14 @@ function ResumeResearchBanner({ founder, onDone, onSkip }: { founder: Founder; o
   }
 
   return (
-    <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-2xl px-6 py-6 flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-lg font-bold text-[#2D2A26]">Let's optimise your profile and write your first Culo article!</p>
-          <p className="text-sm text-[#6B7280] mt-1.5 max-w-xl">
-            Add your full name and your most-known username — YouTube, podcast, Instagram or LinkedIn — and
-            Culo will research you, write your bio, and draft your first article from it. Takes a minute.
-          </p>
-        </div>
+        <p className="text-lg font-bold text-[#2D2A26]">Optimise your bio and let Culo write about you</p>
         <button
           onClick={onSkip}
           className="shrink-0 text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
         >
-          Skip
+          I'll fill it out manually
         </button>
       </div>
       <div className="flex flex-col sm:flex-row gap-2">
@@ -839,25 +825,6 @@ function ResumeResearchBanner({ founder, onDone, onSkip }: { founder: Founder; o
         </button>
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
-
-      {importedLinks.length > 0 && (
-        <div className="border-t border-[#C86A43]/20 pt-3 mt-1">
-          <p className="text-xs font-semibold text-[#2D2A26] mb-2">Already imported — Culo can research from these too</p>
-          <div className="flex flex-col gap-1.5">
-            {importedLinks.map(item => (
-              <a
-                key={item.id}
-                href={item.originalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#6B7280] hover:text-[#C86A43] truncate"
-              >
-                {IMPORT_PLATFORM_LABELS[item.sourcePlatform]}: {item.originalUrl}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -1645,10 +1612,9 @@ export function DashboardProfilePage() {
         {tab === 'overview' && (
           <div className="flex flex-col gap-6">
 
-            <TabIntro>
-              Your name, photo, bio and the basics that make up who you are — the identity every business,
-              story and idea you publish gets connected back to.
-            </TabIntro>
+            <h2 className="text-xl font-bold text-[#2D2A26]">
+              Your name, photo, bio and the basics that make up who you are
+            </h2>
 
             {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && !draft.researchPromptSkipped && (
               <ResumeResearchBanner
