@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useDictation } from '../../hooks/useDictation'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams, useNavigate } from 'react-router-dom'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { SnapchatArchiveImportCard } from '../../components/dashboard/SnapchatArchiveImportCard'
 import { SourceIcon } from '../../components/ui/SourceIcon'
@@ -1881,6 +1881,20 @@ export function DashboardImportContentPage() {
     || user?.email?.trim().toLowerCase() === 'support@prettycoolmarketing.com'
     || hasAnyCapoAccess(user?.role)
 
+  // Ported from DashboardWelcomePage: research runs in the background after
+  // /join/setup without this page having any reason to re-render on its
+  // own — this just forces a fresh read of founder.onboardingStatus every
+  // couple seconds while it's actually running, so "Culo is writing your
+  // first bio…" below clears itself once it's done instead of staying
+  // stuck until some unrelated action happens to re-render the page.
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    if (founder?.onboardingStatus !== 'researching') return
+    const interval = setInterval(() => setTick(t => t + 1), 2500)
+    return () => clearInterval(interval)
+  }, [founder?.onboardingStatus])
+  void tick
+
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [sources, setSources]   = useState<ConnectedSource[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -1913,6 +1927,22 @@ export function DashboardImportContentPage() {
     setDraft(item)
   }, [searchParams])
 
+  // This is now the default landing spot for /dashboard (merged with the
+  // old Welcome page — Welcome and Import used to be two separate nav
+  // items/boxes, now one). Ported straight from DashboardWelcomePage: a
+  // staff-only account (no founder record of their own) used to land on
+  // Welcome and get bounced to Training instead of seeing a founder-facing
+  // pitch that has nothing to do with their job — same redirect needed
+  // here now that this page is the landing spot. Below every hook, so it
+  // never changes the hook order between renders.
+  if (!founder && user && user.role !== 'founder') {
+    return <Navigate to="/dashboard/village/training" replace />
+  }
+  // Landed here directly (bookmark, nav) without going through
+  // /join/setup first — send them there instead of a half-empty importer.
+  if (founder?.onboardingStatus === 'needs_setup') {
+    return <Navigate to="/join/setup" replace />
+  }
 
   // Save keeps the editor open — it used to close it and navigate away, so
   // a founder shaping Q&As or fixing up a caption had to reopen the deep
@@ -1985,6 +2015,26 @@ export function DashboardImportContentPage() {
 
   return (
     <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-[1600px]'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
+
+      {/* ── Welcome ───────────────────────────────────────────────────────
+          Welcome and Import used to be two separate pages/nav items — one
+          merged box now, since Import is the only real thing a founder
+          does here while Culo Creatives isn't live yet. */}
+      {!draft && (
+        <div className="mb-6">
+          <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
+          <p className="text-sm text-[#6B7280] mt-1.5 max-w-2xl">
+            Import your content from multiple channels to republish as web articles, then edit your raw footage
+            with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
+          </p>
+          {founder?.onboardingStatus === 'researching' && (
+            <p className="text-xs text-[#9CA3AF] flex items-center gap-2 mt-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
+              Culo is writing your first bio and article in the background — no need to wait, go ahead and start importing.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Real numbers only, straight from this founder's own sources/imports —
           no invented storage quota or "of N available" ceiling. Hidden
@@ -2155,7 +2205,7 @@ export function DashboardImportContentPage() {
               bottom of the page where content actually comes in. Opens
               straight to Ready to Publish — what's actually actionable —
               not the raw list itself. */}
-          <div className="mt-6 pt-6 pb-10 border-t border-[#E8E4DD]">
+          <div className="mt-6 pt-6 pb-6 border-t border-[#E8E4DD]">
             <Link to="/dashboard/profile?tab=content&contentSubTab=ready" className="hidden md:inline text-2xl font-bold text-[#C86A43] hover:underline">
               View everything you've imported so far
             </Link>
@@ -2166,6 +2216,25 @@ export function DashboardImportContentPage() {
             <p className="md:hidden text-center text-xl font-bold text-[#9CA3AF]">
               See content on your computer
             </p>
+          </div>
+
+          {/* The rest of the old Welcome page, folded in here — everything
+              already edited/published, and the Culo Creatives pitch (still
+              the only other thing there is to do while Creatives isn't
+              live yet). Both links unchanged from Welcome, just relocated. */}
+          <div className="flex flex-col sm:flex-row gap-3 pb-10">
+            <Link
+              to="/dashboard/profile?tab=content&contentSubTab=published"
+              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+            >
+              Manage articles
+            </Link>
+            <Link
+              to="/dashboard/creatives"
+              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors w-full sm:w-auto"
+            >
+              Edit your raw footage with Culo Creatives
+            </Link>
           </div>
         </div>
       )}

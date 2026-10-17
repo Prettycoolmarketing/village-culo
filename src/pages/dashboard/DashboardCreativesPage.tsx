@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { creativeFeedbackService } from '../../services/creativeFeedback'
@@ -161,23 +162,38 @@ export function DashboardCreativesPage() {
   const founder = getCurrentFounder(user)
   const [tab, setTab] = useState('welcome')
 
-  const subscription = founder?.creativeSubscription
-  const alreadySubmitted = !!subscription?.feedbackSubmittedAt
-  const hasAccess = hasCreativeAccess(subscription)
+  // `loading` only covers AuthContext's own session restore — the actual
+  // founders data sync (syncUserDataFromSupabase) kicks off in the
+  // background right after and isn't awaited by it. A brand-new signup
+  // opening their confirm-email link in a fresh tab hits this page before
+  // that sync has populated the local cache: `loading` is already false,
+  // but getCurrentFounder still can't find them. Previously this fell
+  // straight through to `if (!founder) return null` — a permanently blank
+  // page with no recovery, confirmed as a real report from a new signup.
+  // Poll for up to ~10s (sync is normally much faster than that) so the
+  // page finds the founder itself once it lands, instead of needing a
+  // manual refresh.
+  const [syncTick, setSyncTick] = useState(0)
+  useEffect(() => {
+    if (loading || founder || syncTick >= 20) return
+    const timer = setTimeout(() => setSyncTick(t => t + 1), 500)
+    return () => clearTimeout(timer)
+  }, [loading, founder, syncTick])
 
-  // AuthContext's session restore is async — user/founder are briefly null
-  // on a fresh page load (direct URL visit, refresh, redeploy) before that
-  // resolves. Returning null immediately during that window rendered this
-  // page as a permanent-looking blank page instead of a brief loading
-  // flash — same class of bug already fixed on JoinOfferPage.
-  if (loading) {
+  if (loading || (!founder && syncTick < 20)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#C86A43] border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
-  if (!founder) return null
+  // Genuinely no founder record after ~10s of polling (not just mid-sync) —
+  // send them to build one instead of a dead end.
+  if (!founder) return <Navigate to="/onboarding" replace />
+
+  const subscription = founder?.creativeSubscription
+  const alreadySubmitted = !!subscription?.feedbackSubmittedAt
+  const hasAccess = hasCreativeAccess(subscription)
 
   const TABS: DashTab[] = [
     { key: 'welcome', label: 'Welcome' },

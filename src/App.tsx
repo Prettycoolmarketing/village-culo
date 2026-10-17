@@ -62,7 +62,6 @@ import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
 import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
 import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
 import { DashboardArchiveFoundPage } from './pages/dashboard/DashboardArchiveFoundPage'
-import { DashboardWelcomePage }      from './pages/dashboard/DashboardWelcomePage'
 import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
 import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
 import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
@@ -208,8 +207,8 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="welcome" replace />} />
-            <Route path="home"           element={<Navigate to="/dashboard/welcome" replace />} />
+            <Route index element={<Navigate to="import-content" replace />} />
+            <Route path="home"           element={<Navigate to="/dashboard/import-content" replace />} />
             <Route path="profile"        element={<DashboardProfilePage />}      />
             <Route path="preview/:importId" element={<StoryPreviewPage />}       />
             {/* Advanced business editing (Services, Discovery, Partnerships) moved into Profile's Businesses tab */}
@@ -227,7 +226,11 @@ export default function App() {
                 Value now — the separate per-platform browsing tab is gone,
                 see DashboardProfilePage's Content tab. */}
             <Route path="villager"       element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=ready" replace />} />
-            <Route path="welcome"        element={<DashboardWelcomePage />}      />
+            {/* Welcome and Import merged into one page/box — this keeps old
+                bookmarks and every post-signup/login redirect that still
+                points here (JoinConfirmPage, DashboardLoginPage, etc.)
+                working instead of 404ing. */}
+            <Route path="welcome"        element={<Navigate to="/dashboard/import-content" replace />} />
             {/* Series is its own top-level tab in Profile's Content section now */}
             <Route path="series"         element={<Navigate to="/dashboard/profile?tab=content&contentSubTab=series" replace />} />
             <Route path="canva/callback" element={<DashboardCanvaCallbackPage />}/>

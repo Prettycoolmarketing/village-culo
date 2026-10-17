@@ -15,7 +15,6 @@ import { getSeriesList, getSeriesEpisodes, createSeries, saveSeries } from '../.
 import { villageContentIntelligenceService, importedContentToInput } from '../../services/villageIntelligence'
 import type { ImportedContent } from '../../types/importedContent'
 import { getBusinesses, updateBusiness, deleteBusiness } from '../../services/businesses'
-import { EmptyState } from '../../components/ui/EmptyState'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { MediaUpload } from '../../components/ui/MediaUpload'
 import { DictationMicButton } from '../../components/ui/DictationMicButton'
@@ -1102,12 +1101,13 @@ export function DashboardProfilePage() {
 
   if (!draft) {
     return (
-      <div className="p-8">
-        <EmptyState
-          title="No founder profile yet"
-          message="Create your founder profile to start publishing to the Village."
-          action={{ label: 'Start onboarding', href: '/onboarding' }}
-        />
+      <div className="p-8 flex items-center justify-center py-20">
+        <a
+          href="/onboarding"
+          className="inline-flex items-center px-6 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+        >
+          Build your profile
+        </a>
       </div>
     )
   }
