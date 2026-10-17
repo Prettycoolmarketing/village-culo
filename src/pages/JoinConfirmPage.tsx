@@ -107,10 +107,12 @@ export function JoinConfirmPage() {
     // before the dashboard — it was its own extra page in the funnel, with
     // its own cache-sync races, and a real source of signup friction/
     // glitches. That same name+link capture now lives right on Profile's
-    // Overview tab instead (see ResumeResearchBanner there), so a fresh
-    // founder can go straight into the dashboard and fill it in whenever
-    // they're ready, not as a forced gate before they can see anything.
-    navigate('/dashboard/import-content', { replace: true })
+    // Overview tab instead (see ResumeResearchBanner there) — land a fresh
+    // signup there directly, at the top, so "run research" is the first
+    // thing they see, instead of a forced gate before they can see
+    // anything. A returning login still lands on Import as normal (see
+    // DashboardLoginPage) — this is specifically the just-signed-up moment.
+    navigate('/dashboard/profile', { replace: true })
   }
 
   if (!ready) {

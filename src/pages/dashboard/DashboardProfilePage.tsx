@@ -1696,18 +1696,20 @@ export function DashboardProfilePage() {
               </Link>
             </div>
 
-            {/* Culo Creatives — same dark banner as the top of Content. */}
+            {/* Culo Creatives already has its own sidebar link now — this
+                spot does more for a founder as a push toward the one real
+                action (importing), same reasoning as the swap on Content. */}
             <Link
-              to="/dashboard/creatives"
+              to="/dashboard/import-content"
               className="hidden md:block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
                 <p className="font-heading text-2xl font-semibold text-white leading-snug">
-                  CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
+                  Turn your previously posted content into structured web articles, built to be found by
+                  search and AI.
                 </p>
-                <span className="flex-shrink-0 flex flex-col items-center gap-0.5 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
-                  Create with CULO in Canva
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Launching soon</span>
+                <span className="flex-shrink-0 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+                  Import content
                 </span>
               </div>
             </Link>
@@ -1776,18 +1778,18 @@ export function DashboardProfilePage() {
               )
             })()}
             <Link
-              to="/how-culo-canva"
+              to="/dashboard/import-content"
               className="block bg-[#2D2A26] rounded-2xl px-8 pt-8 pb-12 sm:pb-8 hover:bg-[#1a1815] transition-colors"
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
                 <div>
                   <p className="font-heading text-2xl font-semibold text-white leading-snug">
-                    CULO Creatives helps founders turn their messy thoughts and raw footage into different formats of content, exclusively in Canva.
+                    Turn your previously posted content into structured web articles, built to be found by
+                    search and AI.
                   </p>
                 </div>
-                <span className="flex-shrink-0 flex flex-col items-center gap-0.5 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
-                  Create with CULO in Canva
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Launching soon</span>
+                <span className="flex-shrink-0 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+                  Import content
                 </span>
               </div>
             </Link>

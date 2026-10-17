@@ -270,6 +270,11 @@ export function DashboardLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 px-2 py-3 flex flex-col" onClick={() => setMobileNavOpen(false)}>
+          {/* Profile first — a fresh signup lands here now (see
+              JoinConfirmPage/JoinCanvaPaidPage), so it should be the first
+              thing in the list too, not buried after Import. */}
+          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} activeTabs={['overview', 'businesses', 'library', 'expertise', 'discovery', 'settings']} />
+
           {/* Welcome and Import merged into one page/box — one nav item now
               instead of two pointing at what used to be two pages. */}
           <NavLink
@@ -287,7 +292,6 @@ export function DashboardLayout() {
           </NavLink>
 
           <ProfileTabNavItem tabValue="content"  label="Content"          icon={<Icon path={icons.content}  />} hint="Ready to publish, needs more value, published, and series" />
-          <ProfileTabNavItem tabValue="overview" label="Profile"          icon={<Icon path={icons.profile}  />} activeTabs={['overview', 'businesses', 'library', 'expertise', 'discovery', 'settings']} />
 
           <NavLink
             to="/dashboard/publish"

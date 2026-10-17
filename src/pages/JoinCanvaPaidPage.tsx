@@ -72,9 +72,9 @@ export function JoinCanvaPaidPage() {
       stripeSeed: { customerId: checkoutInfo.customerId, subscriptionId: checkoutInfo.subscriptionId },
     })
     if (!founderId) { setError('Could not finish setting up your account. Please contact support.'); return }
-    // Same change as JoinConfirmPage — straight to the dashboard, name/link
-    // capture happens on Profile's Overview tab now, not as a forced gate.
-    navigate('/dashboard/import-content', { replace: true })
+    // Same change as JoinConfirmPage — straight to Profile, name/link
+    // capture happens right there now, not as a forced gate.
+    navigate('/dashboard/profile', { replace: true })
   }
 
   async function handleSubmit(e: FormEvent) {
