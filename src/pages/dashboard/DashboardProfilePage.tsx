@@ -790,6 +790,28 @@ function ResearchingIndicator({ requestedAt }: { requestedAt?: string }) {
   )
 }
 
+// Every Profile tab ends with this — the funnel is Profile (fill in who
+// you are) → Import (bring content in) → Content (review/publish), so no
+// matter which tab a founder's looking at, there's always a next step
+// pointing at the middle of that chain.
+function ImportContentCTA() {
+  return (
+    <Link
+      to="/dashboard/import-content"
+      className="block bg-[#2D2A26] rounded-2xl px-8 py-6 hover:bg-[#1a1815] transition-colors"
+    >
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+        <p className="font-heading text-xl font-semibold text-white leading-snug">
+          Ready to bring your content in? Import from YouTube, podcasts, Instagram and more.
+        </p>
+        <span className="flex-shrink-0 px-6 py-3 bg-[#C86A43] text-white text-base font-semibold rounded-xl">
+          Import content
+        </span>
+      </div>
+    </Link>
+  )
+}
+
 function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
   const [name, setName] = useState(founder.name)
   const [link, setLink] = useState('')
@@ -1670,6 +1692,28 @@ export function DashboardProfilePage() {
                 actually running, so the page never goes quiet on them. */}
             {!draft.bio?.trim() && draft.onboardingStatus === 'researching' && (
               <ResearchingIndicator requestedAt={draft.researchRequestedAt} />
+            )}
+
+            {/* Research writes name, bio and a first article — it can't
+                write a real photo. This is the natural next step right
+                after that finishes: one real photo does double duty as
+                both the profile picture and the cover image on whatever
+                gets published, so it's worth prompting for on its own
+                instead of leaving it buried in the Identity fields below. */}
+            {draft.bio?.trim() && draft.avatar.includes('/placeholders/') && (
+              <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-xl px-5 py-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#2D2A26]">Add a photo</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Used as your profile picture, and as the cover image on your articles.</p>
+                </div>
+                <MediaUpload
+                  value={undefined}
+                  onChange={handleAvatarChange}
+                  label="Upload photo"
+                  aspect="square"
+                  uploadOptions={{ founderId: draft.id, usageType: 'profile-photo' }}
+                />
+              </div>
             )}
 
             <a
@@ -2918,7 +2962,10 @@ export function DashboardProfilePage() {
             fix above; a fresh mount is simpler and safer here than
             resyncing three separate pieces of state by hand. */}
         {tab === 'businesses' && (
-          <BusinessesTab key={draft.id} founderId={draft.id} founderLocation={draft.location} founderIndustry={draft.industry} />
+          <div className="flex flex-col gap-5">
+            <BusinessesTab key={draft.id} founderId={draft.id} founderLocation={draft.location} founderIndustry={draft.industry} />
+            <ImportContentCTA />
+          </div>
         )}
 
         {/* ── Digital Products — its own tab, same standing as Businesses,
@@ -2971,6 +3018,7 @@ export function DashboardProfilePage() {
                 ))}
               </div>
             )}
+            <ImportContentCTA />
           </div>
         )}
 
@@ -3061,6 +3109,8 @@ export function DashboardProfilePage() {
               <p className="text-sm font-semibold text-[#2D2A26] mb-2">Appears On</p>
               <AppearsOnPanel locations={appearsOn} onToggle={key => void handleRemoveFounderTopicFeature(key)} />
             </div>
+
+            <ImportContentCTA />
           </div>
         )}
 
@@ -3113,6 +3163,8 @@ export function DashboardProfilePage() {
                 </div>
               )
             })()}
+
+            <ImportContentCTA />
           </div>
         )}
 
@@ -3268,6 +3320,8 @@ export function DashboardProfilePage() {
                 )
               })()}
             </div>
+
+            <ImportContentCTA />
           </div>
         )}
 
@@ -3369,6 +3423,8 @@ export function DashboardProfilePage() {
                 </div>
               )
             })()}
+
+            <ImportContentCTA />
 
             <div className="bg-white rounded-xl border border-2 border-red-200 px-5 py-4">
               <p className="text-sm font-semibold text-red-700 mb-2">Danger Zone — delete your Culo Village account</p>
