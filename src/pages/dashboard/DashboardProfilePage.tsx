@@ -1645,7 +1645,7 @@ export function DashboardProfilePage() {
                 actually running, so the page never goes quiet on them. */}
             {!draft.bio?.trim() && draft.onboardingStatus === 'researching' && (
               <div className="bg-[#F8F5F0] border border-[#E8E4DD] rounded-xl px-5 py-4 flex items-center gap-3">
-                <div className="w-4 h-4 border-2 border-[#C86A43] border-t-transparent rounded-full animate-spin shrink-0" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-sm font-semibold text-[#2D2A26]">Culo is researching and writing your bio and first article</p>
                   <p className="text-xs text-[#9CA3AF] mt-0.5">Usually takes a minute or two — you can keep using the rest of the dashboard in the meantime, this will fill in on its own.</p>
