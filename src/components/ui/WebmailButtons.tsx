@@ -7,7 +7,9 @@ const PROVIDERS = [
   { label: 'Open Yahoo',   url: 'https://mail.yahoo.com/' },
 ]
 
-export function WebmailButtons() {
+// `dark` is for a dark/charcoal background (e.g. VillagePage's hero) — the
+// default light-bordered/dark-text styling is unreadable there.
+export function WebmailButtons({ dark = false }: { dark?: boolean } = {}) {
   return (
     <div className="flex flex-col gap-2 mb-5">
       {PROVIDERS.map(p => (
@@ -16,7 +18,11 @@ export function WebmailButtons() {
           href={p.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full py-2.5 border border-[#E8E4DD] text-[#2D2A26] text-sm font-medium rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors text-center"
+          className={`block w-full py-2.5 border text-sm font-medium rounded-lg transition-colors text-center ${
+            dark
+              ? 'border-white/20 text-white/80 hover:border-primary/60 hover:text-white'
+              : 'border-[#E8E4DD] text-[#2D2A26] hover:border-[#C86A43]/40 hover:text-[#C86A43]'
+          }`}
         >
           {p.label}
         </a>

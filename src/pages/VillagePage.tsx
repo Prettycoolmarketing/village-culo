@@ -15,6 +15,7 @@ import { InnerContainer }            from '../components/layout/PageContainer'
 import { getStories } from '../services/stories'
 import { dailyRotatingSlice } from '../utils/rotation'
 import { hasRealCoverImage } from '../utils/realMedia'
+import { WebmailButtons } from '../components/ui/WebmailButtons'
 
 // Compact inline variant of the same signup mechanic JoinVillagePage uses —
 // no full-page takeover here, just inline feedback within this section's
@@ -34,9 +35,12 @@ function HomeInstantJoin() {
 
   if (checkEmail) {
     return (
-      <p className="font-body text-sm text-white/70 max-w-xl mx-auto lg:mx-0">
-        Check your email — we sent a confirmation link to <span className="font-medium text-white">{email}</span>.
-      </p>
+      <div className="max-w-xl mx-auto lg:mx-0">
+        <p className="font-body text-sm text-white/70 mb-4">
+          Check your email — we sent a confirmation link to <span className="font-medium text-white">{email}</span>.
+        </p>
+        <WebmailButtons dark />
+      </div>
     )
   }
 

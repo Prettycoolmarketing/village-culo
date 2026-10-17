@@ -105,37 +105,39 @@ export function JoinSetupPage() {
     <>
       <Navbar />
       <main className="min-h-screen bg-background flex items-center justify-center px-6 py-24">
-        <div className="max-w-sm w-full">
+        <div className="max-w-sm md:max-w-lg w-full">
           <JoinProgress step={2} />
-          <h1 className="font-heading text-2xl font-bold text-charcoal mb-2 text-center">Let's build your profile</h1>
-          <p className="font-body text-sm text-muted text-center mb-8">
+          <h1 className="font-heading text-2xl md:text-4xl font-bold text-charcoal mb-2 md:mb-3 text-center">Let's build your profile</h1>
+          <p className="font-body text-sm md:text-base text-muted text-center mb-8 md:mb-10">
             We'll write your bio and first article — add your most-known username, then you can go ahead and
             import your content.
           </p>
-          <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-3">
+          <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-3 md:gap-4">
             <input
               type="text"
               required
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Your full name"
-              className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+              className="rounded-xl px-4 py-3 md:px-5 md:py-4 text-sm md:text-base text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
-            <label htmlFor="setup-social-link" className="sr-only">Username or social link</label>
+            <label htmlFor="setup-social-link" className="font-body text-xs md:text-sm text-muted -mb-1">
+              LinkedIn, Instagram, YouTube, TikTok, podcast — any of them
+            </label>
             <input
               id="setup-social-link"
               type="text"
               required
               value={link}
               onChange={e => setLink(e.target.value)}
-              placeholder="@yourusername, or a link to Instagram, YouTube, LinkedIn…"
-              className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+              placeholder="@yourusername"
+              className="rounded-xl px-4 py-3 md:px-5 md:py-4 text-sm md:text-base text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
             {error && <p className="font-body text-sm text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={submitting}
-              className="mt-2 rounded-xl px-6 py-3 text-sm font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+              className="mt-2 rounded-xl px-6 py-3 md:py-4 text-sm md:text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
             >
               {submitting ? 'Saving…' : 'Build my profile'}
             </button>
