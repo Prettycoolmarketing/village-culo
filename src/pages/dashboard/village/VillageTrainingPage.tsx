@@ -227,31 +227,55 @@ export function VillageTrainingPage() {
         </p>
       </div>
 
-      <nav className="mb-10">
-        <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">On this page</p>
-        {/* Same pill-tab style as the rest of CAPO (see Tabs component) —
-            the previous sticky white bar with its own background/blur/
-            shadow read as a stray floating box, out of step with how every
-            other nav in the dashboard looks. */}
-        <ul className="flex flex-wrap gap-1.5 border-b border-[#E8E4DD] pb-3">
-          {NAV_ITEMS.map(item => (
-            <li key={item.id}>
-              <a
-                href={`#${item.id}`}
-                className={`block px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
-                  activeSection === item.id
-                    ? 'bg-[#C86A43] text-white'
-                    : 'text-[#6B7280] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
-                }`}
-              >
-                {item.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <div className="flex gap-10 items-start">
+        {/* Back to a side nav, like this page originally had — the
+            horizontal pill-tab row that replaced it worked fine but meant
+            losing your place in a long page scrolled it out of view;
+            sticky on the side, it stays put as the active section
+            highlights while reading down the page. Desktop only, same as
+            the rest of CAPO's admin tooling. */}
+        <nav className="hidden lg:block w-56 shrink-0 sticky top-8">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">On this page</p>
+          <ul className="flex flex-col gap-0.5">
+            {NAV_ITEMS.map(item => (
+              <li key={item.id}>
+                <a
+                  href={`#${item.id}`}
+                  className={`block px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                    activeSection === item.id
+                      ? 'bg-[#C86A43] text-white'
+                      : 'text-[#6B7280] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
+                  }`}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-      <div className="max-w-[800px] mx-auto">
+        {/* Mobile fallback — same links, just not sticky/side-mounted. */}
+        <nav className="lg:hidden mb-6">
+          <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-2">On this page</p>
+          <ul className="flex flex-wrap gap-1.5 border-b border-[#E8E4DD] pb-3">
+            {NAV_ITEMS.map(item => (
+              <li key={item.id}>
+                <a
+                  href={`#${item.id}`}
+                  className={`block px-4 py-2 text-sm font-semibold rounded-lg transition-colors whitespace-nowrap ${
+                    activeSection === item.id
+                      ? 'bg-[#C86A43] text-white'
+                      : 'text-[#6B7280] hover:bg-[#F3EDE6] hover:text-[#2D2A26]'
+                  }`}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="max-w-[800px] flex-1 min-w-0">
       <Section id="what-is-village" title="What The Culo Village actually is">
         <p>
           The Culo Village is a publishing platform for founders. Most founders already have real content
@@ -740,6 +764,7 @@ export function VillageTrainingPage() {
           See the full "How CULO in Canva" page →
         </a>
       </Section>
+        </div>
       </div>
     </div>
   )
