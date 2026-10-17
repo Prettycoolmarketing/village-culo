@@ -842,7 +842,7 @@ function OnboardingSteps({ researched, imported, published }: { researched: bool
   )
 }
 
-function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
+function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Founder; onDone: () => void; onNewToContent: () => void }) {
   const [name, setName] = useState(founder.name)
   const [link, setLink] = useState('')
   const [photo, setPhoto] = useState<string | undefined>(undefined)
@@ -913,13 +913,25 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
               className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
             />
           </div>
-          <button
-            onClick={() => void handleRun()}
-            disabled={running}
-            className="px-6 py-3 rounded-xl bg-[#C86A43] text-white text-sm font-bold hover:bg-[#b05a35] disabled:opacity-50 transition-colors self-start"
-          >
-            {running ? 'Researching…' : 'Run research'}
-          </button>
+          <div className="flex items-center gap-4 flex-wrap">
+            <button
+              onClick={() => void handleRun()}
+              disabled={running}
+              className="px-6 py-3 rounded-xl bg-[#C86A43] text-white text-sm font-bold hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+            >
+              {running ? 'Researching…' : 'Run research'}
+            </button>
+            {/* For a founder with nothing existing to repurpose — new to
+                marketing, no content to research from. Skips straight to
+                filling the profile in by hand below instead of sitting on
+                a prompt asking for a link they don't have. */}
+            <button
+              onClick={onNewToContent}
+              className="text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+            >
+              I need to create new content, I don't have any to republish yet
+            </button>
+          </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>
       </div>
@@ -1742,6 +1754,10 @@ export function DashboardProfilePage() {
                 onDone={() => {
                   const fresh = getFounder(draft.id)
                   if (fresh) setDraft(fresh)
+                }}
+                onNewToContent={() => {
+                  void updateFounder({ ...draft, researchPromptSkipped: true })
+                  setDraft({ ...draft, researchPromptSkipped: true })
                 }}
               />
             )}

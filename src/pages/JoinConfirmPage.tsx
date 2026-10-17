@@ -52,7 +52,7 @@ export function JoinConfirmPage() {
       // Skip straight past it when there's nothing left to do here.
       const founder = id ? getFounder(id) : null
       if (founder?.passwordSet) {
-        navigate('/dashboard/import-content', { replace: true })
+        navigate('/dashboard/profile', { replace: true })
         return
       }
       setReady(true)
