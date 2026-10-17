@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
-import { ensureJoinedFounder, needsOnboardingSetup } from '../services/joinFlow'
+import { ensureJoinedFounder } from '../services/joinFlow'
 import { getFounder, updateFounder } from '../services/founders'
 import { supabase } from '../lib/supabase'
 import { JoinProgress } from '../components/ui/JoinProgress'
@@ -52,7 +52,7 @@ export function JoinConfirmPage() {
       // Skip straight past it when there's nothing left to do here.
       const founder = id ? getFounder(id) : null
       if (founder?.passwordSet) {
-        navigate(needsOnboardingSetup(founder) ? '/join/setup' : '/dashboard/import-content', { replace: true })
+        navigate('/dashboard/import-content', { replace: true })
         return
       }
       setReady(true)
@@ -103,7 +103,14 @@ export function JoinConfirmPage() {
     }
 
     setSubmitting(false)
-    navigate(needsOnboardingSetup(founder) ? '/join/setup' : '/dashboard/import-content', { replace: true })
+    // /join/setup used to be a required next step (name + a research link)
+    // before the dashboard — it was its own extra page in the funnel, with
+    // its own cache-sync races, and a real source of signup friction/
+    // glitches. That same name+link capture now lives right on Profile's
+    // Overview tab instead (see ResumeResearchBanner there), so a fresh
+    // founder can go straight into the dashboard and fill it in whenever
+    // they're ready, not as a forced gate before they can see anything.
+    navigate('/dashboard/import-content', { replace: true })
   }
 
   if (!ready) {

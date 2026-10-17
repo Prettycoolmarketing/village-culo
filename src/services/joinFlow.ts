@@ -46,15 +46,6 @@ export interface JoinOptions {
  * directly rather than trusting the local cache, since that cache is empty
  * on a fresh device.
  */
-// Every self-serve signup gets a real profile built, Canva-sourced or not —
-// today's /joincanva is just /join?source=canva under the hood, and even
-// the real Canva Marketplace funnel (once live) still runs this same
-// research, just with a Canva-specific banner added on top of the welcome
-// page rather than skipping the village profile entirely.
-export function needsOnboardingSetup(founder: Founder | null | undefined): boolean {
-  return !!founder && founder.onboardingStatus === 'needs_setup'
-}
-
 export async function ensureJoinedFounder(userId: string, email: string, source: 'village' | 'canva', options: JoinOptions = {}): Promise<string | null> {
   const { canvaUserId, passwordAlreadySet, stripeSeed } = options
 

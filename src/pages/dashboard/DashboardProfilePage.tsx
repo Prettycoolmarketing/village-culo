@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { runOnboardingResearch } from '../../services/onboardingResearch'
-import { updateFounder, deleteFounder, getFounder } from '../../services/founders'
+import { updateFounder, deleteFounder, getFounder, uniqueFounderSlug } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './DashboardImportContentPage'
 import { getUnlockedImportedIds } from '../../utils/archiveUnlock'
@@ -754,14 +754,32 @@ function SocialLinksEditor({ links, onChange }: { links: SocialLink[]; onChange:
 // research failed silently, a curated/imported founder with no research
 // ever run) — same pipeline, triggered by hand instead of hidden behind a
 // loading screen.
+// Lives on Overview/Identity, not Content — this is where a founder fills
+// in who they are, same place as the rest of their Identity fields, not
+// buried in the content-review tab. Also lists every link already brought
+// in through Import (every distinct ImportedContent source, any platform)
+// so it's obvious at a glance what Culo already has to work with.
 function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
+  const [name, setName] = useState(founder.name)
   const [link, setLink] = useState('')
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const importedLinks = Array.from(
+    new Map(
+      importedContentService.getAll({ founderId: founder.id })
+        .filter(i => i.originalUrl)
+        .map(i => [i.originalUrl, i]),
+    ).values(),
+  )
+
   async function handleRun() {
     const raw = link.trim()
+    if (!name.trim()) { setError('Add your full name first.'); return }
     if (!raw) { setError('Add your most-used username or a link first.'); return }
+    if (name.trim() !== founder.name) {
+      await updateFounder({ ...founder, name: name.trim(), slug: uniqueFounderSlug(name.trim(), founder.id) })
+    }
     // Same handle-or-link flexibility as /join/setup — "@n" is enough,
     // runOnboardingResearch treats anything that isn't a real link as a
     // bare handle and researches from that instead.
@@ -785,11 +803,18 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
       <div>
         <p className="text-sm font-semibold text-[#2D2A26]">No bio or articles yet</p>
         <p className="text-xs text-[#6B7280] mt-0.5 max-w-xl">
-          Add your most-known username — your YouTube channel, podcast, Instagram or LinkedIn — and Culo will
-          research you and write your bio and first article from it.
+          Add your full name and your most-known username — your YouTube channel, podcast, Instagram or
+          LinkedIn — and Culo will research you and write your bio and first article from it.
         </p>
       </div>
       <div className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="Your full name"
+          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+        />
         <input
           type="text"
           value={link}
@@ -802,10 +827,29 @@ function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: (
           disabled={running}
           className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0"
         >
-          {running ? 'Researching…' : 'Resume research'}
+          {running ? 'Researching…' : 'Run research'}
         </button>
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
+
+      {importedLinks.length > 0 && (
+        <div className="border-t border-[#C86A43]/20 pt-3 mt-1">
+          <p className="text-xs font-semibold text-[#2D2A26] mb-2">Already imported — Culo can research from these too</p>
+          <div className="flex flex-col gap-1.5">
+            {importedLinks.map(item => (
+              <a
+                key={item.id}
+                href={item.originalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#6B7280] hover:text-[#C86A43] truncate"
+              >
+                {IMPORT_PLATFORM_LABELS[item.sourcePlatform]}: {item.originalUrl}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1598,6 +1642,16 @@ export function DashboardProfilePage() {
               story and idea you publish gets connected back to.
             </TabIntro>
 
+            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && (
+              <ResumeResearchBanner
+                founder={draft}
+                onDone={() => {
+                  const fresh = getFounder(draft.id)
+                  if (fresh) setDraft(fresh)
+                }}
+              />
+            )}
+
             <a
               href={`/founders/${draft.slug}`}
               target="_blank"
@@ -1725,18 +1779,6 @@ export function DashboardProfilePage() {
               </p>
             </div>
           <div className="hidden md:flex md:flex-col gap-5">
-            {/* Lives here, not Overview/Identity — research doesn't matter
-                until there's content to review alongside it (the bio and
-                first article it writes both show up in this same tab). */}
-            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && (
-              <ResumeResearchBanner
-                founder={draft}
-                onDone={() => {
-                  const fresh = getFounder(draft.id)
-                  if (fresh) setDraft(fresh)
-                }}
-              />
-            )}
             {draft.pcmManaged && !draft.pcmGateOpen && (() => {
               const svc = draft.pcmService
               const line = svc === 'social' ? 'Your account manager is setting up your social media.'

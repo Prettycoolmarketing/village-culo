@@ -4,8 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { ensureJoinedFounder, needsOnboardingSetup } from '../services/joinFlow'
-import { getFounder } from '../services/founders'
+import { ensureJoinedFounder } from '../services/joinFlow'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
@@ -73,7 +72,9 @@ export function JoinCanvaPaidPage() {
       stripeSeed: { customerId: checkoutInfo.customerId, subscriptionId: checkoutInfo.subscriptionId },
     })
     if (!founderId) { setError('Could not finish setting up your account. Please contact support.'); return }
-    navigate(needsOnboardingSetup(getFounder(founderId)) ? '/join/setup' : '/dashboard/welcome', { replace: true })
+    // Same change as JoinConfirmPage — straight to the dashboard, name/link
+    // capture happens on Profile's Overview tab now, not as a forced gate.
+    navigate('/dashboard/import-content', { replace: true })
   }
 
   async function handleSubmit(e: FormEvent) {
