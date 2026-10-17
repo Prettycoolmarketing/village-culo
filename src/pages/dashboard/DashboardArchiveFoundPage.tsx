@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
@@ -20,9 +21,30 @@ import { buildPaymentUrl } from '../../config/paymentLinks'
 // unlocked, or if they genuinely have 10 or fewer pieces — there's nothing
 // to sell someone who has nothing locked.
 export function DashboardArchiveFoundPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const founderId = getCurrentFounderId(user) ?? 'dev-user'
   const founder = getFounder(founderId)
+
+  // Same cache-sync race as DashboardCreativesPage/DashboardProfilePage: a
+  // fresh signup's local founder cache can still be empty the moment this
+  // page renders. `founderId` always has a value here (it falls back to
+  // 'dev-user'), but `getFounder` on that id can still miss until the sync
+  // lands, so poll on `founder` itself for up to ~10s before concluding
+  // there's genuinely nothing to show.
+  const [syncTick, setSyncTick] = useState(0)
+  useEffect(() => {
+    if (loading || founder || syncTick >= 20) return
+    const timer = setTimeout(() => setSyncTick(t => t + 1), 500)
+    return () => clearTimeout(timer)
+  }, [loading, founder, syncTick])
+
+  if (loading || (!founder && syncTick < 20)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#C86A43] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
   if (!founder) return null
 
   const allImported = importedContentService.getAll({ founderId })

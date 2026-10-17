@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getCurrentFounder } from '../services/currentFounder'
@@ -17,7 +17,7 @@ import { JoinProgress } from '../components/ui/JoinProgress'
 // runOnboardingResearch) and hands off to /dashboard/welcome's loading
 // state once that's running.
 export function JoinSetupPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const navigate = useNavigate()
   const founder = getCurrentFounder(user)
 
@@ -26,6 +26,27 @@ export function JoinSetupPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Same cache-sync race as DashboardCreativesPage: a brand-new signup
+  // landing here right after confirming their email can hit this page
+  // before syncUserDataFromSupabase has populated the local founder cache.
+  // `loading` is only AuthContext's own session restore, not that sync, so
+  // without a retry this used to show "Loading…" forever with no recovery —
+  // nothing here re-renders once the sync actually lands. Poll for up to
+  // ~10s before genuinely giving up.
+  const [syncTick, setSyncTick] = useState(0)
+  useEffect(() => {
+    if (loading || founder || syncTick >= 20) return
+    const timer = setTimeout(() => setSyncTick(t => t + 1), 500)
+    return () => clearTimeout(timer)
+  }, [loading, founder, syncTick])
+
+  if (loading || (!founder && syncTick < 20)) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <p className="font-body text-sm text-muted">Loading…</p>
+      </main>
+    )
+  }
   if (!founder) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
@@ -151,12 +151,27 @@ function SourceRow({ source, onChanged }: { source: ConnectedSource; onChanged: 
 }
 
 export function DashboardImportSourcesPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const founderId = getCurrentFounderId(user)
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)
   void tick
 
+  // Same cache-sync race as DashboardCreativesPage: a genuinely set-up
+  // founder can still read as `undefined` here for a moment on a fresh tab,
+  // before syncUserDataFromSupabase has populated the local cache. Without
+  // a retry this page falls straight into "Finish setting up your profile
+  // first" for someone who already has — and since nothing here re-renders
+  // once the sync lands, that message would stick until a manual refresh.
+  // Poll for up to ~10s before actually concluding there's no founder.
+  const [syncTick, setSyncTick] = useState(0)
+  useEffect(() => {
+    if (loading || founderId || syncTick >= 20) return
+    const timer = setTimeout(() => setSyncTick(t => t + 1), 500)
+    return () => clearTimeout(timer)
+  }, [loading, founderId, syncTick])
+
+  const stillSyncing = loading || (!founderId && syncTick < 20)
   const sources = founderId ? connectedSourcesService.getAll({ founderId }) : []
 
   return (
@@ -176,7 +191,11 @@ export function DashboardImportSourcesPage() {
         </Link>
       </div>
 
-      {!founderId ? (
+      {stillSyncing ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="w-6 h-6 border-2 border-[#C86A43] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : !founderId ? (
         <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
           <p className="text-sm font-medium text-[#2D2A26]">Finish setting up your profile first</p>
           <p className="text-xs text-[#9CA3AF] mt-1">Sources connect to your founder profile, which isn't set up yet.</p>
