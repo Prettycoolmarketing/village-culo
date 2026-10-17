@@ -1813,29 +1813,6 @@ export function DashboardProfilePage() {
               {renderIdentityFields(draft)}
             </div>
 
-            {/* Businesses, the stat-link grid and the Creatives banner are
-                all navigation to somewhere else in the dashboard — on
-                mobile, Profile is the whole page (see the mobile-only
-                block right below instead of this), so none of that
-                applies; just the identity fields above. */}
-            <div className="hidden md:block">
-              {/* Featured stories now live in one place — the "Feature"
-                  button on each story in Content — instead of duplicated here
-                  as a second, separate picker writing to the same underlying
-                  selection (see toggleFeaturedStory). A quick link there
-                  instead of a second control that could drift out of sync
-                  with it again. */}
-              <div className="bg-white rounded-xl border border-[#E8E4DD] px-8 py-8 flex items-center justify-between gap-6">
-                <div>
-                  <p className="text-lg font-bold text-[#2D2A26]">Featured stories</p>
-                  <p className="text-sm text-[#6B7280] mt-1.5 max-w-xl">Choose what's featured on your public profile — and potentially on the main Culo Village — from the Feature button on each story.</p>
-                </div>
-                <Link to="/dashboard/import-content" className="shrink-0 text-base font-semibold px-6 py-3 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors">
-                  Go to Import →
-                </Link>
-              </div>
-            </div>
-
             <div className="hidden md:grid grid-cols-2 sm:grid-cols-5 gap-3">
               <Link to="/dashboard/profile?tab=businesses" className="hidden sm:block bg-white rounded-xl border border-[#E8E4DD] px-4 py-5 sm:py-4 text-center hover:border-[#C86A43]/40 transition-colors">
                 <p className="text-2xl font-bold text-[#2D2A26]">{founderBusinesses.length}</p>
