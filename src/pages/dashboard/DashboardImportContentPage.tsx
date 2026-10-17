@@ -94,6 +94,36 @@ const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
 // gone rather than left as a broken "Find my podcast" button.
 
 function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
+  // Same "own content vs. a single mention" split as YouTube/Website — an
+  // episode of the founder's own show is theirs to embed and write about
+  // (EpisodeEmbedPanel, unchanged). A guest spot on someone ELSE's podcast
+  // isn't theirs to embed as if it were — "episode" mode reuses the
+  // mention_article writer instead, same as the other two.
+  const [mode, setMode] = useState<'channel' | 'episode'>('channel')
+  const [value, setValue] = useState('')
+  const [busy, setBusy]   = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [episodeDone, setEpisodeDone] = useState(false)
+
+  async function handleImportEpisode() {
+    if (!value.trim()) { setError('Paste the episode link first.'); return }
+    const founder = getFounder(founderId)
+    if (!founder) { setError('Could not find your founder profile.'); return }
+    setBusy(true)
+    setError(null)
+    setEpisodeDone(false)
+    try {
+      await importMentionArticle(founderId, founder.name, value.trim())
+      setValue('')
+      setEpisodeDone(true)
+      onConnected()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not import this episode.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-2xl border-2 border-[#E8E4DD] p-6">
       <div className="flex items-center gap-4 mb-2">
@@ -101,12 +131,54 @@ function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: 
         <p className="text-base font-semibold text-[#2D2A26]">Add a podcast episode</p>
       </div>
       <p className="text-sm text-[#9CA3AF] mb-4">
-        Paste a Spotify or Apple Podcasts episode link to bring that episode into the Village as a shareable blog.
+        {mode === 'channel'
+          ? 'Paste a Spotify or Apple Podcasts episode link to bring that episode into the Village as a shareable blog.'
+          : "Been a guest on someone else's podcast? Paste the episode link and we'll write an original piece about it, with a link back to the episode."}
       </p>
+      <div className="flex gap-1 mb-3 bg-[#F8F5F0] rounded-lg p-1 w-fit">
+        <button
+          onClick={() => { setMode('channel'); setError(null) }}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${mode === 'channel' ? 'bg-white text-[#2D2A26] shadow-sm' : 'text-[#9CA3AF]'}`}
+        >
+          This is my channel
+        </button>
+        <button
+          onClick={() => { setMode('episode'); setError(null); setEpisodeDone(false) }}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${mode === 'episode' ? 'bg-white text-[#2D2A26] shadow-sm' : 'text-[#9CA3AF]'}`}
+        >
+          I was featured — this is an episode
+        </button>
+      </div>
 
-      <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
+      {mode === 'channel' ? (
+        <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
+      ) : (
+        <div>
+          {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={value}
+              onChange={e => setValue(e.target.value)}
+              placeholder="Paste the direct episode URL"
+              className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+            />
+            <button
+              onClick={() => void handleImportEpisode()}
+              className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] transition-colors shrink-0"
+            >
+              {busy ? 'Writing…' : 'Write this up'}
+            </button>
+          </div>
+          {episodeDone && (
+            <p className="text-xs text-[#5E6B4A] font-medium mt-2">
+              Added as a draft below — review it, then publish whenever you're ready.
+            </p>
+          )}
+        </div>
+      )}
 
-      <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />
+      {mode === 'channel' && <ConnectedSourcesSection sources={sources} isHighVolume={isHighVolume} onChanged={onConnected} />}
     </div>
   )
 }
