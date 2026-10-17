@@ -857,6 +857,20 @@ export function DashboardProfilePage() {
     const timer = setTimeout(() => setSyncTick(t => t + 1), 500)
     return () => clearTimeout(timer)
   }, [authLoading, currentFounder, syncTick])
+  // While research is running in the background (see runOnboardingResearch),
+  // nothing re-renders this page on its own once it finishes — the
+  // "Culo is researching…" indicator below would otherwise sit there
+  // forever until a manual reload, even after the bio/article are already
+  // done. Polls the live founder record every few seconds, only while
+  // actually researching, and refreshes draft the moment it's done.
+  useEffect(() => {
+    if (draft?.onboardingStatus !== 'researching') return
+    const interval = setInterval(() => {
+      const fresh = getFounder(draft.id)
+      if (fresh && fresh.onboardingStatus !== 'researching') setDraft(fresh)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [draft?.id, draft?.onboardingStatus])
   const [editingLibraryItem, setEditingLibraryItem] = useState<LibraryItem | null>(null)
   // draft's useState initializer above only ever runs once, on this
   // component's first mount — switching accounts without a full page
@@ -1622,6 +1636,21 @@ export function DashboardProfilePage() {
                   if (fresh) setDraft(fresh)
                 }}
               />
+            )}
+
+            {/* The banner above hides itself entirely once onboardingStatus
+                flips to 'researching' — which used to mean a founder who
+                reloaded mid-run saw nothing at all, no sign anything was
+                happening. This replaces it for as long as research is
+                actually running, so the page never goes quiet on them. */}
+            {!draft.bio?.trim() && draft.onboardingStatus === 'researching' && (
+              <div className="bg-[#F8F5F0] border border-[#E8E4DD] rounded-xl px-5 py-4 flex items-center gap-3">
+                <div className="w-4 h-4 border-2 border-[#C86A43] border-t-transparent rounded-full animate-spin shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-[#2D2A26]">Culo is researching and writing your bio and first article</p>
+                  <p className="text-xs text-[#9CA3AF] mt-0.5">Usually takes a minute or two — you can keep using the rest of the dashboard in the meantime, this will fill in on its own.</p>
+                </div>
+              </div>
             )}
 
             <a
