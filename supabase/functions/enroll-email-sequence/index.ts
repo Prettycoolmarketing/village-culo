@@ -55,6 +55,25 @@ serve(async (req) => {
     })
     if (error) throw new Error(error.message)
 
+    // A day:0 step used to only go out on the next scheduled daily cron
+    // run (up to ~24h away depending on signup time), which read as "the
+    // welcome email didn't send" even though it was only ever queued, not
+    // broken — confirmed real: several real enrollments sitting at "0
+    // sent" hours after signup. Calling send-sequence-emails right here
+    // processes every due step across every active enrollment immediately
+    // (not just this one), so a genuinely day:0 step goes out within
+    // seconds of signing up instead of waiting on the clock. Actually
+    // awaited, not fire-and-forget — an unawaited call risks the Deno
+    // isolate terminating the moment this function's own response is sent,
+    // before the fetch it kicked off ever completes. The caller
+    // (joinFlow.ts) already doesn't await this whole enroll call itself,
+    // so the extra latency here doesn't block signup either way. A
+    // failure here is swallowed, never thrown — the daily cron is still
+    // the real safety net regardless.
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/send-sequence-emails`, { method: 'POST' })
+    } catch { /* best-effort — the daily cron will still catch this */ }
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })

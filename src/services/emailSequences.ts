@@ -1,4 +1,5 @@
 import { readCache, writeEntity, pullVisibleRows, type WriteResult } from '../lib/entityStore'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 const SEQ_KEY = 'email_sequences'
 const SEQ_TABLE = 'email_sequences'
@@ -50,6 +51,19 @@ export const emailSequencesService = {
       table: SEQ_TABLE,
       toRow: s => ({ id: s.id, data: s }),
     })
+  },
+
+  // Manually runs the same send-sequence-emails the daily cron calls —
+  // every active enrollment across every sequence, not just one. Testing a
+  // sequence edit used to mean waiting for the next 9pm UTC run (or longer,
+  // if the step's day hadn't technically arrived yet); this lets staff see
+  // the real send happen the same day.
+  async sendNow(): Promise<{ success: boolean; sent?: number; error?: string }> {
+    if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not available in this environment.' }
+    const { data, error } = await supabase.functions.invoke<{ ok?: boolean; sent?: number; error?: string }>('send-sequence-emails', { body: {} })
+    if (error) return { success: false, error: error.message }
+    if (data?.error) return { success: false, error: data.error }
+    return { success: true, sent: data?.sent ?? 0 }
   },
 }
 

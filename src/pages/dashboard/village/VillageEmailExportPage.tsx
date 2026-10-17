@@ -656,6 +656,18 @@ function SequencesPanel() {
     })
   }
 
+  const [sendingNow, setSendingNow] = useState(false)
+  const [sendNowResult, setSendNowResult] = useState<string | null>(null)
+  function sendNow() {
+    setSendingNow(true)
+    setSendNowResult(null)
+    void emailSequencesService.sendNow().then(result => {
+      setSendingNow(false)
+      setSendNowResult(result.success ? `Sent ${result.sent ?? 0} email${result.sent === 1 ? '' : 's'}.` : result.error ?? 'Could not send.')
+      void emailSequenceEnrollmentsService.refresh().then(() => setEnrollments(emailSequenceEnrollmentsService.getAll()))
+    })
+  }
+
   if (loading) return <p className="text-sm text-[#9CA3AF]">Loading…</p>
 
   return (
@@ -675,7 +687,18 @@ function SequencesPanel() {
         <button onClick={newSequence} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-[#C86A43] hover:bg-[#FBF1EB] transition-colors">
           + New sequence
         </button>
+        {/* Runs the same send across every sequence's active enrollments,
+            not just this one — same thing the daily cron does. Testing a
+            step edit otherwise meant waiting for the next scheduled run. */}
+        <button
+          onClick={sendNow}
+          disabled={sendingNow}
+          className="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
+        >
+          {sendingNow ? 'Sending…' : 'Send due emails now'}
+        </button>
       </div>
+      {sendNowResult && <p className="text-xs text-[#6B7280] mb-3 -mt-2">{sendNowResult}</p>}
 
       {!active ? (
         <p className="text-sm text-[#9CA3AF]">No sequences yet — create one above.</p>

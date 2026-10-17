@@ -27,6 +27,16 @@ export const STANDARD_PAYMENT_LINK = 'https://buy.stripe.com/cNi00k5rPeVleXg6UL8
 // stripe-setup-canva-upsell-link.
 export const CANVA_UPSELL_PAYMENT_LINK = 'https://buy.stripe.com/28E5kE5rPeVl9CW6UL83C0y'
 
+// The actual Culo Creatives app URL inside Canva — doesn't exist yet
+// (still awaiting Canva Marketplace review, see memory/project notes).
+// Left empty rather than a guessed/placeholder value: every call site
+// checks CANVA_APP_URL before showing a paying founder a real "open the
+// app" link, and falls back to the honest "waitlist, we'll email you"
+// messaging while it's unset. Set this to the real URL the moment Canva
+// approves the listing — every paid-user screen picks it up automatically,
+// no other code change needed.
+export const CANVA_APP_URL = ''
+
 // client_reference_id is how stripe-creatives-webhook links the resulting
 // Stripe customer back to a founder (see that function's header comment) —
 // Stripe carries this query param through to the Checkout Session

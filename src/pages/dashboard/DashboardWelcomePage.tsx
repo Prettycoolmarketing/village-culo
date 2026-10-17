@@ -5,6 +5,7 @@ import { getCurrentFounder } from '../../services/currentFounder'
 import { getFounder } from '../../services/founders'
 import { JoinProgress } from '../../components/ui/JoinProgress'
 import { ComingSoonModal } from '../../components/ui/ComingSoonModal'
+import { CANVA_APP_URL } from '../../config/paymentLinks'
 
 // Landing spot for orientation and promotion — everything that used to be
 // bolted onto Publish or Import Content (How it works, what the Voice Brief
@@ -145,12 +146,27 @@ export function DashboardWelcomePage() {
             </div>
           </div>
           <div className="flex flex-col sm:items-end gap-4 pt-4">
-            <button
-              onClick={() => setShowComingSoon(true)}
-              className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
-            >
-              {hasBilling ? 'Check Culo Creatives status' : 'Join the Culo Creatives waitlist'}
-            </button>
+            {/* Once CANVA_APP_URL is actually set (see config/paymentLinks.ts),
+                a paying founder gets a real link straight to the app instead
+                of another "waitlist" screen — this is the one spot that
+                changes automatically the day Canva approves the listing. */}
+            {hasBilling && CANVA_APP_URL ? (
+              <a
+                href={CANVA_APP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+              >
+                Open Culo Creatives in Canva →
+              </a>
+            ) : (
+              <button
+                onClick={() => setShowComingSoon(true)}
+                className="flex justify-center sm:inline-flex text-base font-semibold px-6 py-5 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors w-full sm:w-auto"
+              >
+                {hasBilling ? 'Check Culo Creatives status' : 'Join the Culo Creatives waitlist'}
+              </button>
+            )}
             <ComingSoonModal open={showComingSoon} onClose={() => setShowComingSoon(false)} hasBilling={hasBilling} />
           </div>
         </section>

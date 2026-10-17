@@ -37,8 +37,8 @@ export function ComingSoonModal({ open, onClose, hasBilling = false }: { open: b
         <h2 className="font-heading text-2xl font-bold text-[#2D2A26] mb-2 leading-tight">Coming Soon</h2>
         <p className="text-sm text-[#6B7280] mb-6">
           {hasBilling
-            ? "Your trial is already on file — the app itself isn't open yet, but we'll email you the moment it is, no action needed from you."
-            : "Culo Creatives isn't open yet — we'll let you know the moment it is."}
+            ? "You're on the Culo Creatives waitlist with your trial already on file — we'll email you the moment it's open, no action needed from you."
+            : "You're on the Culo Creatives waitlist. In the meantime, import your content into the Village and keep an eye on your emails."}
         </p>
         <button
           onClick={onClose}
