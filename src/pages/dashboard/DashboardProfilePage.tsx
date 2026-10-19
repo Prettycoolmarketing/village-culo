@@ -919,8 +919,17 @@ function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Fo
               disabled={running}
               className="px-6 py-3 rounded-xl bg-[#C86A43] text-white text-sm font-bold hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
             >
-              {running ? 'Researching…' : 'Run research'}
+              {running ? 'Researching…' : 'Confirm & run research'}
             </button>
+            {/* Defers, doesn't skip — the research prompt is still here
+                waiting the next time they're on Profile. For a founder who
+                just wants to get into importing straight away. */}
+            <Link
+              to="/dashboard/import-content"
+              className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] transition-colors"
+            >
+              Import content first
+            </Link>
             {/* For a founder with nothing existing to repurpose — new to
                 marketing, no content to research from. Skips straight to
                 filling the profile in by hand below instead of sitting on
@@ -929,7 +938,7 @@ function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Fo
               onClick={onNewToContent}
               className="text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
             >
-              I need to create new content, I don't have any to republish yet
+              Update manually
             </button>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
@@ -1864,6 +1873,15 @@ export function DashboardProfilePage() {
               </Link>
             )}
 
+            {/* Everything below — Identity fields, stats, Import CTA, all
+                of it — stays hidden until the first-step decision is
+                actually made: a real bio exists, or they've explicitly
+                chosen to skip research and fill in manually. Showing the
+                whole profile underneath an unanswered research prompt made
+                that prompt read as optional busywork instead of the
+                obvious first thing to do. */}
+            {(!!draft.bio?.trim() || !!draft.researchPromptSkipped) && (
+              <>
             <a
               href={`/founders/${draft.slug}`}
               target="_blank"
@@ -1940,6 +1958,8 @@ export function DashboardProfilePage() {
                 200+ articles written about you, one for every post you've ever shared.
               </p>
             </div>
+              </>
+            )}
 
           </div>
         )}
