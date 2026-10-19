@@ -26,6 +26,7 @@ export function JoinConfirmPage() {
   const canvaUserId = searchParams.get('canvaUserId')?.trim() || undefined
 
   const [ready, setReady] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const [email, setEmail] = useState('')
   const [founderId, setFounderId] = useState<string | null>(null)
   const [password, setPassword] = useState('')
@@ -42,20 +43,38 @@ export function JoinConfirmPage() {
       if (settled) return
       settled = true
       setEmail(user.email ?? '')
-      const id = await ensureJoinedFounder(user.id, user.email ?? '', source, { canvaUserId })
-      setFounderId(id)
-      // Re-opening a confirm-email link (an old one still sitting in an
-      // inbox, or a duplicate Supabase sent) used to show "Set your
-      // password" again every time, with no check for whether this account
-      // already has one — confusing for someone who's already fully set up
-      // and possibly already logged into the dashboard in another tab.
-      // Skip straight past it when there's nothing left to do here.
-      const founder = id ? getFounder(id) : null
-      if (founder?.passwordSet) {
-        navigate('/dashboard/profile', { replace: true })
-        return
+      // ensureJoinedFounder calls out to a couple of edge functions
+      // (find-curated-match, the enroll/notify calls inside it) with no
+      // timeout of its own — a slow or hung network call here used to mean
+      // this page just sat on "Loading…" forever, no error, no retry,
+      // nothing for a founder to do but give up. Confirmed as a real
+      // suspect: two real signups in a row got a founder record created
+      // and then nothing — no password ever set, no further activity at
+      // all. A 15s timeout plus a visible retry beats an indefinite,
+      // silent hang either way, bug or just a slow connection.
+      try {
+        const id = await Promise.race([
+          ensureJoinedFounder(user.id, user.email ?? '', source, { canvaUserId }),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timed out')), 15000)),
+        ])
+        setFounderId(id)
+        // Re-opening a confirm-email link (an old one still sitting in an
+        // inbox, or a duplicate Supabase sent) used to show "Set your
+        // password" again every time, with no check for whether this
+        // account already has one — confusing for someone who's already
+        // fully set up and possibly already logged into the dashboard in
+        // another tab. Skip straight past it when there's nothing left to
+        // do here.
+        const founder = id ? getFounder(id) : null
+        if (founder?.passwordSet) {
+          navigate('/dashboard/profile', { replace: true })
+          return
+        }
+        setReady(true)
+      } catch {
+        settled = false
+        setLoadError(true)
       }
-      setReady(true)
     }
 
     // The confirmation link's session comes back in the URL hash, which
@@ -113,6 +132,23 @@ export function JoinConfirmPage() {
     // anything. A returning login still lands on Import as normal (see
     // DashboardLoginPage) — this is specifically the just-signed-up moment.
     navigate('/dashboard/profile', { replace: true })
+  }
+
+  if (loadError) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center px-6">
+        <div className="max-w-sm text-center">
+          <p className="font-body text-sm text-charcoal font-semibold mb-2">Something took too long to load.</p>
+          <p className="font-body text-sm text-muted mb-6">Your email's confirmed — this was just a connection hiccup setting up your account. Try again.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-xl px-6 py-3 text-sm font-semibold bg-primary text-white hover:bg-[#b05a35] transition-colors"
+          >
+            Try again
+          </button>
+        </div>
+      </main>
+    )
   }
 
   if (!ready) {
