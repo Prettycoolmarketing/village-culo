@@ -529,6 +529,9 @@ export interface Founder {
   // recorded so the prompt doesn't keep asking.
   creativesWaitlistAnswer?: 'yes' | 'no'
   creativesWaitlistAnsweredAt?: string
+  // Set by notify-first-import the one time it alerts staff that this
+  // founder's first real (non-research-written) imported item landed.
+  firstImportAlertSentAt?: string
   // Set by notify-stuck-onboarding the one time it emails a founder who's
   // been sitting at onboardingStatus 'ready' for 24h+ without returning to
   // the dashboard — stops the same person getting this nudge every single

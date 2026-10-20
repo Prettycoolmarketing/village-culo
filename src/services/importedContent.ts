@@ -1,4 +1,5 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import type {
   ImportedContent,
   ImportedContentFilter,
@@ -179,7 +180,25 @@ export const importedContentService = {
     return this.getAll({ founderId })
   },
 
-  upsert(item: ImportedContent): Promise<WriteResult> {
+  async upsert(item: ImportedContent): Promise<WriteResult> {
+    // staffCreated marks the one article runOnboardingResearch writes —
+    // that's not a founder-initiated import, it's already covered by its
+    // own "Culo's Article" tab/decision. A genuinely new (not an edit of
+    // an existing row), founder-initiated item, the first one this founder
+    // has ever brought in, is worth an instant staff alert — Culo Members
+    // previously had no indicator of import activity at all, confirmed as
+    // a real gap (a founder who'd imported 49 real items showed nothing
+    // different there).
+    const isNewItem = !this.get(item.id)
+    if (isNewItem && !item.staffCreated) {
+      const hadRealImportBefore = readCache<ImportedContent>(KEY)
+        .some(i => i.founderId === item.founderId && !i.staffCreated)
+      if (!hadRealImportBefore && isSupabaseConfigured && supabase) {
+        void supabase.functions.invoke('notify-first-import', {
+          body: { founderId: item.founderId, platform: item.sourcePlatform },
+        }).catch(() => {})
+      }
+    }
     return writeEntity<ImportedContent>({
       cacheKey: KEY,
       item,

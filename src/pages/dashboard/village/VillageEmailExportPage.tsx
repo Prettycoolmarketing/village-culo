@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getFounders, getFounder } from '../../../services/founders'
 import { getStories, getStory } from '../../../services/stories'
+import { importedContentService } from '../../../services/importedContent'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import { waitlistService } from '../../../services/waitlist'
@@ -198,6 +199,12 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
             // with the status tags on the right, since it's about intent
             // (do they want Creatives) not where they are in the funnel.
             const onCreativesWaitlist = f.creativesWaitlistAnswer === 'yes'
+            // Culo Members previously had zero indication of import
+            // activity — confirmed real gap (a founder who'd imported 49
+            // real items showed nothing different here from one who'd
+            // imported nothing). staffCreated excluded — that's research's
+            // own article, not something the founder brought in themselves.
+            const importedCount = importedContentService.getAll({ founderId: f.id }).filter(i => !i.staffCreated).length
             return (
               <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="flex items-center gap-2 min-w-0">
@@ -205,6 +212,11 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                   {onCreativesWaitlist && (
                     <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#EBF2F8] text-[#3E6E92]">
                       Creatives waitlist
+                    </span>
+                  )}
+                  {importedCount > 0 && (
+                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">
+                      Imported {importedCount}
                     </span>
                   )}
                 </div>
