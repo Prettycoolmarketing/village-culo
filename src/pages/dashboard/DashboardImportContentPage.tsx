@@ -2041,29 +2041,34 @@ export function DashboardImportContentPage() {
         <div className="mb-8">
           <h1 className="font-heading text-4xl sm:text-5xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
           <p className="text-base sm:text-lg text-[#6B7280] mt-3 max-w-2xl">
-            Import your content from multiple channels to republish as web articles, then edit your raw footage
-            with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
+            Import your content from multiple channels to republish as web articles, and join the waitlist to
+            be the first to edit your raw footage with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
           </p>
 
           {/* Answered once, never shown again either way — 'no' just
               disappears with no message, 'yes' swaps in a short
               confirmation that also keeps the funnel priority straight
-              (import still comes first, Creatives is a waitlist). */}
+              (import still comes first, Creatives is a waitlist). Neither
+              button is styled as a filled/"selected" default — both read
+              as neutral, equally-weighted choices until one is actually
+              clicked (the solid-fill Yes used to look pre-selected). */}
           {!founder?.creativesWaitlistAnswer && !waitlistAnswer && (
-            <div className="flex items-center gap-3 mt-4">
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-xl">
               <p className="text-sm font-semibold text-[#2D2A26]">Join the Culo Creatives waitlist?</p>
-              <button
-                onClick={() => void handleWaitlistAnswer('yes')}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
-              >
-                Yes
-              </button>
-              <button
-                onClick={() => void handleWaitlistAnswer('no')}
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#6B7280] hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
-              >
-                No
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => void handleWaitlistAnswer('yes')}
+                  className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#2D2A26] hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
+                >
+                  Yes, join the waitlist
+                </button>
+                <button
+                  onClick={() => void handleWaitlistAnswer('no')}
+                  className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#6B7280] hover:border-red-200 hover:text-red-600 transition-colors"
+                >
+                  No thanks
+                </button>
+              </div>
             </div>
           )}
           {(founder?.creativesWaitlistAnswer === 'yes' || waitlistAnswer === 'yes') && (
