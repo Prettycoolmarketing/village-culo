@@ -128,7 +128,19 @@ function parseFeed(xml: string): FeedItem[] {
   return blocks.map(block => {
     const title = textBetween(block, 'title') ?? 'Untitled'
     const link = linkOf(block) ?? ''
-    const description = htmlBlockToText(block, 'description') ?? htmlBlockToText(block, 'summary') ?? htmlBlockToText(block, 'content')
+    // content:encoded (the standard RSS Content Module extension) holds the
+    // FULL article body on feeds that provide it — WordPress and several
+    // other platforms do, even though <description> alone is often just a
+    // short teaser/excerpt on those same feeds. Tried first, not last: a
+    // bare 'content' tag match can never actually match this (the colon in
+    // the tag name isn't a wildcard), so it was silently never firing for
+    // any feed using the standard extension, always falling back to
+    // whatever short excerpt <description> had instead. (Confirmed this
+    // doesn't fix every platform — Wix's own feed doesn't populate
+    // content:encoded at all, so some sites are capped at a real excerpt
+    // regardless; this just stops silently missing the ones that do
+    // provide the full body.)
+    const description = htmlBlockToText(block, 'content:encoded') ?? htmlBlockToText(block, 'description') ?? htmlBlockToText(block, 'summary') ?? htmlBlockToText(block, 'content')
     const publishedAt = textBetween(block, 'pubDate') ?? textBetween(block, 'published') ?? textBetween(block, 'updated')
     const enclosureUrl = attrOf(block, 'enclosure', 'url')
     const imageUrl = attrOf(block, 'media:thumbnail', 'url') ?? attrOf(block, 'itunes:image', 'href')
