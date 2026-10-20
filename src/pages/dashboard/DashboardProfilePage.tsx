@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-do
 import { useAuth } from '../../contexts/AuthContext'
 import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
+import { BrandBriefEditor } from '../../components/dashboard/BrandBriefEditor'
 import { runOnboardingResearch } from '../../services/onboardingResearch'
 import { updateFounder, deleteFounder, getFounder, uniqueFounderSlug } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
@@ -1028,6 +1029,7 @@ export function DashboardProfilePage() {
     return () => clearInterval(interval)
   }, [draft?.id, draft?.onboardingStatus])
   const [editingLibraryItem, setEditingLibraryItem] = useState<LibraryItem | null>(null)
+  const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => currentFounder?.voiceBrief)
   // draft's useState initializer above only ever runs once, on this
   // component's first mount — switching accounts without a full page
   // reload (log out, log back in as someone else, in the same tab) left
@@ -2856,7 +2858,7 @@ export function DashboardProfilePage() {
                       onChange={setImportedEditDraft}
                       onSave={() => void handleSaveAdvancedEdit()}
                       onCancel={handleCancelAdvancedEdit}
-                      canRewrite={canUseVoiceRewrite}
+                      canRewrite={canUseVoiceRewrite || (!!draft.archiveUnlocked && !importedEditDraft?.descriptionRewrittenAt)}
                       canSearchAnswer={canSearchAnswer}
                       savedFlash={importedSavedFlash}
                       saving={importedAdvancedSaving}
@@ -3319,8 +3321,12 @@ export function DashboardProfilePage() {
         {/* ── FAQ ──────────────────────────────────────────────────────────── */}
         {tab === 'expertise' && (
           <div className="flex flex-col gap-5">
-            {/* Hidden for now per request — re-enable by uncommenting.
-            {draft && (
+            {/* Restored, but now an Archive Unlock perk, not open to
+                everyone — brand voice upload is part of what unlocking
+                pays for, alongside self-serve Rewrite (see EditForm's
+                canRewrite). A non-unlocked founder sees what it is and
+                where to get it, not a dead end. */}
+            {draft.archiveUnlocked ? (
               <div className="pb-5 border-b border-[#E8E4DD]">
                 <BrandBriefEditor
                   value={voiceBriefDraft}
@@ -3334,8 +3340,17 @@ export function DashboardProfilePage() {
                   }}
                 />
               </div>
+            ) : (
+              <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-xl px-5 py-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#2D2A26]">Voice & Brand Brief</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Upload your brand voice and rewrite your own imports with AI — part of Archive Unlock.</p>
+                </div>
+                <Link to="/dashboard/archive-found" className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors">
+                  Unlock →
+                </Link>
+              </div>
             )}
-            */}
 
             <TabIntro>
               Real questions people ask you, with real answers, written in plain text so people, search

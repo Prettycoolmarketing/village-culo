@@ -2372,7 +2372,11 @@ export function DashboardImportContentPage() {
             onChange={setDraft}
             onSave={() => void handleSave()}
             onCancel={handleCancel}
-            canRewrite={canUseVoiceRewrite}
+            // Unlocked founders get self-serve Rewrite too, not just CAPO —
+            // capped to once per item (descriptionRewrittenAt already marks
+            // "has this ever been through a rewrite," reused here rather
+            // than a new field) so the cost stays bounded per post.
+            canRewrite={canUseVoiceRewrite || (!!founder?.archiveUnlocked && !draft.descriptionRewrittenAt)}
             canSearchAnswer={canSearchAnswer}
             savedFlash={savedFlash}
             saving={advancedSaving}
