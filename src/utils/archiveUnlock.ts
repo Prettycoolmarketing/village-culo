@@ -37,15 +37,31 @@ export function needsArchiveUpgrade(founder: Founder | null | undefined, totalCo
   return limit !== null && totalCount > limit
 }
 
+// Real caption length, tags stripped — same text hasRealCaption checks
+// against its 150-char minimum, but used here as an actual quality signal
+// rather than a pass/fail floor. hasRealCaption only proves a caption
+// clears that low bar; it says nothing about which captions among
+// several that all clear it are actually more substantial. Confirmed
+// real: a founder's "free 10" all just barely cleared 150 characters —
+// most recently imported, not most substantial — producing 10
+// consecutive thin, near-duplicate-of-caption published pages.
+function captionLength(item: ImportedContent): number {
+  return (item.description ?? '').replace(/[@#]\S+/g, '').trim().length
+}
+
 // Ranks a founder's whole imported archive so the free preview always shows
 // their strongest 10 pieces, not just whichever 10 happened to import
-// first — real captions + already-ready-to-publish first, everything else
-// after, each group newest-first.
+// first — real captions + already-ready-to-publish first, then ranked by
+// actual caption length within that, longest (most substantial) first,
+// falling back to recency only as the final tiebreak between equally
+// substantial pieces.
 function rankForUnlock(items: ImportedContent[]): ImportedContent[] {
   return [...items].sort((a, b) => {
     const aReady = isReadyToPublish(a) && hasRealCaption(a) ? 1 : 0
     const bReady = isReadyToPublish(b) && hasRealCaption(b) ? 1 : 0
     if (aReady !== bReady) return bReady - aReady
+    const lengthDiff = captionLength(b) - captionLength(a)
+    if (lengthDiff !== 0) return lengthDiff
     return (b.importedAt ?? '').localeCompare(a.importedAt ?? '')
   })
 }
