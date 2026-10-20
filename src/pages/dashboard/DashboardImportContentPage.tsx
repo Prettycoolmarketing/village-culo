@@ -1084,8 +1084,23 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
   // itself.
   async function handleRewriteBlog() {
     const founder = getFounder(draft.founderId)
-    if (!founder?.voiceBrief?.trim()) {
-      setRewriteError('Add a Voice & Brand Brief in your profile first — Rewrite with AI needs it to write in your voice.')
+    // Voice & Brand Brief is currently hidden with no UI left to set one —
+    // rather than leave Rewrite with AI unusable for every founder until
+    // that's resolved, fall back to what research already found: the bio
+    // it wrote (real, verified context about who they are) stands in for
+    // voiceBrief, and their own confirmed research claims — exactly what
+    // insightBrief is defined to hold ("source-checked bank of what they
+    // actually believe/know/can teach") — stand in for insightBrief. Only
+    // used when the founder hasn't set a manual brief themselves; a real
+    // one (from research or, once restored, written by hand) always wins.
+    const fallbackInsightBrief = founder?.evidenceLedger?.claims
+      ?.filter(c => c.human_review !== 'rejected')
+      .map(c => c.claim)
+      .join(' ')
+    const voiceBrief = founder?.voiceBrief?.trim() || founder?.bio?.trim()
+    const insightBrief = founder?.insightBrief?.trim() || fallbackInsightBrief
+    if (!founder || !voiceBrief) {
+      setRewriteError('Nothing to write your voice from yet — run research or add a bio first.')
       return
     }
     if (!draft.description?.trim()) {
@@ -1104,8 +1119,8 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     // and the catch guarantees something is always shown when it fails.
     try {
       const result = await generateBlogFromVoiceBrief({
-        voiceBrief: founder.voiceBrief,
-        insightBrief: founder.insightBrief,
+        voiceBrief,
+        insightBrief,
         founderName: founder.name,
         caption: draft.description,
         imageUrls: [...(draft.imageUrls ?? []), ...(draft.thumbnailUrl ? [draft.thumbnailUrl] : [])],

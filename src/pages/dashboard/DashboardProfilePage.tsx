@@ -1097,6 +1097,7 @@ export function DashboardProfilePage() {
   const [deleteAnswer, setDeleteAnswer] = useState('')
   const [deleteSubmitting, setDeleteSubmitting] = useState(false)
   const [publishedBulkBusy, setPublishedBulkBusy] = useState(false)
+  const [publishedRegenProgress, setPublishedRegenProgress] = useState<{ done: number; total: number } | null>(null)
   const [readyBulkPublishing, setReadyBulkPublishing] = useState(false)
   // Guards against the exact race that caused a published item to show up
   // twice: the per-row status <select> had no disabled/busy state, so a
@@ -2006,8 +2007,18 @@ export function DashboardProfilePage() {
           // (culo_v1_profile_draft_*) that can predate or simply never
           // include a brief saved from Import Content, which silently
           // disabled Rewrite with no visible reason beyond a hover tooltip.
-          const liveVoiceBrief = getFounder(draft.id)?.voiceBrief
-          const liveInsightBrief = getFounder(draft.id)?.insightBrief
+          // Voice & Brand Brief is currently hidden with no UI left to set
+          // one — same fallback as Import Content's own Rewrite with AI:
+          // the bio research already wrote (real, verified context) stands
+          // in for voiceBrief, and confirmed research claims (exactly what
+          // insightBrief is defined to hold) stand in for insightBrief. A
+          // real manual brief, if one exists, always wins.
+          const liveFounderForVoice = getFounder(draft.id)
+          const liveVoiceBrief = liveFounderForVoice?.voiceBrief?.trim() || liveFounderForVoice?.bio?.trim()
+          const liveInsightBrief = liveFounderForVoice?.insightBrief?.trim() || liveFounderForVoice?.evidenceLedger?.claims
+            ?.filter(c => c.human_review !== 'rejected')
+            .map(c => c.claim)
+            .join(' ')
           return (
           <>
             {/* Every entry point into this tab (sidebar nav, the old
@@ -2590,7 +2601,7 @@ export function DashboardProfilePage() {
                         <button
                           onClick={() => void handleRegenerateSelected()}
                           disabled={!liveVoiceBrief?.trim() || !!importedRegenProgress}
-                          title={!liveVoiceBrief?.trim() ? 'Add your Voice & Brand Brief from Import Content first' : 'Rewrite the selected drafts using your Voice & Brand Brief'}
+                          title={!liveVoiceBrief?.trim() ? 'Run research or add a bio first' : 'Rewrite the selected drafts in this founder\'s voice'}
                           className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
                         >
                           {importedRegenProgress
@@ -2899,6 +2910,50 @@ export function DashboardProfilePage() {
                 setImportedTick(t => t + 1)
               }
 
+              // Same real per-item AI rewrite handleRegenerateSelected runs
+              // for not-yet-published drafts, but for stories that are
+              // already live — the actual gap behind "all 10 of a
+              // founder's published articles are thin, nothing in the
+              // product could fix that without touching each one by hand."
+              // Updates the live Story (what the public page actually
+              // reads) and, when it came from an import, the underlying
+              // ImportedContent record too, so the two don't drift apart.
+              async function handleRewriteSelectedPublished() {
+                if (!canUseVoiceRewrite || !draft || !liveVoiceBrief?.trim()) return
+                const targets = sortedStories.filter(s => publishedChecked.has(s.id))
+                if (targets.length === 0) return
+                setPublishedRegenProgress({ done: 0, total: targets.length })
+                const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
+                for (let i = 0; i < targets.length; i++) {
+                  if (i > 0) await new Promise(r => setTimeout(r, 1500))
+                  const story = targets[i]!
+                  const source = story.importedContentId ? importedContentService.get(story.importedContentId) : undefined
+                  const { blog } = await generateBlogFromVoiceBrief({
+                    voiceBrief: liveVoiceBrief,
+                    founderName: draft.name ?? '',
+                    caption: source?.description ?? story.blog,
+                    transcript: source?.transcriptText,
+                    platform: source ? (IMPORT_PLATFORM_LABELS[source.sourcePlatform] ?? source.sourcePlatform) : 'website',
+                    imageUrls: source?.imageUrls?.length ? source.imageUrls : source?.thumbnailUrl ? [source.thumbnailUrl] : undefined,
+                    postedAt: source?.publishedAt ?? source?.importedAt,
+                    insightBrief: liveInsightBrief,
+                    recentAngles: recentAngles.slice(-8),
+                  })
+                  if (blog?.status === 'ready' && blog.blog) {
+                    await updateStory({ ...story, title: blog.title ?? story.title, blog: blog.blog, subtitle: blog.subtitle ?? story.subtitle })
+                    if (source) await importedContentService.upsert({ ...source, title: blog.title ?? source.title, description: blog.blog })
+                    recentAngles.push({
+                      title: blog.title, articleShape: blog.articleShape, generationType: blog.generationType,
+                      insightSource: blog.insightSource, primaryQuestion: blog.primaryQuestion,
+                    })
+                  }
+                  setPublishedRegenProgress({ done: i + 1, total: targets.length })
+                }
+                setPublishedChecked(new Set())
+                setPublishedRegenProgress(null)
+                setImportedTick(t => t + 1)
+              }
+
               return activeStories.length === 0 ? (
                 <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-8 text-center">
                   <p className="text-sm font-semibold text-[#2D2A26]">Everyone starts with one story. Let's publish yours.</p>
@@ -2935,6 +2990,18 @@ export function DashboardProfilePage() {
                           >
                             {publishedBulkBusy ? 'Working…' : `Publish ${publishedChecked.size} selected`}
                           </button>
+                          {canUseVoiceRewrite && (
+                            <button
+                              onClick={() => void handleRewriteSelectedPublished()}
+                              disabled={!liveVoiceBrief?.trim() || !!publishedRegenProgress}
+                              title={!liveVoiceBrief?.trim() ? 'Run research or add a bio first' : 'Rewrite the selected published articles in this founder\'s voice — already live, updates in place'}
+                              className="px-3 py-2 bg-white border border-[#E8E4DD] text-[#2D2A26] text-xs font-semibold rounded-lg hover:border-[#C86A43]/40 hover:text-[#C86A43] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {publishedRegenProgress
+                                ? `Rewriting ${publishedRegenProgress.done}/${publishedRegenProgress.total}…`
+                                : `Rewrite ${publishedChecked.size} selected`}
+                            </button>
+                          )}
                         </>
                       )}
                       <select
