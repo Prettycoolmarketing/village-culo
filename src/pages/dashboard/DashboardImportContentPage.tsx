@@ -1751,6 +1751,24 @@ export function hasRealCaption(item: ImportedContent): boolean {
   return withoutTags.length >= MIN_REAL_CAPTION_LENGTH
 }
 
+// A genuinely higher bar than hasRealCaption — that one only proves a
+// caption exists at all (150 chars, barely more than a tweet); this is
+// "does this actually read as a real article," not just "is this not
+// empty." Confirmed real: a founder's free 10 all individually passed
+// hasRealCaption yet every single one was thin — the highest-ranked
+// available pieces (see rankForUnlock) can still fail this bar, which is
+// exactly the case this gates: publishing blocked, not just discouraged,
+// for a free-tier founder specifically — once unlocked, Write My Story by
+// Culo is the actual fix, not a block.
+const MIN_PUBLISH_ARTICLE_LENGTH = 400
+
+export function isSubstantialArticle(item: ImportedContent): boolean {
+  const text = (item.description ?? '').trim()
+  if (!text) return false
+  const withoutTags = text.replace(/[@#]\S+/g, '').trim()
+  return withoutTags.length >= MIN_PUBLISH_ARTICLE_LENGTH
+}
+
 export function SavedRow({
   item,
   checked,
@@ -1759,6 +1777,7 @@ export function SavedRow({
   onDelete,
   onStatusChange,
   publishing = false,
+  archiveUnlocked = false,
 }: {
   item: ImportedContent
   checked: boolean
@@ -1771,8 +1790,13 @@ export function SavedRow({
   // DashboardProfilePage's publishingIds guard. Disables the status
   // control so a second trigger can't race the first.
   publishing?: boolean
+  // Once unlocked, thin content isn't blocked at publish time — Write My
+  // Story by Culo (self-serve, once per item) is the actual fix at that
+  // point, not a wall stopping them from publishing at all.
+  archiveUnlocked?: boolean
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [thinBlocked, setThinBlocked] = useState(false)
   const ready = isReadyToPublish(item)
   const publishedStory = item.relatedStoryId ? getStory(item.relatedStoryId) : undefined
 
@@ -1856,6 +1880,10 @@ export function SavedRow({
           const next = e.target.value as ImportedContentStatus
           const goingLive = (next === 'published' || next === 'featured')
             && item.status !== 'published' && item.status !== 'featured'
+          if (goingLive && !archiveUnlocked && !isSubstantialArticle(item)) {
+            setThinBlocked(true)
+            return
+          }
           if (goingLive && !window.confirm('Publish this to the live Village site? It will be publicly visible immediately.')) return
           onStatusChange(next)
         }}
@@ -1863,6 +1891,19 @@ export function SavedRow({
       >
         {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
+      {thinBlocked && (
+        <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-lg px-3 py-2 text-xs text-[#2D2A26] flex items-center gap-2 shrink-0">
+          <span>This is still too thin to publish as a real article.</span>
+          <button onClick={() => { setThinBlocked(false); onAdvancedEdit() }} className="font-semibold text-[#C86A43] hover:underline">
+            Write more
+          </button>
+          <span className="text-[#9CA3AF]">or</span>
+          <Link to="/dashboard/archive-found" className="font-semibold text-[#C86A43] hover:underline">
+            Unlock — Write My Story by Culo →
+          </Link>
+          <button onClick={() => setThinBlocked(false)} className="text-[#9CA3AF] hover:text-[#6B7280]" aria-label="Dismiss">✕</button>
+        </div>
+      )}
       <div className="flex items-center gap-2 shrink-0">
         {item.relatedStoryId && (
           publishedStory ? (

@@ -6,7 +6,7 @@ import { getCurrentFounder } from '../../services/currentFounder'
 import { runOnboardingResearch } from '../../services/onboardingResearch'
 import { updateFounder, deleteFounder, getFounder, uniqueFounderSlug } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
-import { SavedRow, isReadyToPublish, hasRealCaption, EditForm } from './DashboardImportContentPage'
+import { SavedRow, isReadyToPublish, hasRealCaption, isSubstantialArticle, EditForm } from './DashboardImportContentPage'
 import { getUnlockedImportedIds } from '../../utils/archiveUnlock'
 import { getArchiveTier } from '../../config/archiveUnlock'
 import { PublishLimitModal } from '../../components/dashboard/PublishLimitModal'
@@ -2209,7 +2209,17 @@ export function DashboardProfilePage() {
                 // anything already mid-publish via the per-row dropdown —
                 // same race this whole guard exists to close, the other
                 // direction (see handleRowStatusChange's publishingIds note).
-                const publishable = items.filter(i => unlockedIds.has(i.id) && !publishingIds.has(i.id))
+                // Same thin-content gate as the per-row dropdown — bulk
+                // publish was a trivial way around it otherwise. Skipped
+                // silently isn't good enough here (a founder selecting 10
+                // and getting 3 back with no explanation reads as broken),
+                // so it reports how many got skipped and why.
+                const liveFounderForGate = getFounder(draft?.id ?? '')
+                const isUnlockedForGate = !!liveFounderForGate?.archiveUnlocked
+                const eligible = items.filter(i => unlockedIds.has(i.id) && !publishingIds.has(i.id))
+                const publishable = isUnlockedForGate ? eligible : eligible.filter(isSubstantialArticle)
+                const skippedThin = eligible.length - publishable.length
+                if (skippedThin > 0) setSaveError(`${skippedThin} selected ${skippedThin === 1 ? 'is' : 'are'} too thin to publish as a real article yet — write more, or unlock Write My Story by Culo.`)
                 if (publishable.length === 0) return
                 // `draft` is a local editable copy of the profile that only
                 // exists once its own useState/useEffect has resolved — on
@@ -2665,6 +2675,7 @@ export function DashboardProfilePage() {
                                 onDelete={() => handleReadyDelete(item.id)}
                                 onStatusChange={status => void handleRowStatusChange(item, status)}
                                 publishing={publishingIds.has(item.id)}
+                                archiveUnlocked={!!draft.archiveUnlocked}
                               />
                             ))}
                           </div>
