@@ -205,6 +205,7 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
             // imported nothing). staffCreated excluded — that's research's
             // own article, not something the founder brought in themselves.
             const importedCount = importedContentService.getAll({ founderId: f.id }).filter(i => !i.staffCreated).length
+            const publishedCount = getStories({ founderId: f.id }).filter(s => s.status === 'published' || s.status === 'featured').length
             return (
               <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="flex items-center gap-2 min-w-0">
@@ -212,6 +213,11 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                   {onCreativesWaitlist && (
                     <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#EBF2F8] text-[#3E6E92]">
                       Creatives waitlist
+                    </span>
+                  )}
+                  {publishedCount > 0 && (
+                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">
+                      Published {publishedCount}
                     </span>
                   )}
                   {importedCount > 0 && (
