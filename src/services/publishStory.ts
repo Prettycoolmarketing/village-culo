@@ -124,6 +124,20 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
     }
   }
 
+  // Nothing ever promoted the founder's own profile status once they
+  // actually started publishing real content — confirmed real: a founder
+  // with 10 live published stories still showed founder.status === 'draft'
+  // (and so "Draft" on Culo Members, and excluded from getFounders'
+  // publicOnly filter, which requires status published/featured). A
+  // founder who's genuinely publishing is the clearest possible signal
+  // their profile is no longer a draft.
+  if (isFirstPublish) {
+    const founderNow = founder ? getFounders().find(f => f.id === founder.id) : undefined
+    if (founderNow && founderNow.status === 'draft') {
+      await updateFounder({ ...founderNow, status: 'published' })
+    }
+  }
+
   if (story.importedContentId) {
     const source = importedContentService.get(story.importedContentId)
     // Awaited, not fire-and-forget: callers (e.g. bulk publish) write their
