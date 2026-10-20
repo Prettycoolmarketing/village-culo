@@ -5,6 +5,7 @@
   ],
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "https://vptbswxntuycbgqnduab.supabase.co/functions/v1/sitemap" },
+    { "source": "/founders/:slug/rss.xml", "destination": "https://vptbswxntuycbgqnduab.supabase.co/functions/v1/founder-rss?slug=:slug" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -812,6 +812,35 @@ function ImportContentCTA() {
   )
 }
 
+// A standard RSS 2.0 feed of this founder's own published/featured
+// stories, served by the founder-rss Edge Function via vercel.json's
+// rewrite — handy for a founder who wants to pipe their articles into a
+// newsletter tool, another site, or any RSS reader.
+function RssFeedCard({ slug }: { slug: string }) {
+  const [copied, setCopied] = useState(false)
+  const url = `https://www.culovillage.com/founders/${slug}/rss.xml`
+  function handleCopy() {
+    void navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-[#2D2A26] mb-1">RSS Feed</p>
+        <p className="text-xs font-mono text-[#6B7280] truncate">{url}</p>
+      </div>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+      >
+        {copied ? 'Copied ✓' : 'Copy link'}
+      </button>
+    </div>
+  )
+}
+
 // Shown only until a founder's actually published something — the old
 // /join/setup had a "Step 2 of 3" tracker, lost when that page stopped
 // being a forced gate. This replaces it on Profile instead, so a
@@ -3543,6 +3572,7 @@ export function DashboardProfilePage() {
               <p className="text-sm font-semibold text-[#2D2A26] mb-1">Public Slug</p>
               <p className="text-xs font-mono text-[#6B7280]">/founders/{draft.slug}</p>
             </div>
+            <RssFeedCard slug={draft.slug} />
             <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 text-sm">
               <p className="font-semibold text-[#2D2A26] mb-1">Created</p>
               <p className="text-[#6B7280]">{draft.createdAt}</p>
