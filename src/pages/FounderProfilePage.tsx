@@ -177,10 +177,24 @@ function getRelatedFounders(founderId: string, industryId: string, locationId: s
     // unrelated people happening to share a category.
     .filter(f => !(f.profileStatus === 'village-curated' && !f.userId))
     .filter(f => f.id !== founderId)
+    // Shakas's own account (the platform's own meta/demo profile) tags
+    // itself with broad, generic topics ("marketing," "creative") shared
+    // by almost every founder — never a real connection, just noise.
+    // Excluded from appearing here on anyone else's profile; her own
+    // profile is unaffected since founderId !== her id only applies to
+    // everyone ELSE's page.
+    .filter(f => f.slug !== 'shakas-designer' || founderId === f.id)
     .map(f => {
       let score = 0
-      if (f.industry.id === industryId)                         score += 3
-      if (f.location.id === locationId)                          score += 2
+      // 'unset' is the placeholder for "never filled this in" (see
+      // UNSET_INDUSTRY/UNSET_LOCATION) — two founders who both simply
+      // haven't set an industry/location aren't actually related, they
+      // just share the same empty placeholder. Confirmed real: Lydia
+      // (industry/location both unset) was showing as "related to" Shakas
+      // purely because Shakas's were unset too. Only count a real,
+      // specific match, never two placeholders agreeing with each other.
+      if (industryId !== 'unset' && f.industry.id === industryId)  score += 3
+      if (locationId !== 'unset' && f.location.id === locationId)  score += 2
       if (f.topics.some(t => topicIds.includes(t.id)))          score += 1
       return { founder: f, score }
     })

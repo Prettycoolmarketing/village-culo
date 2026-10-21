@@ -1,5 +1,6 @@
 import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
-import { getBusiness } from './businesses'
+import { getBusiness, getBusinesses } from './businesses'
+import { getFounderBySlug } from './founders'
 import type {
   VillageContentIntelligence,
   VillageContentType,
@@ -462,12 +463,29 @@ function findRelatedContentIds(currentId: string, topics: string[]): string[] {
     .map(x => x.contentId)
 }
 
-function findRelatedBusinessIds(topics: string[]): string[] {
+// Shakas's own account publishes broadly across almost every generic topic
+// tag (she writes about CULO itself, content strategy, marketing — the
+// platform's own meta-content), so a single shared generic primaryTopic
+// (e.g. "creative", "health") was matching her to nearly every other
+// founder's profile as "related," regardless of any real connection.
+// Confirmed real: Lydia Fox's profile showed "The Culo Village"/Shakas
+// Designer as Related Business/Founder purely off that kind of broad
+// overlap. Excluded from appearing on anyone else's profile — but never
+// excluded from her own, where it's the real thing being shown.
+function shakasFounderId(): string | undefined {
+  return getFounderBySlug('shakas-designer')?.id
+}
+
+function findRelatedBusinessIds(topics: string[], currentFounderId: string): string[] {
   if (topics.length === 0) return []
+  const excludedFounderId = currentFounderId !== shakasFounderId() ? shakasFounderId() : undefined
+  const excludedBusinessIds = excludedFounderId
+    ? new Set(getBusinesses({ founderId: excludedFounderId }).map(b => b.id))
+    : new Set<string>()
   const all = readCache<VillageContentIntelligence>(KEY)
   const ids = new Set<string>()
   for (const item of all) {
-    if (item.businessId && item.primaryTopics.some(t => topics.includes(t))) {
+    if (item.businessId && !excludedBusinessIds.has(item.businessId) && item.primaryTopics.some(t => topics.includes(t))) {
       ids.add(item.businessId)
     }
   }
@@ -476,10 +494,11 @@ function findRelatedBusinessIds(topics: string[]): string[] {
 
 function findRelatedFounderIds(currentFounderId: string, topics: string[]): string[] {
   if (topics.length === 0) return []
+  const excludedFounderId = currentFounderId !== shakasFounderId() ? shakasFounderId() : undefined
   const all = readCache<VillageContentIntelligence>(KEY)
   const ids = new Set<string>()
   for (const item of all) {
-    if (item.founderId !== currentFounderId && item.primaryTopics.some(t => topics.includes(t))) {
+    if (item.founderId !== currentFounderId && item.founderId !== excludedFounderId && item.primaryTopics.some(t => topics.includes(t))) {
       ids.add(item.founderId)
     }
   }
@@ -532,7 +551,7 @@ function runAnalysis(input: AnalysisInput, existingId?: string): VillageContentI
   const canonicalTopics = primaryTopics.slice(0, 3)
 
   const relatedContentIds  = findRelatedContentIds(input.contentId, primaryTopics)
-  const relatedBusinessIds = findRelatedBusinessIds(primaryTopics)
+  const relatedBusinessIds = findRelatedBusinessIds(primaryTopics, input.founderId)
   const relatedFounderIds  = findRelatedFounderIds(input.founderId, primaryTopics)
 
   return {
