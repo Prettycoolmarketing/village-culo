@@ -17,6 +17,7 @@ import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { topics as allTopics } from '../../data/topics'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { buildFallbackBrief } from '../../utils/voiceBriefFallback'
+import { SELF_SERVE_REWRITE_CAP } from '../../config/archiveUnlock'
 import type { Story, ContentType, Topic, FAQ } from '../../types'
 
 // A deliberately simple story editor — title, summary, the content itself,
@@ -65,6 +66,10 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   onClose: () => void
 }) {
   const [draft, setDraft] = useState<Story>({ ...story })
+  // "Rewrite for My Audience" is open to every founder here (not gated by
+  // Archive Unlock like Rewrite with AI) — still bounded by the same
+  // shared SELF_SERVE_REWRITE_CAP so it isn't unlimited spend.
+  const selfServeAudienceRewriteAllowed = (getFounder(draft.founderId)?.selfServeRewriteCount ?? 0) < SELF_SERVE_REWRITE_CAP
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -374,7 +379,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     }))
     setSaved(false)
     void runDetection(result.article)
-    if (founder && (result.primaryQuestion || result.coreArgument)) {
+    if (founder && (result.primaryQuestion || result.coreArgument || !canRewrite)) {
       void updateFounder({
         ...founder,
         usedAudienceQuestions: result.primaryQuestion
@@ -383,6 +388,10 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
         usedAudienceThemes: result.coreArgument
           ? [...(founder.usedAudienceThemes ?? []), result.coreArgument]
           : founder.usedAudienceThemes,
+        // Counts this call against SELF_SERVE_REWRITE_CAP — only when
+        // access came from the self-serve allowance, not CAPO's own
+        // uncapped canRewrite access.
+        selfServeRewriteCount: !canRewrite ? (founder.selfServeRewriteCount ?? 0) + 1 : founder.selfServeRewriteCount,
       })
     }
   }
@@ -637,7 +646,12 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
                   {searchAnswering ? 'Writing…' : '🔍 Rewrite as a Culo Article'}
                 </button>
               )}
-              {canRewrite && (
+              {/* Available to every founder here, not just CAPO/Archive
+                  Unlock (unlike Rewrite with AI above) — still bounded by
+                  the same SELF_SERVE_REWRITE_CAP shared across every
+                  self-serve rewrite surface, so "for everyone" doesn't mean
+                  unbounded spend. */}
+              {(canRewrite || selfServeAudienceRewriteAllowed) && (
                 <button
                   type="button"
                   onClick={() => void handleAudienceAnswer()}
@@ -646,6 +660,11 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
                 >
                   {audienceAnswering ? 'Writing…' : '🎯 Rewrite for My Audience'}
                 </button>
+              )}
+              {!canRewrite && !selfServeAudienceRewriteAllowed && (
+                <span className="text-xs text-[#9CA3AF]">
+                  You've used all {SELF_SERVE_REWRITE_CAP} of your free AI rewrites — contact us for more.
+                </span>
               )}
               {blogBeforeRewrite !== null && (
                 <button
