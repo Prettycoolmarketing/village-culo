@@ -1731,6 +1731,55 @@ export function DashboardProfilePage() {
         </div>
       )}
 
+      {/* Welcome + the Creatives waitlist question — every signup lands
+          here first (see JoinConfirmPage), so this renders above the
+          founder's own name/header, not after it: this is what a brand
+          new founder should see and answer before anything else. Only
+          shown for as long as there's nothing real on this profile yet
+          (no bio) — an established founder doesn't need "Welcome" every
+          time they open Profile, and only on Overview, not every tab. */}
+      {tab === 'overview' && !draft.bio?.trim() && (
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 px-8 pt-8">
+          <div>
+            <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
+            <p className="text-base text-[#6B7280] mt-3 max-w-2xl">
+              Import your content from multiple channels to republish as web articles, and join the waitlist to
+              be the first to edit your raw footage with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
+            </p>
+          </div>
+
+          {/* Answered once, never shown again either way — 'no' just
+              disappears with no message, 'yes' swaps in a short
+              confirmation. Neither button is styled as a filled/
+              "selected" default — both read as neutral, equally-weighted
+              choices until one is actually clicked. */}
+          {!draft.creativesWaitlistAnswer && !waitlistAnswer && (
+            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex flex-col gap-3 w-full md:w-auto md:max-w-xs shrink-0">
+              <p className="text-sm font-semibold text-[#2D2A26]">Join Culo Creatives waitlist?</p>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => void handleWaitlistAnswer('yes')}
+                  className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#2D2A26] hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
+                >
+                  Yes, join the waitlist
+                </button>
+                <button
+                  onClick={() => void handleWaitlistAnswer('no')}
+                  className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#6B7280] hover:border-red-200 hover:text-red-600 transition-colors"
+                >
+                  No thanks
+                </button>
+              </div>
+            </div>
+          )}
+          {(draft.creativesWaitlistAnswer === 'yes' || waitlistAnswer === 'yes') && (
+            <p className="text-sm font-semibold text-[#5E6B4A] shrink-0">
+              Turn your content into web articles first! You're on the list.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Page header — hidden on Content, which is a focused view of just
           your imported/published items, not the rest of the profile.
           Hidden on mobile entirely now too: pinned above the scroll area,
@@ -1828,55 +1877,6 @@ export function DashboardProfilePage() {
         {/* ── Overview (Profile) ───────────────────────────────────────── */}
         {tab === 'overview' && (
           <div className="flex flex-col gap-6">
-
-            {/* Welcome + the Creatives waitlist question — every signup
-                lands here first (see JoinConfirmPage), so this is where a
-                founder understands what Culo Village actually does and
-                answers the waitlist question, before ever reaching
-                Import. Only shown for as long as there's nothing real on
-                this profile yet — an established founder doesn't need
-                "Welcome" every time they open Profile. */}
-            {!draft.bio?.trim() && (
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                <div>
-                  <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
-                  <p className="text-base text-[#6B7280] mt-3 max-w-2xl">
-                    Import your content from multiple channels to republish as web articles, and join the waitlist to
-                    be the first to edit your raw footage with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
-                  </p>
-                </div>
-
-                {/* Answered once, never shown again either way — 'no' just
-                    disappears with no message, 'yes' swaps in a short
-                    confirmation. Neither button is styled as a filled/
-                    "selected" default — both read as neutral, equally-
-                    weighted choices until one is actually clicked. */}
-                {!draft.creativesWaitlistAnswer && !waitlistAnswer && (
-                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex flex-col gap-3 w-full md:w-auto md:max-w-xs shrink-0">
-                    <p className="text-sm font-semibold text-[#2D2A26]">Join Culo Creatives waitlist?</p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => void handleWaitlistAnswer('yes')}
-                        className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#2D2A26] hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
-                      >
-                        Yes, join the waitlist
-                      </button>
-                      <button
-                        onClick={() => void handleWaitlistAnswer('no')}
-                        className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#6B7280] hover:border-red-200 hover:text-red-600 transition-colors"
-                      >
-                        No thanks
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {(draft.creativesWaitlistAnswer === 'yes' || waitlistAnswer === 'yes') && (
-                  <p className="text-sm font-semibold text-[#5E6B4A] shrink-0">
-                    Turn your content into web articles first! You're on the list.
-                  </p>
-                )}
-              </div>
-            )}
 
             {!founderStories.some(s => s.status === 'published' || s.status === 'featured') && (
               <OnboardingSteps
