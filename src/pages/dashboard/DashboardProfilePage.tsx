@@ -1852,9 +1852,9 @@ export function DashboardProfilePage() {
 
       {/* "Suggest 10 article ideas" — a content-strategy plan for this
           founder's real audience, staff-only (same real AI spend as any
-          other rewrite button). Shown on Content for any founder, not just
-          while managing someone else — equally useful on your own account. */}
-      {tab === 'content' && canUseVoiceRewrite && (
+          other rewrite button). Removed from Manage Content per request —
+          staff-only, own-account use. */}
+      {tab === 'content' && canUseVoiceRewrite && !isManagingOther && (
         <div className="mx-8 mt-6 bg-white border border-[#E8E4DD] rounded-xl px-5 py-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
