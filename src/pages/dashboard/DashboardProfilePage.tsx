@@ -2039,6 +2039,38 @@ export function DashboardProfilePage() {
               </p>
             </div>
           <div className="hidden md:flex md:flex-col gap-5">
+            {/* Content used to be a dead end for a founder who hasn't
+                imported or researched anything yet — nothing but empty
+                tables. Mirrors Profile → Overview's own prompt (same
+                condition: no bio yet, nothing imported) rather than
+                duplicating the full interactive research form here — the
+                actual flow still only runs on Profile, this just sends them
+                there instead of leaving them stuck on an empty Content tab.
+                Disappears the moment research actually writes a bio (and
+                with it, their first article) — at that point there's
+                already a real item in the lists below instead of nothing. */}
+            {allImportedForStats.length === 0 && !liveFounderForVoice?.bio?.trim() && (
+              <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-xl px-5 py-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-[#2D2A26]">
+                    {liveFounderForVoice?.onboardingStatus === 'researching'
+                      ? 'Culo is writing your first bio and article now'
+                      : "Let's write your bio and a CULO article to build your online presence"}
+                  </p>
+                  <p className="text-xs text-[#6B7280] mt-0.5">
+                    {liveFounderForVoice?.onboardingStatus === 'researching'
+                      ? 'Running in the background — check progress on your profile.'
+                      : 'Finish this on your profile first — then your first article appears here automatically.'}
+                  </p>
+                </div>
+                <Link
+                  to="/dashboard/profile?tab=overview"
+                  className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+                >
+                  Go to Profile →
+                </Link>
+              </div>
+            )}
             {draft.pcmManaged && !draft.pcmGateOpen && (() => {
               const svc = draft.pcmService
               const line = svc === 'social' ? 'Your account manager is setting up your social media.'

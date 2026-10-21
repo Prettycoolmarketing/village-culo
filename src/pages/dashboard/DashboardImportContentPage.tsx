@@ -4,6 +4,7 @@ import { Link, Navigate, useSearchParams, useNavigate } from 'react-router-dom'
 import { consumeConnectPrefill } from '../../utils/connectPrefill'
 import { InstagramArchiveImportCard } from '../../components/dashboard/InstagramArchiveImportCard'
 import { SnapchatArchiveImportCard } from '../../components/dashboard/SnapchatArchiveImportCard'
+import { BrandBriefEditor } from '../../components/dashboard/BrandBriefEditor'
 import { SourceIcon } from '../../components/ui/SourceIcon'
 import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { useAuth } from '../../contexts/AuthContext'
@@ -1987,6 +1988,13 @@ export function DashboardImportContentPage() {
   }, [founder?.onboardingStatus])
   void tick
 
+  // Same single Voice & Brand Brief box as Profile → Expertise (see
+  // BrandBriefEditor) — placed next to the import cards too, since a
+  // founder filling this in right before importing gets their very first
+  // imports rewritten in their actual voice immediately, rather than
+  // having to go find this on a separate tab afterward.
+  const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => founder?.voiceBrief)
+
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
   const [waitlistAnswer, setWaitlistAnswer] = useState<'yes' | 'no' | null>(null)
   async function handleWaitlistAnswer(answer: 'yes' | 'no') {
@@ -2318,14 +2326,38 @@ export function DashboardImportContentPage() {
               />
             </div>
 
-            {/* Hidden for now per request — re-enable by uncommenting.
+            {/* Same single Voice & Brand Brief box as Profile → Expertise —
+                an Archive Unlock perk (see that tab's identical gate), shown
+                here too so filling it in happens right alongside importing
+                rather than needing a separate trip to another tab. */}
             <div className="lg:col-start-2 lg:row-start-3">
-              <ICloudArchiveImportCard
-                founderId={founderId}
-                onImported={count => reportImported(count)}
-              />
+              {founder?.archiveUnlocked ? (
+                <BrandBriefEditor
+                  value={voiceBriefDraft}
+                  updatedAt={founder.voiceBriefUpdatedAt}
+                  founderName={founder.name}
+                  onChange={v => {
+                    setVoiceBriefDraft(v)
+                    const now = new Date().toISOString()
+                    const live = getFounder(founderId)
+                    if (live) void updateFounder({ ...live, voiceBrief: v, voiceBriefUpdatedAt: now, insightBrief: v, insightBriefUpdatedAt: now })
+                  }}
+                />
+              ) : (
+                <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-8 h-full flex flex-col justify-between">
+                  <div>
+                    <p className="text-base font-semibold text-[#2D2A26]">Voice & Brand Brief</p>
+                    <p className="text-sm text-[#6B7280] mt-2 leading-relaxed">
+                      Upload your brand voice from your own AI, or answer a few questions — then every import
+                      gets rewritten with AI in your actual voice. Part of Archive Unlock.
+                    </p>
+                  </div>
+                  <Link to="/dashboard/archive-found" className="mt-4 inline-flex justify-center px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white text-sm font-semibold hover:bg-[#1a1815] transition-colors">
+                    Unlock →
+                  </Link>
+                </div>
+              )}
             </div>
-            */}
           </div>
 
           {saveError && <p className="text-xs text-red-600 font-medium mt-4">{saveError}</p>}
