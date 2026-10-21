@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { getFounders, getFounder } from '../../../services/founders'
 import { getStories, getStory } from '../../../services/stories'
 import { importedContentService } from '../../../services/importedContent'
@@ -254,6 +255,19 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                       Canva
                     </span>
                   )}
+                  {/* Opens this founder's own Content tab for CAPO staff to
+                      edit/rewrite/publish directly — exactly what "click a
+                      button next to her name" was asking for (confirmed
+                      real need: Lydia said yes to having her thin published
+                      posts rewritten, and there was previously no way to
+                      get into her content without logging in as her). See
+                      DashboardProfilePage's manageFounderId handling. */}
+                  <Link
+                    to={`/dashboard/profile?tab=content&manageFounderId=${f.id}`}
+                    className="text-[10px] font-semibold text-[#2D2A26] hover:underline ml-2"
+                  >
+                    Manage content →
+                  </Link>
                   <a
                     href={`/founders/${f.slug}`}
                     target="_blank"

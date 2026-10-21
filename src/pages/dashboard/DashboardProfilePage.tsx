@@ -1000,7 +1000,23 @@ export function DashboardProfilePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const welcomeBack = Boolean((location.state as { welcomeBack?: boolean } | null)?.welcomeBack)
-  const currentFounder = getCurrentFounder(user)
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Culo Members → "Manage content" — lets CAPO staff open and directly
+  // edit/rewrite/publish a specific founder's own content, instead of only
+  // ever seeing their own dashboard here. Confirmed real need: Lydia said
+  // yes to having her thin published posts rewritten, and there was
+  // previously no way into her content without logging in as her (RLS only
+  // allowed a founder to write their own row — see migration 048, which
+  // adds is_village_admin()-gated write policies alongside the existing
+  // admin-read ones, so these writes actually persist instead of being
+  // silently rejected). Only ever honoured for CAPO roles — a plain founder
+  // passing this param for someone else just falls through to their own.
+  const canManageOthers = hasAnyCapoAccess(user?.role)
+  const managedFounderId = searchParams.get('manageFounderId')
+  const ownFounder = getCurrentFounder(user)
+  const managedFounder = managedFounderId && canManageOthers ? getFounder(managedFounderId) : null
+  const currentFounder = managedFounder ?? ownFounder
+  const isManagingOther = !!managedFounder && managedFounder.id !== ownFounder?.id
   // Same gate as DashboardImportContentPage's own EditForm usage — Shakas's
   // own account or CAPO staff only, not a general founder feature yet.
   const canSearchAnswer = currentFounder?.slug === 'shakas-designer'
@@ -1057,7 +1073,6 @@ export function DashboardProfilePage() {
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTabState]  = useState(() => searchParams.get('tab') ?? 'overview')
   // Keeps the URL's ?tab= in sync with whichever tab is actually showing —
   // the sidebar's "Content" vs "Profile" links tell which one is active by
@@ -1731,14 +1746,31 @@ export function DashboardProfilePage() {
         </div>
       )}
 
+      {/* CAPO staff viewing/editing someone else's dashboard via Culo
+          Members → "Manage content" — makes that unmistakable (easy to
+          forget which founder's live content a Save or Publish is about
+          to touch) and gives a one-click way back. */}
+      {isManagingOther && (
+        <div className="mx-8 mt-6 px-4 py-3 bg-[#FBF1EB] border border-[#C86A43]/30 text-sm rounded-lg flex items-center justify-between gap-3">
+          <p className="text-[#2D2A26] font-medium">
+            Managing <span className="font-semibold">{managedFounder?.name}</span>'s content as staff.
+          </p>
+          <Link to="/dashboard/village/emails" className="shrink-0 text-xs font-semibold text-[#C86A43] hover:underline">
+            ← Back to Culo Members
+          </Link>
+        </div>
+      )}
+
       {/* Welcome + the Creatives waitlist question — every signup lands
           here first (see JoinConfirmPage), so this renders above the
           founder's own name/header, not after it: this is what a brand
           new founder should see and answer before anything else. Only
           shown for as long as there's nothing real on this profile yet
           (no bio) — an established founder doesn't need "Welcome" every
-          time they open Profile, and only on Overview, not every tab. */}
-      {tab === 'overview' && !draft.bio?.trim() && (
+          time they open Profile, and only on Overview, not every tab.
+          Never shown while staff are managing someone else's content —
+          this is an onboarding prompt aimed at the founder themselves. */}
+      {tab === 'overview' && !draft.bio?.trim() && !isManagingOther && (
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 px-8 pt-8">
           <div>
             <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
