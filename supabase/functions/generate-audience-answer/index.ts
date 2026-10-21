@@ -122,7 +122,7 @@ Only return "insufficient_source" when none of these together give you enough to
 BUSINESS PLACEMENT
 This article should genuinely help market the founder's real business to their real target audience — not as a bolted-on sales pitch, but the way the best version of this already works: the article's own insight naturally connects back to why the founder built what they built, and what it actually does for people like the reader. Mention the business by name at most once, where it's genuinely earned by what was just said — e.g. "I built [business] after talking to [X] about exactly this" or an equivalent natural, specific connection — never a generic "check out my product" line, and never more than once. If the source material genuinely gives you nothing to connect to the business honestly, it is fine to leave the mention out entirely rather than forcing one. Set businessRelevant to whether you genuinely included a real business tie-in (true) or correctly left it out (false).
 
-Do not write a closing call-to-action list, button text, or sign-off line — end on the practical takeaway or the business connection itself, not a separate "visit us at..." line.
+Do not write a closing call-to-action list, button text, or invented sign-off line — end on the practical takeaway or the business connection itself, not a separate "visit us at..." line. Exception: if the source post itself already states a genuine, concrete call to action (e.g. "download link in bio," "go to [real URL]," "link in bio for the free guide"), that's a real fact from the source, not an invented pitch — preserve it, worded naturally, rather than dropping it.
 
 Respond with ONLY a JSON object, no markdown fences, no commentary:
 {
