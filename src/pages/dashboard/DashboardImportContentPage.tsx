@@ -1325,8 +1325,12 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     }
     const founder = getFounder(draft.founderId)
     const business = getBusinesses({ founderId: draft.founderId })[0]
-    if (!business?.targetAudience?.trim()) {
-      setAudienceAnswerError('No target audience set yet — add one on this founder\'s business first (Target Audience field).')
+    // A real business is still required (this exists to market one to its
+    // audience), but Target Audience itself is a nice-to-have, not a hard
+    // requirement — generate-audience-answer can work it out itself from
+    // the business description + Voice/Insight Brief when it's missing.
+    if (!business) {
+      setAudienceAnswerError('No business set up for this founder yet — add one first (Profile → Businesses).')
       return
     }
     const fallback = buildFallbackBrief(founder)

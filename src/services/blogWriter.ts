@@ -166,7 +166,7 @@ export async function generateAudienceAnswerArticle(input: {
   insightBrief?: string
   businessName: string
   businessDescription?: string
-  targetAudience: string
+  targetAudience?: string
   businessWebsite?: string
   usedQuestions?: string[]
 }): Promise<{ result?: GeneratedAudienceAnswer; error?: string }> {
@@ -1391,4 +1391,41 @@ export async function extractFaqsAI(input: { title?: string; text: string; found
   if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
   if (data?.error) return { error: data.error }
   return { pairs: data?.pairs ?? [] }
+}
+
+export interface AudienceTopicIdea {
+  question: string
+  angle: string
+}
+
+export interface GeneratedAudienceTopics {
+  status: 'ready' | 'insufficient_source'
+  note?: string
+  audienceUsed?: string
+  topics?: AudienceTopicIdea[]
+}
+
+// A 10-article content-strategy plan for a founder's real target audience —
+// headlines/angles only (one cheap call), not full articles. Staff work
+// through the list afterward using "Rewrite for My Audience"
+// (generateAudienceAnswerArticle) against whichever real imported piece
+// actually fits each idea. See generate-audience-topics.
+export async function generateAudienceTopics(input: {
+  founderName: string
+  businessName: string
+  businessDescription?: string
+  targetAudience?: string
+  voiceBrief?: string
+  insightBrief?: string
+  archiveSample?: string[]
+  usedQuestions?: string[]
+}): Promise<{ result?: GeneratedAudienceTopics; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
+  const { data, error } = await supabase.functions.invoke<{ result?: GeneratedAudienceTopics; error?: string }>(
+    'generate-audience-topics', { body: input },
+  )
+  if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
+  if (data?.error) return { error: data.error }
+  if (!data?.result) return { error: 'AI returned nothing usable' }
+  return { result: data.result }
 }

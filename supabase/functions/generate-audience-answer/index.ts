@@ -58,7 +58,12 @@ interface RequestBody {
   // generic.
   businessName: string
   businessDescription?: string
-  targetAudience: string
+  // Optional — when the founder's Business record has no Target Audience
+  // field filled in yet (the normal case for most founders), the model is
+  // instead told to work out the real audience itself from the business
+  // description and Voice/Insight Brief, rather than this being a hard
+  // block on every founder who hasn't manually typed one in.
+  targetAudience?: string
   businessWebsite?: string
   // Every primaryQuestion a past run already used for this founder, same
   // rotation mechanism as generate-search-answer's usedQuestions.
@@ -82,7 +87,7 @@ interface GeneratedAudienceAnswer {
 
 const SYSTEM_PROMPT = `You are writing an article on behalf of a real founder, aimed squarely at THEIR OWN real target audience — not a generic reader, and not about the founder's own business/brand-building. The goal is to answer a real question people in that specific audience are likely to search in Google, ChatGPT, Gemini, Perplexity or other search/AI systems.
 
-You are given one real post from the founder (the source material) and their business's real target audience. Your job: find the genuine question that audience would ask that THIS source material can honestly help answer, then answer it directly, using the source post as the real example/evidence.
+You are given one real post from the founder (the source material) and their business. If a real target audience is stated below, write for exactly that audience. If none is stated, work it out yourself from the business description and Voice/Insight Brief — state who you're writing for to yourself first (e.g. "busy parents of young kids", "small trades business owners"), as specifically as the material actually supports, then proceed as normal. Your job either way: find the genuine question that audience would ask that THIS source material can honestly help answer, then answer it directly, using the source post as the real example/evidence.
 
 Do not write an article about the post itself. Do not say "In this post I said...", "I recently posted...", or describe the post as a post. Identify the strongest real audience question the source can genuinely answer, and write the article as a direct answer to that question, using the post's own content and any real material in the Voice/Insight Brief as your source of what actually happened or what you genuinely believe.
 
@@ -141,7 +146,6 @@ serve(async (req) => {
   try {
     const body = await req.json() as RequestBody
     if (!body?.sourceText?.trim()) throw new Error('sourceText is required')
-    if (!body?.targetAudience?.trim()) throw new Error('targetAudience is required — set a target audience on this business first')
     if (!body?.businessName?.trim()) throw new Error('businessName is required')
 
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
@@ -150,7 +154,7 @@ serve(async (req) => {
     const userContent = [
       `FOUNDER'S NAME: ${body.founderName || '(not supplied)'}`,
       `BUSINESS: ${body.businessName}${body.businessDescription ? ` — ${body.businessDescription}` : ''}${body.businessWebsite ? ` (${body.businessWebsite})` : ''}`,
-      `REAL TARGET AUDIENCE: ${body.targetAudience}`,
+      `REAL TARGET AUDIENCE: ${body.targetAudience?.trim() || '(not specified — work this out yourself from the business description and Voice/Insight Brief below)'}`,
       body.platform ? `SOURCE PLATFORM: ${body.platform}` : undefined,
       `\nPREVIOUSLY USED QUESTIONS (never choose one of these again):\n${
         body.usedQuestions?.length ? body.usedQuestions.map(q => `- ${q}`).join('\n') : '(none yet)'
