@@ -2444,7 +2444,6 @@ export function DashboardProfilePage() {
               }
 
               const unlockedReadyItems = readyItems.filter(i => unlockedIds.has(i.id))
-              const lockedReadyCount = readyItems.length - unlockedReadyItems.length
 
               function toggleSelectAllReady() {
                 setReadyChecked(prev =>
@@ -2656,11 +2655,6 @@ export function DashboardProfilePage() {
                           className="w-5 h-5 accent-[#C86A43]"
                         />
                         Select all ({unlockedReadyItems.length})
-                        {lockedReadyCount > 0 && (
-                          <Link to="/dashboard/archive-found" className="text-sm font-medium text-[#C86A43] hover:underline ml-1">
-                            + {lockedReadyCount} locked
-                          </Link>
-                        )}
                       </label>
                       <button
                         onClick={() => void publishItems(readyItems.filter(i => readyChecked.has(i.id)))}
