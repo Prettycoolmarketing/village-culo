@@ -9,6 +9,7 @@ import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '
 import { SavedRow, isReadyToPublish, hasRealCaption, isSubstantialArticle, EditForm } from './DashboardImportContentPage'
 import { getUnlockedImportedIds } from '../../utils/archiveUnlock'
 import { getArchiveTier, SELF_SERVE_REWRITE_CAP } from '../../config/archiveUnlock'
+import { buildFallbackBrief } from '../../utils/voiceBriefFallback'
 import { PublishLimitModal } from '../../components/dashboard/PublishLimitModal'
 import { PublicationMeter } from '../../components/dashboard/PublicationMeter'
 import { SeriesDetail } from './DashboardSeriesPage'
@@ -2098,18 +2099,14 @@ export function DashboardProfilePage() {
           // (culo_v1_profile_draft_*) that can predate or simply never
           // include a brief saved from Import Content, which silently
           // disabled Rewrite with no visible reason beyond a hover tooltip.
-          // Voice & Brand Brief is currently hidden with no UI left to set
-          // one — same fallback as Import Content's own Rewrite with AI:
-          // the bio research already wrote (real, verified context) stands
-          // in for voiceBrief, and confirmed research claims (exactly what
-          // insightBrief is defined to hold) stand in for insightBrief. A
-          // real manual brief, if one exists, always wins.
+          // No manual brief set — same fallback as everywhere else (see
+          // buildFallbackBrief): research (bio + confirmed claims) plus a
+          // genuine CTA naming the founder's real business/audience. A real
+          // manual brief, if one exists, always wins.
           const liveFounderForVoice = getFounder(draft.id)
-          const liveVoiceBrief = liveFounderForVoice?.voiceBrief?.trim() || liveFounderForVoice?.bio?.trim()
-          const liveInsightBrief = liveFounderForVoice?.insightBrief?.trim() || liveFounderForVoice?.evidenceLedger?.claims
-            ?.filter(c => c.human_review !== 'rejected')
-            .map(c => c.claim)
-            .join(' ')
+          const liveFallbackBrief = buildFallbackBrief(liveFounderForVoice)
+          const liveVoiceBrief = liveFounderForVoice?.voiceBrief?.trim() || liveFallbackBrief.voiceBrief
+          const liveInsightBrief = liveFounderForVoice?.insightBrief?.trim() || liveFallbackBrief.insightBrief
           return (
           <>
             {/* Every entry point into this tab (sidebar nav, the old

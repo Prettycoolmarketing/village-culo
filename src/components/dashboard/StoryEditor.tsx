@@ -16,6 +16,7 @@ import { FAQEditor } from './FAQEditor'
 import { getStoryAppearsOn } from '../../utils/appearsOn'
 import { topics as allTopics } from '../../data/topics'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
+import { buildFallbackBrief } from '../../utils/voiceBriefFallback'
 import type { Story, ContentType, Topic, FAQ } from '../../types'
 
 // A deliberately simple story editor — title, summary, the content itself,
@@ -177,8 +178,17 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
   // gets back exactly what was there before — never silently lost.
   async function handleRewriteBlog() {
     const founder = getFounder(draft.founderId)
-    if (!founder?.voiceBrief?.trim()) {
-      setRewriteError('Add a Voice & Brand Brief in your profile first — Rewrite with AI needs it to write in your voice.')
+    // No manual brief set — fall back to research (bio + confirmed claims),
+    // plus a genuine CTA naming the founder's real business/audience, same
+    // as everywhere else Rewrite is offered (see buildFallbackBrief). This
+    // is also what makes Rewrite usable from Culo Members' "Manage
+    // content," where staff have no way to set a brief on the founder's
+    // behalf. A real manual brief, if one exists, always wins.
+    const fallback = buildFallbackBrief(founder)
+    const voiceBrief = founder?.voiceBrief?.trim() || fallback.voiceBrief
+    const insightBrief = founder?.insightBrief?.trim() || fallback.insightBrief
+    if (!founder || !voiceBrief) {
+      setRewriteError('Nothing to write your voice from yet — run research or add a bio first.')
       return
     }
     if (!draft.blog?.trim()) {
@@ -193,8 +203,8 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     // draft text back at itself.
     const sourceImport = draft.importedContentId ? importedContentService.get(draft.importedContentId) : undefined
     const result = await generateBlogFromVoiceBrief({
-      voiceBrief: founder.voiceBrief,
-      insightBrief: founder.insightBrief,
+      voiceBrief,
+      insightBrief,
       founderName: founder.name,
       caption: sourceImport?.description,
       transcript: draft.blog,
@@ -257,6 +267,8 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
       return
     }
     const founder = getFounder(draft.founderId)
+    // Same fallback as handleRewriteBlog above — see buildFallbackBrief.
+    const fallback = buildFallbackBrief(founder)
     setSearchAnswering(true)
     setSearchAnswerError(null)
     setSearchAnswerResult(null)
@@ -264,8 +276,8 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
       founderName: founder?.name ?? 'Shakas Designer',
       sourceText,
       platform: sourceImport?.sourcePlatform,
-      voiceBrief: founder?.voiceBrief,
-      insightBrief: founder?.insightBrief,
+      voiceBrief: founder?.voiceBrief?.trim() || fallback.voiceBrief,
+      insightBrief: founder?.insightBrief?.trim() || fallback.insightBrief,
       usedQuestions: founder?.usedSearchQuestions ?? [],
     })
     setSearchAnswering(false)

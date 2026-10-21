@@ -19,6 +19,7 @@ import {
 } from '../../services/importedContent'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { ARCHIVE_UNLOCK_FREE_COUNT, SELF_SERVE_REWRITE_CAP } from '../../config/archiveUnlock'
+import { buildFallbackBrief } from '../../utils/voiceBriefFallback'
 import { needsArchiveUpgrade } from '../../utils/archiveUnlock'
 import { enrichImportedContent, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
@@ -1093,21 +1094,13 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
   // itself.
   async function handleRewriteBlog() {
     const founder = getFounder(draft.founderId)
-    // Voice & Brand Brief is currently hidden with no UI left to set one —
-    // rather than leave Rewrite with AI unusable for every founder until
-    // that's resolved, fall back to what research already found: the bio
-    // it wrote (real, verified context about who they are) stands in for
-    // voiceBrief, and their own confirmed research claims — exactly what
-    // insightBrief is defined to hold ("source-checked bank of what they
-    // actually believe/know/can teach") — stand in for insightBrief. Only
-    // used when the founder hasn't set a manual brief themselves; a real
-    // one (from research or, once restored, written by hand) always wins.
-    const fallbackInsightBrief = founder?.evidenceLedger?.claims
-      ?.filter(c => c.human_review !== 'rejected')
-      .map(c => c.claim)
-      .join(' ')
-    const voiceBrief = founder?.voiceBrief?.trim() || founder?.bio?.trim()
-    const insightBrief = founder?.insightBrief?.trim() || fallbackInsightBrief
+    // No manual brief set — fall back to research (bio + confirmed claims),
+    // plus a genuine CTA naming the founder's real business/audience. See
+    // buildFallbackBrief. A real one (set in Import Content's Voice & Brand
+    // Brief box) always wins.
+    const fallback = buildFallbackBrief(founder)
+    const voiceBrief = founder?.voiceBrief?.trim() || fallback.voiceBrief
+    const insightBrief = founder?.insightBrief?.trim() || fallback.insightBrief
     if (!founder || !voiceBrief) {
       setRewriteError('Nothing to write your voice from yet — run research or add a bio first.')
       return
