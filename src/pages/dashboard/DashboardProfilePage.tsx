@@ -3,7 +3,6 @@ import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-do
 import { useAuth } from '../../contexts/AuthContext'
 import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
-import { BrandBriefEditor } from '../../components/dashboard/BrandBriefEditor'
 import { runOnboardingResearch } from '../../services/onboardingResearch'
 import { updateFounder, deleteFounder, getFounder, uniqueFounderSlug } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
@@ -988,6 +987,16 @@ export function DashboardProfilePage() {
   const canUseVoiceRewrite = canUseRewrite(user?.role)
     || VOICE_REWRITE_EMAILS.includes(user?.email?.trim().toLowerCase() ?? '')
   const [bioGenerating, setBioGenerating] = useState(false)
+  // Moved here from Import Content — every signup lands on Profile first
+  // now (see JoinConfirmPage), so this is where a founder actually
+  // answers the Creatives waitlist question, before ever reaching Import.
+  const [waitlistAnswer, setWaitlistAnswer] = useState<'yes' | 'no' | null>(null)
+  async function handleWaitlistAnswer(answer: 'yes' | 'no') {
+    setWaitlistAnswer(answer)
+    const live = currentFounder ? getFounder(currentFounder.id) : undefined
+    if (!live) return
+    await updateFounder({ ...live, creativesWaitlistAnswer: answer, creativesWaitlistAnsweredAt: new Date().toISOString() })
+  }
   const navigate = useNavigate()
   const location = useLocation()
   const welcomeBack = Boolean((location.state as { welcomeBack?: boolean } | null)?.welcomeBack)
@@ -1029,7 +1038,6 @@ export function DashboardProfilePage() {
     return () => clearInterval(interval)
   }, [draft?.id, draft?.onboardingStatus])
   const [editingLibraryItem, setEditingLibraryItem] = useState<LibraryItem | null>(null)
-  const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => currentFounder?.voiceBrief)
   // draft's useState initializer above only ever runs once, on this
   // component's first mount — switching accounts without a full page
   // reload (log out, log back in as someone else, in the same tab) left
@@ -1820,6 +1828,55 @@ export function DashboardProfilePage() {
         {/* ── Overview (Profile) ───────────────────────────────────────── */}
         {tab === 'overview' && (
           <div className="flex flex-col gap-6">
+
+            {/* Welcome + the Creatives waitlist question — every signup
+                lands here first (see JoinConfirmPage), so this is where a
+                founder understands what Culo Village actually does and
+                answers the waitlist question, before ever reaching
+                Import. Only shown for as long as there's nothing real on
+                this profile yet — an established founder doesn't need
+                "Welcome" every time they open Profile. */}
+            {!draft.bio?.trim() && (
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                <div>
+                  <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
+                  <p className="text-base text-[#6B7280] mt-3 max-w-2xl">
+                    Import your content from multiple channels to republish as web articles, and join the waitlist to
+                    be the first to edit your raw footage with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
+                  </p>
+                </div>
+
+                {/* Answered once, never shown again either way — 'no' just
+                    disappears with no message, 'yes' swaps in a short
+                    confirmation. Neither button is styled as a filled/
+                    "selected" default — both read as neutral, equally-
+                    weighted choices until one is actually clicked. */}
+                {!draft.creativesWaitlistAnswer && !waitlistAnswer && (
+                  <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex flex-col gap-3 w-full md:w-auto md:max-w-xs shrink-0">
+                    <p className="text-sm font-semibold text-[#2D2A26]">Join Culo Creatives waitlist?</p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => void handleWaitlistAnswer('yes')}
+                        className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#2D2A26] hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
+                      >
+                        Yes, join the waitlist
+                      </button>
+                      <button
+                        onClick={() => void handleWaitlistAnswer('no')}
+                        className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#6B7280] hover:border-red-200 hover:text-red-600 transition-colors"
+                      >
+                        No thanks
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {(draft.creativesWaitlistAnswer === 'yes' || waitlistAnswer === 'yes') && (
+                  <p className="text-sm font-semibold text-[#5E6B4A] shrink-0">
+                    Turn your content into web articles first! You're on the list.
+                  </p>
+                )}
+              </div>
+            )}
 
             {!founderStories.some(s => s.status === 'published' || s.status === 'featured') && (
               <OnboardingSteps
@@ -3359,36 +3416,9 @@ export function DashboardProfilePage() {
         {/* ── FAQ ──────────────────────────────────────────────────────────── */}
         {tab === 'expertise' && (
           <div className="flex flex-col gap-5">
-            {/* Restored, but now an Archive Unlock perk, not open to
-                everyone — brand voice upload is part of what unlocking
-                pays for, alongside self-serve Rewrite (see EditForm's
-                canRewrite). A non-unlocked founder sees what it is and
-                where to get it, not a dead end. */}
-            {draft.archiveUnlocked ? (
-              <div className="pb-5 border-b border-[#E8E4DD]">
-                <BrandBriefEditor
-                  value={voiceBriefDraft}
-                  updatedAt={draft.voiceBriefUpdatedAt}
-                  founderName={draft.name}
-                  onChange={v => {
-                    setVoiceBriefDraft(v)
-                    const now = new Date().toISOString()
-                    const live = getFounder(draft.id)
-                    if (live) void updateFounder({ ...live, voiceBrief: v, voiceBriefUpdatedAt: now, insightBrief: v, insightBriefUpdatedAt: now })
-                  }}
-                />
-              </div>
-            ) : (
-              <div className="bg-[#FBF1EB] border border-[#C86A43]/30 rounded-xl px-5 py-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-[#2D2A26]">Voice & Brand Brief</p>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Upload your brand voice and rewrite your own imports with AI — part of Archive Unlock.</p>
-                </div>
-                <Link to="/dashboard/archive-found" className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors">
-                  Unlock →
-                </Link>
-              </div>
-            )}
+            {/* Voice & Brand Brief moved to Import Content (next to
+                Snapchat Memories) — same component, same Archive Unlock
+                gate, no reason to duplicate it here too. */}
 
             <TabIntro>
               Real questions people ask you, with real answers, written in plain text so people, search

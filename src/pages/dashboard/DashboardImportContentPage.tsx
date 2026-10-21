@@ -1996,12 +1996,6 @@ export function DashboardImportContentPage() {
   const [voiceBriefDraft, setVoiceBriefDraft] = useState(() => founder?.voiceBrief)
 
   const [draft, setDraft]       = useState<ImportedContent | null>(null)
-  const [waitlistAnswer, setWaitlistAnswer] = useState<'yes' | 'no' | null>(null)
-  async function handleWaitlistAnswer(answer: 'yes' | 'no') {
-    setWaitlistAnswer(answer)
-    if (!founder) return
-    await updateFounder({ ...founder, creativesWaitlistAnswer: answer, creativesWaitlistAnsweredAt: new Date().toISOString() })
-  }
   const [sources, setSources]   = useState<ConnectedSource[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
   const [savedFlash, setSavedFlash] = useState(false)
@@ -2120,61 +2114,11 @@ export function DashboardImportContentPage() {
   return (
     <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-[1600px]'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-      {/* ── Welcome ───────────────────────────────────────────────────────
-          Welcome and Import used to be two separate pages/nav items — one
-          merged box now, since Import is the only real thing a founder
-          does here while Culo Creatives isn't live yet. */}
-      {!draft && (
-        <div className="mb-8 flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div>
-            <h1 className="font-heading text-4xl sm:text-5xl font-bold text-[#2D2A26]">Welcome to The Culo Village</h1>
-            <p className="text-base sm:text-lg text-[#6B7280] mt-3 max-w-2xl">
-              Import your content from multiple channels to republish as web articles, and join the waitlist to
-              be the first to edit your raw footage with Culo in Canva <span className="text-[#9CA3AF]">(Coming soon)</span>.
-            </p>
-
-            {founder?.onboardingStatus === 'researching' && (
-              <p className="text-sm sm:text-base text-[#6B7280] flex items-center gap-2.5 mt-4">
-                <span className="w-2 h-2 rounded-full bg-[#C86A43] animate-pulse shrink-0" aria-hidden="true" />
-                Culo is writing your first bio and article in the background — no need to wait, go ahead and start importing.
-              </p>
-            )}
-          </div>
-
-          {/* Right-hand side, next to the welcome copy rather than stacked
-              underneath it — answered once, never shown again either way:
-              'no' just disappears with no message, 'yes' swaps in a short
-              confirmation that also keeps the funnel priority straight
-              (import still comes first, Creatives is a waitlist). Neither
-              button is styled as a filled/"selected" default — both read
-              as neutral, equally-weighted choices until one is actually
-              clicked (the solid-fill Yes used to look pre-selected). */}
-          {!founder?.creativesWaitlistAnswer && !waitlistAnswer && (
-            <div className="bg-white rounded-xl border border-[#E8E4DD] px-5 py-4 flex flex-col gap-3 w-full md:w-auto md:max-w-xs shrink-0">
-              <p className="text-sm font-semibold text-[#2D2A26]">Join Culo Creatives waitlist?</p>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => void handleWaitlistAnswer('yes')}
-                  className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#2D2A26] hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
-                >
-                  Yes, join the waitlist
-                </button>
-                <button
-                  onClick={() => void handleWaitlistAnswer('no')}
-                  className="px-4 py-2 rounded-lg border border-[#E8E4DD] text-sm font-semibold text-[#6B7280] hover:border-red-200 hover:text-red-600 transition-colors"
-                >
-                  No thanks
-                </button>
-              </div>
-            </div>
-          )}
-          {(founder?.creativesWaitlistAnswer === 'yes' || waitlistAnswer === 'yes') && (
-            <p className="text-sm font-semibold text-[#5E6B4A] shrink-0">
-              Turn your content into web articles first! You're on the list.
-            </p>
-          )}
-        </div>
-      )}
+      {/* Welcome + the Creatives waitlist prompt moved to Profile →
+          Overview — every signup lands there first now (see
+          JoinConfirmPage), so that's where a founder understands what to
+          do and answers the waitlist question, before ever reaching
+          Import. */}
 
       {/* Real numbers only, straight from this founder's own sources/imports —
           no invented storage quota or "of N available" ceiling. Hidden
