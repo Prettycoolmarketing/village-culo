@@ -68,6 +68,13 @@ interface RequestBody {
   // Every primaryQuestion a past run already used for this founder, same
   // rotation mechanism as generate-search-answer's usedQuestions.
   usedQuestions?: string[]
+  // Every coreArgument a past run already returned — catches two articles
+  // landing on the identical underlying claim under two genuinely
+  // different questions (confirmed real: a coping-skills piece and a
+  // Christmas piece both resolved to "stop performing for others, do
+  // what's genuinely connecting," via her AuDHD story — usedQuestions
+  // alone didn't catch it since the questions themselves were different).
+  usedThemes?: string[]
 }
 
 interface GeneratedAudienceAnswer {
@@ -92,6 +99,8 @@ You are given one real post from the founder (the source material) and their bus
 Do not write an article about the post itself. Do not say "In this post I said...", "I recently posted...", or describe the post as a post. Identify the strongest real audience question the source can genuinely answer, and write the article as a direct answer to that question, using the post's own content and any real material in the Voice/Insight Brief as your source of what actually happened or what you genuinely believe.
 
 ROTATE: you will be given a list of primary questions already used for this founder below — never choose one of those, and prefer a genuinely different angle, not just a reworded version of one.
+
+DO NOT REPEAT AN ARGUMENT, EVEN UNDER A DIFFERENT QUESTION. You will also be given PREVIOUSLY USED THEMES below — each one the real underlying argument a past article already made. Two different audience questions can still land on the exact same claim (confirmed real: a coping-skills question and a Christmas question both resolved to "stop performing for an audience, do what's genuinely connecting," illustrated the same way via her diagnosis story). Before committing to an angle, check whether its actual thesis matches anything in that list, not just whether the question wording is new. If it does, pick a genuinely different angle on the source, or a different real argument this audience would need instead.
 
 If the source material doesn't actually connect to anything this specific audience would realistically search, or there isn't enough real material to answer a question honestly, return status "insufficient_source" with a one-sentence note on what's missing. Do not force a connection to the audience that the source doesn't actually support.
 
@@ -158,6 +167,9 @@ serve(async (req) => {
       body.platform ? `SOURCE PLATFORM: ${body.platform}` : undefined,
       `\nPREVIOUSLY USED QUESTIONS (never choose one of these again):\n${
         body.usedQuestions?.length ? body.usedQuestions.map(q => `- ${q}`).join('\n') : '(none yet)'
+      }`,
+      `\nPREVIOUSLY USED THEMES (the real argument each past article made — never land on the same one under a different question):\n${
+        body.usedThemes?.length ? body.usedThemes.map(t => `- ${t}`).join('\n') : '(none yet)'
       }`,
       `\nSOURCE POST (the topic anchor and real example):\n${body.sourceText}`,
       body.voiceBrief?.trim() ? `\nFOUNDER'S VOICE & BRAND BRIEF (an equally legitimate source of their real opinion/experience):\n${body.voiceBrief}` : undefined,

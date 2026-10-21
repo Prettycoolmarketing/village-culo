@@ -1348,6 +1348,7 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         targetAudience: business.targetAudience,
         businessWebsite: business.website,
         usedQuestions: founder?.usedAudienceQuestions ?? [],
+        usedThemes: founder?.usedAudienceThemes ?? [],
       })
       if (error) { setAudienceAnswerError(error); return }
       if (!result || result.status !== 'ready' || !result.article) {
@@ -1368,8 +1369,16 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         descriptionRewrittenAt: new Date().toISOString(),
       })
       setShapeTrigger(t => t + 1)
-      if (founder && result.primaryQuestion) {
-        void updateFounder({ ...founder, usedAudienceQuestions: [...(founder.usedAudienceQuestions ?? []), result.primaryQuestion] })
+      if (founder && (result.primaryQuestion || result.coreArgument)) {
+        void updateFounder({
+          ...founder,
+          usedAudienceQuestions: result.primaryQuestion
+            ? [...(founder.usedAudienceQuestions ?? []), result.primaryQuestion]
+            : founder.usedAudienceQuestions,
+          usedAudienceThemes: result.coreArgument
+            ? [...(founder.usedAudienceThemes ?? []), result.coreArgument]
+            : founder.usedAudienceThemes,
+        })
       }
     } catch (err) {
       setAudienceAnswerError(err instanceof Error ? err.message : 'Rewrite failed unexpectedly — please try again.')

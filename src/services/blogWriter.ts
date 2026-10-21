@@ -169,6 +169,7 @@ export async function generateAudienceAnswerArticle(input: {
   targetAudience?: string
   businessWebsite?: string
   usedQuestions?: string[]
+  usedThemes?: string[]
 }): Promise<{ result?: GeneratedAudienceAnswer; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
   const { data, error } = await supabase.functions.invoke<{ result?: GeneratedAudienceAnswer; error?: string }>(

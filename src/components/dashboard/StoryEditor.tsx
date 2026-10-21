@@ -351,6 +351,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
       targetAudience: business.targetAudience,
       businessWebsite: business.website,
       usedQuestions: founder?.usedAudienceQuestions ?? [],
+      usedThemes: founder?.usedAudienceThemes ?? [],
     })
     setAudienceAnswering(false)
     if (error) { setAudienceAnswerError(error); return }
@@ -373,8 +374,16 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     }))
     setSaved(false)
     void runDetection(result.article)
-    if (founder && result.primaryQuestion) {
-      void updateFounder({ ...founder, usedAudienceQuestions: [...(founder.usedAudienceQuestions ?? []), result.primaryQuestion] })
+    if (founder && (result.primaryQuestion || result.coreArgument)) {
+      void updateFounder({
+        ...founder,
+        usedAudienceQuestions: result.primaryQuestion
+          ? [...(founder.usedAudienceQuestions ?? []), result.primaryQuestion]
+          : founder.usedAudienceQuestions,
+        usedAudienceThemes: result.coreArgument
+          ? [...(founder.usedAudienceThemes ?? []), result.coreArgument]
+          : founder.usedAudienceThemes,
+      })
     }
   }
 

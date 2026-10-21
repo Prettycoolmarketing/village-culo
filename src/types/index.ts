@@ -566,6 +566,15 @@ export interface Founder {
   // answering real questions this founder's OWN target audience would ask,
   // a completely different question space from CULO's fixed Topic Bank.
   usedAudienceQuestions?: string[]
+  // Same idea as usedArticleThemes, but for "Rewrite for My Audience" —
+  // catches two audience articles landing on the same real underlying
+  // argument under two different questions (confirmed real: a
+  // coping-skills piece and a Christmas piece both resolved to "stop
+  // performing parenting for others, do what's genuinely connecting,"
+  // via her AuDHD story, with near-identical closing CTA phrasing —
+  // usedAudienceQuestions alone didn't catch it since the questions
+  // themselves were genuinely different).
+  usedAudienceThemes?: string[]
   // Name -> URL pairs set in Profile Settings. Whenever a blog body
   // contains an exact match of `name` (case-sensitive, matched whole-word
   // so it doesn't fire inside an unrelated longer word), that occurrence
