@@ -27,7 +27,7 @@ import { publisherPartnerProfileService, affiliateLinkService } from '../../serv
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentStatus } from '../../types/importedContent'
-import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, generateAudienceTopics, type GeneratedAudienceTopics } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, generateAudienceTopics, generateAudienceAnswerArticle, type GeneratedAudienceTopics, type AudienceTopicIdea } from '../../services/blogWriter'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
@@ -1094,6 +1094,92 @@ export function DashboardProfilePage() {
       return
     }
     setAudienceTopics(result)
+    setWriteAllResults(null)
+  }
+
+  // "Write all N" — works through the planned topics automatically, but
+  // matching each idea to a real post is still done by real evidence, not
+  // forced: a topic with no genuinely relevant unpublished piece behind it
+  // is SKIPPED and reported as such, rather than handed an arbitrary post
+  // to stretch a connection to (that would undercut the whole honesty
+  // guardrail "Rewrite for My Audience" exists for — see its own
+  // insufficient_source check, which this still respects per-item too).
+  // Simple keyword-overlap matching, not a separate AI call — cheap, and
+  // good enough to rule out "no real content for this angle exists yet."
+  const [writeAllRunning, setWriteAllRunning] = useState(false)
+  const [writeAllResults, setWriteAllResults] = useState<{ question: string; outcome: 'written' | 'skipped' | 'failed'; reason?: string }[] | null>(null)
+  function scoreMatch(topic: AudienceTopicIdea, item: ImportedContent): number {
+    const words = (s: string) => new Set(s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 3))
+    const topicWords = new Set([...words(topic.question), ...words(topic.angle)])
+    const itemWords = words(`${item.title ?? ''} ${item.description ?? ''}`)
+    let overlap = 0
+    for (const w of topicWords) if (itemWords.has(w)) overlap++
+    return overlap
+  }
+  async function handleWriteAllAudienceTopics() {
+    if (!draft || !audienceTopics?.topics?.length) return
+    const business = getBusinesses({ founderId: draft.id })[0]
+    if (!business) return
+    setWriteAllRunning(true)
+    setWriteAllResults([])
+    const used = new Set<string>()
+    for (const topic of audienceTopics.topics) {
+      const live = getFounder(draft.id)
+      const fallback = buildFallbackBrief(live)
+      const candidates = importedContentService.getAll({ founderId: draft.id })
+        .filter(i => !i.relatedStoryId && i.status !== 'published' && i.status !== 'featured' && !used.has(i.id) && hasRealCaption(i))
+      const scored = candidates
+        .map(item => ({ item, score: scoreMatch(topic, item) }))
+        .filter(s => s.score >= 2)
+        .sort((a, b) => b.score - a.score)
+      const best = scored[0]?.item
+      if (!best) {
+        setWriteAllResults(prev => [...(prev ?? []), { question: topic.question, outcome: 'skipped', reason: 'No real piece in the archive genuinely connects to this angle yet.' }])
+        continue
+      }
+      used.add(best.id)
+      const sourceText = best.transcriptText?.trim() || best.description?.trim()
+      if (!sourceText) {
+        setWriteAllResults(prev => [...(prev ?? []), { question: topic.question, outcome: 'skipped', reason: 'Matched piece has no real caption to write from.' }])
+        continue
+      }
+      try {
+        const { result, error } = await generateAudienceAnswerArticle({
+          founderName: live?.name ?? business.name,
+          sourceText,
+          platform: best.sourcePlatform,
+          voiceBrief: live?.voiceBrief?.trim() || fallback.voiceBrief,
+          insightBrief: live?.insightBrief?.trim() || fallback.insightBrief,
+          businessName: business.name,
+          businessDescription: business.tagline || business.description,
+          targetAudience: business.targetAudience,
+          businessWebsite: business.website,
+          usedQuestions: live?.usedAudienceQuestions ?? [],
+        })
+        if (error || !result || result.status !== 'ready' || !result.article) {
+          setWriteAllResults(prev => [...(prev ?? []), { question: topic.question, outcome: 'failed', reason: error ?? result?.note ?? 'Not enough to answer this honestly from the matched piece.' }])
+          continue
+        }
+        await importedContentService.upsert({
+          ...best,
+          title: result.headline || best.title,
+          description: normalizeBlogSpacing(result.article),
+          descriptionRewrittenAt: new Date().toISOString(),
+        })
+        if (result.primaryQuestion) {
+          const freshFounder = getFounder(draft.id)
+          if (freshFounder) await updateFounder({ ...freshFounder, usedAudienceQuestions: [...(freshFounder.usedAudienceQuestions ?? []), result.primaryQuestion] })
+        }
+        setWriteAllResults(prev => [...(prev ?? []), { question: topic.question, outcome: 'written' }])
+      } catch (err) {
+        setWriteAllResults(prev => [...(prev ?? []), { question: topic.question, outcome: 'failed', reason: err instanceof Error ? err.message : 'Unexpected error' }])
+      }
+      // Same spacing as the other bulk rewrite loops — avoids hammering
+      // the API back-to-back across 10 real calls in a row.
+      await new Promise(r => setTimeout(r, 1500))
+    }
+    setWriteAllRunning(false)
+    setImportedTick(t => t + 1)
   }
   // draft's useState initializer above only ever runs once, on this
   // component's first mount — switching accounts without a full page
@@ -1864,14 +1950,27 @@ export function DashboardProfilePage() {
                 then write each one with Rewrite for My Audience on a real piece from their archive.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => void handleSuggestAudienceTopics()}
-              disabled={audienceTopicsLoading}
-              className="shrink-0 text-xs font-semibold px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
-            >
-              {audienceTopicsLoading ? 'Planning…' : audienceTopics ? 'Suggest 10 more' : '📋 Suggest 10 article ideas'}
-            </button>
+            <div className="shrink-0 flex items-center gap-2">
+              {audienceTopics?.topics && (
+                <button
+                  type="button"
+                  onClick={() => void handleWriteAllAudienceTopics()}
+                  disabled={writeAllRunning || audienceTopicsLoading}
+                  title="Matches each idea to a real unpublished piece and writes it with Rewrite for My Audience — ideas with no genuine match are skipped, not forced."
+                  className="text-xs font-semibold px-4 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+                >
+                  {writeAllRunning ? `Writing… (${(writeAllResults?.length ?? 0)}/${audienceTopics.topics.length})` : `✍️ Write all ${audienceTopics.topics.length}`}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => void handleSuggestAudienceTopics()}
+                disabled={audienceTopicsLoading || writeAllRunning}
+                className="text-xs font-semibold px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
+              >
+                {audienceTopicsLoading ? 'Planning…' : audienceTopics ? 'Suggest 10 more' : '📋 Suggest 10 article ideas'}
+              </button>
+            </div>
           </div>
           {audienceTopicsError && <p className="text-xs text-red-600 mt-3">{audienceTopicsError}</p>}
           {audienceTopics?.topics && (
@@ -1880,13 +1979,30 @@ export function DashboardProfilePage() {
                 <p className="text-xs text-[#9CA3AF] mb-3">Planned for: <span className="font-medium text-[#6B7280]">{audienceTopics.audienceUsed}</span></p>
               )}
               <ol className="space-y-3 list-decimal list-inside">
-                {audienceTopics.topics.map((t, i) => (
-                  <li key={i} className="text-sm text-[#2D2A26]">
-                    <span className="font-semibold">{t.question}</span>
-                    <p className="text-xs text-[#6B7280] mt-0.5 ml-5">{t.angle}</p>
-                  </li>
-                ))}
+                {audienceTopics.topics.map((t, i) => {
+                  const r = writeAllResults?.[i]
+                  return (
+                    <li key={i} className="text-sm text-[#2D2A26]">
+                      <span className="font-semibold">{t.question}</span>
+                      {r && (
+                        <span className={`ml-2 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${
+                          r.outcome === 'written' ? 'bg-[#5E6B4A]/10 text-[#5E6B4A]' : r.outcome === 'skipped' ? 'bg-[#F3EDE6] text-[#9CA3AF]' : 'bg-red-50 text-red-700'
+                        }`}>
+                          {r.outcome}
+                        </span>
+                      )}
+                      <p className="text-xs text-[#6B7280] mt-0.5 ml-5">{t.angle}</p>
+                      {r?.reason && <p className="text-xs text-[#9CA3AF] mt-0.5 ml-5 italic">{r.reason}</p>}
+                    </li>
+                  )
+                })}
               </ol>
+              {writeAllResults && !writeAllRunning && (
+                <p className="text-xs text-[#6B7280] mt-3">
+                  {writeAllResults.filter(r => r.outcome === 'written').length} written to Needs More Value/Ready for review —
+                  nothing auto-published. {writeAllResults.filter(r => r.outcome !== 'written').length > 0 && 'The rest need either a real piece added to the archive, or writing by hand.'}
+                </p>
+              )}
             </div>
           )}
         </div>
