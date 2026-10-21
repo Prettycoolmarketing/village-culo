@@ -84,7 +84,7 @@ export function BrandBriefEditor({ value, updatedAt, onChange, founderName: _fou
           <button
             type="button"
             onClick={handleCopyPrompt}
-            className="text-sm font-semibold px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] transition-colors"
+            className="text-sm font-semibold px-4 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
           >
             {copiedPrompt ? 'Copied ✓' : 'Copy Brain Transfer prompt'}
           </button>
@@ -92,7 +92,7 @@ export function BrandBriefEditor({ value, updatedAt, onChange, founderName: _fou
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={fileStatus === 'loading'}
-            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] disabled:opacity-70 disabled:cursor-wait transition-colors shrink-0"
+            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-70 disabled:cursor-wait transition-colors shrink-0"
           >
             {fileStatus === 'loading' ? (
               <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin shrink-0" aria-hidden="true" />
