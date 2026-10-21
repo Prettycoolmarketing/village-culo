@@ -2270,37 +2270,25 @@ export function DashboardImportContentPage() {
               />
             </div>
 
-            {/* Same single Voice & Brand Brief box as Profile → Expertise —
-                an Archive Unlock perk (see that tab's identical gate), shown
-                here too so filling it in happens right alongside importing
-                rather than needing a separate trip to another tab. */}
+            {/* Writing/pasting a Brand Brief costs nothing (plain text,
+                no AI call) — only actually using it to Rewrite with AI
+                costs real spend, and that's already gated/capped
+                separately (see EditForm's canRewrite + SELF_SERVE_REWRITE_
+                CAP). No reason to lock this entry itself behind Archive
+                Unlock too — every founder can set their voice here, same
+                paste/upload/answer-questions flow as before. */}
             <div className="lg:col-start-2 lg:row-start-3">
-              {founder?.archiveUnlocked ? (
-                <BrandBriefEditor
-                  value={voiceBriefDraft}
-                  updatedAt={founder.voiceBriefUpdatedAt}
-                  founderName={founder.name}
-                  onChange={v => {
-                    setVoiceBriefDraft(v)
-                    const now = new Date().toISOString()
-                    const live = getFounder(founderId)
-                    if (live) void updateFounder({ ...live, voiceBrief: v, voiceBriefUpdatedAt: now, insightBrief: v, insightBriefUpdatedAt: now })
-                  }}
-                />
-              ) : (
-                <div className="rounded-2xl border-2 border-[#E8E4DD] bg-white p-8 h-full flex flex-col justify-between">
-                  <div>
-                    <p className="text-base font-semibold text-[#2D2A26]">Voice & Brand Brief</p>
-                    <p className="text-sm text-[#6B7280] mt-2 leading-relaxed">
-                      Upload your brand voice from your own AI, or answer a few questions — then every import
-                      gets rewritten with AI in your actual voice. Part of Archive Unlock.
-                    </p>
-                  </div>
-                  <Link to="/dashboard/archive-found" className="mt-4 inline-flex justify-center px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white text-sm font-semibold hover:bg-[#1a1815] transition-colors">
-                    Unlock →
-                  </Link>
-                </div>
-              )}
+              <BrandBriefEditor
+                value={voiceBriefDraft}
+                updatedAt={founder?.voiceBriefUpdatedAt}
+                founderName={founder?.name}
+                onChange={v => {
+                  setVoiceBriefDraft(v)
+                  const now = new Date().toISOString()
+                  const live = getFounder(founderId)
+                  if (live) void updateFounder({ ...live, voiceBrief: v, voiceBriefUpdatedAt: now, insightBrief: v, insightBriefUpdatedAt: now })
+                }}
+              />
             </div>
           </div>
 
