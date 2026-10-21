@@ -1354,35 +1354,69 @@ export function DashboardProfilePage() {
   }, [draft?.id])
 
   // Same trigger — pull the founder's business fields (name / tagline /
-  // description / target audience) out of the brief and fill any that are
-  // still blank. Once per founder; never overwrites what they've set.
+  // description / target audience) out of research and fill any that are
+  // still blank, creating a first Business record if none exists at all.
+  // Falls back to the bio when there's no manual brief — most founders
+  // never type one in, but research already wrote a real bio for them, and
+  // that's enough signal to name their business and audience. Without
+  // this, "Rewrite for My Audience" and the Content strategy panel stayed
+  // dead ends for every founder until staff manually created a business on
+  // their behalf (confirmed real: Lydia had a real bio naming Nomii and
+  // her audience, but no Business record at all). Once per founder; never
+  // overwrites a field the founder's already set themselves.
   useEffect(() => {
     if (!draft) return
     const live = getFounder(draft.id)
-    const brief = live?.voiceBrief?.trim()
+    const brief = live?.voiceBrief?.trim() || live?.bio?.trim()
     if (!brief) return
     const flagKey = `culo_v1_profile_extract_${draft.id}`
     try { if (localStorage.getItem(flagKey) === '1') return } catch { /* ignore */ }
 
     const biz = getBusinesses({ founderId: draft.id })[0]
-    if (!biz) return
-    const needsAnything = !biz.tagline?.trim() || !biz.description?.trim() || !biz.targetAudience?.trim()
+    const needsAnything = !biz || !biz.tagline?.trim() || !biz.description?.trim() || !biz.targetAudience?.trim()
     if (!needsAnything) return
 
     let cancelled = false
     void extractProfileFromVoiceBrief({
       voiceBrief: brief,
       founderName: draft.name,
-      current: { businessName: biz.name, businessTagline: biz.tagline, businessDescription: biz.description, targetAudience: biz.targetAudience },
+      current: biz ? { businessName: biz.name, businessTagline: biz.tagline, businessDescription: biz.description, targetAudience: biz.targetAudience } : undefined,
     }).then(({ fields }) => {
       try { localStorage.setItem(flagKey, '1') } catch { /* ignore */ }
       if (cancelled || !fields) return
-      const patched = { ...biz }
-      let changed = false
-      if (!patched.tagline?.trim() && fields.businessTagline) { patched.tagline = fields.businessTagline; changed = true }
-      if (!patched.description?.trim() && fields.businessDescription) { patched.description = fields.businessDescription; changed = true }
-      if (!patched.targetAudience?.trim() && fields.targetAudience) { patched.targetAudience = fields.targetAudience; changed = true }
-      if (changed) { void updateBusiness(patched); setBusinessAutoDrafted(true) }
+      if (biz) {
+        const patched = { ...biz }
+        let changed = false
+        if (!patched.tagline?.trim() && fields.businessTagline) { patched.tagline = fields.businessTagline; changed = true }
+        if (!patched.description?.trim() && fields.businessDescription) { patched.description = fields.businessDescription; changed = true }
+        if (!patched.targetAudience?.trim() && fields.targetAudience) { patched.targetAudience = fields.targetAudience; changed = true }
+        if (changed) { void updateBusiness(patched); setBusinessAutoDrafted(true) }
+        return
+      }
+      // No business at all yet — only create one when research actually
+      // surfaced a real name for it; a vague/empty extraction isn't worth
+      // creating a junk record over.
+      if (!fields.businessName?.trim()) return
+      const now = new Date().toISOString()
+      void updateBusiness({
+        id: crypto.randomUUID(),
+        slug: slugify(fields.businessName),
+        name: fields.businessName,
+        tagline: fields.businessTagline ?? '',
+        description: fields.businessDescription ?? '',
+        logo: '',
+        coverImage: '',
+        founderId: draft.id,
+        location: draft.location,
+        industry: draft.industry,
+        topics: [],
+        targetAudience: fields.targetAudience,
+        offers: [],
+        status: 'published',
+        featured: false,
+        createdAt: now,
+      })
+      setBusinessAutoDrafted(true)
     })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
