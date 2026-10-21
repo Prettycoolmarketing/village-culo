@@ -610,6 +610,12 @@ export interface Founder {
   // anyone unlocked before this was tracked.
   archiveUnlockAmount?: number
   archiveUnlockCurrency?: string
+  // How many times this founder has used self-serve Rewrite with AI (see
+  // SELF_SERVE_REWRITE_CAP in config/archiveUnlock.ts) — tier prices were
+  // only ever costed against import/storage, not AI rewrite spend, so this
+  // caps that exposure regardless of archive size. Staff's own uncapped
+  // rewrite access (canUseRewrite) never touches this counter.
+  selfServeRewriteCount?: number
 
   // ── Village publishing entitlements (see config/publishing.ts + utils/publishing.ts) ──
   // Two separate free allowances plus a flexible paid credit pool. Free is

@@ -17,7 +17,7 @@ import {
   youtubeThumbnailUrl,
 } from '../../services/importedContent'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
-import { ARCHIVE_UNLOCK_FREE_COUNT } from '../../config/archiveUnlock'
+import { ARCHIVE_UNLOCK_FREE_COUNT, SELF_SERVE_REWRITE_CAP } from '../../config/archiveUnlock'
 import { needsArchiveUpgrade } from '../../utils/archiveUnlock'
 import { enrichImportedContent, type BlogQaPair } from '../../services/importedContentEnrichment'
 import { normalizeUrl } from '../../utils/url'
@@ -1057,6 +1057,14 @@ interface EditFormProps {
   onSave: () => void
   onCancel: () => void
   canRewrite?: boolean
+  // True when canRewrite is only true because of the self-serve Archive
+  // Unlock allowance (not CAPO's own uncapped access) — tells
+  // handleRewriteBlog to count this call against SELF_SERVE_REWRITE_CAP.
+  isSelfServeRewrite?: boolean
+  // True once a self-serve (non-CAPO) founder has used all
+  // SELF_SERVE_REWRITE_CAP rewrites — shown instead of the button so the
+  // cap doesn't just look like the feature silently vanished.
+  selfServeRewriteCapReached?: boolean
   // Shakas's own account + CAPO staff only (see call site) — turns this
   // piece's own clip/transcript into a standalone search-answer article
   // (see generate-search-answer). Not a general founder feature yet.
@@ -1072,7 +1080,7 @@ interface EditFormProps {
   saving?: boolean
 }
 
-export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false, canSearchAnswer = false, savedFlash = false, saving = false }: EditFormProps) {
+export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false, isSelfServeRewrite = false, selfServeRewriteCapReached = false, canSearchAnswer = false, savedFlash = false, saving = false }: EditFormProps) {
   const { listening, toggle: toggleDictationBase } = useDictation()
   const [rewriting, setRewriting] = useState(false)
   const [rewriteError, setRewriteError] = useState<string | null>(null)
@@ -1179,6 +1187,12 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         aiPrimaryQuestion: result.blog.primaryQuestion ?? draft.aiPrimaryQuestion,
         aiQuestions: result.blog.questions?.length ? result.blog.questions : draft.aiQuestions,
       })
+      // Counts this call against SELF_SERVE_REWRITE_CAP — only when access
+      // came from the self-serve Archive Unlock allowance, not CAPO's own
+      // uncapped canUseRewrite access.
+      if (isSelfServeRewrite) {
+        await updateFounder({ ...founder, selfServeRewriteCount: (founder.selfServeRewriteCount ?? 0) + 1 })
+      }
       // Re-run Village Intelligence immediately so Re-analyse's output is
       // already using the above the moment the rewrite lands, the same way
       // Rewrite as a Culo Article already does — a founder shouldn't have
@@ -1473,6 +1487,11 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
             >
               {rewriting ? 'Rewriting…' : '✨ Rewrite with AI'}
             </button>
+          )}
+          {!canRewrite && selfServeRewriteCapReached && (
+            <span className="text-xs text-[#9CA3AF]">
+              You've used all {SELF_SERVE_REWRITE_CAP} of your free AI rewrites — contact us for more.
+            </span>
           )}
           {blogBeforeRewrite !== null && (
             <button
@@ -2086,6 +2105,10 @@ export function DashboardImportContentPage() {
     navigate('/dashboard/profile?tab=content')
   }
 
+  const selfServeRewriteAllowed = !!founder?.archiveUnlocked
+    && !draft?.descriptionRewrittenAt
+    && (founder?.selfServeRewriteCount ?? 0) < SELF_SERVE_REWRITE_CAP
+
   return (
     <div className={`p-8 ${draft ? 'max-w-4xl' : 'max-w-[1600px]'}`} style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
@@ -2375,8 +2398,12 @@ export function DashboardImportContentPage() {
             // Unlocked founders get self-serve Rewrite too, not just CAPO —
             // capped to once per item (descriptionRewrittenAt already marks
             // "has this ever been through a rewrite," reused here rather
-            // than a new field) so the cost stays bounded per post.
-            canRewrite={canUseVoiceRewrite || (!!founder?.archiveUnlocked && !draft.descriptionRewrittenAt)}
+            // than a new field) AND to SELF_SERVE_REWRITE_CAP total per
+            // founder, since tier prices were costed against import/storage
+            // only, not AI rewrite spend.
+            canRewrite={canUseVoiceRewrite || selfServeRewriteAllowed}
+            isSelfServeRewrite={!canUseVoiceRewrite && selfServeRewriteAllowed}
+            selfServeRewriteCapReached={!canUseVoiceRewrite && !!founder?.archiveUnlocked && !draft?.descriptionRewrittenAt && (founder?.selfServeRewriteCount ?? 0) >= SELF_SERVE_REWRITE_CAP}
             canSearchAnswer={canSearchAnswer}
             savedFlash={savedFlash}
             saving={advancedSaving}

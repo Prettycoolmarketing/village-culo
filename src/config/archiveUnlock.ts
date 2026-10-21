@@ -39,6 +39,15 @@ export const ARCHIVE_UNLOCK_SUBSET_5000_PRICE = 699
 // Free preview — same number regardless of tier or archive size.
 export const ARCHIVE_UNLOCK_FREE_COUNT = 10
 
+// Self-serve "Rewrite with AI" (Archive Unlock perk) each costs real AI
+// spend (~$0.02 AUD/call) that tier prices above were never costed
+// against — they were priced purely off import/structure/storage cost
+// (~$0.055/piece). Uncapped, a Tier 3+ founder rewriting their whole
+// archive could eat 30%+ of a one-off fee in pure AI cost. This caps
+// self-serve usage at a flat count regardless of tier/archive size —
+// staff's own rewrite access (canUseRewrite) is separate and uncapped.
+export const SELF_SERVE_REWRITE_CAP = 50
+
 // A founder is offered the "publish only 5,000" option once their archive
 // is bigger than this.
 export const ARCHIVE_UNLOCK_SUBSET_THRESHOLD = 10000

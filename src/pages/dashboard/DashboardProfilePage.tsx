@@ -9,7 +9,7 @@ import { updateFounder, deleteFounder, getFounder, uniqueFounderSlug } from '../
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, hasRealCaption, isSubstantialArticle, EditForm } from './DashboardImportContentPage'
 import { getUnlockedImportedIds } from '../../utils/archiveUnlock'
-import { getArchiveTier } from '../../config/archiveUnlock'
+import { getArchiveTier, SELF_SERVE_REWRITE_CAP } from '../../config/archiveUnlock'
 import { PublishLimitModal } from '../../components/dashboard/PublishLimitModal'
 import { PublicationMeter } from '../../components/dashboard/PublicationMeter'
 import { SeriesDetail } from './DashboardSeriesPage'
@@ -2809,6 +2809,10 @@ export function DashboardProfilePage() {
                 }
               }
 
+              const selfServeRewriteAllowed = !!draft.archiveUnlocked
+                && !importedEditDraft?.descriptionRewrittenAt
+                && (draft.selfServeRewriteCount ?? 0) < SELF_SERVE_REWRITE_CAP
+
               return (
                 // Floating on top of the page, not swapped in in place — a
                 // big popup with a visible sliver of the list still showing
@@ -2858,7 +2862,9 @@ export function DashboardProfilePage() {
                       onChange={setImportedEditDraft}
                       onSave={() => void handleSaveAdvancedEdit()}
                       onCancel={handleCancelAdvancedEdit}
-                      canRewrite={canUseVoiceRewrite || (!!draft.archiveUnlocked && !importedEditDraft?.descriptionRewrittenAt)}
+                      canRewrite={canUseVoiceRewrite || selfServeRewriteAllowed}
+                      isSelfServeRewrite={!canUseVoiceRewrite && selfServeRewriteAllowed}
+                      selfServeRewriteCapReached={!canUseVoiceRewrite && !!draft.archiveUnlocked && !importedEditDraft?.descriptionRewrittenAt && (draft.selfServeRewriteCount ?? 0) >= SELF_SERVE_REWRITE_CAP}
                       canSearchAnswer={canSearchAnswer}
                       savedFlash={importedSavedFlash}
                       saving={importedAdvancedSaving}
