@@ -244,6 +244,28 @@ const THIN_TEXT_THRESHOLD = 80
 const MAX_IMAGES = 4
 const MAX_IMAGE_BYTES = 5_000_000
 
+// Relying on the model to notice and preserve a real CTA buried in a
+// paragraph of prompt rules wasn't reliable enough in practice (confirmed:
+// a "download the free Coping Skills Alphabet" link was dropped from a
+// rewrite despite the rule telling it to keep one). Pulling it out
+// mechanically and handing it back as its own explicit, unmissable
+// instruction — rather than hoping it's noticed — makes keeping it a hard
+// requirement instead of one more line in a long list.
+function extractSourceCta(text: string): string | undefined {
+  const patterns = [
+    /download\s+(?:link\s+)?(?:in\s+bio|here|now|at)\s*[:\-]?\s*\S*/i,
+    /link\s+in\s+bio(?:\s+(?:for|to)\s+[^.!\n]+)?/i,
+    /go\s+to\s+https?:\/\/\S+/i,
+    /https?:\/\/\S+/i,
+    /\b[a-z0-9-]+\.(?:com|com\.au|net|org|co)(?:\/\S*)?/i,
+  ]
+  for (const re of patterns) {
+    const match = text.match(re)
+    if (match) return match[0].trim().replace(/[.,!]+$/, '')
+  }
+  return undefined
+}
+
 async function fetchImageAsBase64(url: string): Promise<{ media_type: string; data: string } | undefined> {
   try {
     const res = await fetch(url)
@@ -311,7 +333,12 @@ serve(async (req) => {
         ).join('\n')}`
       : ''
 
-    const perItemText = `SOURCE MATERIAL FOR THIS PIECE (originally posted on ${body.platform}${body.kind ? ` as a ${body.kind}` : ''}):${postedLine}\n${sourceMaterial}${imagesNote}${recentAnglesBlock}`
+    const sourceCta = extractSourceCta(rawText)
+    const ctaBlock = sourceCta
+      ? `\n\nTHIS PIECE'S OWN CALL TO ACTION (REQUIRED — not optional): the source material states "${sourceCta}". This is a real instruction the founder already gave their reader for this exact piece, not an invented pitch — you MUST preserve it, worded naturally, near the end of the article. Do not drop it, and do not replace it with a vaguer reference to "the resource" without the actual action/link.`
+      : ''
+
+    const perItemText = `SOURCE MATERIAL FOR THIS PIECE (originally posted on ${body.platform}${body.kind ? ` as a ${body.kind}` : ''}):${postedLine}\n${sourceMaterial}${imagesNote}${ctaBlock}${recentAnglesBlock}`
 
     const userContent: unknown[] = [
       {
@@ -421,6 +448,18 @@ serve(async (req) => {
         throw secondErr
       }
     }
+
+    // The "no em dash" rule above isn't reliably followed by the model
+    // alone (confirmed real) — this guarantees it mechanically instead of
+    // just hoping. In the body, a dash marks a real pause between two
+    // thoughts, so it becomes its own paragraph break exactly as asked
+    // ("the line be on its own"), not just a different inline punctuation
+    // mark. Single-line fields (subtitle/insight/title) can't sensibly
+    // break onto a new line, so those just lose the dash for a comma.
+    if (parsed.blog) parsed.blog = parsed.blog.replace(/\s*—\s*/g, '\n\n')
+    if (parsed.subtitle) parsed.subtitle = parsed.subtitle.replace(/\s*—\s*/g, ', ')
+    if (parsed.insight) parsed.insight = parsed.insight.replace(/\s*—\s*/g, ', ')
+    if (parsed.title) parsed.title = parsed.title.replace(/\s*—\s*/g, ': ')
 
     return new Response(JSON.stringify({ blog: parsed }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

@@ -487,6 +487,13 @@ serve(async (req) => {
       parsed.article = `${parsed.article}\n\nJoin the Culo Village to republish the posts you have already distributed as individual web articles, then use Culo Creatives in Canva in one repeatable, sustainable workflow.`
     }
 
+    // Same mechanical guarantee as generate-blog — a dash marks a real
+    // pause between two thoughts, so it becomes its own paragraph break
+    // ("the line be on its own") rather than hoping the model skips it.
+    if (parsed.article) parsed.article = parsed.article.replace(/\s*—\s*/g, '\n\n')
+    if (parsed.headline) parsed.headline = parsed.headline.replace(/\s*—\s*/g, ': ')
+    if (parsed.seoDescription) parsed.seoDescription = parsed.seoDescription.replace(/\s*—\s*/g, ', ')
+
     return new Response(JSON.stringify({ result: parsed }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })
