@@ -135,6 +135,51 @@ export async function generateSearchAnswerArticle(input: {
   return { result: data.result }
 }
 
+export interface GeneratedAudienceAnswer {
+  status: 'ready' | 'insufficient_source'
+  note?: string
+  primaryQuestion?: string
+  relatedQuestions?: string[]
+  headline?: string
+  article?: string
+  seoTitle?: string
+  seoDescription?: string
+  slug?: string
+  sourceUsed?: string
+  businessRelevant?: boolean
+  coreArgument?: string
+}
+
+// Sibling to generateSearchAnswerArticle, but answers a real question the
+// FOUNDER'S OWN target audience would search, instead of CULO's fixed Topic
+// Bank — see generate-audience-answer's own prompt. Built because
+// generate-search-answer structurally can't produce anything for a founder
+// whose content has nothing to do with CULO/personal branding (confirmed
+// real: a parenting-app founder's birthday post always failed its "connects
+// to a Topic Bank question" check). Requires a real business with a real
+// targetAudience set — without one there's no actual audience to write for.
+export async function generateAudienceAnswerArticle(input: {
+  founderName: string
+  sourceText: string
+  platform?: string
+  voiceBrief?: string
+  insightBrief?: string
+  businessName: string
+  businessDescription?: string
+  targetAudience: string
+  businessWebsite?: string
+  usedQuestions?: string[]
+}): Promise<{ result?: GeneratedAudienceAnswer; error?: string }> {
+  if (!isSupabaseConfigured || !supabase) return { error: 'Not available in this environment' }
+  const { data, error } = await supabase.functions.invoke<{ result?: GeneratedAudienceAnswer; error?: string }>(
+    'generate-audience-answer', { body: input },
+  )
+  if (error) return { error: await functionErrorMessage(error, 'AI request failed.') }
+  if (data?.error) return { error: data.error }
+  if (!data?.result) return { error: 'AI returned nothing usable' }
+  return { result: data.result }
+}
+
 export interface GeneratedBio {
   status: 'ready' | 'insufficient_source'
   note?: string

@@ -10,6 +10,7 @@ import { DictationMicButton } from '../../components/ui/DictationMicButton'
 import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { getFounder, updateFounder } from '../../services/founders'
+import { getBusinesses } from '../../services/businesses'
 import { getStory, updateStory } from '../../services/stories'
 import {
   importedContentService,
@@ -25,7 +26,7 @@ import { enrichImportedContent, type BlogQaPair } from '../../services/importedC
 import { normalizeUrl } from '../../utils/url'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
-import { generateBlogFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, type GeneratedSearchAnswer } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, generateAudienceAnswerArticle, type GeneratedSearchAnswer } from '../../services/blogWriter'
 import { CreateWithCuloCTA } from '../../components/ui/CreateWithCuloCTA'
 import { MediaUpload, inferKindFromUrl } from '../../components/ui/MediaUpload'
 import {
@@ -1309,6 +1310,70 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
     }
   }
 
+  // Rewrite for My Audience — sibling to Rewrite as a Culo Article above,
+  // but answers a real question THIS founder's own target audience would
+  // search, instead of CULO's fixed Topic Bank — see
+  // generate-audience-answer and StoryEditor's identical handler. Needs a
+  // real Business record with a real targetAudience set.
+  const [audienceAnswering, setAudienceAnswering] = useState(false)
+  const [audienceAnswerError, setAudienceAnswerError] = useState<string | null>(null)
+  async function handleAudienceAnswer() {
+    const sourceText = draft.transcriptText?.trim() || draft.description?.trim() || draft.diaryNote?.trim()
+    if (!sourceText) {
+      setAudienceAnswerError('Nothing to work from yet — this needs a transcript, caption or diary note first.')
+      return
+    }
+    const founder = getFounder(draft.founderId)
+    const business = getBusinesses({ founderId: draft.founderId })[0]
+    if (!business?.targetAudience?.trim()) {
+      setAudienceAnswerError('No target audience set yet — add one on this founder\'s business first (Target Audience field).')
+      return
+    }
+    const fallback = buildFallbackBrief(founder)
+    setAudienceAnswering(true)
+    setAudienceAnswerError(null)
+    try {
+      const { result, error } = await generateAudienceAnswerArticle({
+        founderName: founder?.name ?? business.name,
+        sourceText,
+        platform: draft.sourcePlatform,
+        voiceBrief: founder?.voiceBrief?.trim() || fallback.voiceBrief,
+        insightBrief: founder?.insightBrief?.trim() || fallback.insightBrief,
+        businessName: business.name,
+        businessDescription: business.tagline || business.description,
+        targetAudience: business.targetAudience,
+        businessWebsite: business.website,
+        usedQuestions: founder?.usedAudienceQuestions ?? [],
+      })
+      if (error) { setAudienceAnswerError(error); return }
+      if (!result || result.status !== 'ready' || !result.article) {
+        setAudienceAnswerError(
+          result?.note
+            ? `Not enough to answer a real audience question yet — ${result.note}`
+            : 'Not enough here yet to answer a real audience question.'
+        )
+        return
+      }
+      const isPlaceholderTitle = /^Imported from /i.test(draft.title.trim())
+      const preservedOriginalTitle = !isPlaceholderTitle && draft.title.trim() ? draft.title.trim() : undefined
+      onChange({
+        ...draft,
+        title: result.headline || draft.title,
+        subtitle: preservedOriginalTitle ?? draft.subtitle,
+        description: normalizeBlogSpacing(result.article),
+        descriptionRewrittenAt: new Date().toISOString(),
+      })
+      setShapeTrigger(t => t + 1)
+      if (founder && result.primaryQuestion) {
+        void updateFounder({ ...founder, usedAudienceQuestions: [...(founder.usedAudienceQuestions ?? []), result.primaryQuestion] })
+      }
+    } catch (err) {
+      setAudienceAnswerError(err instanceof Error ? err.message : 'Rewrite failed unexpectedly — please try again.')
+    } finally {
+      setAudienceAnswering(false)
+    }
+  }
+
   // Dictation — the browser's own free, local speech-to-text (Web Speech
   // API), no server call and no AI spend. Talk through the story and it
   // transcribes straight into Blog; a founder can clean it up or run it
@@ -1506,9 +1571,20 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
               {searchAnswering ? 'Writing…' : '🔍 Rewrite as a Culo Article'}
             </button>
           )}
+          {canRewrite && (
+            <button
+              type="button"
+              onClick={() => void handleAudienceAnswer()}
+              disabled={audienceAnswering}
+              className="text-sm font-bold px-5 py-3 rounded-xl bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
+            >
+              {audienceAnswering ? 'Writing…' : '🎯 Rewrite for My Audience'}
+            </button>
+          )}
         </div>
         {rewriteError && <p className="text-xs text-red-600">{rewriteError}</p>}
         {searchAnswerError && <p className="text-xs text-red-600">{searchAnswerError}</p>}
+        {audienceAnswerError && <p className="text-xs text-red-600">{audienceAnswerError}</p>}
         {searchAnswerResult && (
           <div className="rounded-xl border border-[#E8E4DD] bg-[#FBF8F4] px-4 py-3 text-xs text-[#4B4845] space-y-1.5">
             <p><span className="font-semibold text-[#2D2A26]">Primary question:</span> {searchAnswerResult.primaryQuestion}</p>

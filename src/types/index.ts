@@ -561,6 +561,11 @@ export interface Founder {
   // usedSearchQuestions alone can't catch since it only dedupes on the
   // question text. Grows by one each time the button succeeds.
   usedArticleThemes?: string[]
+  // Same rotation mechanism as usedSearchQuestions, but for "Rewrite for My
+  // Audience" (see generate-audience-answer) — a separate list since it's
+  // answering real questions this founder's OWN target audience would ask,
+  // a completely different question space from CULO's fixed Topic Bank.
+  usedAudienceQuestions?: string[]
   // Name -> URL pairs set in Profile Settings. Whenever a blog body
   // contains an exact match of `name` (case-sensitive, matched whole-word
   // so it doesn't fire inside an unrelated longer word), that occurrence

@@ -5,7 +5,7 @@ import { villageContentIntelligenceService, storyToInput } from '../../services/
 import { syncIdeasFromStory, refreshAuthorityScores } from '../../services/ideaSync'
 import { getBusinesses } from '../../services/businesses'
 import { getFounder, updateFounder } from '../../services/founders'
-import { generateBlogFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, type GeneratedSearchAnswer } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, generateAudienceAnswerArticle, type GeneratedSearchAnswer } from '../../services/blogWriter'
 import { importedContentService } from '../../services/importedContent'
 import { fallbackSummary } from '../../services/publishStory'
 import { MediaUpload, inferKindFromUrl } from '../ui/MediaUpload'
@@ -309,6 +309,70 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     }
   }
 
+  // Rewrite for My Audience — sibling to Rewrite as a Culo Article above,
+  // but answers a real question THIS founder's own target audience would
+  // search, instead of CULO's fixed Topic Bank (which a founder whose
+  // content has nothing to do with CULO/personal branding can never
+  // genuinely connect to — confirmed real: a parenting-app founder's
+  // birthday post always failed that check). Needs a real Business record
+  // with a real targetAudience set — without one there's no actual
+  // audience to write for, so this errors clearly rather than guessing.
+  const [audienceAnswering, setAudienceAnswering] = useState(false)
+  const [audienceAnswerError, setAudienceAnswerError] = useState<string | null>(null)
+  async function handleAudienceAnswer() {
+    const sourceImport = draft.importedContentId ? importedContentService.get(draft.importedContentId) : undefined
+    const sourceText = sourceImport?.transcriptText?.trim() || sourceImport?.description?.trim() || draft.blog?.trim()
+    if (!sourceText) {
+      setAudienceAnswerError('Nothing to work from yet — this needs a Blog, transcript or caption first.')
+      return
+    }
+    const founder = getFounder(draft.founderId)
+    const business = getBusinesses({ founderId: draft.founderId })[0]
+    if (!business?.targetAudience?.trim()) {
+      setAudienceAnswerError('No target audience set yet — add one on this founder\'s business first (Target Audience field).')
+      return
+    }
+    const fallback = buildFallbackBrief(founder)
+    setAudienceAnswering(true)
+    setAudienceAnswerError(null)
+    const { result, error } = await generateAudienceAnswerArticle({
+      founderName: founder?.name ?? business.name,
+      sourceText,
+      platform: sourceImport?.sourcePlatform,
+      voiceBrief: founder?.voiceBrief?.trim() || fallback.voiceBrief,
+      insightBrief: founder?.insightBrief?.trim() || fallback.insightBrief,
+      businessName: business.name,
+      businessDescription: business.tagline || business.description,
+      targetAudience: business.targetAudience,
+      businessWebsite: business.website,
+      usedQuestions: founder?.usedAudienceQuestions ?? [],
+    })
+    setAudienceAnswering(false)
+    if (error) { setAudienceAnswerError(error); return }
+    if (!result || result.status !== 'ready' || !result.article) {
+      setAudienceAnswerError(
+        result?.note
+          ? `Not enough to answer a real audience question yet — ${result.note}`
+          : 'Not enough here yet to answer a real audience question.'
+      )
+      return
+    }
+    const isPlaceholderTitle = /^Imported from /i.test(draft.title.trim())
+    const preservedOriginalTitle = !isPlaceholderTitle && draft.title.trim() ? draft.title.trim() : undefined
+    setBlogBeforeRewrite(draft.blog ?? null)
+    setDraft(prev => ({
+      ...prev,
+      title: result.headline || prev.title,
+      subtitle: preservedOriginalTitle ?? prev.subtitle,
+      blog: normalizeBlogSpacing(result.article!),
+    }))
+    setSaved(false)
+    void runDetection(result.article)
+    if (founder && result.primaryQuestion) {
+      void updateFounder({ ...founder, usedAudienceQuestions: [...(founder.usedAudienceQuestions ?? []), result.primaryQuestion] })
+    }
+  }
+
   // Dictation — the browser's own free, local speech-to-text (Web Speech
   // API), no server call and no AI spend. Appends each finalised chunk as
   // it's recognised; a founder can then hit Rewrite with AI on top of
@@ -559,6 +623,16 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
                   {searchAnswering ? 'Writing…' : '🔍 Rewrite as a Culo Article'}
                 </button>
               )}
+              {canRewrite && (
+                <button
+                  type="button"
+                  onClick={() => void handleAudienceAnswer()}
+                  disabled={audienceAnswering}
+                  className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FBF1EB] text-[#C86A43] hover:bg-[#C86A43]/10 disabled:opacity-50 transition-colors"
+                >
+                  {audienceAnswering ? 'Writing…' : '🎯 Rewrite for My Audience'}
+                </button>
+              )}
               {blogBeforeRewrite !== null && (
                 <button
                   type="button"
@@ -572,6 +646,7 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
             </div>
             {rewriteError && <p className="text-xs text-red-600 mb-2">{rewriteError}</p>}
             {searchAnswerError && <p className="text-xs text-red-600 mb-2">{searchAnswerError}</p>}
+            {audienceAnswerError && <p className="text-xs text-red-600 mb-2">{audienceAnswerError}</p>}
             {searchAnswerResult && (
               <div className="text-xs text-[#6B7280] bg-[#F8F5F0] border border-[#E8E4DD] rounded-lg p-3 mb-2 space-y-1">
                 <p><span className="font-semibold text-[#2D2A26]">Primary question:</span> {searchAnswerResult.primaryQuestion}</p>
