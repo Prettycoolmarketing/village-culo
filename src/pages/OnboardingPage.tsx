@@ -4,7 +4,7 @@ import { usePageTitle } from '../utils/usePageTitle'
 import { slugify } from '../utils/slugify'
 import { useAuth } from '../contexts/AuthContext'
 import { linkOwnFounder, getCurrentFounder } from '../services/currentFounder'
-import { updateFounder } from '../services/founders'
+import { updateFounderAndConfirm } from '../services/founders'
 import { updateBusiness } from '../services/businesses'
 import { updateService } from '../services/serviceOfferings'
 import { MediaUpload } from '../components/ui/MediaUpload'
@@ -974,7 +974,11 @@ export function OnboardingPage() {
       joinSource: draft.joinSource || undefined,
     }
 
-    const founderResult = await updateFounder(founder)
+    // Confirmed, not just a reported upsert success — see
+    // updateFounderAndConfirm. The business records and linkOwnFounder
+    // call right below both depend on this founder row actually existing
+    // on the server, not just a local optimistic write.
+    const founderResult = await updateFounderAndConfirm(founder)
     if (!founderResult.success) {
       setPublishing(false)
       setPublishError(founderResult.error ?? 'Could not publish your profile. Please try again.')

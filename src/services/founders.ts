@@ -114,6 +114,39 @@ export async function updateFounder(founder: Founder): Promise<WriteResult> {
   return writeEntity<Founder>({ cacheKey: KEY, item: founder, table: TABLE, toRow })
 }
 
+// Confirmed real, live: a founder's row reported a successful upsert
+// (writeEntity returned success:true) at signup, but the row was never
+// actually readable on the server afterward — profiles.founder_id and a
+// published Business both ended up pointing at a founder id with no
+// founders row behind it at all (millie.ioapo@makalinvestigation.com.au,
+// 2026-10-15). Whatever caused that specific gap (replica lag, a dropped
+// connection mid-request, anything else "the upsert call returned 200 but
+// the row isn't actually there yet/at all") is the same failure class
+// regardless of cause, so rather than trust a single upsert's reported
+// success before linking anything else to it, this re-reads the row back
+// from the server and retries once if it's missing — only a confirmed,
+// actually-readable row is safe to build a profile link or a business on
+// top of.
+export async function updateFounderAndConfirm(founder: Founder): Promise<WriteResult> {
+  const result = await updateFounder(founder)
+  if (!result.success) return result
+  if (!isSupabaseConfigured || !supabase) return result
+
+  async function rowExists(): Promise<boolean> {
+    const { data } = await supabase!.from(TABLE).select('id').eq('id', founder.id).maybeSingle()
+    return !!data
+  }
+
+  if (await rowExists()) return result
+  // One retry — covers a transient blip (dropped connection, a stale
+  // session mid-write) rather than failing a founder's whole signup over
+  // what's usually a one-off hiccup.
+  const retry = await updateFounder(founder)
+  if (!retry.success) return retry
+  if (await rowExists()) return retry
+  return { success: false, error: 'Could not confirm your profile actually saved — please try again.' }
+}
+
 /** One Supabase upsert + one cache rewrite for the whole batch — see Sprint 19B-Fix audit. */
 export function updateFoundersBatch(founders: Founder[]): Promise<WriteResult> {
   return writeEntityBatch<Founder>({ cacheKey: KEY, items: founders, table: TABLE, toRow })

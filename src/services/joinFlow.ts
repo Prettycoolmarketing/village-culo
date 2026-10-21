@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { store } from '../lib/store'
-import { updateFounder, uniqueFounderSlug } from './founders'
+import { updateFounder, updateFounderAndConfirm, uniqueFounderSlug } from './founders'
 import { linkOwnFounder } from './currentFounder'
 import { UNSET_LOCATION } from '../data/locations'
 import { UNSET_INDUSTRY } from '../data/industries'
@@ -146,7 +146,11 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
       : { status: 'trial', tier: 'standard', trialEnd: new Date(now.getTime() + STANDARD_TRIAL_DAYS * 86400000).toISOString() },
   }
 
-  const result = await updateFounder(founder)
+  // Confirmed, not just a reported upsert success — see
+  // updateFounderAndConfirm. linkOwnFounder below writes profiles.
+  // founder_id straight to the server; nothing should point at this
+  // founder id until its own row is actually readable there.
+  const result = await updateFounderAndConfirm(founder)
   if (!result.success) return null
   void linkOwnFounder(founderId)
 
