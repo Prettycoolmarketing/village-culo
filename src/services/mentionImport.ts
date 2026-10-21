@@ -27,6 +27,15 @@ export async function importMentionArticle(
 ): Promise<ImportedContent> {
   if (!isSupabaseConfigured || !supabase) throw new MentionImportError('Not configured.')
 
+  // LinkedIn blocks server-side scraping without a logged-in session —
+  // confirmed real: every LinkedIn import produced a generic, info-free
+  // placeholder article (resolve-article could only ever reach a login
+  // wall, never the actual post/profile content). Refusing it up front is
+  // more honest than quietly producing junk that reads like a real import.
+  if (/(^|\.)linkedin\.com$/i.test(new URL(articleUrl).hostname.replace(/^www\./, ''))) {
+    throw new MentionImportError('Sorry, LinkedIn can\'t be imported this way — it blocks us from reading the real page, so it only ever produces an empty placeholder. Copy the post text in yourself instead.')
+  }
+
   const resolved = await resolveArticle(articleUrl)
   if (resolved.status === 'error') throw new MentionImportError(resolved.message)
   const { article } = resolved

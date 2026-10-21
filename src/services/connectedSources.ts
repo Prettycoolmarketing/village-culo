@@ -7,6 +7,8 @@ import { fetchRssItems } from './connectors/rss'
 import { fetchPodcastItems } from './connectors/podcastRss'
 import type { NormalizedImportItem } from './connectors/types'
 import { villageContentIntelligenceService, importedContentToInput } from './villageIntelligence'
+import { getFounder } from './founders'
+import { runOnboardingResearch } from './onboardingResearch'
 
 const KEY = 'connected_sources'
 const TABLE = 'connected_sources'
@@ -62,8 +64,18 @@ export const connectedSourcesService = {
     return readCache<ConnectedSource>(KEY).find(s => s.id === id)
   },
 
-  upsert(item: ConnectedSource): Promise<WriteResult> {
-    return writeEntity<ConnectedSource>({
+  async upsert(item: ConnectedSource): Promise<WriteResult> {
+    // Before the write — connecting a brand-new source means a real
+    // identifying link/handle now exists, which is exactly what research
+    // needs. A founder could previously only get a bio by separately
+    // typing their name+link into the research box on Profile — easy to
+    // skip straight past on the way to Import, confirmed real for more
+    // than one signup (Brad Marsh, Joshua Lara) who connected a real
+    // account, imported real content, but never got a bio and so could
+    // never actually go public. Firing this off the connection itself
+    // means the same link only has to be given once.
+    const isNewSource = !readCache<ConnectedSource>(KEY).some(s => s.id === item.id)
+    const result = await writeEntity<ConnectedSource>({
       cacheKey: KEY,
       item,
       table: TABLE,
@@ -77,6 +89,14 @@ export const connectedSourcesService = {
         data: s,
       }),
     })
+    if (result.success && isNewSource) {
+      const founder = getFounder(item.founderId)
+      if (founder && !founder.bio?.trim() && !founder.researchRequestedAt
+        && founder.onboardingStatus !== 'researching' && !founder.researchPromptSkipped) {
+        void runOnboardingResearch(item.founderId, item.label)
+      }
+    }
+    return result
   },
 
   delete(id: string): Promise<WriteResult> {
