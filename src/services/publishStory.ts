@@ -86,6 +86,26 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
     }
   }
 
+  // ── Bio gate ─────────────────────────────────────────────────────────
+  // FounderProfilePage deliberately refuses to render a public page for a
+  // published founder with no bio (never a working profile with nothing
+  // behind it) — but nothing stopped a founder who skipped research
+  // entirely from publishing anyway, straight into that exact dead end.
+  // Confirmed real: a founder who went straight to Import (skipping
+  // research, a legitimate path — "I need to create new content" on
+  // Profile) published real content with status='published' and a bio
+  // that was still empty, leaving their public page invisible with no
+  // staff alert until someone happened to check it manually (the same
+  // class of bug Lydia's account had). Blocking it here, at the one place
+  // every publish path funnels through, means it can't happen silently
+  // again regardless of which route a founder takes to get here.
+  if (!founder?.bio?.trim()) {
+    return {
+      success: false,
+      error: 'Add a short bio first so your profile can actually go live — run research or write one on your Profile page.',
+    }
+  }
+
   const priorStoryCount = story.founderId ? getStories({ founderId: story.founderId, publicOnly: true }).length : 0
   const priorIdeas = story.founderId ? getIdeas({ founderId: story.founderId }) : []
   const priorIdeaCount = priorIdeas.length
