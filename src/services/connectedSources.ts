@@ -93,7 +93,18 @@ export const connectedSourcesService = {
       const founder = getFounder(item.founderId)
       if (founder && !founder.bio?.trim() && !founder.researchRequestedAt
         && founder.onboardingStatus !== 'researching' && !founder.researchPromptSkipped) {
-        void runOnboardingResearch(item.founderId, item.label)
+        // runOnboardingResearch only treats this as a real link (building a
+        // proper editorial-research `sources` entry the model can directly
+        // investigate, rather than falling back to a vague handle-only
+        // guess) when it starts with an explicit http(s):// — a connected
+        // source's own label is often typed/stored without one (e.g.
+        // "www.youtube.com/@Handle", confirmed real on Brad Marsh's
+        // account), which would otherwise silently degrade this to the
+        // weaker path every time.
+        const identifier = /^https?:\/\//i.test(item.label) || item.label.startsWith('@')
+          ? item.label
+          : `https://${item.label}`
+        void runOnboardingResearch(item.founderId, identifier)
       }
     }
     return result
