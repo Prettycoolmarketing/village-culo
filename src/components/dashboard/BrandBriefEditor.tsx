@@ -50,9 +50,8 @@ export function BrandBriefEditor({ value, updatedAt, onChange, founderName: _fou
       <div className="mb-6">
         <p className="text-lg font-semibold text-[#2D2A26]">Tell us who you are and what you know</p>
         <p className="text-sm text-[#9CA3AF] mt-1 leading-relaxed">
-          Easy steps to ensure your profile is optimised for AI discovery, based on your actual goals.
-          Copy the Brain Transfer Prompt, paste or upload it — or if you don't use AI, answer the
-          questions before importing your content.
+          Copy the Brain Transfer Prompt into your AI, then paste or upload what it gives you back.
+          No AI? Just answer a few questions instead.
         </p>
         {updatedAt && (
           <p className="text-xs text-[#9CA3AF] mt-1.5">
