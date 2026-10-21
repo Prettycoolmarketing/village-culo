@@ -1425,6 +1425,20 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
   useEffect(() => {
     if (!draft.diaryGeneratedAt) {
       const result = enrichImportedContent(draft)
+      // No real transcript or platform caption to draw from — the diary
+      // note in this case is pure template filler ("X — a video from
+      // YouTube.", a bare founder name, a generic CTA), not a genuine
+      // enrichment. Confirmed real: that filler is long enough to clear
+      // hasRealCaption's 150-char floor, so it was silently marking
+      // caption-less imports "ready to publish" with confident-looking
+      // junk instead of leaving them correctly in Needs More Value for a
+      // human to actually write something. Leave Blog blank instead —
+      // still mark diaryGeneratedAt so this doesn't retry every time the
+      // item is opened.
+      if (!result.hasRealLead) {
+        onChange({ ...draft, diaryGeneratedAt: new Date().toISOString() })
+        return
+      }
       const bullets = result.keyMoments.length > 0
         ? `\n\nKey moments:\n${result.keyMoments.map(m => `- ${m}`).join('\n')}`
         : ''

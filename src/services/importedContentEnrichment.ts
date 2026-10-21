@@ -12,6 +12,17 @@ export interface EnrichmentResult {
   suggestedTopics: string[]
   suggestedLocations: string[]
   diaryGenerationMode: 'transcript' | 'metadata'
+  // False when this item has no real transcript AND no real platform
+  // caption/description — diaryNote is still returned in that case, but
+  // it's pure template filler ("X — a video from YouTube.", "Shared on
+  // YouTube.", the founder's bare name, a generic CTA) with zero actual
+  // information about this specific piece. Confirmed real: this filler
+  // text is long enough to clear hasRealCaption's 150-char floor, so it
+  // was silently marking caption-less imports "ready to publish" —
+  // confident-looking junk, not a genuine enrichment. Callers should
+  // leave the Blog field blank (and the item in Needs More Value)
+  // rather than auto-filling with this when it's false.
+  hasRealLead: boolean
 }
 
 // ─── Curated keyword maps ─────────────────────────────────────────────────────
@@ -341,6 +352,7 @@ export function enrichImportedContent(item: ImportedContent): EnrichmentResult {
     suggestedTopics,
     suggestedLocations,
     diaryGenerationMode: mode,
+    hasRealLead: hasTranscript || !!item.description?.trim(),
   }
 }
 
