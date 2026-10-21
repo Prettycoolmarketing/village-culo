@@ -91,6 +91,15 @@ export function getUnlockedImportedIds(items: ImportedContent[], founder: Founde
     return new Set(items.map(i => i.id))
   }
 
-  const freeSlice = rankForUnlock(unpublished).slice(0, ARCHIVE_UNLOCK_FREE_COUNT)
+  // Free is ARCHIVE_UNLOCK_FREE_COUNT total, full stop — not 10 free
+  // unpublished pieces on TOP of however many are already published. This
+  // used to always hand out a fresh 10-unpublished-item preview regardless
+  // of publish count, so a founder who'd already published their free 10
+  // still saw 10 MORE pieces as unlocked/editable in Ready and Needs More
+  // Value — confirmed real: Lydia had 10 published (her whole free quota)
+  // plus another ~10 unpublished pieces still showing as free/unlocked.
+  // Shrinks to zero once the free quota's actually used up by publishing.
+  const freeRemaining = Math.max(0, ARCHIVE_UNLOCK_FREE_COUNT - alreadyPublished.length)
+  const freeSlice = rankForUnlock(unpublished).slice(0, freeRemaining)
   return new Set([...alreadyPublished, ...freeSlice].map(i => i.id))
 }

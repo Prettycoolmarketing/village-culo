@@ -2775,6 +2775,14 @@ export function DashboardProfilePage() {
                     const visibleReady = shownReady.filter(item => unlockedIds.has(item.id))
                     const hiddenReady = shownReady.filter(item => !unlockedIds.has(item.id))
                     const archiveTier = getArchiveTier(allImported.length)
+                    // The real total locked across the WHOLE archive, not
+                    // just this subtab — hiddenReady on its own undercounts
+                    // (e.g. only counting locked pieces that are also
+                    // "ready," when most of what unlocking actually buys
+                    // might be sitting in Needs More Value instead), which
+                    // read as "pay the full tier price for just 2 pieces."
+                    // One real number for what the price actually unlocks.
+                    const totalLocked = allImported.filter(item => !unlockedIds.has(item.id)).length
                     return (
                       <>
                         {visibleReady.length > 0 && contentSubTab === 'ready' && (
@@ -2812,7 +2820,7 @@ export function DashboardProfilePage() {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
-                            Unlock {hiddenReady.length} more piece{hiddenReady.length === 1 ? '' : 's'} — {archiveTier.priceLabel}
+                            Unlock {totalLocked} more piece{totalLocked === 1 ? '' : 's'} — {archiveTier.priceLabel}
                           </Link>
                         )}
 
