@@ -260,7 +260,14 @@ export function FounderProfilePage() {
   // dashboard) must never render publicly — filtered here, at the source,
   // rather than in each place this list gets rendered, so nothing downstream
   // can accidentally re-introduce a blank card.
-  const founderOwnedBusinesses = founder
+  // An unclaimed curated profile's businessId/business associations come
+  // from whatever external dataset seeded it, not from the founder
+  // actually telling us about a real business they run — confirmed real:
+  // dozens of curated founders ended up pointing at the same generic
+  // placeholder "CULO" business. Never show business info for one of
+  // these until a real person actually claims the profile and sets their
+  // own business up properly.
+  const founderOwnedBusinesses = founder && !(founder.profileStatus === 'village-curated' && !founder.userId)
     ? getBusinesses({ founderId: founder.id }).filter(b => b.name.trim().length > 0)
     : []
   const business           = founder
