@@ -2663,7 +2663,13 @@ export function DashboardProfilePage() {
                     </div>
                   )}
 
-                  {contentSubTab === 'review' && reviewItems.length > 0 && (
+                  {/* /dashboard/archive-found always reads the signed-in
+                      staff member's own founder, not whichever one is being
+                      managed — broken/irrelevant while managing someone
+                      else, and redundant anyway with the "Unlock N more
+                      pieces" banner right below, which already points
+                      there. */}
+                  {contentSubTab === 'review' && reviewItems.length > 0 && !isManagingOther && (
                     <div className="text-center mb-6">
                       <p className="text-sm text-[#6B7280] max-w-xl mx-auto mb-4">
                         Publish your full archive to help your customers find you with AI
