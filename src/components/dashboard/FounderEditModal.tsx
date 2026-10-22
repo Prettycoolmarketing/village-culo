@@ -114,6 +114,32 @@ export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder;
     ? (status === 'researching' ? 'Researching…' : 'Not yet researched')
     : gatePassed ? 'Researched · nothing flagged' : `Researched · ${unreviewedBlockingCount > 0 ? `${unreviewedBlockingCount} item${unreviewedBlockingCount === 1 ? '' : 's'} flagged` : 'reviewed'}`
 
+  // Before any research exists, this is the actual first thing staff
+  // should do with this founder — not a collapsed footnote under Name/Bio.
+  // A big, obvious call-to-action instead of the small button tucked
+  // inside a closed <details>, which was easy to miss entirely.
+  if (!ledger) {
+    return (
+      <div className="bg-[#FBF1EB] border-2 border-[#C86A43]/30 rounded-xl px-5 py-6 text-center">
+        <p className="text-sm font-bold text-[#2D2A26] mb-1">
+          {status === 'researching' || running ? 'Researching…' : 'Not yet researched'}
+        </p>
+        <p className="text-xs text-[#6B7280] mb-4 max-w-sm mx-auto">
+          Searches the web to verify this founder's real sources and build a structured evidence ledger.
+          Produces no article or bio yet — that's Stage 2, not built.
+        </p>
+        <button
+          onClick={() => void handleRun()}
+          disabled={running || status === 'researching'}
+          className="px-6 py-3 rounded-xl bg-[#C86A43] text-white text-base font-bold hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+        >
+          {running || status === 'researching' ? 'Researching…' : '🔍 Research this founder'}
+        </button>
+        {error && <p className="text-xs text-red-600 mt-3">{error}</p>}
+      </div>
+    )
+  }
+
   return (
     <details className="bg-white border border-[#E8E4DD] rounded-lg px-3 py-3">
       <summary className="cursor-pointer flex items-center justify-between gap-2 list-none">
@@ -126,16 +152,10 @@ export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder;
           disabled={running || status === 'researching'}
           className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors shrink-0"
         >
-          {running || status === 'researching' ? 'Researching…' : ledger ? 'Re-run research' : 'Research this founder'}
+          {running || status === 'researching' ? 'Researching…' : 'Re-run research'}
         </button>
       </div>
       {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
-      {!ledger && !running && (
-        <p className="text-xs text-[#9CA3AF]">
-          Searches the web to verify this founder's real sources and build a structured evidence ledger.
-          Produces no article or bio yet — that's Stage 2, not built.
-        </p>
-      )}
       {ledger && (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
@@ -732,6 +752,15 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
 
   return (
     <div className="space-y-4">
+      {/* Research (Stage 1) and Audit (Stage 3) status, claims and Confirm
+          actions live here too now — not just in Bulk Import — since Edit
+          is what actually triggers research (see DashboardBulkImportPage's
+          Edit button), staff need to see it's running and confirm claims
+          without leaving this modal. Moved above Name/Bio — before any
+          research exists, running it is the actual first thing to do here,
+          not something to discover after scrolling past two other fields. */}
+      <EditorialResearchPanel founder={founder} onSaved={onSaved} />
+
       <div>
         <label className={LABEL_CLS}>Name</label>
         <input className={INPUT_CLS} value={name} onChange={e => setName(e.target.value)} />
@@ -745,13 +774,6 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
           onChange={e => setBio(e.target.value)}
         />
       </div>
-
-      {/* Research (Stage 1) and Audit (Stage 3) status, claims and Confirm
-          actions live here too now — not just in Bulk Import — since Edit
-          is what actually triggers research (see DashboardBulkImportPage's
-          Edit button), staff need to see it's running and confirm claims
-          without leaving this modal. */}
-      <EditorialResearchPanel founder={founder} onSaved={onSaved} />
 
       <BioDraftBlock founder={founder} onUseBio={setBio} onSaved={onSaved} />
 
