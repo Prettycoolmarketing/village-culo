@@ -145,6 +145,7 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
           { label: 'Needs setup', cls: 'bg-amber-50 text-amber-700', hint: 'signed up, hasn\'t submitted their one-link setup yet' },
           { label: 'Researching', cls: 'bg-amber-50 text-amber-700', hint: 'link submitted, Culo is writing their bio/article now' },
           { label: 'Ready to confirm', cls: 'bg-blue-50 text-blue-700', hint: 'bio/article written, waiting on them to come back and confirm' },
+          { label: 'Research — no match', cls: 'bg-red-50 text-red-700', hint: 'research ran but couldn\'t verify a real link/person — needs a better link from them' },
           { label: 'Published', cls: 'bg-[#5E6B4A]/10 text-[#5E6B4A]', hint: 'profile is live on the public site' },
           { label: 'Draft', cls: 'bg-[#F3EDE6] text-[#9CA3AF]', hint: 'profile exists but isn\'t published yet' },
           { label: 'Unclaimed', cls: 'bg-red-50 text-red-700', hint: 'no login behind this profile (a curated founder who hasn\'t claimed it)' },
@@ -182,7 +183,16 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
             // "Draft" a plain curated founder also shows as — confirmed
             // live as a real gap when auditing a 3-of-5 self-serve
             // follow-through drop-off.
+            // Distinct from "Ready to confirm" — that label means a bio and
+            // article actually got written and are waiting on the founder
+            // to review them. Research genuinely running and coming back
+            // with nothing real to go on (confirmed real: Brad Marsh,
+            // Joshua Lara — no verifiable link found) is a different state
+            // entirely: there's nothing to confirm, they need to supply a
+            // real link/handle before anything can be written.
+            const researchFoundNoMatch = f.onboardingStatus === 'ready' && f.researchFoundNothing && !f.bio?.trim()
             const memberStatus =
+              researchFoundNoMatch ? { label: 'Research — no match', cls: 'bg-red-50 text-red-700' } :
               f.onboardingStatus === 'needs_setup' ? { label: 'Needs setup', cls: 'bg-amber-50 text-amber-700' } :
               f.onboardingStatus === 'researching' ? { label: 'Researching', cls: 'bg-amber-50 text-amber-700' } :
               f.onboardingStatus === 'ready' ? { label: 'Ready to confirm', cls: 'bg-blue-50 text-blue-700' } :
