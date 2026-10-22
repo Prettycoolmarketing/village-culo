@@ -191,7 +191,6 @@ export function DashboardBulkImportPage() {
   // Raw messy text (e.g. a pasted Facebook comment thread full of real
   // leads mixed in with UI noise) — same idea as the CSV-upload path
   // above, just text instead of a file. See convertTextToVIF.
-  const [textOpen, setTextOpen] = useState(false)
   const [rawTextInput, setRawTextInput] = useState('')
   const [extractingText, setExtractingText] = useState(false)
   const [textError, setTextError] = useState<string | null>(null)
@@ -202,10 +201,21 @@ export function DashboardBulkImportPage() {
     void convertTextToVIF(rawTextInput).then(result => {
       setExtractingText(false)
       if (result.error) { setTextError(`Could not extract leads from that text: ${result.error}`); return }
-      setRaw(JSON.stringify(result.vif, null, 2))
+      const json = JSON.stringify(result.vif, null, 2)
+      setRaw(json)
       setParseError(null)
       setFileName(null)
-      setPasteOpen(true)
+      // Straight to Preview — validating the JSON costs nothing (it's just
+      // a structure check), only the actual research/import spends real
+      // money, which still only happens after staff reviews this Preview
+      // screen and explicitly continues. No reason to make "paste into the
+      // JSON box, then click Validate" a separate manual step when
+      // extraction already produced valid JSON.
+      const { pkg: parsed, error } = parseVIF(json, curatorName)
+      if (error || !parsed) { setParseError(error ?? 'Unknown parse error'); return }
+      setPkg(parsed)
+      setValidation(validateVIF(parsed))
+      setStep(1)
     })
   }
 
@@ -386,13 +396,46 @@ export function DashboardBulkImportPage() {
         </div>
       )}
 
-      {/* ── Step 0: Add a file ───────────────────────────────────────────────
-          File upload is the normal path — a Village Import Format .json file
-          from Claude, ChatGPT or Sellable — so it leads here. Pasting JSON
-          directly is a fallback for anyone without a file, tucked away
-          rather than shown by default. */}
+      {/* ── Step 0: Add a batch ──────────────────────────────────────────────
+          Facebook Comments (below) is the primary path now — messy pasted
+          text is the common real case. File upload is the alternative for
+          anyone with an already-built VIF .json or a spreadsheet; pasting
+          JSON directly stays tucked away as the fallback under that. */}
       {step === 0 && (
         <div className="space-y-4">
+
+          {/* Facebook Comments — now the primary, default-open path (not a
+              buried fallback): the common real case is a staff member with
+              a pasted comment thread, not a pre-built VIF file. Jumps
+              straight to Preview on a successful extract (see
+              handleExtractText) — validating costs nothing, only the
+              actual research/import spends money, which still only
+              happens after Preview is reviewed and continued past. */}
+          <div className="rounded-xl border-2 border-[#C86A43]/30 bg-[#FBF1EB] p-6">
+            <h2 className="font-heading text-xl font-bold text-[#2D2A26] mb-1">Facebook Comments</h2>
+            <p className="text-sm text-[#6B7280] mb-4">
+              Paste a comment thread, a list of replies, anything with real names + businesses + links buried in it —
+              Culo pulls out the real leads, skips the noise, and takes you straight to Preview.
+            </p>
+            <textarea
+              className="w-full px-4 py-3.5 rounded-xl border border-[#E8E4DD] text-xs text-[#2D2A26] focus:outline-none focus:border-[#C86A43] bg-white placeholder:text-[#9CA3AF] resize-y"
+              rows={10}
+              placeholder="Paste the raw text here — comment threads, reply lists, anything with names/businesses/links in it..."
+              value={rawTextInput}
+              onChange={e => { setRawTextInput(e.target.value); setTextError(null) }}
+            />
+            <button
+              type="button"
+              onClick={handleExtractText}
+              disabled={!rawTextInput.trim() || extractingText}
+              className="mt-3 px-6 py-3 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
+            >
+              {extractingText ? 'Extracting leads…' : '✨ Extract leads with AI'}
+            </button>
+            {textError && <p className="text-xs text-red-600 mt-2">{textError}</p>}
+          </div>
+
+          <p className="text-xs text-[#9CA3AF] text-center">— or —</p>
 
           {/* File upload */}
           <div
@@ -500,41 +543,6 @@ export function DashboardBulkImportPage() {
             </div>
           </details>
 
-          {/* Paste raw text — e.g. a Facebook comment thread full of real
-              leads (name + business + link) mixed in with "Reply"/"Edited"/
-              link-preview noise. AI extracts the real leads into the same
-              VIF JSON shape, dropped into the Paste JSON box above for
-              review/editing before Validate — never skips straight to
-              import, since extraction from messy text won't always be
-              perfect. */}
-          <details className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden" open={textOpen} onToggle={e => setTextOpen((e.target as HTMLDetailsElement).open)}>
-            <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-semibold text-[#2D2A26] hover:bg-[#F8F5F0] transition-colors flex items-center justify-between">
-              <span>Got messy text instead? Paste it (e.g. Facebook comments)</span>
-              <span className="text-[#9CA3AF] text-xs font-normal">{textOpen ? '▲ Collapse' : '▼ Expand'}</span>
-            </summary>
-            <div className="border-t border-[#E8E4DD] p-5 space-y-3">
-              <p className="text-xs text-[#6B7280]">
-                Paste a comment thread, a list of replies, anything with real names + businesses + links buried in it —
-                Culo pulls out the real leads and drops them into the Paste JSON box above for you to check before importing.
-              </p>
-              <textarea
-                className="w-full px-4 py-3.5 rounded-xl border border-[#E8E4DD] text-xs text-[#2D2A26] focus:outline-none focus:border-[#C86A43] bg-white placeholder:text-[#9CA3AF] resize-y"
-                rows={10}
-                placeholder="Paste the raw text here — comment threads, reply lists, anything with names/businesses/links in it..."
-                value={rawTextInput}
-                onChange={e => { setRawTextInput(e.target.value); setTextError(null) }}
-              />
-              <button
-                type="button"
-                onClick={handleExtractText}
-                disabled={!rawTextInput.trim() || extractingText}
-                className="px-5 py-2.5 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
-              >
-                {extractingText ? 'Extracting leads…' : '✨ Extract leads with AI'}
-              </button>
-              {textError && <p className="text-xs text-red-600">{textError}</p>}
-            </div>
-          </details>
 
           {parseError && (
             <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
