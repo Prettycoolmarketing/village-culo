@@ -27,7 +27,7 @@ import { publisherPartnerProfileService, affiliateLinkService } from '../../serv
 import { getStories, getStory, updateStory, deleteStory, removeTopicFromStories } from '../../services/stories'
 import { importedContentService, PLATFORM_LABELS as IMPORT_PLATFORM_LABELS } from '../../services/importedContent'
 import type { ImportedContentStatus } from '../../types/importedContent'
-import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle, generateAudienceTopics, type GeneratedAudienceTopics } from '../../services/blogWriter'
+import { generateBlogFromVoiceBrief, generateBioFromVoiceBrief, extractProfileFromVoiceBrief, extractFaqsAI, generateSearchAnswerArticle } from '../../services/blogWriter'
 import { normalizeBlogSpacing } from '../../utils/blogFormatting'
 import { getIdeas } from '../../services/ideas'
 import { getLibraryItems } from '../../services/library'
@@ -1055,46 +1055,6 @@ export function DashboardProfilePage() {
     return () => clearInterval(interval)
   }, [draft?.id, draft?.onboardingStatus])
   const [editingLibraryItem, setEditingLibraryItem] = useState<LibraryItem | null>(null)
-  // "Suggest 10 article ideas" — a cheap, one-call content-strategy plan
-  // for this founder's real audience (see generateAudienceTopics), worked
-  // through afterward via "Rewrite for My Audience" against whichever real
-  // imported piece actually fits each idea.
-  const [audienceTopics, setAudienceTopics] = useState<GeneratedAudienceTopics | null>(null)
-  const [audienceTopicsLoading, setAudienceTopicsLoading] = useState(false)
-  const [audienceTopicsError, setAudienceTopicsError] = useState<string | null>(null)
-  async function handleSuggestAudienceTopics() {
-    if (!draft) return
-    const business = getBusinesses({ founderId: draft.id })[0]
-    if (!business) {
-      setAudienceTopicsError('No business set up for this founder yet — add one first (Profile → Businesses).')
-      return
-    }
-    const liveFounderForTopics = getFounder(draft.id)
-    const fallback = buildFallbackBrief(liveFounderForTopics)
-    const archiveSample = importedContentService.getAll({ founderId: draft.id })
-      .filter(i => !i.relatedStoryId && i.status !== 'published' && i.status !== 'featured')
-      .map(i => i.title)
-      .filter((t): t is string => !!t?.trim())
-    setAudienceTopicsLoading(true)
-    setAudienceTopicsError(null)
-    const { result, error } = await generateAudienceTopics({
-      founderName: liveFounderForTopics?.name ?? business.name,
-      businessName: business.name,
-      businessDescription: business.tagline || business.description,
-      targetAudience: business.targetAudience,
-      voiceBrief: liveFounderForTopics?.voiceBrief?.trim() || fallback.voiceBrief,
-      insightBrief: liveFounderForTopics?.insightBrief?.trim() || fallback.insightBrief,
-      archiveSample,
-      usedQuestions: liveFounderForTopics?.usedAudienceQuestions ?? [],
-    })
-    setAudienceTopicsLoading(false)
-    if (error) { setAudienceTopicsError(error); return }
-    if (!result || result.status !== 'ready' || !result.topics?.length) {
-      setAudienceTopicsError(result?.note ?? 'Not enough here yet to plan a real content strategy.')
-      return
-    }
-    setAudienceTopics(result)
-  }
   // draft's useState initializer above only ever runs once, on this
   // component's first mount — switching accounts without a full page
   // reload (log out, log back in as someone else, in the same tab) left
@@ -1847,48 +1807,6 @@ export function DashboardProfilePage() {
               ← Back to Culo Members
             </Link>
           </div>
-        </div>
-      )}
-
-      {/* "Suggest 10 article ideas" — a content-strategy plan for this
-          founder's real audience, staff-only (same real AI spend as any
-          other rewrite button). Removed from Manage Content per request —
-          staff-only, own-account use. */}
-      {tab === 'content' && canUseVoiceRewrite && !isManagingOther && (
-        <div className="mx-8 mt-6 bg-white border border-[#E8E4DD] rounded-xl px-5 py-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <p className="text-sm font-semibold text-[#2D2A26]">Content strategy</p>
-              <p className="text-xs text-[#6B7280] mt-0.5">
-                10 real questions {draft?.name ?? 'this founder'}'s own audience would search — plan a series,
-                then write each one with Rewrite for My Audience on a real piece from their archive.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void handleSuggestAudienceTopics()}
-              disabled={audienceTopicsLoading}
-              className="shrink-0 text-xs font-semibold px-4 py-2.5 rounded-lg bg-[#2D2A26] text-white hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
-            >
-              {audienceTopicsLoading ? 'Planning…' : audienceTopics ? 'Suggest 10 more' : '📋 Suggest 10 article ideas'}
-            </button>
-          </div>
-          {audienceTopicsError && <p className="text-xs text-red-600 mt-3">{audienceTopicsError}</p>}
-          {audienceTopics?.topics && (
-            <div className="mt-4 pt-4 border-t border-[#F3EDE6]">
-              {audienceTopics.audienceUsed && (
-                <p className="text-xs text-[#9CA3AF] mb-3">Planned for: <span className="font-medium text-[#6B7280]">{audienceTopics.audienceUsed}</span></p>
-              )}
-              <ol className="space-y-3 list-decimal list-inside">
-                {audienceTopics.topics.map((t, i) => (
-                  <li key={i} className="text-sm text-[#2D2A26]">
-                    <span className="font-semibold">{t.question}</span>
-                    <p className="text-xs text-[#6B7280] mt-0.5 ml-5">{t.angle}</p>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
         </div>
       )}
 
