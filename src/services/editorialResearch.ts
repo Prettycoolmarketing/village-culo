@@ -27,7 +27,7 @@ export async function runFounderResearch(founderId: string): Promise<ResearchRes
   if (!founder) return { success: false, error: 'Founder not found.' }
 
   const items = importedContentService.getAll({ founderId })
-  const sources = items
+  const importedSources = items
     .filter(i => i.originalUrl)
     .map(i => ({
       importedContentId: i.id,
@@ -37,6 +37,27 @@ export async function runFounderResearch(founderId: string): Promise<ResearchRes
         : i.sourcePlatform === 'website' ? 'website' as const
         : 'other' as const,
     }))
+
+  // A founder's own stored social/profile links (set by a curator reading
+  // them off a comment/DM, or by import) are a real, checkable address —
+  // not just a name-matching hint. Without handing these over as sources,
+  // a lead with no imported articles/videos gives the Researcher nothing
+  // to verify against, so it falls back to a blind name search and can
+  // land on a same-named stranger (confirmed real: Eleanor Lackey's TikTok
+  // handle, set directly on her record, was ignored and research found
+  // unrelated ZoomInfo/Virginia Tech people instead).
+  const profileSources = ([
+    ['website', founder.website],
+    ['youtube', founder.youtube],
+    ['podcast', founder.podcast],
+    ['other', founder.instagram],
+    ['other', founder.tiktok],
+    ['other', founder.linkedin],
+  ] as const)
+    .filter(([, url]) => url?.trim())
+    .map(([sourceType, url]) => ({ url: url!.trim(), sourceType }))
+
+  const sources = [...importedSources, ...profileSources]
 
   const business = getBusinesses({ founderId })[0]
   const identityHints = [
