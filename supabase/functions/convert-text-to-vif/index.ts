@@ -78,6 +78,7 @@ If a name has only a Facebook profile/page link and nothing else, put that link 
 If the same person appears to comment more than once in the thread, merge into one founder object rather than creating a duplicate.
 fullName is the only required field — skip (do not fabricate) anyone with no usable name attached to real business/link content.
 batchName: a short descriptive name from any context given (e.g. what the thread/post was about), or a sensible default like "Pasted leads — <N> found" if none given.
+Never use a literal double-quote character (") anywhere inside a JSON string value, including when quoting a phrase from the pasted text (e.g. a business tagline in quotes). Use single quotes (') for that instead — this output is parsed as strict JSON and an unescaped double quote inside a string breaks the parser, silently failing the whole extraction.
 
 VIF SCHEMA
 ${VIF_SCHEMA}
@@ -99,34 +100,56 @@ serve(async (req) => {
       `PASTED TEXT (raw, messy — clean it up per the rules above):\n${body.rawText}`,
     ].filter(Boolean).join('\n\n')
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-5',
-        max_tokens: 8000,
-        thinking: { type: 'adaptive' },
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userContent }],
-      }),
-    })
-
-    if (!res.ok) {
-      const errText = await res.text()
-      throw new Error(`AI request failed (${res.status}): ${errText}`)
+    async function callAnthropic(): Promise<Response> {
+      return fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey!,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-5',
+          max_tokens: 8000,
+          thinking: { type: 'adaptive' },
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: userContent }],
+        }),
+      })
     }
 
-    const data = await res.json()
-    const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
-    const raw = textBlock?.text?.trim()
-    if (!raw) throw new Error('AI returned no text')
+    async function generateOnce(): Promise<unknown> {
+      const res = await callAnthropic()
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(`AI request failed (${res.status}): ${errText}`)
+      }
+      const data = await res.json()
+      const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
+      const raw = textBlock?.text?.trim()
+      if (!raw) throw new Error('AI returned no text')
+      const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+      return JSON.parse(sanitizeJsonControlChars(cleaned))
+    }
 
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
-    const parsed = JSON.parse(sanitizeJsonControlChars(cleaned))
+    // An unescaped double-quote inside a string value (the model quoting a
+    // phrase from the pasted text despite the prompt rule against it)
+    // breaks JSON.parse outright — confirmed real, live. One extra call is
+    // cheap next to silently failing the whole extraction.
+    let parsed: unknown
+    try {
+      parsed = await generateOnce()
+    } catch (firstErr) {
+      if (!(firstErr instanceof SyntaxError)) throw firstErr
+      try {
+        parsed = await generateOnce()
+      } catch (secondErr) {
+        if (secondErr instanceof SyntaxError) {
+          throw new Error('The AI\'s response came back malformed twice in a row — please try again.')
+        }
+        throw secondErr
+      }
+    }
 
     return new Response(JSON.stringify({ vif: parsed }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
