@@ -5,6 +5,7 @@ import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { ensureJoinedFounder } from '../services/joinFlow'
+import { runOnboardingResearch } from '../services/onboardingResearch'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
@@ -36,6 +37,9 @@ export function JoinCanvaPaidPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  // Same optional field as JoinConfirmPage — see its own note. Not a
+  // required step; skip it and nothing changes.
+  const [researchLink, setResearchLink] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [alreadyMember, setAlreadyMember] = useState(false)
@@ -72,6 +76,13 @@ export function JoinCanvaPaidPage() {
       stripeSeed: { customerId: checkoutInfo.customerId, subscriptionId: checkoutInfo.subscriptionId },
     })
     if (!founderId) { setError('Could not finish setting up your account. Please contact support.'); return }
+    // Fire-and-forget — never block landing on the dashboard waiting for
+    // research to finish. Only fires when a link was actually given.
+    if (researchLink.trim()) {
+      const raw = researchLink.trim()
+      const identifier = raw.startsWith('@') || /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+      void runOnboardingResearch(founderId, identifier)
+    }
     // Same change as JoinConfirmPage — straight to Profile, name/link
     // capture happens right there now, not as a forced gate.
     navigate('/dashboard/profile', { replace: true })
@@ -209,6 +220,16 @@ export function JoinCanvaPaidPage() {
                       placeholder="Confirm password"
                       className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
                     />
+                    <input
+                      type="text"
+                      value={researchLink}
+                      onChange={e => setResearchLink(e.target.value)}
+                      placeholder="Your Instagram, YouTube, website or LinkedIn (optional)"
+                      className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                    />
+                    <p className="font-body text-xs text-muted -mt-1">
+                      Give us a link and we'll start writing your bio and first article right away — or skip this and do it later.
+                    </p>
                     {error && <p className="font-body text-sm text-red-600">{error}</p>}
                     <button
                       type="submit"
