@@ -1659,13 +1659,13 @@ export function EditForm({ draft, onChange, onSave, onCancel, canRewrite = false
         </div>
       )}
 
-      {/* Thumbnail small on the left (the whole image visible, not
-          cropped), Extra Media using the rest of the width on the right —
-          two separate stacked full-width sections read as one long form;
-          side by side, they read as what they actually are: one photo
-          plus whatever else goes with it. */}
-      <div className="mb-4 border-t border-[#E8E4DD] pt-4 grid grid-cols-1 md:grid-cols-[220px_1fr] gap-5">
-        <div>
+      {/* Thumbnail stacked above Extra Media, not side by side — the
+          thumbnail is the cover photo for the whole piece, so it gets more
+          visual weight (and a bigger upload target) than a small column
+          ever gave it; Extra Media follows underneath, same as it would
+          read in the published story itself. */}
+      <div className="mb-4 border-t border-[#E8E4DD] pt-4 flex flex-col gap-5">
+        <div className="max-w-md">
           <label className="block text-xs font-semibold text-[#2D2A26] mb-1">Thumbnail</label>
           {/* wide-contain, not wide — the whole cover photo stays visible
               instead of being cropped to fill the box, and MediaUpload's
