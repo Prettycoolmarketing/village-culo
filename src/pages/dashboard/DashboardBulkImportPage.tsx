@@ -9,7 +9,7 @@ import { getFounder, deleteFounderAccount, updateFounder } from '../../services/
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
 import { getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../services/editorialItems'
-import { convertSpreadsheetToVIF } from '../../services/spreadsheetImport'
+import { convertSpreadsheetToVIF, convertTextToVIF } from '../../services/spreadsheetImport'
 import type { Founder } from '../../types'
 
 // Nobody's got a "name" field in the system today — email is all a staff
@@ -188,6 +188,26 @@ export function DashboardBulkImportPage() {
   const [fileError, setFileError] = useState<string | null>(null)
   const [converting, setConverting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Raw messy text (e.g. a pasted Facebook comment thread full of real
+  // leads mixed in with UI noise) — same idea as the CSV-upload path
+  // above, just text instead of a file. See convertTextToVIF.
+  const [textOpen, setTextOpen] = useState(false)
+  const [rawTextInput, setRawTextInput] = useState('')
+  const [extractingText, setExtractingText] = useState(false)
+  const [textError, setTextError] = useState<string | null>(null)
+  function handleExtractText() {
+    if (!rawTextInput.trim()) return
+    setTextError(null)
+    setExtractingText(true)
+    void convertTextToVIF(rawTextInput).then(result => {
+      setExtractingText(false)
+      if (result.error) { setTextError(`Could not extract leads from that text: ${result.error}`); return }
+      setRaw(JSON.stringify(result.vif, null, 2))
+      setParseError(null)
+      setFileName(null)
+      setPasteOpen(true)
+    })
+  }
 
   // ── File upload — the normal path. Reads the .json Claude/ChatGPT/Sellable
   // produced straight off disk instead of asking staff to open it and paste
@@ -477,6 +497,42 @@ export function DashboardBulkImportPage() {
                   </pre>
                 </div>
               )}
+            </div>
+          </details>
+
+          {/* Paste raw text — e.g. a Facebook comment thread full of real
+              leads (name + business + link) mixed in with "Reply"/"Edited"/
+              link-preview noise. AI extracts the real leads into the same
+              VIF JSON shape, dropped into the Paste JSON box above for
+              review/editing before Validate — never skips straight to
+              import, since extraction from messy text won't always be
+              perfect. */}
+          <details className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden" open={textOpen} onToggle={e => setTextOpen((e.target as HTMLDetailsElement).open)}>
+            <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-semibold text-[#2D2A26] hover:bg-[#F8F5F0] transition-colors flex items-center justify-between">
+              <span>Got messy text instead? Paste it (e.g. Facebook comments)</span>
+              <span className="text-[#9CA3AF] text-xs font-normal">{textOpen ? '▲ Collapse' : '▼ Expand'}</span>
+            </summary>
+            <div className="border-t border-[#E8E4DD] p-5 space-y-3">
+              <p className="text-xs text-[#6B7280]">
+                Paste a comment thread, a list of replies, anything with real names + businesses + links buried in it —
+                Culo pulls out the real leads and drops them into the Paste JSON box above for you to check before importing.
+              </p>
+              <textarea
+                className="w-full px-4 py-3.5 rounded-xl border border-[#E8E4DD] text-xs text-[#2D2A26] focus:outline-none focus:border-[#C86A43] bg-white placeholder:text-[#9CA3AF] resize-y"
+                rows={10}
+                placeholder="Paste the raw text here — comment threads, reply lists, anything with names/businesses/links in it..."
+                value={rawTextInput}
+                onChange={e => { setRawTextInput(e.target.value); setTextError(null) }}
+              />
+              <button
+                type="button"
+                onClick={handleExtractText}
+                disabled={!rawTextInput.trim() || extractingText}
+                className="px-5 py-2.5 bg-[#2D2A26] text-white text-sm font-semibold rounded-xl hover:bg-[#1a1815] disabled:opacity-50 transition-colors"
+              >
+                {extractingText ? 'Extracting leads…' : '✨ Extract leads with AI'}
+              </button>
+              {textError && <p className="text-xs text-red-600">{textError}</p>}
             </div>
           </details>
 
