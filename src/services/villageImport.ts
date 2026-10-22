@@ -1096,14 +1096,26 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
       // purely so research has real URLs to read — never auto-published,
       // never shown as "articles" anywhere a founder/visitor would see them
       // unless staff deliberately publishes one later.
-      if (f.sourceLinks && f.sourceLinks.length > 0) {
+      // instagramUrl/tiktokUrl/youtubeUrl/podcastUrl go through the exact
+      // same gap as sourceLinks above — Instagram/TikTok/YouTube/Podcast
+      // are deliberately never written onto the founder record itself (see
+      // the comment where `founder` is built: a submitted handle is a
+      // research lead, not a verified "this is their own account" claim),
+      // so without this they were silently discarded entirely — not a
+      // source, not even text anywhere. Confirmed real, live: both Eleanor
+      // Lackey's TikTok handle and Frank Terranova's Instagram link, each
+      // correctly extracted into these exact fields, still vanished after
+      // import, and research had nothing to check and guessed wrong.
+      const socialLinks = [f.instagramUrl, f.tiktokUrl, f.youtubeUrl, f.podcastUrl, ...(f.sourceLinks ?? [])]
+      if (socialLinks.length > 0) {
         const existingUrls = new Set(importedContentService.getAll({ founderId }).map(c => c.originalUrl))
-        for (const link of f.sourceLinks) {
+        for (const link of socialLinks) {
           if (!link || !isValidUrl(link) || existingUrls.has(link)) continue
           const draft = buildDraftImport(founderId, link)
           draft.title = `${displayName} — source`
           draft.staffCreated = true
           await writeWithRetry(() => importedContentService.upsert(draft))
+          existingUrls.add(link)
         }
       }
 
