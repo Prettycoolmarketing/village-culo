@@ -5,6 +5,7 @@ import { usePageMeta } from '../utils/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { ensureJoinedFounder } from '../services/joinFlow'
 import { getFounder, updateFounder } from '../services/founders'
+import { runOnboardingResearch } from '../services/onboardingResearch'
 import { supabase } from '../lib/supabase'
 import { JoinProgress } from '../components/ui/JoinProgress'
 import { Navbar } from '../components/layout/Navbar'
@@ -31,6 +32,16 @@ export function JoinConfirmPage() {
   const [founderId, setFounderId] = useState<string | null>(null)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  // Optional, not a required step — /join/setup tried making a link
+  // mandatory here once before and it was a real source of signup friction
+  // and sync races (see the comment on handleSubmit below), so this is
+  // deliberately just one more field on the same form, not a new gate.
+  // Skipping it changes nothing; giving it means research runs immediately
+  // instead of waiting for them to separately find Profile's own research
+  // box or connect a source later (confirmed real gap: Brad Marsh, Julie
+  // Trell, Rachel Harker, Vivien all sat with a real account and no bio for
+  // days before anyone noticed).
+  const [researchLink, setResearchLink] = useState('')
   const [remember, setRemember] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -121,16 +132,27 @@ export function JoinConfirmPage() {
       founder = { ...founder, passwordSet: true }
     }
 
+    // Fire-and-forget — never block landing on the dashboard waiting for
+    // research to finish. Only fires when a link was actually given; an
+    // empty field changes nothing about this flow.
+    if (founder && researchLink.trim()) {
+      const raw = researchLink.trim()
+      const identifier = raw.startsWith('@') || /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+      void runOnboardingResearch(founder.id, identifier)
+    }
+
     setSubmitting(false)
     // /join/setup used to be a required next step (name + a research link)
     // before the dashboard — it was its own extra page in the funnel, with
     // its own cache-sync races, and a real source of signup friction/
-    // glitches. That same name+link capture now lives right on Profile's
-    // Overview tab instead (see ResumeResearchBanner there) — land a fresh
-    // signup there directly, at the top, so "run research" is the first
-    // thing they see, instead of a forced gate before they can see
-    // anything. A returning login still lands on Import as normal (see
-    // DashboardLoginPage) — this is specifically the just-signed-up moment.
+    // glitches. The optional researchLink field above gives a lighter way
+    // to capture the same thing without that mistake: one more field on
+    // this same form, never a gate. Whether or not they gave one, they
+    // still land on Profile's Overview tab, where "run research" is the
+    // first thing they see (see ResumeResearchBanner there) if they
+    // skipped it or want to try a different link. A returning login still
+    // lands on Import as normal (see DashboardLoginPage) — this is
+    // specifically the just-signed-up moment.
     navigate('/dashboard/profile', { replace: true })
   }
 
@@ -193,6 +215,18 @@ export function JoinConfirmPage() {
               placeholder="Confirm password"
               className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
+            {/* Optional — see researchLink's own note above. One extra
+                field on the same form, not a new required step. */}
+            <input
+              type="text"
+              value={researchLink}
+              onChange={e => setResearchLink(e.target.value)}
+              placeholder="Your Instagram, YouTube, website or LinkedIn (optional)"
+              className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+            />
+            <p className="font-body text-xs text-muted -mt-1">
+              Give us a link and we'll start writing your bio and first article right away — or skip this and do it later.
+            </p>
             <label className="flex items-center gap-2 text-sm text-muted mt-1">
               <input
                 type="checkbox"
