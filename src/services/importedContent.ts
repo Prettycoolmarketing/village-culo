@@ -209,7 +209,16 @@ export const importedContentService = {
         founder_id: i.founderId,
         business_id: i.businessId ?? null,
         status: i.status,
-        visibility: i.visibility,
+        // Always derived from status, never trusted from the caller.
+        // Confirmed real, live, site-wide: the public RLS read policy
+        // requires visibility = 'public' AND status in
+        // (published, featured) — a caller that only ever set `status`
+        // (the everyday "Publish" toggle in Import Content, updateStatus,
+        // and others) left visibility at whatever it was created with
+        // (private), so the item showed "Published" in every admin screen
+        // while staying completely invisible to an actual visitor. 292
+        // published rows were affected before this fix.
+        visibility: i.status === 'published' || i.status === 'featured' ? 'public' : 'private',
         source_platform: i.sourcePlatform,
         connected_source_id: i.connectedSourceId ?? null,
         published_at: i.status === 'published' || i.status === 'featured' ? new Date().toISOString() : null,
