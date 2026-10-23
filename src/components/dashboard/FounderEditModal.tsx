@@ -652,28 +652,28 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
   if (!ledger && !bioItem) return null
 
   return (
-    <div className="bg-[#F8F5F0] rounded-lg px-3 py-2 flex items-center justify-between gap-2">
-      {writing && !bioItem ? (
-        <p className="text-xs text-[#9CA3AF]">Writing bio from research…</p>
-      ) : bioItem && !bioItem.auto_publish_allowed ? (
-        <p className="text-xs text-amber-700">
-          {bioItem.draft_content?.byline} — blocked by the Risk Gate, NOT saved to the Bio field. Review before using.
-        </p>
-      ) : bioItem ? (
-        <p className="text-xs text-[#9CA3AF]">
-          {bioItem.draft_content?.byline} — written into the Bio field above · audit: {bioItem.editorial_status}
-        </p>
-      ) : null}
+    <div className="bg-[#F8F5F0] rounded-xl px-4 py-4 space-y-3">
       {ledger && (
         <button
           onClick={() => void handleWrite()}
           disabled={writing}
-          className="text-xs font-semibold text-[#3E6E92] hover:underline disabled:opacity-50 shrink-0"
+          className="w-full px-6 py-3 rounded-xl bg-[#3E6E92] text-white text-base font-bold hover:bg-[#335c7a] disabled:opacity-50 transition-colors"
         >
-          {writing ? 'Writing…' : bioItem ? 'Rewrite from research' : 'Write from research'}
+          {writing ? 'Writing…' : bioItem ? '✍️ Rewrite from research' : '✍️ Write from research'}
         </button>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {writing && !bioItem ? (
+        <p className="text-xs text-[#9CA3AF] text-center">Writing bio from research…</p>
+      ) : bioItem && !bioItem.auto_publish_allowed ? (
+        <p className="text-xs text-amber-700 text-center">
+          {bioItem.draft_content?.byline} — blocked by the Risk Gate, NOT saved to the Bio field. Review before using.
+        </p>
+      ) : bioItem ? (
+        <p className="text-xs text-[#9CA3AF] text-center">
+          {bioItem.draft_content?.byline} — written into the Bio field above · audit: {bioItem.editorial_status}
+        </p>
+      ) : null}
+      {error && <p className="text-xs text-red-600 text-center">{error}</p>}
     </div>
   )
 }
