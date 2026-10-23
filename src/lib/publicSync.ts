@@ -14,6 +14,15 @@ const PUBLIC_TABLES: Array<{ table: string; cacheKey: string }> = [
   // JSONB blob. See migration 042_founders_safe_view.sql.
   { table: 'founders_safe',                cacheKey: 'founders' },
   { table: 'businesses',                   cacheKey: 'businesses' },
+  // Confirmed real, live: a founder's public profile page builds its
+  // Articles Written by CULO section entirely from this cache
+  // (FounderProfilePage's publicImports), client-side — this table was
+  // simply never fetched for an anonymous/public session at all, so no
+  // amount of the row itself being correctly published+public ever
+  // mattered. The admin dashboard uses a separate, authenticated table
+  // list (sync.ts) that does include it, which is why it could look fine
+  // there while staying empty for every actual visitor.
+  { table: 'imported_content',             cacheKey: 'imported_content' },
   { table: 'library_items',                cacheKey: 'library' },
   { table: 'services',                     cacheKey: 'services' },
   { table: 'ideas',                        cacheKey: 'ideas' },
