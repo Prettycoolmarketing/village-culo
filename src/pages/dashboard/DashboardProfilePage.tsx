@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext'
 import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { runOnboardingResearch } from '../../services/onboardingResearch'
+import { runFounderResearch } from '../../services/editorialResearch'
+import { writeProfileBio, runAudit } from '../../services/editorialItems'
 import { updateFounder, deleteFounder, getFounder, uniqueFounderSlug } from '../../services/founders'
 import { buildStoryFromImport, publishStoryCore, syncImportEditsToStory } from '../../services/publishStory'
 import { SavedRow, isReadyToPublish, hasRealCaption, isSubstantialArticle, EditForm } from './DashboardImportContentPage'
@@ -1080,12 +1082,24 @@ export function DashboardProfilePage() {
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  // Forces ResumeResearchBanner to show again even once a bio already
-  // exists — normally it hides itself the moment there's a real bio, so a
-  // founder who wants to point research at a different/better link later
-  // (or just try again) had no way back to it at all. "if they want" —
-  // this never runs anything on its own, it only brings the banner back.
-  const [forceShowResearch, setForceShowResearch] = useState(false)
+  // Runs research straight from whatever's already on the founder record
+  // (bio, business, LinkedIn/Instagram/etc. fields, any imported content) —
+  // for a founder past the initial research/manual-entry choice who just
+  // wants to try again, without going back to the name/link prompt they've
+  // already moved on from.
+  const [runningDirect, setRunningDirect] = useState(false)
+  async function handleRunResearchDirect() {
+    if (!draft) return
+    setRunningDirect(true)
+    const research = await runFounderResearch(draft.id)
+    if (research.success) {
+      const bioResult = await writeProfileBio(draft.id)
+      if (bioResult.success && bioResult.item) await runAudit(bioResult.item)
+    }
+    setRunningDirect(false)
+    const fresh = getFounder(draft.id)
+    if (fresh) setDraft(fresh)
+  }
   const [tab, setTabState]  = useState(() => searchParams.get('tab') ?? 'overview')
   // Keeps the URL's ?tab= in sync with whichever tab is actually showing —
   // the sidebar's "Content" vs "Profile" links tell which one is active by
@@ -1995,16 +2009,14 @@ export function DashboardProfilePage() {
               </div>
             )}
 
-            {((!draft.bio?.trim() && !draft.researchPromptSkipped) || forceShowResearch) && draft.onboardingStatus !== 'researching' && (
+            {!draft.bio?.trim() && !draft.researchPromptSkipped && draft.onboardingStatus !== 'researching' && (
               <ResumeResearchBanner
                 founder={draft}
                 onDone={() => {
-                  setForceShowResearch(false)
                   const fresh = getFounder(draft.id)
                   if (fresh) setDraft(fresh)
                 }}
                 onNewToContent={() => {
-                  setForceShowResearch(false)
                   void updateFounder({ ...draft, researchPromptSkipped: true })
                   setDraft({ ...draft, researchPromptSkipped: true })
                 }}
@@ -2074,16 +2086,18 @@ export function DashboardProfilePage() {
             >
               View public profile ↗
             </a>
-            {/* Brings ResumeResearchBanner back even once a bio already
-                exists — it hides itself permanently otherwise, with no way
-                back to it for a founder who wants to point research at a
-                different/better link later, or just try again. Same size
-                as View public profile right above it, "if they want." */}
+            {/* For a founder past the initial research/manual-entry
+                choice who just wants to try research again — runs straight
+                off whatever's already on the record (bio, business,
+                LinkedIn/Instagram/etc., any imported content) instead of
+                sending them back to the name/link prompt they've already
+                moved on from. Same size as View public profile above it. */}
             <button
-              onClick={() => { setTab('overview'); setForceShowResearch(true) }}
-              className="self-start text-sm font-semibold text-[#3E6E92] hover:underline"
+              onClick={() => void handleRunResearchDirect()}
+              disabled={runningDirect}
+              className="self-start text-sm font-semibold text-[#3E6E92] hover:underline disabled:opacity-50"
             >
-              Run research
+              {runningDirect ? 'Researching…' : 'Run research'}
             </button>
 
             {businessAutoDrafted && (
