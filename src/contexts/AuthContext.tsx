@@ -115,20 +115,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // the order explicit: the public pull always lands, then (for CAPO
         // staff) this admin pull always overwrites it last, deterministically.
         //
-        // Confirmed real bug: `loading` used to flip false (the dashboard
-        // becomes clickable) the instant the session itself was confirmed,
-        // without waiting for either sync to actually land — components
-        // read straight from the local cache in their render body with no
-        // subscription to it, so opening a founder's Edit modal before the
-        // sync finished showed whatever was cached from before (often
-        // empty/stale), and nothing ever automatically re-rendered it once
-        // the real data did arrive moments later. Got materially more
-        // likely once imported_content's sync started properly paging
-        // through all 3,000+ rows instead of silently truncating at 1,000 —
-        // the real fetch now visibly takes longer, same bug, wider window.
-        // Now the dashboard only becomes usable once the actual data it
-        // reads from is actually there.
-        await syncPublishedContent().finally(() => syncUserDataFromSupabase(STAFF_ROLES.includes(restoredUser.role)))
+        // Tried making `loading` wait on this sync (so the dashboard never
+        // renders before its data has actually landed) and reverted it
+        // same session — it blocks `loading` for every page, including the
+        // public marketing pages' own Navbar (see Navbar's `loading` ->
+        // its "Dashboard" button), not just the admin dashboard that
+        // actually needed it. A visitor just waiting for the homepage nav
+        // to show a button is a worse, more universal regression than the
+        // narrower admin-dashboard staleness this was trying to fix. Real
+        // fix still needed is scoped to the dashboard routes specifically
+        // (a loading state the Founders/Content pages themselves await,
+        // not a global one), not attempted here yet.
+        void syncPublishedContent().finally(() => {
+          void syncUserDataFromSupabase(STAFF_ROLES.includes(restoredUser.role))
+        })
       }
       setLoading(false)
     })

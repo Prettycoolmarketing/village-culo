@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 're
 import { Link } from 'react-router-dom'
 import type { Founder } from '../../types'
 import type { ImportedContent, ImportedContentStatus } from '../../types/importedContent'
-import { updateFounder, getFounder } from '../../services/founders'
+import { updateFounder, getFounder, deleteFounder } from '../../services/founders'
 import { getBusiness, deleteBusiness } from '../../services/businesses'
 import { relationshipService } from '../../services/relationships'
 import { importedContentService } from '../../services/importedContent'
@@ -653,11 +653,42 @@ function ArticlesTab({ founder, tick, bump }: { founder: Founder; tick: number; 
 // founder's own just-pasted bio the moment Edit was reopened on them).
 // Opening Edit must only ever show what's already there; writing from
 // research is exclusively the explicit button below.
-function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUseBio: (body: string) => void; onSaved: (f: Founder) => void }) {
+// Staff's own exact wording for this — sent as-is, not reworded or
+// personalised, since a generic "Hey!" reads as real outreach, not a
+// template. Lives here, next to the one place staff actually discover a
+// thin result, so it's one click to copy instead of hunting it down or
+// retyping it from memory each time.
+const THIN_RESEARCH_OUTREACH_MESSAGE = `Hey!
+
+You recently commented for us to publish about you in the culo village! thanks for that! our research came back very thin
+
+the culo village helps founders republish the content they have already posted and turns them into individual web articles so that if your audience is looking for you with ai, you can show up!
+
+feel free to join, culo will run research and help you with how to start publishing free for 10 articles, feel free to reach out if you get stuck!!
+
+www.culovillage.com/join`
+
+function BioDraftBlock({ founder, onUseBio, onSaved, onDeleted }: { founder: Founder; onUseBio: (body: string) => void; onSaved: (f: Founder) => void; onDeleted: () => void }) {
   const [items, setItems] = useState<EditorialItemRow[]>([])
   const [loaded, setLoaded] = useState(false)
   const [writing, setWriting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleCopyOutreach() {
+    await navigator.clipboard.writeText(THIN_RESEARCH_OUTREACH_MESSAGE)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleDeleteThin() {
+    setDeleting(true)
+    const result = await deleteFounder(founder.id)
+    setDeleting(false)
+    if (result.success) onDeleted()
+    else setError(result.error ?? 'Could not delete. Try again.')
+  }
 
   if (!loaded) {
     void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
@@ -717,9 +748,39 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
       {writing && !bioItem ? (
         <p className="text-xs text-[#9CA3AF] text-center">Writing bio from research…</p>
       ) : bioItem && !bioItem.auto_publish_allowed ? (
-        <p className="text-xs text-amber-700 text-center">
-          {bioItem.draft_content?.byline} — blocked by the Risk Gate. Dropped into the Bio field above for you to read and edit, but NOT saved yet — review it, then hit Save Changes if you want to keep it.
-        </p>
+        <div className="space-y-2">
+          <p className="text-xs text-amber-700 text-center">
+            {bioItem.draft_content?.byline} — blocked by the Risk Gate. Dropped into the Bio field above for you to read and edit, but NOT saved yet — review it, then hit Save Changes if you want to keep it.
+          </p>
+          {/* A block usually means the Researcher genuinely found nothing
+              real to work with (a thin, generic-sounding bio like "the
+              public record is still taking shape" is the tell) — not
+              something to force through with "Use this anyway" so much as
+              a sign this lead isn't ready to be a profile yet. Outreach +
+              delete live right here, the exact moment staff realises that,
+              instead of a separate trip to figure out what to do about it. */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 space-y-2">
+            <p className="text-xs text-amber-900">
+              Thin research — usually means there's nothing real public yet to build a profile from. Worth inviting them to join and self-publish instead.
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => void handleCopyOutreach()}
+                className="text-xs font-semibold text-amber-800 hover:underline"
+              >
+                {copied ? 'Copied ✓' : 'Copy outreach message'}
+              </button>
+              <ConfirmButton
+                label={deleting ? 'Deleting…' : 'Delete this profile'}
+                confirmLabel="Yes, delete"
+                message={`Delete ${founder.name}'s curated profile? This can't be undone.`}
+                disabled={deleting}
+                onConfirm={() => void handleDeleteThin()}
+                className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+              />
+            </div>
+          </div>
+        </div>
       ) : bioItem ? (
         <p className="text-xs text-[#9CA3AF] text-center">
           {bioItem.draft_content?.byline} — written into the Bio field above · audit: {bioItem.editorial_status}
@@ -734,7 +795,7 @@ export interface ProfileTabHandle {
   save: () => Promise<void>
 }
 
-const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f: Founder) => void }>(function ProfileTab({ founder, onSaved }, ref) {
+const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f: Founder) => void; onDeleted: () => void }>(function ProfileTab({ founder, onSaved, onDeleted }, ref) {
   const [name, setName]           = useState(founder.name)
   const [bio, setBio]             = useState(founder.bio)
   const [locationId, setLocationId] = useState(founder.location.id)
@@ -851,7 +912,7 @@ const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f:
         />
       </div>
 
-      <BioDraftBlock founder={founder} onUseBio={setBio} onSaved={onSaved} />
+      <BioDraftBlock founder={founder} onUseBio={setBio} onSaved={onSaved} onDeleted={onDeleted} />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -1093,6 +1154,7 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
             ref={profileTabRef}
             founder={current}
             onSaved={f => { setCurrent(f); onChanged() }}
+            onDeleted={() => { onChanged(); onClose() }}
           />
         )}
         {tab === 'articles' && (
