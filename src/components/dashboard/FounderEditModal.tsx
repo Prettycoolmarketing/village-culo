@@ -636,16 +636,19 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
     setWriting(false)
     if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
     setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
+    if (!result.item?.draft_content?.body) return
     // auto_publish_allowed IS the Risk Gate's verdict (passesRiskGate),
-    // computed by writeProfileBio at write time — writing it into the real
-    // Bio field here regardless was the actual bug behind "the bio was
-    // worse": the panel's "Risk Gate: Needs human review" text was already
-    // correct, this button just never checked it before publishing
-    // straight to the live profile. A blocked draft now only ever sits in
-    // draft_content for a human to read and decide on, same as the
-    // source-article side of this pipeline already does.
-    if (result.item?.auto_publish_allowed && result.item.draft_content?.body) {
+    // computed by writeProfileBio at write time. A pass persists straight
+    // to the real founder record, same as before. A block used to show the
+    // draft in a separate read-only box below the real Bio field — reads
+    // as two bio sections, confusing — so it now lands in the one real Bio
+    // textarea itself instead, same as a pass, just not saved to the
+    // database yet: it only actually goes live once Save Changes is
+    // clicked, same as any other hand-edit to that field.
+    if (result.item.auto_publish_allowed) {
       void persistBio(result.item.draft_content.body)
+    } else {
+      onUseBio(result.item.draft_content.body)
     }
   }
 
@@ -665,20 +668,9 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
       {writing && !bioItem ? (
         <p className="text-xs text-[#9CA3AF] text-center">Writing bio from research…</p>
       ) : bioItem && !bioItem.auto_publish_allowed ? (
-        <div className="space-y-2">
-          <p className="text-xs text-amber-700 text-center">
-            {bioItem.draft_content?.byline} — blocked by the Risk Gate, NOT saved to the Bio field. Read it below, then decide for yourself.
-          </p>
-          <p className="text-sm text-[#2D2A26] whitespace-pre-wrap bg-white border border-amber-300 rounded-lg px-3 py-2">
-            {bioItem.draft_content?.body}
-          </p>
-          <button
-            onClick={() => bioItem.draft_content?.body && void persistBio(bioItem.draft_content.body)}
-            className="w-full px-4 py-2 rounded-lg border-2 border-amber-600 text-amber-700 text-sm font-bold hover:bg-amber-50 transition-colors"
-          >
-            Use this anyway
-          </button>
-        </div>
+        <p className="text-xs text-amber-700 text-center">
+          {bioItem.draft_content?.byline} — blocked by the Risk Gate. Dropped into the Bio field above for you to read and edit, but NOT saved yet — review it, then hit Save Changes if you want to keep it.
+        </p>
       ) : bioItem ? (
         <p className="text-xs text-[#9CA3AF] text-center">
           {bioItem.draft_content?.byline} — written into the Bio field above · audit: {bioItem.editorial_status}
