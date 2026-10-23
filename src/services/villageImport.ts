@@ -1106,7 +1106,19 @@ export async function importVIF(pkg: VillageImportPackage, options: VIFImportOpt
       // Lackey's TikTok handle and Frank Terranova's Instagram link, each
       // correctly extracted into these exact fields, still vanished after
       // import, and research had nothing to check and guessed wrong.
-      const socialLinks = [f.instagramUrl, f.tiktokUrl, f.youtubeUrl, f.podcastUrl, ...(f.sourceLinks ?? [])]
+      //
+      // A business's own website goes through the same gap a second way:
+      // extraction sometimes nests a lead's one real link under
+      // businesses[].website instead of the founder's own website/
+      // instagramUrl field (confirmed real: "Jessica Lynne" from a real
+      // pasted Facebook thread — her one link, her latest project's
+      // Instagram, only ever landed inside businesses[1].website). That
+      // field was never read as a source either, same dead end.
+      const socialLinks = [
+        f.instagramUrl, f.tiktokUrl, f.youtubeUrl, f.podcastUrl,
+        ...(f.sourceLinks ?? []),
+        ...(f.businesses ?? []).map(b => b.website),
+      ]
       if (socialLinks.length > 0) {
         const existingUrls = new Set(importedContentService.getAll({ founderId }).map(c => c.originalUrl))
         for (const link of socialLinks) {
