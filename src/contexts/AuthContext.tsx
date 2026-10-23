@@ -114,9 +114,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // wins. Awaiting the same memoized public-sync promise first makes
         // the order explicit: the public pull always lands, then (for CAPO
         // staff) this admin pull always overwrites it last, deterministically.
-        void syncPublishedContent().finally(() => {
-          void syncUserDataFromSupabase(STAFF_ROLES.includes(restoredUser.role))
-        })
+        //
+        // Confirmed real bug: `loading` used to flip false (the dashboard
+        // becomes clickable) the instant the session itself was confirmed,
+        // without waiting for either sync to actually land — components
+        // read straight from the local cache in their render body with no
+        // subscription to it, so opening a founder's Edit modal before the
+        // sync finished showed whatever was cached from before (often
+        // empty/stale), and nothing ever automatically re-rendered it once
+        // the real data did arrive moments later. Got materially more
+        // likely once imported_content's sync started properly paging
+        // through all 3,000+ rows instead of silently truncating at 1,000 —
+        // the real fetch now visibly takes longer, same bug, wider window.
+        // Now the dashboard only becomes usable once the actual data it
+        // reads from is actually there.
+        await syncPublishedContent().finally(() => syncUserDataFromSupabase(STAFF_ROLES.includes(restoredUser.role)))
       }
       setLoading(false)
     })
