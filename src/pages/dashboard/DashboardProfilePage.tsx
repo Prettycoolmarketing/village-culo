@@ -928,20 +928,26 @@ function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Fo
         </div>
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex flex-col sm:flex-row gap-2">
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your full name"
-              className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
-            />
-            <input
-              type="text"
-              value={link}
-              onChange={e => setLink(e.target.value)}
-              placeholder="@yourusername"
-              className="flex-1 px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
-            />
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-[#6B7280] mb-1">Full name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Your full name"
+                className="w-full px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-[#6B7280] mb-1">Username or link (LinkedIn, Instagram, YouTube, website — whatever's most you)</label>
+              <input
+                type="text"
+                value={link}
+                onChange={e => setLink(e.target.value)}
+                placeholder="@yourusername or a link"
+                className="w-full px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-4 flex-wrap">
             <button
