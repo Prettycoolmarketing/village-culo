@@ -426,8 +426,20 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
   // see and edit in this popup is actually what's on the page.
   async function handleSaveEdit() {
     setBusy(true)
+    setArticleError(null)
     const nextDescription = normalizeBlogSpacing(description.trim())
-    await importedContentService.upsert({ ...item, title: title.trim() || item.title, description: nextDescription })
+    // Confirmed real bug: this never checked whether the write actually
+    // succeeded — "Saved ✓" showed unconditionally, so a save that failed
+    // silently (an expired session, an RLS rejection, any other write
+    // error) looked exactly like a successful one. The edit was then lost
+    // the moment anything re-read from the real record (a reload, a
+    // background sync), reading as "I saved it and it reverted back."
+    const result = await importedContentService.upsert({ ...item, title: title.trim() || item.title, description: nextDescription })
+    if (!result.success) {
+      setBusy(false)
+      setArticleError(result.error ?? 'Could not save. Please try again.')
+      return
+    }
     if (publishedStory) {
       await updateStory({ ...publishedStory, title: title.trim() || publishedStory.title, blog: nextDescription })
     }
@@ -529,6 +541,7 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
               {busy ? 'Saving…' : 'Save'}
             </button>
             {saved && <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>}
+            {articleError && <span className="text-xs font-semibold text-red-600">{articleError}</span>}
           </div>
         </div>
       )}
@@ -1013,6 +1026,13 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
                 {publishing ? 'Publishing…' : current.researchStatus === 'researching' ? 'Researching…' : 'Publish'}
               </button>
             )}
+            <Link
+              to={`/founders/${current.slug}`}
+              target="_blank"
+              className="text-sm font-semibold px-4 py-2 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+            >
+              Preview ↗
+            </Link>
             {tab === 'profile' && (
               <button
                 onClick={() => void handleHeaderSave()}
@@ -1022,13 +1042,6 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
                 {headerSaving ? 'Saving…' : 'Save changes'}
               </button>
             )}
-            <Link
-              to={`/founders/${current.slug}`}
-              target="_blank"
-              className="text-sm font-semibold px-4 py-2 rounded-xl bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
-            >
-              Preview ↗
-            </Link>
             {publishError && (
               <p className="text-xs text-red-600 font-medium max-w-[220px]" role="alert">{publishError}</p>
             )}
