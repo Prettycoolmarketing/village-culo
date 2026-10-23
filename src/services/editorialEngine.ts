@@ -19,6 +19,33 @@ export function passesRiskGate(ledger: EvidenceLedger): boolean {
   return true
 }
 
+// Same gate, scoped to one specific source — for an article written about
+// just that source, not the founder's whole ledger. Confirmed real, live
+// bug this fixes: passesRiskGate blocked every single one of Jon Evans's
+// 8 well-sourced, high-confidence Marketing Week/podcast articles because
+// ONE unrelated claim elsewhere in his ledger (a sensitive detail about
+// being fired, and a minor conflicting download-count figure) tripped
+// claimIsBlocking — neither of which that writing even cited. A single
+// unrelated flagged claim anywhere in a large, well-researched ledger
+// should never silently block every other, unconnected piece from ever
+// auto-publishing. Identity confidence and claim-blocking now only look
+// at this source and the claims actually drawn from it; the ledger-wide
+// risk flags (reputational/health/legal/financial) still apply globally,
+// since those are about the subject as a whole, not one piece of writing.
+export function passesRiskGateForSource(
+  ledger: EvidenceLedger,
+  source: EvidenceLedger['source_assessments'][number],
+): boolean {
+  if (ledger.reputational_risk === 'high') return false
+  if (ledger.health_science_risk) return false
+  if (ledger.legal_risk) return false
+  if (ledger.financial_risk) return false
+  if (source.identity_confidence === 'low') return false
+  const claimsFromThisSource = ledger.claims.filter(c => c.sources.some(s => s.url === source.url))
+  if (claimsFromThisSource.some(claimIsBlocking)) return false
+  return true
+}
+
 function claimIsBlocking(claim: EvidenceClaim): boolean {
   // A CAPO staff member has already looked at this specific claim and
   // confirmed it — the one override the Risk Gate accepts, since it's a

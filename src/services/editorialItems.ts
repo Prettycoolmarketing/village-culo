@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getFounder } from './founders'
-import { passesRiskGate } from './editorialEngine'
+import { passesRiskGate, passesRiskGateForSource } from './editorialEngine'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { normalizeBlogSpacing } from '../utils/blogFormatting'
 import type { EvidenceLedger } from '../types/editorialEngine'
@@ -252,7 +252,11 @@ export async function writeSourceArticle(
   const { draft, error } = await callWriter('source_article', founder.name, claims, source)
   if (error || !draft) return { success: false, error: error ?? 'Writer returned nothing.' }
 
-  const autoPublishAllowed = passesRiskGate(ledger)
+  // Scoped to this one source, not the whole ledger — see
+  // passesRiskGateForSource. This piece is about this source alone; an
+  // unrelated flagged claim elsewhere in the founder's research has
+  // nothing to do with whether this specific article is safe to publish.
+  const autoPublishAllowed = passesRiskGateForSource(ledger, source)
   const { data, error: dbError } = await supabase
     .from('editorial_items')
     .insert({
