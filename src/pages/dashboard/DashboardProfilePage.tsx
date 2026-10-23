@@ -1088,13 +1088,32 @@ export function DashboardProfilePage() {
   // wants to try again, without going back to the name/link prompt they've
   // already moved on from.
   const [runningDirect, setRunningDirect] = useState(false)
+  const [directResearchNote, setDirectResearchNote] = useState<string | null>(null)
   async function handleRunResearchDirect() {
     if (!draft) return
     setRunningDirect(true)
+    setDirectResearchNote(null)
     const research = await runFounderResearch(draft.id)
-    if (research.success) {
+    if (!research.success) {
+      setDirectResearchNote(research.error ?? 'Research failed — please try again.')
+    } else {
       const bioResult = await writeProfileBio(draft.id)
-      if (bioResult.success && bioResult.item) await runAudit(bioResult.item)
+      if (bioResult.success && bioResult.item) {
+        await runAudit(bioResult.item)
+        // auto_publish_allowed is the Risk Gate's own verdict — same check
+        // as every other research path (FounderEditModal's BioDraftBlock,
+        // runFullEditorialPipeline, onboarding). Missed here originally:
+        // this wrote nothing to founder.bio at all, gate or no gate — a
+        // low-confidence run shouldn't publish straight to the live
+        // profile any more here than it does anywhere else.
+        if (bioResult.item.auto_publish_allowed && bioResult.item.draft_content?.body) {
+          const latest = getFounder(draft.id) ?? draft
+          await updateFounder({ ...latest, bio: bioResult.item.draft_content.body })
+          setDirectResearchNote('Bio updated from research.')
+        } else {
+          setDirectResearchNote('Couldn\'t confidently verify who you are from what\'s available — try adding a real link (LinkedIn, website, YouTube) and run again.')
+        }
+      }
     }
     setRunningDirect(false)
     const fresh = getFounder(draft.id)
@@ -2099,6 +2118,9 @@ export function DashboardProfilePage() {
             >
               {runningDirect ? 'Researching…' : 'Run research'}
             </button>
+            {directResearchNote && (
+              <p className="text-xs text-[#6B7280] -mt-1">{directResearchNote}</p>
+            )}
 
             {businessAutoDrafted && (
               <p className="hidden md:block text-xs text-[#C86A43] font-medium -mt-2">
