@@ -18,6 +18,7 @@ import { getAllEditorialItems, type EditorialItemRow } from '../../../services/e
 import { getStories } from '../../../services/stories'
 import { runFullEditorialPipeline } from '../../../services/editorialPipeline'
 import { publishFounderArticles } from '../../../services/publishStory'
+import { pullVisibleRows } from '../../../lib/entityStore'
 import { getSourcedLeads } from '../../../services/sourcedLeads'
 import { syncUserDataFromSupabase } from '../../../lib/sync'
 
@@ -141,6 +142,25 @@ export function VillageCuratedFoundersPage() {
   // who'd get a permission error clicking it.
   const canDeleteAccounts = user?.role === 'admin' || user?.role === 'owner'
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  // The global auth-level sync runs fire-and-forget on page load (see
+  // AuthContext) — a fix to block on it there got reverted same session,
+  // since it delayed the public site's own Navbar for every visitor, not
+  // just this admin page. The actual bug it was trying to fix is real
+  // though, confirmed live: this page could render from a stale/partial
+  // cache, with a founder's correctly published+public articles showing
+  // "No articles yet" here even though the database had them all along,
+  // and nothing auto-corrected it since nothing here subscribes to the
+  // cache. Scoped fix instead — just this page explicitly re-pulls the
+  // two tables its own content depends on before it lets itself render
+  // real data, instead of trusting whatever the global sync happened to
+  // have landed already.
+  const [dataReady, setDataReady] = useState(false)
+  useEffect(() => {
+    void Promise.all([
+      pullVisibleRows('founders', 'founders'),
+      pullVisibleRows('imported_content', 'imported_content'),
+    ]).finally(() => setDataReady(true))
+  }, [])
   const [searchParams] = useSearchParams()
   // Export moved to Village Overview — no longer a tab here. The separate
   // Editorial Queue tab/page is gone too — it was a cross-founder review
@@ -462,6 +482,14 @@ export function VillageCuratedFoundersPage() {
   // shows manage actions when the person viewing it really is the owner.
   const ownFounderId = useMemo(() => getCurrentFounder(user)?.id ?? null, [user, tick])
   const isLockedFromViewer = (f: Founder) => f.slug === PROTECTED_FOUNDER_SLUG && f.id !== ownFounderId
+
+  if (!dataReady) {
+    return (
+      <div className="p-8 max-w-5xl pb-24 text-sm text-[#9CA3AF]" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        Loading founders…
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 max-w-5xl pb-24" style={{ fontFamily: "'DM Sans', sans-serif" }}>
