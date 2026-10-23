@@ -636,7 +636,17 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
     setWriting(false)
     if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
     setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
-    if (result.item?.draft_content?.body) void persistBio(result.item.draft_content.body)
+    // auto_publish_allowed IS the Risk Gate's verdict (passesRiskGate),
+    // computed by writeProfileBio at write time — writing it into the real
+    // Bio field here regardless was the actual bug behind "the bio was
+    // worse": the panel's "Risk Gate: Needs human review" text was already
+    // correct, this button just never checked it before publishing
+    // straight to the live profile. A blocked draft now only ever sits in
+    // draft_content for a human to read and decide on, same as the
+    // source-article side of this pipeline already does.
+    if (result.item?.auto_publish_allowed && result.item.draft_content?.body) {
+      void persistBio(result.item.draft_content.body)
+    }
   }
 
   if (!ledger && !bioItem) return null
@@ -645,6 +655,10 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
     <div className="bg-[#F8F5F0] rounded-lg px-3 py-2 flex items-center justify-between gap-2">
       {writing && !bioItem ? (
         <p className="text-xs text-[#9CA3AF]">Writing bio from research…</p>
+      ) : bioItem && !bioItem.auto_publish_allowed ? (
+        <p className="text-xs text-amber-700">
+          {bioItem.draft_content?.byline} — blocked by the Risk Gate, NOT saved to the Bio field. Review before using.
+        </p>
       ) : bioItem ? (
         <p className="text-xs text-[#9CA3AF]">
           {bioItem.draft_content?.byline} — written into the Bio field above · audit: {bioItem.editorial_status}

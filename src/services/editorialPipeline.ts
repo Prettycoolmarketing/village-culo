@@ -45,13 +45,24 @@ export async function runFullEditorialPipeline(founderId: string): Promise<Pipel
   // step FounderEditModal's BioDraftBlock does manually — this is that,
   // automatic, so Publish has something real to publish without a
   // separate manual step in between).
+  //
+  // Second confirmed real bug, found right alongside it: this copied the
+  // draft into `bio` completely regardless of auto_publish_allowed (the
+  // Risk Gate's verdict) — a low-identity-confidence research run still
+  // got its AI-written bio published straight to the live profile every
+  // time, even though the panel told staff "Needs human review before
+  // anything is written." A blocked draft now stays in editorial_items for
+  // a human to read in Edit (see FounderEditModal's BioDraftBlock) instead
+  // of overwriting the real bio on its own.
   let bioWritten = false
   const bioResult = await writeProfileBio(founderId)
   if (bioResult.success && bioResult.item?.draft_content?.body) {
     const audited = await runAudit(bioResult.item)
     bioWritten = audited.success
-    const latest = getFounder(founderId) ?? founder
-    await updateFounder({ ...latest, bio: bioResult.item.draft_content.body })
+    if (bioResult.item.auto_publish_allowed) {
+      const latest = getFounder(founderId) ?? founder
+      await updateFounder({ ...latest, bio: bioResult.item.draft_content.body })
+    }
   }
 
   let articlesWritten = 0

@@ -89,7 +89,13 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
     if (bioResult.success && bioResult.item) {
       await runAudit(bioResult.item)
       const bioText = bioResult.item.draft_content?.body
-      if (bioText) {
+      // auto_publish_allowed is the Risk Gate's own verdict on this exact
+      // ledger — confirmed real bug, same shape as FounderEditModal's
+      // BioDraftBlock and runFullEditorialPipeline: this wrote straight to
+      // the live, public bio field regardless of it, so a low-confidence
+      // research run (research couldn't actually verify who this founder
+      // is) still got published onto their real profile automatically.
+      if (bioText && bioResult.item.auto_publish_allowed) {
         const founderNow = getFounder(founderId)
         if (founderNow) await updateFounder({ ...founderNow, bio: bioText })
       }
