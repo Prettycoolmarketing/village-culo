@@ -875,7 +875,17 @@ function OnboardingSteps({ researched, imported, published }: { researched: bool
 }
 
 function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Founder; onDone: () => void; onNewToContent: () => void }) {
-  const [name, setName] = useState(founder.name)
+  // founder.name starts as the email's local part at signup (see joinFlow
+  // -> "name: email.split('@')[0]"), e.g. "shakasdesigner" — a handle, not
+  // a real name, and research run on that alone finds nothing (confirmed
+  // real: "shakasdesigner" + "@shakasdesigner" as both fields came back
+  // empty). A real full name is almost always two-plus words; a handle
+  // essentially never is — leaving the field pre-filled with it reads as
+  // "this is already filled in, nothing to do here" and buries the one
+  // thing that actually helps research the most. Starting it blank
+  // instead makes it obvious something real still needs typing in.
+  const looksLikeHandle = !founder.name.trim().includes(' ')
+  const [name, setName] = useState(looksLikeHandle ? '' : founder.name)
   const [link, setLink] = useState('')
   const [photo, setPhoto] = useState<string | undefined>(undefined)
   const [running, setRunning] = useState(false)
