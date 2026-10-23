@@ -933,7 +933,18 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
   // whenever a still-draft real article exists, even once already
   // published — re-running Publish is harmless (publishFounderArticles
   // only touches drafts) and is the one action meant to ship everything.
-  const hasDraftArticles = importedContentService.getAll({ founderId: current.id }).some(i => i.status === 'draft')
+  const draftArticleCount = importedContentService.getAll({ founderId: current.id }).filter(i => i.status === 'draft').length
+  // A handful of research-written drafts (writeArticlesFromLedger caps at 3
+  // per run) is the only case this is meant to re-open Publish for. A
+  // founder with a large personal content archive imported separately —
+  // confirmed real: Shakas Designer has 2,694 draft items, Lydia Fox has
+  // 39 — must never get a one-click "publish everything" surfaced here. A
+  // staff member reviewing one curated profile has no reason to expect
+  // this button could mass-publish an entire personal archive at once.
+  // Capped well above any plausible research-written batch, well below any
+  // real archive import.
+  const MAX_SAFE_REPUBLISH_DRAFTS = 10
+  const hasDraftArticles = draftArticleCount > 0 && draftArticleCount <= MAX_SAFE_REPUBLISH_DRAFTS
   // Save used to live only down inside the Profile tab's own fields,
   // scrolled well below Research/Bio — easy to miss, and invisible at all
   // while on the Articles tab. This ref lets the header's own button
