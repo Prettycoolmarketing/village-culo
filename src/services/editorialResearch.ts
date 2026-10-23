@@ -64,6 +64,13 @@ export async function runFounderResearch(founderId: string): Promise<ResearchRes
     business ? `Runs ${business.name}${business.description ? ` (${business.description})` : ''}` : undefined,
     founder.industry?.name ? `Industry: ${founder.industry.name}` : undefined,
     founder.location?.name ? `Based in ${founder.location.name}, ${founder.location.state}` : undefined,
+    // Whatever's already sitting in the Bio field — real, if a founder
+    // wrote it themselves before clicking Run research (self-serve
+    // onboarding, or hand-filled in Edit), not the generic CULO template a
+    // curated import starts with. Either way it can only help narrow down
+    // which same-named person this actually is; never used as a source to
+    // verify against, just a hint same as the others here.
+    founder.bio?.trim() ? `Existing bio on file: ${founder.bio.trim()}` : undefined,
     // A village-curated founder's real original bio, key facts and other
     // pre-compiled detail lives here (see buildSupplementaryNotes in
     // villageImport.ts) — founder.bio itself is only ever the short
