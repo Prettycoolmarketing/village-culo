@@ -175,10 +175,26 @@ export function readCache<T>(cacheKey: string): T[] {
  * tables). For an unauthenticated/anonymous caller, RLS naturally limits this to
  * whatever each table's public-read policy allows (often nothing).
  */
+const SYNC_PAGE_SIZE = 1000
+
 export async function pullVisibleRows<T extends { id: string }>(table: string, cacheKey: string): Promise<void> {
   if (!supabase) return
-  const { data, error } = await supabase.from(table).select('data')
-  if (error || !data) return
+  // PostgREST caps an unbounded select at 1000 rows by default — confirmed
+  // real and live: imported_content alone has 3,099 rows, so a single
+  // `.select('data')` with no `.range()` silently truncated to an
+  // arbitrary (no ORDER BY) ~1000 of them. Any founder whose articles
+  // didn't happen to land in that arbitrary slice saw "no articles" in
+  // both the admin Articles tab and their own public profile — not
+  // deleted, not an RLS/visibility issue, just never fetched at all. Pages
+  // through every row RLS says is visible instead of trusting one request
+  // to return all of them.
+  const rows: T[] = []
+  for (let from = 0; ; from += SYNC_PAGE_SIZE) {
+    const { data, error } = await supabase.from(table).select('data').range(from, from + SYNC_PAGE_SIZE - 1)
+    if (error || !data) return
+    rows.push(...data.map(r => r.data as T))
+    if (data.length < SYNC_PAGE_SIZE) break
+  }
   // Full replace, not merge: this is every row RLS currently says is visible
   // to this session, so anything cached locally that's missing from it has
   // been deleted or is no longer visible (e.g. unpublished) and must not
@@ -186,7 +202,7 @@ export async function pullVisibleRows<T extends { id: string }>(table: string, c
   // old published copy of a since-unpublished story) stuck in localStorage
   // forever, since a row that's gone from the source never has a chance to
   // overwrite the stale one still sitting there.
-  replaceCache<T>(cacheKey, data.map(r => r.data as T))
+  replaceCache<T>(cacheKey, rows)
 }
 
 export function replaceCache<T extends { id: string }>(cacheKey: string, remote: T[]): void {
