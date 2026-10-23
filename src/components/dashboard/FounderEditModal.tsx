@@ -923,6 +923,17 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
   const [publishing, setPublishing] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
   const articleCount = importedContentService.getAll({ founderId: founder.id }).length
+  // Confirmed real: a founder published before their articles were written
+  // (or written afterward, e.g. via "Write articles from research") never
+  // got those articles swept into published along with them — Publish only
+  // ever ran once, the moment status first flipped, and the button then
+  // disappeared behind a static "Published" badge with no way back to it.
+  // Jon Evans, Christie Whitehill, Giles Bourne and Callum Cryans all had
+  // this exact gap: profile live, articles still sitting in draft. Shown
+  // whenever a still-draft real article exists, even once already
+  // published — re-running Publish is harmless (publishFounderArticles
+  // only touches drafts) and is the one action meant to ship everything.
+  const hasDraftArticles = importedContentService.getAll({ founderId: current.id }).some(i => i.status === 'draft')
   // Save used to live only down inside the Profile tab's own fields,
   // scrolled well below Research/Bio — easy to miss, and invisible at all
   // while on the Articles tab. This ref lets the header's own button
@@ -1014,16 +1025,17 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
                 running for this founder — publishing before a background
                 write has landed would ship whatever old content was there
                 before it, not what's actually about to be written. */}
-            {current.status === 'published' ? (
+            {current.status === 'published' && !hasDraftArticles ? (
               <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#5E6B4A]/10 text-[#5E6B4A]">Published</span>
             ) : (
               <button
                 onClick={() => void handlePublish()}
                 disabled={publishing || current.researchStatus === 'researching'}
-                title={current.researchStatus === 'researching' ? 'Research is still running for this founder — wait for it to finish first' : undefined}
+                title={current.researchStatus === 'researching' ? 'Research is still running for this founder — wait for it to finish first' : current.status === 'published' ? 'Publishes the new draft article(s) sitting in Articles too' : undefined}
                 className="text-sm font-semibold px-4 py-2 rounded-xl bg-[#5E6B4A] text-white hover:bg-[#4a5538] disabled:opacity-60 transition-colors"
               >
-                {publishing ? 'Publishing…' : current.researchStatus === 'researching' ? 'Researching…' : 'Publish'}
+                {publishing ? 'Publishing…' : current.researchStatus === 'researching' ? 'Researching…'
+                  : current.status === 'published' ? 'Publish new articles' : 'Publish'}
               </button>
             )}
             <Link
