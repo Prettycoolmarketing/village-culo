@@ -1080,6 +1080,12 @@ export function DashboardProfilePage() {
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  // Forces ResumeResearchBanner to show again even once a bio already
+  // exists — normally it hides itself the moment there's a real bio, so a
+  // founder who wants to point research at a different/better link later
+  // (or just try again) had no way back to it at all. "if they want" —
+  // this never runs anything on its own, it only brings the banner back.
+  const [forceShowResearch, setForceShowResearch] = useState(false)
   const [tab, setTabState]  = useState(() => searchParams.get('tab') ?? 'overview')
   // Keeps the URL's ?tab= in sync with whichever tab is actually showing —
   // the sidebar's "Content" vs "Profile" links tell which one is active by
@@ -1885,14 +1891,22 @@ export function DashboardProfilePage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href={`/founders/${draft.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-2 text-sm text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
-            >
-              View on site ↗
-            </a>
+            <div className="flex flex-col items-end gap-1">
+              <a
+                href={`/founders/${draft.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2 text-sm text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
+              >
+                View on site ↗
+              </a>
+              <button
+                onClick={() => { setTab('overview'); setForceShowResearch(true) }}
+                className="text-xs font-semibold text-[#3E6E92] hover:underline"
+              >
+                Run research
+              </button>
+            </div>
             {/* Content, Businesses and Partners each save themselves inline —
                 this button only ever touches founder-profile fields (Profile,
                 FAQ, Settings), so it only shows there. Showing it everywhere
@@ -1950,14 +1964,22 @@ export function DashboardProfilePage() {
               <img src={draft.avatar} alt="" className="w-10 h-10 rounded-full object-cover object-top bg-[#F3EDE6]" />
             )}
             <h1 className="text-xl font-bold text-[#2D2A26] flex-1">{draft.name}</h1>
-            <a
-              href={`/founders/${draft.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 px-3 py-2 text-sm text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
-            >
-              View on site ↗
-            </a>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <a
+                href={`/founders/${draft.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2 text-sm text-[#6B7280] border border-[#E8E4DD] rounded-lg hover:border-[#C86A43]/50 hover:text-[#C86A43] transition-colors"
+              >
+                View on site ↗
+              </a>
+              <button
+                onClick={() => { setTab('overview'); setForceShowResearch(true) }}
+                className="text-xs font-semibold text-[#3E6E92] hover:underline"
+              >
+                Run research
+              </button>
+            </div>
           </div>
         )}
 
@@ -1989,14 +2011,16 @@ export function DashboardProfilePage() {
               </div>
             )}
 
-            {!draft.bio?.trim() && draft.onboardingStatus !== 'researching' && !draft.researchPromptSkipped && (
+            {((!draft.bio?.trim() && !draft.researchPromptSkipped) || forceShowResearch) && draft.onboardingStatus !== 'researching' && (
               <ResumeResearchBanner
                 founder={draft}
                 onDone={() => {
+                  setForceShowResearch(false)
                   const fresh = getFounder(draft.id)
                   if (fresh) setDraft(fresh)
                 }}
                 onNewToContent={() => {
+                  setForceShowResearch(false)
                   void updateFounder({ ...draft, researchPromptSkipped: true })
                   setDraft({ ...draft, researchPromptSkipped: true })
                 }}
