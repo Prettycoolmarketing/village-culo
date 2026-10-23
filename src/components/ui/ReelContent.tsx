@@ -33,12 +33,19 @@ export function ReelContent({ reelUrl, title, summary, landscape = false, storyH
   const platform = reelUrl ? detectPlatform(reelUrl) : undefined
   const embedUrl = reelUrl && platform && !isChannelLink && !isUploadedFile ? generateEmbedUrl(reelUrl, platform) : undefined
   const platformLabel = platform ? PLATFORM_LABELS[platform] : 'the original platform'
+  // LinkedIn never has a real embeddable player (no public iframe embed
+  // exists) — the box this would otherwise show is permanently just a
+  // fake black placeholder with a play button that does nothing but link
+  // out, no actual video ever plays in it. Skip the box entirely here and
+  // keep just the title + "Watch on LinkedIn" button.
+  const showVideoBox = !(platform === 'linkedin' && !embedUrl && !isUploadedFile)
 
   return (
     <div className={`flex flex-col ${compact ? '' : 'sm:flex-row'} gap-6 items-start`} aria-label="Video content">
       {/* Only an actual Reel gets the vertical phone frame — a landscape
           video (YouTube, talking head) stretched into 9:16 is what was
           reading as blurry/cropped. */}
+      {showVideoBox && (
       <div
         // A fixed sm:w-[28rem]/sm:w-56 used to force this wider than
         // whatever container it was actually placed in (e.g. a sidebar
@@ -105,6 +112,7 @@ export function ReelContent({ reelUrl, title, summary, landscape = false, storyH
           </>
         )}
       </div>
+      )}
 
       {/* Video context */}
       {compact ? (
