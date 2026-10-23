@@ -523,6 +523,10 @@ export interface Founder {
   // Cleared at the start of every research run so a retry doesn't still
   // show the old failure after a new run succeeds.
   researchFoundNothing?: boolean
+  // Staff's own reference marker for an account used to test onboarding/
+  // research flows — purely informational, doesn't hide this founder or
+  // change any public count/listing anywhere.
+  isTestAccount?: boolean
   // The yes/no prompt on Import ("join the Culo Creatives waitlist?") —
   // answered once, never shown again either way. Only 'yes' shows as a tag
   // on the Culo Members list (see VillageEmailExportPage); 'no' is just

@@ -30,6 +30,54 @@ import { setConnectPrefill } from '../utils/connectPrefill'
 // source it found (or the exact link, if one was given) becomes the first
 // article's source — the draft import for a handle only gets built here,
 // after research has actually found a real URL to build it from.
+// Stage 2 (Write), split out so it can run as its own explicit "Write bio
+// and article from research" next step once Research is done — not bundled
+// invisibly inside runOnboardingResearch below. A research run that passes
+// the Risk Gate still gets written automatically from inside that function
+// (no reason to make a founder click twice when it just works); this is
+// the fallback/explicit path for everything else: a blocked run, or a
+// founder returning later to try writing again.
+export async function writeOnboardingDraftsFromResearch(founderId: string): Promise<{ bioWritten: boolean; articleWritten: boolean }> {
+  const founder = getFounder(founderId)
+  if (!founder?.evidenceLedger) return { bioWritten: false, articleWritten: false }
+
+  let bioWritten = false
+  const bioResult = await writeProfileBio(founderId)
+  if (bioResult.success && bioResult.item) {
+    await runAudit(bioResult.item)
+    const bioText = bioResult.item.draft_content?.body
+    if (bioText && bioResult.item.auto_publish_allowed) {
+      const latest = getFounder(founderId) ?? founder
+      await updateFounder({ ...latest, bio: bioText })
+      bioWritten = true
+    }
+  }
+
+  let articleWritten = false
+  const validSources = founder.evidenceLedger.source_assessments.filter(s => s.source_valid)
+  const primarySource = validSources[0]
+  if (primarySource) {
+    let draft = importedContentService.getAll({ founderId }).find(c => c.originalUrl === primarySource.url)
+    if (!draft) {
+      draft = buildDraftImport(founderId, primarySource.url)
+      draft.staffCreated = true
+      await importedContentService.upsert(draft)
+    }
+    const articleResult = await writeSourceArticle(founderId, draft.id, primarySource)
+    if (articleResult.success && articleResult.item?.draft_content?.body) {
+      await runAudit(articleResult.item)
+      await importedContentService.upsert({
+        ...draft,
+        title: articleResult.item.draft_content.title || draft.title,
+        description: normalizeBlogSpacing(articleResult.item.draft_content.body),
+      })
+      articleWritten = true
+    }
+  }
+
+  return { bioWritten, articleWritten }
+}
+
 export async function runOnboardingResearch(founderId: string, identifier: string): Promise<void> {
   const seed = getFounder(founderId)
   if (!seed) return

@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-do
 import { useAuth } from '../../contexts/AuthContext'
 import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
-import { runOnboardingResearch } from '../../services/onboardingResearch'
+import { runOnboardingResearch, writeOnboardingDraftsFromResearch } from '../../services/onboardingResearch'
 import { runFounderResearch } from '../../services/editorialResearch'
 import { writeProfileBio, runAudit } from '../../services/editorialItems'
 import { updateFounder, deleteFounder, getFounder, uniqueFounderSlug } from '../../services/founders'
@@ -1097,6 +1097,23 @@ export function DashboardProfilePage() {
   // for a founder past the initial research/manual-entry choice who just
   // wants to try again, without going back to the name/link prompt they've
   // already moved on from.
+  // The explicit "Write bio and article from research" next step — Research
+  // and Write are two separate, visible actions (matching the Sign up ->
+  // Research -> Import -> Publish stepper above) instead of Write
+  // happening invisibly bundled inside Research. Research already writes
+  // automatically when it clears the Risk Gate (no reason to make a
+  // founder click twice when it just works) — this is for everything
+  // else: a blocked run, or coming back later to try writing again.
+  const [writingFromResearch, setWritingFromResearch] = useState(false)
+  async function handleWriteFromResearch() {
+    if (!draft) return
+    setWritingFromResearch(true)
+    await writeOnboardingDraftsFromResearch(draft.id)
+    setWritingFromResearch(false)
+    const fresh = getFounder(draft.id)
+    if (fresh) setDraft(fresh)
+  }
+
   const [runningDirect, setRunningDirect] = useState(false)
   const [directResearchNote, setDirectResearchNote] = useState<string | null>(null)
   async function handleRunResearchDirect() {
@@ -2022,6 +2039,26 @@ export function DashboardProfilePage() {
               />
             )}
 
+            {/* Research found something real (a ledger exists) but writing
+                didn't happen automatically — almost always the Risk Gate
+                blocking a low-confidence result rather than publishing it
+                straight to a live profile. The explicit next step, same
+                big-button pattern as Research itself. */}
+            {!!draft.evidenceLedger && !draft.researchFoundNothing && !draft.bio?.trim() && draft.onboardingStatus !== 'researching' && (
+              <div className="bg-[#F8F5F0] rounded-xl px-4 py-4 space-y-2">
+                <button
+                  onClick={() => void handleWriteFromResearch()}
+                  disabled={writingFromResearch}
+                  className="w-full px-6 py-3 rounded-xl bg-[#3E6E92] text-white text-base font-bold hover:bg-[#335c7a] disabled:opacity-50 transition-colors"
+                >
+                  {writingFromResearch ? 'Writing…' : '✍️ Write bio and article from research'}
+                </button>
+                <p className="text-xs text-[#6B7280] text-center">
+                  Fills in your bio, SEO title and links from what research found — same as a curated profile.
+                </p>
+              </div>
+            )}
+
             {/* Research genuinely found no trustworthy match for the name/
                 handle given — never fabricate a bio from nothing, say so
                 honestly instead. Clears itself the moment a new run starts
@@ -2038,7 +2075,8 @@ export function DashboardProfilePage() {
               </div>
             )}
 
-            {!draft.bio?.trim() && !draft.researchPromptSkipped && draft.onboardingStatus !== 'researching' && (
+            {!draft.bio?.trim() && !draft.researchPromptSkipped && draft.onboardingStatus !== 'researching'
+              && !(draft.evidenceLedger && !draft.researchFoundNothing) && (
               <ResumeResearchBanner
                 founder={draft}
                 onDone={() => {
