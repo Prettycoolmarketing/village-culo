@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { Link } from 'react-router-dom'
 import type { Founder } from '../../types'
 import type { ImportedContent, ImportedContentStatus } from '../../types/importedContent'
@@ -15,7 +15,7 @@ import { Tabs } from './Tabs'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { runFounderResearch } from '../../services/editorialResearch'
 import { passesRiskGate, riskGateReasons } from '../../services/editorialEngine'
-import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, type EditorialItemRow } from '../../services/editorialItems'
+import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, writeArticlesFromLedger, type EditorialItemRow } from '../../services/editorialItems'
 import { formatLocationLabel } from '../../utils/location'
 
 // Shared renderer for any Culo-written draft (bio or article) — splits on
@@ -564,31 +564,67 @@ function ArticlesTab({ founder, tick, bump }: { founder: Founder; tick: number; 
   const items = importedContentService.getAll({ founderId: founder.id })
   const [editorialItems, setEditorialItems] = useState<EditorialItemRow[]>([])
   const [editorialLoaded, setEditorialLoaded] = useState(false)
+  const [writingArticles, setWritingArticles] = useState(false)
   if (!editorialLoaded) {
     void getEditorialItems(founder.id).then(r => { setEditorialItems(r); setEditorialLoaded(true) })
   }
+
+  // Research (Stage 1) and the bio half of Stage 2 both have their own
+  // explicit buttons elsewhere in this modal — but nothing in here ever
+  // called writeArticlesFromLedger, the actual article half of Stage 2.
+  // Confirmed real, live: a founder researched and written through this
+  // modal's own buttons could have several valid, high-confidence sources
+  // sitting in their evidence ledger and zero articles to show for it —
+  // the only place that ever wrote them was the separate bulk/curated-
+  // founder-builder pipeline. This is that same step, explicit here too.
+  const ledger = founder.evidenceLedger
+  const validSourceUrls = (ledger?.source_assessments ?? []).filter(s => s.source_valid).map(s => s.url)
+  const writtenUrls = new Set(items.map(i => i.originalUrl))
+  const hasUnwrittenValidSources = validSourceUrls.some(url => !writtenUrls.has(url))
+
+  async function handleWriteArticles() {
+    if (!ledger) return
+    setWritingArticles(true)
+    await writeArticlesFromLedger(founder.id, ledger)
+    setWritingArticles(false)
+    bump()
+  }
+
+  const writeButton = ledger && hasUnwrittenValidSources && (
+    <button
+      onClick={() => void handleWriteArticles()}
+      disabled={writingArticles}
+      className="px-6 py-3 rounded-xl bg-[#3E6E92] text-white text-sm font-bold hover:bg-[#335c7a] disabled:opacity-50 transition-colors"
+    >
+      {writingArticles ? 'Writing…' : items.length === 0 ? '✍️ Write articles from research' : '✍️ Write more articles from research'}
+    </button>
+  )
 
   if (items.length === 0) {
     return (
       <div className="px-4 py-10 text-center">
         <p className="text-sm font-semibold text-[#2D2A26] mb-1">No articles yet</p>
-        <p className="text-xs text-[#9CA3AF]">Nothing has been imported for {founder.name} yet.</p>
+        <p className="text-xs text-[#9CA3AF] mb-4">Nothing has been imported for {founder.name} yet.</p>
+        {writeButton}
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden max-h-[50vh] overflow-y-auto">
-      {items.map(item => (
-        <ArticleRow
-          key={item.id}
-          item={item}
-          founder={founder}
-          onChanged={bump}
-          editorialItem={editorialItems.find(e => e.type === 'source_article' && e.imported_content_id === item.id)}
-          onEditorialChanged={ei => setEditorialItems(prev => [...prev.filter(x => x.id !== ei.id), ei])}
-        />
-      ))}
+    <div className="space-y-3">
+      {writeButton && <div className="w-full [&>button]:w-full">{writeButton}</div>}
+      <div className="bg-white rounded-xl border border-[#E8E4DD] overflow-hidden max-h-[50vh] overflow-y-auto">
+        {items.map(item => (
+          <ArticleRow
+            key={item.id}
+            item={item}
+            founder={founder}
+            onChanged={bump}
+            editorialItem={editorialItems.find(e => e.type === 'source_article' && e.imported_content_id === item.id)}
+            onEditorialChanged={ei => setEditorialItems(prev => [...prev.filter(x => x.id !== ei.id), ei])}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -681,7 +717,11 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
   )
 }
 
-function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Founder) => void }) {
+export interface ProfileTabHandle {
+  save: () => Promise<void>
+}
+
+const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f: Founder) => void }>(function ProfileTab({ founder, onSaved }, ref) {
   const [name, setName]           = useState(founder.name)
   const [bio, setBio]             = useState(founder.bio)
   const [locationId, setLocationId] = useState(founder.location.id)
@@ -767,6 +807,12 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
     setTimeout(() => setSaved(false), 2000)
   }
 
+  // Lets the modal's own header button (next to Preview) trigger the exact
+  // same save this tab's own button does, without duplicating the field
+  // state up in the parent — the header button is a second, always-visible
+  // entry point to the one real save, not a separate save path.
+  useImperativeHandle(ref, () => ({ save: handleSave }))
+
   return (
     <div className="space-y-4">
       {/* Research (Stage 1) and Audit (Stage 3) status, claims and Confirm
@@ -849,7 +895,7 @@ function ProfileTab({ founder, onSaved }: { founder: Founder; onSaved: (f: Found
       </div>
     </div>
   )
-}
+})
 
 // ─── Modal shell ────────────────────────────────────────────────────────────
 
@@ -864,6 +910,17 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
   const [publishing, setPublishing] = useState(false)
   const [publishError, setPublishError] = useState<string | null>(null)
   const articleCount = importedContentService.getAll({ founderId: founder.id }).length
+  // Save used to live only down inside the Profile tab's own fields,
+  // scrolled well below Research/Bio — easy to miss, and invisible at all
+  // while on the Articles tab. This ref lets the header's own button
+  // (next to Preview, always visible) trigger that exact same save.
+  const profileTabRef = useRef<ProfileTabHandle>(null)
+  const [headerSaving, setHeaderSaving] = useState(false)
+  async function handleHeaderSave() {
+    setHeaderSaving(true)
+    await profileTabRef.current?.save()
+    setHeaderSaving(false)
+  }
 
   // Edit is what actually triggers a background research run (see
   // DashboardBulkImportPage's Edit button) — but that run updates the
@@ -956,6 +1013,15 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
                 {publishing ? 'Publishing…' : current.researchStatus === 'researching' ? 'Researching…' : 'Publish'}
               </button>
             )}
+            {tab === 'profile' && (
+              <button
+                onClick={() => void handleHeaderSave()}
+                disabled={headerSaving}
+                className="text-sm font-semibold px-4 py-2 rounded-xl border-2 border-[#C86A43] text-[#C86A43] hover:bg-[#C86A43]/5 disabled:opacity-60 transition-colors"
+              >
+                {headerSaving ? 'Saving…' : 'Save changes'}
+              </button>
+            )}
             <Link
               to={`/founders/${current.slug}`}
               target="_blank"
@@ -988,6 +1054,7 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
 
         {tab === 'profile' && (
           <ProfileTab
+            ref={profileTabRef}
             founder={current}
             onSaved={f => { setCurrent(f); onChanged() }}
           />

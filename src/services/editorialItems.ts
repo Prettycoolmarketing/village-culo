@@ -1,6 +1,8 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getFounder } from './founders'
 import { passesRiskGate } from './editorialEngine'
+import { importedContentService, buildDraftImport } from './importedContent'
+import { normalizeBlogSpacing } from '../utils/blogFormatting'
 import type { EvidenceLedger } from '../types/editorialEngine'
 import type { Founder } from '../types'
 
@@ -264,6 +266,51 @@ export async function writeSourceArticle(
     .single()
   if (dbError || !data) return { success: false, error: dbError?.message ?? 'Could not save draft.' }
   return { success: true, item: data as EditorialItemRow }
+}
+
+// Writes one article draft per valid source in the evidence ledger (capped
+// at 3 — a founder with a lot of valid sources, Christie Whitehill: 9, got
+// one for every single one, real AI spend per source and more than
+// anyone needs to review at once). Extracted from runFullEditorialPipeline
+// so the exact same step can run as its own explicit action — confirmed
+// real, live: a founder researched/written through FounderEditModal's own
+// Research + "Write from research" buttons (Stage 1 + the bio half of
+// Stage 2 only) never got a single article written, because nothing in
+// that modal ever called this — the only place that did was the bulk/
+// curated-founder-builder pipeline. Trudy Henley had 5 valid high-
+// confidence sources sitting in her ledger and zero articles to show for
+// it, purely because she'd been researched through the modal instead.
+export async function writeArticlesFromLedger(founderId: string, ledger: EvidenceLedger): Promise<number> {
+  const MAX_ARTICLES = 3
+  const founderContent = importedContentService.getAll({ founderId })
+  const validSources = ledger.source_assessments.filter(s => s.source_valid).slice(0, MAX_ARTICLES)
+  let articlesWritten = 0
+  for (const source of validSources) {
+    let matchedContent = founderContent.find(c => c.originalUrl === source.url)
+    if (!matchedContent) {
+      const created = buildDraftImport(founderId, source.url)
+      created.staffCreated = true
+      const createResult = await importedContentService.upsert(created)
+      if (createResult.success) {
+        matchedContent = created
+        founderContent.push(created)
+      }
+    }
+
+    const articleResult = await writeSourceArticle(founderId, matchedContent?.id, source)
+    if (articleResult.success && articleResult.item) {
+      if (matchedContent && articleResult.item.draft_content?.body) {
+        await importedContentService.upsert({
+          ...matchedContent,
+          title: articleResult.item.draft_content.title || matchedContent.title,
+          description: normalizeBlogSpacing(articleResult.item.draft_content.body),
+        })
+      }
+      const audited = await runAudit(articleResult.item)
+      if (audited.success) articlesWritten++
+    }
+  }
+  return articlesWritten
 }
 
 // A real status readout built only from what the data already records —

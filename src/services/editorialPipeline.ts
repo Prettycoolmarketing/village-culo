@@ -9,10 +9,8 @@
 // about one founder at a time.
 
 import { getFounder, updateFounder } from './founders'
-import { importedContentService, buildDraftImport } from './importedContent'
-import { normalizeBlogSpacing } from '../utils/blogFormatting'
 import { runFounderResearch } from './editorialResearch'
-import { writeProfileBio, writeSourceArticle, runAudit } from './editorialItems'
+import { writeProfileBio, runAudit, writeArticlesFromLedger } from './editorialItems'
 
 export interface PipelineResult {
   researched: boolean
@@ -31,7 +29,6 @@ export async function runFullEditorialPipeline(founderId: string): Promise<Pipel
   // explicit "Re-run research" button inside Edit.
   if (founder.evidenceLedger) return { researched: false, bioWritten: false, articlesWritten: 0 }
 
-  const founderContent = importedContentService.getAll({ founderId })
   const research = await runFounderResearch(founderId)
   if (!research.success || !research.ledger) {
     return { researched: false, bioWritten: false, articlesWritten: 0, error: research.error ?? 'Research failed.' }
@@ -65,39 +62,7 @@ export async function runFullEditorialPipeline(founderId: string): Promise<Pipel
     }
   }
 
-  let articlesWritten = 0
-  // Capped at 3 — confirmed real, a founder with a lot of valid sources
-  // (Christie Whitehill: 9) got an article written for every single one,
-  // which is both real AI spend per source and more than anyone actually
-  // needs to review before publishing. Takes the first 3 as the ledger
-  // returns them (already ranked by the Researcher), not a random subset.
-  const MAX_ARTICLES = 3
-  const validSources = research.ledger.source_assessments.filter(s => s.source_valid).slice(0, MAX_ARTICLES)
-  for (const source of validSources) {
-    let matchedContent = founderContent.find(c => c.originalUrl === source.url)
-    if (!matchedContent) {
-      const created = buildDraftImport(founderId, source.url)
-      created.staffCreated = true
-      const createResult = await importedContentService.upsert(created)
-      if (createResult.success) {
-        matchedContent = created
-        founderContent.push(created)
-      }
-    }
-
-    const articleResult = await writeSourceArticle(founderId, matchedContent?.id, source)
-    if (articleResult.success && articleResult.item) {
-      if (matchedContent && articleResult.item.draft_content?.body) {
-        await importedContentService.upsert({
-          ...matchedContent,
-          title: articleResult.item.draft_content.title || matchedContent.title,
-          description: normalizeBlogSpacing(articleResult.item.draft_content.body),
-        })
-      }
-      const audited = await runAudit(articleResult.item)
-      if (audited.success) articlesWritten++
-    }
-  }
+  const articlesWritten = await writeArticlesFromLedger(founderId, research.ledger)
 
   return { researched: true, bioWritten, articlesWritten }
 }
