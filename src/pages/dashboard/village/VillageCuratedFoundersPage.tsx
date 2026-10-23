@@ -342,9 +342,15 @@ export function VillageCuratedFoundersPage() {
     if (filterHasClaim)           list = list.filter(f => claimByFounder.has(f.id))
     if (filterHasEmail)           list = list.filter(f => claimEmailByFounder.has(f.id))
 
+    // On the Published tab, "newest" means most recently published, not
+    // most recently created — a founder curated weeks ago and only
+    // published today should show at the top, not buried under founders
+    // imported earlier but published sooner. Falls back to createdAt for
+    // anything published before publishedAt started getting set.
+    const sortDate = (f: Founder) => (pageTab === 'published' ? f.publishedAt ?? f.createdAt : f.createdAt)
     list.sort((a, b) => {
-      if (sortBy === 'newest')  return b.createdAt.localeCompare(a.createdAt)
-      if (sortBy === 'oldest')  return a.createdAt.localeCompare(b.createdAt)
+      if (sortBy === 'newest')  return sortDate(b).localeCompare(sortDate(a))
+      if (sortBy === 'oldest')  return sortDate(a).localeCompare(sortDate(b))
       if (sortBy === 'name-az') return a.name.localeCompare(b.name)
       if (sortBy === 'name-za') return b.name.localeCompare(a.name)
       return 0
@@ -389,7 +395,7 @@ export function VillageCuratedFoundersPage() {
   async function publishSelected(ids: Set<string>) {
     const allFounders = getFounders()
     const targets = Array.from(ids).map(id => allFounders.find(fo => fo.id === id)).filter((f): f is Founder => !!f)
-    await bulkUpdate(ids, { status: 'published' })
+    await bulkUpdate(ids, { status: 'published', publishedAt: new Date().toISOString() })
     for (const f of targets) await publishFounderArticles(f)
   }
 

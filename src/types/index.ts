@@ -412,6 +412,16 @@ export interface Founder {
   status: Status
   featured: boolean
   createdAt: string
+  // When this founder first actually went live (status became published/
+  // featured) — separate from createdAt, which for a founder curated
+  // weeks earlier and only published later still reflects the old draft
+  // date. Same pattern as Story's own publishedAt. "Newest first" on the
+  // Curated Founders Published tab sorts by this so a founder published
+  // today shows first even if their record is old; falls back to
+  // createdAt for anyone published before this field existed. Only ever
+  // stamped on the actual first publish — re-running Publish later (e.g.
+  // to ship new draft articles) must never bump it.
+  publishedAt?: string
   // Knowledge graph extensions
   expertiseIds?: string[]
   faqs?: FAQ[]

@@ -1046,7 +1046,15 @@ export function FounderEditModal({ founder, onClose, onChanged }: {
   async function handlePublish() {
     setPublishing(true)
     setPublishError(null)
-    const result = await updateFounder({ ...current, status: 'published' })
+    // Only stamped on the actual first publish — this button stays
+    // available afterward too (see hasDraftArticles) to re-run Publish for
+    // new draft articles, which must never bump a founder that's been live
+    // for weeks back to the top of "newest published."
+    const result = await updateFounder({
+      ...current,
+      status: 'published',
+      publishedAt: current.publishedAt ?? new Date().toISOString(),
+    })
     if (!result.success) {
       setPublishing(false)
       setPublishError(result.error ?? 'Could not publish. Try again.')
