@@ -665,9 +665,20 @@ function BioDraftBlock({ founder, onUseBio, onSaved }: { founder: Founder; onUse
       {writing && !bioItem ? (
         <p className="text-xs text-[#9CA3AF] text-center">Writing bio from research…</p>
       ) : bioItem && !bioItem.auto_publish_allowed ? (
-        <p className="text-xs text-amber-700 text-center">
-          {bioItem.draft_content?.byline} — blocked by the Risk Gate, NOT saved to the Bio field. Review before using.
-        </p>
+        <div className="space-y-2">
+          <p className="text-xs text-amber-700 text-center">
+            {bioItem.draft_content?.byline} — blocked by the Risk Gate, NOT saved to the Bio field. Read it below, then decide for yourself.
+          </p>
+          <p className="text-sm text-[#2D2A26] whitespace-pre-wrap bg-white border border-amber-300 rounded-lg px-3 py-2">
+            {bioItem.draft_content?.body}
+          </p>
+          <button
+            onClick={() => bioItem.draft_content?.body && void persistBio(bioItem.draft_content.body)}
+            className="w-full px-4 py-2 rounded-lg border-2 border-amber-600 text-amber-700 text-sm font-bold hover:bg-amber-50 transition-colors"
+          >
+            Use this anyway
+          </button>
+        </div>
       ) : bioItem ? (
         <p className="text-xs text-[#9CA3AF] text-center">
           {bioItem.draft_content?.byline} — written into the Bio field above · audit: {bioItem.editorial_status}
