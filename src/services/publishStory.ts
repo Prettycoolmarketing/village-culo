@@ -154,7 +154,13 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
   if (isFirstPublish) {
     const founderNow = founder ? getFounders().find(f => f.id === founder.id) : undefined
     if (founderNow && founderNow.status === 'draft') {
-      await updateFounder({ ...founderNow, status: 'published' })
+      // A third place a founder's status flips to published, missed when
+      // publishedAt was added for the Curated Founders "newest first" sort
+      // — confirmed real: Trudy Henley went live through exactly this path
+      // (her first article actually publishing auto-promoted her from
+      // draft) and still showed publishedAt: null, so she never actually
+      // moved to the top of the list.
+      await updateFounder({ ...founderNow, status: 'published', publishedAt: founderNow.publishedAt ?? new Date().toISOString() })
     }
   }
 
