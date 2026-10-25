@@ -557,11 +557,13 @@ export function FounderProfilePage() {
         </InnerContainer>
       </nav>
 
-      {/* The blue "Is this you? Claim this profile" banner used to sit here,
-          right at the top — moved to just above the evidence strip (see
-          claimBanner/isUnclaimedCurated below) so it doesn't compete with
-          the hero for attention, while still appearing before any real
-          content. */}
+      {/* Back at the top again, per direct request — moving it down to just
+          above the evidence strip (it's also still there, see
+          ClaimProfileBanner further down) traded away real claims for a
+          cleaner hero. Showing it twice is deliberate: top, where every
+          visitor sees it before anything else, and bottom, for anyone who
+          read the whole page first. */}
+      <ClaimProfileBanner founder={founder} />
 
       {founder.profileStatus === 'claim-pending' && !founder.userId && (
         <div className="bg-amber-50 border-b border-amber-100" role="note">
@@ -962,7 +964,7 @@ export function FounderProfilePage() {
 
               {/* FAQ */}
               {faqs.length > 0 && (
-                <section aria-labelledby="founder-faq-heading">
+                <section aria-labelledby="founder-faq-heading" className="mt-10">
                   <h2 id="founder-faq-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
                     Questions &amp; Answers
                   </h2>

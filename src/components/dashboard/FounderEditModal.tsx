@@ -903,6 +903,16 @@ const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f:
         <input className={INPUT_CLS} value={name} onChange={e => setName(e.target.value)} />
       </div>
       <div>
+        {/* Same signal as BioDraftBlock's "thin research" messaging below —
+            the Risk Gate failing on this founder's whole ledger, not
+            anything specific to one lead. Applies to any founder research
+            genuinely couldn't find anything real on, whatever they
+            originally sent in (a bare handle, a Facebook comment with no
+            real link) — a quick, obvious flag for the DM-and-delete call,
+            right where staff is about to look at the actual bio text. */}
+        {founder.evidenceLedger && !passesRiskGate(founder.evidenceLedger) && (
+          <p className="text-xs font-bold text-red-600 mb-1">Failed profile — DM and delete</p>
+        )}
         <label className={LABEL_CLS}>Bio</label>
         <textarea
           className={`${INPUT_CLS} resize-y leading-relaxed`}
