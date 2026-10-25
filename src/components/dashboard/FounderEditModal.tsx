@@ -14,7 +14,7 @@ import { industries } from '../../data/industries'
 import { Tabs } from './Tabs'
 import { ConfirmButton } from '../ui/ConfirmButton'
 import { runFounderResearch } from '../../services/editorialResearch'
-import { passesRiskGate, riskGateReasons } from '../../services/editorialEngine'
+import { passesRiskGate, riskGateReasons, isThinResearch } from '../../services/editorialEngine'
 import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, writeArticlesFromLedger, type EditorialItemRow } from '../../services/editorialItems'
 import { formatLocationLabel } from '../../utils/location'
 
@@ -752,34 +752,36 @@ function BioDraftBlock({ founder, onUseBio, onSaved, onDeleted }: { founder: Fou
           <p className="text-xs text-amber-700 text-center">
             {bioItem.draft_content?.byline} — blocked by the Risk Gate. Dropped into the Bio field above for you to read and edit, but NOT saved yet — review it, then hit Save Changes if you want to keep it.
           </p>
-          {/* A block usually means the Researcher genuinely found nothing
-              real to work with (a thin, generic-sounding bio like "the
-              public record is still taking shape" is the tell) — not
-              something to force through with "Use this anyway" so much as
-              a sign this lead isn't ready to be a profile yet. Outreach +
-              delete live right here, the exact moment staff realises that,
-              instead of a separate trip to figure out what to do about it. */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 space-y-2">
-            <p className="text-xs text-amber-900">
-              Thin research — usually means there's nothing real public yet to build a profile from. Worth inviting them to join and self-publish instead.
-            </p>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => void handleCopyOutreach()}
-                className="text-xs font-semibold text-amber-800 hover:underline"
-              >
-                {copied ? 'Copied ✓' : 'Copy outreach message'}
-              </button>
-              <ConfirmButton
-                label={deleting ? 'Deleting…' : 'Delete this profile'}
-                confirmLabel="Yes, delete"
-                message={`Delete ${founder.name}'s curated profile? This can't be undone.`}
-                disabled={deleting}
-                onConfirm={() => void handleDeleteThin()}
-                className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
-              />
+          {/* Only for genuinely thin research (no source could actually be
+              confirmed as this person) — NOT every Risk Gate block.
+              Confirmed real: Jon Evans had 3 high-confidence sources and 8
+              well-sourced articles, blocked only by one unrelated sensitive
+              claim, and this panel showed for him too, which read as "this
+              lead failed" when the opposite was true — his research was
+              genuinely good, just needed a human glance at one claim. */}
+          {ledger && isThinResearch(ledger) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 space-y-2">
+              <p className="text-xs text-amber-900">
+                Thin research — usually means there's nothing real public yet to build a profile from. Worth inviting them to join and self-publish instead.
+              </p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => void handleCopyOutreach()}
+                  className="text-xs font-semibold text-amber-800 hover:underline"
+                >
+                  {copied ? 'Copied ✓' : 'Copy outreach message'}
+                </button>
+                <ConfirmButton
+                  label={deleting ? 'Deleting…' : 'Delete this profile'}
+                  confirmLabel="Yes, delete"
+                  message={`Delete ${founder.name}'s curated profile? This can't be undone.`}
+                  disabled={deleting}
+                  onConfirm={() => void handleDeleteThin()}
+                  className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ) : bioItem ? (
         <p className="text-xs text-[#9CA3AF] text-center">
@@ -903,14 +905,13 @@ const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f:
         <input className={INPUT_CLS} value={name} onChange={e => setName(e.target.value)} />
       </div>
       <div>
-        {/* Same signal as BioDraftBlock's "thin research" messaging below —
-            the Risk Gate failing on this founder's whole ledger, not
-            anything specific to one lead. Applies to any founder research
-            genuinely couldn't find anything real on, whatever they
-            originally sent in (a bare handle, a Facebook comment with no
-            real link) — a quick, obvious flag for the DM-and-delete call,
-            right where staff is about to look at the actual bio text. */}
-        {founder.evidenceLedger && !passesRiskGate(founder.evidenceLedger) && (
+        {/* Same isThinResearch signal as BioDraftBlock's "thin research"
+            panel below — genuinely no verifiable identity, not just any
+            Risk Gate block (a block can also mean plenty of good research
+            sitting next to one unrelated flagged claim, see Jon Evans).
+            Only the narrower case is worth flagging for the DM-and-delete
+            call, right where staff is about to look at the bio text. */}
+        {founder.evidenceLedger && isThinResearch(founder.evidenceLedger) && (
           <p className="text-xs font-bold text-red-600 mb-1">Failed profile — DM and delete</p>
         )}
         <label className={LABEL_CLS}>Bio</label>

@@ -46,6 +46,21 @@ export function passesRiskGateForSource(
   return true
 }
 
+// "Genuinely thin" — essentially no verifiable identity to build a profile
+// from at all. Distinct from just "blocked by the Risk Gate," which can
+// also mean plenty of real, high-confidence research sitting alongside one
+// unrelated sensitive/conflicting claim (confirmed real: Jon Evans — 3
+// high-confidence sources, 8 well-sourced articles, blocked only because
+// of one claim about being fired years earlier that had nothing to do
+// with any of it). Only this narrower case — no source research could
+// actually confirm belongs to this person — is worth telling staff "invite
+// them to join and self-publish instead," not every Risk Gate block.
+export function isThinResearch(ledger: EvidenceLedger): boolean {
+  const validSources = ledger.source_assessments.filter(s => s.source_valid)
+  if (validSources.length === 0) return true
+  return validSources.every(s => s.identity_confidence === 'low')
+}
+
 function claimIsBlocking(claim: EvidenceClaim): boolean {
   // A CAPO staff member has already looked at this specific claim and
   // confirmed it — the one override the Risk Gate accepts, since it's a
