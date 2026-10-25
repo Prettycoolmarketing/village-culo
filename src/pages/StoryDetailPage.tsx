@@ -17,6 +17,7 @@ import { FeaturedInSection } from '../components/ui/FeaturedInSection'
 import { ReelContent } from '../components/ui/ReelContent'
 import { applyAffiliateLinks, type AffiliateLink } from '../utils/affiliateLinks'
 import { FounderCard }      from '../components/cards/FounderCard'
+import { ExitIntentClaimPopup } from '../components/ui/ExitIntentClaimPopup'
 import { BusinessCard }     from '../components/cards/BusinessCard'
 import { StoryCard }        from '../components/cards/StoryCard'
 import { CoverImage }       from '../components/ui/CoverImage'
@@ -401,6 +402,8 @@ export function StoryDetailPage() {
 
   return (
     <main className="min-h-screen bg-background">
+
+      {founder && <ExitIntentClaimPopup founder={founder} />}
 
       {/* ── Breadcrumb ──────────────────────────────────────────────────────── */}
       <nav

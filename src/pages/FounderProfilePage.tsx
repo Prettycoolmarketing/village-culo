@@ -26,6 +26,7 @@ import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { AreYouThisFounderCTA, ClaimPitchBox, ClaimProfileBanner } from '../components/ui/ClaimProfileBanner'
+import { ExitIntentClaimPopup } from '../components/ui/ExitIntentClaimPopup'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { formatLocationFull } from '../utils/location'
 import { slugify } from '../utils/slugify'
@@ -564,6 +565,7 @@ export function FounderProfilePage() {
           visitor sees it before anything else, and bottom, for anyone who
           read the whole page first. */}
       <ClaimProfileBanner founder={founder} />
+      <ExitIntentClaimPopup founder={founder} />
 
       {founder.profileStatus === 'claim-pending' && !founder.userId && (
         <div className="bg-amber-50 border-b border-amber-100" role="note">
