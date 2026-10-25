@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { getFounder } from './founders'
+import { getBusinesses } from './businesses'
 import { passesRiskGate, passesRiskGateForSource } from './editorialEngine'
 import { importedContentService, buildDraftImport } from './importedContent'
 import { normalizeBlogSpacing } from '../utils/blogFormatting'
@@ -165,12 +166,26 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
   const { draft, error } = await callWriter('profile_bio', founder.name, claims)
   if (error || !draft) return { success: false, error: error ?? 'Writer returned nothing.' }
 
-  const autoPublishAllowed = passesRiskGate(ledger)
+  let autoPublishAllowed = passesRiskGate(ledger)
+  // Deterministic guard on top of the Risk Gate, not instead of it — the
+  // gate's identity_confidence only measures "is this a real, findable
+  // person," which can be just as high for a genuine same-named stranger
+  // as for the actual lead. Confirmed real, live: Lani Withnall-Dickson's
+  // bio described an unrelated Australian athlete in full, polished
+  // detail — passed the gate, published — while never once mentioning
+  // Delightfully Fresh Organics, the actual business she named in the
+  // Facebook comment this lead came from. If this founder has a known
+  // business and the written bio never mentions it, that's a cheap,
+  // structural tell the Writer drifted to the wrong same-named person —
+  // block auto-publish regardless of what the gate decided.
+  const businessName = getBusinesses({ founderId })[0]?.name
+  if (businessName && !draft.body.toLowerCase().includes(businessName.toLowerCase())) {
+    autoPublishAllowed = false
+  }
   const { data, error: dbError } = await supabase
     .from('editorial_items')
     .insert({
       founder_id: founderId,
-      type: 'profile_bio',
       draft_content: { ...draft, byline: CULO_BYLINE },
       auto_publish_allowed: autoPublishAllowed,
     })
