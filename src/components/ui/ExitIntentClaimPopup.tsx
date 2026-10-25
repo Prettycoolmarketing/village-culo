@@ -59,10 +59,10 @@ export function ExitIntentClaimPopup({ founder }: { founder: Founder }) {
           ×
         </button>
         <p className="font-heading text-xl font-bold text-[#2D2A26] mb-3 pr-6">
-          Wait — is this your content?
+          Wait, publish your own story!
         </p>
         <p className="font-body text-sm text-[#6B7280] leading-relaxed mb-5">
-          Claim your profile and Culo will republish what you've already posted — stuck on closed platforms like Instagram or a podcast feed — as individual web articles, free, so your audience (and AI) can actually find you.
+          Import your content from across platforms to republish as individual web articles for discovery.
         </p>
         <Link
           to={`/claim/${founder.slug}`}
