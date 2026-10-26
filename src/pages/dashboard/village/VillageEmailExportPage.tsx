@@ -454,6 +454,21 @@ function CampaignsPanel() {
   // article card + "Publish in the Village" button on save.
   const [featuredStoryId, setFeaturedStoryId] = useState('')
   const bodyRef = useRef<HTMLTextAreaElement>(null)
+  // Set while editing an existing draft (vs. writing a brand new one) —
+  // handleSaveDraft reuses this id so Save overwrites the same campaign
+  // row instead of creating a duplicate. Confirmed real gap: a saved
+  // draft had no way back into it at all, only "Send now" — the subject/
+  // body (e.g. "Hey" / "From Shakas") could never actually be corrected
+  // once saved.
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  function handleEditDraft(c: EmailCampaign) {
+    setEditingId(c.id)
+    setSubject(c.subject)
+    setBody(bodyHtmlToText(c.bodyHtml))
+    setFeaturedStoryId('')
+    bodyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   // Drops the {{article}} token wherever the cursor last was in the
   // textarea, instead of asking a founder to type it themselves — pick the
@@ -519,15 +534,17 @@ function CampaignsPanel() {
       const story = getStory(featuredStoryId)
       if (story) {
         const founderName = getFounder(story.founderId)?.name
-        bodyHtml = bodyHtml.replace('<p>{{article}}</p>', buildArticleCardHtml(story, founderName))
+        bodyHtml = bodyHtml.replace('<p style="margin:0 0 16px;">{{article}}</p>', buildArticleCardHtml(story, founderName))
       }
     }
+    const existing = editingId ? campaigns.find(c => c.id === editingId) : undefined
     const campaign: EmailCampaign = {
-      id: crypto.randomUUID(), subject: subject.trim(), bodyHtml, status: 'draft',
-      createdAt: new Date().toISOString(),
+      id: editingId ?? crypto.randomUUID(), subject: subject.trim(), bodyHtml, status: 'draft',
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
     }
     await emailCampaignsService.saveDraft(campaign)
     setCampaigns(emailCampaignsService.getAll())
+    setEditingId(null)
     setSubject('')
     setBody('')
     setFeaturedStoryId('')
@@ -545,7 +562,17 @@ function CampaignsPanel() {
   return (
     <div>
       <div className="bg-white rounded-xl border border-[#E8E4DD] p-4 mb-6">
-        <p className="text-sm font-bold text-[#2D2A26] mb-3">New newsletter</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-bold text-[#2D2A26]">{editingId ? 'Edit newsletter' : 'New newsletter'}</p>
+          {editingId && (
+            <button
+              onClick={() => { setEditingId(null); setSubject(''); setBody(''); setFeaturedStoryId('') }}
+              className="text-xs font-semibold text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
+            >
+              Cancel edit
+            </button>
+          )}
+        </div>
         <input
           type="text"
           value={subject}
@@ -634,7 +661,13 @@ function CampaignsPanel() {
                     </p>
                   </div>
                   {c.status === 'draft' ? (
-                    <span onClick={e => e.stopPropagation()} className="shrink-0">
+                    <span onClick={e => e.stopPropagation()} className="shrink-0 flex items-center gap-2">
+                      <button
+                        onClick={() => handleEditDraft(c)}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#E8E4DD] text-[#2D2A26] hover:border-[#C86A43]/40 hover:text-[#C86A43] transition-colors"
+                      >
+                        Edit
+                      </button>
                       <ConfirmButton
                         label={sendingId === c.id ? 'Sending…' : 'Send now'}
                         confirmLabel="Yes, send"
