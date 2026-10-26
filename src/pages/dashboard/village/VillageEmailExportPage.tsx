@@ -108,7 +108,12 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
     // always live the moment they sign up, so this filter would be a
     // no-op there anyway.
     .filter(f => !curatedOnly || f.status === 'published' || f.status === 'featured')
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    // Same "newest published first" as Founder Management's Published tab
+    // (see VillageCuratedFoundersPage) — per direct request, these two
+    // lists should always show curated/published founders in the same
+    // order. Falls back to createdAt for anyone published before
+    // publishedAt existed, same as the other list.
+    .sort((a, b) => (curatedOnly ? (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt) : b.createdAt.localeCompare(a.createdAt)))
 
   function handleExport() {
     const rows = sorted.map(f => ({
