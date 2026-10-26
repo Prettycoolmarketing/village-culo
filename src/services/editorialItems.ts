@@ -186,6 +186,7 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
     .from('editorial_items')
     .insert({
       founder_id: founderId,
+      type: 'profile_bio',
       draft_content: { ...draft, byline: CULO_BYLINE },
       auto_publish_allowed: autoPublishAllowed,
     })
