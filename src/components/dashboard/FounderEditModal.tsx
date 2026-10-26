@@ -668,9 +668,15 @@ feel free to join, culo will run research and help you with how to start publish
 
 www.culovillage.com/join`
 
-function BioDraftBlock({ founder, onUseBio, onSaved, onDeleted }: { founder: Founder; onUseBio: (body: string) => void; onSaved: (f: Founder) => void; onDeleted: () => void }) {
-  const [items, setItems] = useState<EditorialItemRow[]>([])
-  const [loaded, setLoaded] = useState(false)
+function BioDraftBlock({ founder, onUseBio, onSaved, onDeleted, items, itemsLoaded, onItemsChanged }: {
+  founder: Founder
+  onUseBio: (body: string) => void
+  onSaved: (f: Founder) => void
+  onDeleted: () => void
+  items: EditorialItemRow[]
+  itemsLoaded: boolean
+  onItemsChanged: (items: EditorialItemRow[]) => void
+}) {
   const [writing, setWriting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -690,10 +696,7 @@ function BioDraftBlock({ founder, onUseBio, onSaved, onDeleted }: { founder: Fou
     else setError(result.error ?? 'Could not delete. Try again.')
   }
 
-  if (!loaded) {
-    void getEditorialItems(founder.id).then(r => { setItems(r); setLoaded(true) })
-    return null
-  }
+  if (!itemsLoaded) return null
 
   const ledger = founder.evidenceLedger
   const bioItem = items.find(i => i.type === 'profile_bio')
@@ -715,7 +718,7 @@ function BioDraftBlock({ founder, onUseBio, onSaved, onDeleted }: { founder: Fou
     const result = await writeProfileBio(founder.id)
     setWriting(false)
     if (!result.success) { setError(result.error ?? 'Failed to write bio.'); return }
-    setItems(prev => [...prev.filter(i => i.type !== 'profile_bio'), result.item!])
+    onItemsChanged([...items.filter(i => i.type !== 'profile_bio'), result.item!])
     if (!result.item?.draft_content?.body) return
     // auto_publish_allowed IS the Risk Gate's verdict (passesRiskGate),
     // computed by writeProfileBio at write time. A pass persists straight
@@ -812,6 +815,20 @@ const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f:
   const [saving, setSaving]       = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved]         = useState(false)
+  // Lifted out of BioDraftBlock so the "Failed profile" label above the
+  // Bio box (just below) can use the exact same bioItem — confirmed real:
+  // it used to show the moment research alone finished (founder.evidenceLedger
+  // + isThinResearch), before a bio was ever even attempted — reading as
+  // "this already failed" when nothing had actually been tried yet. Now
+  // only shows once a write was actually attempted and the result itself
+  // came back blocked as thin.
+  const [editorialItems, setEditorialItems] = useState<EditorialItemRow[]>([])
+  const [editorialItemsLoaded, setEditorialItemsLoaded] = useState(false)
+  useEffect(() => {
+    void getEditorialItems(founder.id).then(r => { setEditorialItems(r); setEditorialItemsLoaded(true) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [founder.id])
+  const bioItem = editorialItems.find(i => i.type === 'profile_bio')
   const [removingBusiness, setRemovingBusiness] = useState(false)
 
   // Curated batches often bring in a business alongside the founder even
@@ -905,13 +922,16 @@ const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f:
         <input className={INPUT_CLS} value={name} onChange={e => setName(e.target.value)} />
       </div>
       <div>
-        {/* Same isThinResearch signal as BioDraftBlock's "thin research"
-            panel below — genuinely no verifiable identity, not just any
-            Risk Gate block (a block can also mean plenty of good research
-            sitting next to one unrelated flagged claim, see Jon Evans).
-            Only the narrower case is worth flagging for the DM-and-delete
-            call, right where staff is about to look at the bio text. */}
-        {founder.evidenceLedger && isThinResearch(founder.evidenceLedger) && (
+        {/* Confirmed real: this used to show the moment research alone
+            finished (founder.evidenceLedger + isThinResearch), before a
+            bio had ever actually been attempted — read as "this already
+            failed" when nothing had been tried yet. Now requires a real
+            write attempt (bioItem) that actually came back blocked, same
+            isThinResearch signal BioDraftBlock's own panel below uses —
+            genuinely no verifiable identity, not just any Risk Gate block
+            (a block can also mean plenty of good research sitting next to
+            one unrelated flagged claim, see Jon Evans). */}
+        {bioItem && !bioItem.auto_publish_allowed && founder.evidenceLedger && isThinResearch(founder.evidenceLedger) && (
           <p className="text-xs font-bold text-red-600 mb-1">Failed profile — DM and delete</p>
         )}
         <label className={LABEL_CLS}>Bio</label>
@@ -923,7 +943,15 @@ const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f:
         />
       </div>
 
-      <BioDraftBlock founder={founder} onUseBio={setBio} onSaved={onSaved} onDeleted={onDeleted} />
+      <BioDraftBlock
+        founder={founder}
+        onUseBio={setBio}
+        onSaved={onSaved}
+        onDeleted={onDeleted}
+        items={editorialItems}
+        itemsLoaded={editorialItemsLoaded}
+        onItemsChanged={setEditorialItems}
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <div>
