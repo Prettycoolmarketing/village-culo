@@ -68,6 +68,17 @@ export function JoinConfirmPage() {
           ensureJoinedFounder(user.id, user.email ?? '', source, { canvaUserId }),
           new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timed out')), 15000)),
         ])
+        // Confirmed real, live: ensureJoinedFounder returning null (the
+        // founder write failing even after its own confirm-and-retry) used
+        // to fall straight through to the normal "Set your password"
+        // screen with zero indication anything had gone wrong — a real
+        // auth account, a password someone sets thinking they're done,
+        // and no founder profile ever created, invisible everywhere in
+        // the dashboard forever after (confirmed real: two signups,
+        // bellissimebyemily@outlook.com and catherinejanemack@gmail.com,
+        // both stuck exactly this way). Treated the same as a genuine
+        // failure now, not a silent success.
+        if (!id) throw new Error('Could not create your profile')
         setFounderId(id)
         // Re-opening a confirm-email link (an old one still sitting in an
         // inbox, or a duplicate Supabase sent) used to show "Set your
@@ -160,8 +171,8 @@ export function JoinConfirmPage() {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center px-6">
         <div className="max-w-sm text-center">
-          <p className="font-body text-sm text-charcoal font-semibold mb-2">Something took too long to load.</p>
-          <p className="font-body text-sm text-muted mb-6">Your email's confirmed — this was just a connection hiccup setting up your account. Try again.</p>
+          <p className="font-body text-sm text-charcoal font-semibold mb-2">Something went wrong setting up your profile.</p>
+          <p className="font-body text-sm text-muted mb-6">Your email's confirmed — this was just a connection hiccup. Try again.</p>
           <button
             onClick={() => window.location.reload()}
             className="rounded-xl px-6 py-3 text-sm font-semibold bg-primary text-white hover:bg-[#b05a35] transition-colors"
