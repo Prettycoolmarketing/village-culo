@@ -15,8 +15,26 @@ export function passesRiskGate(ledger: EvidenceLedger): boolean {
   if (ledger.legal_risk) return false
   if (ledger.financial_risk) return false
   if (ledger.claims.some(claimIsBlocking)) return false
-  if (ledger.source_assessments.some(s => s.identity_confidence === 'low')) return false
+  if (!hasVerifiedIndependentEvidence(ledger)) return false
   return true
+}
+
+// Confirmed real, live: the old check (block if ANY supplied source came
+// back low-confidence) blocked Amanda Eckert's entire bio — solidly
+// researched, independently verified coverage of her basketball
+// commentary career (The Courier, NBL1 Central, Adelaide 36ers) — because
+// the one specific business URL she'd given (getyourmindoutoftheclutter.
+// com.au) simply couldn't be loaded by web search at all. One unreachable
+// link should disqualify writing ABOUT that one link (see
+// passesRiskGateForSource), never erase everything else research
+// genuinely found and verified about the person elsewhere. This instead
+// requires at least one real, positive signal — an independently-verified
+// claim (not just the subject's own material), or at least one supplied
+// source actually confirmed to be about them — before trusting identity
+// at the whole-ledger level.
+function hasVerifiedIndependentEvidence(ledger: EvidenceLedger): boolean {
+  if (ledger.claims.some(c => c.verification_status === 'verified' && !c.first_party_only)) return true
+  return ledger.source_assessments.some(s => s.source_valid && s.identity_confidence !== 'low')
 }
 
 // Same gate, scoped to one specific source — for an article written about
@@ -56,9 +74,7 @@ export function passesRiskGateForSource(
 // actually confirm belongs to this person — is worth telling staff "invite
 // them to join and self-publish instead," not every Risk Gate block.
 export function isThinResearch(ledger: EvidenceLedger): boolean {
-  const validSources = ledger.source_assessments.filter(s => s.source_valid)
-  if (validSources.length === 0) return true
-  return validSources.every(s => s.identity_confidence === 'low')
+  return !hasVerifiedIndependentEvidence(ledger)
 }
 
 function claimIsBlocking(claim: EvidenceClaim): boolean {
