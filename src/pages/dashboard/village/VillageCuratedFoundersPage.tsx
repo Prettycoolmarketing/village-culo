@@ -381,14 +381,26 @@ export function VillageCuratedFoundersPage() {
     // (needs attention, but nothing to review yet), everything else in the
     // middle. Array.sort is stable, so this second pass only reorders by
     // that priority without disturbing the order above within each group.
-    const priority = (f: Founder): number => {
-      if (f.researchStatus === 'failed') return 2
-      const items = editorialItemsAll.filter(i => i.founder_id === f.id)
-      const needsReview = f.researchStatus === 'researching'
-        || items.some(i => i.editorial_status === 'review' || i.editorial_status === 'pending' || i.editorial_status === 'reject')
-      return needsReview ? 0 : 1
+    //
+    // Founders tab (the review queue) only — confirmed real bug: this ran
+    // unconditionally on every tab, including Published, so a founder with
+    // any leftover pending/review editorial_item (Renate Crollini: an old
+    // unapproved bio draft and an article still at "review" from weeks
+    // back) got pinned to the very top of the Published list forever,
+    // completely overriding "newest first" no matter how many founders
+    // were published more recently. That queue-urgency concept only makes
+    // sense for the review queue; Published should sort purely by when it
+    // was actually published.
+    if (pageTab === 'founders') {
+      const priority = (f: Founder): number => {
+        if (f.researchStatus === 'failed') return 2
+        const items = editorialItemsAll.filter(i => i.founder_id === f.id)
+        const needsReview = f.researchStatus === 'researching'
+          || items.some(i => i.editorial_status === 'review' || i.editorial_status === 'pending' || i.editorial_status === 'reject')
+        return needsReview ? 0 : 1
+      }
+      list.sort((a, b) => priority(a) - priority(b))
     }
-    list.sort((a, b) => priority(a) - priority(b))
 
     return list
   }, [tick, search, sortBy, filterIndustry, filterStatus, filterHasYT, filterHasWeb, filterHasBiz, filterHasContent, filterHasClaim, filterHasEmail, curatedDraftFounders, publishedFounders, claimedFounders, pageTab, businesses, contentCountByFounder, claimByFounder, claimEmailByFounder, editorialItemsAll])

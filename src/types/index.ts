@@ -450,6 +450,17 @@ export interface Founder {
   claimedByUserId?: string
   claimEmail?: string
   claimNotes?: string
+  // The business name exactly as the founder themselves stated it in
+  // their original lead (a Facebook comment, their own reply) — distinct
+  // from an actual verified Business record (getBusinesses), which most
+  // curated founders never get (see villageImport.ts's createBusinesses
+  // comment). Lets research trust a self-report on its own for identity
+  // purposes (per direct product decision: faster publishing over
+  // requiring independent third-party corroboration), while still
+  // requiring the written bio to actually be about this business — the
+  // guard that catches the Writer drifting to an unrelated same-named
+  // person (see editorialItems.ts's writeProfileBio).
+  selfStatedBusinessName?: string
   isClaimable?: boolean
   // Culo Editorial Engine, Sprint 1 (Stage 1: Researcher only) — see
   // src/types/editorialEngine.ts and supabase/functions/editorial-research.
