@@ -14,6 +14,7 @@ import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import { toCSV, downloadCSV, splitName } from '../../../utils/emailExport'
 import { bodyTextToHtml, bodyHtmlToText } from '../../../utils/emailBody'
 import { syncUserDataFromSupabase } from '../../../lib/sync'
+import { supabase } from '../../../lib/supabase'
 
 export function VillageEmailExportPage() {
   const [pageTab, setPageTab] = useState('members')
@@ -327,6 +328,23 @@ function SubscribersPanel() {
   }
 
   function handleDelete(id: string) {
+    // Deleting from email_subscribers alone doesn't actually guarantee
+    // "never email this person again" — send-campaign builds its
+    // recipient list from THREE sources (email_subscribers, canva_waitlist,
+    // every founder's signupEmail), deduplicated. If this same address
+    // also exists on the waitlist or as a founder account, it would still
+    // get sent to. email_unsubscribes is the one list checked and
+    // subtracted from all three — reusing the same unsubscribe-email
+    // function a recipient's own footer link calls, so a staff delete
+    // gives the same durable, real opt-out instead of just hiding one of
+    // several lists they could still be reached through. Fire-and-forget:
+    // the subscriber row's own delete below is the part that must never
+    // be blocked by this.
+    const email = subs.find(s => s.id === id)?.email
+    if (email && supabase) {
+      void supabase.functions.invoke(`unsubscribe-email?email=${encodeURIComponent(email.trim().toLowerCase())}`)
+        .catch(() => { /* best-effort */ })
+    }
     void emailSubscribersService.delete(id)
     setSubs(prev => prev.filter(s => s.id !== id))
   }
