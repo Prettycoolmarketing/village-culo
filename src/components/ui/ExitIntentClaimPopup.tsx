@@ -33,8 +33,23 @@ export function ExitIntentClaimPopup({ founder }: { founder: Founder }) {
       try { sessionStorage.setItem(SESSION_KEY, '1') } catch { /* ignore */ }
       document.removeEventListener('mouseout', handleMouseOut)
     }
-    document.addEventListener('mouseout', handleMouseOut)
-    return () => document.removeEventListener('mouseout', handleMouseOut)
+
+    // Confirmed real bug: arming this immediately on mount fired the
+    // popup when a visitor merely clicked a link into the page, not when
+    // they tried to leave it. Clicking a link near the top of the page
+    // (a navbar item, a list entry) leaves the mouse at a low clientY,
+    // and an SPA route change swaps the DOM right under that still-
+    // stationary cursor — the browser can fire a mouseout off that swap
+    // alone, with no actual mouse movement, that looks identical to
+    // real exit intent. A short grace period before arming the listener
+    // lets that initial page-load settle first.
+    const armTimer = setTimeout(() => {
+      document.addEventListener('mouseout', handleMouseOut)
+    }, 1500)
+    return () => {
+      clearTimeout(armTimer)
+      document.removeEventListener('mouseout', handleMouseOut)
+    }
   }, [eligible])
 
   if (!eligible || !show) return null
