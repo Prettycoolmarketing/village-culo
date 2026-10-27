@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { getFounders, getFounder } from '../../../services/founders'
+import { getFounders, getFounder, deleteFounderAccount } from '../../../services/founders'
 import { getStories, getStory } from '../../../services/stories'
 import { importedContentService } from '../../../services/importedContent'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
@@ -99,6 +99,26 @@ function isRealMember(f: ReturnType<typeof getFounders>[number]) {
 interface PendingSignup { id: string; email: string; createdAt: string; emailConfirmed: boolean }
 
 function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
+  const { user } = useAuth()
+  // Deleting a founder's account from here (not just removing them from a
+  // mailing list) is admin/owner only, same bar as every other real
+  // account deletion in CAPO — Capo staff can reach this page but must
+  // never be able to delete a real login. Culo Members previously had no
+  // delete control here at all despite a stale comment claiming one
+  // existed — confirmed real gap, staff could only delete an account from
+  // Founder Management instead.
+  const canDeleteAccounts = user?.role === 'admin' || user?.role === 'owner'
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [refreshTick, setRefreshTick] = useState(0)
+  void refreshTick
+  async function handleDeleteAccount(founderId: string) {
+    setDeletingId(founderId)
+    const result = await deleteFounderAccount(founderId)
+    setDeletingId(null)
+    if (!result.success) { alert(result.error ?? 'Could not delete this account. Please try again.'); return }
+    setRefreshTick(t => t + 1)
+  }
+
   // Only real /join signups ever land here before a founder record exists —
   // a curated profile is created by staff, never by someone signing up, so
   // this has nothing to show on the Curated tab.
@@ -392,6 +412,16 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                   >
                     View ↗
                   </a>
+                  {canDeleteAccounts && (
+                    <ConfirmButton
+                      label={deletingId === f.id ? 'Deleting…' : 'Delete'}
+                      confirmLabel="Yes, delete"
+                      message="Permanently deletes this member's login and founder profile. This can't be undone."
+                      disabled={deletingId === f.id}
+                      onConfirm={() => void handleDeleteAccount(f.id)}
+                      className="text-[10px] font-semibold text-red-500 hover:text-red-600 transition-colors ml-2"
+                    />
+                  )}
                 </div>
               </div>
             )
