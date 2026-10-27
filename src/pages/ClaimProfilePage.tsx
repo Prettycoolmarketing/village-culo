@@ -27,10 +27,19 @@ export function ClaimProfilePage() {
     if (!key || !founder) { setClaimKeyState('invalid'); return }
     if (!isSupabaseConfigured || !supabase) { setClaimKeyState('invalid'); return }
     let cancelled = false
+    // Same bug class as AuthContext's stuck-loading fix — no timeout here
+    // either, and 'checking' renders a genuinely blank page below (not
+    // even a spinner). A visitor following a pre-verified claim link who
+    // hits a stalled network request got a permanently empty white page
+    // with nothing to click, no reload prompt, nothing. Falls back to
+    // 'invalid' (the normal request-review form, not a dead end) rather
+    // than hang forever.
+    const timer = setTimeout(() => { if (!cancelled) setClaimKeyState('invalid') }, 8000)
     supabase.functions.invoke<{ valid?: boolean }>('verify-claim-token', { body: { founderId: founder.id, key } })
       .then(({ data }) => { if (!cancelled) setClaimKeyState(data?.valid ? 'valid' : 'invalid') })
       .catch(() => { if (!cancelled) setClaimKeyState('invalid') })
-    return () => { cancelled = true }
+      .finally(() => clearTimeout(timer))
+    return () => { cancelled = true; clearTimeout(timer) }
   }, [key, founder?.id])
 
   usePageMeta({
