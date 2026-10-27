@@ -2082,7 +2082,6 @@ export function DashboardImportContentPage() {
     const interval = setInterval(() => setTick(t => t + 1), 2500)
     return () => clearInterval(interval)
   }, [founder?.onboardingStatus])
-  void tick
 
   // Same single Voice & Brand Brief box as Profile → Expertise (see
   // BrandBriefEditor) — placed next to the import cards too, since a
@@ -2215,6 +2214,32 @@ export function DashboardImportContentPage() {
           JoinConfirmPage), so that's where a founder understands what to
           do and answers the waitlist question, before ever reaching
           Import. */}
+
+      {/* The one visible sign research is actually running — a founder
+          landing here straight from /join/setup used to see nothing at
+          all while runOnboardingResearch worked in the background (the
+          tick re-render above existed, but nothing on screen ever read
+          it). A running counter, same idea as the claim page's simple
+          "checking…" state, so this doesn't read as "did my link even
+          submit?" for up to a minute. Clears itself the moment
+          onboardingStatus moves on, via the same poll. */}
+      {founder?.onboardingStatus === 'researching' && (
+        <div className="flex items-center gap-3 bg-[#FBF1EB] border border-[#C86A43]/30 rounded-xl px-5 py-4 mb-8">
+          <svg className="w-5 h-5 text-[#C86A43] animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-[#2D2A26]">
+              {tick < 2 ? 'Finding your public profiles…'
+                : tick < 5 ? 'Reading what you\'ve already said…'
+                : tick < 10 ? 'Writing your first bio and article…'
+                : 'Almost done — polishing it up…'}
+            </p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">Usually takes under a minute ({tick * 2.5 | 0}s so far)</p>
+          </div>
+        </div>
+      )}
 
       {/* Real numbers only, straight from this founder's own sources/imports —
           no invented storage quota or "of N available" ceiling. Hidden
