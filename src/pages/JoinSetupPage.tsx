@@ -5,6 +5,7 @@ import { getCurrentFounder } from '../services/currentFounder'
 import { updateFounder, uniqueFounderSlug } from '../services/founders'
 import { runOnboardingResearch } from '../services/onboardingResearch'
 import { setConnectPrefill } from '../utils/connectPrefill'
+import { ONBOARDING_LINK_FIELDS as LINK_FIELDS, normalizeOnboardingLink as normalizeLink } from '../utils/onboardingLinks'
 import { Navbar } from '../components/layout/Navbar'
 import { JoinProgress } from '../components/ui/JoinProgress'
 
@@ -14,54 +15,11 @@ import { JoinProgress } from '../components/ui/JoinProgress'
 // did). This is the first thing a new signup sees instead of the empty
 // dashboard: their real name, and a few real links — simple separate
 // questions, same idea as the claim page, rather than one combined field.
-//
-// Used to ask for a single "most-known link or @handle" field. Confirmed
-// real gap: a founder with several real, verifiable public profiles
-// (website, Instagram, LinkedIn...) could only ever submit ONE of them —
-// if that one happened to be unreachable, private, or too thin for
-// research to confidently verify, the whole run came back
-// researchFoundNothing even though the other links she had would have
-// worked. Each field here, once filled, saves straight onto the matching
-// founder field (website/instagram/linkedin/youtube) BEFORE research
-// runs — runFounderResearch's own profileSources builder (see
-// editorialResearch.ts) already pulls from all of those automatically, so
-// just saving them first is enough; no change needed to research itself.
+// See ../utils/onboardingLinks.ts for why (used here and by
+// ResumeResearchBanner — the retry/staff-run version of this same form).
 // Kicks off the same research → write pipeline CAPO runs by hand for
 // curated founders (see runOnboardingResearch) and hands off to
 // /dashboard/welcome's running-research counter.
-// `prefill` marks the two platforms that actually have a bulk-capture
-// connector on Import (see YouTubeConnectForm/website's connect form in
-// DashboardImportContentPage) — what's typed here gets handed straight to
-// that connector via setConnectPrefill so it's ready to go, one click, the
-// moment they land on Import. Instagram and LinkedIn have no such
-// connector in this app; they're real research signal (verifying who this
-// founder is) but nothing imports from them automatically — the hint text
-// below says so plainly rather than leaving that difference to guesswork.
-const LINK_FIELDS = [
-  { key: 'website' as const, label: 'Website', placeholder: 'yourbusiness.com', prefill: 'website' as const,
-    hint: 'Helps us verify you — and if it\'s a blog, your posts will be ready to import as articles.' },
-  { key: 'instagram' as const, label: 'Instagram', placeholder: '@yourusername', prefill: undefined,
-    hint: 'Helps us verify who you are. We don\'t pull your posts in automatically yet.' },
-  { key: 'linkedin' as const, label: 'LinkedIn', placeholder: 'linkedin.com/in/yourname', prefill: undefined,
-    hint: 'Helps us verify who you are and write a stronger first bio.' },
-  { key: 'youtube' as const, label: 'YouTube', placeholder: '@yourchannel', prefill: 'youtube' as const,
-    hint: 'Helps us verify you — and your channel will be ready to import as articles.' },
-]
-
-// Auto-prepend https:// rather than making a founder notice and fix a
-// scheme-less link themselves (confirmed real friction). A bare "@handle"
-// is left as-is — founder.instagram etc. don't require a full URL, and
-// runOnboardingResearch/runFounderResearch both already treat a plain
-// handle as a real research lead, not just a link.
-function normalizeLink(raw: string): string {
-  const trimmed = raw.trim()
-  if (!trimmed || trimmed.startsWith('@')) return trimmed
-  try {
-    return new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`).toString()
-  } catch {
-    return trimmed
-  }
-}
 
 export function JoinSetupPage() {
   const { user, loading } = useAuth()

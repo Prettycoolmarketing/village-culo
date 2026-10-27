@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext'
 import { canUseRewrite, hasAnyCapoAccess } from '../../utils/permissions'
 import { getCurrentFounder } from '../../services/currentFounder'
 import { runOnboardingResearch, writeOnboardingDraftsFromResearch } from '../../services/onboardingResearch'
+import { setConnectPrefill } from '../../utils/connectPrefill'
+import { ONBOARDING_LINK_FIELDS, normalizeOnboardingLink, type OnboardingLinkKey } from '../../utils/onboardingLinks'
 import { runFounderResearch } from '../../services/editorialResearch'
 import { writeProfileBio, runAudit } from '../../services/editorialItems'
 import { updateFounder, deleteFounder, getFounder, uniqueFounderSlug } from '../../services/founders'
@@ -886,41 +888,47 @@ function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Fo
   // instead makes it obvious something real still needs typing in.
   const looksLikeHandle = !founder.name.trim().includes(' ')
   const [name, setName] = useState(looksLikeHandle ? '' : founder.name)
-  const [link, setLink] = useState('')
+  const [links, setLinks] = useState<Record<OnboardingLinkKey, string>>({
+    website: founder.website ?? '', instagram: founder.instagram ?? '',
+    linkedin: founder.linkedin ?? '', youtube: founder.youtube ?? '',
+  })
   const [photo, setPhoto] = useState<string | undefined>(undefined)
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleRun() {
-    const raw = link.trim()
     if (!name.trim()) { setError('Add your full name first.'); return }
-    if (!raw) { setError('Add your most-used username or a link first.'); return }
-    // Name and photo save immediately here, same as Run research itself —
-    // one single action, not a separate trip to the page's own Save
-    // button. Research can write a bio and an article, but never a real
-    // photo, so collecting it right alongside the one other thing a
-    // founder has to supply by hand keeps this to one step instead of two.
-    const updates: Partial<Founder> = {}
+    const normalized = Object.fromEntries(
+      ONBOARDING_LINK_FIELDS.map(f => [f.key, normalizeOnboardingLink(links[f.key])]),
+    ) as Record<OnboardingLinkKey, string>
+    const filled = ONBOARDING_LINK_FIELDS.filter(f => normalized[f.key])
+    if (filled.length === 0) { setError('Add at least one real link — website, Instagram, LinkedIn or YouTube.'); return }
+
+    // Name, photo and every link field save immediately here, same as Run
+    // research itself — one single action, not a separate trip to the
+    // page's own Save button. Research can write a bio and an article, but
+    // never a real photo, so collecting it right alongside the links keeps
+    // this to one step instead of two.
+    const updates: Partial<Founder> = {
+      website:   normalized.website || founder.website,
+      instagram: normalized.instagram || founder.instagram,
+      linkedin:  normalized.linkedin || founder.linkedin,
+      youtube:   normalized.youtube || founder.youtube,
+    }
     if (name.trim() !== founder.name) {
       updates.name = name.trim()
       updates.slug = uniqueFounderSlug(name.trim(), founder.id)
     }
     if (photo) updates.avatar = photo
-    if (Object.keys(updates).length > 0) await updateFounder({ ...founder, ...updates })
-    // Same handle-or-link flexibility as /join/setup — "@n" is enough,
-    // runOnboardingResearch treats anything that isn't a real link as a
-    // bare handle and researches from that instead.
-    let identifier = raw
-    if (!raw.startsWith('@')) {
-      try {
-        identifier = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`).toString()
-      } catch {
-        // Not a parseable link either — fall through as a bare handle.
-      }
+    await updateFounder({ ...founder, ...updates })
+
+    for (const f of ONBOARDING_LINK_FIELDS) {
+      if (f.prefill && normalized[f.key]) setConnectPrefill(founder.id, f.prefill, normalized[f.key])
     }
+
     setRunning(true)
     setError(null)
-    await runOnboardingResearch(founder.id, identifier)
+    await runOnboardingResearch(founder.id, normalized[filled[0].key])
     setRunning(false)
     onDone()
   }
@@ -938,28 +946,32 @@ function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Fo
             uploadOptions={{ founderId: founder.id, usageType: 'profile-photo' }}
           />
         </div>
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-[#6B7280] mb-1">Full name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Your full name"
-                className="w-full px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs font-bold text-[#6B7280] mb-1">Username or link (LinkedIn, Instagram, YouTube, website — whatever's most you)</label>
-              <input
-                type="text"
-                value={link}
-                onChange={e => setLink(e.target.value)}
-                placeholder="@yourusername or a link"
-                className="w-full px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
-              />
-            </div>
+        <div className="flex-1 flex flex-col gap-3">
+          <div>
+            <label className="block text-xs font-bold text-[#6B7280] mb-1">Full name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Your full name"
+              className="w-full px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+            />
+          </div>
+          <p className="text-xs text-[#9CA3AF]">Add at least one real link — the more you give us, the better we can find and verify you.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {ONBOARDING_LINK_FIELDS.map(f => (
+              <div key={f.key}>
+                <label className="block text-xs font-bold text-[#6B7280] mb-1">{f.label}</label>
+                <p className="text-[11px] text-[#9CA3AF] mb-1">{f.hint}</p>
+                <input
+                  type="text"
+                  value={links[f.key]}
+                  onChange={e => setLinks(prev => ({ ...prev, [f.key]: e.target.value }))}
+                  placeholder={f.placeholder}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+                />
+              </div>
+            ))}
           </div>
           <div className="flex items-center gap-4 flex-wrap">
             <button
