@@ -177,7 +177,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
                   to={isMember ? '/dashboard/publish' : '/onboarding'}
                   className="whitespace-nowrap px-4 py-2 bg-charcoal text-white text-sm font-medium rounded-xl hover:bg-[#1a1815] transition-colors"
                 >
-                  {isMember ? 'Publish Dashboard' : 'Join The Village'}
+                  {isMember ? 'Dashboard' : 'Join The Village'}
                 </Link>
               ) : (
                 <>
@@ -185,7 +185,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
                     to="/dashboard/login"
                     className="text-sm font-medium text-charcoal hover:text-primary transition-colors"
                   >
-                    Log in
+                    Login
                   </Link>
                   <Link
                     to="/onboarding"
@@ -257,7 +257,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
                   onClick={() => setMobileOpen(false)}
                   className="block px-3 py-2.5 bg-charcoal text-white text-sm font-medium rounded-xl text-center hover:bg-[#1a1815] transition-colors"
                 >
-                  {isMember ? 'Publish Dashboard' : 'Join The Village'}
+                  {isMember ? 'Dashboard' : 'Join The Village'}
                 </Link>
               ) : (
                 <>
@@ -266,7 +266,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
                     onClick={() => setMobileOpen(false)}
                     className="block px-3 py-2.5 border border-border text-charcoal text-sm font-medium rounded-xl text-center hover:border-primary hover:text-primary transition-colors"
                   >
-                    Log in
+                    Login
                   </Link>
                   <Link
                     to="/onboarding"
