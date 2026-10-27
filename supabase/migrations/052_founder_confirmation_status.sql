@@ -8,7 +8,7 @@
 -- not just the ones still missing a founder row, so the Unconfirmed tag and
 -- resend action are accurate regardless of how the founder record got there.
 CREATE OR REPLACE FUNCTION get_founder_confirmation_status()
-RETURNS TABLE(founder_id uuid, email_confirmed boolean)
+RETURNS TABLE(founder_id text, email_confirmed boolean)
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   SELECT p.founder_id, (u.email_confirmed_at IS NOT NULL) AS email_confirmed
   FROM profiles p
