@@ -306,7 +306,14 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
             // than folded into memberStatus since the two are genuinely
             // different axes (a founder can be claimed AND still draft, or
             // unclaimed AND already published).
-            const isClaimed = !!f.userId
+            // userId alone missed curated-then-claimed founders entirely —
+            // claiming a curated profile only ever sets claimedByUserId, not
+            // userId (see VillageCuratedFoundersPage's own real
+            // userId || claimedByUserId check) — confirmed real: a founder
+            // Founder Management correctly shows as Claimed/Verified read as
+            // Unclaimed here. profileStatus is the most authoritative signal
+            // (what Founder Management itself displays), so it leads.
+            const isClaimed = f.profileStatus === 'claimed' || f.profileStatus === 'verified' || !!f.userId || !!f.claimedByUserId
             // Said yes to the "join the Culo Creatives waitlist?" prompt on
             // Import — shown right next to the name rather than grouped
             // with the status tags on the right, since it's about intent
