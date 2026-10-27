@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getCurrentFounder } from '../services/currentFounder'
 import { updateFounder, uniqueFounderSlug } from '../services/founders'
-import { runOnboardingResearch } from '../services/onboardingResearch'
 import { setConnectPrefill } from '../utils/connectPrefill'
 import { ONBOARDING_LINK_FIELDS as LINK_FIELDS, normalizeOnboardingLink as normalizeLink } from '../utils/onboardingLinks'
 import { Navbar } from '../components/layout/Navbar'
@@ -17,9 +16,9 @@ import { JoinProgress } from '../components/ui/JoinProgress'
 // questions, same idea as the claim page, rather than one combined field.
 // See ../utils/onboardingLinks.ts for why (used here and by
 // ResumeResearchBanner — the retry/staff-run version of this same form).
-// Kicks off the same research → write pipeline CAPO runs by hand for
-// curated founders (see runOnboardingResearch) and hands off to
-// /dashboard/welcome's running-research counter.
+// Just saves name + links here, then hands off to /join/research — the
+// explicit "Run research" / "Write article and bio" two-step page, not a
+// fused background call with nothing on screen to show it happening.
 
 export function JoinSetupPage() {
   const { user, loading } = useAuth()
@@ -75,12 +74,6 @@ export function JoinSetupPage() {
     setSubmitting(true)
     setError(null)
 
-    // The first one filled (in the order shown) becomes the "primary"
-    // identifier — builds the first draft import research writes the
-    // initial article from. Every field saved below still feeds research
-    // automatically via profileSources regardless of which one this is.
-    const primaryIdentifier = normalized[filled[0].key]
-
     const result = await updateFounder({
       ...founder,
       name: name.trim(),
@@ -103,12 +96,11 @@ export function JoinSetupPage() {
       if (f.prefill && normalized[f.key]) setConnectPrefill(founder.id, f.prefill, normalized[f.key])
     }
 
-    // Deliberately not awaited — this can take over a minute (research +
-    // writing + audit), and /dashboard/welcome's running-research counter
-    // is what shows progress from here, polling onboardingStatus rather
-    // than this page holding the founder on a spinner until it's done.
-    void runOnboardingResearch(founder.id, primaryIdentifier)
-    navigate('/dashboard/welcome', { replace: true })
+    // Research and writing used to fire together in the background right
+    // here, with nothing on screen to show either stage actually
+    // happening — per direct product direction, this should be two
+    // explicit, visible steps instead: /join/research.
+    navigate('/join/research', { replace: true })
   }
 
   return (

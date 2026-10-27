@@ -42,6 +42,7 @@ import { OnboardingPage }    from './pages/OnboardingPage'
 import { JoinVillagePage }   from './pages/JoinVillagePage'
 import { JoinConfirmPage }   from './pages/JoinConfirmPage'
 import { JoinSetupPage }     from './pages/JoinSetupPage'
+import { JoinResearchPage }  from './pages/JoinResearchPage'
 import { JoinCanvaPaidPage } from './pages/JoinCanvaPaidPage'
 import { MarketingLandingPage }    from './pages/marketing/MarketingLandingPage'
 import { MarketingPublishingPage } from './pages/marketing/MarketingPublishingPage'
@@ -188,6 +189,7 @@ export default function App() {
               ever reaching the dashboard. */}
           <Route path="/join/confirm" element={<JoinConfirmPage />} />
           <Route path="/join/setup" element={<JoinSetupPage />} />
+          <Route path="/join/research" element={<JoinResearchPage />} />
           {/* The pricing lock-in + simplified profile step, styled like the
               founder profile they're building. */}
           {/* Where CANVA_UPSELL_PAYMENT_LINK redirects after a completed
