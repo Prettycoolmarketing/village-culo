@@ -352,10 +352,21 @@ export function FounderProfilePage() {
   // no more of a leak than the founder profile itself already is. A real
   // anonymous visitor hitting a draft founder's URL never reaches this line
   // at all — see the founder-not-found branch above.
+  // Excludes anything with relatedStoryId set — once an import has been
+  // published, it's a real Story now (shown above under Stories by X /
+  // Articles Written by CULO's culoWrittenStories), and this list existed
+  // to show imports BEFORE that happened. Without this filter, publishing
+  // "Culo's Article" (see DashboardProfilePage's handleCuloArticleDecision,
+  // which deliberately keeps the original import row status 'published' as
+  // a record) left the exact same piece rendering twice on the public page —
+  // once as the Story, once again here as its own card. Every dashboard-side
+  // list already treats relatedStoryId this same way (see
+  // DashboardProfilePage's notPublished/isPublishedStat); this was the one
+  // public-facing query that never got the same exclusion.
   const publicImports   = importedContentService.getAll({
     founderId: founder.id,
     publicOnly: founder.status === 'published' || founder.status === 'featured',
-  })
+  }).filter(i => !i.relatedStoryId)
 
   // Featured picks — stories the founder has chosen to spotlight (see
   // Profile > Content). When they've picked any, the public profile leads
