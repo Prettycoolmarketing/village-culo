@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getCurrentFounder } from '../services/currentFounder'
 import { updateFounder, uniqueFounderSlug } from '../services/founders'
 import { runOnboardingResearch } from '../services/onboardingResearch'
+import { setConnectPrefill } from '../utils/connectPrefill'
 import { Navbar } from '../components/layout/Navbar'
 import { JoinProgress } from '../components/ui/JoinProgress'
 
@@ -28,11 +29,23 @@ import { JoinProgress } from '../components/ui/JoinProgress'
 // Kicks off the same research → write pipeline CAPO runs by hand for
 // curated founders (see runOnboardingResearch) and hands off to
 // /dashboard/welcome's running-research counter.
+// `prefill` marks the two platforms that actually have a bulk-capture
+// connector on Import (see YouTubeConnectForm/website's connect form in
+// DashboardImportContentPage) — what's typed here gets handed straight to
+// that connector via setConnectPrefill so it's ready to go, one click, the
+// moment they land on Import. Instagram and LinkedIn have no such
+// connector in this app; they're real research signal (verifying who this
+// founder is) but nothing imports from them automatically — the hint text
+// below says so plainly rather than leaving that difference to guesswork.
 const LINK_FIELDS = [
-  { key: 'website' as const, label: 'Website', placeholder: 'yourbusiness.com' },
-  { key: 'instagram' as const, label: 'Instagram', placeholder: '@yourusername' },
-  { key: 'linkedin' as const, label: 'LinkedIn', placeholder: 'linkedin.com/in/yourname' },
-  { key: 'youtube' as const, label: 'YouTube', placeholder: '@yourchannel' },
+  { key: 'website' as const, label: 'Website', placeholder: 'yourbusiness.com', prefill: 'website' as const,
+    hint: 'Helps us verify you — and if it\'s a blog, your posts will be ready to import as articles.' },
+  { key: 'instagram' as const, label: 'Instagram', placeholder: '@yourusername', prefill: undefined,
+    hint: 'Helps us verify who you are. We don\'t pull your posts in automatically yet.' },
+  { key: 'linkedin' as const, label: 'LinkedIn', placeholder: 'linkedin.com/in/yourname', prefill: undefined,
+    hint: 'Helps us verify who you are and write a stronger first bio.' },
+  { key: 'youtube' as const, label: 'YouTube', placeholder: '@yourchannel', prefill: 'youtube' as const,
+    hint: 'Helps us verify you — and your channel will be ready to import as articles.' },
 ]
 
 // Auto-prepend https:// rather than making a founder notice and fix a
@@ -105,10 +118,9 @@ export function JoinSetupPage() {
     setError(null)
 
     // The first one filled (in the order shown) becomes the "primary"
-    // identifier — builds the first draft import and seeds Import's
-    // connect-form prefill. Every other field saved below still feeds
-    // research automatically via profileSources, it just isn't the one
-    // the initial article gets built from.
+    // identifier — builds the first draft import research writes the
+    // initial article from. Every field saved below still feeds research
+    // automatically via profileSources regardless of which one this is.
     const primaryIdentifier = normalized[filled[0].key]
 
     const result = await updateFounder({
@@ -124,6 +136,13 @@ export function JoinSetupPage() {
       setSubmitting(false)
       setError(result.error ?? 'Could not save. Please try again.')
       return
+    }
+
+    // Hand off whatever they typed for the two platforms that actually
+    // have a bulk-capture connector on Import — one click, ready to go,
+    // instead of making them go find and retype the same link there.
+    for (const f of LINK_FIELDS) {
+      if (f.prefill && normalized[f.key]) setConnectPrefill(founder.id, f.prefill, normalized[f.key])
     }
 
     // Deliberately not awaited — this can take over a minute (research +
@@ -159,9 +178,10 @@ export function JoinSetupPage() {
             </p>
             {LINK_FIELDS.map(f => (
               <div key={f.key}>
-                <label htmlFor={`setup-link-${f.key}`} className="font-body text-xs md:text-sm text-muted block mb-1">
+                <label htmlFor={`setup-link-${f.key}`} className="font-body text-xs md:text-sm font-semibold text-charcoal block mb-0.5">
                   {f.label}
                 </label>
+                <p className="font-body text-xs text-muted mb-1.5">{f.hint}</p>
                 <input
                   id={`setup-link-${f.key}`}
                   type="text"
