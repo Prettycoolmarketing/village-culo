@@ -103,12 +103,23 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
   // a curated profile is created by staff, never by someone signing up, so
   // this has nothing to show on the Curated tab.
   const [pending, setPending] = useState<PendingSignup[]>([])
+  // Keyed by founder id — a founder record existing (the normal case, or a
+  // staff-backfilled one) says nothing about whether its owner ever
+  // actually confirmed their email; this is the only place that does.
+  const [unconfirmedFounders, setUnconfirmedFounders] = useState<Set<string>>(new Set())
   const [resendingId, setResendingId] = useState<string | null>(null)
   useEffect(() => {
     if (curatedOnly || !supabase) return
     void supabase.rpc('get_pending_signups').then(({ data }) => {
       if (data) setPending((data as { id: string; email: string; created_at: string; email_confirmed: boolean }[])
         .map(r => ({ id: r.id, email: r.email, createdAt: r.created_at, emailConfirmed: r.email_confirmed })))
+    })
+    void supabase.rpc('get_founder_confirmation_status').then(({ data }) => {
+      if (data) setUnconfirmedFounders(new Set(
+        (data as { founder_id: string; email_confirmed: boolean }[])
+          .filter(r => !r.email_confirmed)
+          .map(r => r.founder_id),
+      ))
     })
   }, [curatedOnly])
 
@@ -298,6 +309,26 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                   <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${memberStatus.cls}`}>
                     {memberStatus.label}
                   </span>
+                  {/* A founder record existing says nothing about whether
+                      its owner ever actually confirmed their email — mainly
+                      hits accounts staff backfilled a founder record for by
+                      hand, see get_founder_confirmation_status. */}
+                  {unconfirmedFounders.has(f.id) && (
+                    <>
+                      <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">
+                        Unconfirmed
+                      </span>
+                      {f.signupEmail && (
+                        <button
+                          onClick={() => void handleResend(f.signupEmail!, f.id)}
+                          disabled={resendingId === f.id}
+                          className="text-[10px] font-semibold text-[#C86A43] hover:underline disabled:opacity-40"
+                        >
+                          {resendingId === f.id ? 'Sending…' : 'Resend confirm email'}
+                        </button>
+                      )}
+                    </>
+                  )}
                   {/* Only the exception is worth a tag here — claimed is
                       the normal case for almost every row, same reasoning
                       as Upgraded/Creatives/Canva below only showing when
