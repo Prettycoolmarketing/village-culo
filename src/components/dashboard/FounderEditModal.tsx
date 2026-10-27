@@ -17,6 +17,8 @@ import { runFounderResearch } from '../../services/editorialResearch'
 import { passesRiskGate, riskGateReasons, isThinResearch } from '../../services/editorialEngine'
 import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, writeArticlesFromLedger, type EditorialItemRow } from '../../services/editorialItems'
 import { formatLocationLabel } from '../../utils/location'
+import { useAuth } from '../../contexts/AuthContext'
+import { canDeleteCapoData } from '../../utils/permissions'
 
 // Shared renderer for any Culo-written draft (bio or article) — splits on
 // blank lines and gives each paragraph real spacing, rather than one
@@ -315,6 +317,8 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
 }) {
   const [writingArticle, setWritingArticle] = useState(false)
   const [articleError, setArticleError] = useState<string | null>(null)
+  const { user: currentUser } = useAuth()
+  const canDelete = canDeleteCapoData(currentUser?.role)
 
   // Stage 2 (Writer) for this specific article — matched to the founder's
   // evidence ledger by imported_content_id first (set when Stage 1 was
@@ -502,14 +506,17 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
             Source ↗
           </a>
         )}
-        <ConfirmButton
-          label="Delete"
-          confirmLabel="Yes"
-          message="Delete this piece of content?"
-          onConfirm={() => void handleDelete()}
-          disabled={busy}
-          className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors shrink-0"
-        />
+        {/* Admin/owner only, per direct product decision. */}
+        {canDelete && (
+          <ConfirmButton
+            label="Delete"
+            confirmLabel="Yes"
+            message="Delete this piece of content?"
+            onConfirm={() => void handleDelete()}
+            disabled={busy}
+            className="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors shrink-0"
+          />
+        )}
       </div>
 
       {publishError && <p className="px-4 pb-2 text-xs text-red-600">{publishError}</p>}
@@ -681,6 +688,8 @@ function BioDraftBlock({ founder, onUseBio, onSaved, onDeleted, items, itemsLoad
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const { user } = useAuth()
+  const canDelete = canDeleteCapoData(user?.role)
 
   async function handleCopyOutreach() {
     await navigator.clipboard.writeText(THIN_RESEARCH_OUTREACH_MESSAGE)
@@ -774,14 +783,20 @@ function BioDraftBlock({ founder, onUseBio, onSaved, onDeleted, items, itemsLoad
                 >
                   {copied ? 'Copied ✓' : 'Copy outreach message'}
                 </button>
-                <ConfirmButton
-                  label={deleting ? 'Deleting…' : 'Delete this profile'}
-                  confirmLabel="Yes, delete"
-                  message={`Delete ${founder.name}'s curated profile? This can't be undone.`}
-                  disabled={deleting}
-                  onConfirm={() => void handleDeleteThin()}
-                  className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
-                />
+                {/* Admin/owner only, per direct product decision — Capo
+                    staff can research, write and recommend a delete, but
+                    must never be able to permanently delete a member's
+                    data themselves. */}
+                {canDelete && (
+                  <ConfirmButton
+                    label={deleting ? 'Deleting…' : 'Delete this profile'}
+                    confirmLabel="Yes, delete"
+                    message={`Delete ${founder.name}'s curated profile? This can't be undone.`}
+                    disabled={deleting}
+                    onConfirm={() => void handleDeleteThin()}
+                    className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+                  />
+                )}
               </div>
             </div>
           )}
@@ -815,6 +830,8 @@ const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f:
   const [saving, setSaving]       = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved]         = useState(false)
+  const { user: currentUser } = useAuth()
+  const canDelete = canDeleteCapoData(currentUser?.role)
   // Lifted out of BioDraftBlock so the "Failed profile" label above the
   // Bio box (just below) can use the exact same bioItem — confirmed real:
   // it used to show the moment research alone finished (founder.evidenceLedger
@@ -995,7 +1012,7 @@ const ProfileTab = forwardRef<ProfileTabHandle, { founder: Founder; onSaved: (f:
           {saving ? 'Saving…' : 'Save changes'}
         </button>
         {saved && <span className="text-xs font-semibold text-[#5E6B4A]">Saved ✓</span>}
-        {attachedBusiness && (
+        {attachedBusiness && canDelete && (
           <ConfirmButton
             label={removingBusiness ? 'Removing…' : `Remove business (${attachedBusiness.name})`}
             confirmLabel="Remove it"

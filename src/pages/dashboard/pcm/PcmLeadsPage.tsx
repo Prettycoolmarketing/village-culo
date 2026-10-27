@@ -4,6 +4,8 @@ import { Tabs } from '../../../components/dashboard/Tabs'
 import { pcmLeadsService, type PcmLead } from '../../../services/pcmLeads'
 import { downloadCSV } from '../../../utils/emailExport'
 import { ConfirmButton } from '../../../components/ui/ConfirmButton'
+import { useAuth } from '../../../contexts/AuthContext'
+import { canDeleteCapoData } from '../../../utils/permissions'
 
 const font = { fontFamily: "'DM Sans', sans-serif" }
 
@@ -34,6 +36,8 @@ function leadsToCSV(leads: PcmLead[]): string {
 }
 
 export function PcmLeadsPage() {
+  const { user } = useAuth()
+  const canDelete = canDeleteCapoData(user?.role)
   const [leads, setLeads] = useState<PcmLead[]>(pcmLeadsService.getAll())
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<LeadTab>('all')
@@ -111,7 +115,7 @@ export function PcmLeadsPage() {
               </span>
               <span className="text-xs text-[#9CA3AF] shrink-0 w-24">{new Date(l.createdAt).toLocaleDateString()}</span>
               <span className="shrink-0">
-                <ConfirmButton label="Delete" onConfirm={() => remove(l.id)} />
+                {canDelete && <ConfirmButton label="Delete" onConfirm={() => remove(l.id)} />}
               </span>
             </div>
           ))}

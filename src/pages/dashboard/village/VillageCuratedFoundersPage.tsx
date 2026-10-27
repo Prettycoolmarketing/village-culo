@@ -13,7 +13,7 @@ import { FounderEditModal } from '../../../components/dashboard/FounderEditModal
 import { VillageBulkImportPage } from './VillageBulkImportPage'
 import { LeadSourcesPage } from './LeadSourcesPage'
 import { useAuth } from '../../../contexts/AuthContext'
-import { canAccessCapoSection } from '../../../utils/permissions'
+import { canAccessCapoSection, canDeleteCapoData } from '../../../utils/permissions'
 import { getAllEditorialItems, type EditorialItemRow } from '../../../services/editorialItems'
 import { getStories } from '../../../services/stories'
 import { runFullEditorialPipeline } from '../../../services/editorialPipeline'
@@ -79,6 +79,7 @@ function BulkBar({
   onPublish,
   onArchive,
   onResearch,
+  canDelete,
 }: {
   selected: Set<string>
   total: number
@@ -89,6 +90,7 @@ function BulkBar({
   onPublish: () => void
   onArchive: () => void
   onResearch: () => void
+  canDelete: boolean
 }) {
   if (selected.size === 0) return null
   return (
@@ -112,13 +114,18 @@ function BulkBar({
           {researching ? 'Researching…' : 'Research'}
         </button>
         <button onClick={onPublish}     className="text-xs px-3 py-1.5 bg-[#5E6B4A] text-white rounded-lg font-semibold hover:bg-[#4a5538] transition-colors">Publish</button>
-        <ConfirmButton
-          label="Delete"
-          confirmLabel="Yes, delete"
-          message={`Delete ${selected.size} founder${selected.size === 1 ? '' : 's'}?`}
-          onConfirm={onArchive}
-          className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
-        />
+        {/* Admin/owner only, per direct product decision — Capo staff can
+            research, write and publish, but must never be able to
+            permanently delete a founder/member's data. */}
+        {canDelete && (
+          <ConfirmButton
+            label="Delete"
+            confirmLabel="Yes, delete"
+            message={`Delete ${selected.size} founder${selected.size === 1 ? '' : 's'}?`}
+            onConfirm={onArchive}
+            className="text-xs px-3 py-1.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+          />
+        )}
       </div>
       <div className="flex gap-1">
         <button onClick={onSelectAll} className="text-[10px] text-[#9CA3AF] hover:text-white transition-colors">All</button>
@@ -853,6 +860,7 @@ export function VillageCuratedFoundersPage() {
         onPublish={() => void publishSelected(selected)}
         onArchive={() => void archiveSelected(selected)}
         onResearch={() => void runResearchSelected(selected)}
+        canDelete={canDeleteCapoData(user?.role)}
       />
       </>
       )}

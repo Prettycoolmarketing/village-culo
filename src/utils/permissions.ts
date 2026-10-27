@@ -62,6 +62,15 @@ export function canUseRewrite(role: UserRole | undefined): boolean {
   return role === 'editor' || role === 'admin' || role === 'owner'
 }
 
+/** Admin (admin/owner) only — Capo (editor) staff can reach Founders and
+ *  Email Lists but, per direct product decision, must never be able to
+ *  permanently delete a member, a founder profile, a subscriber or any
+ *  other real person's data from there. Every delete action across the
+ *  CAPO People/Email sections gates on this, not just route access. */
+export function canDeleteCapoData(role: UserRole | undefined): boolean {
+  return role === 'admin' || role === 'owner'
+}
+
 export const ROLE_LABELS: Record<UserRole, string> = {
   founder: 'Founder',
   moderator: 'Moderator',

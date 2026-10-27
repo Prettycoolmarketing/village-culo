@@ -15,6 +15,8 @@ import { toCSV, downloadCSV, splitName } from '../../../utils/emailExport'
 import { bodyTextToHtml, bodyHtmlToText } from '../../../utils/emailBody'
 import { syncUserDataFromSupabase } from '../../../lib/sync'
 import { supabase } from '../../../lib/supabase'
+import { useAuth } from '../../../contexts/AuthContext'
+import { canDeleteCapoData } from '../../../utils/permissions'
 
 export function VillageEmailExportPage() {
   const [pageTab, setPageTab] = useState('members')
@@ -309,6 +311,8 @@ function SubscribersPanel() {
   const [loading, setLoading] = useState(true)
   const [newEmail, setNewEmail] = useState('')
   const [search, setSearch] = useState('')
+  const { user } = useAuth()
+  const canDelete = canDeleteCapoData(user?.role)
 
   useEffect(() => {
     void emailSubscribersService.refresh().then(() => {
@@ -424,7 +428,9 @@ function SubscribersPanel() {
                 <p className="text-sm font-medium text-[#2D2A26]">{s.email}</p>
                 <p className="text-xs text-[#9CA3AF]">{s.source}</p>
               </div>
-              <ConfirmButton label="Remove" confirmLabel="Confirm" onConfirm={() => handleDelete(s.id)} className="text-xs text-[#9CA3AF] hover:text-red-500" />
+              {canDelete && (
+                <ConfirmButton label="Remove" confirmLabel="Confirm" onConfirm={() => handleDelete(s.id)} className="text-xs text-[#9CA3AF] hover:text-red-500" />
+              )}
             </div>
           ))}
         </div>
