@@ -876,7 +876,7 @@ function OnboardingSteps({ researched, imported, published }: { researched: bool
   )
 }
 
-function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Founder; onDone: () => void; onNewToContent: () => void }) {
+function ResumeResearchBanner({ founder, onDone }: { founder: Founder; onDone: () => void }) {
   // founder.name starts as the email's local part at signup (see joinFlow
   // -> "name: email.split('@')[0]"), e.g. "shakasdesigner" — a handle, not
   // a real name, and research run on that alone finds nothing (confirmed
@@ -980,25 +980,6 @@ function ResumeResearchBanner({ founder, onDone, onNewToContent }: { founder: Fo
               className="px-6 py-3 rounded-xl bg-[#C86A43] text-white text-sm font-bold hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
             >
               {running ? 'Researching…' : 'Confirm & run research'}
-            </button>
-            {/* Defers, doesn't skip — the research prompt is still here
-                waiting the next time they're on Profile. For a founder who
-                just wants to get into importing straight away. */}
-            <Link
-              to="/dashboard/import-content"
-              className="text-xs font-semibold text-[#6B7280] hover:text-[#2D2A26] transition-colors"
-            >
-              Import content first
-            </Link>
-            {/* For a founder with nothing existing to repurpose — new to
-                marketing, no content to research from. Skips straight to
-                filling the profile in by hand below instead of sitting on
-                a prompt asking for a link they don't have. */}
-            <button
-              onClick={onNewToContent}
-              className="text-xs font-semibold text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
-            >
-              Update manually
             </button>
           </div>
           {error && <p className="text-xs text-red-600">{error}</p>}
@@ -2094,10 +2075,6 @@ export function DashboardProfilePage() {
                 onDone={() => {
                   const fresh = getFounder(draft.id)
                   if (fresh) setDraft(fresh)
-                }}
-                onNewToContent={() => {
-                  void updateFounder({ ...draft, researchPromptSkipped: true })
-                  setDraft({ ...draft, researchPromptSkipped: true })
                 }}
               />
             )}
