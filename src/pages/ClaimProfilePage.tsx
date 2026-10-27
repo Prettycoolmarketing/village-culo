@@ -337,12 +337,9 @@ function InstantClaimForm({ founder, skipVerification, claimKey }: { founder: Re
     <main className="min-h-screen bg-background pt-20">
       <InnerContainer>
         <div className="max-w-md mx-auto py-16">
-          <h1 className="font-heading text-2xl font-semibold text-charcoal mb-2">
+          <h1 className="font-heading text-2xl font-semibold text-charcoal mb-5">
             Claim {founder.name}'s profile
           </h1>
-          <p className="font-body text-sm text-muted mb-5 leading-relaxed">
-            Create your account below and everything already on your profile (bio, stories, businesses) will be waiting, fully editable.
-          </p>
           {/* What they're actually joining, spelled out — the form below
               only asks for an email and password, which undersells what's
               on the other side of it without this. Same free-10 offer as
