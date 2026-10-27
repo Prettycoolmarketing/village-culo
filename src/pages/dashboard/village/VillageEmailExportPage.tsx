@@ -96,7 +96,31 @@ function isRealMember(f: ReturnType<typeof getFounders>[number]) {
 // and the actual login (see delete-founder-account) — not just a
 // cache-side hide.
 
+interface PendingSignup { id: string; email: string; createdAt: string; emailConfirmed: boolean }
+
 function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
+  // Only real /join signups ever land here before a founder record exists —
+  // a curated profile is created by staff, never by someone signing up, so
+  // this has nothing to show on the Curated tab.
+  const [pending, setPending] = useState<PendingSignup[]>([])
+  const [resendingId, setResendingId] = useState<string | null>(null)
+  useEffect(() => {
+    if (curatedOnly || !supabase) return
+    void supabase.rpc('get_pending_signups').then(({ data }) => {
+      if (data) setPending((data as { id: string; email: string; created_at: string; email_confirmed: boolean }[])
+        .map(r => ({ id: r.id, email: r.email, createdAt: r.created_at, emailConfirmed: r.email_confirmed })))
+    })
+  }, [curatedOnly])
+
+  async function handleResend(email: string, id: string) {
+    setResendingId(id)
+    const { data, error } = await supabase!.functions.invoke('send-transactional-email', {
+      body: { type: 'confirm-and-import-nudge', to: email },
+    })
+    setResendingId(null)
+    if (error || !data?.ok) alert('Could not send that email. Please try again.')
+  }
+
   const sorted = [...getFounders()]
     // Curated means "we curated this profile at some point" (f.curatedBy),
     // not "still unclaimed" — a founder who claims a curated profile still
@@ -133,7 +157,8 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-[#6B7280]">
-          {sorted.length} member{sorted.length === 1 ? '' : 's'}.
+          {sorted.length} member{sorted.length === 1 ? '' : 's'}
+          {pending.length > 0 ? `, ${pending.length} pending` : ''}.
         </p>
         <button
           onClick={handleExport}
@@ -160,6 +185,7 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
           { label: 'Upgraded', cls: 'bg-[#FBF1EB] text-[#C86A43]', hint: 'has purchased an Archive Unlock' },
           { label: 'Creatives', cls: 'bg-[#EBF2F8] text-[#3E6E92]', hint: 'has a real, paid Culo Creatives subscription' },
           { label: 'Creatives waitlist', cls: 'bg-[#EBF2F8] text-[#3E6E92]', hint: 'said yes to the Culo Creatives waitlist prompt on Import' },
+          { label: 'Unconfirmed', cls: 'bg-red-50 text-red-700', hint: 'signed up but hasn\'t clicked the email confirm link yet — no profile exists for them until they do' },
         ].map(item => (
           <span key={item.label} className="inline-flex items-center gap-1.5 text-xs text-[#6B7280]">
             <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${item.cls}`}>
@@ -169,6 +195,29 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
           </span>
         ))}
       </div>
+      {pending.length > 0 && (
+        <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6] mb-4">
+          {pending.map(p => (
+            <div key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <p className="text-sm font-semibold text-[#2D2A26] truncate">{p.email}</p>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${
+                  p.emailConfirmed ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
+                }`}>
+                  {p.emailConfirmed ? 'Confirming…' : 'Unconfirmed'}
+                </span>
+                <button
+                  onClick={() => void handleResend(p.email, p.id)}
+                  disabled={resendingId === p.id}
+                  className="text-[10px] font-semibold text-[#C86A43] hover:underline ml-2 disabled:opacity-40"
+                >
+                  {resendingId === p.id ? 'Sending…' : 'Resend confirm email'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {sorted.length === 0 ? (
         <p className="text-sm text-[#9CA3AF]">No members yet.</p>
       ) : (

@@ -11,7 +11,12 @@
 // Deploy: supabase functions deploy send-transactional-email --no-verify-jwt
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail, emailLayout, emailButton } from '../_shared/resend.ts'
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
+const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -30,6 +35,7 @@ type EmailBody =
   | { type: 'claim-submitted-staff'; founderName: string; founderSlug: string; requesterName: string; requesterEmail: string }
   | { type: 'partner-application-staff'; businessName: string; applicationUrl: string; pitch: string }
   | { type: 'pcm-content-ready'; to: string; founderName: string }
+  | { type: 'confirm-and-import-nudge'; to: string; name?: string }
 
 // Staff-facing notifications (new claim / new partner application) always go
 // to the fixed CAPO inbox, never a caller-supplied address — the caller is
@@ -39,8 +45,40 @@ function recipientFor(body: EmailBody): string | undefined {
   return body.to
 }
 
-function render(body: EmailBody): { subject: string; html: string } {
+// Templates below this point generate a real Supabase action link (confirm,
+// recovery, etc.) with the service role — unlike every other template here,
+// that's a privileged action (anyone able to call it could mint a sign-in
+// link for an arbitrary email), so these specifically require the caller to
+// be real, signed-in Village staff. Every other template stays open (this
+// function deploys --no-verify-jwt on purpose — see header) since they only
+// ever send a templated email to an address the caller already supplied.
+const STAFF_ONLY_TYPES: EmailBody['type'][] = ['confirm-and-import-nudge']
+
+async function requireStaff(req: Request): Promise<void> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) throw new Error('Not signed in.')
+  const asCaller = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authHeader } } })
+  const { data: { user: caller } } = await asCaller.auth.getUser()
+  if (!caller) throw new Error('Not signed in.')
+  const { data: profile } = await asCaller.from('profiles').select('role').eq('id', caller.id).maybeSingle()
+  if (!profile || !['admin', 'owner', 'editor'].includes(profile.role)) {
+    throw new Error('Only Village staff can send this email.')
+  }
+}
+
+function render(body: EmailBody, actionLink?: string): { subject: string; html: string } {
   switch (body.type) {
+    case 'confirm-and-import-nudge':
+      return {
+        subject: `Confirm your account and import your content`,
+        html: emailLayout(
+          `Finish setting up your Village profile`,
+          `<p>Hi${body.name ? ` ${body.name.split(' ')[0]}` : ''},</p>
+           <p>You're almost in — confirm your account below, then import your content and we'll republish each post as its own web article on your Village profile.</p>
+           ${emailButton('Confirm account & get started', actionLink ?? `${SITE_URL}/dashboard/login`)}
+           <p style="margin-top:20px;font-size:13px;color:#6B7280;">Once you're in, head to Import in your dashboard to bring your posts over.</p>`,
+        ),
+      }
     case 'claim-received':
       return {
         subject: `We've got your claim for ${body.founderName}'s profile`,
@@ -130,7 +168,21 @@ serve(async (req) => {
       })
     }
 
-    const { subject, html } = render(body)
+    let actionLink: string | undefined
+    if (STAFF_ONLY_TYPES.includes(body.type)) {
+      await requireStaff(req)
+      // magiclink (not 'signup') — confirms the account the same way clicking
+      // it to sign in does, without touching a password this account may
+      // already have set, and works whether or not they confirmed before.
+      const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
+      const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+        type: 'magiclink', email: to, options: { redirectTo: `${SITE_URL}/dashboard/import-content` },
+      })
+      if (linkError) throw new Error(linkError.message)
+      actionLink = linkData?.properties?.action_link
+    }
+
+    const { subject, html } = render(body, actionLink)
     const result = await sendEmail(to, subject, html)
 
     return new Response(JSON.stringify(result), {
