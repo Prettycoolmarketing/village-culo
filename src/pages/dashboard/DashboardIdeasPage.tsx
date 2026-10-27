@@ -267,7 +267,11 @@ export function DashboardIdeasPage() {
                       onDuplicate={() => { void duplicateIdea(idea.id).then(refresh) }}
                       onArchive={() => { void updateIdea({ ...idea, status: 'archived' }).then(refresh) }}
                       onRestore={() => { void updateIdea({ ...idea, status: 'published' }).then(refresh) }}
-                      onDelete={() => { void deleteIdea(idea.id).then(() => { if (selectedId === idea.id) setSelectedId(null); refresh() }) }}
+                      onDelete={() => { void deleteIdea(idea.id).then(result => {
+                        if (!result.success) { alert(result.error ?? 'Could not delete this idea. Please try again.'); return }
+                        if (selectedId === idea.id) setSelectedId(null)
+                        refresh()
+                      }) }}
                     />
                   </div>
                 </div>

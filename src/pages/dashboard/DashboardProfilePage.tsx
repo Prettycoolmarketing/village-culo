@@ -3379,7 +3379,10 @@ export function DashboardProfilePage() {
                           <ConfirmButton
                             label="Delete"
                             confirmLabel="Confirm"
-                            onConfirm={() => { void deleteStory(story.id).then(() => setImportedTick(t => t + 1)) }}
+                            onConfirm={() => { void deleteStory(story.id).then(result => {
+                              if (!result.success) { alert(result.error ?? 'Could not delete this story. Please try again.'); return }
+                              setImportedTick(t => t + 1)
+                            }) }}
                             className="text-sm font-medium text-[#9CA3AF] bg-[#F3EDE6] px-4 py-2.5 rounded-lg hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
                           />
                         </div>

@@ -251,7 +251,13 @@ serve(async (req) => {
       const now = new Date().toISOString()
       const businessSlug = `${baseSlug}-biz-${businessId.slice(0, 6)}`
 
-      await admin.from('businesses').insert({
+      // A paying customer with no founder/business record behind them — a
+      // real charge going through with nothing to show for it — is the
+      // worst version of this bug, so both inserts are checked and throw on
+      // failure rather than silently continuing to the welcome email as if
+      // the account actually existed. Throwing here returns a non-2xx to
+      // Stripe, which retries the webhook delivery automatically.
+      const { error: businessError } = await admin.from('businesses').insert({
         id: businessId, slug: businessSlug, founder_id: founderId, status: 'draft', visibility: 'private',
         data: {
           id: businessId, slug: businessSlug, name, tagline: '', description: '',
@@ -259,8 +265,9 @@ serve(async (req) => {
           offers: [], status: 'draft', featured: false, createdAt: now,
         },
       })
+      if (businessError) throw new Error(`Could not create business record: ${businessError.message}`)
 
-      await admin.from('founders').insert({
+      const { error: founderError } = await admin.from('founders').insert({
         id: founderId, user_id: userId, status: 'draft', featured: false, slug, visibility: 'private',
         data: {
           id: founderId, slug, name, bio: '', avatar: '', location: DEFAULT_LOCATION, industry: DEFAULT_INDUSTRY,
@@ -268,6 +275,7 @@ serve(async (req) => {
           userId, pcmManaged: true, pcmManagedAt: now, pcmService, pcmGateOpen: false, ...publishingGrant,
         },
       })
+      if (founderError) throw new Error(`Could not create founder record: ${founderError.message}`)
     }
 
     const clientData = {
@@ -286,9 +294,10 @@ serve(async (req) => {
       founderId,
       monthlyTarget: 30,
     }
-    await admin.from('pcm_clients').upsert({
+    const { error: clientError } = await admin.from('pcm_clients').upsert({
       id: clientData.id, founder_id: founderId, email, data: clientData,
     })
+    if (clientError) throw new Error(`Could not save client record: ${clientError.message}`)
 
     // Branded "set your password" email — a Supabase recovery link sent
     // through Resend instead of Supabase's own default-styled template.

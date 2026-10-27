@@ -408,7 +408,11 @@ export function DashboardLibraryPage() {
                       onDuplicate={() => { void duplicateLibraryItem(item.id).then(refresh) }}
                       onArchive={() => { void updateLibraryItem({ ...item, status: 'archived' }).then(refresh) }}
                       onRestore={() => { void updateLibraryItem({ ...item, status: 'coming-soon' }).then(refresh) }}
-                      onDelete={() => { void deleteLibraryItem(item.id).then(() => { if (selectedId === item.id) setSelectedId(null); refresh() }) }}
+                      onDelete={() => { void deleteLibraryItem(item.id).then(result => {
+                        if (!result.success) { alert(result.error ?? 'Could not delete this item. Please try again.'); return }
+                        if (selectedId === item.id) setSelectedId(null)
+                        refresh()
+                      }) }}
                     />
                   </div>
                 </div>

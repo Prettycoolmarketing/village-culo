@@ -168,7 +168,10 @@ export function VillageBulkImportPage({ embedded = false }: { embedded?: boolean
               <BatchRow
                 key={batch.id}
                 batch={batch}
-                onDelete={() => { void importBatchService.delete(batch.id).then(refresh) }}
+                onDelete={() => { void importBatchService.delete(batch.id).then(result => {
+                  if (!result.success) { alert(result.error ?? 'Could not delete this batch. Please try again.'); return }
+                  refresh()
+                }) }}
               />
             ))}
           </div>
