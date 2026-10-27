@@ -169,12 +169,13 @@ serve(async (req) => {
     }
 
     let actionLink: string | undefined
+    let admin: ReturnType<typeof createClient> | undefined
     if (STAFF_ONLY_TYPES.includes(body.type)) {
       await requireStaff(req)
       // magiclink (not 'signup') — confirms the account the same way clicking
       // it to sign in does, without touching a password this account may
       // already have set, and works whether or not they confirmed before.
-      const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
+      admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
       const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
         type: 'magiclink', email: to, options: { redirectTo: `${SITE_URL}/dashboard/import-content` },
       })
@@ -184,6 +185,14 @@ serve(async (req) => {
 
     const { subject, html } = render(body, actionLink)
     const result = await sendEmail(to, subject, html)
+
+    // Record a successful nudge so Culo Members can hide the resend button
+    // for a few days — never blocks the response on this, and never records
+    // a send that didn't actually go out.
+    if (result.ok && body.type === 'confirm-and-import-nudge') {
+      void (admin ?? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE))
+        .from('confirm_nudge_sends').upsert({ email: to, sent_at: new Date().toISOString() })
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },

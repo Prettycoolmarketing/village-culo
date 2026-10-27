@@ -108,6 +108,11 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
   // actually confirmed their email; this is the only place that does.
   const [unconfirmedFounders, setUnconfirmedFounders] = useState<Set<string>>(new Set())
   const [resendingId, setResendingId] = useState<string | null>(null)
+  // Emails nudged in the last 3 days — the resend button hides for that
+  // window so staff don't double-send right after each other from
+  // different sessions/devices. Lowercased, matching what the resend call
+  // and confirm_nudge_sends itself both store.
+  const [recentlySent, setRecentlySent] = useState<Set<string>>(new Set())
   useEffect(() => {
     if (curatedOnly || !supabase) return
     void supabase.rpc('get_pending_signups').then(({ data }) => {
@@ -121,6 +126,10 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
           .map(r => r.founder_id),
       ))
     })
+    const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString()
+    void supabase.from('confirm_nudge_sends').select('email').gte('sent_at', threeDaysAgo).then(({ data }) => {
+      if (data) setRecentlySent(new Set((data as { email: string }[]).map(r => r.email.toLowerCase())))
+    })
   }, [curatedOnly])
 
   async function handleResend(email: string, id: string) {
@@ -129,7 +138,8 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
       body: { type: 'confirm-and-import-nudge', to: email },
     })
     setResendingId(null)
-    if (error || !data?.ok) alert('Could not send that email. Please try again.')
+    if (error || !data?.ok) { alert('Could not send that email. Please try again.'); return }
+    setRecentlySent(prev => new Set(prev).add(email.toLowerCase()))
   }
 
   const sorted = [...getFounders()]
@@ -217,13 +227,17 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                 }`}>
                   {p.emailConfirmed ? 'Confirming…' : 'Unconfirmed'}
                 </span>
-                <button
-                  onClick={() => void handleResend(p.email, p.id)}
-                  disabled={resendingId === p.id}
-                  className="text-[10px] font-semibold text-[#C86A43] hover:underline ml-2 disabled:opacity-40"
-                >
-                  {resendingId === p.id ? 'Sending…' : 'Resend confirm email'}
-                </button>
+                {recentlySent.has(p.email.toLowerCase()) ? (
+                  <span className="text-[10px] text-[#9CA3AF] ml-2">Sent — resend in a few days</span>
+                ) : (
+                  <button
+                    onClick={() => void handleResend(p.email, p.id)}
+                    disabled={resendingId === p.id}
+                    className="text-[10px] font-semibold text-[#C86A43] hover:underline ml-2 disabled:opacity-40"
+                  >
+                    {resendingId === p.id ? 'Sending…' : 'Resend confirm email'}
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -319,13 +333,17 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                         Unconfirmed
                       </span>
                       {f.signupEmail && (
-                        <button
-                          onClick={() => void handleResend(f.signupEmail!, f.id)}
-                          disabled={resendingId === f.id}
-                          className="text-[10px] font-semibold text-[#C86A43] hover:underline disabled:opacity-40"
-                        >
-                          {resendingId === f.id ? 'Sending…' : 'Resend confirm email'}
-                        </button>
+                        recentlySent.has(f.signupEmail.toLowerCase()) ? (
+                          <span className="text-[10px] text-[#9CA3AF]">Sent — resend in a few days</span>
+                        ) : (
+                          <button
+                            onClick={() => void handleResend(f.signupEmail!, f.id)}
+                            disabled={resendingId === f.id}
+                            className="text-[10px] font-semibold text-[#C86A43] hover:underline disabled:opacity-40"
+                          >
+                            {resendingId === f.id ? 'Sending…' : 'Resend confirm email'}
+                          </button>
+                        )
                       )}
                     </>
                   )}
