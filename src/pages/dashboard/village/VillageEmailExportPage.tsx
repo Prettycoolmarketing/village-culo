@@ -331,7 +331,7 @@ function SubscribersPanel() {
     setNewEmail('')
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     // Deleting from email_subscribers alone doesn't actually guarantee
     // "never email this person again" — send-campaign builds its
     // recipient list from THREE sources (email_subscribers, canva_waitlist,
@@ -349,8 +349,17 @@ function SubscribersPanel() {
       void supabase.functions.invoke(`unsubscribe-email?email=${encodeURIComponent(email.trim().toLowerCase())}`)
         .catch(() => { /* best-effort */ })
     }
-    void emailSubscribersService.delete(id)
+    // Removing from the list optimistically but never checking whether the
+    // delete actually landed let a failed delete look identical to a
+    // successful one — the row vanished on screen but was still in the
+    // database, and came back the next time this page re-synced. Roll the
+    // row back and say so when that happens.
     setSubs(prev => prev.filter(s => s.id !== id))
+    const result = await emailSubscribersService.delete(id)
+    if (!result.success) {
+      setSubs(emailSubscribersService.getAll())
+      alert(result.error ?? 'Could not delete this subscriber. Please try again.')
+    }
   }
 
   // Newest first — raw fetch order has no real meaning, and a growing
@@ -429,7 +438,7 @@ function SubscribersPanel() {
                 <p className="text-xs text-[#9CA3AF]">{s.source}</p>
               </div>
               {canDelete && (
-                <ConfirmButton label="Remove" confirmLabel="Confirm" onConfirm={() => handleDelete(s.id)} className="text-xs text-[#9CA3AF] hover:text-red-500" />
+                <ConfirmButton label="Remove" confirmLabel="Confirm" onConfirm={() => void handleDelete(s.id)} className="text-xs text-[#9CA3AF] hover:text-red-500" />
               )}
             </div>
           ))}
