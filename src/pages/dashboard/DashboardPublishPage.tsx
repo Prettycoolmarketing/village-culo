@@ -1065,14 +1065,19 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
   const lessons   = draft.lessonsOverride   ?? intel.lessons
   const questions = draft.questionsOverride ?? [...intel.geoQuestions, ...intel.searchQuestions]
 
-  const suggestedFounders  = getFounders().filter(f => intel.relatedFounderIds.includes(f.id) && !draft.excludedFounderIds.includes(f.id))
   const suggestedBusinesses = getBusinesses().filter(b => intel.relatedBusinessIds.includes(b.id) && !draft.excludedBusinessIds.includes(b.id))
-  const extraFounders  = getFounders().filter(f => draft.extraFounderIds.includes(f.id))
   const extraBusinesses = getBusinesses().filter(b => draft.extraBusinessIds.includes(b.id))
+  // Scoped to this founder's own content only — findRelatedContentIds
+  // matches by topic across every founder's content site-wide, which
+  // surfaced other founders' stories here with no founder-identity
+  // boundary at all (not even the "connect/remove" framing Related
+  // Founders had). Per the same product decision as removing Related
+  // Founders above, this founder should only ever see their own content.
   const relatedContentItems = intel.relatedContentIds
     .filter(id => !draft.excludedContentIds.includes(id))
     .map(id => getStories().find(s => s.id === id) ?? importedContentService.get(id))
     .filter((x): x is NonNullable<typeof x> => !!x)
+    .filter(x => x.founderId === draft.founderId)
 
   function toggleTopic(topic: Topic) {
     const has = draft.topics.some(t => t.id === topic.id)
@@ -1092,7 +1097,6 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
 
   const intelligenceRows = [
     { label: 'Ideas detected',      count: impact.newIdeas + impact.strengthenedIdeas },
-    { label: 'Founders connected',  count: suggestedFounders.length + extraFounders.length },
     { label: 'Businesses connected', count: suggestedBusinesses.length + extraBusinesses.length },
     { label: 'Related content',     count: relatedContentItems.length },
     { label: 'Topics added',        count: draft.topics.length },
@@ -1291,36 +1295,10 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
         </div>
       </BuilderCard>
 
-      {/* ── 7 & 8. Related founders / businesses ─────────────────────────── */}
-      <BuilderCard title="Related Founders" subtitle="Detected from your writing. Uncheck to exclude, or connect someone manually." defaultOpen={false}
-        badge={<span className="text-[10px] text-[#9CA3AF]">{suggestedFounders.length + extraFounders.length}</span>}>
-        <div className="flex flex-col gap-2">
-          {[...suggestedFounders, ...extraFounders].map(f => (
-            <div key={f.id} className="flex items-center gap-2 text-sm">
-              <img src={f.avatar} alt="" className="w-6 h-6 rounded-full object-cover bg-[#F3EDE6] shrink-0" />
-              <span className="flex-1 text-[#2D2A26]">{f.name}</span>
-              <button
-                onClick={() => draft.extraFounderIds.includes(f.id)
-                  ? onChange({ extraFounderIds: draft.extraFounderIds.filter(id => id !== f.id) })
-                  : onChange({ excludedFounderIds: [...draft.excludedFounderIds, f.id] })}
-                className="text-xs text-[#9CA3AF] hover:text-red-500"
-              >Remove</button>
-            </div>
-          ))}
-          {suggestedFounders.length + extraFounders.length === 0 && <p className="text-xs text-[#9CA3AF]">None detected yet. Mention another founder by name in your writing.</p>}
-          <select
-            value=""
-            onChange={e => e.target.value && onChange({ extraFounderIds: [...draft.extraFounderIds, e.target.value] })}
-            className={inp + ' mt-1'}
-          >
-            <option value="">+ Connect a founder…</option>
-            {getFounders().filter(f => f.id !== draft.founderId && !suggestedFounders.some(s => s.id === f.id) && !extraFounders.some(s => s.id === f.id)).map(f => (
-              <option key={f.id} value={f.id}>{f.name}</option>
-            ))}
-          </select>
-        </div>
-      </BuilderCard>
-
+      {/* ── 8. Related businesses ─────────────────────────────────────────
+          Related Founders used to show here too — removed per direct
+          product decision: founders shouldn't see each other's names while
+          drafting a story, even just as a "connect them" suggestion. */}
       <BuilderCard title="Related Businesses" subtitle="Detected from your writing. Uncheck to exclude, or connect one manually." defaultOpen={false}
         badge={<span className="text-[10px] text-[#9CA3AF]">{suggestedBusinesses.length + extraBusinesses.length}</span>}>
         <div className="flex flex-col gap-2">
@@ -1471,8 +1449,12 @@ function StoryBuilderStep({ draft, onChange, onBack, onNext }: {
       {/* ── 12. SEO Preview ──────────────────────────────────────────────── */}
       <BuilderCard title="SEO Preview" subtitle="Read-only: generated automatically from the content above." defaultOpen={false}>
         <div className="space-y-2 text-xs">
-          <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Title</p><p className="text-[#2D2A26] font-medium">{draft.title || 'Untitled'}</p></div>
-          <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Description</p><p className="text-[#2D2A26]">{draft.summary || '—'}</p></div>
+          <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Title</p><p className="text-[#2D2A26] font-medium">{deriveSeoTitle(draft.title)}</p></div>
+          {/* Same deriveSeoDescription() the live page actually uses — showing
+              the raw, often-blank summary field here made this preview look
+              broken even when the real published page would show a real,
+              non-empty description derived from the blog body. */}
+          <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Description</p><p className="text-[#2D2A26]">{deriveSeoDescription(draft.summary || fallbackSummary(draft.blog), draft.blog) || '—'}</p></div>
           <div><p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Canonical topic</p><p className="text-[#2D2A26]">{draft.topics[0]?.name ?? intel.canonicalTopics[0] ?? '—'}</p></div>
           <div>
             <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wide">Keywords</p>
@@ -1531,7 +1513,6 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
 }) {
   const founder = getFounders().find(f => f.id === draft.founderId)
   const business = getBusinesses().find(b => b.id === draft.businessId)
-  const [founderSearch, setFounderSearch] = useState('')
   const [businessSearch, setBusinessSearch] = useState('')
 
   const intel = useMemo(() => {
@@ -1543,16 +1524,16 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
   const lessons   = draft.lessonsOverride   ?? intel.lessons
   const questions = draft.questionsOverride ?? [...intel.geoQuestions, ...intel.searchQuestions]
 
-  const suggestedFounders   = getFounders().filter(f => intel.relatedFounderIds.includes(f.id) && !draft.excludedFounderIds.includes(f.id))
   const suggestedBusinesses = getBusinesses().filter(b => intel.relatedBusinessIds.includes(b.id) && !draft.excludedBusinessIds.includes(b.id))
-  const extraFounders   = getFounders().filter(f => draft.extraFounderIds.includes(f.id))
   const extraBusinesses = getBusinesses().filter(b => draft.extraBusinessIds.includes(b.id))
+  // Scoped to this founder's own content only — see the matching comment on
+  // StoryBuilderStep's relatedContentItems above.
   const relatedContentItems = intel.relatedContentIds
     .filter(id => !draft.excludedContentIds.includes(id))
     .map(id => getStories().find(s => s.id === id) ?? importedContentService.get(id))
     .filter((x): x is NonNullable<typeof x> => !!x)
+    .filter(x => x.founderId === draft.founderId)
 
-  const allFounders  = [...suggestedFounders, ...extraFounders]
   const allBusinesses = business ? [business, ...suggestedBusinesses, ...extraBusinesses] : [...suggestedBusinesses, ...extraBusinesses]
 
   return (
@@ -1568,9 +1549,9 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
           <div>
             <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1.5">Mentioned in this story</p>
             <p className="text-[11px] text-[#9CA3AF] mb-2">
-              {allBusinesses.length > 0 || allFounders.length > 0
+              {allBusinesses.length > 0
                 ? 'Found by name in your writing. Link them to this story, or remove any that shouldn\'t be here.'
-                : 'Nothing found by name yet — type below to link a founder or business anyway.'}
+                : 'Nothing found by name yet — type below to link a business anyway.'}
             </p>
           </div>
           {allBusinesses.map(b => (
@@ -1587,19 +1568,6 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
               )}
             </div>
           ))}
-          {allFounders.map(f => (
-            <div key={f.id} className="flex items-center gap-2.5 text-sm">
-              <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-[#5E6B4A]">
-                <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-              </div>
-              <span className="flex-1 text-[#2D2A26]">Connect to {f.name}</span>
-              <button onClick={() => draft.extraFounderIds.includes(f.id)
-                ? onChange({ extraFounderIds: draft.extraFounderIds.filter(id => id !== f.id) })
-                : onChange({ excludedFounderIds: [...draft.excludedFounderIds, f.id] })}
-                className="text-xs text-[#9CA3AF] hover:text-red-500">Remove</button>
-            </div>
-          ))}
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             <div className="relative">
               <input
@@ -1625,34 +1593,6 @@ function PreviewStep({ draft, onChange, onBack, onPublish, publishing, publishEr
                     ))}
                   {getBusinesses().filter(b => b.name.toLowerCase().includes(businessSearch.trim().toLowerCase()) && !allBusinesses.some(x => x.id === b.id)).length === 0 && (
                     <p className="px-3 py-2 text-xs text-[#9CA3AF]">No matching business found.</p>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="relative">
-              <input
-                type="text"
-                value={founderSearch}
-                onChange={e => setFounderSearch(e.target.value)}
-                placeholder="Type a founder name to connect…"
-                className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-[#E8E4DD] focus:outline-none focus:border-[#C86A43]"
-              />
-              {founderSearch.trim().length > 0 && (
-                <div className="absolute z-10 mt-1 w-full bg-white border border-[#E8E4DD] rounded-lg shadow-md max-h-40 overflow-y-auto">
-                  {getFounders()
-                    .filter(f => f.name.toLowerCase().includes(founderSearch.trim().toLowerCase()) && !allFounders.some(x => x.id === f.id))
-                    .slice(0, 6)
-                    .map(f => (
-                      <button
-                        key={f.id}
-                        onClick={() => { onChange({ extraFounderIds: [...draft.extraFounderIds, f.id] }); setFounderSearch('') }}
-                        className="block w-full text-left px-3 py-2 text-xs text-[#2D2A26] hover:bg-[#F8F5F0]"
-                      >
-                        {f.name}
-                      </button>
-                    ))}
-                  {getFounders().filter(f => f.name.toLowerCase().includes(founderSearch.trim().toLowerCase()) && !allFounders.some(x => x.id === f.id)).length === 0 && (
-                    <p className="px-3 py-2 text-xs text-[#9CA3AF]">No matching founder found.</p>
                   )}
                 </div>
               )}
