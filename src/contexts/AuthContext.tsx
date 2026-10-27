@@ -65,11 +65,22 @@ async function toAuthUser(supaUser: User): Promise<AuthUser> {
 
   if (!supabase) return base
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, founder_id, suspended')
-    .eq('id', supaUser.id)
-    .maybeSingle()
+  // Confirmed real, live, serious: this had no timeout and nothing
+  // downstream caught a hang here — the one `.then()` callback that
+  // awaits this (AuthProvider's session restore, below) has setLoading(false)
+  // sitting right after it with no finally/catch, so a stalled query (a
+  // network blip, RLS slowness, anything short of a clean fast failure)
+  // left `loading` stuck true forever. Navbar's entire CTA area, "Log in"
+  // included, is gated on `!loading` — stuck loading means no login
+  // button ever appears again, not even on a fresh reload, since this
+  // runs on every single page load for every user. A few real signups
+  // hit exactly this. Falls back to `base` (role/founderId from the
+  // session's own metadata) rather than hang indefinitely.
+  const profile = await Promise.race([
+    supabase.from('profiles').select('role, founder_id, suspended').eq('id', supaUser.id).maybeSingle()
+      .then(({ data }) => data),
+    new Promise<null>(resolve => setTimeout(() => resolve(null), 8000)),
+  ]).catch(() => null)
 
   if (!profile) return base
 
@@ -96,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      try {
       if (session?.user) {
         const restoredUser = await toAuthUser(session.user)
         setUser(restoredUser)
@@ -130,7 +142,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           void syncUserDataFromSupabase(STAFF_ROLES.includes(restoredUser.role))
         })
       }
-      setLoading(false)
+      } catch {
+        // toAuthUser already has its own timeout/fallback now, but this
+        // belt-and-suspenders catch means literally nothing in here can
+        // skip setLoading(false) below — the one thing that must always
+        // run no matter what, since the Navbar's login button (and
+        // everything else gated on `loading`) depends on it.
+      } finally {
+        setLoading(false)
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
