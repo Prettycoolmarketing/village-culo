@@ -328,28 +328,51 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
             const publishedCount = getStories({ founderId: f.id }).filter(s => s.status === 'published' || s.status === 'featured').length
             return (
               <div key={f.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.signupEmail ?? f.name}</p>
-                  {onCreativesWaitlist && (
-                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#EBF2F8] text-[#3E6E92]">
-                      Creatives waitlist
-                    </span>
-                  )}
-                  {publishedCount > 0 && (
-                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">
-                      Published {publishedCount}
-                    </span>
-                  )}
-                  {importedCount > 0 && (
-                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">
-                      Imported {importedCount}
-                    </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="text-sm font-semibold text-[#2D2A26] truncate">{f.signupEmail ?? f.name}</p>
+                    {onCreativesWaitlist && (
+                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#EBF2F8] text-[#3E6E92]">
+                        Creatives waitlist
+                      </span>
+                    )}
+                    {publishedCount > 0 && (
+                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">
+                        Published {publishedCount}
+                      </span>
+                    )}
+                    {importedCount > 0 && (
+                      <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">
+                        Imported {importedCount}
+                      </span>
+                    )}
+                  </div>
+                  {/* Curated tab only — staff reviewing/outreach-ing a
+                      curated batch need to see at a glance what each
+                      profile actually says without opening it. Not shown
+                      on the plain Members tab, which is already dense with
+                      real self-serve signups. */}
+                  {curatedOnly && f.bio?.trim() && (
+                    <p className="text-xs text-[#9CA3AF] mt-0.5 line-clamp-1">{f.bio.trim()}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${memberStatus.cls}`}>
-                    {memberStatus.label}
-                  </span>
+                  {/* Unclaimed and the publish-status tag used to show side
+                      by side (e.g. "Published" + "Unclaimed" together) —
+                      per direct request, collapsed into one: unclaimed is
+                      the more important fact to lead with when it's true,
+                      and once claimed, memberStatus (Published/Draft/etc)
+                      is the real status to show instead of a redundant
+                      second tag. */}
+                  {!isClaimed ? (
+                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">
+                      Unclaimed
+                    </span>
+                  ) : (
+                    <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${memberStatus.cls}`}>
+                      {memberStatus.label}
+                    </span>
+                  )}
                   {/* A founder record existing says nothing about whether
                       its owner ever actually confirmed their email — mainly
                       hits accounts staff backfilled a founder record for by
@@ -373,15 +396,6 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                         )
                       )}
                     </>
-                  )}
-                  {/* Only the exception is worth a tag here — claimed is
-                      the normal case for almost every row, same reasoning
-                      as Upgraded/Creatives/Canva below only showing when
-                      true. */}
-                  {!isClaimed && (
-                    <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">
-                      Unclaimed
-                    </span>
                   )}
                   {isUpgraded && (
                     <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-[#FBF1EB] text-[#C86A43]">
