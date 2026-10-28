@@ -55,10 +55,21 @@ const SYNCED_TABLES: Array<{ table: string; cacheKey: string }> = [
 // exists. Only CAPO staff (is_village_admin()) read the raw table; every
 // other signed-in session reads founders_safe, same as an anonymous
 // visitor (see publicSync.ts and migration 042_founders_safe_view.sql).
+// Same fix as publicSync.ts's runPublicSync, same reason: pullVisibleRows
+// only returns early on a clean Supabase-reported error, it does nothing
+// about the underlying fetch throwing outright (a real network blip). An
+// uncaught throw from any ONE of these ~31 tables rejected the whole
+// Promise.all — and since this whole function is called fire-and-forget
+// (`void syncUserDataFromSupabase(...)` in AuthContext, nothing awaits or
+// retries it), that rejection just vanished as an unhandled promise
+// rejection, leaving every single table — founders included — stuck on
+// whatever was cached from a previous, smaller/older sync. Confirmed
+// real: a CAPO session reading "8 members" when the database has 20.
+// Catching per-table means one flaky request loses just that table.
 export async function syncUserDataFromSupabase(isCapoStaff: boolean): Promise<void> {
   if (!supabase) return
   await Promise.all([
-    pullVisibleRows(isCapoStaff ? 'founders' : 'founders_safe', 'founders'),
-    ...SYNCED_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey)),
+    pullVisibleRows(isCapoStaff ? 'founders' : 'founders_safe', 'founders').catch(() => {}),
+    ...SYNCED_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey).catch(() => {})),
   ])
 }
