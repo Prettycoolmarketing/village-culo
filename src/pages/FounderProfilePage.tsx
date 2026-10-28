@@ -168,43 +168,6 @@ function FounderNotFound({ slug }: { slug: string }) {
   )
 }
 
-// ─── Related Founders ────────────────────────────────────────────────────────────
-
-function getRelatedFounders(founderId: string, industryId: string, locationId: string, topicIds: string[]) {
-  return getFounders({ publicOnly: true })
-    // An unclaimed curated founder isn't a real, verified account yet — a
-    // topic/industry overlap with one reads as a genuine connection to
-    // visitors and staff alike, when it's really just an artifact of two
-    // unrelated people happening to share a category.
-    .filter(f => !(f.profileStatus === 'village-curated' && !f.userId))
-    .filter(f => f.id !== founderId)
-    // Shakas's own account (the platform's own meta/demo profile) tags
-    // itself with broad, generic topics ("marketing," "creative") shared
-    // by almost every founder — never a real connection, just noise.
-    // Excluded from appearing here on anyone else's profile; her own
-    // profile is unaffected since founderId !== her id only applies to
-    // everyone ELSE's page.
-    .filter(f => f.slug !== 'shakas-designer' || founderId === f.id)
-    .map(f => {
-      let score = 0
-      // 'unset' is the placeholder for "never filled this in" (see
-      // UNSET_INDUSTRY/UNSET_LOCATION) — two founders who both simply
-      // haven't set an industry/location aren't actually related, they
-      // just share the same empty placeholder. Confirmed real: Lydia
-      // (industry/location both unset) was showing as "related to" Shakas
-      // purely because Shakas's were unset too. Only count a real,
-      // specific match, never two placeholders agreeing with each other.
-      if (industryId !== 'unset' && f.industry.id === industryId)  score += 3
-      if (locationId !== 'unset' && f.location.id === locationId)  score += 2
-      if (f.topics.some(t => topicIds.includes(t.id)))          score += 1
-      return { founder: f, score }
-    })
-    .filter(({ score }) => score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map(({ founder }) => founder)
-}
-
 // ─── Founder Profile ─────────────────────────────────────────────────────────────
 
 const VISITED_FOUNDERS_KEY = 'culo_v1_visited_founders'
@@ -339,9 +302,6 @@ export function FounderProfilePage() {
   // founders could edit, so answering FAQs in the dashboard never showed up
   // here at all.
   const faqs              = (founder.faqs ?? []).filter(f => f.answer.trim().length > 0)
-  const relatedFounders  = getRelatedFounders(
-    founder.id, founder.industry.id, founder.location.id, founder.topics.map(t => t.id)
-  )
 
   const approvedRecs    = recommendationService.getAll({ founderId: founder.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
@@ -536,13 +496,6 @@ export function FounderProfilePage() {
       </div>
     </section>
   )
-
-  // Intel-driven related founders (supplement existing scoring-based related founders)
-  const intelRelatedFounders = aggregatedIntel
-    ? aggregatedIntel.relatedFounderIds
-        .map(id => getFounders({ publicOnly: true }).find(f => f.id === id))
-        .filter((f): f is NonNullable<typeof f> => !!f && f.id !== founder.id && !(f.profileStatus === 'village-curated' && !f.userId))
-    : []
 
   // Intel-driven related businesses — exclude the founder's own (already
   // shown above in "Connect with {founder}"), otherwise a business the
@@ -1152,73 +1105,6 @@ export function FounderProfilePage() {
                       )
                     })}
                   </div>
-                </section>
-              )}
-
-              {/* Related founders — skipped for a curated profile nobody's
-                  claimed yet. This is built from shared industry/location/
-                  topic overlap, which reads as a real, earned connection for
-                  a founder who's actually published here — for a profile
-                  that's just been imported from a spreadsheet, "related to"
-                  a stranger sharing their industry tag isn't a real
-                  relationship yet, just noise next to a profile that isn't
-                  really live. */}
-              {!isUnclaimedCurated && (relatedFounders.length > 0 || intelRelatedFounders.length > 0) && (
-                <section aria-labelledby="related-founders-heading">
-                  <h2 id="related-founders-heading" className="font-heading text-lg font-semibold text-charcoal mb-4">
-                    Related Founders
-                  </h2>
-                  <div className="flex flex-col gap-3" role="list">
-                    {[
-                      ...relatedFounders,
-                      ...intelRelatedFounders.filter(f => !relatedFounders.some(r => r.id === f.id)),
-                    ].slice(0, 5).map(related => {
-                      const relatedBiz = getBusiness(related.businessId)
-                      const isIntelOnly = !relatedFounders.some(r => r.id === related.id)
-                      const sharedLocation = related.location.id === founder.location.id
-                      const sharedIndustry = related.industry.id === founder.industry.id
-                      const sharedLabel = isIntelOnly
-                        ? 'Similar topics'
-                        : sharedIndustry
-                          ? related.industry.name
-                          : sharedLocation
-                            ? related.location.name
-                            : related.topics.find(t => founder.topics.some(ft => ft.id === t.id))?.name ?? ''
-                      return (
-                        <div key={related.id} role="listitem">
-                          <Link
-                            to={`/founders/${related.slug}`}
-                            className="flex items-center gap-3 bg-surface rounded-xl p-3 border border-border hover:border-primary hover:shadow-sm transition-all group"
-                            aria-label={`View ${related.name}'s profile`}
-                          >
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full overflow-hidden bg-primary/10 ring-2 ring-border">
-                              {related.avatar && !related.avatar.includes('/placeholders/') ? (
-                                <img src={related.avatar} alt="" className="w-full h-full object-cover object-top" loading="lazy" />
-                              ) : (
-                                <span className="flex items-center justify-center h-full text-primary font-heading text-sm font-semibold">
-                                  {related.name[0]}
-                                </span>
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-body text-sm font-semibold text-charcoal group-hover:text-primary transition-colors truncate">
-                                {related.name}
-                              </p>
-                              <p className="font-body text-xs text-muted truncate">
-                                {relatedBiz?.name ?? related.industry.name}
-                              </p>
-                            </div>
-                            {sharedLabel && (
-                              <Badge label={sharedLabel} variant="neutral" className="flex-shrink-0 text-xs" />
-                            )}
-                          </Link>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <Link to="/founders" className="mt-4 block text-center text-sm font-medium text-primary hover:text-[#b05a35] transition-colors">
-                    Browse all founders →
-                  </Link>
                 </section>
               )}
 

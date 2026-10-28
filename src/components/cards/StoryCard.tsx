@@ -52,15 +52,23 @@ export function StoryCard({
         className={`group relative bg-surface rounded-2xl overflow-hidden shadow-card hover:shadow-md transition-all duration-300 flex flex-col ${className}`}
         aria-label={`Story: ${story.title}`}
       >
-        {/* Cover image — 9:16 for an actual Reel, 16:9 for a YouTube video,
-            matching whichever the source really is. Plain rectangle, same
-            rounding as the rest of the card — per direct request, back to
-            how it was before the arched top-corner treatment. */}
+        {/* Always 16:9, regardless of this one story's real source
+            orientation — 'vertical' is specifically the multi-card grid
+            variant (see FounderProfilePage: 'horizontal' is used instead
+            the moment there's only one story to show), so two+ cards
+            sitting side by side need one consistent shape. Letting each
+            card pick 16:9 vs 9:16 off its own content type produced
+            mismatched-height cards in the same row — confirmed real on
+            Ebony Rose's page (one YouTube-sourced piece, one podcast-
+            sourced piece, different heights next to each other). Plain
+            rectangle, same rounding as the rest of the card — per direct
+            request, back to how it was before the arched top-corner
+            treatment. */}
         <Link
           to={storyUrl}
           className="block relative"
           aria-label={`Read ${story.title}`}
-          style={{ aspectRatio: isLandscapeCover ? '16/9' : '9/16' }}
+          style={{ aspectRatio: '16/9' }}
           tabIndex={0}
         >
           <CoverImage
