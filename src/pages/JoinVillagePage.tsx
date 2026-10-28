@@ -164,10 +164,10 @@ export function JoinVillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Join The Culo Village
+                {isCanva ? 'Join The Culo Village' : 'Free to join'}
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
-                {isCanva ? <>Edit Your Raw Footage<br />Into Social Media Posts<br />In Canva</> : <>Structure Your Posts<br />Into Web Articles<br />For Discovery</>}
+                {isCanva ? <>Edit Your Raw Footage<br />Into Social Media Posts<br />In Canva</> : <>Turn everything you've already created into a body of work people can discover.</>}
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
                 {isCanva ? (
@@ -175,10 +175,8 @@ export function JoinVillagePage() {
                   and Culo Creatives, coming soon to Canva, helps founders edit their raw footage into social
                   media formatted content.</>
                 ) : (
-                  <>Everything you've already posted is disappearing the moment the feed moves on — buried,
-                  unsearchable, impossible for someone to find later even though it's still real, true and
-                  valuable. The Culo Village pulls your existing posts, videos and podcasts together into a
-                  permanent, searchable body of work connected back to your name.</>
+                  <>The Culo Village connects your podcasts, videos, social posts, articles, businesses and expertise
+                  into one public founder profile built for discovery across people, search engines and AI.</>
                 )}
               </p>
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
@@ -290,14 +288,19 @@ export function JoinVillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
             <div>
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
-                Free to join
+                What is The Culo Village?
               </p>
               <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
                 Turn everything you've already created into a body of work people can discover.
               </h2>
               <p className="font-body text-base text-muted leading-relaxed mb-4">
-                The Culo Village connects your podcasts, videos, social posts, articles, businesses and expertise
-                into one public founder profile built for discovery across people, search engines and AI.
+                The Culo Village is a founder publishing network that brings together the content, ideas,
+                businesses and expertise you've already shared across the internet.
+              </p>
+              <p className="font-body text-base text-muted leading-relaxed mb-4">
+                Republish your social posts, podcast appearances, videos, articles and other existing content as
+                individual web stories connected to your founder profile, creating one growing body of work
+                designed for discovery across people, search engines and AI.
               </p>
               <p className="font-body text-base text-muted leading-relaxed mb-8">
                 Membership is free, forever, and your first 10 published stories are included. Culo Creatives,
