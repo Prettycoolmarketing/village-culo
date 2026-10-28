@@ -49,16 +49,13 @@ export function StoryCard({
   if (variant === 'vertical') {
     return (
       <article
-        className={`group relative bg-surface rounded-b-2xl overflow-hidden shadow-card hover:shadow-md transition-all duration-300 flex flex-col ${className}`}
-        style={{ borderTopLeftRadius: '50% 48px', borderTopRightRadius: '50% 48px' }}
+        className={`group relative bg-surface rounded-2xl overflow-hidden shadow-card hover:shadow-md transition-all duration-300 flex flex-col ${className}`}
         aria-label={`Story: ${story.title}`}
       >
         {/* Cover image — 9:16 for an actual Reel, 16:9 for a YouTube video,
-            matching whichever the source really is. The arch lives on this
-            outer article (which already clips everything via
-            overflow-hidden), not on this inner link — putting it on a nested
-            element left a gap where the article's own square corner showed
-            through behind the curve. One clip boundary, no seam. */}
+            matching whichever the source really is. Plain rectangle, same
+            rounding as the rest of the card — per direct request, back to
+            how it was before the arched top-corner treatment. */}
         <Link
           to={storyUrl}
           className="block relative"
@@ -76,12 +73,7 @@ export function StoryCard({
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent" aria-hidden="true" />
 
-          {/* Featured badge — sits with Location, bottom-left, not top-right.
-              The card's arch (borderTopLeftRadius/borderTopRightRadius: 50%
-              48px above) curves both top corners inward, so a badge pinned
-              at top-3 right-3 sat right in that curve and got visually
-              clipped by it. The bottom corners are square, nothing to
-              clip. */}
+          {/* Location badge — bottom-left, over the gradient. */}
           <div className="absolute bottom-3 left-3 flex flex-col items-start gap-1.5">
             <span className="inline-flex items-center gap-1 text-xs text-white/90 font-medium">
               <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
