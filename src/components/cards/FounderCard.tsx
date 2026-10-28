@@ -188,7 +188,7 @@ export function FounderCard({ founder, business, variant = 'default', className 
               <Avatar
                 src={founder.avatar}
                 alt={founder.name}
-                size="lg"
+                size="md"
                 className="ring-2 ring-border"
               />
             </Link>
