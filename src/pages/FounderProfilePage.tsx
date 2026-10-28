@@ -391,7 +391,7 @@ export function FounderProfilePage() {
   // get pulled out of "Stories by X" entirely and shown alongside the
   // imported "Articles Written by CULO" instead, regardless of the
   // founder's overall claimed status.
-  const allFounderStories = getStories({ founderId: founder.id, publicOnly: true })
+  const allFounderStories = getStories({ founderId: founder.id, publicOnly: true, includeUnclaimedCurated: true })
   // An unclaimed founder (no userId at all) cannot possibly have personally
   // written or edited anything themselves, regardless of whether the
   // writtenByCulo flag happens to be set — confirmed live as a real bug: a

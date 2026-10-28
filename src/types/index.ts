@@ -967,6 +967,14 @@ export interface StoryFilter {
   featured?: boolean
   status?: Status
   publicOnly?: boolean
+  // publicOnly alone also excludes an unclaimed curated founder's own
+  // stories — right for a general cross-founder listing (/stories, /join),
+  // where a thin auto-published piece looks out of place next to real
+  // founders' own photos, but wrong on that founder's OWN profile page,
+  // where showing exactly these stories (From Around the Web) is the
+  // entire point. Confirmed real: Rohit Bhargava's 4 published articles
+  // vanished from his own page once this exclusion landed.
+  includeUnclaimedCurated?: boolean
   seriesId?: string
   limit?: number
 }

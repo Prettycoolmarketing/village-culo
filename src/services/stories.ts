@@ -44,6 +44,7 @@ export function getStories(filter?: StoryFilter): Story[] {
   // so the article itself stays reachable either way.
   if (filter.publicOnly) result = result.filter(s => {
     if (s.status !== 'published' && s.status !== 'featured') return false
+    if (filter.includeUnclaimedCurated) return true
     const f = getFounder(s.founderId)
     return !f || f.profileStatus !== 'village-curated' || !!f.userId
   })

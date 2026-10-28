@@ -388,7 +388,7 @@ export function StoryDetailPage() {
   // Other published stories by the same founder — a reader who liked this one
   // is more likely to want more from this founder than an "Ideas" module that
   // usually has nothing in it yet.
-  const otherStoriesByFounder = getStories({ founderId: story.founderId, publicOnly: true })
+  const otherStoriesByFounder = getStories({ founderId: story.founderId, publicOnly: true, includeUnclaimedCurated: true })
     .filter(s => s.id !== story.id && notHiddenFromRelated(s))
     .slice(0, 4)
 
