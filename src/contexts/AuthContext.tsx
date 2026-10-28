@@ -52,8 +52,21 @@ const DEV_ADMIN_EMAILS = (import.meta.env.VITE_DEV_ADMIN_EMAILS ?? '')
  * cannot be self-edited by the signed-in user. user_metadata is read only as a
  * fallback (e.g. the row hasn't synced yet) and is never trusted for role alone.
  */
-async function toAuthUser(supaUser: User): Promise<AuthUser> {
+type Profile = { role: string; founder_id: string | null; suspended: boolean | null }
+
+async function toAuthUser(supaUser: User, onLateProfile?: (user: AuthUser) => void): Promise<AuthUser> {
   const meta = supaUser.user_metadata ?? {}
+  // Nothing in this codebase ever writes `role` into Supabase user_metadata
+  // (confirmed: no edge function, no client code, anywhere) — so this
+  // fallback is in practice always 'founder' for every staff member, every
+  // single time the profiles fetch below times out. That turned the
+  // timeout fix (see its own comment) into a different real bug: any CAPO
+  // staff member's session silently downgrades to 'founder' — "Staff
+  // access required" on a real admin/owner account — whenever that one
+  // query is merely slow, not broken, and stayed downgraded for the rest
+  // of the session since nothing ever retried it. onLateProfile below is
+  // the actual fix for that; this fallback only covers the (rare) case
+  // where the profiles row genuinely can't be reached at all.
   const fallbackRole: UserRole = STAFF_ROLES.includes(meta.role) ? meta.role : 'founder'
 
   const base: AuthUser = {
@@ -65,6 +78,15 @@ async function toAuthUser(supaUser: User): Promise<AuthUser> {
 
   if (!supabase) return base
 
+  function toFinal(profile: Profile): AuthUser {
+    return {
+      ...base,
+      role: (['founder', ...STAFF_ROLES].includes(profile.role) ? profile.role : base.role) as UserRole,
+      founderId: profile.founder_id ?? base.founderId,
+      suspended: profile.suspended ?? false,
+    }
+  }
+
   // Confirmed real, live, serious: this had no timeout and nothing
   // downstream caught a hang here — the one `.then()` callback that
   // awaits this (AuthProvider's session restore, below) has setLoading(false)
@@ -75,21 +97,34 @@ async function toAuthUser(supaUser: User): Promise<AuthUser> {
   // button ever appears again, not even on a fresh reload, since this
   // runs on every single page load for every user. A few real signups
   // hit exactly this. Falls back to `base` (role/founderId from the
-  // session's own metadata) rather than hang indefinitely.
+  // session's own metadata) rather than hang indefinitely — kept
+  // separate from the actual query promise (profileFetch) so a slow-but-
+  // real response can still be used once it lands, see below.
+  const profileFetch: Promise<Profile | null> = (async () => {
+    try {
+      const { data } = await supabase.from('profiles').select('role, founder_id, suspended').eq('id', supaUser.id).maybeSingle()
+      return data as Profile | null
+    } catch {
+      return null
+    }
+  })()
+
   const profile = await Promise.race([
-    supabase.from('profiles').select('role, founder_id, suspended').eq('id', supaUser.id).maybeSingle()
-      .then(({ data }) => data),
+    profileFetch,
     new Promise<null>(resolve => setTimeout(() => resolve(null), 8000)),
-  ]).catch(() => null)
+  ])
 
-  if (!profile) return base
+  if (profile) return toFinal(profile)
 
-  return {
-    ...base,
-    role: (['founder', ...STAFF_ROLES].includes(profile.role) ? profile.role : base.role) as UserRole,
-    founderId: profile.founder_id ?? base.founderId,
-    suspended: profile.suspended ?? false,
+  // Timed out, not necessarily failed — the real query may still land a
+  // few seconds later. When it does, correct the session's role in place
+  // instead of leaving it stuck on the 'founder' guess for the rest of
+  // this session. A no-op when the caller doesn't pass one (e.g. nothing
+  // downstream can act on a late correction) or when it never resolves.
+  if (onLateProfile) {
+    void profileFetch.then(late => { if (late) onLateProfile(toFinal(late)) })
   }
+  return base
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -109,7 +144,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       try {
       if (session?.user) {
-        const restoredUser = await toAuthUser(session.user)
+        const sessionUserId = session.user.id
+        const restoredUser = await toAuthUser(session.user, lateUser => {
+          // Only apply if this is still the signed-in session — a late
+          // profile response landing after sign-out/switching accounts
+          // must never silently reinstate the old user.
+          setUser(current => (current?.id === sessionUserId ? lateUser : current))
+        })
         setUser(restoredUser)
         // onAuthStateChange's SIGNED_IN branch doesn't fire for a session
         // restored from storage on a plain reload — without this, a CAPO
@@ -155,7 +196,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       void (async () => {
-        const nextUser = session?.user ? await toAuthUser(session.user) : null
+        const sessionUserId = session?.user?.id
+        const nextUser = session?.user
+          ? await toAuthUser(session.user, lateUser => {
+              setUser(current => (current?.id === sessionUserId ? lateUser : current))
+            })
+          : null
         setUser(nextUser)
         if (event === 'SIGNED_IN' && session?.user) {
           // See the getSession() branch above for why this awaits the
