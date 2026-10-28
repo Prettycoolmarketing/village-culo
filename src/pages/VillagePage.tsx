@@ -126,14 +126,19 @@ export function VillagePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
               <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Free to join
+                What is The Culo Village?
               </p>
               <h2 id="creatives-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
                 Turn everything you've already created into a body of work people can discover.
               </h2>
+              <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed mb-4 max-w-xl mx-auto lg:mx-0">
+                The Culo Village is a founder publishing network that brings together the content, ideas,
+                businesses and expertise you've already shared across the internet.
+              </p>
               <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
-                The Culo Village connects your podcasts, videos, social posts, articles, businesses and expertise
-                into one public founder profile built for discovery across people, search engines and AI.
+                Republish your social posts, podcast appearances, videos, articles and other existing content as
+                individual web stories connected to your founder profile — one growing body of work designed for
+                discovery across people, search engines and AI.
               </p>
               <HomeInstantJoin />
               <p className="font-body text-sm text-white/50 mt-6 max-w-xl mx-auto lg:mx-0">
