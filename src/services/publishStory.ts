@@ -350,11 +350,16 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
     status: 'published',
     featured: false,
     publishingSource: item.sourcePlatform === 'canva' ? 'canva-api' : 'website-import',
-    // descriptionRewrittenAt already marks exactly this — set whenever the
-    // description actually came from the editorial Writer (see
-    // safeStoryBody's copyright gate), not raw scraped/imported text. Same
-    // signal, reused: a story whose body Culo actually wrote should say so.
-    writtenByCulo: !!item.descriptionRewrittenAt,
+    // descriptionRewrittenAt is defined on ImportedContent but nothing in
+    // the codebase ever actually sets it — writtenByCulo computed from it
+    // was silently false for every story built this way, system-wide, not
+    // just one founder (confirmed real: Genevieve Dennis's research-written
+    // article showed under "Stories by X" instead of "Articles Written by
+    // CULO"). staffCreated is the real, already-correctly-set signal for
+    // "Culo wrote this from research," not the founder — same flag
+    // culoPendingArticle itself keys off to find the piece in the first
+    // place (see DashboardProfilePage).
+    writtenByCulo: !!item.staffCreated,
     createdAt: nowIso,
     updatedAt: nowIso,
     publishedAt: nowIso,
