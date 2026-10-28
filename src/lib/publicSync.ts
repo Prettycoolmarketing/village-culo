@@ -37,10 +37,29 @@ const PUBLIC_TABLES: Array<{ table: string; cacheKey: string }> = [
 async function runPublicSync(): Promise<void> {
   if (!supabase) return
 
-  await Promise.all(PUBLIC_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey)))
+  // Confirmed real, live, serious: pullVisibleRows itself only returns early
+  // on a clean Supabase-reported error — it does nothing to stop the
+  // underlying fetch throwing outright (a real network blip, far more
+  // common on a mobile connection than wifi). An uncaught throw from ANY
+  // ONE of these ~17 tables rejected the whole Promise.all, which rejected
+  // this function, which meant App.tsx's `.then(() => setSyncTick(...))`
+  // never ran — not just that one table staying stale, the ENTIRE public
+  // cache (founders included) stayed empty for the rest of that visit, no
+  // retry, no error shown, every public page reading "not found" until a
+  // hard reload happened to retry at a better moment. Catching per-table
+  // means one flaky request loses just that table's fresh data, not
+  // everyone else's.
+  await Promise.all(PUBLIC_TABLES.map(({ table, cacheKey }) =>
+    pullVisibleRows(table, cacheKey).catch(() => { /* this table stays stale; others still land */ }),
+  ))
 
-  const { data, error } = await supabase.from('village_settings').select('data').eq('id', 'default').maybeSingle()
-  if (!error && data) villageSettingsService.cacheFromRemote(data.data as Partial<import('../types/villageSettings').VillageSettings>)
+  try {
+    const { data, error } = await supabase.from('village_settings').select('data').eq('id', 'default').maybeSingle()
+    if (!error && data) villageSettingsService.cacheFromRemote(data.data as Partial<import('../types/villageSettings').VillageSettings>)
+  } catch {
+    // Same reasoning — a failure here must never take the rest of the sync
+    // (and App.tsx's re-render) down with it.
+  }
 }
 
 // Both this (App.tsx, unconditional on every mount, for anonymous visitors
