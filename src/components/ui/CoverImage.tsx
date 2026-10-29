@@ -44,6 +44,7 @@ export function CoverImage({ src, fallbackSrc, ...rest }: CoverImageProps) {
 
   return (
     <img
+      loading="lazy"
       {...rest}
       src={resolvedSrc}
       onError={e => {

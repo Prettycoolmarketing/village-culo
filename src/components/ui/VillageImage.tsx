@@ -15,6 +15,7 @@ export function VillageImage({
 
   return (
     <img
+      loading="lazy"
       src={resolvedSrc}
       onError={(e) => {
         const img = e.currentTarget

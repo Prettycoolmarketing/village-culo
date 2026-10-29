@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Link, Navigate, Outlet, useLocation } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { seedStore } from './lib/seedStore'
 import { syncPublishedContent } from './lib/publicSync'
 import { AuthProvider }    from './contexts/AuthContext'
@@ -52,35 +52,39 @@ import { MarketingStartPage }      from './pages/marketing/MarketingStartPage'
  import { PrivacyPolicyPage }      from './pages/PrivacyPolicyPage'
 
 // ─── Dashboard pages ────────────────────────────────────────────────────────────
+// Lazy-loaded — this is CAPO/admin/founder-dashboard tooling (~30 routes),
+// not the public site a search crawler or first-time visitor ever hits.
+// Before this, every single one shipped in the one public bundle, so
+// loading the homepage meant downloading all of CAPO's admin tooling too.
 import { DashboardLoginPage }        from './pages/dashboard/DashboardLoginPage'
 import { DashboardForgotPasswordPage } from './pages/dashboard/DashboardForgotPasswordPage'
 import { DashboardResetPasswordPage }  from './pages/dashboard/DashboardResetPasswordPage'
-import { DashboardProfilePage }      from './pages/dashboard/DashboardProfilePage'
-import { StoryPreviewPage }          from './pages/dashboard/StoryPreviewPage'
-import { DashboardIdeasPage }        from './pages/dashboard/DashboardIdeasPage'
-import { DashboardLibraryPage }      from './pages/dashboard/DashboardLibraryPage'
-import { DashboardMediaPage }        from './pages/dashboard/DashboardMediaPage'
-import { DashboardImportSourcesPage }from './pages/dashboard/DashboardImportSourcesPage'
-import { DashboardImportContentPage }from './pages/dashboard/DashboardImportContentPage'
-import { DashboardArchiveFoundPage } from './pages/dashboard/DashboardArchiveFoundPage'
-import { DashboardCanvaCallbackPage } from './pages/dashboard/DashboardCanvaCallbackPage'
-import { DashboardSettingsPage }         from './pages/dashboard/DashboardSettingsPage'
-import { DashboardPublishPage }          from './pages/dashboard/DashboardPublishPage'
-import { DashboardCuratedFounderBuilderPage } from './pages/dashboard/DashboardCuratedFounderBuilderPage'
-import { DashboardBulkImportPage }            from './pages/dashboard/DashboardBulkImportPage'
-import { VillageHQOverviewPage }              from './pages/dashboard/village/VillageHQOverviewPage'
-import { VillageCuratedFoundersPage }         from './pages/dashboard/village/VillageCuratedFoundersPage'
-import { VillageEmailExportPage }             from './pages/dashboard/village/VillageEmailExportPage'
-import { VillageTrainingPage }                from './pages/dashboard/village/VillageTrainingPage'
-import { VillageSettingsPage }                from './pages/dashboard/village/VillageSettingsPage'
-import { CapoTeamPage }                       from './pages/dashboard/village/CapoTeamPage'
-import { CapoOpportunitiesHubPage }           from './pages/dashboard/village/CapoOpportunitiesHubPage'
-import { VillageCreativeMembersPage }         from './pages/dashboard/village/VillageCreativeMembersPage'
-import { VillageCreativeFeedbackPage }        from './pages/dashboard/village/VillageCreativeFeedbackPage'
-import { DashboardCreativesPage }             from './pages/dashboard/DashboardCreativesPage'
-import { PcmClientsPage }                     from './pages/dashboard/pcm/PcmClientsPage'
-import { PcmClientDetailPage }                from './pages/dashboard/pcm/PcmClientDetailPage'
-import { PcmLeadsPage }                       from './pages/dashboard/pcm/PcmLeadsPage'
+const DashboardProfilePage      = lazy(() => import('./pages/dashboard/DashboardProfilePage').then(m => ({ default: m.DashboardProfilePage })))
+const StoryPreviewPage          = lazy(() => import('./pages/dashboard/StoryPreviewPage').then(m => ({ default: m.StoryPreviewPage })))
+const DashboardIdeasPage        = lazy(() => import('./pages/dashboard/DashboardIdeasPage').then(m => ({ default: m.DashboardIdeasPage })))
+const DashboardLibraryPage      = lazy(() => import('./pages/dashboard/DashboardLibraryPage').then(m => ({ default: m.DashboardLibraryPage })))
+const DashboardMediaPage        = lazy(() => import('./pages/dashboard/DashboardMediaPage').then(m => ({ default: m.DashboardMediaPage })))
+const DashboardImportSourcesPage= lazy(() => import('./pages/dashboard/DashboardImportSourcesPage').then(m => ({ default: m.DashboardImportSourcesPage })))
+const DashboardImportContentPage= lazy(() => import('./pages/dashboard/DashboardImportContentPage').then(m => ({ default: m.DashboardImportContentPage })))
+const DashboardArchiveFoundPage = lazy(() => import('./pages/dashboard/DashboardArchiveFoundPage').then(m => ({ default: m.DashboardArchiveFoundPage })))
+const DashboardCanvaCallbackPage= lazy(() => import('./pages/dashboard/DashboardCanvaCallbackPage').then(m => ({ default: m.DashboardCanvaCallbackPage })))
+const DashboardSettingsPage         = lazy(() => import('./pages/dashboard/DashboardSettingsPage').then(m => ({ default: m.DashboardSettingsPage })))
+const DashboardPublishPage          = lazy(() => import('./pages/dashboard/DashboardPublishPage').then(m => ({ default: m.DashboardPublishPage })))
+const DashboardCuratedFounderBuilderPage = lazy(() => import('./pages/dashboard/DashboardCuratedFounderBuilderPage').then(m => ({ default: m.DashboardCuratedFounderBuilderPage })))
+const DashboardBulkImportPage            = lazy(() => import('./pages/dashboard/DashboardBulkImportPage').then(m => ({ default: m.DashboardBulkImportPage })))
+const VillageHQOverviewPage              = lazy(() => import('./pages/dashboard/village/VillageHQOverviewPage').then(m => ({ default: m.VillageHQOverviewPage })))
+const VillageCuratedFoundersPage         = lazy(() => import('./pages/dashboard/village/VillageCuratedFoundersPage').then(m => ({ default: m.VillageCuratedFoundersPage })))
+const VillageEmailExportPage             = lazy(() => import('./pages/dashboard/village/VillageEmailExportPage').then(m => ({ default: m.VillageEmailExportPage })))
+const VillageTrainingPage                = lazy(() => import('./pages/dashboard/village/VillageTrainingPage').then(m => ({ default: m.VillageTrainingPage })))
+const VillageSettingsPage                = lazy(() => import('./pages/dashboard/village/VillageSettingsPage').then(m => ({ default: m.VillageSettingsPage })))
+const CapoTeamPage                       = lazy(() => import('./pages/dashboard/village/CapoTeamPage').then(m => ({ default: m.CapoTeamPage })))
+const CapoOpportunitiesHubPage           = lazy(() => import('./pages/dashboard/village/CapoOpportunitiesHubPage').then(m => ({ default: m.CapoOpportunitiesHubPage })))
+const VillageCreativeMembersPage         = lazy(() => import('./pages/dashboard/village/VillageCreativeMembersPage').then(m => ({ default: m.VillageCreativeMembersPage })))
+const VillageCreativeFeedbackPage        = lazy(() => import('./pages/dashboard/village/VillageCreativeFeedbackPage').then(m => ({ default: m.VillageCreativeFeedbackPage })))
+const DashboardCreativesPage             = lazy(() => import('./pages/dashboard/DashboardCreativesPage').then(m => ({ default: m.DashboardCreativesPage })))
+const PcmClientsPage                     = lazy(() => import('./pages/dashboard/pcm/PcmClientsPage').then(m => ({ default: m.PcmClientsPage })))
+const PcmClientDetailPage                = lazy(() => import('./pages/dashboard/pcm/PcmClientDetailPage').then(m => ({ default: m.PcmClientDetailPage })))
+const PcmLeadsPage                       = lazy(() => import('./pages/dashboard/pcm/PcmLeadsPage').then(m => ({ default: m.PcmLeadsPage })))
 import { ClaimProfilePage }             from './pages/ClaimProfilePage'
 import { CAPO_PERMISSIONS } from './utils/permissions'
 
@@ -164,6 +168,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ScrollToTop />
+        <Suspense fallback={null}>
         <Routes>
 
           {/* Standalone, no Navbar/Footer — same reason /dashboard/login is
@@ -331,6 +336,7 @@ export default function App() {
           </Route>
 
         </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   )
