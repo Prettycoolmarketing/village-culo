@@ -107,6 +107,8 @@ const PROFILE_BIO_PROMPT = `${SHARED_RULES}
 
 TASK: write a founder bio (roughly 120-200 words) synthesising the founder's identity, real role(s), and what their work actually focuses on — drawn only from "fact" and well-attributed claims in the ledger. Do not attempt to cover every claim; pick what actually establishes who this person is.
 
+If the ledger contains no "fact" or well-attributed claim about this founder — only "unverified"/"conflicting" material, or claims casting doubt on whether research even found the right person — do not write a confident bio out of what's left anyway. Write the shortest honest bio the material actually supports (which may be just their name and nothing else) rather than presenting an uncertain or likely-mismatched identity as established fact.
+
 Write it as 2-3 short paragraphs, separated by a blank line (\\n\\n) — never one dense block. A natural split: who they are and what they've built; then what they focus on or believe, drawing on an attributed claim if one exists. Each paragraph should read as a complete thought, not an arbitrary line break.
 
 {
@@ -117,6 +119,8 @@ Write it as 2-3 short paragraphs, separated by a blank line (\\n\\n) — never o
 const SOURCE_ARTICLE_PROMPT = `${SHARED_RULES}
 
 TASK: write one real, original article (roughly 250-500 words, 3-5 paragraphs) about the founder's appearance in ONE specific source (given below as targetSource). Centre the piece on what that source actually covers — use other ledger claims only as brief supporting context, never as the main subject. This is journalism about a real appearance, not a repeat of the founder's whole biography.
+
+Do not write this article at all if targetSource's own identity_confidence is "low" and nothing else in the ledger corroborates it's genuinely this founder — a specific, well-written article about the wrong same-named person is worse than no article. In that case return {"title": "", "body": "", "claim_ids_used": []} instead.
 
 If a claim used in this article is "attributed_statement," keep it attributed throughout the piece, not just in one sentence — a reader should never come away thinking it was independently confirmed.
 

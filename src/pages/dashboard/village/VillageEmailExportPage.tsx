@@ -433,7 +433,10 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                   >
                     View ↗
                   </a>
-                  {canDeleteAccounts && (
+                  {/* Never render this on the signed-in admin/owner's own
+                      card — a confirm dialog is not enough of a backstop
+                      against a self-inflicted account delete. */}
+                  {canDeleteAccounts && f.id !== user?.founderId && (
                     <ConfirmButton
                       label={deletingId === f.id ? 'Deleting…' : 'Delete'}
                       confirmLabel="Yes, delete"

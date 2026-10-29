@@ -120,25 +120,6 @@ export async function writeEntityBatch<T extends { id: string }>(opts: {
   return { success: true }
 }
 
-export async function deleteEntityBatch(opts: {
-  cacheKey: string
-  ids: string[]
-  table?: string
-}): Promise<WriteResult> {
-  const { cacheKey, ids, table } = opts
-  if (ids.length === 0) return { success: true }
-
-  if (isSupabaseConfigured && supabase && table) {
-    const { error } = await supabase.from(table).delete().in('id', ids)
-    if (error) return { success: false, error: friendlyWriteError(error.message) }
-  }
-
-  const idSet = new Set(ids)
-  const items = (store.get<{ id: string }>(cacheKey) ?? []).filter(i => !idSet.has(i.id))
-  store.set(cacheKey, items)
-  return { success: true }
-}
-
 export async function deleteEntity(opts: {
   cacheKey: string
   id: string

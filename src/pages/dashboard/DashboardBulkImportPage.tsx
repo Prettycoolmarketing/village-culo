@@ -6,6 +6,7 @@ import { DEFAULT_IMPORT_OPTIONS } from '../../types/villageImport'
 import type { VillageImportPackage, VIFValidationResult, VIFImportOptions, VIFImportResult } from '../../types/villageImport'
 import { useAuth } from '../../contexts/AuthContext'
 import { getFounder, deleteFounderAccount, updateFounder } from '../../services/founders'
+import { supabase } from '../../lib/supabase'
 import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
 import { getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../services/editorialItems'
@@ -314,6 +315,15 @@ export function DashboardBulkImportPage() {
         // point — only the admin-facing log entry failed. Surface it, but don't
         // block the admin from seeing their (real) results.
         setImportError(`Import completed, but the history log failed to save: ${batchResult.write.error ?? 'unknown error'}`)
+      }
+      // Staff asked to be emailed when something in an import goes wrong,
+      // not just shown the result on screen — fire-and-forget, same as
+      // every other notify-* call, so a flaky alert send never blocks the
+      // admin from seeing their own already-saved results.
+      if (res.errors.length > 0 && supabase) {
+        void supabase.functions.invoke('notify-import-errors', {
+          body: { batchName: pkg.batchName, errors: res.errors },
+        }).catch(() => { /* best-effort */ })
       }
       setResult(res)
       setStep(3)

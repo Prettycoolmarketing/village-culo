@@ -267,6 +267,10 @@ export async function writeSourceArticle(
   const claims = ledger.claims.filter(c => c.human_review !== 'rejected')
   const { draft, error } = await callWriter('source_article', founder.name, claims, source)
   if (error || !draft) return { success: false, error: error ?? 'Writer returned nothing.' }
+  // The Writer deliberately returns an empty draft when this source's own
+  // identity_confidence is too low to trust — see SOURCE_ARTICLE_PROMPT.
+  // Nothing to save; this isn't a failure, just nothing worth writing.
+  if (!draft.body?.trim()) return { success: false, error: 'Source identity could not be confirmed — skipped.' }
 
   // Scoped to this one source, not the whole ledger — see
   // passesRiskGateForSource. This piece is about this source alone; an

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { getFounders, getFounder, updateFoundersBatch, deleteFoundersBatch, deleteFounderAccount } from '../../../services/founders'
+import { getFounders, getFounder, updateFoundersBatch, deleteFounderAccount } from '../../../services/founders'
 import { getCurrentFounder } from '../../../services/currentFounder'
 import { getBusinesses } from '../../../services/businesses'
 import { importedContentService } from '../../../services/importedContent'
@@ -438,11 +438,14 @@ export function VillageCuratedFoundersPage() {
     for (const f of targets) await publishFounderArticles(f)
   }
 
+  // A real soft-delete, not deleteFoundersBatch's hard DELETE — see the
+  // incident writeup in 055_deletion_safety_gates.sql. The button has
+  // always said "Archive," so it should behave like one: reversible,
+  // auditable via status history, never a silent permanent wipe (which
+  // also cascaded to every byte of the founder's imported_content and
+  // connected_sources before that migration closed the cascade hole).
   async function archiveSelected(ids: Set<string>) {
-    setBulkError(null)
-    const result = await deleteFoundersBatch(Array.from(ids))
-    if (!result.success) setBulkError(result.error ?? `Failed to archive ${ids.size} founder${ids.size === 1 ? '' : 's'}. Try again.`)
-    refresh()
+    await bulkUpdate(ids, { status: 'archived' })
   }
 
   // Runs (or re-runs) the FULL pipeline — research, bio write + audit, one

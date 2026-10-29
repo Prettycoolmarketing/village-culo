@@ -9,7 +9,7 @@ import type { UserRole } from '../contexts/AuthContext'
  * Two staff roles:
  *   Admin (owner) — sees and does everything.
  *   Capo (editor) — Pretty Cool Marketing (Client Tracker + Leads) and
- *                   People (Founders + Email Lists). Nothing else.
+ *                   People (Founders + Bulk Import + Email Lists). Nothing else.
  *
  * `admin` and `moderator` are legacy roles kept for existing accounts:
  * `admin` is treated as full access alongside `owner`; `moderator` has no
@@ -26,7 +26,7 @@ const CAPO_AND_ADMIN: UserRole[] = ['editor', 'admin', 'owner']
 export const CAPO_PERMISSIONS: Record<CapoSection, UserRole[]> = {
   overview:  ADMIN,
   founders:  CAPO_AND_ADMIN,
-  imports:   ADMIN,
+  imports:   CAPO_AND_ADMIN,
   claims:    ADMIN,
   emails:    CAPO_AND_ADMIN,
   featured:  ADMIN,

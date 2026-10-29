@@ -1,4 +1,4 @@
-import { readCache, writeEntity, writeEntityBatch, deleteEntity, deleteEntityBatch, type WriteResult } from '../lib/entityStore'
+import { readCache, writeEntity, writeEntityBatch, deleteEntity, type WriteResult } from '../lib/entityStore'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { slugify } from '../utils/slugify'
 import type { Founder, FounderFilter } from '../types'
@@ -170,10 +170,6 @@ export function duplicateFounder(id: string): Promise<WriteResult> {
 
 export function deleteFounder(id: string): Promise<WriteResult> {
   return deleteEntity({ cacheKey: KEY, id, table: TABLE })
-}
-
-export function deleteFoundersBatch(ids: string[]): Promise<WriteResult> {
-  return deleteEntityBatch({ cacheKey: KEY, ids, table: TABLE })
 }
 
 // Unlike deleteFounder (which only ever removes the founders row), this also

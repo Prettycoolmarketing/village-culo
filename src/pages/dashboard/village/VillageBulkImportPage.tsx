@@ -1,15 +1,14 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { importBatchService } from '../../../services/importBatch'
-import { ConfirmButton } from '../../../components/ui/ConfirmButton'
 import type { ImportBatch } from '../../../services/importBatch'
 import { CapoBackLink } from '../../../components/dashboard/CapoBackLink'
 
 // ─── Batch row ────────────────────────────────────────────────────────────────
 
-function BatchRow({ batch, onDelete }: { batch: ImportBatch; onDelete: () => void }) {
-  const [confirming, setConfirming] = useState(false)
-
+// No delete here, deliberately — these are just import-run log rows, not
+// the founders/content they created, and there's no real need to ever
+// clear them. One less destructive action sitting in CAPO tooling.
+function BatchRow({ batch }: { batch: ImportBatch }) {
   return (
     <div className="flex items-center gap-4 px-5 py-4">
       <div className="flex-1 min-w-0">
@@ -41,31 +40,6 @@ function BatchRow({ batch, onDelete }: { batch: ImportBatch; onDelete: () => voi
           <p className="text-[10px] text-[#9CA3AF]">Content</p>
         </div>
       </div>
-      <div className="shrink-0">
-        {confirming ? (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { onDelete(); setConfirming(false) }}
-              className="text-xs font-semibold px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Delete
-            </button>
-            <button
-              onClick={() => setConfirming(false)}
-              className="text-xs text-[#9CA3AF] hover:text-[#2D2A26] transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setConfirming(true)}
-            className="text-xs text-[#9CA3AF] hover:text-red-500 transition-colors"
-          >
-            Delete record
-          </button>
-        )}
-      </div>
     </div>
   )
 }
@@ -76,10 +50,6 @@ function BatchRow({ batch, onDelete }: { batch: ImportBatch; onDelete: () => voi
 // for when this renders as a tab inside another page (Curated Founders)
 // instead of at its own standalone route.
 export function VillageBulkImportPage({ embedded = false }: { embedded?: boolean } = {}) {
-  const [tick, setTick] = useState(0)
-  void tick
-  const refresh = () => setTick(t => t + 1)
-
   const batches = importBatchService.getAll()
 
   const totalCreated  = batches.reduce((s, b) => s + b.created, 0)
@@ -139,14 +109,6 @@ export function VillageBulkImportPage({ embedded = false }: { embedded?: boolean
           <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-widest">
             Import History ({batches.length} {batches.length === 1 ? 'batch' : 'batches'})
           </p>
-          {batches.length > 0 && (
-            <ConfirmButton
-              label="Clear history"
-              confirmLabel="Yes, clear all"
-              message={`Delete all ${batches.length} batch records?`}
-              onConfirm={() => void importBatchService.clear().then(refresh)}
-            />
-          )}
         </div>
 
         {batches.length === 0 ? (
@@ -165,14 +127,7 @@ export function VillageBulkImportPage({ embedded = false }: { embedded?: boolean
         ) : (
           <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">
             {batches.map(batch => (
-              <BatchRow
-                key={batch.id}
-                batch={batch}
-                onDelete={() => { void importBatchService.delete(batch.id).then(result => {
-                  if (!result.success) { alert(result.error ?? 'Could not delete this batch. Please try again.'); return }
-                  refresh()
-                }) }}
-              />
+              <BatchRow key={batch.id} batch={batch} />
             ))}
           </div>
         )}

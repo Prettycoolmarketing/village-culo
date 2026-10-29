@@ -1,5 +1,4 @@
-import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
-import { store } from '../lib/store'
+import { readCache, writeEntity, type WriteResult } from '../lib/entityStore'
 import type { VIFSource } from '../types/villageImport'
 
 const KEY = 'village_import_batches'
@@ -45,14 +44,5 @@ export const importBatchService = {
       }),
     })
     return { ...record, write }
-  },
-
-  delete(id: string): Promise<WriteResult> {
-    return deleteEntity({ cacheKey: KEY, id, table: TABLE })
-  },
-
-  async clear(): Promise<void> {
-    for (const batch of this.getAll()) await this.delete(batch.id)
-    store.set(KEY, [])
   },
 }
