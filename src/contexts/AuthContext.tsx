@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { syncUserDataFromSupabase } from '../lib/sync'
 import { syncPublishedContent } from '../lib/publicSync'
@@ -130,6 +130,8 @@ async function toAuthUser(supaUser: User, onLateProfile?: (user: AuthUser) => vo
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,    setUser]    = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const userRef = useRef<AuthUser | null>(null)
+  useEffect(() => { userRef.current = user }, [user])
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
@@ -197,6 +199,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       void (async () => {
         const sessionUserId = session?.user?.id
+
+        // TOKEN_REFRESHED fires silently in the background roughly every
+        // hour (and on tab refocus) for the same already-signed-in account
+        // — it's not an identity change. Re-running toAuthUser() here
+        // unconditionally re-does the profiles query with its 8s
+        // race-timeout fallback (see that function's comment); if that
+        // query was ever merely slow, a real CAPO staff member's role
+        // would silently fall back to 'founder' mid-session — hiding
+        // Founder Management from nav, or bouncing them off the page via
+        // RoleProtectedRoute — with no DB change at all. Skip the re-fetch
+        // when the signed-in account hasn't actually changed.
+        if (event === 'TOKEN_REFRESHED' && sessionUserId && userRef.current?.id === sessionUserId) {
+          return
+        }
+
         const nextUser = session?.user
           ? await toAuthUser(session.user, lateUser => {
               setUser(current => (current?.id === sessionUserId ? lateUser : current))
