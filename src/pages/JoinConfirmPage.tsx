@@ -54,6 +54,24 @@ export function JoinConfirmPage() {
       if (settled) return
       settled = true
       setEmail(user.email ?? '')
+
+      // This page grabs whatever Supabase session is live on mount with no
+      // check on whose it is — a CAPO/staff member landing here (an old
+      // bookmark, or trying this page as a workaround when something in
+      // their own dashboard looked broken) got a throwaway blank founder
+      // profile auto-created and linked to their staff account, since
+      // ensureJoinedFounder below has no role check of its own either.
+      // Confirmed real: a Capo (editor) account got exactly this. Bounce
+      // any non-founder role straight to the dashboard instead of running
+      // the founder-signup flow against their staff session.
+      if (supabase) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+        if (profile && profile.role !== 'founder') {
+          navigate('/dashboard/profile', { replace: true })
+          return
+        }
+      }
+
       // ensureJoinedFounder calls out to a couple of edge functions
       // (find-curated-match, the enroll/notify calls inside it) with no
       // timeout of its own — a slow or hung network call here used to mean

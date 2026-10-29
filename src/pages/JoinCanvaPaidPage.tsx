@@ -70,6 +70,17 @@ export function JoinCanvaPaidPage() {
 
   async function finish(userId: string) {
     if (!checkoutInfo) return
+    // Same guard as JoinConfirmPage — a staff session landing here (this
+    // listens for whatever session is active, not specifically a fresh
+    // Canva checkout signup) must never get a throwaway founder profile
+    // auto-created and linked to their staff account.
+    if (supabase) {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
+      if (profile && profile.role !== 'founder') {
+        navigate('/dashboard/profile', { replace: true })
+        return
+      }
+    }
     const founderId = await ensureJoinedFounder(userId, checkoutInfo.email, 'canva', {
       canvaUserId: checkoutInfo.canvaUserId,
       passwordAlreadySet: true,
