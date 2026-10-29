@@ -28,6 +28,7 @@ export interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null
   loading: boolean
+  roleResolving: boolean
   isConfigured: boolean
   signIn:  (email: string, password: string) => Promise<{ error: string | null }>
   signUp:  (email: string, password: string, redirectPath?: string) => Promise<{ error: string | null; needsConfirmation: boolean; alreadyRegistered: boolean }>
@@ -54,7 +55,11 @@ const DEV_ADMIN_EMAILS = (import.meta.env.VITE_DEV_ADMIN_EMAILS ?? '')
  */
 type Profile = { role: string; founder_id: string | null; suspended: boolean | null }
 
-async function toAuthUser(supaUser: User, onLateProfile?: (user: AuthUser) => void): Promise<AuthUser> {
+async function toAuthUser(
+  supaUser: User,
+  onLateProfile?: (user: AuthUser) => void,
+  onResolving?: (resolving: boolean) => void,
+): Promise<AuthUser> {
   const meta = supaUser.user_metadata ?? {}
   // Nothing in this codebase ever writes `role` into Supabase user_metadata
   // (confirmed: no edge function, no client code, anywhere) — so this
@@ -117,19 +122,36 @@ async function toAuthUser(supaUser: User, onLateProfile?: (user: AuthUser) => vo
   if (profile) return toFinal(profile)
 
   // Timed out, not necessarily failed — the real query may still land a
-  // few seconds later. When it does, correct the session's role in place
-  // instead of leaving it stuck on the 'founder' guess for the rest of
-  // this session. A no-op when the caller doesn't pass one (e.g. nothing
-  // downstream can act on a late correction) or when it never resolves.
-  if (onLateProfile) {
-    void profileFetch.then(late => { if (late) onLateProfile(toFinal(late)) })
-  }
+  // few seconds later (a slow connection, e.g. a staff member working from
+  // overseas, routinely blows past 8s without the query actually having
+  // failed). When it does, correct the session's role in place instead of
+  // leaving it stuck on the 'founder' guess for the rest of this session.
+  // onResolving marks this role as provisional for as long as that
+  // correction might still be coming, so a caller like RoleProtectedRoute
+  // can hold a loading state instead of enforcing/denying against a role
+  // that's still just a guess — confirmed real: a CAPO staff member's
+  // nav tab and route access both silently fell back to 'founder'-level
+  // this way. Capped at a further 20s so a genuinely dead connection
+  // still resolves to *something* rather than spinning forever.
+  onResolving?.(true)
+  void Promise.race([
+    profileFetch,
+    new Promise<null>(resolve => setTimeout(() => resolve(null), 20000)),
+  ])
+    .then(late => { if (late) onLateProfile?.(toFinal(late)) })
+    .finally(() => onResolving?.(false))
+
   return base
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user,    setUser]    = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  // True only while the current user's role is a provisional guess still
+  // waiting on a late profiles correction (see toAuthUser's onResolving) —
+  // RoleProtectedRoute holds a spinner instead of denying access while
+  // this is true, rather than acting on a role that might still be wrong.
+  const [roleResolving, setRoleResolving] = useState(false)
   const userRef = useRef<AuthUser | null>(null)
   useEffect(() => { userRef.current = user }, [user])
 
@@ -152,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // profile response landing after sign-out/switching accounts
           // must never silently reinstate the old user.
           setUser(current => (current?.id === sessionUserId ? lateUser : current))
-        })
+        }, setRoleResolving)
         setUser(restoredUser)
         // onAuthStateChange's SIGNED_IN branch doesn't fire for a session
         // restored from storage on a plain reload — without this, a CAPO
@@ -217,7 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const nextUser = session?.user
           ? await toAuthUser(session.user, lateUser => {
               setUser(current => (current?.id === sessionUserId ? lateUser : current))
-            })
+            }, setRoleResolving)
           : null
         setUser(nextUser)
         if (event === 'SIGNED_IN' && session?.user) {
@@ -317,7 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isConfigured: isSupabaseConfigured, signIn, signUp, signOut, resetPasswordForEmail, updatePassword }}>
+    <AuthContext.Provider value={{ user, loading, roleResolving, isConfigured: isSupabaseConfigured, signIn, signUp, signOut, resetPasswordForEmail, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )
