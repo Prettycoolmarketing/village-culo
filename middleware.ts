@@ -23,6 +23,7 @@
 // Supabase RLS rather than by being hidden.
 
 export const config = {
+  runtime: 'nodejs',
   matcher: [
     '/', '/speaker', '/stories', '/library', '/stories/:slug', '/founders/:slug', '/businesses/:slug',
     '/ideas/:slug', '/series/:slug', '/editorial/:slug', '/library/:slug',
