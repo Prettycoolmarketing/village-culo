@@ -18,6 +18,7 @@
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { safeFetchBinary, SafeFetchError } from '../_shared/safeFetch.ts'
+import { requireAuth, unauthorizedResponse } from '../_shared/requireAuth.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -34,6 +35,10 @@ const MAX_BYTES = 200_000_000
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+
+  // See editorial-write's identical comment — same --no-verify-jwt +
+  // no-internal-check gap, same fix.
+  if (!(await requireAuth(req))) return unauthorizedResponse(CORS_HEADERS)
 
   try {
     const { url } = await req.json() as { url?: string }

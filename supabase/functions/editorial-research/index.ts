@@ -19,6 +19,7 @@
 // Deploy: supabase functions deploy editorial-research --no-verify-jwt
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
+import { requireAuth, unauthorizedResponse } from '../_shared/requireAuth.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -126,6 +127,10 @@ Output ONLY a single valid JSON object matching this exact shape, no markdown fe
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+
+  // See editorial-write's identical comment — same --no-verify-jwt +
+  // no-internal-check gap, same fix.
+  if (!(await requireAuth(req))) return unauthorizedResponse(CORS_HEADERS)
 
   try {
     const body = await req.json() as RequestBody

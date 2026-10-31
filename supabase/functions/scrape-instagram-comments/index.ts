@@ -21,6 +21,7 @@
 // Deploy: supabase functions deploy scrape-instagram-comments --no-verify-jwt
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
+import { requireAdmin, forbiddenResponse } from '../_shared/requireAuth.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -73,6 +74,14 @@ interface ApifyCommentItem {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+
+  // Admin-only (see CAPO_PERMISSIONS.leadSources) — this was deployed with
+  // --no-verify-jwt (needed so the client's own request reaches the
+  // handler at all) but had no check inside the function body either, so
+  // anyone who found the URL could trigger a real, billed Apify scrape
+  // with no login at all. verify_jwt off is a platform-level gate only;
+  // it doesn't mean "no auth," it means this function decides for itself.
+  if (!(await requireAdmin(req))) return forbiddenResponse(CORS_HEADERS)
 
   try {
     const body = await req.json() as RequestBody

@@ -13,6 +13,7 @@
 // Deploy: supabase functions deploy editorial-write --no-verify-jwt
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
+import { requireAuth, unauthorizedResponse } from '../_shared/requireAuth.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -145,6 +146,15 @@ Credit the source by name naturally in the piece (e.g. "In a piece on {siteName}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
+
+  // Deployed --no-verify-jwt (needed so the client's own request reaches
+  // the handler) but had no check inside the function body either, so
+  // anyone who found the URL could trigger a real, billed LLM call with
+  // no login at all. Doesn't write to the DB itself (the client saves the
+  // result separately, under normal RLS), so this only needs to confirm
+  // a real signed-in user is calling, not verify they own the founder
+  // being written about.
+  if (!(await requireAuth(req))) return unauthorizedResponse(CORS_HEADERS)
 
   try {
     const body = await req.json() as RequestBody
