@@ -79,7 +79,15 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
     // link_claimed_founder (migration 032) here converges ownership the
     // same way the claim form's own flow does (see finalizeClaimOwnership
     // in currentFounder.ts) rather than duplicating that logic.
-    const { data: matchResult } = await supabase.functions.invoke<{ founderId: string | null }>(
+    // 'verified' = exact claimEmail on file. 'likely' = no exact email on
+    // file, but find-curated-match found a plausible name/domain match
+    // among curated/claim-pending profiles and already wrote claimEmail
+    // itself — connects automatically either way (no more hard-blocking
+    // a real person's signup on a claimEmail staff never had reason to
+    // fill in), while telling staff which tier it was so a 'likely'
+    // connection gets a quick human glance instead of being trusted
+    // blindly. See notify-claim-activity and _shared/claimMatch.ts.
+    const { data: matchResult } = await supabase.functions.invoke<{ founderId: string | null; match: 'verified' | 'likely' | 'none' }>(
       'find-curated-match', { body: { email: email.trim() } },
     )
     if (matchResult?.founderId) {
@@ -97,6 +105,9 @@ export async function ensureJoinedFounder(userId: string, email: string, source:
           }
           store.update<Founder>('founders', founder)
           void linkOwnFounder(founder.id)
+          void supabase.functions.invoke('notify-claim-activity', {
+            body: { kind: 'auto-matched', match: matchResult.match, founderId: founder.id, founderName: founder.name, requesterEmail: email },
+          }).catch(() => { /* best-effort */ })
           return founder.id
         }
       } catch {

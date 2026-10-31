@@ -84,6 +84,20 @@ serve(async (req) => {
       await admin.from('founders').update({ data: updatedData, profile_status: 'claim-pending' }).eq('id', founderId)
     }
 
+    // Staff alert — this one never auto-connects (no instant match was
+    // possible), so unlike claim-founder-profile's alert this always needs
+    // a human decision, not just an FYI. Fire-and-forget, same as every
+    // other notify-* call.
+    void fetch(`${SUPABASE_URL}/functions/v1/notify-claim-activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_SERVICE_ROLE}` },
+      body: JSON.stringify({
+        kind: 'review-requested', founderId,
+        founderName: (founderRow?.data as { name?: string } | undefined)?.name,
+        requesterName: claim.requesterName, requesterEmail: claim.requesterEmail,
+      }),
+    }).catch(() => { /* best-effort */ })
+
     return new Response(JSON.stringify({ claim }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
     })

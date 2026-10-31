@@ -18,14 +18,16 @@
 // Re-does the match check server-side rather than trusting whatever the
 // client claims the match level is — a client could otherwise call this
 // directly and claim it was a "verified" match for any founder it likes.
-// Mirrors matchClaimEmail/extractDomain/normalizeToken in
-// src/pages/ClaimProfilePage.tsx exactly; keep both in sync if either
-// changes.
+// Matching logic now lives in _shared/claimMatch.ts, shared with
+// find-curated-match (the automatic /join signup match uses the exact
+// same verified/likely/none tiers now, not a hard exact-email-only check)
+// — keep both call sites in mind if the matching rules ever change.
 //
 // Deploy: supabase functions deploy claim-founder-profile --no-verify-jwt
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { matchClaimEmail, type ClaimMatch, type ClaimableFounder } from '../_shared/claimMatch.ts'
 
 const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -40,58 +42,10 @@ function json(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } })
 }
 
-const GENERIC_EMAIL_DOMAINS = new Set([
-  'gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com', 'me.com', 'live.com', 'aol.com', 'proton.me', 'protonmail.com',
-])
-const GENERIC_LINK_DOMAINS = new Set([
-  'instagram.com', 'linkedin.com', 'youtube.com', 'tiktok.com', 'facebook.com', 'twitter.com', 'x.com', 'threads.net', 'spotify.com', 'linktr.ee',
-])
-
-function normalizeToken(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/g, '')
-}
-
-function extractDomain(url?: string): string | null {
-  if (!url) return null
-  try {
-    const u = new URL(/^https?:\/\//.test(url) ? url : `https://${url}`)
-    return u.hostname.replace(/^www\./, '').toLowerCase()
-  } catch {
-    return null
-  }
-}
-
-type ClaimMatch = 'verified' | 'likely' | 'none'
-type FounderData = Record<string, unknown> & {
-  name?: string
-  claimEmail?: string
-  website?: string
-  instagram?: string
-  linkedin?: string
-  youtube?: string
-  podcast?: string
-  socialLinks?: { url?: string }[]
+type FounderData = ClaimableFounder & {
   isClaimable?: boolean
   profileStatus?: string
   claimNotes?: string
-}
-
-function matchClaimEmail(email: string, founder: FounderData): ClaimMatch {
-  const normalizedEmail = email.trim().toLowerCase()
-  if (founder.claimEmail && founder.claimEmail.trim().toLowerCase() === normalizedEmail) return 'verified'
-
-  const [localPart, emailDomain] = normalizedEmail.split('@')
-  const localToken = normalizeToken(localPart ?? '')
-
-  const ownDomains = [founder.website, founder.instagram, founder.linkedin, founder.youtube, founder.podcast, ...(founder.socialLinks?.map(l => l.url) ?? [])]
-    .map(extractDomain)
-    .filter((d): d is string => !!d && !GENERIC_LINK_DOMAINS.has(d))
-  if (emailDomain && !GENERIC_EMAIL_DOMAINS.has(emailDomain) && ownDomains.includes(emailDomain)) return 'likely'
-
-  const nameParts = (founder.name ?? '').toLowerCase().split(/\s+/).map(normalizeToken).filter(p => p.length >= 3)
-  if (localToken.length >= 3 && nameParts.some(part => localToken.includes(part))) return 'likely'
-
-  return 'none'
 }
 
 serve(async (req) => {
@@ -142,6 +96,14 @@ serve(async (req) => {
     }
     const { error: writeError } = await admin.from('founders').update({ data: nextData }).eq('id', founderId)
     if (writeError) return json({ error: writeError.message }, 500)
+
+    // Staff alert — fire-and-forget, this flow's own success must never
+    // wait on or fail because of the notification.
+    void fetch(`${SUPABASE_URL}/functions/v1/notify-claim-activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SUPABASE_SERVICE_ROLE}` },
+      body: JSON.stringify({ kind: 'instant-claim', match, founderId, founderName: founder.name, requesterName: name.trim(), requesterEmail: email.trim() }),
+    }).catch(() => { /* best-effort */ })
 
     return json({ success: true, match })
   } catch (err) {

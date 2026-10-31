@@ -51,6 +51,7 @@ interface FounderData {
   signupEmail?: string
   bio?: string
   onboardingStatus?: string
+  passwordSet?: boolean
   needsSetupNudgeSentAt?: string
   readyNudgeSentAt?: string
   importNudgeSentAt?: string
@@ -99,7 +100,17 @@ serve(async (req) => {
       if (f.data.onboardingStatus !== 'needs_setup' || f.data.needsSetupNudgeSentAt) continue
       if (stuckFor(f.updated_at) < 24 * HOUR) continue
       const name = f.data.name || 'there'
-      if (await sendNudge(f, 'needsSetupNudgeSentAt', { name })) notified.needsSetup.push(`${name} <${f.data.signupEmail}>`)
+      // "Finish setting up" links to /join/setup, which needs an active
+      // login — dead end for anyone who never actually finished the
+      // "Set your password" step on /join/confirm (they're signed up with
+      // an account but no password they know), with nothing here telling
+      // them "Forgot password" is how to get back in. Confirmed real: at
+      // least three real signups stuck exactly this way, never recovered
+      // on their own. passwordSet is only ever false in that exact case.
+      const passwordHelp = f.data.passwordSet === false
+        ? `<p>Looks like you haven't set a password yet — <a href="https://www.culovillage.com/dashboard/forgot-password">use "Forgot password" here</a> to get back in and finish up.</p>`
+        : ''
+      if (await sendNudge(f, 'needsSetupNudgeSentAt', { name, passwordHelp })) notified.needsSetup.push(`${name} <${f.data.signupEmail}>`)
     }
 
     // 2. Ready to confirm, 24h+ (the original notify-stuck-onboarding condition)
