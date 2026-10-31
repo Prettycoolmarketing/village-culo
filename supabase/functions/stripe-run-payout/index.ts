@@ -58,28 +58,64 @@ serve(async (req) => {
     if (stripeAccountError || !stripeAccount) throw new Error('This founder has not connected Stripe yet.')
     if (!stripeAccount.payouts_enabled) throw new Error('This founder\'s Stripe account cannot receive payouts yet.')
 
-    // Recompute the total from the actual, still-unpaid rows — never trust a
-    // client-supplied amount for something that moves real money.
-    const { data: conversions, error: conversionsError } = await asCaller
-      .from('partner_conversions').select('id, founder_share_cents, currency')
+    // Was a plain select-then-act: check which conversions are still
+    // unpaid, then (after a real Stripe transfer) write payout_id onto
+    // them in a separate later statement. Two overlapping runs — a
+    // double-click, a retried request, two staff racing — could both pass
+    // the "still unpaid" check before either write landed, triggering two
+    // real Stripe transfers for the same conversions. Fixed by claiming
+    // the rows FIRST via a single atomic UPDATE ... WHERE payout_id IS
+    // NULL, before Stripe is ever called — Postgres row-level locking
+    // means two concurrent claims can never both succeed on the same
+    // conversion, so this is race-proof at the database level, not just
+    // "unlikely in practice." The payout row is inserted as 'pending'
+    // first so there's something for the claim to point payout_id at;
+    // rolled back (conversions unclaimed, payout marked 'failed') if the
+    // Stripe call itself then fails, so a failed transfer doesn't leave
+    // real, still-unpaid earnings permanently stuck as unselectable.
+    const payoutId = crypto.randomUUID()
+    const { error: insertPayoutError } = await asCaller.from('partner_payouts').insert({
+      id: payoutId, founder_id: founderId, method: 'stripe', status: 'pending',
+      amount_cents: 0, currency: 'aud', note: 'Claiming conversions…',
+      data: { id: payoutId, founderId, method: 'stripe', status: 'pending', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    })
+    if (insertPayoutError) throw new Error(insertPayoutError.message)
+
+    const { data: claimed, error: claimError } = await asCaller
+      .from('partner_conversions')
+      .update({ payout_id: payoutId })
       .in('id', conversionIds)
       .eq('founder_id', founderId)
       .eq('status', 'confirmed')
       .is('payout_id', null)
-    if (conversionsError) throw new Error(conversionsError.message)
-    if (!conversions || conversions.length === 0) throw new Error('Nothing left to pay — these conversions may already be paid.')
+      .select('id, founder_share_cents, currency')
 
-    const totalCents = conversions.reduce((sum: number, c: { founder_share_cents: number }) => sum + c.founder_share_cents, 0)
-    const currency = conversions[0].currency ?? 'aud'
+    if (claimError || !claimed || claimed.length === 0) {
+      await asCaller.from('partner_payouts').delete().eq('id', payoutId)
+      throw new Error('Nothing left to pay — these conversions may already be paid.')
+    }
+
+    // Recompute the total from the rows we actually just claimed — never
+    // trust a client-supplied amount for something that moves real money.
+    const totalCents = claimed.reduce((sum: number, c: { founder_share_cents: number }) => sum + c.founder_share_cents, 0)
+    const currency = claimed[0].currency ?? 'aud'
+    const claimedIds = claimed.map((c: { id: string }) => c.id)
+
+    async function rollbackClaim(reason: string): Promise<never> {
+      await asCaller.from('partner_conversions').update({ payout_id: null }).in('id', claimedIds)
+      await asCaller.from('partner_payouts').update({ status: 'failed', note: reason }).eq('id', payoutId)
+      throw new Error(reason)
+    }
+
     // AUD only for now — no FX conversion anywhere in this system yet.
-    if (currency !== 'aud') throw new Error(`Only AUD payouts are supported right now (got ${currency}).`)
-    if (totalCents <= 0) throw new Error('Total is zero — nothing to transfer.')
+    if (currency !== 'aud') await rollbackClaim(`Only AUD payouts are supported right now (got ${currency}).`)
+    if (totalCents <= 0) await rollbackClaim('Total is zero — nothing to transfer.')
 
     const form = new URLSearchParams({
       amount: String(totalCents),
       currency,
       destination: stripeAccount.stripe_account_id,
-      description: `CULO Village Partnerships Program payout — ${conversions.length} conversion(s)`,
+      description: `CULO Village Partnerships Program payout — ${claimed.length} conversion(s)`,
     })
     const res = await fetch('https://api.stripe.com/v1/transfers', {
       method: 'POST',
@@ -87,31 +123,19 @@ serve(async (req) => {
       body: form,
     })
     const transfer = await res.json()
-    if (!res.ok) throw new Error(transfer.error?.message ?? 'Stripe transfer failed.')
+    if (!res.ok) await rollbackClaim(transfer.error?.message ?? 'Stripe transfer failed.')
 
-    const payoutId = crypto.randomUUID()
-    const payoutRow = {
-      id: payoutId,
-      founder_id: founderId,
-      method: 'stripe',
-      status: 'paid',
-      amount_cents: totalCents,
-      currency,
-      stripe_transfer_id: transfer.id,
-      note: `${conversions.length} conversion(s)`,
+    const { error: payoutError } = await asCaller.from('partner_payouts').update({
+      status: 'paid', amount_cents: totalCents, currency, stripe_transfer_id: transfer.id,
+      note: `${claimed.length} conversion(s)`,
       data: {
         id: payoutId, founderId, method: 'stripe', status: 'paid',
         amountCents: totalCents, currency, stripeTransferId: transfer.id,
-        note: `${conversions.length} conversion(s)`,
+        note: `${claimed.length} conversion(s)`,
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       },
-    }
-    const { error: payoutError } = await asCaller.from('partner_payouts').insert(payoutRow)
+    }).eq('id', payoutId)
     if (payoutError) throw new Error(payoutError.message)
-
-    const { error: updateError } = await asCaller
-      .from('partner_conversions').update({ payout_id: payoutId }).in('id', conversions.map((c: { id: string }) => c.id))
-    if (updateError) throw new Error(updateError.message)
 
     return new Response(JSON.stringify({ payoutId, transferId: transfer.id, amountCents: totalCents }), {
       headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
