@@ -33,7 +33,12 @@ export async function saveSourcedLeads(leads: LeadComment[]): Promise<{ success:
 
 export async function removeSourcedLead(handle: string): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
-  const { error } = await supabase.from('sourced_leads').delete().eq('handle', handle)
+  // A denied RLS delete returns success with zero rows affected, not an
+  // error — .select('handle') forces the actually-deleted row(s) back so
+  // that case is reported as a real failure instead of looking like it
+  // worked. Same class of bug fixed in entityStore.ts's deleteEntity.
+  const { data, error } = await supabase.from('sourced_leads').delete().eq('handle', handle).select('handle')
   if (error) return { success: false, error: error.message }
+  if (!data || data.length === 0) return { success: false, error: 'Could not remove this lead — you may not have permission, or it was already removed.' }
   return { success: true }
 }

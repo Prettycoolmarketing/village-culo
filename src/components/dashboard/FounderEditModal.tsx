@@ -419,7 +419,20 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
 
   async function handleDelete() {
     setBusy(true)
-    await importedContentService.delete(item.id)
+    setArticleError(null)
+    // Same bug as handleSaveEdit above, same fix: never checked whether
+    // the delete actually succeeded — the row vanished from this list
+    // either way, since the underlying service also didn't catch a
+    // silently-denied RLS delete (zero rows affected, not an error; see
+    // entityStore.ts's deleteEntity). Confirmed real: deleting a source
+    // article here looked like it worked, then the row quietly came back
+    // on the next reload.
+    const result = await importedContentService.delete(item.id)
+    setBusy(false)
+    if (!result.success) {
+      setArticleError(result.error ?? 'Could not delete this. Please try again.')
+      return
+    }
     onChanged()
   }
 

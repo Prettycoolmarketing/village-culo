@@ -128,8 +128,19 @@ export async function deleteEntity(opts: {
   const { cacheKey, id, table } = opts
 
   if (isSupabaseConfigured && supabase && table) {
-    const { error } = await supabase.from(table).delete().eq('id', id)
+    // RLS silently filters rows outside a DELETE policy's USING clause —
+    // Postgres returns success with zero rows affected, not an error, so
+    // a denied delete looked identical to a real one here. The local
+    // cache was then cleared unconditionally regardless, making a
+    // blocked delete look like it worked until the row silently
+    // reappeared on the next reload/refetch. .select('id') forces the
+    // actually-deleted row(s) back so that case can be told apart from a
+    // genuine delete and reported as a real failure instead.
+    const { data, error } = await supabase.from(table).delete().eq('id', id).select('id')
     if (error) return { success: false, error: friendlyWriteError(error.message) }
+    if (!data || data.length === 0) {
+      return { success: false, error: 'Could not delete this — you may not have permission, or it was already removed.' }
+    }
   }
 
   const items = (store.get<{ id: string }>(cacheKey) ?? []).filter(i => i.id !== id)
