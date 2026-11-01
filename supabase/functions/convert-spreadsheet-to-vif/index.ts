@@ -80,6 +80,7 @@ Any spreadsheet column that doesn't map cleanly to a VIF field (e.g. "source pos
 Do not write a bio from scratch — only use bio if the spreadsheet itself already has real biographical text in a column.
 batchName: a short descriptive name for this import, from any batch/list name context given, or a sensible default like "CSV Import <row count> founders" if none given.
 Never use a literal double-quote character (") anywhere inside a JSON string value, including when quoting a phrase from a cell. Use single quotes (') for that instead — this output is parsed as strict JSON and an unescaped double quote inside a string breaks the parser, silently failing the whole conversion.
+Keep bio and notes BRIEF — a 1-2 sentence summary of the real substance, never a verbatim copy of a long cell's full text. On a large spreadsheet (many rows in one upload), reproducing every long cell in full risks the whole response running out of room to finish before the JSON closes, which fails the entire conversion — condensing each one keeps the output a predictable size regardless of how much text any one row has.
 
 VIF SCHEMA
 ${VIF_SCHEMA}
@@ -111,13 +112,22 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-5',
-          max_tokens: 8000,
+          // Was 8000 — same real truncation risk confirmed on the sibling
+          // convert-text-to-vif function (a large batch's response ran
+          // out of room before the JSON closed, which JSON.parse can't
+          // tell apart from genuinely malformed output, and a retry hits
+          // the exact same cutoff both times). Raised well above what a
+          // normal batch needs; see stop_reason check below for when even
+          // this isn't enough.
+          max_tokens: 16000,
           thinking: { type: 'adaptive' },
           system: SYSTEM_PROMPT,
           messages: [{ role: 'user', content: userContent }],
         }),
       })
     }
+
+    class TruncatedResponseError extends Error {}
 
     async function generateOnce(): Promise<unknown> {
       const res = await callAnthropic()
@@ -129,6 +139,14 @@ serve(async (req) => {
       const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
       const raw = textBlock?.text?.trim()
       if (!raw) throw new Error('AI returned no text')
+      // A real, distinguishable cause — the response was cut off because
+      // it hit max_tokens, not because the model formatted badly.
+      // Retrying this exact input would truncate at the same point again,
+      // so this skips straight to a real, actionable error instead of
+      // burning a second identical attempt.
+      if (data.stop_reason === 'max_tokens') {
+        throw new TruncatedResponseError('The AI ran out of room writing the response — this spreadsheet has too many rows for one go. Try uploading a smaller batch at a time.')
+      }
       const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
       return JSON.parse(sanitizeJsonControlChars(cleaned))
     }
@@ -141,10 +159,12 @@ serve(async (req) => {
     try {
       parsed = await generateOnce()
     } catch (firstErr) {
+      if (firstErr instanceof TruncatedResponseError) throw firstErr
       if (!(firstErr instanceof SyntaxError)) throw firstErr
       try {
         parsed = await generateOnce()
       } catch (secondErr) {
+        if (secondErr instanceof TruncatedResponseError) throw secondErr
         if (secondErr instanceof SyntaxError) {
           throw new Error('The AI\'s response came back malformed twice in a row — please try again.')
         }

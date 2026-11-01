@@ -80,6 +80,7 @@ If the same person appears to comment more than once in the thread, merge into o
 fullName is the only required field — skip (do not fabricate) anyone with no usable name attached to real business/link content.
 batchName: a short descriptive name from any context given (e.g. what the thread/post was about), or a sensible default like "Pasted leads — <N> found" if none given.
 Never use a literal double-quote character (") anywhere inside a JSON string value, including when quoting a phrase from the pasted text (e.g. a business tagline in quotes). Use single quotes (') for that instead — this output is parsed as strict JSON and an unescaped double quote inside a string breaks the parser, silently failing the whole extraction.
+Keep businesses[].description and notes BRIEF — a 1-2 sentence summary of the real substance, never a verbatim copy of a long elevator pitch or bio paragraph. On a large batch (many founders in one paste), reproducing every multi-paragraph pitch in full risks the whole response running out of room to finish before the JSON closes, which fails the entire extraction — condensing each one to its essential point keeps the output a predictable size regardless of how long the source text is, and a short summary is more useful for a leads list than a pasted essay anyway.
 
 VIF SCHEMA
 ${VIF_SCHEMA}
@@ -111,13 +112,23 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: 'claude-sonnet-5',
-          max_tokens: 8000,
+          // Was 8000 — confirmed real, live failure on a 12-founder batch
+          // with several long elevator pitches: the response ran out of
+          // room before the JSON closed, which JSON.parse can't tell
+          // apart from genuinely malformed output, and retrying hit the
+          // exact same cutoff both times ("malformed twice in a row" on
+          // every attempt for that input, not a random flake). Raised
+          // well above what a normal batch needs; see stop_reason check
+          // below for when even this isn't enough.
+          max_tokens: 16000,
           thinking: { type: 'adaptive' },
           system: SYSTEM_PROMPT,
           messages: [{ role: 'user', content: userContent }],
         }),
       })
     }
+
+    class TruncatedResponseError extends Error {}
 
     async function generateOnce(): Promise<unknown> {
       const res = await callAnthropic()
@@ -129,6 +140,14 @@ serve(async (req) => {
       const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
       const raw = textBlock?.text?.trim()
       if (!raw) throw new Error('AI returned no text')
+      // A real, distinguishable cause — the response was cut off because
+      // it hit max_tokens, not because the model formatted badly.
+      // Retrying this exact input would truncate at the same point again,
+      // so this skips straight to a real, actionable error instead of
+      // burning a second identical attempt.
+      if (data.stop_reason === 'max_tokens') {
+        throw new TruncatedResponseError('The AI ran out of room writing the response — this batch has too much text for one go. Try pasting a smaller group of people at a time.')
+      }
       const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
       return JSON.parse(sanitizeJsonControlChars(cleaned))
     }
@@ -141,10 +160,12 @@ serve(async (req) => {
     try {
       parsed = await generateOnce()
     } catch (firstErr) {
+      if (firstErr instanceof TruncatedResponseError) throw firstErr
       if (!(firstErr instanceof SyntaxError)) throw firstErr
       try {
         parsed = await generateOnce()
       } catch (secondErr) {
+        if (secondErr instanceof TruncatedResponseError) throw secondErr
         if (secondErr instanceof SyntaxError) {
           throw new Error('The AI\'s response came back malformed twice in a row — please try again.')
         }
