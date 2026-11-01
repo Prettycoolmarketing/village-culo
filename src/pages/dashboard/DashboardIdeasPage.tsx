@@ -72,12 +72,17 @@ function IdeaDetailPane({ idea, onClose, onSave, onDuplicated, onDeleted }: Idea
   }
 
   async function handleArchiveToggle() {
+    const previous = draft
     const nextStatus = draft.status === 'archived' ? 'published' : 'archived'
     const next = { ...draft, status: nextStatus as Idea['status'] }
     setDraft(next)
     const result = await updateIdea(next)
     if (result.success) onSave(next)
-    else setSaveError(result.error ?? 'Save failed. Please try again.')
+    else {
+      // Same rollback fix as DashboardLibraryPage's identical toggle.
+      setDraft(previous)
+      setSaveError(result.error ?? 'Save failed. Please try again.')
+    }
   }
 
   async function handleDelete() {

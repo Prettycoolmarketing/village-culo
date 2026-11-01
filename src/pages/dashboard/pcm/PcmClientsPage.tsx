@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Tabs } from '../../../components/dashboard/Tabs'
 import {
   getPcmClients, createPcmClient, currentStage, syncPcmClientsFromServer,
-  PCM_OFFER_LABELS, PCM_OFFER_IDS, type PcmOfferId,
+  PCM_OFFER_LABELS, PCM_OFFER_IDS, type PcmOfferId, onPcmSyncError,
 } from '../../../lib/pcmClients'
 
 const font = { fontFamily: "'DM Sans', sans-serif" }
@@ -22,9 +22,17 @@ export function PcmClientsPage() {
     startDate: new Date().toISOString().slice(0, 10), nextShootDate: '',
   })
 
+  const [syncError, setSyncError] = useState<string | null>(null)
+
   function refresh() { setClients(getPcmClients()) }
 
   useEffect(() => { void syncPcmClientsFromServer().then(refresh) }, [])
+  // Surfaces a real server-write failure instead of leaving it totally
+  // silent (see pcmClients.ts's onPcmSyncError for why this exists).
+  useEffect(() => {
+    onPcmSyncError(setSyncError)
+    return () => onPcmSyncError(null)
+  }, [])
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,6 +48,12 @@ export function PcmClientsPage() {
 
   return (
     <div className="p-8 sm:pt-12 flex flex-col gap-6" style={font}>
+      {syncError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-start justify-between gap-3">
+          <span>{syncError}</span>
+          <button onClick={() => setSyncError(null)} className="text-red-400 hover:text-red-600 shrink-0">✕</button>
+        </div>
+      )}
       <div className="flex items-center justify-between px-2 gap-4 flex-wrap">
         <div>
           <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-widest mb-1">CAPO · Pretty Cool Marketing</p>

@@ -89,11 +89,35 @@ function write(clients: PcmClient[]): void {
   localStorage.setItem(KEY, JSON.stringify(clients))
 }
 
+// Confirmed real (found independently by two separate audits): every write
+// in this file used to be truly fire-and-forget — upsert errors only went
+// to console.warn, delete didn't even check `error` at all, and the local
+// cache was always mutated immediately regardless. A staff member toggling
+// a stage, editing notes, or deleting a client saw it "done" right away;
+// if the server write was actually blocked (an RLS/session issue, since
+// migration 031 gates writes to is_village_admin()), nothing ever told
+// them, and the next syncPcmClientsFromServer() call (page mount) would
+// silently overwrite the local change back to the real server state — a
+// toggled stage reverting, a "deleted" client reappearing, with zero
+// explanation. Kept the local-first/optimistic UX (deliberate per this
+// file's own header comment, and every call site here is synchronous) but
+// added a real failure signal: callers (PcmClientsPage, PcmClientDetailPage)
+// register a handler via onPcmSyncError to show it instead of nothing.
+let syncErrorHandler: ((message: string) => void) | null = null
+export function onPcmSyncError(handler: ((message: string) => void) | null): void {
+  syncErrorHandler = handler
+}
+
 function pushToServer(client: PcmClient): void {
   if (!isSupabaseConfigured || !supabase) return
   void supabase.from('pcm_clients').upsert({
     id: client.id, founder_id: client.founderId ?? null, email: client.email, data: client,
-  }).then(({ error }) => { if (error) console.warn('pcm_clients sync failed', error) })
+  }).then(({ error }) => {
+    if (error) {
+      console.warn('pcm_clients sync failed', error)
+      syncErrorHandler?.(`Couldn't save "${client.name}" to the shared tracker — this change may not stick. (${error.message})`)
+    }
+  })
 }
 
 /** Pulls every row from the shared table and merges it into the local cache
@@ -154,8 +178,19 @@ export function updatePcmClient(id: string, patch: Partial<PcmClient>): PcmClien
 }
 
 export function deletePcmClient(id: string): void {
+  const client = read().find(c => c.id === id)
   write(read().filter(c => c.id !== id))
-  if (isSupabaseConfigured && supabase) void supabase.from('pcm_clients').delete().eq('id', id)
+  if (!isSupabaseConfigured || !supabase) return
+  // .select('id') forces the actually-deleted row(s) back — a blocked RLS
+  // delete returns success with zero rows affected, not an error, same
+  // gap already fixed in entityStore.ts's deleteEntity.
+  void supabase.from('pcm_clients').delete().eq('id', id).select('id').then(({ data, error }) => {
+    if (error) {
+      syncErrorHandler?.(`Couldn't delete "${client?.name ?? 'this client'}" from the shared tracker — it may reappear. (${error.message})`)
+    } else if (!data || data.length === 0) {
+      syncErrorHandler?.(`Couldn't delete "${client?.name ?? 'this client'}" from the shared tracker — it may reappear. You may not have permission.`)
+    }
+  })
 }
 
 function logActivity(client: PcmClient, text: string): PcmActivityEntry[] {

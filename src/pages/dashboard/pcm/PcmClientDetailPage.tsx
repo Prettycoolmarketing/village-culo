@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   getPcmClient, updatePcmClient, deletePcmClient, togglePcmStage, addPcmActivity, syncPcmClientsFromServer,
-  PCM_STAGES, PCM_OFFER_LABELS, type PcmStageId,
+  PCM_STAGES, PCM_OFFER_LABELS, type PcmStageId, onPcmSyncError,
 } from '../../../lib/pcmClients'
 import { PCM_SUPPORT_EMAIL } from '../../../config/pcmPaymentLinks'
 import { getFounder, getFounderBySlug, updateFounder } from '../../../services/founders'
@@ -36,6 +36,10 @@ export function PcmClientDetailPage() {
   // browser's local cache yet — sync once on mount so opening a direct link
   // to a brand new client doesn't land on "not found".
   useEffect(() => { void syncPcmClientsFromServer().then(reload) }, [])
+  useEffect(() => {
+    onPcmSyncError(setLinkError)
+    return () => onPcmSyncError(null)
+  }, [])
 
   if (!client) {
     return (
@@ -57,10 +61,20 @@ export function PcmClientDetailPage() {
   }
 
   async function notifyClient() {
+    setLinkError(null)
     if (client!.founderId) {
       const founder = getFounder(client!.founderId)
       if (founder) {
-        await updateFounder({ ...founder, pcmGateOpen: true })
+        // Confirmed real: this used to send the "your content is ready"
+        // email regardless of whether pcmGateOpen actually got saved — a
+        // client could be told their content is ready while the founder's
+        // own dashboard still shows the "being built" banner, since that
+        // banner reads pcmGateOpen directly.
+        const result = await updateFounder({ ...founder, pcmGateOpen: true })
+        if (!result.success) {
+          setLinkError(result.error ?? "Couldn't update the founder's account — email not sent.")
+          return
+        }
         sendTransactionalEmail({ type: 'pcm-content-ready', to: client!.email, founderName: founder.name })
       }
     }
@@ -75,16 +89,30 @@ export function PcmClientDetailPage() {
     if (!ref) return
     const founder = getFounder(ref) ?? getFounderBySlug(ref)
     if (!founder) { setLinkError('No Village founder found with that id or profile slug.'); return }
-    await updateFounder({ ...founder, pcmManaged: true, pcmManagedAt: new Date().toISOString() })
+    const result = await updateFounder({ ...founder, pcmManaged: true, pcmManagedAt: new Date().toISOString() })
+    if (!result.success) {
+      setLinkError(result.error ?? "Couldn't link this founder — self-serve publishing limits weren't turned off.")
+      return
+    }
     updatePcmClient(clientId, { founderId: founder.id, monthlyTarget: client!.monthlyTarget ?? 30 })
     addPcmActivity(clientId, `Linked to Village founder ${founder.name} — now PCM-managed (self-serve publishing limits off).`)
     reload()
   }
 
   async function unlinkFounder() {
+    setLinkError(null)
     if (client!.founderId) {
       const founder = getFounder(client!.founderId)
-      if (founder) await updateFounder({ ...founder, pcmManaged: false })
+      if (founder) {
+        // Confirmed real: unchecked before — a failure here could leave a
+        // founder still pcmManaged (unlimited publishing) after staff
+        // believe self-serve limits are back on, with nothing telling them.
+        const result = await updateFounder({ ...founder, pcmManaged: false })
+        if (!result.success) {
+          setLinkError(result.error ?? "Couldn't unlink — the founder's account may still show as PCM-managed.")
+          return
+        }
+      }
     }
     updatePcmClient(clientId, { founderId: undefined })
     addPcmActivity(clientId, 'Unlinked from Village founder — self-serve publishing limits back on.')

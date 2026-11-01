@@ -409,7 +409,8 @@ function EditorialPanel() {
   }
 
   async function handleDelete(id: string) {
-    await editorialService.delete(id)
+    const result = await editorialService.delete(id)
+    if (!result.success) setSaveError(result.error ?? 'Could not delete this feature. Please try again.')
     refresh()
   }
 

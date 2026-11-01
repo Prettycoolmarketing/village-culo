@@ -301,7 +301,18 @@ export const importedContentService = {
     const result = await this.upsert(merged)
     if (!result.success) return result
 
-    for (const item of rest) await this.delete(item.id)
+    // Confirmed real: this loop's deletes used to be unchecked, with
+    // `success: true` returned unconditionally afterward — a founder
+    // merging duplicate imports would be told it was a clean merge even
+    // if one of the duplicates failed to delete and silently survived.
+    const failed: string[] = []
+    for (const item of rest) {
+      const deleteResult = await this.delete(item.id)
+      if (!deleteResult.success) failed.push(item.id)
+    }
+    if (failed.length > 0) {
+      return { success: false, error: `Merged, but ${failed.length} duplicate(s) couldn't be removed and may still show up separately.` }
+    }
     return { success: true }
   },
 }

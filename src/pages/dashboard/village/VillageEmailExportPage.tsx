@@ -727,7 +727,15 @@ function CampaignsPanel() {
       id: editingId ?? crypto.randomUUID(), subject: subject.trim(), bodyHtml, status: 'draft',
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     }
-    await emailCampaignsService.saveDraft(campaign)
+    setSendError(null)
+    // Confirmed real: unchecked before — the form fields cleared
+    // unconditionally right after, so a failed save lost whatever the
+    // staff member had just typed with no error shown at all.
+    const result = await emailCampaignsService.saveDraft(campaign)
+    if (!result.success) {
+      setSendError(result.error ?? 'Could not save this draft — your changes are still in the form above.')
+      return
+    }
     setCampaigns(emailCampaignsService.getAll())
     setEditingId(null)
     setSubject('')

@@ -347,7 +347,16 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
     if (draft?.body) {
       const nextTitle = draft.title || item.title
       const nextDescription = normalizeBlogSpacing(draft.body)
-      await importedContentService.upsert({ ...item, title: nextTitle, description: nextDescription })
+      // Confirmed real: unchecked before — a failed save left the UI
+      // showing the newly-written text while the real record still had
+      // the old one, reverting the moment anything re-reads it (same
+      // "looks saved, isn't" shape as the sibling bug already fixed on
+      // handleSaveEdit/handleDelete in this same file).
+      const upsertResult = await importedContentService.upsert({ ...item, title: nextTitle, description: nextDescription })
+      if (!upsertResult.success) {
+        setArticleError(upsertResult.error ?? 'Article written, but could not be saved. Please try again.')
+        return
+      }
       setTitle(nextTitle)
       setDescription(nextDescription)
       onChanged()
@@ -394,10 +403,26 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
   async function setStatus(status: ImportedContentStatus) {
     setBusy(true)
     setPublishError(null)
+    // Confirmed real: every updateStatus()/updateStory() call below used
+    // to go unchecked, with onChanged() firing regardless — a failed
+    // status change looked like it worked until the real record was
+    // re-read and the badge reverted, with nothing ever telling staff why.
     if (item.relatedStoryId) {
       const existing = getStory(item.relatedStoryId)
-      if (existing) await updateStory({ ...existing, status })
-      await importedContentService.updateStatus(item.id, status)
+      if (existing) {
+        const storyResult = await updateStory({ ...existing, status })
+        if (!storyResult.success) {
+          setBusy(false)
+          setPublishError(storyResult.error ?? 'Could not update the published Story. Please try again.')
+          return
+        }
+      }
+      const statusResult = await importedContentService.updateStatus(item.id, status)
+      if (!statusResult.success) {
+        setBusy(false)
+        setPublishError(statusResult.error ?? 'Could not save the new status. Please try again.')
+        return
+      }
     } else if (status === 'published' || status === 'featured') {
       // Used to fall through to the bare updateStatus below when
       // isReadyToPublish was false (no title yet) — that flipped the badge
@@ -410,13 +435,23 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
         if (!result.success) {
           setPublishError(result.error ?? 'Could not publish. Please try again.')
         } else {
-          await importedContentService.updateStatus(item.id, status)
+          const statusResult = await importedContentService.updateStatus(item.id, status)
+          if (!statusResult.success) {
+            setBusy(false)
+            setPublishError(statusResult.error ?? 'Published, but the item\'s own status failed to update — it may still show as pending.')
+            return
+          }
         }
       } else {
         setPublishError('Give this a real title before publishing it.')
       }
     } else {
-      await importedContentService.updateStatus(item.id, status)
+      const statusResult = await importedContentService.updateStatus(item.id, status)
+      if (!statusResult.success) {
+        setBusy(false)
+        setPublishError(statusResult.error ?? 'Could not save the new status. Please try again.')
+        return
+      }
     }
     setBusy(false)
     onChanged()

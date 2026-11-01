@@ -74,7 +74,8 @@ export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }
   }
 
   async function handleRemoveEpisode(storyId: string) {
-    await removeEpisode(storyId)
+    const result = await removeEpisode(storyId)
+    if (!result.success) setSaveError(result.error ?? 'Could not remove that episode. Please try again.')
     onChanged()
   }
 
@@ -85,7 +86,8 @@ export function SeriesDetail({ series, founderId, onBack, onChanged, onDeleted }
     const tmp = reordered[index]!
     reordered[index] = reordered[target]!
     reordered[target] = tmp
-    await reorderEpisodes(series.id, reordered)
+    const result = await reorderEpisodes(series.id, reordered)
+    if (!result.success) setSaveError(result.error ?? 'Could not reorder episodes. Please try again.')
     onChanged()
   }
 

@@ -85,9 +85,14 @@ export async function approveItem(itemId: string): Promise<WriteResult> {
 // verdict an item is currently sitting at. Staff already had their chance
 // to delete/edit anything off; Publish ships what's left. Silently a no-op
 // when Supabase isn't configured, same as every other editorial_items call.
-export async function approveAllForFounder(founderId: string): Promise<void> {
-  if (!isSupabaseConfigured || !supabase) return
-  await supabase.from('editorial_items').update({ editorial_status: 'approved' }).eq('founder_id', founderId).neq('editorial_status', 'approved')
+export async function approveAllForFounder(founderId: string): Promise<boolean> {
+  if (!isSupabaseConfigured || !supabase) return true
+  // Confirmed real: unchecked before, called fire-and-forget from the main
+  // "Publish this founder" flow — a blocked update here left editorial_items
+  // stuck at the wrong status in the review queue (an item staff just
+  // published still showing as pending/review) with zero signal anywhere.
+  const { error } = await supabase.from('editorial_items').update({ editorial_status: 'approved' }).eq('founder_id', founderId).neq('editorial_status', 'approved')
+  return !error
 }
 
 // Bulk version of approveItem — "Confirm all" in the UI, for approving

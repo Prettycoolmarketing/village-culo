@@ -110,7 +110,12 @@ function SourceRow({ source, onChanged }: { source: ConnectedSource; onChanged: 
   }
 
   async function handleRemove() {
-    await connectedSourcesService.delete(source.id)
+    // Confirmed real: unchecked before — a founder disconnecting a
+    // source saw it vanish immediately (onChanged() refetches) even if
+    // the delete was rejected server-side, reappearing on the next real
+    // refresh with no explanation.
+    const result = await connectedSourcesService.delete(source.id)
+    if (!result.success) setNotice(result.error ?? "Couldn't disconnect this source. Please try again.")
     onChanged()
   }
 

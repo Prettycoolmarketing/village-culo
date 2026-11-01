@@ -442,7 +442,9 @@ export function buildStoryFromImport(item: ImportedContent, founder: Founder): S
 const MIN_REAL_ARTICLE_LENGTH = 300
 
 export async function publishFounderArticles(founder: Founder): Promise<void> {
-  void approveAllForFounder(founder.id)
+  void approveAllForFounder(founder.id).then(ok => {
+    if (!ok) console.warn(`approveAllForFounder failed for ${founder.id} — editorial_items may still show these as pending review.`)
+  })
   // Confirmed real bug: a curated founder's research-source stubs (one-
   // line summaries like "Tap4Change's post linking to a recorded
   // interview...") were getting published as full "articles" the moment

@@ -71,12 +71,19 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
   }
 
   async function handleArchiveToggle() {
+    const previous = draft
     const nextStatus = draft.status === 'archived' ? 'coming-soon' : 'archived'
     const next = { ...draft, status: nextStatus as LibraryItem['status'] }
     setDraft(next)
     const result = await updateLibraryItem(next)
     if (result.success) onSave(next)
-    else setSaveError(result.error ?? 'Save failed. Please try again.')
+    else {
+      // Confirmed real: on failure this left the optimistic flip in
+      // place — the toggle visually stayed switched even though the
+      // save never actually landed.
+      setDraft(previous)
+      setSaveError(result.error ?? 'Save failed. Please try again.')
+    }
   }
 
   async function handleDelete() {

@@ -93,7 +93,15 @@ export async function saveSeries(series: Series): Promise<WriteResult> {
 /** Deletes the series itself and un-assigns every episode currently in it — episodes stay published, they just lose their series/episode number. */
 export async function deleteSeries(id: string): Promise<WriteResult> {
   const episodes = getSeriesEpisodes(id)
-  await Promise.all(episodes.map(ep => updateStory({ ...ep, seriesId: undefined, episodeNumber: undefined })))
+  // Confirmed real: these un-assign writes used to be discarded — if one
+  // failed, that episode kept a seriesId pointing at a series about to be
+  // deleted below, leaving an orphaned reference that could surface as a
+  // broken "part of series X" link on an otherwise-published story.
+  const results = await Promise.all(episodes.map(ep => updateStory({ ...ep, seriesId: undefined, episodeNumber: undefined })))
+  const failed = results.filter(r => !r.success).length
+  if (failed > 0) {
+    return { success: false, error: `${failed} episode(s) couldn't be un-assigned — try again before deleting this series.` }
+  }
   return deleteEntity({ cacheKey: KEY, id, table: TABLE })
 }
 

@@ -625,12 +625,16 @@ function ConnectedSourceRow({ source, isHighVolume, onChanged }: { source: Conne
   }
 
   async function handleRemove() {
-    await connectedSourcesService.delete(source.id)
+    // Confirmed real: unchecked before — same disconnect-then-reappear
+    // gap as DashboardImportSourcesPage's identical handler.
+    const result = await connectedSourcesService.delete(source.id)
+    if (!result.success) setNotice(result.error ?? "Couldn't disconnect this source. Please try again.")
     onChanged()
   }
 
   async function handleTogglePause() {
-    await connectedSourcesService.upsert({ ...source, autoSyncPaused: !source.autoSyncPaused })
+    const result = await connectedSourcesService.upsert({ ...source, autoSyncPaused: !source.autoSyncPaused })
+    if (!result.success) setNotice(result.error ?? "Couldn't update auto-sync. Please try again.")
     onChanged()
   }
 

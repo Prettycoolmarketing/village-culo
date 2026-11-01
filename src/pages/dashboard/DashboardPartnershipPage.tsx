@@ -239,7 +239,10 @@ function AffiliateLinksOverview({ founderId }: { founderId: string }) {
   }
 
   async function handleRemove(id: string) {
-    await affiliateLinkService.delete(id)
+    // Confirmed real: unchecked before — a rejected delete looked
+    // identical to a real one until the link reappeared later.
+    const result = await affiliateLinkService.delete(id)
+    if (!result.success) setError(result.error ?? "Couldn't remove this link. Please try again.")
     refresh()
   }
 

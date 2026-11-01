@@ -1573,9 +1573,21 @@ export function DashboardProfilePage() {
           setCuloArticleError(result.error ?? 'Could not publish. Please try again.')
           return
         }
-        await importedContentService.upsert({ ...culoPendingArticle, status: 'published', relatedStoryId: story.id })
+        // Confirmed real: unchecked before — a failure here meant the
+        // Story went live but the ImportedContent record never got
+        // status:'published'/relatedStoryId set, leaving it stuck
+        // showing as "pending decision" while already live elsewhere.
+        const syncResult = await importedContentService.upsert({ ...culoPendingArticle, status: 'published', relatedStoryId: story.id })
+        if (!syncResult.success) {
+          setCuloArticleError(syncResult.error ?? 'Published, but this item is still showing as pending — refresh and check.')
+          return
+        }
       } else {
-        await importedContentService.upsert({ ...culoPendingArticle, status: 'archived' })
+        const archiveResult = await importedContentService.upsert({ ...culoPendingArticle, status: 'archived' })
+        if (!archiveResult.success) {
+          setCuloArticleError(archiveResult.error ?? 'Could not archive this. Please try again.')
+          return
+        }
       }
       setImportedTick(t => t + 1)
       setTab('overview')
@@ -2551,7 +2563,11 @@ export function DashboardProfilePage() {
                 // that actually needs a real founder record (see
                 // publishItems' identical founderForPublish note).
                 if (status !== 'published' && status !== 'featured') {
-                  await importedContentService.updateStatus(item.id, status)
+                  const statusResult = await importedContentService.updateStatus(item.id, status)
+                  if (!statusResult.success) {
+                    setSaveError(statusResult.error ?? 'Could not save the new status. Please try again.')
+                    return
+                  }
                   setImportedTick(t => t + 1)
                   return
                 }
@@ -2564,8 +2580,18 @@ export function DashboardProfilePage() {
                 try {
                 if (item.relatedStoryId) {
                   const existing = getStory(item.relatedStoryId)
-                  if (existing) await updateStory({ ...existing, status })
-                  await importedContentService.updateStatus(item.id, status)
+                  let storyOk = true
+                  if (existing) {
+                    const storyResult = await updateStory({ ...existing, status })
+                    if (!storyResult.success) {
+                      storyOk = false
+                      setSaveError(storyResult.error ?? 'Could not update the published story. Please try again.')
+                    }
+                  }
+                  if (storyOk) {
+                    const statusResult = await importedContentService.updateStatus(item.id, status)
+                    if (!statusResult.success) setSaveError(statusResult.error ?? 'Could not save the new status. Please try again.')
+                  }
                 } else if (isReadyToPublish(item)) {
                   const story = buildStoryFromImport(item, founderForPublish)
                   story.status = status
@@ -2574,7 +2600,8 @@ export function DashboardProfilePage() {
                     if (result.limitKind) setLimitModal(result.limitKind)
                     else setSaveError(result.error ?? 'Could not publish. Please try again.')
                   } else {
-                    await importedContentService.updateStatus(item.id, status)
+                    const statusResult = await importedContentService.updateStatus(item.id, status)
+                    if (!statusResult.success) setSaveError(statusResult.error ?? 'Published, but the item\'s own status failed to update — it may still show as pending.')
                   }
                 } else {
                   setSaveError('Give this a real title before publishing it.')
@@ -2626,20 +2653,37 @@ export function DashboardProfilePage() {
                 if (!seriesId) return
                 const targets = shownReady.filter(i => readyChecked.has(i.id))
                 if (targets.length === 0) return
+                const failed: string[] = []
                 for (const item of targets) {
-                  await importedContentService.upsert({ ...item, seriesId })
+                  const result = await importedContentService.upsert({ ...item, seriesId })
+                  if (!result.success) failed.push(item.id)
                 }
                 setReadyChecked(new Set())
                 setImportedTick(t => t + 1)
+                if (failed.length > 0) {
+                  setSaveError(`${failed.length} of ${targets.length} item(s) couldn't be added to the series. Please try again.`)
+                }
               }
 
               async function handleDeleteSelected() {
                 const ids = Array.from(readyChecked)
                 if (ids.length === 0) return
                 if (!window.confirm(`Delete ${ids.length} selected item${ids.length === 1 ? '' : 's'}? This can't be undone.`)) return
-                for (const id of ids) await importedContentService.delete(id)
+                // Confirmed real: unchecked before — a delete that failed
+                // (RLS, a dropped connection, anything) still removed the
+                // checkbox selection and reported as done; the item then
+                // reappeared on the next refetch with nothing having ever
+                // told the founder it didn't actually delete.
+                const failed: string[] = []
+                for (const id of ids) {
+                  const result = await importedContentService.delete(id)
+                  if (!result.success) failed.push(id)
+                }
                 setReadyChecked(new Set())
                 setImportedTick(t => t + 1)
+                if (failed.length > 0) {
+                  setSaveError(`${failed.length} of ${ids.length} item(s) couldn't be deleted — they may still be here.`)
+                }
               }
 
               // Rewrites the selected drafts with the founder's Voice & Brand
@@ -2654,6 +2698,11 @@ export function DashboardProfilePage() {
                 if (ids.length === 0) return
                 setImportedRegenProgress({ done: 0, total: ids.length })
                 let held = 0
+                // Confirmed real: these upserts used to be unchecked — a
+                // real, costly AI generation call could succeed and the
+                // save could still silently fail, burning spend and
+                // losing the result with nothing telling the founder.
+                let failedSaves = 0
                 // Rolling memory of recent rewrites so a batch doesn't read
                 // as repetitive — each call is otherwise unaware of what any
                 // other item in the same batch just became.
@@ -2678,7 +2727,7 @@ export function DashboardProfilePage() {
                       recentAngles: recentAngles.slice(-8),
                     })
                     if (blog?.status === 'ready') {
-                      await importedContentService.upsert({
+                      const saveResult = await importedContentService.upsert({
                         ...item,
                         title: blog.title ?? item.title,
                         description: blog.blog ?? item.description,
@@ -2693,6 +2742,7 @@ export function DashboardProfilePage() {
                         possibleGroupHint: blog.possibleGroupHint,
                         articleShape: blog.articleShape,
                       })
+                      if (!saveResult.success) failedSaves++
                       recentAngles.push({
                         title: blog.title, articleShape: blog.articleShape, generationType: blog.generationType,
                         insightSource: blog.insightSource, primaryQuestion: blog.primaryQuestion,
@@ -2712,7 +2762,11 @@ export function DashboardProfilePage() {
                 }
                 setReadyChecked(new Set())
                 setImportedRegenProgress(null)
-                setSaveError(held > 0 ? `${held} item${held === 1 ? '' : 's'} had too little to go on and ${held === 1 ? 'was' : 'were'} held for review instead of guessed at.` : null)
+                const regenMessages = [
+                  held > 0 ? `${held} item${held === 1 ? '' : 's'} had too little to go on and ${held === 1 ? 'was' : 'were'} held for review instead of guessed at.` : null,
+                  failedSaves > 0 ? `${failedSaves} rewritten item${failedSaves === 1 ? '' : 's'} couldn't be saved — the AI spend happened but the result was lost. Please retry ${failedSaves === 1 ? 'it' : 'them'}.` : null,
+                ].filter(Boolean)
+                setSaveError(regenMessages.length > 0 ? regenMessages.join(' ') : null)
                 setImportedTick(t => t + 1)
               }
 
@@ -2732,6 +2786,8 @@ export function DashboardProfilePage() {
                 setCuloArticleProgress({ done: 0, total: ids.length })
                 let usedQuestions = [...(getFounder(draft.id)?.usedSearchQuestions ?? [])]
                 let held = 0
+                // Same AI-spend-then-lost-on-save risk as handleRegenerateSelected above.
+                let failedSaves = 0
                 for (let i = 0; i < ids.length; i++) {
                   if (i > 0) await new Promise(r => setTimeout(r, 1500))
                   const item = importedContentService.get(ids[i]!)
@@ -2750,7 +2806,7 @@ export function DashboardProfilePage() {
                       const resultTopics = [result.primaryTopic, ...(result.secondaryTopics ?? [])].filter((t): t is string => !!t)
                       const isPlaceholderTitle = /^Imported from /i.test(item.title.trim())
                       const preservedOriginalTitle = !isPlaceholderTitle && item.title.trim() ? item.title.trim() : undefined
-                      await importedContentService.upsert({
+                      const saveResult = await importedContentService.upsert({
                         ...item,
                         title: result.headline,
                         // The original post's own title (when it's a real
@@ -2760,6 +2816,7 @@ export function DashboardProfilePage() {
                         description: normalizeBlogSpacing(result.article),
                         topics: resultTopics.length > 0 ? Array.from(new Set([...item.topics, ...resultTopics])) : item.topics,
                       })
+                      if (!saveResult.success) failedSaves++
                       if (result.primaryQuestion) {
                         usedQuestions = [...usedQuestions, result.primaryQuestion]
                         if (liveFounder) await updateFounder({ ...liveFounder, usedSearchQuestions: usedQuestions })
@@ -2772,7 +2829,11 @@ export function DashboardProfilePage() {
                 }
                 setReadyChecked(new Set())
                 setCuloArticleProgress(null)
-                setSaveError(held > 0 ? `${held} item${held === 1 ? '' : 's'} had no real question left to answer and ${held === 1 ? 'was' : 'were'} left as-is — write those by hand.` : null)
+                const articleMessages = [
+                  held > 0 ? `${held} item${held === 1 ? '' : 's'} had no real question left to answer and ${held === 1 ? 'was' : 'were'} left as-is — write those by hand.` : null,
+                  failedSaves > 0 ? `${failedSaves} written item${failedSaves === 1 ? '' : 's'} couldn't be saved — the AI spend happened but the result was lost. Please retry ${failedSaves === 1 ? 'it' : 'them'}.` : null,
+                ].filter(Boolean)
+                setSaveError(articleMessages.length > 0 ? articleMessages.join(' ') : null)
                 setImportedTick(t => t + 1)
               }
 
@@ -3214,6 +3275,12 @@ export function DashboardProfilePage() {
                 if (targets.length === 0) return
                 setPublishedRegenProgress({ done: 0, total: targets.length })
                 const recentAngles: { title?: string; articleShape?: string; generationType?: string; insightSource?: string; primaryQuestion?: string }[] = []
+                // Same AI-spend-then-lost-on-save risk as the Ready-to-
+                // Publish rewrite above, plus a sync risk: the live Story
+                // and its source ImportedContent record could end up
+                // showing different text if one write lands and the
+                // other doesn't.
+                let failedSaves = 0
                 for (let i = 0; i < targets.length; i++) {
                   if (i > 0) await new Promise(r => setTimeout(r, 1500))
                   const story = targets[i]!
@@ -3230,8 +3297,12 @@ export function DashboardProfilePage() {
                     recentAngles: recentAngles.slice(-8),
                   })
                   if (blog?.status === 'ready' && blog.blog) {
-                    await updateStory({ ...story, title: blog.title ?? story.title, blog: blog.blog, subtitle: blog.subtitle ?? story.subtitle })
-                    if (source) await importedContentService.upsert({ ...source, title: blog.title ?? source.title, description: blog.blog })
+                    const storyResult = await updateStory({ ...story, title: blog.title ?? story.title, blog: blog.blog, subtitle: blog.subtitle ?? story.subtitle })
+                    if (!storyResult.success) failedSaves++
+                    if (source) {
+                      const sourceResult = await importedContentService.upsert({ ...source, title: blog.title ?? source.title, description: blog.blog })
+                      if (!sourceResult.success) failedSaves++
+                    }
                     recentAngles.push({
                       title: blog.title, articleShape: blog.articleShape, generationType: blog.generationType,
                       insightSource: blog.insightSource, primaryQuestion: blog.primaryQuestion,
@@ -3241,6 +3312,9 @@ export function DashboardProfilePage() {
                 }
                 setPublishedChecked(new Set())
                 setPublishedRegenProgress(null)
+                if (failedSaves > 0) {
+                  setSaveError(`${failedSaves} rewrite(s) couldn't be fully saved — the AI spend happened but some results were lost, or the story and its source may now show different text. Please check and retry.`)
+                }
                 setImportedTick(t => t + 1)
               }
 

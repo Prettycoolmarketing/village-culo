@@ -68,7 +68,15 @@ export const founderClaimService = {
     const result = await writeEntityUnowned<FounderClaimRequest>({ cacheKey: KEY, item: claim, table: TABLE, toRow })
     if (!result.success) throw new Error(result.error ?? 'Failed to submit claim')
     const founder = getFounder(data.founderId)
-    if (founder) void updateFounder({ ...founder, profileStatus: 'claim-pending' })
+    // Local/dev-only fallback path (Supabase not configured) — the claim
+    // itself already succeeded above, so not worth failing the whole
+    // request over this secondary flag; logged so a real failure isn't
+    // completely invisible either.
+    if (founder) {
+      void updateFounder({ ...founder, profileStatus: 'claim-pending' }).then(r => {
+        if (!r.success) console.warn(`Could not mark founder ${founder.id} as claim-pending`, r.error)
+      })
+    }
     sendTransactionalEmail({ type: 'claim-received', to: claim.requesterEmail, founderName: founder?.name ?? 'this profile' })
     return claim
   },
@@ -88,9 +96,14 @@ export const founderClaimService = {
     const result = await writeAdminClaim(updated)
     if (!result.success) return result
 
+    // Confirmed real: this founder-record write used to be unchecked —
+    // the claim row says "approved" either way, but if this fails the
+    // founder's own profile never actually flips to claimed, reading as
+    // "I approved this claim, why does the founder still show unclaimed?"
     const founder = getFounder(claim.founderId)
+    let founderUpdateFailed = false
     if (founder) {
-      void updateFounder({
+      const founderResult = await updateFounder({
         ...founder,
         profileStatus: 'claimed',
         claimedAt: new Date().toISOString(),
@@ -105,6 +118,7 @@ export const founderClaimService = {
         // string comparison forever either way.
         claimedByUserId: claim.requesterUserId ?? founder.claimedByUserId,
       })
+      if (!founderResult.success) founderUpdateFailed = true
     }
     sendTransactionalEmail({
       type: 'claim-approved',
@@ -112,6 +126,9 @@ export const founderClaimService = {
       founderName: founder?.name ?? 'your profile',
       founderSlug: founder?.slug ?? '',
     })
+    if (founderUpdateFailed) {
+      return { success: false, error: 'Claim approved, but the founder profile itself failed to update — it may still show as unclaimed. Try approving again.' }
+    }
     return result
   },
 
@@ -130,9 +147,12 @@ export const founderClaimService = {
     const result = await writeAdminClaim(updated)
     if (!result.success) return result
 
+    // Same gap as approve() above — unchecked before.
     const founder = getFounder(claim.founderId)
+    let founderUpdateFailed = false
     if (founder && founder.profileStatus === 'claim-pending') {
-      void updateFounder({ ...founder, profileStatus: 'village-curated', isClaimable: true })
+      const founderResult = await updateFounder({ ...founder, profileStatus: 'village-curated', isClaimable: true })
+      if (!founderResult.success) founderUpdateFailed = true
     }
     sendTransactionalEmail({
       type: 'claim-rejected',
@@ -140,6 +160,9 @@ export const founderClaimService = {
       founderName: founder?.name ?? 'this profile',
       reason: adminNotes,
     })
+    if (founderUpdateFailed) {
+      return { success: false, error: "Claim rejected, but the founder profile didn't revert to claimable — it may still show as pending. Try again." }
+    }
     return result
   },
 

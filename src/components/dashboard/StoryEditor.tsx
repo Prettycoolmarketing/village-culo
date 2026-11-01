@@ -102,7 +102,11 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
     if (!founder) return
     const others = (founder.faqs ?? []).filter(f => !f.relatedStoryIds.includes(draft.id))
     const stamped = next.map(f => f.relatedStoryIds.includes(draft.id) ? f : { ...f, relatedStoryIds: [...f.relatedStoryIds, draft.id] })
-    await updateFounder({ ...founder, faqs: [...others, ...stamped] })
+    // Confirmed real: unchecked before — a founder editing Q&A saw it
+    // "saved" (local state already updated above) with no way to know a
+    // failed write would silently not persist.
+    const result = await updateFounder({ ...founder, faqs: [...others, ...stamped] })
+    if (!result.success) setSaveError(result.error ?? "Couldn't save your Q&A changes. Please try again.")
   }
 
   // Auto-adds newly detected topics rather than just suggesting them — a
@@ -508,7 +512,14 @@ export function StoryEditor({ story, onSave, onDelete, onClose, canRewrite = fal
 
   async function handleDelete() {
     const result = await deleteStory(draft.id)
-    if (result.success) onDelete(draft)
+    if (result.success) {
+      onDelete(draft)
+      return
+    }
+    // Confirmed real: a rejected delete used to do nothing visible at
+    // all — the confirm dialog closes, nothing happens, and there's no
+    // way to tell a real failure apart from the button just not working.
+    setSaveError(result.error ?? "Couldn't delete this story. Please try again.")
   }
 
   // A story published with real blog text but a contentTypes list that
