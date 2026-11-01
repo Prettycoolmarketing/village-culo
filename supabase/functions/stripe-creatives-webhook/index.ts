@@ -25,7 +25,7 @@
 //                               signing secret from that page and set it here.
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
 import Stripe from 'https://esm.sh/stripe@17?target=deno'
 
 const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!

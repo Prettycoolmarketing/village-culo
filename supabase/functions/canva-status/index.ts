@@ -9,7 +9,7 @@
 // Deploy: supabase functions deploy canva-status
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
 import { assertOwnsFounder } from '../_shared/canva.ts'
 
 const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!

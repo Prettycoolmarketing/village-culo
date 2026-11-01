@@ -6,7 +6,7 @@
 // founder's connection should keep working indefinitely without them
 // reconnecting.
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
 
 const CANVA_CLIENT_ID     = Deno.env.get('CANVA_CLIENT_ID')
 const CANVA_CLIENT_SECRET = Deno.env.get('CANVA_CLIENT_SECRET')

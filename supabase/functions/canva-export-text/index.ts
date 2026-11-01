@@ -17,7 +17,7 @@
 // Deploy: supabase functions deploy canva-export-text
 
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.108.2'
 import JSZip from 'https://esm.sh/jszip@3.10.1'
 import { getValidCanvaAccessToken, assertOwnsFounder } from '../_shared/canva.ts'
 import { createExportJob, waitForExportJob, fetchWithLimit } from '../_shared/canvaExport.ts'

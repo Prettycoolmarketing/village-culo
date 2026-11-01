@@ -1,4 +1,17 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains" },
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'self'; base-uri 'self'; object-src 'none'" }
+      ]
+    }
+  ],
   "redirects": [
     { "source": "/stories/3-in-1-beach-bag-with-a-towel-and-pillow-10", "destination": "/stories/3-in-1-beach-bag-with-a-towel-and-pillow", "permanent": true },
     { "source": "/stories/3-in-1-beach-bag-with-a-towel-and-pillow-11", "destination": "/stories/3-in-1-beach-bag-with-a-towel-and-pillow", "permanent": true }
