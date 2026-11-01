@@ -6,13 +6,16 @@ import { Navbar } from '../components/layout/Navbar'
 import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { StoryGrid } from '../widgets/StoryGrid'
+import { LiveFounderPagePreview } from '../components/ui/LiveFounderPagePreview'
 
-// Resized/compressed from the original 1971x1430 PNG (~1MB) down to a
-// 1200px-wide JPEG (~100KB) — the raw screenshot was slow to load in the
-// hero, which is above the fold on first paint.
-// Swapped with VillagePage.tsx's top-section photo (was culo-canva-hero.png
-// on each side) — /join-hero.jpg now runs on the homepage instead.
-const HERO_IMAGE = '/creatives/culo-canva-hero.png'
+// The Canva-variant hero (isCanva=true, ?source=canva) keeps its real
+// Canva product screenshot — that pitch IS about Canva. The default
+// (Village) hero used to show this same Canva screenshot despite pitching
+// the Village, not Canva — a visitor reading "turn what you've made into
+// something people can discover" landed on a photo of a Canva editing
+// screen. Swapped for a live founder-page preview (LiveFounderPagePreview)
+// instead, same device already used lower on this page and on the
+// homepage — shows the actual thing being pitched, not a mismatched one.
 const HERO_IMAGE_CANVA = '/join/join-hero-canva.jpg'
 
 const GRID_ROW_1 = ['/join/grid-1.jpg', '/join/grid-2.jpg', '/join/grid-3.jpg']
@@ -213,11 +216,15 @@ export function JoinVillagePage() {
                 </div>
               )}
             </div>
-            <img
-              src={isCanva ? HERO_IMAGE_CANVA : HERO_IMAGE}
-              alt="A Canva project full of finished CULO Creatives content — vlog style reels, talking head reels, quick rhythm reels, voice over reels and captions, all generated from one founder's raw footage"
-              className="w-full h-auto rounded-3xl"
-            />
+            {isCanva ? (
+              <img
+                src={HERO_IMAGE_CANVA}
+                alt="A Canva project full of finished CULO Creatives content — vlog style reels, talking head reels, quick rhythm reels, voice over reels and captions, all generated from one founder's raw footage"
+                className="w-full h-auto rounded-3xl"
+              />
+            ) : (
+              <LiveFounderPagePreview className="block rounded-3xl border border-white/10 shadow-xl hover:shadow-2xl" />
+            )}
           </div>
         </InnerContainer>
       </section>
@@ -314,30 +321,7 @@ export function JoinVillagePage() {
                 Create your founder profile
               </a>
             </div>
-            <a
-              href="https://www.culovillage.com/founders/shakas-designer"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block rounded-2xl overflow-hidden border border-border shadow-lg bg-white hover:shadow-xl transition-shadow"
-              aria-label="See an example CULO Village founder page (opens in a new tab)"
-            >
-              <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F3EDE6] border-b border-border">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
-                <span className="w-2.5 h-2.5 rounded-full bg-green-300" />
-                <span className="ml-3 text-[10px] text-muted truncate font-body">culovillage.com/founders/shakas-designer</span>
-              </div>
-              <div className="relative overflow-hidden" style={{ aspectRatio: '4 / 3' }}>
-                <iframe
-                  src="https://www.culovillage.com/founders/shakas-designer"
-                  title="Example CULO Village founder page"
-                  className="absolute top-0 left-0 border-0 pointer-events-none"
-                  style={{ width: '250%', height: '250%', transform: 'scale(0.4)', transformOrigin: 'top left' }}
-                  loading="lazy"
-                  tabIndex={-1}
-                />
-              </div>
-            </a>
+            <LiveFounderPagePreview className="block rounded-2xl border border-border shadow-lg hover:shadow-xl" />
           </div>
         </InnerContainer>
       </section>
