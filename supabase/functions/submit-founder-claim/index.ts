@@ -78,10 +78,20 @@ serve(async (req) => {
 
     // Mirrors founderClaimService.create()'s side effect — mark the founder as
     // having a claim pending so the profile stops offering to claim again.
+    // Confirmed real: this write used to be unchecked. The claim request
+    // row itself (inserted above) is the real record and already exists
+    // either way, but if THIS write silently fails, the profile still
+    // looks freely claimable — a second visitor, or claim-founder-profile's
+    // instant-claim path, could claim the same profile concurrently with
+    // staff unaware there are now two competing claims on it. Flagged in
+    // the staff alert below rather than failing the whole request, since
+    // the claim itself did genuinely get filed.
     const { data: founderRow } = await admin.from('founders').select('data').eq('id', founderId).maybeSingle()
+    let statusFlagFailed = false
     if (founderRow?.data) {
       const updatedData = { ...founderRow.data, profileStatus: 'claim-pending' }
-      await admin.from('founders').update({ data: updatedData, profile_status: 'claim-pending' }).eq('id', founderId)
+      const { error: statusError } = await admin.from('founders').update({ data: updatedData, profile_status: 'claim-pending' }).eq('id', founderId)
+      if (statusError) statusFlagFailed = true
     }
 
     // Staff alert — this one never auto-connects (no instant match was
@@ -94,7 +104,8 @@ serve(async (req) => {
       body: JSON.stringify({
         kind: 'review-requested', founderId,
         founderName: (founderRow?.data as { name?: string } | undefined)?.name,
-        requesterName: claim.requesterName, requesterEmail: claim.requesterEmail,
+        requesterName: statusFlagFailed ? `${claim.requesterName} — ⚠️ profile still shows as claimable, the claim-pending flag failed to save, check for competing claims` : claim.requesterName,
+        requesterEmail: claim.requesterEmail,
       }),
     }).catch(() => { /* best-effort */ })
 

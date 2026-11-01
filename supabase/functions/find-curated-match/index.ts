@@ -87,14 +87,22 @@ serve(async (req) => {
     // link_claimed_founder's own server-side check (auth.email() must
     // equal claimEmail) passes when the caller runs it next, same write
     // claim-founder-profile makes for its own 'likely' instant-claims.
+    // Confirmed real: if this write silently fails, the caller still
+    // gets told "connected" and runs link_claimed_founder next — which
+    // will itself then fail (claimEmail never actually got set, so the
+    // RPC's own auth.email()===claimEmail check won't pass), leaving the
+    // person's real curated profile and their new signup permanently
+    // disconnected with nothing ever telling anyone why. Report 'none'
+    // instead of a match this function can't actually deliver on.
     if (best.match === 'likely') {
-      await admin.from('founders').update({
+      const { error } = await admin.from('founders').update({
         data: {
           ...best.data,
           claimEmail: email.trim(),
           claimNotes: `Auto-connected at signup by <${email.trim()}> — soft match (name/domain), not an exact verified email. Worth a quick look.`,
         },
       }).eq('id', best.id)
+      if (error) return json({ founderId: null, match: 'none' })
     }
 
     return json({ founderId: best.id, match: best.match })

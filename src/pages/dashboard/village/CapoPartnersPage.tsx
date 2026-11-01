@@ -381,12 +381,27 @@ function EarningsSection() {
   }
 
   async function markPaid(founderId: string, items: PartnerConversion[]) {
+    setPayError(null)
     const total = items.reduce((sum, c) => sum + c.founderShareCents, 0)
     const payout = newManualPayout({ founderId, amountCents: total, note: `${items.length} conversion(s)` })
     const result = await payoutService.upsert(payout)
-    if (!result.success) return
+    if (!result.success) { setPayError(result.error ?? 'Could not record this payout. Please try again.'); return }
+    // Confirmed real: this loop's per-conversion writes used to go
+    // unchecked — a payout record for the FULL amount already existed
+    // the moment the line above succeeded, but a conversion whose own
+    // write failed here never got flagged payoutId-set, so it stayed in
+    // unpaidByFounder and could be paid out a SECOND time later. Same
+    // double-payment shape already fixed in stripe-run-payout, just one
+    // layer up (this manual-payout path, not the Stripe one). Abort and
+    // tell staff exactly which conversion didn't get marked, rather than
+    // silently leaving some of them double-payable.
+    const failed: string[] = []
     for (const c of items) {
-      await partnerConversionService.upsert({ ...c, payoutId: payout.id })
+      const r = await partnerConversionService.upsert({ ...c, payoutId: payout.id })
+      if (!r.success) failed.push(c.id)
+    }
+    if (failed.length > 0) {
+      setPayError(`Payout recorded, but ${failed.length} conversion(s) couldn't be marked paid — they may show as unpaid again. Check manually before re-running this payout.`)
     }
     setTick(t => t + 1)
   }
@@ -398,8 +413,13 @@ function EarningsSection() {
   // equal-and-opposite negative conversion instead — it nets off their next
   // payout rather than trying to claw back money that already moved.
   async function handleReverse(c: PartnerConversion) {
+    setPayError(null)
     const wasPaid = Boolean(c.payoutId)
-    await partnerConversionService.upsert({ ...c, status: 'reversed' })
+    const reverseResult = await partnerConversionService.upsert({ ...c, status: 'reversed' })
+    if (!reverseResult.success) {
+      setPayError(reverseResult.error ?? 'Could not reverse this conversion. Please try again.')
+      return
+    }
     if (wasPaid) {
       const partner = partnerService.get(c.partnerId)
       if (partner) {
@@ -412,7 +432,16 @@ function EarningsSection() {
           status: 'confirmed',
           notes: `Clawback — reversal of a previously paid conversion (was ${formatCents(c.founderShareCents)})`,
         })
-        await partnerConversionService.upsert(clawback)
+        // Confirmed real: unchecked before. The status flip above already
+        // landed, so a failure here leaves the reversal half-applied — the
+        // conversion no longer counts as paid, but the offsetting negative
+        // conversion that's supposed to net it off the founder's next
+        // payout never gets created, meaning their unpaid total silently
+        // overstates what they're actually still owed.
+        const clawbackResult = await partnerConversionService.upsert(clawback)
+        if (!clawbackResult.success) {
+          setPayError(clawbackResult.error ?? 'Reversed, but the clawback entry failed to save — this founder\'s unpaid total may now be wrong. Check manually.')
+        }
       }
     }
     setTick(t => t + 1)

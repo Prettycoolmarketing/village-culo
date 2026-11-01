@@ -39,7 +39,18 @@ serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE)
-    await admin.from('email_unsubscribes').upsert({ email })
+    // Confirmed real: this always told the visitor they were unsubscribed
+    // regardless of whether the write actually landed — since send-campaign
+    // and send-sequence-emails both check email_unsubscribes at send time,
+    // a silently failed write here means someone who was explicitly told
+    // "you won't receive any more newsletters" keeps getting them, with no
+    // way for them to know the click didn't actually work. This is the
+    // one-click unsubscribe link in every newsletter footer, so it has to
+    // be right.
+    const { error } = await admin.from('email_unsubscribes').upsert({ email })
+    if (error) {
+      return page('Something went wrong', `We couldn't process this — please try again, or email connect@culovillage.com and we'll remove ${email} manually.`)
+    }
 
     return page("You're unsubscribed", `${email} won't receive any more newsletters from The Culo Village. Sorry to see you go.`)
   } catch (err) {

@@ -23,6 +23,7 @@ import { sendEmail, emailLayout } from '../_shared/resend.ts'
 
 const SUPABASE_URL          = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const STAFF_DIGEST_EMAIL = 'support@prettycoolmarketing.com'
 
 interface SequenceStep { day: number; subject: string; bodyHtml: string }
 interface Sequence { name: string; steps: SequenceStep[] }
@@ -57,6 +58,12 @@ serve(async (req) => {
     const unsubscribed = new Set((unsubRows ?? []).map(r => (r.email as string).trim().toLowerCase()))
 
     let sent = 0
+    // Confirmed real: if the sentDays write below fails after a real send
+    // just went out, nothing recorded that step as sent — the next daily
+    // run sees it as still due and sends it again, repeating indefinitely
+    // until the write happens to succeed. Tracked here so a failure can
+    // alert staff instead of silently repeating forever with no signal.
+    const unrecordedSends: string[] = []
     for (const row of enrollmentRows ?? []) {
       const enrollment = row.data as Enrollment
       const sequence = sequences.get(enrollment.sequenceId)
@@ -79,12 +86,23 @@ serve(async (req) => {
       }
 
       const allSent = sequence.steps.every(s => sentDays.has(s.day))
-      await admin.from('email_sequence_enrollments').update({
+      const { error: recordError } = await admin.from('email_sequence_enrollments').update({
         data: { ...enrollment, sentDays: [...sentDays], status: allSent ? 'completed' : enrollment.status },
       }).eq('id', row.id)
+      if (recordError && nextStep) {
+        unrecordedSends.push(`${enrollment.email} — "${sequence.name}" day ${nextStep.day} (will likely re-send tomorrow)`)
+      }
     }
 
-    return new Response(JSON.stringify({ ok: true, sent }), { headers: { 'Content-Type': 'application/json' } })
+    if (unrecordedSends.length > 0) {
+      await sendEmail(
+        STAFF_DIGEST_EMAIL,
+        `${unrecordedSends.length} sequence email(s) sent but not recorded`,
+        emailLayout('Staff alert', `<p>These sends went out, but the database write marking them sent failed — they'll likely be re-sent on tomorrow's run unless this is fixed:</p><ul>${unrecordedSends.map(s => `<li>${s}</li>`).join('')}</ul>`),
+      ).catch(() => { /* best-effort — the real sends already happened, this is just the alert */ })
+    }
+
+    return new Response(JSON.stringify({ ok: true, sent, unrecorded: unrecordedSends.length }), { headers: { 'Content-Type': 'application/json' } })
   } catch (err) {
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }), {
       status: 400, headers: { 'Content-Type': 'application/json' },

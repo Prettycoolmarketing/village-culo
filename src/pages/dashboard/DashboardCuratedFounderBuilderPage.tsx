@@ -38,6 +38,7 @@ interface BuildResult {
   founderName: string
   importCount: number
   intelCount: number
+  publishWarnings: string[]
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────────
@@ -297,6 +298,7 @@ export function DashboardCuratedFounderBuilderPage() {
     const validLinks = links.filter(l => l.url.trim())
     let importCount = 0
     let intelCount = 0
+    const publishWarnings: string[] = []
 
     for (const link of validLinks) {
       const draft = buildDraftImport(founderId, link.url.trim())
@@ -314,19 +316,34 @@ export function DashboardCuratedFounderBuilderPage() {
       // in Content's Ready-to-Publish dropdown (DashboardProfilePage),
       // just a second, independent occurrence of it in this curated-
       // founder path. A link marked Published here now actually publishes.
+      // Confirmed still real despite the comment above claiming it fixed:
+      // item.status/visibility were set to 'published'/'public' BEFORE
+      // this check even ran, so a failed publishStoryCore call still left
+      // the imported_content row saved as published with no real Story
+      // behind it — the exact bug, just one step further down. Downgrade
+      // back to draft/private on failure instead.
       if (link.status === 'published') {
         const story = buildStoryFromImport(item, founder)
         const publishResult = await publishStoryCore(story)
         if (publishResult.success && publishResult.story) {
           item = { ...item, relatedStoryId: publishResult.story.id }
+        } else {
+          item = { ...item, status: 'draft', visibility: 'private' }
+          publishWarnings.push(`"${item.title}" couldn't be published (${publishResult.error ?? 'unknown error'}) — saved as a draft instead.`)
         }
       }
 
-      importedContentService.upsert(item)
+      const upsertResult = await importedContentService.upsert(item)
+      if (!upsertResult.success) {
+        publishWarnings.push(`"${item.title}" couldn't be saved at all (${upsertResult.error ?? 'unknown error'}).`)
+        continue
+      }
       importCount++
 
-      // Generate intelligence for published items
-      if (link.status === 'published') {
+      // Generate intelligence for published items — item.status, not the
+      // original link.status request, since a failed publish above may
+      // have downgraded this one to draft.
+      if (item.status === 'published') {
         try {
           const input = importedContentToInput(item)
           const intel = villageContentIntelligenceService.analyse(input)
@@ -346,7 +363,7 @@ export function DashboardCuratedFounderBuilderPage() {
     // the completion screen (step 3) shouldn't sit blocked on it.
     void runFullEditorialPipeline(founderId)
 
-    setResult({ founderId, founderSlug: slug.trim(), founderName: name.trim(), importCount, intelCount })
+    setResult({ founderId, founderSlug: slug.trim(), founderName: name.trim(), importCount, intelCount, publishWarnings })
     setSaving(false)
     setStep(3)
   }
@@ -816,6 +833,15 @@ export function DashboardCuratedFounderBuilderPage() {
               </p>
             </div>
           </div>
+
+          {result.publishWarnings.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
+              <p className="text-xs font-semibold text-amber-800 mb-2">Some content needs a second look</p>
+              <ul className="text-xs text-amber-700 space-y-1 list-disc list-inside">
+                {result.publishWarnings.map((w, i) => <li key={i}>{w}</li>)}
+              </ul>
+            </div>
+          )}
 
           {/* Claim readiness */}
           <div className="bg-white rounded-xl border border-[#E8E4DD] divide-y divide-[#F3EDE6]">

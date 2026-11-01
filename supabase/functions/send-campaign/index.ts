@@ -70,6 +70,26 @@ serve(async (req) => {
 
     const campaign = campaignRow.data as { subject: string; bodyHtml: string }
 
+    // Claim the campaign as 'sent' NOW, atomically, before sending a single
+    // email — not after, like before. The check above (reading status once)
+    // is not what actually prevents a double-send: two overlapping runs, or
+    // a retry after a slow/failed response, could both pass that read
+    // before either write landed. This single conditional UPDATE is
+    // race-proof at the database level the same way stripe-run-payout's
+    // atomic claim is — only one concurrent request can ever win it.
+    // Previously the status write happened at the very end, unchecked; if
+    // it failed, nothing told the next run this campaign was already
+    // sent, and a retry or staff double-click re-sent to the ENTIRE list
+    // a second time.
+    const { data: claimed, error: claimError } = await admin
+      .from('email_campaigns')
+      .update({ status: 'sent', data: { ...campaign, sentAt: new Date().toISOString() } })
+      .eq('id', campaignId)
+      .eq('status', 'draft')
+      .select('id')
+    if (claimError) throw new Error(claimError.message)
+    if (!claimed || claimed.length === 0) throw new Error('This campaign is already sending or has already been sent.')
+
     // "All lists" — every address we hold, across every section of Email
     // Lists: explicit subscribers, the CULO Creatives waitlist, and every
     // founder account's signup email. Deduped, lowercased.
@@ -116,8 +136,10 @@ serve(async (req) => {
       else failures.push(email)
     }
 
+    // Status is already locked in as 'sent' (claimed above, before any
+    // email went out) — this is just the recipient count for display,
+    // best-effort, never something a retry should ever depend on.
     await admin.from('email_campaigns').update({
-      status: 'sent',
       data: { ...campaign, sentAt: new Date().toISOString(), recipientCount: subscribers.length },
     }).eq('id', campaignId)
 

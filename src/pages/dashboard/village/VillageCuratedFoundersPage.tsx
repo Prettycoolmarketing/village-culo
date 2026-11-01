@@ -415,7 +415,7 @@ export function VillageCuratedFoundersPage() {
   // Bulk operations — one Supabase upsert/delete + one cache rewrite per batch,
   // not one round-trip per founder (see Sprint 19B-Fix audit for the O(n²) bug
   // this replaces).
-  async function bulkUpdate(ids: Set<string>, patch: Partial<Founder>) {
+  async function bulkUpdate(ids: Set<string>, patch: Partial<Founder>): Promise<boolean> {
     setBulkError(null)
     const allFounders = getFounders()
     const targets = Array.from(ids)
@@ -425,6 +425,7 @@ export function VillageCuratedFoundersPage() {
     const result = await updateFoundersBatch(targets)
     if (!result.success) setBulkError(result.error ?? `Failed to update ${ids.size} founder${ids.size === 1 ? '' : 's'}. Try again.`)
     refresh()
+    return result.success
   }
 
   // Same fix as the Edit modal's own Publish button (see publishFounderArticles) —
@@ -434,7 +435,14 @@ export function VillageCuratedFoundersPage() {
   async function publishSelected(ids: Set<string>) {
     const allFounders = getFounders()
     const targets = Array.from(ids).map(id => allFounders.find(fo => fo.id === id)).filter((f): f is Founder => !!f)
-    await bulkUpdate(ids, { status: 'published', publishedAt: new Date().toISOString() })
+    // Confirmed real: this used to publish every target's articles live
+    // unconditionally, even when the founder status update above failed —
+    // content going public while the founder record itself never actually
+    // flipped to "published" (bulkUpdate already sets bulkError and
+    // refreshes the list on failure, see above; just wasn't being checked
+    // here before proceeding).
+    const ok = await bulkUpdate(ids, { status: 'published', publishedAt: new Date().toISOString() })
+    if (!ok) return
     for (const f of targets) await publishFounderArticles(f)
   }
 

@@ -81,6 +81,12 @@ serve(async (req) => {
     const founders = (allFounders ?? []).map(r => r as unknown as FounderRow)
     const templates = new Map<string, NudgeTemplate>((templateRows ?? []).map(r => [r.id as string, r.data as NudgeTemplate]))
 
+    // Confirmed real: if the record-write below fails after a real nudge
+    // just went out, nothing marks that founder as nudged for this
+    // condition — the next daily run sees them as still due and sends the
+    // exact same nudge again, repeating every day indefinitely until the
+    // write happens to succeed.
+    const unrecordedNudges: string[] = []
     async function sendNudge(founder: FounderRow, field: NudgeField, vars: Record<string, string>): Promise<boolean> {
       const template = templates.get(field)
       const email = founder.data.signupEmail
@@ -89,7 +95,8 @@ serve(async (req) => {
       const bodyHtml = render(template.bodyHtml, vars)
       const result = await sendEmail(email, subject, emailLayout('The Culo Village: Brisbane, Australia', bodyHtml), 'connect@culovillage.com')
       if (!result.ok) return false
-      await admin.from('founders').update({ data: { ...founder.data, [field]: new Date().toISOString() } }).eq('id', founder.id)
+      const { error } = await admin.from('founders').update({ data: { ...founder.data, [field]: new Date().toISOString() } }).eq('id', founder.id)
+      if (error) unrecordedNudges.push(`${email} — ${field} (will likely re-send tomorrow)`)
       return true
     }
 
@@ -163,13 +170,14 @@ serve(async (req) => {
     }
 
     const total = Object.values(notified).reduce((n, arr) => n + arr.length, 0)
-    if (total > 0) {
+    if (total > 0 || unrecordedNudges.length > 0) {
       const section = (title: string, list: string[]) => list.length > 0 ? `<p><strong>${title}</strong></p><ul>${list.map(n => `<li>${n}</li>`).join('')}</ul>` : ''
       const digestHtml = [
         section('Needs setup (24h+)', notified.needsSetup),
         section('Ready to confirm (24h+)', notified.ready),
         section('Imported nothing (48h+)', notified.importedNothing),
         section('Ready to publish, untouched (72h+)', notified.publishUntouched),
+        section('Sent but not recorded — will likely re-send tomorrow', unrecordedNudges),
       ].join('')
       await sendEmail(STAFF_DIGEST_EMAIL, `${total} founder${total === 1 ? '' : 's'} nudged today`, emailLayout('Staff digest', digestHtml))
     }
