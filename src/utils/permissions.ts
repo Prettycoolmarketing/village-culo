@@ -71,6 +71,17 @@ export function canDeleteCapoData(role: UserRole | undefined): boolean {
   return role === 'admin' || role === 'owner'
 }
 
+/** Capo (editor) and Admin (admin/owner) — a deliberately narrower carve-out
+ *  than canDeleteCapoData above, scoped to exactly one thing: the research/
+ *  source article rows (imported_content) in Founder Management's Articles
+ *  tab — the junk-cleanup case where research couldn't verify a real
+ *  identity match, not a real founder/member's actual content or account.
+ *  Founders, businesses, stories and everything else canDeleteCapoData
+ *  gates stay admin/owner-only; this does not widen that. */
+export function canDeleteArticles(role: UserRole | undefined): boolean {
+  return role === 'editor' || role === 'admin' || role === 'owner'
+}
+
 export const ROLE_LABELS: Record<UserRole, string> = {
   founder: 'Founder',
   moderator: 'Moderator',

@@ -18,7 +18,7 @@ import { passesRiskGate, riskGateReasons, isThinResearch } from '../../services/
 import { writeProfileBio, writeSourceArticle, getEditorialItems, runAudit, writeArticlesFromLedger, type EditorialItemRow } from '../../services/editorialItems'
 import { formatLocationLabel } from '../../utils/location'
 import { useAuth } from '../../contexts/AuthContext'
-import { canDeleteCapoData } from '../../utils/permissions'
+import { canDeleteCapoData, canDeleteArticles } from '../../utils/permissions'
 
 // Shared renderer for any Culo-written draft (bio or article) — splits on
 // blank lines and gives each paragraph real spacing, rather than one
@@ -318,7 +318,12 @@ function ArticleRow({ item, founder, onChanged, editorialItem, onEditorialChange
   const [writingArticle, setWritingArticle] = useState(false)
   const [articleError, setArticleError] = useState<string | null>(null)
   const { user: currentUser } = useAuth()
-  const canDelete = canDeleteCapoData(currentUser?.role)
+  // Deliberately narrower than canDeleteCapoData (used everywhere else in
+  // this file, e.g. deleting a founder's whole curated profile below) —
+  // Capo staff can delete a research/source article row here (the
+  // couldn't-verify-identity junk-cleanup case), but still can't delete a
+  // founder, a business, or anything canDeleteCapoData still gates.
+  const canDelete = canDeleteArticles(currentUser?.role)
 
   // Stage 2 (Writer) for this specific article — matched to the founder's
   // evidence ledger by imported_content_id first (set when Stage 1 was
