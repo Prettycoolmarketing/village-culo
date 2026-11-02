@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { store } from './store'
 
 export interface WriteResult {
@@ -24,6 +25,37 @@ export async function currentUserId(): Promise<string | null> {
   // RLS enforces ownership server-side so session-level trust is sufficient here.
   const { data: { session } } = await supabase.auth.getSession()
   return session?.user.id ?? null
+}
+
+// A flow that sits open for a while (e.g. Canva import — pick designs,
+// wait through per-slide text extraction, then save) or a tab that's been
+// backgrounded for a stretch (switched to another tab/app — browsers
+// throttle supabase-js's background auto-refresh timer while a tab isn't
+// visible) can outlast the access token's refresh cycle. The RLS failure
+// that produces is real, but the fix is usually just a fresh token — retry
+// once after forcing a refresh instead of making staff manually reload or
+// sign out over what's actually a transient, self-healable blip.
+// writeEntity already did this inline; deleteEntity and the raw
+// editorial_items calls in editorialItems.ts didn't — confirmed real,
+// live: a delete/rewrite kept failing with "session may have expired"
+// repeatedly across completely different accounts and founders tonight,
+// exactly the pattern this already-proven fix (just not applied
+// everywhere) explains.
+// Takes the live client as a parameter (rather than closing over the
+// module-level `supabase` export directly) purely so TypeScript can
+// actually narrow it to non-null inside the callback — every call site
+// already null-checks `supabase` before calling this, but TS can't carry
+// that narrowing through into the closure otherwise.
+export async function withRlsRetry<T>(
+  client: SupabaseClient,
+  fn: (client: SupabaseClient) => PromiseLike<{ data: T | null; error: { message: string } | null }>,
+): Promise<{ data: T | null; error: { message: string } | null }> {
+  const first = await fn(client)
+  if (first.error && /row-level security policy/i.test(first.error.message)) {
+    const { data: refreshed } = await client.auth.refreshSession()
+    if (refreshed.session) return await fn(client)
+  }
+  return first
 }
 
 /**
@@ -128,6 +160,7 @@ export async function deleteEntity(opts: {
   const { cacheKey, id, table } = opts
 
   if (isSupabaseConfigured && supabase && table) {
+    const client = supabase
     // RLS silently filters rows outside a DELETE policy's USING clause —
     // Postgres returns success with zero rows affected, not an error, so
     // a denied delete looked identical to a real one here. The local
@@ -136,7 +169,7 @@ export async function deleteEntity(opts: {
     // reappeared on the next reload/refetch. .select('id') forces the
     // actually-deleted row(s) back so that case can be told apart from a
     // genuine delete and reported as a real failure instead.
-    const { data, error } = await supabase.from(table).delete().eq('id', id).select('id')
+    const { data, error } = await withRlsRetry(client, c => c.from(table).delete().eq('id', id).select('id'))
     if (error) return { success: false, error: friendlyWriteError(error.message) }
     if (!data || data.length === 0) {
       return { success: false, error: 'Could not delete this — you may not have permission, or it was already removed.' }

@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { withRlsRetry } from '../lib/entityStore'
 import { getFounder } from './founders'
 import { getBusinesses } from './businesses'
 import { passesRiskGate, passesRiskGateForSource } from './editorialEngine'
@@ -69,12 +70,13 @@ export async function getAllEditorialItems(): Promise<EditorialItemRow[]> {
 // model never gets to take for itself.
 export async function approveItem(itemId: string): Promise<WriteResult> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
-  const { data, error } = await supabase
+  const client = supabase
+  const { data, error } = await withRlsRetry(client, c => c
     .from('editorial_items')
     .update({ editorial_status: 'approved' })
     .eq('id', itemId)
     .select()
-    .single()
+    .single())
   if (error || !data) return { success: false, error: error?.message ?? 'Could not approve.' }
   return { success: true, item: data as EditorialItemRow }
 }
@@ -87,11 +89,12 @@ export async function approveItem(itemId: string): Promise<WriteResult> {
 // when Supabase isn't configured, same as every other editorial_items call.
 export async function approveAllForFounder(founderId: string): Promise<boolean> {
   if (!isSupabaseConfigured || !supabase) return true
+  const client = supabase
   // Confirmed real: unchecked before, called fire-and-forget from the main
   // "Publish this founder" flow — a blocked update here left editorial_items
   // stuck at the wrong status in the review queue (an item staff just
   // published still showing as pending/review) with zero signal anywhere.
-  const { error } = await supabase.from('editorial_items').update({ editorial_status: 'approved' }).eq('founder_id', founderId).neq('editorial_status', 'approved')
+  const { error } = await withRlsRetry(client, c => c.from('editorial_items').update({ editorial_status: 'approved' }).eq('founder_id', founderId).neq('editorial_status', 'approved'))
   return !error
 }
 
@@ -102,12 +105,13 @@ export async function approveAllForFounder(founderId: string): Promise<boolean> 
 // skip the one review a "review"/"pending" item is still waiting on.
 export async function approveAllPassing(itemIds: string[]): Promise<{ approved: number; failed: number }> {
   if (!isSupabaseConfigured || !supabase || itemIds.length === 0) return { approved: 0, failed: 0 }
-  const { data, error } = await supabase
+  const client = supabase
+  const { data, error } = await withRlsRetry(client, c => c
     .from('editorial_items')
     .update({ editorial_status: 'approved' })
     .in('id', itemIds)
     .eq('editorial_status', 'pass')
-    .select('id')
+    .select('id'))
   if (error) return { approved: 0, failed: itemIds.length }
   return { approved: data?.length ?? 0, failed: 0 }
 }
@@ -117,12 +121,13 @@ export async function approveAllPassing(itemIds: string[]): Promise<{ approved: 
 // it out of the queue without waiting for a re-audit to catch up.
 export async function rejectItem(itemId: string): Promise<WriteResult> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
-  const { data, error } = await supabase
+  const client = supabase
+  const { data, error } = await withRlsRetry(client, c => c
     .from('editorial_items')
     .update({ editorial_status: 'reject' })
     .eq('id', itemId)
     .select()
-    .single()
+    .single())
   if (error || !data) return { success: false, error: error?.message ?? 'Could not reject.' }
   return { success: true, item: data as EditorialItemRow }
 }
@@ -163,6 +168,7 @@ async function callWriter(
 // the review queue actually needs to diff versions).
 export async function writeProfileBio(founderId: string): Promise<WriteResult> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
+  const client = supabase
   const founder = getFounder(founderId)
   const ledger = founder?.evidenceLedger
   if (!founder || !ledger) return { success: false, error: 'Run research before writing.' }
@@ -187,7 +193,7 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
   if (businessName && !draft.body.toLowerCase().includes(businessName.toLowerCase())) {
     autoPublishAllowed = false
   }
-  const { data, error: dbError } = await supabase
+  const { data, error: dbError } = await withRlsRetry(client, c => c
     .from('editorial_items')
     .insert({
       founder_id: founderId,
@@ -196,7 +202,7 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
       auto_publish_allowed: autoPublishAllowed,
     })
     .select()
-    .single()
+    .single())
   if (dbError || !data) return { success: false, error: dbError?.message ?? 'Could not save draft.' }
   return { success: true, item: data as EditorialItemRow }
 }
@@ -209,6 +215,7 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
 // queue to show.
 export async function runAudit(item: EditorialItemRow): Promise<WriteResult> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
+  const client = supabase
   const founder = getFounder(item.founder_id)
   const ledger = founder?.evidenceLedger
   if (!founder || !ledger) return { success: false, error: 'No evidence ledger found for this founder.' }
@@ -229,6 +236,7 @@ export async function runAudit(item: EditorialItemRow): Promise<WriteResult> {
   if (error || data?.error || !data?.result) {
     return { success: false, error: data?.error || (error instanceof Error ? error.message : 'Audit failed.') }
   }
+  const result = data.result
 
   // A clean pass — zero issues found — goes straight to approved rather
   // than sitting in "needs review" waiting for a human to confirm what the
@@ -237,20 +245,20 @@ export async function runAudit(item: EditorialItemRow): Promise<WriteResult> {
   // eyes; only a genuinely clean pass skips that step, to keep the
   // Editorial research panel from filling up with items that don't
   // actually need attention.
-  const finalStatus = data.result.verdict === 'pass' && data.result.issues.length === 0
+  const finalStatus = result.verdict === 'pass' && result.issues.length === 0
     ? 'approved'
-    : data.result.verdict
+    : result.verdict
 
-  const { data: updated, error: dbError } = await supabase
+  const { data: updated, error: dbError } = await withRlsRetry(client, c => c
     .from('editorial_items')
     .update({
       editorial_status: finalStatus,
-      auditor_notes: data.result.issues,
+      auditor_notes: result.issues,
       last_verified_at: new Date().toISOString(),
     })
     .eq('id', item.id)
     .select()
-    .single()
+    .single())
   if (dbError || !updated) return { success: false, error: dbError?.message ?? 'Could not save audit result.' }
   return { success: true, item: updated as EditorialItemRow }
 }
@@ -264,6 +272,7 @@ export async function writeSourceArticle(
   source: EvidenceLedger['source_assessments'][number],
 ): Promise<WriteResult> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
+  const client = supabase
   const founder = getFounder(founderId)
   const ledger = founder?.evidenceLedger
   if (!founder || !ledger) return { success: false, error: 'Run research before writing.' }
@@ -282,7 +291,7 @@ export async function writeSourceArticle(
   // unrelated flagged claim elsewhere in the founder's research has
   // nothing to do with whether this specific article is safe to publish.
   const autoPublishAllowed = passesRiskGateForSource(ledger, source)
-  const { data, error: dbError } = await supabase
+  const { data, error: dbError } = await withRlsRetry(client, c => c
     .from('editorial_items')
     .insert({
       founder_id: founderId,
@@ -292,7 +301,7 @@ export async function writeSourceArticle(
       auto_publish_allowed: autoPublishAllowed,
     })
     .select()
-    .single()
+    .single())
   if (dbError || !data) return { success: false, error: dbError?.message ?? 'Could not save draft.' }
   return { success: true, item: data as EditorialItemRow }
 }
