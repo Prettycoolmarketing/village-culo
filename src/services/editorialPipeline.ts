@@ -20,6 +20,25 @@ export interface PipelineResult {
 }
 
 export async function runFullEditorialPipeline(founderId: string): Promise<PipelineResult> {
+  try {
+    return await runFullEditorialPipelineInner(founderId)
+  } catch (err) {
+    // Confirmed real: nothing in this function (or its bulk-loop caller,
+    // VillageCuratedFoundersPage's runResearchSelected) ever caught an
+    // unexpected exception — one founder hitting something unforeseen
+    // (a network blip, an unexpected API response shape) killed the
+    // WHOLE batch loop outright, leaving every founder after it
+    // completely unprocessed (research never run, nothing written) and
+    // the progress bar frozen forever with no error ever shown — read by
+    // staff as "it just stopped." Every known failure mode inside this
+    // pipeline already returns a proper {error} result; this is the
+    // backstop for the unknown ones, so a single founder's genuinely
+    // unexpected failure can never take the rest of a bulk run with it.
+    return { researched: false, bioWritten: false, articlesWritten: 0, error: err instanceof Error ? err.message : 'Unexpected error.' }
+  }
+}
+
+async function runFullEditorialPipelineInner(founderId: string): Promise<PipelineResult> {
   const founder = getFounder(founderId)
   if (!founder) return { researched: false, bioWritten: false, articlesWritten: 0, error: 'Founder not found.' }
 

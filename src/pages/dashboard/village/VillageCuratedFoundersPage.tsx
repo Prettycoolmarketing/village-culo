@@ -470,15 +470,38 @@ export function VillageCuratedFoundersPage() {
   async function runResearchSelected(ids: Set<string>) {
     const targets = Array.from(ids).filter(id => getFounder(id)?.researchStatus !== 'researching')
     if (targets.length === 0) return
+    setBulkError(null)
     setResearching(true)
     setResearchProgress({ done: 0, total: targets.length })
-    for (let i = 0; i < targets.length; i++) {
-      await runFullEditorialPipeline(targets[i]!)
-      setResearchProgress({ done: i + 1, total: targets.length })
+    // Confirmed real: this loop had no try/catch at all — one founder
+    // hitting an unexpected error killed the whole batch outright,
+    // leaving everyone after it in the selection completely unprocessed
+    // and the progress bar frozen forever with nothing ever shown (read
+    // as "it just stopped" at whatever count it reached). The pipeline
+    // itself now also can't throw (see runFullEditorialPipeline's own
+    // catch), but this stays as a second line of defence — plus it's the
+    // only place that can actually report which founders failed by name
+    // so staff know exactly who to retry instead of guessing.
+    const failedNames: string[] = []
+    try {
+      for (let i = 0; i < targets.length; i++) {
+        const id = targets[i]!
+        try {
+          const result = await runFullEditorialPipeline(id)
+          if (result.error) failedNames.push(getFounder(id)?.name ?? id)
+        } catch {
+          failedNames.push(getFounder(id)?.name ?? id)
+        }
+        setResearchProgress({ done: i + 1, total: targets.length })
+      }
+    } finally {
+      setResearching(false)
+      setResearchProgress(null)
+      refresh()
     }
-    setResearching(false)
-    setResearchProgress(null)
-    refresh()
+    if (failedNames.length > 0) {
+      setBulkError(`${targets.length - failedNames.length} of ${targets.length} finished. These need another try: ${failedNames.join(', ')}.`)
+    }
   }
 
 
