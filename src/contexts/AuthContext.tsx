@@ -174,6 +174,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // profile response landing after sign-out/switching accounts
           // must never silently reinstate the old user.
           setUser(current => (current?.id === sessionUserId ? lateUser : current))
+          // Confirmed real, live: syncUserDataFromSupabase below only
+          // ever runs once, keyed to whatever role was known at that
+          // exact instant — including the provisional 'founder' fallback
+          // when the profiles query raced past its timeout. This late
+          // correction updated the role for display/route-checks, but
+          // never re-pulled the data layer with it — a CAPO staff
+          // member's founders cache could stay permanently stuck on
+          // founders_safe (the stripped, published-only view) even after
+          // their role was showing correctly everywhere else, making the
+          // Editorial Queue (which needs the draft/unpublished rows
+          // founders_safe excludes) look completely empty. Re-sync here
+          // too so the data layer always catches up with whatever role
+          // actually turns out to be correct.
+          void syncUserDataFromSupabase(STAFF_ROLES.includes(lateUser.role))
         }, setRoleResolving)
         setUser(restoredUser)
         // onAuthStateChange's SIGNED_IN branch doesn't fire for a session
@@ -244,6 +258,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const nextUser = session?.user
           ? await toAuthUser(session.user, lateUser => {
               setUser(current => (current?.id === sessionUserId ? lateUser : current))
+              // Same fix as the getSession() branch above — a late role
+              // correction must also re-sync the data layer, not just
+              // update what's displayed.
+              void syncUserDataFromSupabase(STAFF_ROLES.includes(lateUser.role))
             }, setRoleResolving)
           : null
         setUser(nextUser)
