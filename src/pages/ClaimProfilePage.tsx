@@ -354,6 +354,7 @@ function InstantClaimForm({ founder, skipVerification, claimKey }: { founder: Re
               'Free membership, forever — no credit card required',
               'Your first 10 articles published free, on us',
               'Full control to edit, add or remove anything on your profile',
+              'First access to Culo Creatives in Canva once live (Raw footage editing platform)',
             ].map(item => (
               <li key={item} className="flex items-start gap-2 font-body text-sm text-charcoal/80">
                 <svg className="w-4 h-4 text-[#5E6B4A] mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
