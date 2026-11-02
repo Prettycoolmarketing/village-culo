@@ -222,17 +222,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void (async () => {
         const sessionUserId = session?.user?.id
 
-        // TOKEN_REFRESHED fires silently in the background roughly every
-        // hour (and on tab refocus) for the same already-signed-in account
-        // — it's not an identity change. Re-running toAuthUser() here
-        // unconditionally re-does the profiles query with its 8s
-        // race-timeout fallback (see that function's comment); if that
-        // query was ever merely slow, a real CAPO staff member's role
-        // would silently fall back to 'founder' mid-session — hiding
-        // Founder Management from nav, or bouncing them off the page via
-        // RoleProtectedRoute — with no DB change at all. Skip the re-fetch
-        // when the signed-in account hasn't actually changed.
-        if (event === 'TOKEN_REFRESHED' && sessionUserId && userRef.current?.id === sessionUserId) {
+        // Was TOKEN_REFRESHED-only — too narrow. Confirmed real, live: a
+        // CAPO owner got bounced to "Staff access required" mid-session
+        // while a heavy, long-running client-side operation (a bulk
+        // research run — dozens of sequential edge-function calls from
+        // the same tab) was active, which is exactly the kind of
+        // self-inflicted network congestion that can stall any OTHER
+        // background auth event's profiles re-fetch past even its
+        // extended timeout, not just a token refresh. SIGNED_IN is the
+        // only event that's a genuine identity change needing full
+        // re-derivation (and the initial getSession() cold-start above
+        // already covers a plain page load separately) — every other
+        // event (TOKEN_REFRESHED, USER_UPDATED, PASSWORD_RECOVERY, etc.)
+        // for the SAME already-known account should never re-run the
+        // race-prone profiles query at all, regardless of what triggered
+        // it or how busy the tab happens to be at that moment.
+        if (event !== 'SIGNED_IN' && sessionUserId && userRef.current?.id === sessionUserId) {
           return
         }
 
