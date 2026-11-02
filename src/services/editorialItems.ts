@@ -193,6 +193,16 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
   if (businessName && !draft.body.toLowerCase().includes(businessName.toLowerCase())) {
     autoPublishAllowed = false
   }
+  // Replace, not stack — this function is explicitly "safe to call
+  // again," but re-running it on an already-written founder used to just
+  // insert ANOTHER profile_bio row alongside the old one(s), with no
+  // status priority telling staff which is current. Confirmed real: a
+  // founder re-researched a few times over one evening ended up with
+  // several bios in different review states, making the founder-level
+  // status badge show "Needs review" (an old draft stuck there) even
+  // though the newest run had genuinely finished. One current draft per
+  // founder per type — never more.
+  await withRlsRetry(client, c => c.from('editorial_items').delete().eq('founder_id', founderId).eq('type', 'profile_bio'))
   const { data, error: dbError } = await withRlsRetry(client, c => c
     .from('editorial_items')
     .insert({
@@ -291,6 +301,21 @@ export async function writeSourceArticle(
   // unrelated flagged claim elsewhere in the founder's research has
   // nothing to do with whether this specific article is safe to publish.
   const autoPublishAllowed = passesRiskGateForSource(ledger, source)
+  // Same replace-not-stack fix as writeProfileBio above, scoped to this
+  // one source specifically — a founder can have several independent
+  // source articles (one per valid link), so this only clears the prior
+  // draft for the SAME source, never a different one. Only runs when
+  // there's a real imported_content_id to match on; the rare case where
+  // none was matched skips cleanup rather than risk deleting an
+  // unrelated article.
+  if (importedContentId) {
+    await withRlsRetry(client, c => c
+      .from('editorial_items')
+      .delete()
+      .eq('founder_id', founderId)
+      .eq('type', 'source_article')
+      .eq('imported_content_id', importedContentId))
+  }
   const { data, error: dbError } = await withRlsRetry(client, c => c
     .from('editorial_items')
     .insert({
