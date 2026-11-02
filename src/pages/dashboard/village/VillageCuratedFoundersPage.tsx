@@ -59,10 +59,32 @@ function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialIt
   if (founder.researchStatus === 'failed') {
     return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-red-50 text-red-600">Failed</span>
   }
-  const needsReview = founder.researchStatus === 'researching'
-    || items.some(i => i.editorial_status === 'review' || i.editorial_status === 'pending' || i.editorial_status === 'reject')
-  if (needsReview) {
-    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-amber-50 text-amber-700">Review</span>
+  if (founder.researchStatus === 'researching') {
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-blue-50 text-blue-700">Researching…</span>
+  }
+  // Was one "Review" label for four genuinely different situations —
+  // still researching, written but not yet audited, audit flagged
+  // something, and a real reject — with no way to tell "nothing written
+  // yet" apart from "fully written, basically ready to publish" at a
+  // glance. Confirmed real: that's exactly what made it hard to see
+  // which founders could actually be checked and published right now
+  // versus which still needed the AI to write something first.
+  if (founder.evidenceLedger && items.length === 0) {
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-blue-50 text-blue-700">Researched</span>
+  }
+  if (items.some(i => i.editorial_status === 'review' || i.editorial_status === 'reject')) {
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-amber-50 text-amber-700">Needs review</span>
+  }
+  if (items.some(i => i.editorial_status === 'approved')) {
+    // Was the real gap: an audit that passes clean goes straight to
+    // 'approved' (see runAudit), which is exactly "written and basically
+    // ready to publish" — but this fell through to no badge at all
+    // (blank cell) before, so the founders actually ready to just check
+    // and publish were the hardest ones to spot, not the easiest.
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-[#5E6B4A]/10 text-[#5E6B4A]">Ready to publish</span>
+  }
+  if (items.length > 0 && items.every(i => i.editorial_status === 'pending')) {
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-blue-50 text-blue-700">Written</span>
   }
   return null
 }
