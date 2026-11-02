@@ -127,13 +127,19 @@ function BulkBar({
             research. Works on any selection, not just failed ones, so
             this is also how staff kick off the whole thing on a batch
             that was just imported (the only place that does now — see
-            runResearchSelected). Skips anything already mid-run. */}
+            runResearchSelected). Skips anything already mid-run, and
+            resumes straight into writing for anything already researched
+            but not yet written — one button covers both steps, whatever
+            state each selected founder happens to be in. Labelled
+            "Research" alone used to read as "only does Stage 1," leaving
+            staff unsure whether they still had to separately trigger
+            writing for anything it touched. */}
         <button
           onClick={onResearch}
           disabled={researching}
           className="text-xs px-3 py-1.5 bg-[#3E6E92] text-white rounded-lg font-semibold hover:bg-[#345c7a] disabled:opacity-50 transition-colors"
         >
-          {researching ? 'Researching…' : 'Research'}
+          {researching ? 'Researching & writing…' : 'Research & write'}
         </button>
         <button onClick={onPublish}     className="text-xs px-3 py-1.5 bg-[#5E6B4A] text-white rounded-lg font-semibold hover:bg-[#4a5538] transition-colors">Publish</button>
         {/* Admin/owner only, per direct product decision — Capo staff can
