@@ -10,7 +10,7 @@
 
 import { getFounder, updateFounder } from './founders'
 import { runFounderResearch } from './editorialResearch'
-import { writeProfileBio, runAudit, writeArticlesFromLedger } from './editorialItems'
+import { writeProfileBio, runAudit, writeArticlesFromLedger, getEditorialItems } from './editorialItems'
 
 export interface PipelineResult {
   researched: boolean
@@ -42,15 +42,30 @@ async function runFullEditorialPipelineInner(founderId: string): Promise<Pipelin
   const founder = getFounder(founderId)
   if (!founder) return { researched: false, bioWritten: false, articlesWritten: 0, error: 'Founder not found.' }
 
-  // Same guard as the bulk pipeline — never silently re-run a founder
-  // that's already been researched (duplicate drafts/audits, real API
-  // spend for nothing new). Re-researching on purpose is still the
-  // explicit "Re-run research" button inside Edit.
-  if (founder.evidenceLedger) return { researched: false, bioWritten: false, articlesWritten: 0 }
-
-  const research = await runFounderResearch(founderId)
-  if (!research.success || !research.ledger) {
-    return { researched: false, bioWritten: false, articlesWritten: 0, error: research.error ?? 'Research failed.' }
+  // Never silently re-run a founder that's already been researched
+  // (duplicate drafts/audits, real API spend for nothing new) —
+  // re-researching on purpose is still the explicit "Re-run research"
+  // button inside Edit. But a ledger existing doesn't mean this founder
+  // is actually done: confirmed real — a bulk run that died partway
+  // through (see runFullEditorialPipeline's own catch above) left
+  // founders with a completed ledger and ZERO editorial_items, since the
+  // write step never got a chance to run for them. The old version of
+  // this guard treated "has a ledger" as "fully done" and skipped them
+  // outright, meaning simply re-selecting and re-running the bulk button
+  // couldn't recover them either — it'd silently no-op every time. Now
+  // only skips research itself (never redone), and still resumes
+  // straight into writing from the existing ledger if nothing's been
+  // written yet.
+  let ledger = founder.evidenceLedger
+  if (ledger) {
+    const existingItems = await getEditorialItems(founderId)
+    if (existingItems.length > 0) return { researched: false, bioWritten: false, articlesWritten: 0 }
+  } else {
+    const research = await runFounderResearch(founderId)
+    if (!research.success || !research.ledger) {
+      return { researched: false, bioWritten: false, articlesWritten: 0, error: research.error ?? 'Research failed.' }
+    }
+    ledger = research.ledger
   }
 
   // Confirmed real bug: this only ever wrote the researched bio into the
@@ -81,7 +96,7 @@ async function runFullEditorialPipelineInner(founderId: string): Promise<Pipelin
     }
   }
 
-  const articlesWritten = await writeArticlesFromLedger(founderId, research.ledger)
+  const articlesWritten = await writeArticlesFromLedger(founderId, ledger)
 
   return { researched: true, bioWritten, articlesWritten }
 }
