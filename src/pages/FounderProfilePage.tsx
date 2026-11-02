@@ -323,10 +323,17 @@ export function FounderProfilePage() {
   // list already treats relatedStoryId this same way (see
   // DashboardProfilePage's notPublished/isPublishedStat); this was the one
   // public-facing query that never got the same exclusion.
+  // Also excludes anything with no real article body — a source row that
+  // was published (or previewed) before the Writer ever produced content
+  // for it, or whose write attempt failed/was skipped, has nothing but a
+  // title and a source link. Confirmed real: Kirsty Gibbs's "— source" row
+  // had no description at all and still rendered a bare, content-free card
+  // on her public preview. A blank card isn't a useful public-facing
+  // placeholder — hide it from this list until it actually has something.
   const publicImports   = importedContentService.getAll({
     founderId: founder.id,
     publicOnly: founder.status === 'published' || founder.status === 'featured',
-  }).filter(i => !i.relatedStoryId)
+  }).filter(i => !i.relatedStoryId && (i.description?.trim().length ?? 0) > 0)
 
   // Featured picks — stories the founder has chosen to spotlight (see
   // Profile > Content). When they've picked any, the public profile leads
