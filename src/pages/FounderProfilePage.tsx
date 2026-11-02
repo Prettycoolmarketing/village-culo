@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
+import { syncPublishedContent } from '../lib/publicSync'
 import { normalizeUrl } from '../utils/url'
 import { getFounders } from '../services/founders'
 import { getBusiness, getBusinesses } from '../services/businesses'
@@ -197,6 +198,24 @@ export function FounderProfilePage() {
   const navigate = useNavigate()
   const founder = getFounders().find(f => f.slug === slug)
 
+  // A first-ever visitor (empty local cache, no prior visit to this site)
+  // hits this page before App.tsx's own startup sync has had a chance to
+  // land anything — getFounders() legitimately returns nothing yet, so
+  // "not found" was true for a moment. The bug: nothing ever re-checked.
+  // syncPublishedContent() returns the SAME shared, already-in-flight
+  // promise App.tsx kicked off on mount (see publicSync.ts) — awaiting it
+  // again here is free, not a second fetch — but until this resolved,
+  // this page had no way to know "founder genuinely doesn't exist" from
+  // "founder not loaded yet," and rendered the first as if it were the
+  // second. Confirmed real, live: a freshly published founder's own first
+  // share of her profile link, opened in a browser with no prior visit to
+  // the site, showed "Founder not found" and silently never corrected
+  // itself — only a manual reload (which now has a warm cache available
+  // on the very first render) fixed it. A visitor has no reason to know
+  // to reload a page that confidently told them the link was dead.
+  const [hasSynced, setHasSynced] = useState(false)
+  useEffect(() => { void syncPublishedContent().then(() => setHasSynced(true)) }, [])
+
   // Binge-on-first-click: the very first time anyone lands on this founder's
   // profile, and they have at least one published series with episodes, send
   // them straight into Episode 1 instead of the profile overview. Every
@@ -287,7 +306,10 @@ export function FounderProfilePage() {
   // additionally require status === published/featured, which blocked the
   // dashboard's own "Preview (not public yet)" link for every draft, the
   // one case this branch exists to serve.
-  if (!founder) return <FounderNotFound slug={slug ?? ''} />
+  // Not synced yet — this is genuinely unknown, not genuinely missing.
+  // Render nothing rather than a confident false "not found" (matches the
+  // app's own Suspense fallback={null} elsewhere) until the real answer is in.
+  if (!founder) return hasSynced ? <FounderNotFound slug={slug ?? ''} /> : null
   // Same minimum bar as getFounders({ publicOnly: true }) (see
   // services/founders.ts) — a published founder with no real bio at all
   // (never wrote/connected/imported anything) shouldn't have a working
