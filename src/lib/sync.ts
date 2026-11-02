@@ -66,10 +66,38 @@ const SYNCED_TABLES: Array<{ table: string; cacheKey: string }> = [
 // whatever was cached from a previous, smaller/older sync. Confirmed
 // real: a CAPO session reading "8 members" when the database has 20.
 // Catching per-table means one flaky request loses just that table.
+// This function can now legitimately fire more than once in close
+// succession for the same session — AuthContext calls it again whenever a
+// late profile correction lands, on top of the original SIGNED_IN call —
+// and pullVisibleRows does a blind full-replace of the cache with
+// whatever it fetches. If an earlier call started with a wrong provisional
+// role (the 'founder' fallback, while the real profiles row was still
+// loading) and happens to resolve AFTER a later call that started once the
+// real staff role was known, that earlier, wrong-permission pull would
+// overwrite the correct one with the stripped founders_safe view — a pure
+// timing accident, not something "last call wins" can be trusted to avoid.
+// Confirmed real: a CAPO member's Editorial Queue went empty again even
+// after a fresh sign-out/sign-in, with the fix that should have corrected
+// it already live. Latching true the first time any call in this page
+// load establishes real staff access, and never pulling founders_safe
+// again for the rest of that load, makes this safe regardless of which
+// call actually finishes last.
+let knownCapoStaffThisLoad = false
+
+// Must be called on sign-out — otherwise a different, non-staff person
+// signing in on the same tab afterward (no full page reload in between)
+// would incorrectly inherit this latch and get pulled the full founders
+// table, CAPO-internal fields included, instead of founders_safe.
+export function resetKnownCapoStaff(): void {
+  knownCapoStaffThisLoad = false
+}
+
 export async function syncUserDataFromSupabase(isCapoStaff: boolean): Promise<void> {
   if (!supabase) return
+  if (isCapoStaff) knownCapoStaffThisLoad = true
+  const useFullFounders = isCapoStaff || knownCapoStaffThisLoad
   await Promise.all([
-    pullVisibleRows(isCapoStaff ? 'founders' : 'founders_safe', 'founders').catch(() => {}),
+    pullVisibleRows(useFullFounders ? 'founders' : 'founders_safe', 'founders').catch(() => {}),
     ...SYNCED_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey).catch(() => {})),
   ])
 }

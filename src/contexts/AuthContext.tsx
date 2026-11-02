@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { syncUserDataFromSupabase } from '../lib/sync'
+import { syncUserDataFromSupabase, resetKnownCapoStaff } from '../lib/sync'
 import { syncPublishedContent } from '../lib/publicSync'
 import type { User } from '@supabase/supabase-js'
 
@@ -235,6 +235,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       void (async () => {
         const sessionUserId = session?.user?.id
+        // Covers every path a session can end, not just the explicit
+        // signOut() button (a session can also just expire) — see
+        // resetKnownCapoStaff's own comment for why this matters.
+        if (!sessionUserId) resetKnownCapoStaff()
 
         // Was TOKEN_REFRESHED-only — too narrow. Confirmed real, live: a
         // CAPO owner got bounced to "Staff access required" mid-session
@@ -353,6 +357,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut(): Promise<void> {
+    resetKnownCapoStaff()
     if (!isSupabaseConfigured || !supabase) {
       setUser(null)
       localStorage.removeItem('culo_dev_user')
