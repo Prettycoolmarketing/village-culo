@@ -62,12 +62,29 @@ const SIMILARITY_THRESHOLD = 0.6
 // structured data (who, what business, where, what topic) instead of
 // truncating free text, so it can never come out as a fragment — the full
 // lesson sentence still lives in `description` underneath it.
-function ideaTitleForNewStory(story: Story, founder: Founder, topicName: string): string {
+// `where` used to always append `, ${state}` even when a location is just
+// a bare country entry with no state on file (e.g. "Australia") — state
+// came back as an empty string, not undefined, so this produced a dangling
+// "Australia,  published…" with a stray comma and double space. Confirmed
+// real, live, on dozens of titles.
+function whereClause(location: Story['location']): string {
+  return location.state ? `${location.name}, ${location.state}` : location.name
+}
+
+function ideaTitleForNewStory(story: Story, founder: Founder, topicName: string | undefined): string {
   const business = story.businessId ? getBusinesses().find(b => b.id === story.businessId) : undefined
-  const where = `${story.location.name}, ${story.location.state}`
-  return business
-    ? `${founder.name} from ${business.name} in ${where} published an article about ${topicName}`
-    : `${founder.name} in ${where} published an article about ${topicName}`
+  const where = whereClause(story.location)
+  const who = business ? `${founder.name} from ${business.name}` : founder.name
+  // Confirmed real, live: when a story has no real topic tagged, this used
+  // to fall back to the story's own full title as "topicName" — producing
+  // a redundant, run-on sentence like "published an article about Inside
+  // MusoLingo: Nicole Salisbury's Music-First Approach to Learning
+  // Languages" instead of a short theme. Dropping the "about X" clause
+  // entirely when there's no real topic reads as a complete sentence
+  // either way, rather than parroting the headline back at itself.
+  return topicName
+    ? `${who} in ${where} published an article about ${topicName}`
+    : `${who} in ${where} published a new article`
 }
 
 // Once a second (and later, third+) founder's story links into the same
@@ -75,13 +92,14 @@ function ideaTitleForNewStory(story: Story, founder: Founder, topicName: string)
 // meant to be a shared, recurring concept across founders, not one person's
 // announcement forever. Recomputed with the full current founder list every
 // time the idea is strengthened by a new founder.
-function ideaTitleForFounders(founderIds: string[], topicName: string): string {
+function ideaTitleForFounders(founderIds: string[], topicName: string | undefined): string {
   const names = founderIds
     .map(id => getFounders().find(f => f.id === id)?.name)
     .filter((n): n is string => !!n)
-  if (names.length <= 1) return `${names[0] ?? 'A founder'} published an article about ${topicName}`
-  if (names.length === 2) return `${names[0]} and ${names[1]} both published articles about ${topicName}`
-  return `${names.length} founders have published articles about ${topicName}`
+  const about = topicName ? ` about ${topicName}` : ''
+  if (names.length <= 1) return `${names[0] ?? 'A founder'} published an article${about}`
+  if (names.length === 2) return `${names[0]} and ${names[1]} both published articles${about}`
+  return `${names.length} founders have published articles${about}`
 }
 
 /** Shared matching rule — the one place "is this the same idea?" is decided, used by both the real sync and the read-only preview so they can never disagree. */
@@ -121,7 +139,7 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
   for (const lessonText of intel.lessons) {
     const trimmed = lessonText.trim()
     if (!trimmed || trimmed.length < MIN_IDEA_LENGTH) continue
-    const topicName = story.topics[0]?.name ?? story.title
+    const topicName = story.topics[0]?.name
     const title = ideaTitleForNewStory(story, founder, topicName)
 
     const candidateIdx = findIdeaMatch(pool, story, trimmed)

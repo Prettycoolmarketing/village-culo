@@ -178,21 +178,21 @@ export function VillagePage() {
 
       {/* ── 4. Latest Stories ───────────────────────────────────────────────── */}
       {/*
-        Six reel-sized vertical story cards.
-        The primary content format — blogs, reels and carousels from real founders.
+        One "Latest Stories" heading, two card shapes stacked under it —
+        vertical (reel-style) cards first, horizontal cards after. Per
+        direct product direction: no separate sub-heading for each shape,
+        just one section that shows both. Pulled from the same rotating
+        pool and split so no story appears twice between the two rows.
         Schema-visible: title, summary, founder, location, topic, CTA all in readable text.
       */}
       <VillageSection>
-        <StoryGrid
-          heading="Latest Stories"
-          subheading="Real founder experiences transformed into blogs, reels and carousels."
-          action={{ label: 'View All Stories', href: '/stories' }}
-          // A rotating window of the most recent stories, not a fixed top 6 —
+        {(() => {
+          // A rotating window of the most recent stories, not a fixed top N —
           // otherwise this always showed the exact same stories, and clicking
           // "View All Stories" led straight back into the same items at the
           // top of /stories. /stories itself stays plain newest-first (best
           // for SEO/crawl consistency); only this homepage preview rotates.
-          stories={dailyRotatingSlice(
+          const latest = dailyRotatingSlice(
             [...getStories({ publicOnly: true })]
               // Same reasoning as FeaturedWidget/FounderGrid's rotate — the
               // homepage preview shouldn't fill up with the generic Culo
@@ -200,18 +200,43 @@ export function VillagePage() {
               // image yet. The plain /stories listing is unaffected.
               .filter(hasRealCoverImage)
               .sort((a, b) => (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)).slice(0, 18),
-            6
-          )}
-          hideKey="homepage"
-          columns={3}
-          cardVariant="vertical"
-          showSummary
-          showFounder
-          showTopics
-          showCTA
-          emptyTitle="The Village is about to come alive."
-          emptyMessage="The first stories will appear here as founders begin publishing. Real experiences, real businesses, real ideas — all permanent."
-        />
+            12
+          )
+          const verticalStories = latest.slice(0, 6)
+          const horizontalStories = latest.slice(6, 12)
+          return (
+            <>
+              <StoryGrid
+                heading="Latest Stories"
+                subheading="Real founder experiences transformed into blogs, reels and carousels."
+                action={{ label: 'View All Stories', href: '/stories' }}
+                stories={verticalStories}
+                hideKey="homepage"
+                columns={3}
+                cardVariant="vertical"
+                showSummary
+                showFounder
+                showTopics
+                showCTA
+                emptyTitle="The Village is about to come alive."
+                emptyMessage="The first stories will appear here as founders begin publishing. Real experiences, real businesses, real ideas — all permanent."
+              />
+              {horizontalStories.length > 0 && (
+                <StoryGrid
+                  stories={horizontalStories}
+                  hideKey="homepage-horizontal"
+                  columns={2}
+                  cardVariant="horizontal"
+                  showSummary
+                  showFounder
+                  showTopics
+                  showCTA
+                  className="mt-6"
+                />
+              )}
+            </>
+          )
+        })()}
       </VillageSection>
 
       {/* ── 5. From the Village — founder announcement carousel ─────────────
