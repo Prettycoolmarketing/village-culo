@@ -931,6 +931,15 @@ export interface Idea {
   // a new story reinforces an existing idea instead of creating a duplicate,
   // that story's id is appended here rather than adding a separate counter.
   founderId?: string
+  // Each founder's actual contribution to this Idea, once Ideas became
+  // topic-anchored (one Idea per Topic, matched by topic id rather than
+  // sentence-similarity — see ideaSync.ts's findIdeaMatch). An Idea with
+  // several contributions is a real "here's what multiple founders in the
+  // Village say about X" page, not an echo of one person's single article.
+  // Optional/absent on an idea created before this existed — those keep
+  // reading from the single description/quote fields until a new story
+  // on the same topic naturally strengthens them and starts this array.
+  contributions?: { founderId: string; storyId: string; quote: string }[]
 }
 
 // ─── Event / Notice ────────────────────────────────────────────────────────────

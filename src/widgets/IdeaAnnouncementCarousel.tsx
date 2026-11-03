@@ -39,16 +39,25 @@ function IdeaAnnouncementCard({ idea, founder, story, tabIndex }: {
       <Link
         to={`/founders/${founder.slug}`}
         tabIndex={tabIndex}
-        className="group flex items-start gap-3"
+        className="group flex items-center gap-3"
         aria-label={`View ${founder.name}'s founder profile`}
       >
         <Avatar src={founder.avatar} alt={founder.name} size="md" />
-        <p className="font-body text-sm text-charcoal leading-snug group-hover:text-primary transition-colors">
-          {idea.title}
-        </p>
+        <div className="min-w-0">
+          <p className="font-body text-sm font-semibold text-charcoal group-hover:text-primary transition-colors">
+            {founder.name}
+          </p>
+          {/* idea.title is now the topic itself (e.g. "Personal Brand"),
+              not a narrated sentence — see ideaSync.ts's topic-anchored
+              redesign. Reads as a topic label next to the founder, with the
+              real quote (idea.description) as the card's main text below. */}
+          <p className="font-body text-[10px] font-semibold text-secondary uppercase tracking-wide">
+            {idea.title}
+          </p>
+        </div>
       </Link>
-      <p className="font-body text-xs text-muted leading-relaxed line-clamp-2">
-        {idea.description}
+      <p className="font-body text-xs text-charcoal/80 leading-relaxed line-clamp-3">
+        "{idea.description}"
       </p>
       {story && (
         <Link
@@ -64,9 +73,10 @@ function IdeaAnnouncementCard({ idea, founder, story, tabIndex }: {
 }
 
 /**
- * A continuously-scrolling strip of "so-and-so published an article about
- * X" cards, each linking through to that founder's own profile (with a
- * secondary link to the actual article) — recirculates a growing pool of
+ * A continuously-scrolling strip of founder-quote cards (founder, the topic
+ * their insight anchors to, the quote itself), each linking through to that
+ * founder's own profile (with a secondary link to the actual article) —
+ * recirculates a growing pool of
  * founder announcements through a small, tidy space instead of a static
  * grid that either shows too few or grows unbounded. Every card exists once
  * in real, accessible markup; the strip is that same set rendered a second

@@ -11,6 +11,7 @@ import { FounderGrid }          from '../widgets/FounderGrid'
 import { BusinessGrid }         from '../widgets/BusinessGrid'
 import { IdeaCard }             from '../components/cards/IdeaCard'
 import { QuoteCard }            from '../components/cards/QuoteCard'
+import { Avatar }               from '../components/ui/Avatar'
 import { Badge }                from '../components/ui/Badge'
 import { InnerContainer }       from '../components/layout/PageContainer'
 import { formatDate }           from '../utils/slugify'
@@ -203,6 +204,59 @@ export function IdeaDetailPage() {
 
             {/* ── Left: knowledge graph ─────────────────────────────────────── */}
             <div className="lg:col-span-2 flex flex-col gap-14">
+
+              {/* What founders say — each real, attributed contribution to
+                  this topic (see Idea.contributions). This is the part that
+                  makes an Idea a genuine "here's what multiple founders in
+                  the Village say about X" page rather than an echo of one
+                  person's single article. Falls back to nothing here (the
+                  hero's single idea.quote block above still covers it) for
+                  an idea created before this existed and not yet
+                  strengthened by a later story on the same topic. */}
+              {idea.contributions && idea.contributions.length > 0 && (
+                <section aria-labelledby="idea-contributions-heading">
+                  <h2
+                    id="idea-contributions-heading"
+                    className="font-heading text-2xl font-semibold text-charcoal mb-2"
+                  >
+                    What founders say
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">
+                    {idea.contributions.length === 1
+                      ? 'One founder’s insight on this, straight from their own story.'
+                      : `${idea.contributions.length} founders' insights on this, straight from their own stories.`}
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {idea.contributions.map(c => {
+                      const contributor = getFounder(c.founderId)
+                      const story = getStories({ publicOnly: true }).find(s => s.id === c.storyId)
+                      if (!contributor) return null
+                      return (
+                        <figure key={`${c.founderId}-${c.storyId}`} className="bg-surface rounded-2xl p-5 border border-border">
+                          <blockquote>
+                            <p className="font-heading text-base italic text-charcoal leading-relaxed">"{c.quote}"</p>
+                          </blockquote>
+                          <figcaption className="flex items-center gap-2.5 pt-4 mt-4 border-t border-border">
+                            <Avatar src={contributor.avatar} alt={contributor.name} size="sm" />
+                            <div className="min-w-0">
+                              <cite className="not-italic font-body text-sm font-semibold text-charcoal block">
+                                <Link to={`/founders/${contributor.slug}`} className="hover:text-primary transition-colors">
+                                  {contributor.name}
+                                </Link>
+                              </cite>
+                              {story && (
+                                <Link to={`/stories/${story.slug}`} className="font-body text-xs text-muted hover:text-secondary transition-colors line-clamp-1">
+                                  {story.title}
+                                </Link>
+                              )}
+                            </div>
+                          </figcaption>
+                        </figure>
+                      )
+                    })}
+                  </div>
+                </section>
+              )}
 
               {/* Stories connected to this Idea */}
               {idea.relatedStoryIds.length > 0 && (

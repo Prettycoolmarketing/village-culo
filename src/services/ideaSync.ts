@@ -28,87 +28,27 @@ export interface IdeaSyncResult {
   strengthened: Idea[]
 }
 
-// Word-overlap similarity — the same class of heuristic villageIntelligence.ts
-// already uses elsewhere (keyword/regex extraction, not embeddings or an LLM
-// call). Real dedup, honestly simple: two lessons are "the same idea" if most
-// of their significant words overlap and they share at least one topic.
-const STOPWORDS = new Set([
-  'the', 'a', 'an', 'and', 'or', 'but', 'of', 'to', 'in', 'on', 'for', 'with',
-  'is', 'are', 'was', 'were', 'this', 'that', 'it', 'i', 'we', 'you', 'your', 'my',
-])
+// Ideas are topic-anchored: one Idea per Topic, not one per "lesson
+// sentence that happens to resemble another one." The previous design
+// matched two founders' raw lesson text against each other with a
+// word-overlap similarity score (0.6 threshold) — in practice this almost
+// never fired, because two founders describing a similar insight phrase it
+// completely differently. Every Idea stayed 1:1 with a single founder's
+// single article regardless of how many other founders said something
+// related, which is the opposite of what an Idea is supposed to be: a real
+// "here's what multiple founders in the Village say about X" page. Topics
+// are already structured, shared vocabulary attached to every story — using
+// the topic itself as the grouping key, instead of trying to algorithmically
+// detect "is this the same idea" from free text, is both more reliable and
+// much simpler. See the Idea type's `contributions` field for how each
+// founder's individual insight is now kept, attributed, rather than
+// collapsed into one shared description/title.
 
-function wordSet(text: string): Set<string> {
-  return new Set(
-    text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOPWORDS.has(w)),
-  )
-}
-
-function similarity(a: string, b: string): number {
-  const wa = wordSet(a)
-  const wb = wordSet(b)
-  if (wa.size === 0 || wb.size === 0) return 0
-  let overlap = 0
-  for (const w of wa) if (wb.has(w)) overlap++
-  return overlap / Math.min(wa.size, wb.size)
-}
-
-const SIMILARITY_THRESHOLD = 0.6
-
-// The old approach cut a lesson sentence ("I want founders to have a
-// permanent home for the things they've created...") down to its first 5
-// words and title-cased them — which produced titles like "I Want Founders
-// To Have", a sentence fragment with no meaning on its own. An Idea's title
-// is now a plain CULO-voiced announcement built entirely from real,
-// structured data (who, what business, where, what topic) instead of
-// truncating free text, so it can never come out as a fragment — the full
-// lesson sentence still lives in `description` underneath it.
-// `where` used to always append `, ${state}` even when a location is just
-// a bare country entry with no state on file (e.g. "Australia") — state
-// came back as an empty string, not undefined, so this produced a dangling
-// "Australia,  published…" with a stray comma and double space. Confirmed
-// real, live, on dozens of titles.
-function whereClause(location: Story['location']): string {
-  return location.state ? `${location.name}, ${location.state}` : location.name
-}
-
-function ideaTitleForNewStory(story: Story, founder: Founder, topicName: string | undefined): string {
-  const business = story.businessId ? getBusinesses().find(b => b.id === story.businessId) : undefined
-  const where = whereClause(story.location)
-  const who = business ? `${founder.name} from ${business.name}` : founder.name
-  // Confirmed real, live: when a story has no real topic tagged, this used
-  // to fall back to the story's own full title as "topicName" — producing
-  // a redundant, run-on sentence like "published an article about Inside
-  // MusoLingo: Nicole Salisbury's Music-First Approach to Learning
-  // Languages" instead of a short theme. Dropping the "about X" clause
-  // entirely when there's no real topic reads as a complete sentence
-  // either way, rather than parroting the headline back at itself.
-  return topicName
-    ? `${who} in ${where} published an article about ${topicName}`
-    : `${who} in ${where} published a new article`
-}
-
-// Once a second (and later, third+) founder's story links into the same
-// idea, a title naming only the first founder would read as wrong — this is
-// meant to be a shared, recurring concept across founders, not one person's
-// announcement forever. Recomputed with the full current founder list every
-// time the idea is strengthened by a new founder.
-function ideaTitleForFounders(founderIds: string[], topicName: string | undefined): string {
-  const names = founderIds
-    .map(id => getFounders().find(f => f.id === id)?.name)
-    .filter((n): n is string => !!n)
-  const about = topicName ? ` about ${topicName}` : ''
-  if (names.length <= 1) return `${names[0] ?? 'A founder'} published an article${about}`
-  if (names.length === 2) return `${names[0]} and ${names[1]} both published articles${about}`
-  return `${names.length} founders have published articles${about}`
-}
-
-/** Shared matching rule — the one place "is this the same idea?" is decided, used by both the real sync and the read-only preview so they can never disagree. */
-function findIdeaMatch(pool: Idea[], story: Story, lessonText: string): number {
-  const storyTopicIds = new Set(story.topics.map(t => t.id))
-  return pool.findIndex(idea =>
-    idea.topics.some(t => storyTopicIds.has(t.id)) &&
-    similarity(idea.title, lessonText) >= SIMILARITY_THRESHOLD,
-  )
+/** Shared matching rule — the one place "is this the same idea?" is decided, used by both the real sync and the read-only preview so they can never disagree. A story with no real topic tagged can't anchor to anything and is skipped entirely (see callers). */
+function findIdeaMatch(pool: Idea[], story: Story): number {
+  const primaryTopicId = story.topics[0]?.id
+  if (!primaryTopicId) return -1
+  return pool.findIndex(idea => idea.topics[0]?.id === primaryTopicId)
 }
 
 // extractLessons (villageIntelligence.ts) is a keyword-marker sentence
@@ -136,13 +76,17 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
 
   const pool = [...getIdeas()]
 
+  const topic = story.topics[0]
   for (const lessonText of intel.lessons) {
     const trimmed = lessonText.trim()
     if (!trimmed || trimmed.length < MIN_IDEA_LENGTH) continue
-    const topicName = story.topics[0]?.name
-    const title = ideaTitleForNewStory(story, founder, topicName)
+    // Can't anchor an Idea to a topic that doesn't exist — an untagged
+    // story's lessons used to fall back to a generic/title-derived idea of
+    // their own; now they're simply not substantial enough to earn a
+    // standalone topic page. Tag the story with a real topic instead.
+    if (!topic) continue
 
-    const candidateIdx = findIdeaMatch(pool, story, trimmed)
+    const candidateIdx = findIdeaMatch(pool, story)
 
     if (candidateIdx !== -1) {
       const candidate = pool[candidateIdx]
@@ -151,24 +95,23 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
         ? candidate.relatedFounderIds : [...candidate.relatedFounderIds, story.founderId]
       const nextBusinesses = story.businessId && !candidate.relatedBusinessIds.includes(story.businessId)
         ? [...candidate.relatedBusinessIds, story.businessId] : candidate.relatedBusinessIds
+      // One contribution per (founder, story) pair — a second lesson from
+      // the same story shouldn't duplicate the same person's entry twice.
+      const hasContribution = (candidate.contributions ?? []).some(c => c.founderId === story.founderId && c.storyId === story.id)
+      const nextContributions = hasContribution
+        ? candidate.contributions
+        : [...(candidate.contributions ?? []), { founderId: story.founderId, storyId: story.id, quote: trimmed }]
 
-      if (alreadyLinked && nextFounders.length === candidate.relatedFounderIds.length && nextBusinesses.length === candidate.relatedBusinessIds.length) {
+      if (alreadyLinked && hasContribution && nextFounders.length === candidate.relatedFounderIds.length && nextBusinesses.length === candidate.relatedBusinessIds.length) {
         continue // this exact story already strengthened this idea — no-op, not a re-count
       }
 
-      // A newly-added founder makes the old single-founder title wrong —
-      // rebuild it from the full founder list whenever the list actually grew.
-      const founderListGrew = nextFounders.length !== candidate.relatedFounderIds.length
-      const nextTitle = founderListGrew
-        ? ideaTitleForFounders(nextFounders, candidate.topics[0]?.name ?? topicName)
-        : candidate.title
-
       const next: Idea = {
         ...candidate,
-        title: nextTitle,
         relatedStoryIds: alreadyLinked ? candidate.relatedStoryIds : [...candidate.relatedStoryIds, story.id],
         relatedFounderIds: nextFounders,
         relatedBusinessIds: nextBusinesses,
+        contributions: nextContributions,
       }
       const result = await updateIdea(next)
       if (result.success) {
@@ -178,16 +121,22 @@ export async function syncIdeasFromStory(story: Story, intel: VillageContentInte
       continue
     }
 
-    const id = `idea-${slugify(title).slice(0, 40) || 'untitled'}-${Date.now().toString(36)}`
+    // Stable, deterministic per topic — not time-suffixed — so the same
+    // topic always resolves to the same Idea id/slug across runs, and two
+    // stories tagged with the same topic (even if sync somehow ran for both
+    // before either landed in `pool`) can never silently create duplicate
+    // topic pages for the same topic.
+    const id = `idea-${slugify(topic.name).slice(0, 40) || topic.id}`
     const newIdea: Idea = {
       id,
-      slug: slugify(title) || id,
-      title,
+      slug: slugify(topic.name) || id,
+      title: topic.name,
       description: trimmed,
-      topics: story.topics,
+      topics: [topic],
       relatedStoryIds: [story.id],
       relatedFounderIds: [story.founderId],
       relatedBusinessIds: story.businessId ? [story.businessId] : [],
+      contributions: [{ founderId: story.founderId, storyId: story.id, quote: trimmed }],
       featured: false,
       // Auto-extracted from a keyword-marker scan, not written or reviewed
       // by anyone — lands as a draft so a real person has to actually look
@@ -313,8 +262,9 @@ export function previewIdeaImpact(story: Story, intel: VillageContentIntelligenc
   for (const lessonText of intel.lessons) {
     const trimmed = lessonText.trim()
     if (!trimmed || trimmed.length < MIN_IDEA_LENGTH) continue
+    if (!story.topics[0]) continue // same "needs a real topic to anchor to" rule as the real sync
 
-    const idx = findIdeaMatch(pool, story, trimmed)
+    const idx = findIdeaMatch(pool, story)
     if (idx !== -1) {
       const idea = pool[idx]
       if (!touched.has(idea.id) && !idea.relatedStoryIds.includes(story.id)) {
