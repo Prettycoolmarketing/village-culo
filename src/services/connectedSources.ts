@@ -142,13 +142,26 @@ function draftFrom(founderId: string, sourceId: string, platform: ImportedConten
   return {
     id: crypto.randomUUID(),
     founderId,
-    // website-rss is the one connector type that doesn't imply the
-    // founder's own voice — WebsiteConnectForm's whole framing is "Been
-    // featured on someone else's blog?", so unlike a founder's own
-    // YouTube/podcast/Instagram, this defaults to third-party authorship
-    // unless the founder explicitly connected it as their own blog. See
-    // safeStoryBody in publishStory.ts for what this actually gates.
-    thirdPartyAuthored: platform === 'website' && !ownContent ? true : undefined,
+    // website-rss is one connector type that doesn't imply the founder's
+    // own voice — WebsiteConnectForm's whole framing is "Been featured on
+    // someone else's blog?" — so it defaults to third-party authorship
+    // unless the founder explicitly connected it as their own blog.
+    //
+    // Confirmed real, live, serious: podcast used to be grouped with
+    // "a founder's own YouTube/podcast/Instagram" here — true for YouTube
+    // and Instagram, where the poster usually writes their own description/
+    // caption, but false for a podcast episode description, which is
+    // almost always written by the show/producer/network, not the guest —
+    // and often describes a DIFFERENT person entirely when the founder was
+    // a co-host interviewing someone else. Julie Trell's published "Why
+    // leadership means you don't have the answers" Story carried her
+    // co-hosted show's full, unedited episode description about guest
+    // Bobbi Mahlab, verbatim, as her own blog — because this flag was never
+    // set, so safeStoryBody (publishStory.ts) never truncated it. Podcast
+    // has no "this is genuinely my own solo show" override today (unlike
+    // website's ownContent) — defaulting to third-party-authored is the
+    // safe default regardless; a founder can still correct it by rewriting.
+    thirdPartyAuthored: (platform === 'website' && !ownContent) || platform === 'podcast' ? true : undefined,
     sourcePlatform: platform,
     originalUrl: item.originalUrl,
     embedUrl: item.embedUrl,
