@@ -28,6 +28,22 @@ export function JoinConfirmPage() {
 
   const [ready, setReady] = useState(false)
   const [loadError, setLoadError] = useState(false)
+  // Confirmed real, live: Supabase's confirmation link is single-use and
+  // expires — and email providers that pre-fetch/scan links before a
+  // human ever clicks them (Microsoft's Safe Links on Outlook/Hotmail/
+  // live.com.au addresses is the well-known one) silently consume that
+  // one use, so the link is already dead by the time the real person
+  // clicks it. Supabase reports this as #error=access_denied&error_code=
+  // otp_expired in the URL hash, not as a normal query param — nothing
+  // here used to check for it at all, so this fell straight through to
+  // the normal session-wait logic below and just sat on "Loading…"
+  // forever, identical to a genuine account-creation failure but with an
+  // actually-fixable cause (ask for a fresh link) that a founder had no
+  // way to know about or act on.
+  const [expiredLink, setExpiredLink] = useState(false)
+  const [resendEmail, setResendEmail] = useState('')
+  const [resent, setResent] = useState(false)
+  const [resending, setResending] = useState(false)
   const [email, setEmail] = useState('')
   const [founderId, setFounderId] = useState<string | null>(null)
   const [password, setPassword] = useState('')
@@ -48,6 +64,11 @@ export function JoinConfirmPage() {
 
   useEffect(() => {
     if (!supabase) { navigate('/join', { replace: true }); return }
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    if (hashParams.get('error')) {
+      setExpiredLink(true)
+      return
+    }
     let settled = false
 
     async function proceed(user: { id: string; email?: string }) {
@@ -183,6 +204,57 @@ export function JoinConfirmPage() {
     // lands on Import as normal (see DashboardLoginPage) — this is
     // specifically the just-signed-up moment.
     navigate('/dashboard/profile', { replace: true })
+  }
+
+  async function handleResendFromExpired(e: FormEvent) {
+    e.preventDefault()
+    if (!supabase || !resendEmail.trim()) return
+    setResending(true)
+    await supabase.auth.resend({
+      type: 'signup',
+      email: resendEmail.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/join/confirm?source=${source}${canvaUserId ? `&canvaUserId=${encodeURIComponent(canvaUserId)}` : ''}` },
+    }).catch(() => { /* best-effort — Supabase's anti-enumeration behaviour means this never reveals whether the email actually exists */ })
+    setResending(false)
+    setResent(true)
+  }
+
+  if (expiredLink) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen bg-background flex items-center justify-center px-6">
+          <div className="max-w-sm w-full text-center">
+            <p className="font-body text-sm text-charcoal font-semibold mb-2">That confirmation link has expired.</p>
+            <p className="font-body text-sm text-muted mb-6">
+              This can happen if it sat unopened for a while, or if your email provider (Outlook/Hotmail especially)
+              scanned the link before you clicked it. Enter your email and we'll send a fresh one.
+            </p>
+            {resent ? (
+              <p className="font-body text-sm text-[#5E6B4A] font-semibold">Sent — check your inbox (and spam folder).</p>
+            ) : (
+              <form onSubmit={e => void handleResendFromExpired(e)} className="flex flex-col gap-3">
+                <input
+                  type="email"
+                  required
+                  value={resendEmail}
+                  onChange={e => setResendEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="rounded-xl px-4 py-3 text-sm text-charcoal border border-border focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={resending}
+                  className="rounded-xl px-6 py-3 text-sm font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
+                >
+                  {resending ? 'Sending…' : 'Send a new confirmation link'}
+                </button>
+              </form>
+            )}
+          </div>
+        </main>
+      </>
+    )
   }
 
   if (loadError) {
