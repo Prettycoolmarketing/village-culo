@@ -30,11 +30,12 @@ export function CapoOpportunitiesHubPage() {
     [
       { key: 'opportunities', label: 'Opportunities', allowed: true },
       { key: 'revenue',       label: 'Revenue',        allowed: true },
-      // Claims review is no longer part of the day-to-day dashboard — curated
-      // founders are claimed instantly now (see /claim/:slug), not queued
-      // for manual approval. Left wired up (data, service, this component)
-      // rather than deleted, in case a manual-review path is ever needed
-      // again; just not surfaced as a tab to click into.
+      // Claim approve/reject now lives on the Founders page's Claimed tab
+      // (VillageCuratedFoundersPage) instead — same page staff already
+      // check a curated founder's status on, rather than a separate hub
+      // tab they have to remember exists. Left wired up here (data,
+      // service, this component) rather than deleted, in case this hub is
+      // ever the better home for it again.
       { key: 'claims',        label: 'Claims',         allowed: false },
       { key: 'spotlight',     label: 'Spotlight',      allowed: canAccessCapoSection(user?.role, 'featured') },
       { key: 'sources',       label: 'Sources',        allowed: canAccessCapoSection(user?.role, 'featured') },

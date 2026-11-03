@@ -51,7 +51,14 @@ export function extractDomain(url?: string): string | null {
   }
 }
 
-export function matchClaimEmail(email: string, founder: ClaimableFounder): ClaimMatch {
+// `businessNames` — the name(s) of any business linked to this founder.
+// Confirmed real (Mitchell Bateman/Stagger Inn Adventures): a founder's
+// claim email is very often based on their business/brand name, not their
+// own personal name ("staggermarketing@..." vs "Mitchell Bateman") — the
+// personal-name check alone let a perfectly legitimate claim fall through
+// to manual review with zero actual signal against it. Checked the same
+// way as the personal-name tokens, just against a second source of names.
+export function matchClaimEmail(email: string, founder: ClaimableFounder, businessNames: string[] = []): ClaimMatch {
   const normalizedEmail = email.trim().toLowerCase()
   if (founder.claimEmail && founder.claimEmail.trim().toLowerCase() === normalizedEmail) return 'verified'
 
@@ -63,7 +70,10 @@ export function matchClaimEmail(email: string, founder: ClaimableFounder): Claim
     .filter((d): d is string => !!d && !GENERIC_LINK_DOMAINS.has(d))
   if (emailDomain && !GENERIC_EMAIL_DOMAINS.has(emailDomain) && ownDomains.includes(emailDomain)) return 'likely'
 
-  const nameParts = (founder.name ?? '').toLowerCase().split(/\s+/).map(normalizeToken).filter(p => p.length >= 3)
+  const nameParts = [founder.name ?? '', ...businessNames]
+    .flatMap(n => n.toLowerCase().split(/\s+/))
+    .map(normalizeToken)
+    .filter(p => p.length >= 3)
   if (localToken.length >= 3 && nameParts.some(part => localToken.includes(part))) return 'likely'
 
   return 'none'

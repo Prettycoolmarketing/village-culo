@@ -23,14 +23,17 @@
 // connection for staff to double-check (see notify-claim-activity)
 // instead of trusting it blindly.
 //
-// Restricted to unclaimed founders with profileStatus 'village-curated'
-// or 'claim-pending' — never every unclaimed founder row. A self-signup
-// founder's own blank profile is also "unclaimed" in the claimed_by_
-// user_id sense, and the fuzzy 'likely' tier (unlike an exact email
-// match) could otherwise cross-match two different real people's
-// accounts by name/domain coincidence. Curated/claim-pending profiles are
-// staff-built placeholders waiting for their real owner, so matching
-// against only that pool keeps the fuzzy tier safe.
+// Restricted to founders with claimed_by_user_id still null — never every
+// founder row, since a self-signup founder's own blank profile is also
+// "unclaimed" in that sense, and the fuzzy 'likely' tier (unlike an exact
+// email match) could otherwise cross-match two different real people's
+// accounts by name/domain coincidence. 'village-curated'/'claim-pending'
+// (nobody's claimed it yet) get the full fuzzy tier. 'claimed'/'verified'
+// are included too — but only to catch a claim staff already approved
+// before the person ever signed up (confirmed real: Mitchell Bateman,
+// approved while claimed_by_user_id was still null) — restricted further
+// down to an exact claimEmail match only, not the fuzzy tier, since that
+// founder is already someone's settled profile, not an open placeholder.
 //
 // Returns the matched founder's id and match tier — never claimEmail or
 // any other field — so this can't be used to enumerate claimEmails for
@@ -68,15 +71,38 @@ serve(async (req) => {
       .from('founders')
       .select('id, data')
       .is('claimed_by_user_id', null)
-      .in('data->>profileStatus', ['village-curated', 'claim-pending'])
+      .in('data->>profileStatus', ['village-curated', 'claim-pending', 'claimed', 'verified'])
 
     if (error || !candidates) return json({ founderId: null, match: 'none' })
 
+    // Fetched once for every candidate rather than per-row — same
+    // business-name signal claim-founder-profile uses (see claimMatch.ts),
+    // keyed by founderId so the loop below is just a map lookup.
+    const { data: bizRows } = await admin.from('businesses').select('data')
+    const businessNamesByFounder = new Map<string, string[]>()
+    for (const b of bizRows ?? []) {
+      const biz = b.data as { founderId?: string; name?: string }
+      if (!biz.founderId || !biz.name) continue
+      const list = businessNamesByFounder.get(biz.founderId) ?? []
+      list.push(biz.name)
+      businessNamesByFounder.set(biz.founderId, list)
+    }
+
     let best: { id: string; data: ClaimableFounder; match: ClaimMatch } | null = null
     for (const row of candidates) {
-      const founder = row.data as ClaimableFounder
-      const m = matchClaimEmail(email, founder)
+      const founder = row.data as ClaimableFounder & { profileStatus?: string }
+      const m = matchClaimEmail(email, founder, businessNamesByFounder.get(row.id as string) ?? [])
       if (m === 'none') continue
+      // A founder already 'claimed'/'verified' is here only to catch a
+      // claim staff approved before the person ever signed up (claimEmail
+      // is already an exact, deliberate match at that point) — not to open
+      // the fuzzy name/domain tier against that whole pool too, which
+      // would risk cross-matching an unrelated new signup against someone
+      // else's already-settled profile. Only 'village-curated'/'claim-
+      // pending' (genuinely unclaimed, nobody's checked yet) get the
+      // 'likely' tier's benefit of the doubt.
+      const isAlreadyClaimed = founder.profileStatus === 'claimed' || founder.profileStatus === 'verified'
+      if (isAlreadyClaimed && m !== 'verified') continue
       if (m === 'verified') { best = { id: row.id as string, data: founder, match: m }; break }
       if (!best) best = { id: row.id as string, data: founder, match: m }
     }

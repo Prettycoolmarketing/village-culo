@@ -34,6 +34,13 @@ import { syncUserDataFromSupabase } from '../../../lib/sync'
 // case. Publish is what clears a row out of "Review": once it's published
 // there's nothing left needing a look, so this renders nothing at all.
 function SimpleStatus({ founder, items }: { founder: Founder; items: EditorialItemRow[] }) {
+  // A pending claim is the single most actionable thing staff can see on
+  // this row — it needs an Approve/Reject click, unlike every other status
+  // below which is just informational. Checked first so it always wins,
+  // same reasoning as Published winning below for its own cases.
+  if (founder.profileStatus === 'claim-pending') {
+    return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide bg-amber-50 text-amber-700">Claim Pending</span>
+  }
   // Published is the final word — a leftover 'review'/'pending' editorial
   // item (e.g. the audit never got a chance to auto-approve before staff
   // published anyway) shouldn't keep showing "Review" on something that's
@@ -306,6 +313,15 @@ export function VillageCuratedFoundersPage() {
     return map
   }, [claims])
 
+  // The actual pending claim per founder — requester name/id, for the
+  // Approve/Reject action in the Claimed tab below (claimByFounder above is
+  // just a boolean presence flag for the filter checkbox, not enough here).
+  const pendingClaimByFounder = useMemo(() => {
+    const map = new Map<string, typeof claims[number]>()
+    for (const c of claims) if (c.status === 'pending') map.set(c.founderId, c)
+    return map
+  }, [claims])
+
   const contentCountByFounder = useMemo(() => {
     const all = importedContentService.getAll()
     const counts = new Map<string, number>()
@@ -369,7 +385,7 @@ export function VillageCuratedFoundersPage() {
 
   const curatedDraftFounders = useMemo(() => founders.filter(f => f.status === 'draft'), [founders])
   const publishedFounders    = useMemo(() => founders.filter(f => f.status !== 'draft'), [founders])
-  const claimedFounders      = useMemo(() => founders.filter(f => f.profileStatus === 'claimed' || f.profileStatus === 'verified'), [founders])
+  const claimedFounders      = useMemo(() => founders.filter(f => f.profileStatus === 'claimed' || f.profileStatus === 'verified' || f.profileStatus === 'claim-pending'), [founders])
 
   // Filter + sort
   const filtered = useMemo(() => {
@@ -762,6 +778,7 @@ export function VillageCuratedFoundersPage() {
               const hasEmail     = claimEmailByFounder.has(f.id)
               const isSelected   = selected.has(f.id)
               const duplicateWarning = duplicateWarningByFounder.get(f.id)
+              const pendingClaim = pendingClaimByFounder.get(f.id)
 
               return (
                 <div key={f.id} className={`grid grid-cols-12 gap-3 px-5 py-3.5 items-center transition-colors ${isSelected ? 'bg-[#C86A43]/5' : duplicateWarning ? 'bg-red-50' : 'hover:bg-[#F8F5F0]'}`}>
@@ -793,6 +810,11 @@ export function VillageCuratedFoundersPage() {
                       {duplicateWarning && (
                         <p className="text-[10px] font-semibold text-red-600 mt-0.5" title={duplicateWarning}>
                           ⚠ Possible duplicate account
+                        </p>
+                      )}
+                      {pendingClaim && (
+                        <p className="text-[10px] font-semibold text-amber-700 mt-0.5 truncate">
+                          Claimed by {pendingClaim.requesterName} ({pendingClaim.requesterEmail})
                         </p>
                       )}
                     </div>
@@ -867,6 +889,30 @@ export function VillageCuratedFoundersPage() {
                         >
                           {copiedId === f.id ? 'Copied ✓' : 'Copy link to claim'}
                         </button>
+                      )}
+                      {pendingClaim && (
+                        <>
+                          <ConfirmButton
+                            label="Approve"
+                            confirmLabel="Yes, approve"
+                            message={`Transfer ownership of this profile to ${pendingClaim.requesterName}?`}
+                            onConfirm={() => void founderClaimService.approve(pendingClaim.id, user?.email).then(result => {
+                              if (!result.success) { alert(result.error ?? 'Could not approve. Please try again.'); return }
+                              refresh()
+                            })}
+                            className="text-[10px] font-semibold text-[#5E6B4A] hover:underline"
+                          />
+                          <ConfirmButton
+                            label="Reject"
+                            confirmLabel="Yes, reject"
+                            message={`Reject ${pendingClaim.requesterName}'s claim? This profile goes back to unclaimed.`}
+                            onConfirm={() => void founderClaimService.reject(pendingClaim.id, user?.email).then(result => {
+                              if (!result.success) { alert(result.error ?? 'Could not reject. Please try again.'); return }
+                              refresh()
+                            })}
+                            className="text-[10px] text-red-500 hover:text-red-600 transition-colors"
+                          />
+                        </>
                       )}
                       {f.profileStatus === 'claimed' && (
                         <ConfirmButton

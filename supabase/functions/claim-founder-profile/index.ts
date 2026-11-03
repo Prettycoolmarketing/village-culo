@@ -78,7 +78,11 @@ serve(async (req) => {
         .from('founder_claim_tokens').select('token').eq('founder_id', founderId).maybeSingle()
       if (tokenRow?.token && tokenRow.token === key) match = 'verified'
     }
-    if (match !== 'verified') match = matchClaimEmail(email, founder)
+    if (match !== 'verified') {
+      const { data: bizRows } = await admin.from('businesses').select('data').eq('data->>founderId', founderId)
+      const businessNames = (bizRows ?? []).map(b => (b.data as { name?: string }).name).filter((n): n is string => !!n)
+      match = matchClaimEmail(email, founder, businessNames)
+    }
 
     if (match === 'none') {
       return json({ error: 'Could not verify this email against the profile — use the review request instead.' }, 400)
