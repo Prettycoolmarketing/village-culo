@@ -311,7 +311,7 @@ serve(async (req) => {
         "You're in — set your password",
         emailLayout(
           'Set your Culo Village dashboard password',
-          `<p>Hi ${name.split(' ')[0]},</p><p>Thanks for joining Pretty Cool Marketing. Set your password to get into your dashboard — your account manager is already getting started on your first batch of content.</p>${emailButton('Set your password', actionLink)}`,
+          `<p>Hi ${name.split(' ')[0]},</p><p>Thanks for securing your management package, set your password to get into your dashboard — your account manager is already getting started on your first batch of content.</p>${emailButton('Set your password', actionLink)}`,
         ),
       )
     }

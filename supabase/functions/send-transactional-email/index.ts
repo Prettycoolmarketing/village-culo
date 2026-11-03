@@ -75,6 +75,7 @@ function render(body: EmailBody, actionLink?: string): { subject: string; html: 
           `Finish setting up your Village profile`,
           `<p>Hi${body.name ? ` ${body.name.split(' ')[0]}` : ''},</p>
            <p>You're almost in — confirm your account below, then import your content and we'll republish each post as its own web article on your Village profile.</p>
+           <p>Our aim is to help position you as an authority with AI!</p>
            ${emailButton('Confirm account & get started', actionLink ?? `${SITE_URL}/dashboard/login`)}
            <p style="margin-top:20px;font-size:13px;color:#6B7280;">Once you're in, head to Import in your dashboard to bring your posts over.</p>`,
         ),
@@ -86,7 +87,7 @@ function render(body: EmailBody, actionLink?: string): { subject: string; html: 
           `Claim received for ${body.founderName}`,
           `<p>Hi there,</p>
            <p>Thanks for letting us know <strong>${body.founderName}</strong>'s Village profile is yours. Our team reviews claims by hand, so it may take a few days — we'll email you the moment there's a decision.</p>
-           <p>In the meantime, there's nothing else you need to do.</p>`,
+           <p>In the meantime, reply to this email, tell me about yourself, I'd love to connect with you! I am Shakas btw, let's connect! <a href="https://linkedin.com/in/shakasdesigner">linkedin.com/in/shakasdesigner</a></p>`,
         ),
       }
     case 'claim-approved':
@@ -101,8 +102,10 @@ function render(body: EmailBody, actionLink?: string): { subject: string; html: 
             html: emailLayout(
               `Your claim was approved`,
               `<p>Good news — your claim for <strong>${body.founderName}</strong>'s Village profile has been approved.</p>
-               <p>Sign in with the email and password you already set when you submitted your claim — your profile (bio, stories, everything already there) is now linked to your account and ready to edit.</p>
-               ${emailButton('Sign in', `${SITE_URL}/dashboard/login`)}`,
+               <p>Your Village account is set up, use this exact email address and the password you set to take control of it.</p>
+               <p>You will get access to your private dashboard, please update your bio and articles as you please, import your content from across platforms and Culo will republish each post as an individual web article!</p>
+               ${emailButton('Create your account', `${SITE_URL}/onboarding`)}
+               <p style="margin-top:20px;font-size:13px;color:#6B7280;">Don't create a new profile from scratch during sign-up — just create the account with this email and we'll connect the two automatically.</p>`,
             ),
           }
         : {
