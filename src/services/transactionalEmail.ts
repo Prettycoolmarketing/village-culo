@@ -2,7 +2,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
 type EmailBody =
   | { type: 'claim-received'; to: string; founderName: string }
-  | { type: 'claim-approved'; to: string; founderName: string; founderSlug: string }
+  | { type: 'claim-approved'; to: string; founderName: string; founderSlug: string; hasAccount?: boolean }
   | { type: 'claim-rejected'; to: string; founderName: string; reason?: string }
   | { type: 'staff-invite'; to: string; role: string; invitedBy?: string }
   | { type: 'claim-submitted-staff'; founderName: string; founderSlug: string; requesterName: string; requesterEmail: string }

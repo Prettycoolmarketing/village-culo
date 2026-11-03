@@ -240,12 +240,33 @@ function InstantClaimForm({ founder, skipVerification, claimKey }: { founder: Re
     if (match === 'none') {
       setSubmitting(true)
       try {
+        // Confirmed real (Mitchell Bateman): this form asks for a password
+        // right alongside name/email regardless of which branch it's about
+        // to take, but this branch used to just throw it away — nothing
+        // ever called signUp() here, so the account the claimant thought
+        // they'd just created never existed, and they had to type a
+        // password again from scratch once staff approved the claim. Now
+        // actually creates the account with it (unconfirmed until they
+        // click the email, same as any signup) and attaches the new
+        // user's id to the claim, so approve() links it directly instead
+        // of relying on a later claimEmail match at their next sign-in.
+        const { error: signUpError, needsConfirmation: needsConf, alreadyRegistered, userId } = await signUp(email.trim(), password, '/dashboard/welcome')
+        if (alreadyRegistered) {
+          setAlreadyHasAccount(true)
+          return
+        }
+        if (signUpError) {
+          setError(signUpError)
+          return
+        }
         await founderClaimService.create({
           founderId:        founder.id,
           requesterName:    name.trim(),
           requesterEmail:   email.trim(),
           requesterMessage: 'Submitted via instant claim — could not auto-verify email against profile records.',
+          requesterUserId:  userId ?? undefined,
         })
+        if (needsConf) setNeedsConfirmation(true)
         setSubmittedForReview(true)
       } catch (err) {
         setError(err instanceof Error && err.message ? err.message : 'Something went wrong submitting your claim. Please try again.')
@@ -309,7 +330,9 @@ function InstantClaimForm({ founder, skipVerification, claimKey }: { founder: Re
             <p className="font-body text-muted mb-6 leading-relaxed">
               We couldn't automatically verify <strong>{email}</strong> against what we have on file for {founder.name}, so
               our team will take a quick look and follow up by email within a few business days.
+              {needsConfirmation && <> In the meantime, check your inbox for a confirmation link — click it now so your account's already set up and ready the moment the claim's approved.</>}
             </p>
+            {needsConfirmation && <WebmailButtons />}
             <Link to={`/founders/${founder.slug}`} className="text-sm font-medium text-primary hover:underline">
               ← Back to {founder.name}'s profile
             </Link>

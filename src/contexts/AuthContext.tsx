@@ -31,7 +31,7 @@ interface AuthContextValue {
   roleResolving: boolean
   isConfigured: boolean
   signIn:  (email: string, password: string) => Promise<{ error: string | null }>
-  signUp:  (email: string, password: string, redirectPath?: string) => Promise<{ error: string | null; needsConfirmation: boolean; alreadyRegistered: boolean }>
+  signUp:  (email: string, password: string, redirectPath?: string) => Promise<{ error: string | null; needsConfirmation: boolean; alreadyRegistered: boolean; userId: string | null }>
   signOut: () => Promise<void>
   resetPasswordForEmail: (email: string) => Promise<{ error: string | null }>
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>
@@ -298,9 +298,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }
 
-  async function signUp(email: string, password: string, redirectPath = '/dashboard/home'): Promise<{ error: string | null; needsConfirmation: boolean; alreadyRegistered: boolean }> {
+  async function signUp(email: string, password: string, redirectPath = '/dashboard/home'): Promise<{ error: string | null; needsConfirmation: boolean; alreadyRegistered: boolean; userId: string | null }> {
     if (!isSupabaseConfigured || !supabase) {
-      return { error: 'Supabase not configured. Sign up is unavailable in dev mode.', needsConfirmation: false, alreadyRegistered: false }
+      return { error: 'Supabase not configured. Sign up is unavailable in dev mode.', needsConfirmation: false, alreadyRegistered: false, userId: null }
     }
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -328,6 +328,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       error:              friendly,
       needsConfirmation:  !error && !data.session && !alreadyRegistered,
       alreadyRegistered,
+      userId:             !error && !alreadyRegistered ? (data.user?.id ?? null) : null,
     }
   }
 

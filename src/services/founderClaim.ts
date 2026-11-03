@@ -125,6 +125,7 @@ export const founderClaimService = {
       to: claim.requesterEmail,
       founderName: founder?.name ?? 'your profile',
       founderSlug: founder?.slug ?? '',
+      hasAccount: !!claim.requesterUserId,
     })
     if (founderUpdateFailed) {
       return { success: false, error: 'Claim approved, but the founder profile itself failed to update — it may still show as unclaimed. Try approving again.' }

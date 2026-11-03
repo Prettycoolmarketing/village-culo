@@ -29,7 +29,7 @@ const STAFF_NOTIFICATION_EMAIL = Deno.env.get('STAFF_NOTIFICATION_EMAIL')
 
 type EmailBody =
   | { type: 'claim-received'; to: string; founderName: string }
-  | { type: 'claim-approved'; to: string; founderName: string; founderSlug: string }
+  | { type: 'claim-approved'; to: string; founderName: string; founderSlug: string; hasAccount?: boolean }
   | { type: 'claim-rejected'; to: string; founderName: string; reason?: string }
   | { type: 'staff-invite'; to: string; role: string; invitedBy?: string }
   | { type: 'claim-submitted-staff'; founderName: string; founderSlug: string; requesterName: string; requesterEmail: string }
@@ -90,16 +90,31 @@ function render(body: EmailBody, actionLink?: string): { subject: string; html: 
         ),
       }
     case 'claim-approved':
-      return {
-        subject: `You're in — ${body.founderName}'s profile is yours`,
-        html: emailLayout(
-          `Your claim was approved`,
-          `<p>Good news — your claim for <strong>${body.founderName}</strong>'s Village profile has been approved.</p>
-           <p>To take control of it, create a Village account using <strong>this exact email address</strong>. As soon as you sign up, your existing profile — bio, stories, everything already there — will be waiting for you, fully editable.</p>
-           ${emailButton('Create your account', `${SITE_URL}/onboarding`)}
-           <p style="margin-top:20px;font-size:13px;color:#6B7280;">Don't create a new profile from scratch during sign-up — just create the account with this email and we'll connect the two automatically.</p>`,
-        ),
-      }
+      // Claims filed through the manual-review path (no automatic match)
+      // now create the account right at claim time with whatever password
+      // was typed on that form — so by approval time there's often already
+      // a real account waiting, just not yet linked. "Create a new account"
+      // is the wrong instruction for that person; they just need to sign in.
+      return body.hasAccount
+        ? {
+            subject: `You're in — ${body.founderName}'s profile is yours`,
+            html: emailLayout(
+              `Your claim was approved`,
+              `<p>Good news — your claim for <strong>${body.founderName}</strong>'s Village profile has been approved.</p>
+               <p>Sign in with the email and password you already set when you submitted your claim — your profile (bio, stories, everything already there) is now linked to your account and ready to edit.</p>
+               ${emailButton('Sign in', `${SITE_URL}/dashboard/login`)}`,
+            ),
+          }
+        : {
+            subject: `You're in — ${body.founderName}'s profile is yours`,
+            html: emailLayout(
+              `Your claim was approved`,
+              `<p>Good news — your claim for <strong>${body.founderName}</strong>'s Village profile has been approved.</p>
+               <p>To take control of it, create a Village account using <strong>this exact email address</strong>. As soon as you sign up, your existing profile — bio, stories, everything already there — will be waiting for you, fully editable.</p>
+               ${emailButton('Create your account', `${SITE_URL}/onboarding`)}
+               <p style="margin-top:20px;font-size:13px;color:#6B7280;">Don't create a new profile from scratch during sign-up — just create the account with this email and we'll connect the two automatically.</p>`,
+            ),
+          }
     case 'claim-rejected':
       return {
         subject: `An update on your Village profile claim`,
