@@ -14,6 +14,7 @@ const sections = [
       { to: '/businesses',   label: 'Businesses' },
       { to: '/stories',   label: 'Stories'    },
       { to: '/library',   label: 'Library'    },
+      { to: '/how-culo-works', label: 'How It Works' },
     ],
   },
   {

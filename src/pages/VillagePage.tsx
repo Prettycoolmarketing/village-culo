@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
+import { CULO_ORGANIZATION } from '../utils/seo'
 import { useInstantJoin } from '../hooks/useInstantJoin'
 import { HeroWidget }                from '../widgets/HeroWidget'
 import { FeaturedWidget }            from '../widgets/FeaturedWidget'
@@ -100,6 +101,7 @@ export function VillagePage() {
       name:         'CULO Village',
       description:  'A curated directory of Australian founder stories, businesses, and content.',
       url:          window.location.origin,
+      publisher:    CULO_ORGANIZATION,
     },
   })
   return (

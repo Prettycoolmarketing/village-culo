@@ -25,9 +25,9 @@
 export const config = {
   runtime: 'nodejs',
   matcher: [
-    '/', '/speaker', '/stories', '/library', '/stories/:slug', '/founders/:slug', '/businesses/:slug',
+    '/', '/speaker', '/stories', '/library', '/how-culo-works', '/stories/:slug', '/founders/:slug', '/businesses/:slug',
     '/ideas/:slug', '/series/:slug', '/editorial/:slug', '/library/:slug',
-    '/topics/:slug',
+    '/topics/:slug', '/articles/:id',
   ],
 }
 
@@ -337,6 +337,48 @@ ${items.length > 0 ? `<ul>\n${items.map((i: any) => `<li><a href="/library/${esc
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }
 
+    // /how-culo-works — static (no DB fetch needed), but a real
+    // FAQPage-schema snapshot is exactly the kind of content an AI answer
+    // engine weights when deciding whether to cite CULO as a source at
+    // all, not just an individual founder page. Mirrors src/pages/
+    // HowCuloWorksPage.tsx's FAQ content — kept in sync by hand since this
+    // file can't import from the React src tree.
+    if (url.pathname === '/how-culo-works') {
+      const title = 'How CULO Works'
+      const description = 'How CULO finds, verifies and publishes founder stories — the research, the editorial standard, and how to get listed.'
+      const faqs = [
+        { q: 'What is CULO Village?', a: 'CULO Village is a directory of Australian founders, their stories and the work they’ve already made, brought together in one place built to be found by search engines and AI tools.' },
+        { q: 'How are founder profiles researched?', a: 'CULO finds what’s genuinely public and verifiable about a founder, then writes only from what that research confirmed — every piece is audited a second time and reviewed by a real person before it publishes.' },
+        { q: 'Can I edit or remove my profile?', a: 'Yes — full control, any time, free.' },
+        { q: 'Does CULO ever publish anything I didn’t say or do?', a: 'No — every piece is sourced, reviewed, and attributed; nothing is invented.' },
+      ]
+      const jsonLd = {
+        '@context': 'https://schema.org', '@type': 'FAQPage',
+        mainEntity: faqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(title)}</h1>
+<p>${escapeHtml(description)}</p>
+<section>
+<h2>How an article gets made</h2>
+<ol>
+<li>Research — CULO finds what's genuinely public and verifiable about a founder and separates confirmed fact from anything that can't be verified.</li>
+<li>Writing — every piece is written only from what research confirmed; nothing is invented.</li>
+<li>Audit — every piece is checked a second time against the same source material it was written from.</li>
+<li>Human review — a real person reviews anything the audit flags before it goes live.</li>
+<li>Publish — the piece goes live under a "Written by Culo" byline.</li>
+</ol>
+</section>
+<section>
+<h2>Frequently asked</h2>
+${faqs.map(f => `<h3>${escapeHtml(f.q)}</h3>\n<p>${escapeHtml(f.a)}</p>`).join('\n')}
+</section>
+</article>`
+      const html = renderDocument({ title, description, path: '/how-culo-works', ogType: 'website', jsonLd, bodyHtml, image: undefined })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
     // /speaker — the one link handed to a podcast booker, journalist or
     // conference organiser. Same reasoning as the founder-page sameAs fix
     // above, at the entity level: an AI reading this page should come away
@@ -508,6 +550,38 @@ ${linksHtml.length > 0 ? `<nav><h2>Find ${escapeHtml(founder.name)}</h2><ul>\n${
       const html = renderDocument({
         title: founder.name, description: founder.bio, path: url.pathname,
         ogType: 'profile', jsonLd, bodyHtml, image: founder.avatar,
+      })
+      return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
+    }
+
+    // /articles/:id — the public reading page for a CULO-written piece not
+    // (yet, or ever) promoted into a formal Story row. Mirrors the /stories
+    // handler above; see src/pages/ArticlePage.tsx for the matching React
+    // page and why this route exists at all (it fixes a real bug: these
+    // links used to go to a login-gated preview route no visitor, human or
+    // bot, could ever actually reach).
+    if (section === 'articles' && slug) {
+      const item = await fetchRowById('imported_content', slug, '&status=in.(published,featured)')
+      if (!item || !item.description) return notFoundResponse(url.pathname)
+      const author = item.founderId ? await fetchRowById('founders', item.founderId, '&status=in.(published,featured)') : null
+      if (!author) return notFoundResponse(url.pathname)
+      const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: item.title,
+        description: (item.description || '').slice(0, 200),
+        datePublished: item.publishedAt || item.importedAt,
+        author: { '@type': 'Person', name: author.name, url: `${SITE_ORIGIN}/founders/${author.slug}` },
+      }
+      const bodyHtml = `
+<article>
+<h1>${escapeHtml(item.title)}</h1>
+<p>Written by Culo about <a href="/founders/${escapeHtml(author.slug)}">${escapeHtml(author.name)}</a></p>
+${textToParagraphs(item.description)}
+</article>`
+      const html = renderDocument({
+        title: item.title, description: padDescription(undefined, item.description), path: url.pathname,
+        ogType: 'article', jsonLd, bodyHtml, image: item.thumbnailUrl || author.avatar,
       })
       return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
     }

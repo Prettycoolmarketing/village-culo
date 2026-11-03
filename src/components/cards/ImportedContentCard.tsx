@@ -48,9 +48,21 @@ export function ImportedContentCard({ content, compact = false, intel, size = 'd
   // moment it's written, not only after someone remembers to hit Publish.
   const relatedStory = content.relatedStoryId ? getStory(content.relatedStoryId) : undefined
   const hasRealArticleBody = (content.description?.trim().length ?? 0) >= 200
+  const isPublished = content.status === 'published' || content.status === 'featured'
+  // Confirmed real, live, serious: EVERY "Read the article" link on every
+  // published founder's page for a piece not yet promoted into a formal
+  // Story pointed at /dashboard/preview/:id — a route wrapped in
+  // <ProtectedRoute>, built for a founder/staff previewing their OWN
+  // unpublished draft. A real visitor (or an AI crawler) clicking through
+  // hit a login wall and could never actually read the article. Once a
+  // piece is genuinely published, it gets the real public article page
+  // (see ArticlePage.tsx) instead — the dashboard preview route is now
+  // reserved for what it was actually built for: a still-unpublished draft.
   const articleLink = relatedStory && (relatedStory.status === 'published' || relatedStory.status === 'featured')
     ? `/stories/${relatedStory.slug}`
-    : hasRealArticleBody ? `/dashboard/preview/${content.id}` : undefined
+    : hasRealArticleBody
+      ? (isPublished ? `/articles/${content.id}` : `/dashboard/preview/${content.id}`)
+      : undefined
   const sourceUrl = normalizeUrl(content.originalUrl)
 
   // Compact — used for sidebar lists like "From Around the Web" — is a

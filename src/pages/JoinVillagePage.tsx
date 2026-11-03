@@ -108,7 +108,7 @@ export function JoinVillagePage() {
     ogType: 'website',
   })
 
-  const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit } = useInstantJoin(source, canvaUserId)
+  const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit, handleResend, resending, resent } = useInstantJoin(source, canvaUserId)
 
   if (alreadyMember) {
     return (
@@ -147,6 +147,19 @@ export function JoinVillagePage() {
               then come back here to get into your dashboard.
             </p>
             <WebmailButtons />
+            <p className="font-body text-xs text-muted mt-6">
+              {resent
+                ? "Sent again — check your inbox (and spam folder)."
+                : <>Didn't get it?{' '}
+                    <button
+                      onClick={() => void handleResend()}
+                      disabled={resending}
+                      className="font-semibold text-primary hover:underline disabled:opacity-60"
+                    >
+                      {resending ? 'Resending…' : 'Resend the email'}
+                    </button>
+                  </>}
+            </p>
           </div>
         </main>
       </>
@@ -262,7 +275,16 @@ export function JoinVillagePage() {
           bridging the hero straight into "what is the Village" below.
           Culo Creatives makes it, The Culo Village publishes/discovers it —
           one combined system, not two separate pitches competing for
-          attention. */}
+          attention.
+          Canva-mode only: a visitor who arrived wanting Creatives genuinely
+          needs this "oh, and there's also a Village" context before the
+          Village pitch below makes sense. A visitor who arrived wanting the
+          Village (the default — no ?source=canva, the far more common
+          entry point) doesn't need a 2-product pitch before getting to the
+          thing they actually came for; this used to run unconditionally and
+          led every /join visit with Culo Creatives regardless of why they
+          were actually here. */}
+      {isCanva && (
       <section className="py-16 md:py-20 bg-background border-b border-border" aria-labelledby="ecosystem-heading">
         <InnerContainer>
           <h2 id="ecosystem-heading" className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold text-charcoal text-center leading-tight mb-14">
@@ -286,6 +308,7 @@ export function JoinVillagePage() {
           </p>
         </InnerContainer>
       </section>
+      )}
 
       {/* ── What is The Culo Village — text left, a live scaled-down preview
           of a real founder page on the right, so it's an actual example
@@ -326,6 +349,13 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
+      {/* ── Everything from here through the "how it works" steps is the
+          Culo Creatives walkthrough — genuinely about Canva, not the
+          Village. Canva-mode only, same reasoning as the "2 Products"
+          section above: a default /join visitor came here for the
+          Village, not a 4-section Creatives product tour. */}
+      {isCanva && (
+      <>
       {/* ── Moving "Culo Creatives in Canva" banner — blue, mirrors the
           dark "The Culo Village" strip above, sitting right before the
           Creatives walkthrough video. */}
@@ -461,8 +491,12 @@ export function JoinVillagePage() {
           </div>
         </InnerContainer>
       </section>
+      </>
+      )}
 
-      {/* ── Final CTA ─────────────────────────────────────────────────────── */}
+      {/* ── Final CTA — Village-focused, shown regardless of entry mode so
+          a default /join visitor still gets a closing CTA instead of the
+          page just ending after "What is The Culo Village" above. ──────── */}
       <section className="py-16 md:py-20 text-center" aria-label="Join The Culo Village">
         <InnerContainer>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-4 leading-tight">
@@ -485,6 +519,11 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
+      {/* ── Everything below is Creatives-specific again (output examples,
+          the founder-note video, the "we'll run it for you" pitch) —
+          Canva-mode only, same reasoning as above. */}
+      {isCanva && (
+      <>
       {/* ── What Culo Creatives turns your footage into — moved here from
           the standalone Creatives page, which will point straight at this
           /join funnel soon (keeping its "Creatives" label in the nav). */}
@@ -615,6 +654,8 @@ export function JoinVillagePage() {
           </Link>
         </InnerContainer>
       </section>
+      </>
+      )}
 
       <Footer />
     </main>

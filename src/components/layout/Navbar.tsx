@@ -14,6 +14,7 @@ const primaryLinks = [
   { to: '/stories',    label: 'Stories',    exact: false },
   { to: '/library',    label: 'Library',    exact: false },
   { to: '/marketing',  label: 'Services',   exact: false },
+  { to: '/how-culo-works', label: 'How It Works', exact: false },
 ]
 
 
@@ -167,7 +168,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
           {!loading && (
             <div className="hidden lg:flex items-center gap-4">
               <Link
-                to="/joincanva"
+                to="/how-culo-canva"
                 className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
               >
                 CULO in Canva
@@ -245,7 +246,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
             ))}
             <div className="pt-3 border-t border-border mt-3 flex flex-col gap-2">
               <Link
-                to="/joincanva"
+                to="/how-culo-canva"
                 onClick={() => setMobileOpen(false)}
                 className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
               >

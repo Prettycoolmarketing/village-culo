@@ -16,6 +16,8 @@ import { usePageTitle }    from './utils/usePageTitle'
 // ─── Public pages ───────────────────────────────────────────────────────────────
 import { VillagePage }        from './pages/VillagePage'
 import { CreativesPage }      from './pages/CreativesPage'
+import { HowCuloWorksPage }   from './pages/HowCuloWorksPage'
+import { ArticlePage }        from './pages/ArticlePage'
 import { ContactPage }        from './pages/ContactPage'
 import { SpeakerPage }        from './pages/SpeakerPage'
 import { FoundersPage }       from './pages/FoundersPage'
@@ -294,6 +296,8 @@ export default function App() {
           {/* ── Public site (with Navbar + Footer) ────────────────────────── */}
           <Route element={<PublicLayout />}>
             <Route path="/"                   element={<VillagePage />}          />
+            <Route path="/how-culo-works"     element={<HowCuloWorksPage />}     />
+            <Route path="/articles/:importId" element={<ArticlePage />}          />
             <Route path="/how-culo-canva"     element={<CreativesPage />}        />
             {/* Kept working, not removed — this exact URL is on file as the
                 Canva app's own submitted Support URL in the Developer

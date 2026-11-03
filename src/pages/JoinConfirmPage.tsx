@@ -217,8 +217,11 @@ export function JoinConfirmPage() {
         <div className="max-w-sm w-full">
           <JoinProgress step={1} />
           <h1 className="font-heading text-2xl font-bold text-charcoal mb-2 text-center">You're confirmed</h1>
-          <p className="font-body text-sm text-muted text-center mb-8">
+          <p className="font-body text-sm text-muted text-center mb-2">
             Set a password so you can log back in next time.
+          </p>
+          <p className="font-body text-xs text-muted text-center mb-8">
+            Confirm your account, add your links in for Culo research, and import your content as individual web articles.
           </p>
           <form onSubmit={e => void handleSubmit(e)} className="flex flex-col gap-3">
             {/* Hidden username field — lets the browser's password manager

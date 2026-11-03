@@ -37,3 +37,22 @@ export function deriveSeoDescription(summary: string | undefined, blog: string |
   const padding = cleanBlog && !cleanBlog.startsWith(cleanSummary) ? ` ${cleanBlog}` : ''
   return truncateAtWord(`${cleanSummary}${padding}`, 155)
 }
+
+// The one CULO Organization entity every page's JSON-LD should point back
+// to (as `publisher` on a Person/Article, or as its own WebSite/Organization
+// block on the homepage) — using the exact same object shape everywhere
+// is what lets an AI/search knowledge graph consolidate every founder and
+// article under one real, named publisher instead of treating each page as
+// an unconnected, unsourced claim. Keep this the single source of truth
+// rather than re-typing the org's name/logo/sameAs on each page.
+export const CULO_ORGANIZATION = {
+  '@type': 'Organization',
+  name: 'CULO Village',
+  url: 'https://www.culovillage.com',
+  logo: 'https://www.culovillage.com/culo_logo.png',
+  sameAs: [
+    'https://instagram.com/shakasdesigner',
+    'https://linkedin.com/in/shakasdesigner',
+    'https://youtube.com/@shakasdesigner',
+  ],
+} as const
