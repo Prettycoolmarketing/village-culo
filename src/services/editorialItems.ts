@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { withRlsRetry } from '../lib/entityStore'
+import { store } from '../lib/store'
 import { getFounder } from './founders'
 import { getBusinesses } from './businesses'
 import { passesRiskGate, passesRiskGateForSource } from './editorialEngine'
@@ -38,6 +39,28 @@ export interface EditorialItemRow {
 // asking the Writer prompt to produce it, since a byline is exactly the
 // kind of line that must never vary or go missing on one run.
 const CULO_BYLINE = 'Written by Culo'
+
+// Falls back to a direct, live fetch when the local cache's copy of this
+// founder has no ledger yet — confirmed real, repeatedly (Breanna Morrow,
+// Christie McVeigh, Shalini Sharma): research had genuinely completed and
+// the database had a real evidence ledger every single time, while this
+// session's local cache simply hadn't caught up (same tab right after a
+// run, a different tab, or a different staff member's session entirely),
+// failing the write with "Run research before writing" on research that
+// didn't actually need re-running. One extra round-trip only when the
+// cache looks empty, not on every call — this is a low-volume, manual-
+// trigger feature (see the file header), so the cost of that is trivial.
+async function getFounderWithLedger(founderId: string, client: NonNullable<typeof supabase>): Promise<Founder | undefined> {
+  const cached = getFounder(founderId)
+  if (cached?.evidenceLedger) return cached
+  const { data } = await client.from('founders').select('data').eq('id', founderId).maybeSingle()
+  const fresh = data?.data as Founder | undefined
+  if (fresh?.evidenceLedger) {
+    store.update<Founder>('founders', fresh)
+    return fresh
+  }
+  return cached
+}
 
 export async function getEditorialItems(founderId: string): Promise<EditorialItemRow[]> {
   if (!isSupabaseConfigured || !supabase) return []
@@ -169,7 +192,7 @@ async function callWriter(
 export async function writeProfileBio(founderId: string): Promise<WriteResult> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
   const client = supabase
-  const founder = getFounder(founderId)
+  const founder = await getFounderWithLedger(founderId, client)
   const ledger = founder?.evidenceLedger
   if (!founder || !ledger) return { success: false, error: 'Run research before writing.' }
 
@@ -226,7 +249,7 @@ export async function writeProfileBio(founderId: string): Promise<WriteResult> {
 export async function runAudit(item: EditorialItemRow): Promise<WriteResult> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
   const client = supabase
-  const founder = getFounder(item.founder_id)
+  const founder = await getFounderWithLedger(item.founder_id, client)
   const ledger = founder?.evidenceLedger
   if (!founder || !ledger) return { success: false, error: 'No evidence ledger found for this founder.' }
   if (!item.draft_content?.body) return { success: false, error: 'This item has no draft to audit.' }
@@ -283,7 +306,7 @@ export async function writeSourceArticle(
 ): Promise<WriteResult> {
   if (!isSupabaseConfigured || !supabase) return { success: false, error: 'Not configured.' }
   const client = supabase
-  const founder = getFounder(founderId)
+  const founder = await getFounderWithLedger(founderId, client)
   const ledger = founder?.evidenceLedger
   if (!founder || !ledger) return { success: false, error: 'Run research before writing.' }
   if (!source.source_valid) return { success: false, error: 'This source was assessed as invalid — nothing to write.' }
