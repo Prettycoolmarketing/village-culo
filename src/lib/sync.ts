@@ -95,9 +95,28 @@ export function resetKnownCapoStaff(): void {
 export async function syncUserDataFromSupabase(isCapoStaff: boolean): Promise<void> {
   if (!supabase) return
   if (isCapoStaff) knownCapoStaffThisLoad = true
-  const useFullFounders = isCapoStaff || knownCapoStaffThisLoad
   await Promise.all([
-    pullVisibleRows(useFullFounders ? 'founders' : 'founders_safe', 'founders').catch(() => {}),
+    (async () => {
+      // The latch above only stops a call that HASN'T started yet from
+      // picking founders_safe — it does nothing for a call that already
+      // started with founders_safe (staff status wasn't known yet when IT
+      // began) and simply takes longer to resolve than a later, correct
+      // call. replaceCache is a blind full-replace, so whichever finishes
+      // LAST wins the cache, not whichever was right. Confirmed real,
+      // twice now (see this function's own prior fix, and Mitchell's
+      // Editorial Queue going empty again after a fresh sign-out/sign-in
+      // with that fix already live): re-checking the latch fresh right
+      // before the fetch, not just once at the top, closes most of the
+      // gap — and if staff status becomes known WHILE this particular
+      // founders_safe fetch is still in flight, immediately re-pulling the
+      // real table afterward corrects the cache regardless of which call
+      // technically finished last.
+      const table = knownCapoStaffThisLoad ? 'founders' : 'founders_safe'
+      const ok = await pullVisibleRows(table, 'founders').catch(() => false)
+      if (ok && table === 'founders_safe' && knownCapoStaffThisLoad) {
+        await pullVisibleRows('founders', 'founders').catch(() => {})
+      }
+    })(),
     ...SYNCED_TABLES.map(({ table, cacheKey }) => pullVisibleRows(table, cacheKey).catch(() => {})),
   ])
 }
