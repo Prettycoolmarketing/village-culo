@@ -532,6 +532,12 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
         Been featured on someone else's blog? Paste the article link and we'll write an original piece about
         it, with a link back to the original.
       </p>
+      {mode === 'mention' && (
+        <p className="text-xs text-[#9CA3AF] bg-[#F8F5F0] rounded-lg px-3 py-2 mb-3">
+          Note: LinkedIn posts can't be imported this way — LinkedIn blocks us from reading the real page, so
+          it only ever produces an empty placeholder. Copy the post text in yourself instead.
+        </p>
+      )}
       <div className="flex gap-1 mb-3 bg-[#F8F5F0] rounded-lg p-1 w-fit">
         <button
           onClick={() => { setMode('mention'); setError(null); setMentionDone(false) }}
@@ -2206,8 +2212,10 @@ export function DashboardImportContentPage() {
     navigate('/dashboard/profile?tab=content')
   }
 
-  const selfServeRewriteAllowed = !!founder?.archiveUnlocked
-    && !draft?.descriptionRewrittenAt
+  // Previously required founder.archiveUnlocked (paid) — opened up to every
+  // founder, paid or not, per direct product direction (2026-11-04): the
+  // SELF_SERVE_REWRITE_CAP below is still the real cost control.
+  const selfServeRewriteAllowed = !draft?.descriptionRewrittenAt
     && (founder?.selfServeRewriteCount ?? 0) < SELF_SERVE_REWRITE_CAP
 
   return (
@@ -2483,15 +2491,15 @@ export function DashboardImportContentPage() {
             onChange={setDraft}
             onSave={() => void handleSave()}
             onCancel={handleCancel}
-            // Unlocked founders get self-serve Rewrite too, not just CAPO —
-            // capped to once per item (descriptionRewrittenAt already marks
-            // "has this ever been through a rewrite," reused here rather
-            // than a new field) AND to SELF_SERVE_REWRITE_CAP total per
-            // founder, since tier prices were costed against import/storage
-            // only, not AI rewrite spend.
+            // Every founder gets self-serve Rewrite now, not just CAPO or
+            // paid/unlocked ones — capped to once per item
+            // (descriptionRewrittenAt already marks "has this ever been
+            // through a rewrite," reused here rather than a new field) AND
+            // to SELF_SERVE_REWRITE_CAP total per founder, which is the
+            // real cost control now that it's no longer gated by payment.
             canRewrite={canUseVoiceRewrite || selfServeRewriteAllowed}
             isSelfServeRewrite={!canUseVoiceRewrite && selfServeRewriteAllowed}
-            selfServeRewriteCapReached={!canUseVoiceRewrite && !!founder?.archiveUnlocked && !draft?.descriptionRewrittenAt && (founder?.selfServeRewriteCount ?? 0) >= SELF_SERVE_REWRITE_CAP}
+            selfServeRewriteCapReached={!canUseVoiceRewrite && !draft?.descriptionRewrittenAt && (founder?.selfServeRewriteCount ?? 0) >= SELF_SERVE_REWRITE_CAP}
             canSearchAnswer={canSearchAnswer}
             savedFlash={savedFlash}
             saving={advancedSaving}
