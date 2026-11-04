@@ -14,7 +14,7 @@ const primaryLinks = [
   { to: '/stories',    label: 'Stories',    exact: false },
   { to: '/library',    label: 'Library',    exact: false },
   { to: '/marketing',  label: 'Services',   exact: false },
-  { to: '/how-culo-works', label: 'How It Works', exact: false },
+  { to: '/how-culo-canva', label: 'Join Creatives', exact: false },
 ]
 
 

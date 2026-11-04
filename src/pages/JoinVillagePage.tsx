@@ -63,6 +63,33 @@ const STEPS = [
   },
 ]
 
+// How a Village article actually gets made — same pipeline copy as the old
+// standalone /how-culo-works page, moved here since that page no longer has
+// a nav entry. Shown on every /join visit (not Canva-gated): this is about
+// the Village's editorial process, not the Creatives/Canva product.
+const PIPELINE_STEPS = [
+  {
+    title: 'Research',
+    desc: "CULO finds what's genuinely public and verifiable about a founder — their own sites, real press coverage, official company pages, social profiles — and separates confirmed fact from anything that can't be verified.",
+  },
+  {
+    title: 'Writing',
+    desc: 'A profile bio and individual articles are written only from what research actually confirmed. A claim a founder makes about themselves stays attributed to them, never stated as flat fact. Nothing is invented — not a stat, a quote, or a date.',
+  },
+  {
+    title: 'Audit',
+    desc: 'Every piece is checked a second time, independently, against the same source material it was written from — catching anything overstated, dropped attribution, or drifted from the evidence.',
+  },
+  {
+    title: 'Human review',
+    desc: 'A real person reviews what the audit flags before anything goes live. A clean pass can publish automatically; anything with a question mark waits for a person.',
+  },
+  {
+    title: 'Publish',
+    desc: 'The piece goes live under a clear "Written by Culo" byline, so it\'s never mistaken for the founder\'s own words.',
+  },
+]
+
 // The real, account-creating join flow, staged at /join. Every "coming
 // soon" spot that used to be a bare email-capture waitlist (homepage hero,
 // Archive page, the Canva CTA banner) now points here directly instead —
@@ -346,6 +373,34 @@ export function JoinVillagePage() {
             </div>
             <LiveFounderPagePreview className="block rounded-2xl border border-border shadow-lg hover:shadow-xl" />
           </div>
+        </InnerContainer>
+      </section>
+
+      {/* ── How it works — the editorial pipeline behind every Village
+          article (research, writing, audit, human review, publish). Moved
+          in from the old standalone /how-culo-works page, which no longer
+          has a nav link. Shown on every /join visit, Canva or not. */}
+      <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="how-it-works-heading">
+        <InnerContainer>
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3 text-center">
+            How It Works
+          </p>
+          <h2 id="how-it-works-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-10 text-center">
+            How an article gets made
+          </h2>
+          <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            {PIPELINE_STEPS.map((step, i) => (
+              <li key={step.title} className="bg-background rounded-2xl border border-border p-6">
+                <span className="font-heading text-sm font-bold text-primary">{String(i + 1).padStart(2, '0')}</span>
+                <h3 className="font-heading text-lg font-bold text-charcoal mt-2 mb-2">{step.title}</h3>
+                <p className="font-body text-sm text-muted leading-relaxed">{step.desc}</p>
+              </li>
+            ))}
+          </ol>
+          <p className="font-body text-sm text-muted leading-relaxed text-center mt-8 max-w-2xl mx-auto">
+            Every article carries a byline — "Written by CULO" — so it's always clear the founder didn't write it
+            themselves, and every founder can edit, correct or remove anything on their profile at any time.
+          </p>
         </InnerContainer>
       </section>
 
