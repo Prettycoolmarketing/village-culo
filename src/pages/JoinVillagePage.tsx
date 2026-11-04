@@ -420,7 +420,7 @@ export function JoinVillagePage() {
                 Create your founder profile
               </a>
             </div>
-            <LiveFounderPagePreview className="block rounded-2xl border border-border shadow-lg hover:shadow-xl" />
+            <LiveFounderPagePreview slug="rohit-bhargava" className="block rounded-2xl border border-border shadow-lg hover:shadow-xl" />
           </div>
         </InnerContainer>
       </section>
