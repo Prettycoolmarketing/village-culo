@@ -104,8 +104,7 @@ function render(body: EmailBody, actionLink?: string): { subject: string; html: 
               `<p>Good news — your claim for <strong>${body.founderName}</strong>'s Village profile has been approved.</p>
                <p>Your Village account is set up, use this exact email address and the password you set to take control of it.</p>
                <p>You will get access to your private dashboard, please update your bio and articles as you please, import your content from across platforms and Culo will republish each post as an individual web article!</p>
-               ${emailButton('Create your account', `${SITE_URL}/onboarding`)}
-               <p style="margin-top:20px;font-size:13px;color:#6B7280;">Don't create a new profile from scratch during sign-up — just create the account with this email and we'll connect the two automatically.</p>`,
+               ${emailButton('Sign in', `${SITE_URL}/dashboard/login`)}`,
             ),
           }
         : {
