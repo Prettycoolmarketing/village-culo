@@ -94,16 +94,26 @@ serve(async (req) => {
     // one-line meta description), falling back to the meta description for
     // a page that's mostly JS-rendered and yields little readable HTML.
     const excerptSource = bodyText.length > (description?.length ?? 0) ? bodyText : (description ?? bodyText)
-    const excerpt = excerptSource.slice(0, MAX_EXCERPT_CHARS)
+    let excerpt = excerptSource.slice(0, MAX_EXCERPT_CHARS)
 
     // A page that needs JavaScript to render its real content (common on
     // modern sites — Webflow, Framer, React/Vue SPAs, even this app's own
     // site) returns almost nothing from a plain HTML fetch: just nav/footer
-    // boilerplate. That's indistinguishable from "nothing" by length alone,
-    // so this errors clearly instead of silently handing the Writer a thin
-    // excerpt it would have to pad with invented detail to meet its word
-    // count — better to fail loudly here than produce a vague article.
+    // boilerplate. That's indistinguishable from "nothing" by length alone.
+    // Rather than failing outright, fall back to a rendering proxy (Jina AI's
+    // free Reader — r.jina.ai — actually executes the page's JS server-side
+    // and returns the rendered text) before giving up.
     const MIN_USABLE_EXCERPT_CHARS = 200
+    if (excerpt.trim().length < MIN_USABLE_EXCERPT_CHARS) {
+      try {
+        const rendered = await safeFetchText(`https://r.jina.ai/${url.toString()}`, { timeoutMs: 15_000 })
+        const renderedExcerpt = rendered.trim().slice(0, MAX_EXCERPT_CHARS)
+        if (renderedExcerpt.length >= MIN_USABLE_EXCERPT_CHARS) excerpt = renderedExcerpt
+      } catch {
+        // Fall through to the error below — the proxy is a best-effort
+        // fallback, not a guarantee.
+      }
+    }
     if (excerpt.trim().length < MIN_USABLE_EXCERPT_CHARS) {
       return json({ error: 'Could not read enough real text from that page — it may require JavaScript to load its content. Try a different link, or paste the article text directly if you have it.' }, 400)
     }

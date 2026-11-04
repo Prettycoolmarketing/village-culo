@@ -97,6 +97,76 @@ const SOURCE_TYPE_HINTS: Record<ConnectedSourceType, string> = {
 // resolve-by-URL-or-name flow never reliably found a real feed, so it's
 // gone rather than left as a broken "Find my podcast" button.
 
+// Whole-feed bulk connect (paste an RSS feed URL, every past/future episode
+// drips in on the DAILY_IMPORT_LIMIT schedule, same mechanic as
+// YouTube/website-rss) — previously only reachable from the separate
+// Import Sources page, not this one, so a founder with a back-catalogue
+// podcast landing on the main Import screen had no visible way to bulk
+// import at all, only the single-episode embed above. Added here too.
+function PodcastFeedConnectForm({ founderId, isHighVolume, onConnected }: { founderId: string; isHighVolume: boolean; onConnected: () => void }) {
+  const [open, setOpen]   = useState(false)
+  const [value, setValue] = useState('')
+  const [busy, setBusy]   = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleConnect() {
+    if (!value.trim()) { setError('Paste your podcast\'s RSS feed URL first.'); return }
+    setBusy(true)
+    setError(null)
+    try {
+      const source = newConnectedSource(founderId, 'podcast-rss', new URL(value.trim()).hostname, { feedUrl: value.trim() })
+      source.ownContent = true
+      if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
+      await connectedSourcesService.upsert(source)
+      await scanSource(source)
+      setValue('')
+      onConnected()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not connect this feed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-xs font-semibold text-[#C86A43] hover:underline mt-3"
+      >
+        Have a full back-catalogue? Connect your podcast's RSS feed →
+      </button>
+    )
+  }
+
+  return (
+    <div className="border-t border-[#E8E4DD] mt-4 pt-4">
+      <p className="text-xs text-[#9CA3AF] mb-2">
+        Paste your podcast's RSS feed URL to bring in every episode over time (most podcast hosts — Spotify
+        for Podcasters, Buzzsprout, Transistor, etc. — show this in their settings).
+      </p>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          placeholder="Paste your podcast's RSS feed URL"
+          className="flex-1 px-3 py-2.5 rounded-lg border border-[#E8E4DD] text-sm text-[#2D2A26] bg-white placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#C86A43]/30 focus:border-[#C86A43] transition-colors"
+        />
+        <button
+          onClick={() => void handleConnect()}
+          disabled={busy}
+          className="px-4 py-2.5 rounded-lg bg-[#C86A43] text-white text-sm font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors shrink-0"
+        >
+          {busy ? 'Connecting…' : 'Connect feed'}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+    </div>
+  )
+}
+
 function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: { founderId: string; isHighVolume: boolean; sources: ConnectedSource[]; onConnected: () => void }) {
   // Same "own content vs. a single mention" split as YouTube/Website — an
   // episode of the founder's own show is theirs to embed and write about
@@ -155,7 +225,10 @@ function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: 
       </div>
 
       {mode === 'channel' ? (
-        <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
+        <div>
+          <EpisodeEmbedPanel founderId={founderId} onImported={onConnected} />
+          <PodcastFeedConnectForm founderId={founderId} isHighVolume={isHighVolume} onConnected={onConnected} />
+        </div>
       ) : (
         <div>
           {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
