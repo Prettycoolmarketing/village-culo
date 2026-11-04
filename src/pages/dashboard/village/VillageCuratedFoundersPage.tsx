@@ -412,7 +412,10 @@ export function VillageCuratedFoundersPage() {
   const industries = useMemo(() => [...new Set(founders.map(f => f.industry.name))].sort(), [founders])
 
   const curatedDraftFounders = useMemo(() => founders.filter(f => f.status === 'draft'), [founders])
-  const publishedFounders    = useMemo(() => founders.filter(f => f.status !== 'draft'), [founders])
+  // Was `f.status !== 'draft'`, which let archived (soft-deleted) founders leak back in here —
+  // an archived founder with unaudited editorial items showed a "Written" badge inside what
+  // looked like the Published list. Published now means actually published/featured content.
+  const publishedFounders    = useMemo(() => founders.filter(f => f.status === 'published' || f.status === 'featured'), [founders])
   const claimedFounders      = useMemo(() => founders.filter(f => f.profileStatus === 'claimed' || f.profileStatus === 'verified' || f.profileStatus === 'claim-pending'), [founders])
 
   // Filter + sort
