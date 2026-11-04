@@ -2333,18 +2333,14 @@ export function DashboardImportContentPage() {
               action. */}
           <p className="text-xl font-bold text-[#2D2A26] mb-3">Republish your content as web articles for structured discovery</p>
 
-          {/* Mobile-only notice, replacing the actual connector cards below
-              (hidden on mobile — see their wrapper's hidden md:grid). Real
-              reason, not just general mobile-simplification: Instagram's
-              connect button sends the browser to Instagram's own login
-              page to authorize, and on mobile that's a full navigation
-              away with no reliable way back to Culo afterward (confirmed
-              real complaint) — unlike desktop, where it's a popup/new tab
-              that closes itself back to this page when done. */}
-          <div className="md:hidden bg-white rounded-xl border border-[#E8E4DD] px-6 py-10 mb-6 text-center">
-            <p className="text-base font-semibold text-[#2D2A26]">Open Culo on desktop</p>
-            <p className="text-sm text-[#9CA3AF] mt-1">Follow the instructions to import your content simply.</p>
-          </div>
+          {/* Used to hide this entire grid on mobile behind an "Open Culo
+              on desktop" notice, on the theory that Instagram's connect
+              button needed a desktop-style OAuth popup to return to Culo
+              reliably. InstagramArchiveImportCard has never actually used
+              OAuth — it's a manual ZIP-upload flow — so that reasoning
+              didn't apply, and it was blocking YouTube/podcast/website
+              import on mobile too for no real reason. Removed; the grid
+              below now renders (single column) on mobile as well. */}
 
           {/* A real 2-column grid with each card explicitly placed by row,
               not two independent flex columns — flex columns have no idea
@@ -2354,7 +2350,7 @@ export function DashboardImportContentPage() {
               Placing cards by grid row means row 1's height is driven by
               whichever of YouTube/Instagram is taller, row 2 by whichever
               of Podcast/Blog is taller, and so on — top edges always align. */}
-          <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 items-stretch">
             <div className="lg:col-start-1 lg:row-start-1">
               <YouTubeConnectForm
                 founderId={founderId}
