@@ -202,8 +202,22 @@ export function readCache<T>(cacheKey: string): T[] {
  */
 const SYNC_PAGE_SIZE = 1000
 
-export async function pullVisibleRows<T extends { id: string }>(table: string, cacheKey: string): Promise<void> {
-  if (!supabase) return
+// Confirmed real, repeatedly, across different staff and different tables
+// (Gia/Darryl's Editorial Queue showing "no founders match", then 17 draft
+// founders silently missing from this exact page for Mitchell): a single
+// page of this fetch erroring — a network blip, a token hiccup, anything
+// transient — used to just `return` immediately, leaving the OLD cache in
+// place with zero signal to the caller or the user that anything went
+// wrong. The page then renders completely normally, just quietly short a
+// page's worth of rows, which reads as "random" missing data with no error
+// anywhere to explain it. Retries each page a couple of times before
+// giving up, and now reports back whether it actually succeeded so a
+// caller can show a real "couldn't load, try again" state instead of
+// silently trusting a cache that was never actually updated.
+const PULL_RETRIES = 2
+
+export async function pullVisibleRows<T extends { id: string }>(table: string, cacheKey: string): Promise<boolean> {
+  if (!supabase) return false
   // PostgREST caps an unbounded select at 1000 rows by default — confirmed
   // real and live: imported_content alone has 3,099 rows, so a single
   // `.select('data')` with no `.range()` silently truncated to an
@@ -215,8 +229,18 @@ export async function pullVisibleRows<T extends { id: string }>(table: string, c
   // to return all of them.
   const rows: T[] = []
   for (let from = 0; ; from += SYNC_PAGE_SIZE) {
-    const { data, error } = await supabase.from(table).select('data').range(from, from + SYNC_PAGE_SIZE - 1)
-    if (error || !data) return
+    let data: { data: unknown }[] | null = null
+    let lastError: string | undefined
+    for (let attempt = 0; attempt <= PULL_RETRIES; attempt++) {
+      const result = await supabase.from(table).select('data').range(from, from + SYNC_PAGE_SIZE - 1)
+      if (!result.error && result.data) { data = result.data; break }
+      lastError = result.error?.message
+      if (attempt < PULL_RETRIES) await new Promise(r => setTimeout(r, 400 * (attempt + 1)))
+    }
+    if (!data) {
+      console.error(`pullVisibleRows: giving up on ${table} after ${PULL_RETRIES + 1} attempts — ${lastError ?? 'no data returned'}`)
+      return false
+    }
     rows.push(...data.map(r => r.data as T))
     if (data.length < SYNC_PAGE_SIZE) break
   }
@@ -228,6 +252,7 @@ export async function pullVisibleRows<T extends { id: string }>(table: string, c
   // forever, since a row that's gone from the source never has a chance to
   // overwrite the stale one still sitting there.
   replaceCache<T>(cacheKey, rows)
+  return true
 }
 
 export function replaceCache<T extends { id: string }>(cacheKey: string, remote: T[]): void {

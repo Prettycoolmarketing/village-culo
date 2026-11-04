@@ -197,12 +197,20 @@ export function VillageCuratedFoundersPage() {
   // real data, instead of trusting whatever the global sync happened to
   // have landed already.
   const [dataReady, setDataReady] = useState(false)
+  // pullVisibleRows now reports success/failure instead of silently
+  // leaving a stale cache in place on error (see entityStore.ts) — surface
+  // that here rather than rendering the list as if it's current when it
+  // might not be.
+  const [syncFailed, setSyncFailed] = useState(false)
+  const [syncAttempt, setSyncAttempt] = useState(0)
   useEffect(() => {
+    setDataReady(false)
     void Promise.all([
       pullVisibleRows('founders', 'founders'),
       pullVisibleRows('imported_content', 'imported_content'),
-    ]).finally(() => setDataReady(true))
-  }, [])
+    ]).then(([foundersOk, importsOk]) => setSyncFailed(!foundersOk || !importsOk))
+      .finally(() => setDataReady(true))
+  }, [syncAttempt])
   const [searchParams] = useSearchParams()
   // Export moved to Village Overview — no longer a tab here. The separate
   // Editorial Queue tab/page is gone too — it was a cross-founder review
@@ -591,6 +599,20 @@ export function VillageCuratedFoundersPage() {
   return (
     <div className="p-8 max-w-5xl pb-24" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <CapoBackLink />
+
+      {syncFailed && (
+        <div className="mb-5 flex items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          <p className="text-sm text-red-700">
+            Couldn't load the latest data — what's showing below may be out of date or missing rows.
+          </p>
+          <button
+            onClick={() => setSyncAttempt(n => n + 1)}
+            className="text-xs font-semibold px-3 py-1.5 bg-white border border-red-300 text-red-700 rounded-lg hover:bg-red-100 transition-colors shrink-0"
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
