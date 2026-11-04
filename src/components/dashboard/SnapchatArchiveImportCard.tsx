@@ -5,6 +5,7 @@ import { importedContentService } from '../../services/importedContent'
 import { SourceIcon } from '../ui/SourceIcon'
 import { getFounder } from '../../services/founders'
 import { hashFile, findPriorImport, recordImportHash } from '../../utils/archiveFileHash'
+import { logImportError } from '../../services/importErrorLog'
 
 // Same shape as InstagramArchiveImportCard — upload Snapchat's "My Data"
 // export, every Memory becomes its own private draft piece. Snapchat's
@@ -66,8 +67,10 @@ export function SnapchatArchiveImportCard({ founderId, onImported }: {
     try {
       const { memories, zip } = await parseSnapchatArchiveFile(file, msg => setStage(msg))
       if (memories.length === 0) {
-        setError('Couldn’t find any memories in that archive. Snapchat’s export format can vary — let support know and we’ll take a look.')
+        const msg = 'Couldn’t find any memories in that archive. Snapchat’s export format can vary — let support know and we’ll take a look.'
+        setError(msg)
         setStage(null)
+        logImportError(founderId, 'snapchat', msg, file.name)
         return
       }
 
@@ -92,7 +95,9 @@ export function SnapchatArchiveImportCard({ founderId, onImported }: {
       onImported(imported)
     } catch (err) {
       setStage(null)
-      setError(err instanceof Error ? err.message : 'Could not process that archive.')
+      const msg = err instanceof Error ? err.message : 'Could not process that archive.'
+      setError(msg)
+      logImportError(founderId, 'snapchat', msg, file.name)
     }
   }
 

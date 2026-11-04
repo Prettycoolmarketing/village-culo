@@ -38,6 +38,7 @@ import { resolveChannelId } from '../../services/connectors/youtube'
 import { resolveEpisode, type ResolvedEpisode } from '../../services/episodeResolve'
 import { resolveWebsiteFeed, type WebsiteFeedCandidate } from '../../services/websiteResolve'
 import { importMentionArticle } from '../../services/mentionImport'
+import { logImportError } from '../../services/importErrorLog'
 import type {
   ImportedContent,
   ImportedContentStatus,
@@ -122,7 +123,9 @@ function PodcastFeedConnectForm({ founderId, isHighVolume, onConnected }: { foun
       setValue('')
       onConnected()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not connect this feed.')
+      const msg = err instanceof Error ? err.message : 'Could not connect this feed.'
+      setError(msg)
+      logImportError(founderId, 'podcast-rss', msg, value.trim())
     } finally {
       setBusy(false)
     }
@@ -192,7 +195,9 @@ function PodcastConnectPanel({ founderId, isHighVolume, sources, onConnected }: 
       setEpisodeDone(true)
       onConnected()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not import this episode.')
+      const msg = err instanceof Error ? err.message : 'Could not import this episode.'
+      setError(msg)
+      logImportError(founderId, 'episode', msg, value.trim())
     } finally {
       setBusy(false)
     }
@@ -286,7 +291,9 @@ function EpisodeEmbedPanel({ founderId, onImported }: { founderId: string; onImp
       setEditableTitle(result.title)
       setStep('review')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not resolve this episode.')
+      const msg = err instanceof Error ? err.message : 'Could not resolve this episode.'
+      setError(msg)
+      logImportError(founderId, 'episode', msg, url.trim())
       setStep('input')
     }
   }
@@ -434,7 +441,9 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
       setValue('')
       onConnected()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not connect this channel.')
+      const msg = err instanceof Error ? err.message : 'Could not connect this channel.'
+      setError(msg)
+      logImportError(founderId, 'youtube', msg, value.trim())
     } finally {
       setBusy(false)
     }
@@ -453,7 +462,9 @@ function YouTubeConnectForm({ founderId, isHighVolume, sources, onConnected }: {
       setEpisodeDone(true)
       onConnected()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not import this episode.')
+      const msg = err instanceof Error ? err.message : 'Could not import this episode.'
+      setError(msg)
+      logImportError(founderId, 'episode', msg, value.trim())
     } finally {
       setBusy(false)
     }
@@ -568,9 +579,12 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
         }
       } else {
         setError(result.message)
+        logImportError(founderId, 'website-rss', result.message, value.trim())
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not connect this website.')
+      const msg = err instanceof Error ? err.message : 'Could not connect this website.'
+      setError(msg)
+      logImportError(founderId, 'website-rss', msg, value.trim())
     } finally {
       setBusy(false)
     }
@@ -589,7 +603,9 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
       setMentionDone(true)
       onConnected()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not import this article.')
+      const msg = err instanceof Error ? err.message : 'Could not import this article.'
+      setError(msg)
+      logImportError(founderId, 'mention-article', msg, value.trim())
     } finally {
       setBusy(false)
     }

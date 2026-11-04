@@ -5,6 +5,7 @@ import { importedContentService } from '../../services/importedContent'
 import { SourceIcon } from '../ui/SourceIcon'
 import { getFounder } from '../../services/founders'
 import { hashFile, findPriorImport, recordImportHash } from '../../utils/archiveFileHash'
+import { logImportError } from '../../services/importErrorLog'
 
 // Bring in a whole Instagram export ZIP at once — posts, reels and stories
 // each become their own ImportedContent (carousels keep every photo, in
@@ -83,8 +84,10 @@ export function InstagramArchiveImportCard({ founderId, onImported }: {
     try {
       const { posts, zip } = await parseInstagramArchiveFile(file, msg => setStage(msg))
       if (posts.length === 0) {
-        setError('Couldn’t find any posts, reels or stories in that archive. Instagram’s export format varies — let support know and we’ll take a look.')
+        const msg = 'Couldn’t find any posts, reels or stories in that archive. Instagram’s export format varies — let support know and we’ll take a look.'
+        setError(msg)
         setStage(null)
+        logImportError(founderId, 'instagram', msg, file.name)
         return
       }
 
@@ -113,7 +116,9 @@ export function InstagramArchiveImportCard({ founderId, onImported }: {
       onImported(imported)
     } catch (err) {
       setStage(null)
-      setError(err instanceof Error ? err.message : 'Could not process that archive.')
+      const msg = err instanceof Error ? err.message : 'Could not process that archive.'
+      setError(msg)
+      logImportError(founderId, 'instagram', msg, file.name)
     }
   }
 

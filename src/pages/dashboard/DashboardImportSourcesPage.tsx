@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getCurrentFounderId } from '../../services/currentFounder'
 import { connectedSourcesService, scanSource, newConnectedSource } from '../../services/connectedSources'
 import { resolveChannelId } from '../../services/connectors/youtube'
+import { logImportError } from '../../services/importErrorLog'
 import type { ConnectedSource, ConnectedSourceType } from '../../types/connectedSource'
 
 const TYPE_LABELS: Record<ConnectedSourceType, string> = {
@@ -44,7 +45,9 @@ function ConnectForm({ founderId, onConnected }: { founderId: string; onConnecte
       setValue('')
       onConnected()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not connect this source.')
+      const msg = err instanceof Error ? err.message : 'Could not connect this source.'
+      setError(msg)
+      logImportError(founderId, type, msg, value.trim())
     } finally {
       setBusy(false)
     }
