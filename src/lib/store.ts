@@ -1,8 +1,29 @@
 const PREFIX    = 'culo_v1_'
 const SEED_FLAG = 'culo_seeded_v1'
 
+// In-memory mirror of every cache key, kept in sync with every write below.
+// This is now the real source of truth for the current page session —
+// localStorage underneath it is a best-effort persistence layer only, not
+// the only copy of the data.
+//
+// Confirmed real and live (Mitchell, Editorial Queue, 2026-11-04): a CAPO/
+// admin session caches the WHOLE platform's rows for tables with no
+// per-user RLS scope (imported_content alone can run to several thousand
+// rows), which can exceed a browser's ~5-10MB per-origin localStorage
+// quota — mobile Safari's especially so, and an incognito window imposes
+// an even smaller one. The console showed it happening on nearly every
+// table at once. Before this fix, `get()` read ONLY from localStorage, so
+// when `set()`'s write failed, the correct data — already fetched from the
+// server successfully that same session — was simply gone: every read was
+// built on top of a failed write, with nothing else keeping it. Reading
+// from memory first means a quota failure now only costs the "load
+// instantly from last visit" optimization, never correctness within the
+// session that actually has the real data.
+const memory = new Map<string, unknown[]>()
+
 export const store = {
   get<T>(key: string): T[] | null {
+    if (memory.has(key)) return memory.get(key) as T[]
     try {
       const raw = localStorage.getItem(PREFIX + key)
       return raw ? (JSON.parse(raw) as T[]) : null
@@ -11,22 +32,12 @@ export const store = {
     }
   },
 
-  // Not wrapped before: an admin/CAPO session caches the WHOLE platform's
-  // rows for tables like stories/imported_content (RLS has no per-user
-  // scope for that role), which can run well past mobile Safari's much
-  // smaller per-origin localStorage quota (often ~5MB vs desktop Chrome's
-  // much larger one) — a real, confirmed-plausible cause of "content only
-  // showing 1" on a phone logged in as the admin account specifically.
-  // Before this, that quota error threw straight out of setItem, which
-  // left the write half-done and could leave stale/partial data in place
-  // silently. Doesn't fix the underlying "cache everything" architecture
-  // not scaling to a whole-platform admin pull on mobile, but at least
-  // fails loud (one console error) instead of silently corrupting state.
   set<T>(key: string, items: T[]): void {
+    memory.set(key, items as unknown[])
     try {
       localStorage.setItem(PREFIX + key, JSON.stringify(items))
     } catch (err) {
-      console.error(`[store] Failed to cache "${key}" (${items.length} items) — likely storage quota exceeded.`, err)
+      console.error(`[store] Couldn't persist "${key}" (${items.length} items) to localStorage — likely over the browser's storage quota. Using it for this session only; it won't load instantly next time without a fresh sync.`, err)
     }
   },
 
@@ -65,6 +76,7 @@ export const store = {
   },
 
   resetAll(): void {
+    memory.clear()
     Object.keys(localStorage)
       .filter(k => k.startsWith(PREFIX))
       .forEach(k => localStorage.removeItem(k))
