@@ -21,6 +21,7 @@ import { publishFounderArticles } from '../../../services/publishStory'
 import { pullVisibleRows } from '../../../lib/entityStore'
 import { getSourcedLeads } from '../../../services/sourcedLeads'
 import { syncUserDataFromSupabase } from '../../../lib/sync'
+import { supabase } from '../../../lib/supabase'
 
 // ─── Status pill ──────────────────────────────────────────────────────────────
 
@@ -202,14 +203,33 @@ export function VillageCuratedFoundersPage() {
   // that here rather than rendering the list as if it's current when it
   // might not be.
   const [syncFailed, setSyncFailed] = useState(false)
+  const [sessionExpired, setSessionExpired] = useState(false)
   const [syncAttempt, setSyncAttempt] = useState(0)
   useEffect(() => {
     setDataReady(false)
-    void Promise.all([
-      pullVisibleRows('founders', 'founders'),
-      pullVisibleRows('imported_content', 'imported_content'),
-    ]).then(([foundersOk, importsOk]) => setSyncFailed(!foundersOk || !importsOk))
-      .finally(() => setDataReady(true))
+    setSessionExpired(false)
+    void (async () => {
+      // Confirmed real: a long-idle tab's access token can go stale without
+      // ever throwing an error — PostgREST just quietly treats the request
+      // as unauthenticated and applies anon-level RLS instead of staff-
+      // level, so this page renders normally but a staff account only ever
+      // sees published rows (draft founders silently vanish, no error, no
+      // banner). A proactive refresh here either heals it transparently
+      // (the common case) or, if the refresh token itself is dead too,
+      // fails explicitly — which is the one case actually worth telling
+      // the person to sign in again for, rather than guessing from a
+      // row count that looked a bit low.
+      if (supabase) {
+        const { error } = await supabase.auth.refreshSession()
+        if (error) { setSessionExpired(true); setDataReady(true); return }
+      }
+      const [foundersOk, importsOk] = await Promise.all([
+        pullVisibleRows('founders', 'founders'),
+        pullVisibleRows('imported_content', 'imported_content'),
+      ])
+      setSyncFailed(!foundersOk || !importsOk)
+      setDataReady(true)
+    })()
   }, [syncAttempt])
   const [searchParams] = useSearchParams()
   // Export moved to Village Overview — no longer a tab here. The separate
@@ -600,7 +620,21 @@ export function VillageCuratedFoundersPage() {
     <div className="p-8 max-w-5xl pb-24" style={{ fontFamily: "'DM Sans', sans-serif" }}>
       <CapoBackLink />
 
-      {syncFailed && (
+      {sessionExpired && (
+        <div className="mb-5 flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <p className="text-sm text-amber-800">
+            Your session has expired — sign in again to see everything, including drafts awaiting review.
+          </p>
+          <Link
+            to="/dashboard/login"
+            className="text-xs font-semibold px-3 py-1.5 bg-white border border-amber-300 text-amber-800 rounded-lg hover:bg-amber-100 transition-colors shrink-0"
+          >
+            Sign in
+          </Link>
+        </div>
+      )}
+
+      {syncFailed && !sessionExpired && (
         <div className="mb-5 flex items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
           <p className="text-sm text-red-700">
             Couldn't load the latest data — what's showing below may be out of date or missing rows.
