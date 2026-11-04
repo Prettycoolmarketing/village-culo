@@ -97,7 +97,7 @@ export function VillagePage() {
           // top of /stories. /stories itself stays plain newest-first (best
           // for SEO/crawl consistency); only this homepage preview rotates.
           const latest = dailyRotatingSlice(
-            [...getStories({ publicOnly: true })]
+            [...getStories({ publicOnly: true, includeUnclaimedCurated: true })]
               // Same reasoning as FeaturedWidget/FounderGrid's rotate — the
               // homepage preview shouldn't fill up with the generic Culo
               // logo just because a story hasn't gotten a real cover

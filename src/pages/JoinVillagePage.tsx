@@ -1,5 +1,6 @@
 import { useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
+import { CULO_ORGANIZATION } from '../utils/seo'
 import { useInstantJoin } from '../hooks/useInstantJoin'
 import { WebmailButtons } from '../components/ui/WebmailButtons'
 import { Navbar } from '../components/layout/Navbar'
@@ -90,6 +91,28 @@ const PIPELINE_STEPS = [
   },
 ]
 
+const DASHBOARD_ITEMS = [
+  { label: 'Import', desc: 'your existing posts — YouTube videos, podcast episodes, Instagram posts, articles you\'ve already published elsewhere — and CULO restructures each one into its own web article.' },
+  { label: 'Content', desc: 'is where you review everything CULO has written or imported for you before it goes live — edit it, approve it, or send it back.' },
+  { label: 'Publish', desc: 'is the one place you control what\'s actually live on your public profile.' },
+  { label: 'Profile', desc: 'is where your bio, links, socials and business details live — the same information that appears on your public page.' },
+]
+
+const JOIN_FAQS = [
+  {
+    q: 'How are founder profiles researched?',
+    a: 'CULO finds what\'s genuinely public and verifiable about a founder, then writes only from what that research confirmed — every piece is audited a second time and reviewed by a real person before it publishes.',
+  },
+  {
+    q: 'Can I edit or remove my profile?',
+    a: 'Yes — full control, any time, free.',
+  },
+  {
+    q: "Does CULO ever publish anything I didn't say or do?",
+    a: 'No — every piece is sourced, reviewed, and attributed; nothing is invented.',
+  },
+]
+
 // The real, account-creating join flow, staged at /join. Every "coming
 // soon" spot that used to be a bare email-capture waitlist (homepage hero,
 // Archive page, the Canva CTA banner) now points here directly instead —
@@ -129,10 +152,30 @@ export function JoinVillagePage() {
     title: 'Culo Creatives in Canva',
     description: 'Culo Creatives in Canva, coming soon — turn your raw footage into finished blogs, carousels and reels. Join the waitlist for first access.',
     ogType: 'website',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: JOIN_FAQS.map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+      publisher: CULO_ORGANIZATION,
+    },
   } : {
     title: 'Culo In Canva',
     description: 'Join the CULO Village — republish your content, and be first in line for Culo Creatives in Canva, coming soon.',
     ogType: 'website',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: JOIN_FAQS.map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+      publisher: CULO_ORGANIZATION,
+    },
   })
 
   const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit, handleResend, resending, resent } = useInstantJoin(source, canvaUserId)
@@ -407,6 +450,48 @@ export function JoinVillagePage() {
             Every article carries a byline — "Written by CULO" — so it's always clear the founder didn't write it
             themselves, and every founder can edit, correct or remove anything on their profile at any time.
           </p>
+        </InnerContainer>
+      </section>
+
+      {/* ── Importing, your dashboard, and managing your profile — also
+          moved in from /how-culo-works. */}
+      <section className="py-16 md:py-20 bg-surface" aria-labelledby="dashboard-heading">
+        <InnerContainer className="max-w-3xl">
+          <h2 id="dashboard-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-5">
+            Importing, your dashboard, and managing your profile
+          </h2>
+          <p className="font-body text-base text-muted leading-loose mb-6">
+            Once you're in, your dashboard is where you run the whole thing:
+          </p>
+          <ul className="space-y-4 mb-6">
+            {DASHBOARD_ITEMS.map(item => (
+              <li key={item.label} className="font-body text-base text-muted leading-relaxed">
+                <span className="font-heading font-semibold text-charcoal">{item.label}</span> {item.desc}
+              </li>
+            ))}
+          </ul>
+          <p className="font-body text-base text-muted leading-loose">
+            Everything stays editable, always. Nothing publishes without passing through this dashboard first, and
+            nothing stays published if you decide to remove it.
+          </p>
+        </InnerContainer>
+      </section>
+
+      {/* ── Frequently asked — also moved in from /how-culo-works, same
+          FAQPage schema wired into usePageMeta above. */}
+      <section className="py-16 md:py-20 bg-background" aria-labelledby="faq-heading">
+        <InnerContainer className="max-w-3xl">
+          <h2 id="faq-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-10">
+            Frequently asked
+          </h2>
+          <div className="space-y-8">
+            {JOIN_FAQS.map(f => (
+              <div key={f.q}>
+                <p className="font-heading font-semibold text-charcoal mb-1">{f.q}</p>
+                <p className="font-body text-sm text-muted leading-relaxed">{f.a}</p>
+              </div>
+            ))}
+          </div>
         </InnerContainer>
       </section>
 
