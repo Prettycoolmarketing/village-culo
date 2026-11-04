@@ -450,13 +450,23 @@ export function VillageCuratedFoundersPage() {
     // imported earlier but published sooner. Falls back to createdAt for
     // anything published before publishedAt started getting set.
     const sortDate = (f: Founder) => (pageTab === 'published' ? f.publishedAt ?? f.createdAt : f.createdAt)
-    list.sort((a, b) => {
-      if (sortBy === 'newest')  return sortDate(b).localeCompare(sortDate(a))
-      if (sortBy === 'oldest')  return sortDate(a).localeCompare(sortDate(b))
-      if (sortBy === 'name-az') return a.name.localeCompare(b.name)
-      if (sortBy === 'name-za') return b.name.localeCompare(a.name)
-      return 0
-    })
+    // Claimed tab defaults to alphabetical regardless of the sortBy picker —
+    // it's a roster of real people with accounts, not a review queue, so
+    // "find this specific person" matters more than "what's newest," and
+    // 'newest' (by createdAt) looked arbitrary mixing pending/claimed/
+    // verified founders together with no obvious order to a human eye.
+    // The sortBy dropdown still works normally for the other tabs.
+    if (pageTab === 'claimed') {
+      list.sort((a, b) => a.name.localeCompare(b.name))
+    } else {
+      list.sort((a, b) => {
+        if (sortBy === 'newest')  return sortDate(b).localeCompare(sortDate(a))
+        if (sortBy === 'oldest')  return sortDate(a).localeCompare(sortDate(b))
+        if (sortBy === 'name-az') return a.name.localeCompare(b.name)
+        if (sortBy === 'name-za') return b.name.localeCompare(a.name)
+        return 0
+      })
+    }
 
     // Queue order regardless of the chosen sort: needs-review on top (the
     // actual work waiting on staff), failed research at the very bottom
