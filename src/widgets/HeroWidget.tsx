@@ -82,10 +82,10 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
           </p>
 
           <Link
-            to="/founders"
-            className="inline-block text-sm font-semibold text-primary hover:text-[#b05a35] transition-colors mb-10 underline underline-offset-4 decoration-primary/30 hover:decoration-[#b05a35]"
+            to="/join"
+            className="inline-flex items-center justify-center px-6 py-3 mb-10 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
           >
-            Explore founders →
+            Join the Village
           </Link>
 
           {/* Search */}
@@ -168,14 +168,11 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
             </ul>
           </nav>
 
-          {/* Direct "Join the Village" — /join is Culo Creatives-in-Canva
-              flavoured and reads confusingly to someone who just wants a
-              plain Village account, so this goes straight to signup. */}
           <Link
-            to="/dashboard/login?mode=signup"
+            to="/founders"
             className="inline-flex items-center justify-center px-6 py-3 mt-8 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
           >
-            Join the Village
+            Explore the Village
           </Link>
         </div>
 

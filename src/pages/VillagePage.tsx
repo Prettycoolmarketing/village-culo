@@ -1,8 +1,6 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { CULO_ORGANIZATION } from '../utils/seo'
-import { useInstantJoin } from '../hooks/useInstantJoin'
 import { HeroWidget }                from '../widgets/HeroWidget'
 import { FeaturedWidget }            from '../widgets/FeaturedWidget'
 import { StoryGrid }                 from '../widgets/StoryGrid'
@@ -16,58 +14,6 @@ import { InnerContainer }            from '../components/layout/PageContainer'
 import { getStories } from '../services/stories'
 import { dailyRotatingSlice } from '../utils/rotation'
 import { hasRealCoverImage } from '../utils/realMedia'
-import { WebmailButtons } from '../components/ui/WebmailButtons'
-import { LiveFounderPagePreview } from '../components/ui/LiveFounderPagePreview'
-
-// Compact inline variant of the same signup mechanic JoinVillagePage uses —
-// no full-page takeover here, just inline feedback within this section's
-// own space, since this is embedded partway down the homepage, not a
-// dedicated page. Tagged source=canva — see the section comment above.
-function HomeInstantJoin() {
-  const { email, setEmail, submitting, error, checkEmail, alreadyMember, handleSubmit } = useInstantJoin('village')
-
-  if (alreadyMember) {
-    return (
-      <p className="font-body text-sm text-white/70 max-w-xl mx-auto lg:mx-0">
-        <span className="font-medium text-white">{email}</span> already has a Culo Village account —{' '}
-        <Link to="/dashboard/login" className="text-primary underline hover:text-white transition-colors">sign in</Link> to pick up where you left off.
-      </p>
-    )
-  }
-
-  if (checkEmail) {
-    return (
-      <div className="max-w-xl mx-auto lg:mx-0">
-        <p className="font-body text-sm text-white/70 mb-4">
-          Check your email — we sent a confirmation link to <span className="font-medium text-white">{email}</span>.
-        </p>
-        <WebmailButtons dark />
-      </div>
-    )
-  }
-
-  return (
-    <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
-      <input
-        type="email"
-        required
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="you@email.com"
-        aria-label="Email address"
-        className="flex-1 min-w-0 rounded-xl px-5 py-4 text-base bg-white/10 text-white placeholder:text-white/50 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30 transition-colors"
-      />
-      <button
-        type="submit"
-        disabled={submitting}
-        className="shrink-0 rounded-xl px-8 py-4 text-base font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
-      >
-        {submitting ? 'Joining…' : 'Create your founder profile'}
-      </button>
-      {error && <p className="font-body text-sm text-red-400 w-full">{error}</p>}
-    </form>
-  )
-}
 
 // ─── Section wrapper ───────────────────────────────────────────────────────────
 // Alternates between surface white and warm background to create visual rhythm.
@@ -113,48 +59,6 @@ export function VillagePage() {
       >
         Skip to main content
       </a>
-
-      {/* ── 1. Village hero / signup ──────────────────────────────────────────
-        Full-bleed and hero-scale (matching /how-culo-canva). Instant email
-        capture right here — no click-through to /join needed first — so
-        anyone landing on culovillage.com can start immediately. Tagged
-        source=village now (not canva) — this section pitches the Village
-        itself, not Culo Creatives, so a signup here should land on the
-        plain Village welcome, not the Canva-first one. The Creatives pitch
-        has its own dedicated section further down the page instead of
-        leading with it.
-      */}
-      <section className="bg-charcoal relative overflow-hidden" aria-labelledby="creatives-heading">
-        <InnerContainer className="pt-28 pb-16 md:pt-28 md:pb-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-left">
-              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                Join The Culo Village
-              </p>
-              <h2 id="creatives-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-                Structure Your Posts Into Web Articles For Discovery
-              </h2>
-              <p className="font-body text-lg md:text-xl text-white/70 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
-                Everything you've already posted is disappearing the moment the feed moves on — buried,
-                unsearchable, impossible for someone to find later even though it's still real, true and
-                valuable. The Culo Village pulls your existing posts, videos and podcasts together into a
-                permanent, searchable body of work connected back to your name.
-              </p>
-              <HomeInstantJoin />
-              <p className="font-body text-sm text-white/50 mt-6 max-w-xl mx-auto lg:mx-0">
-                Culo Creatives in Canva is coming soon, to make editing raw footage into social media posts easy.
-              </p>
-            </div>
-            {/* A real Village founder page, not a Creatives/Canva
-                screenshot — this section is deliberately pitching the
-                Village itself (see the section comment above), so the
-                image next to that copy should actually be the Village,
-                same live-preview pattern /join uses for its own "What is
-                The Culo Village" section. */}
-            <LiveFounderPagePreview className="relative hidden lg:block rounded-2xl border border-white/10 shadow-xl hover:shadow-2xl" />
-          </div>
-        </InnerContainer>
-      </section>
 
       {/* ── 2. Hero ─────────────────────────────────────────────────────────── */}
       {/*

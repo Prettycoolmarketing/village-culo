@@ -210,18 +210,24 @@ export function JoinVillagePage() {
                 {isCanva ? 'Join The Culo Village' : 'Free to join'}
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
-                {isCanva ? <>Edit Your Raw Footage<br />Into Social Media Posts<br />In Canva</> : <>Turn everything you've already created into a body of work people can discover.</>}
+                {isCanva ? <>Structure Your Posts Into Web Articles For Discovery</> : <>Turn everything you've already created into a body of work people can discover.</>}
               </h1>
-              <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0">
+              <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-4 max-w-xl mx-auto lg:mx-0">
                 {isCanva ? (
-                  <>The Culo Village republishes your social posts across YouTube, podcasts and Instagram archives —
-                  and Culo Creatives, coming soon to Canva, helps founders edit their raw footage into social
-                  media formatted content.</>
+                  <>Everything you've already posted is disappearing the moment the feed moves on — buried,
+                  unsearchable, impossible for someone to find later even though it's still real, true and
+                  valuable. The Culo Village pulls your existing posts, videos and podcasts together into a
+                  permanent, searchable body of work connected back to your name.</>
                 ) : (
                   <>The Culo Village connects your podcasts, videos, social posts, articles, businesses and expertise
                   into one public founder profile built for discovery across people, search engines and AI.</>
                 )}
               </p>
+              {isCanva && (
+                <p className="font-body text-sm text-white/50 mb-6 max-w-xl mx-auto lg:mx-0">
+                  Culo Creatives in Canva is coming soon, to make editing raw footage into social media posts easy.
+                </p>
+              )}
               <form onSubmit={e => void handleSubmit(e)} className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto lg:mx-0">
                 <input
                   type="email"
