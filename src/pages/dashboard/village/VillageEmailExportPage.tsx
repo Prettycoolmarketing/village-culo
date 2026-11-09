@@ -98,6 +98,63 @@ function isRealMember(f: ReturnType<typeof getFounders>[number]) {
 
 interface PendingSignup { id: string; email: string; createdAt: string; emailConfirmed: boolean }
 
+// ─── Curated outreach emails — plain copy/paste list ────────────────────────
+// Unclaimed curated founders have no account/signupEmail at all — the only
+// email we ever have for one is whatever editorial-research found published
+// on their own site/bio (evidenceLedger.verified_profiles.email, see
+// editorial-research/index.ts and editorialResearch.ts). This reads that
+// live, so it needs no separate write path: the moment research finds an
+// email for a curated founder (one-off "Find emails" run or regular
+// research), it shows up here automatically, ready to copy and send
+// outreach manually — no CSV, no mail-merge, just the list.
+function CuratedEmailsList() {
+  const entries = [...getFounders()]
+    .filter(f => f.profileStatus === 'village-curated' && !!f.evidenceLedger?.verified_profiles?.email)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(f => ({ name: f.name, email: f.evidenceLedger!.verified_profiles!.email! }))
+
+  const [copied, setCopied] = useState(false)
+  function handleCopy() {
+    void navigator.clipboard.writeText(entries.map(e => e.email).join('\n')).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  if (entries.length === 0) {
+    return (
+      <div className="bg-[#F8F5F0] rounded-lg px-4 py-3 mb-4">
+        <p className="text-sm text-[#6B7280]">
+          No contact emails found yet for curated founders — use "Find emails" on the Founders page to have research look for one.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-[#E8E4DD] p-4 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold text-[#2D2A26]">
+          {entries.length} contact email{entries.length === 1 ? '' : 's'} found from research
+        </p>
+        <button
+          onClick={handleCopy}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors"
+        >
+          {copied ? 'Copied ✓' : 'Copy all emails'}
+        </button>
+      </div>
+      <textarea
+        readOnly
+        value={entries.map(e => `${e.name} — ${e.email}`).join('\n')}
+        rows={Math.min(entries.length, 10)}
+        className="w-full text-xs font-mono text-[#2D2A26] bg-[#F8F5F0] rounded-lg px-3 py-2 resize-y"
+        onFocus={e => e.target.select()}
+      />
+    </div>
+  )
+}
+
 function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
   const { user } = useAuth()
   // Deleting a founder's account from here (not just removing them from a
@@ -196,6 +253,7 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
 
   return (
     <div>
+      {curatedOnly && <CuratedEmailsList />}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-[#6B7280]">
           {sorted.length} member{sorted.length === 1 ? '' : 's'}
