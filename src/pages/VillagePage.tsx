@@ -67,6 +67,23 @@ export function VillagePage() {
       */}
       <HeroWidget />
 
+      {/* ── From the Village — founder announcement carousel ─────────────────
+          Replaces the old static "Trending Ideas" grid. A continuously
+          scrolling strip gives variety (many founders cycle through a small
+          space instead of a fixed 6-card grid) without cluttering the
+          homepage, and renders nothing at all once there's nothing real to
+          show — no "coming soon" placeholder needed here. */}
+      {/* Not wrapped in VillageSection's InnerContainer — the scrolling
+          track needs to span the full page width, not the max-w-7xl content
+          column; the widget constrains its own heading internally. */}
+      <section className="bg-surface py-14 md:py-20">
+        <IdeaAnnouncementCarousel
+          heading="From the Village"
+          subheading="Founders publishing real knowledge, right now."
+          action={{ label: 'Explore Ideas', href: '/ideas' }}
+        />
+      </section>
+
       {/* ── 3. Today's Highlights ───────────────────────────────────────────── */}
       {/*
         Story of the Day, Founder of the Day, Idea of the Day,
@@ -143,24 +160,7 @@ export function VillagePage() {
         })()}
       </VillageSection>
 
-      {/* ── 5. From the Village — founder announcement carousel ─────────────
-          Replaces the old static "Trending Ideas" grid. A continuously
-          scrolling strip gives variety (many founders cycle through a small
-          space instead of a fixed 6-card grid) without cluttering the
-          homepage, and renders nothing at all once there's nothing real to
-          show — no "coming soon" placeholder needed here. */}
-      {/* Not wrapped in VillageSection's InnerContainer — the scrolling
-          track needs to span the full page width, not the max-w-7xl content
-          column; the widget constrains its own heading internally. */}
-      <section className="bg-surface py-14 md:py-20">
-        <IdeaAnnouncementCarousel
-          heading="From the Village"
-          subheading="Founders publishing real knowledge, right now."
-          action={{ label: 'Explore Ideas', href: '/ideas' }}
-        />
-      </section>
-
-      {/* ── 6. Featured Founders + Mercato preview ──────────────────────────── */}
+      {/* ── 5. Featured Founders + Mercato preview ──────────────────────────── */}
       {/*
         Two grids side by side on desktop — people and businesses together.
         Keeps the human + commercial ecosystem visible in one section.
@@ -199,7 +199,7 @@ export function VillagePage() {
         </div>
       </VillageSection>
 
-      {/* ── 7. Explore by Location ──────────────────────────────────────────── */}
+      {/* ── 6. Explore by Location ──────────────────────────────────────────── */}
       {/*
         Six location cards, portrait orientation.
         Each shows story count — incentivises publishing from underrepresented cities.
@@ -213,7 +213,7 @@ export function VillagePage() {
         />
       </VillageSection>
 
-      {/* ── 8. Noticeboard ──────────────────────────────────────────────────── */}
+      {/* ── 7. Noticeboard ──────────────────────────────────────────────────── */}
       {/*
         Latest events, collaborations, opportunities and requests.
         Hidden entirely when there's nothing on the noticeboard yet, rather
