@@ -409,8 +409,13 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                       curated batch need to see at a glance what each
                       profile actually says without opening it. Not shown
                       on the plain Members tab, which is already dense with
-                      real self-serve signups. */}
-                  {curatedOnly && f.bio?.trim() && (
+                      real self-serve signups. Once research has found a
+                      contact email, that's the more useful thing to see at
+                      a glance here (this IS the outreach list) — the bio
+                      excerpt only shows for rows that still don't have one. */}
+                  {curatedOnly && f.evidenceLedger?.verified_profiles?.email ? (
+                    <p className="text-xs text-[#C86A43] font-semibold mt-0.5 line-clamp-1">{f.evidenceLedger.verified_profiles.email}</p>
+                  ) : curatedOnly && f.bio?.trim() && (
                     <p className="text-xs text-[#9CA3AF] mt-0.5 line-clamp-1">{f.bio.trim()}</p>
                   )}
                 </div>
