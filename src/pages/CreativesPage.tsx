@@ -66,17 +66,23 @@ export function CreativesPage() {
         <InnerContainer>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
-              <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
-                What CULO Creatives makes
-              </p>
+              <span className="inline-block font-body text-xs font-bold text-white uppercase tracking-widest mb-4 px-3 py-1.5 rounded-full bg-primary">
+                Coming soon
+              </span>
               <h1 id="creatives-hero-heading" className="font-heading text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
                 Edit your raw footage in one workspace
               </h1>
-              <p className="font-body text-base sm:text-lg text-white/70 leading-relaxed max-w-xl mx-auto lg:mx-0">
+              <p className="font-body text-base sm:text-lg text-white/70 leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8">
                 Culo Creatives helps founders turn their messy thoughts and raw footage into
                 social media content. CULO helps you create blogs, carousels and multiple reel formats from
                 the stories, experiences and insights you already have.
               </p>
+              <a
+                href="https://www.culovillage.com/join?source=canva"
+                className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+              >
+                Join The Culo Village for first access →
+              </a>
             </div>
             <img
               src="/creatives/culo-media-2.png"
@@ -271,10 +277,10 @@ export function CreativesPage() {
             ))}
           </div>
           <a
-            href="https://www.culovillage.com/joincanva"
+            href="https://www.culovillage.com/join?source=canva"
             className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
           >
-            Join Culo Creatives →
+            Join The Culo Village for first access →
           </a>
         </InnerContainer>
       </section>
