@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { submitSupportRequest } from '../services/supportRequest'
-import { StoryGrid } from '../widgets/StoryGrid'
+
+const GRID_ROW_1 = ['/join/grid-1.jpg', '/join/grid-2.jpg', '/join/grid-3.jpg']
+const GRID_ROW_2 = ['/join/grid-4.jpg', '/join/grid-5.jpg', '/join/grid-6.jpg']
 
 const FORMATS = [
   { emoji: '📖', label: 'Blogs', desc: 'Turns what you actually said into a proper written article with a beginning, middle and point.' },
@@ -277,24 +279,21 @@ export function CreativesPage() {
         </InnerContainer>
       </section>
 
-      {/* ── Real evidence, not just claims ───────────────────────────────────
-          Closes the loop back into the Village: this page made the case for
-          Culo Creatives, now it points at real, published proof that it
-          works, instead of leaving the reader to just take the pitch above
-          on faith. Also the missing link in the intended interlinking
-          chain (founder profile → CULO → Creatives → real articles). */}
-      <section className="py-16 bg-surface border-y border-border">
+      {/* ── Product screenshot grid — the 6 vertical shots this page used
+          to carry before this section was briefly a StoryGrid instead.
+          Moved back per direct product direction (2026-11-09). */}
+      <section className="py-16 md:py-20 bg-surface border-y border-border">
         <InnerContainer>
-          <StoryGrid
-            heading="See it in action"
-            subheading="Real stories, published by real founders using Culo Creatives and the Village."
-            filter={{ publicOnly: true }}
-            columns={3}
-            cardVariant="vertical"
-            limit={3}
-            hideEmpty
-            action={{ label: 'See all stories', href: '/stories' }}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+            {GRID_ROW_1.map(src => (
+              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {GRID_ROW_2.map(src => (
+              <img key={src} src={src} alt="CULO Creatives in Canva" className="w-full h-auto rounded-2xl border border-border" />
+            ))}
+          </div>
         </InnerContainer>
       </section>
 
