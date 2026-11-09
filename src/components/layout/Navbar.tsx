@@ -9,12 +9,12 @@ import { SearchInput } from '../ui/SearchInput'
 // same as any large content site.
 const primaryLinks = [
   { to: '/join',  label: 'Join Culo',  exact: false },
+  { to: '/how-culo-canva', label: 'Culo in Canva', exact: false },
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/businesses',    label: 'Businesses', exact: false },
   { to: '/stories',    label: 'Stories',    exact: false },
   { to: '/library',    label: 'Library',    exact: false },
   { to: '/marketing',  label: 'Services',   exact: false },
-  { to: '/how-culo-canva', label: 'Join Creatives', exact: false },
 ]
 
 
