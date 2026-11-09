@@ -17,6 +17,7 @@ import { canAccessCapoSection, canDeleteCapoData } from '../../../utils/permissi
 import { getAllEditorialItems, type EditorialItemRow } from '../../../services/editorialItems'
 import { getStories } from '../../../services/stories'
 import { runFullEditorialPipeline } from '../../../services/editorialPipeline'
+import { runFounderResearch } from '../../../services/editorialResearch'
 import { publishFounderArticles } from '../../../services/publishStory'
 import { pullVisibleRows } from '../../../lib/entityStore'
 import { getSourcedLeads } from '../../../services/sourcedLeads'
@@ -109,6 +110,9 @@ function BulkBar({
   onPublish,
   onArchive,
   onResearch,
+  onFindEmails,
+  findingEmails,
+  findEmailsProgress,
   canDelete,
 }: {
   selected: Set<string>
@@ -120,13 +124,18 @@ function BulkBar({
   onPublish: () => void
   onArchive: () => void
   onResearch: () => void
+  onFindEmails: () => void
+  findingEmails: boolean
+  findEmailsProgress: { done: number; total: number } | null
   canDelete: boolean
 }) {
   if (selected.size === 0) return null
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#2D2A26] rounded-2xl px-5 py-3 flex items-center gap-4 shadow-2xl">
       <p className="text-xs font-semibold text-white whitespace-nowrap">
-        {researching && researchProgress ? `Researching & writing… (${researchProgress.done}/${researchProgress.total})` : `${selected.size} of ${total} selected`}
+        {researching && researchProgress ? `Researching & writing… (${researchProgress.done}/${researchProgress.total})`
+          : findingEmails && findEmailsProgress ? `Finding emails… (${findEmailsProgress.done}/${findEmailsProgress.total})`
+          : `${selected.size} of ${total} selected`}
       </p>
       <div className="flex items-center gap-2">
         {/* Runs (or re-runs, for anything failed/unresearched in the
@@ -144,10 +153,24 @@ function BulkBar({
             writing for anything it touched. */}
         <button
           onClick={onResearch}
-          disabled={researching}
+          disabled={researching || findingEmails}
           className="text-xs px-3 py-1.5 bg-[#3E6E92] text-white rounded-lg font-semibold hover:bg-[#345c7a] disabled:opacity-50 transition-colors"
         >
           {researching ? 'Researching & writing…' : 'Research & write'}
+        </button>
+        {/* Re-runs Stage 1 research only (not the full bio/article pipeline)
+            on the selection — including founders that already have an
+            evidenceLedger, which "Research & write" above deliberately
+            skips re-researching (it only resumes the writing step for
+            those). That's the one way to actually surface a newly-findable
+            contact email for an already-curated founder without a costly
+            full re-write of their bio/articles too. */}
+        <button
+          onClick={onFindEmails}
+          disabled={researching || findingEmails}
+          className="text-xs px-3 py-1.5 bg-[#C86A43] text-white rounded-lg font-semibold hover:bg-[#b05a35] disabled:opacity-50 transition-colors"
+        >
+          {findingEmails ? 'Finding emails…' : 'Find emails'}
         </button>
         <button onClick={onPublish}     className="text-xs px-3 py-1.5 bg-[#5E6B4A] text-white rounded-lg font-semibold hover:bg-[#4a5538] transition-colors">Publish</button>
         {/* Admin/owner only, per direct product decision — Capo staff can
@@ -297,6 +320,8 @@ export function VillageCuratedFoundersPage() {
   const [selected, setSelected]   = useState<Set<string>>(new Set())
   const [researching, setResearching] = useState(false)
   const [researchProgress, setResearchProgress] = useState<{ done: number; total: number } | null>(null)
+  const [findingEmails, setFindingEmails] = useState(false)
+  const [findEmailsProgress, setFindEmailsProgress] = useState<{ done: number; total: number } | null>(null)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null)
   void tick
@@ -589,6 +614,41 @@ export function VillageCuratedFoundersPage() {
     }
   }
 
+  // Stage 1 research only, re-run unconditionally even for a founder that
+  // already has an evidenceLedger — runFullEditorialPipeline above
+  // deliberately skips re-researching anyone already researched, so this
+  // is the only path that re-checks an already-curated founder for a
+  // newly-findable contact email without also re-writing their bio and
+  // articles (slower and costs real AI spend for no reason when all
+  // that's wanted is the email). Same per-item try/catch pattern as
+  // runResearchSelected so one failure doesn't kill the whole batch.
+  async function findEmailsSelected(ids: Set<string>) {
+    const targets = Array.from(ids).filter(id => getFounder(id)?.researchStatus !== 'researching')
+    if (targets.length === 0) return
+    setBulkError(null)
+    setFindingEmails(true)
+    setFindEmailsProgress({ done: 0, total: targets.length })
+    const failedNames: string[] = []
+    try {
+      for (let i = 0; i < targets.length; i++) {
+        const id = targets[i]!
+        try {
+          const result = await runFounderResearch(id)
+          if (!result.success) failedNames.push(getFounder(id)?.name ?? id)
+        } catch {
+          failedNames.push(getFounder(id)?.name ?? id)
+        }
+        setFindEmailsProgress({ done: i + 1, total: targets.length })
+      }
+    } finally {
+      setFindingEmails(false)
+      setFindEmailsProgress(null)
+      refresh()
+    }
+    if (failedNames.length > 0) {
+      setBulkError(`${targets.length - failedNames.length} of ${targets.length} finished. These need another try: ${failedNames.join(', ')}.`)
+    }
+  }
 
   // The Pretty Cool Marketing staff account itself sometimes shows up in
   // this list (it's a real founder record) — it must never be selectable
@@ -1037,6 +1097,9 @@ export function VillageCuratedFoundersPage() {
         onPublish={() => void publishSelected(selected)}
         onArchive={() => void archiveSelected(selected)}
         onResearch={() => void runResearchSelected(selected)}
+        onFindEmails={() => void findEmailsSelected(selected)}
+        findingEmails={findingEmails}
+        findEmailsProgress={findEmailsProgress}
         canDelete={canDeleteCapoData(user?.role)}
       />
       </>
