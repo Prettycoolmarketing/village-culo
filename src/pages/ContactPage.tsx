@@ -4,7 +4,7 @@ import { usePageMeta } from '../utils/usePageMeta'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { submitSupportRequest } from '../services/supportRequest'
 
-// Same dark "Support" treatment as the bottom of /how-culo-canva, standing
+// Same dark "Support" treatment as the bottom of /culocreatives, standing
 // alone as its own page rather than only living at the foot of one other
 // page — a real, memorable /culocontact URL to hand out.
 export function ContactPage() {

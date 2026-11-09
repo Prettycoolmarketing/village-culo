@@ -606,7 +606,7 @@ export function ArchivePage() {
             >
               Start with The Culo Village →
             </Link>
-            <Link to="/how-culo-canva" className="block mt-4 text-xs font-medium text-white/50 hover:text-white/80 transition-colors">
+            <Link to="/culocreatives" className="block mt-4 text-xs font-medium text-white/50 hover:text-white/80 transition-colors">
               Learn more about CULO Creatives →
             </Link>
           </div>

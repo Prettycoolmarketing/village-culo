@@ -79,7 +79,7 @@ export function Footer() {
               <span className="font-heading text-3xl font-bold text-primary">CULO</span>
               <span className="block font-body text-sm text-white/50 mt-1">Village</span>
             </Link>
-            <Link to="/how-culo-canva" target="_blank" rel="noopener noreferrer" className="mt-4 block text-sm text-white/60 leading-relaxed hover:text-white transition-colors">
+            <Link to="/culocreatives" target="_blank" rel="noopener noreferrer" className="mt-4 block text-sm text-white/60 leading-relaxed hover:text-white transition-colors">
               Create with Culo Creatives in Canva<br />
               Publish to The Culo Village<br />
               Be discovered for your creatives across platforms
@@ -163,7 +163,7 @@ export function Footer() {
             founder of{' '}
             <Link to="/" className="text-white/70 hover:text-white transition-colors">The Culo Village</Link>{' '}
             <span className="text-white/30">✕</span>{' '}
-            <Link to="/how-culo-canva" className="text-white/70 hover:text-white transition-colors">Culo Creatives in Canva</Link>
+            <Link to="/culocreatives" className="text-white/70 hover:text-white transition-colors">Culo Creatives in Canva</Link>
           </p>
           <p className="text-xs text-white/40">
             © {new Date().getFullYear()} · <Link to="/terms" className="hover:text-white/70 transition-colors">Terms</Link>{' '}

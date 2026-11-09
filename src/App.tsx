@@ -298,12 +298,15 @@ export default function App() {
             <Route path="/"                   element={<VillagePage />}          />
             <Route path="/how-culo-works"     element={<HowCuloWorksPage />}     />
             <Route path="/articles/:importId" element={<ArticlePage />}          />
-            <Route path="/how-culo-canva"     element={<CreativesPage />}        />
-            {/* Kept working, not removed — this exact URL is on file as the
+            <Route path="/culocreatives"      element={<CreativesPage />}        />
+            {/* Both kept working, not removed — /creatives is on file as the
                 Canva app's own submitted Support URL in the Developer
-                Portal. Update it there to /how-culo-canva when convenient;
-                this redirect means nothing breaks in the meantime either way. */}
-            <Route path="/creatives"          element={<Navigate to="/how-culo-canva" replace />} />
+                Portal, and /how-culo-canva was the previous canonical URL
+                (still linked from wherever it was shared before). Update
+                the Developer Portal to /culocreatives when convenient;
+                these redirects mean nothing breaks in the meantime either way. */}
+            <Route path="/creatives"          element={<Navigate to="/culocreatives" replace />} />
+            <Route path="/how-culo-canva"     element={<Navigate to="/culocreatives" replace />} />
             <Route path="/culocontact"        element={<ContactPage />}          />
             <Route path="/speaker"            element={<SpeakerPage />}          />
             <Route path="/piazza"             element={<Navigate to="/" replace />}      />

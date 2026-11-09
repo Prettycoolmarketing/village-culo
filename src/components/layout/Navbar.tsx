@@ -9,7 +9,7 @@ import { SearchInput } from '../ui/SearchInput'
 // same as any large content site.
 const primaryLinks = [
   { to: '/join',  label: 'Join Culo',  exact: false },
-  { to: '/how-culo-canva', label: 'Culo in Canva', exact: false },
+  { to: '/culocreatives', label: 'Culo in Canva', exact: false },
   { to: '/founders',   label: 'Founders',   exact: false },
   { to: '/businesses',    label: 'Businesses', exact: false },
   { to: '/stories',    label: 'Stories',    exact: false },
@@ -168,7 +168,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
           {!loading && (
             <div className="hidden lg:flex items-center gap-4">
               <Link
-                to="/how-culo-canva"
+                to="/culocreatives"
                 className="whitespace-nowrap px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-[#b05a35] transition-colors"
               >
                 CULO in Canva
@@ -246,7 +246,7 @@ export function Navbar({ dark = false }: { dark?: boolean }) {
             ))}
             <div className="pt-3 border-t border-border mt-3 flex flex-col gap-2">
               <Link
-                to="/how-culo-canva"
+                to="/culocreatives"
                 onClick={() => setMobileOpen(false)}
                 className="block px-3 py-2.5 bg-primary text-white text-sm font-medium rounded-xl text-center hover:bg-[#b05a35] transition-colors"
               >

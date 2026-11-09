@@ -10,7 +10,7 @@ import { ComingSoonModal } from '../../components/ui/ComingSoonModal'
 // TODO: swap for the real "open CULO Creatives in Canva" URL once the app
 // clears Canva review — placeholder for now, same as CreateWithCuloCTA and
 // DashboardWelcomePage's REAL_CANVA_APP_URL.
-const CULO_CANVA_URL = 'https://www.culovillage.com/how-culo-canva'
+const CULO_CANVA_URL = 'https://www.culovillage.com/culocreatives'
 
 // ─── Welcome tab ────────────────────────────────────────────────────────────
 

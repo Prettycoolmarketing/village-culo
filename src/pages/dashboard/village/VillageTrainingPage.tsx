@@ -756,7 +756,7 @@ export function VillageTrainingPage() {
           />
         </div>
         <a
-          href="https://www.culovillage.com/how-culo-canva"
+          href="https://www.culovillage.com/culocreatives"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex text-xs font-semibold px-4 py-2 rounded-lg bg-[#C86A43] text-white hover:bg-[#b05a35] transition-colors mt-1"
