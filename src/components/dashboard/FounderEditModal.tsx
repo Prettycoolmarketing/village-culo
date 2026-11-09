@@ -178,6 +178,15 @@ export function EditorialResearchPanel({ founder, onSaved }: { founder: Founder;
               {gateReasons.map((r, i) => <li key={i}>{r}</li>)}
             </ul>
           )}
+          {/* A real public contact email the Researcher found (business
+              site, verified bio) — never auto-filled into the Email field
+              below on its own; staff reviews it here and copies it in
+              deliberately, same human-in-the-loop as every other claim. */}
+          {ledger.verified_profiles?.email && (
+            <p className="text-xs text-[#2D2A26] bg-[#FBF1EB] rounded-lg px-3 py-2">
+              Found a contact email: <span className="font-semibold">{ledger.verified_profiles.email}</span> — add it to the Email field below if it checks out.
+            </p>
+          )}
           <details className="text-xs text-[#6B7280]">
             <summary className="cursor-pointer font-semibold text-[#2D2A26]">
               {ledger.claims.length} claim{ledger.claims.length === 1 ? '' : 's'} found · {ledger.source_assessments.length} source{ledger.source_assessments.length === 1 ? '' : 's'} assessed

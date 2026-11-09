@@ -85,6 +85,12 @@ export interface EvidenceLedger {
     youtube?: string
     tiktok?: string
     podcast?: string
+    // A real, published public contact email (business site's contact/about
+    // page, a verified bio) — CAPO-internal only (stays inside
+    // evidenceLedger, never copied onto the founder record itself, which
+    // is publicly readable once published — see founders_safe). Used for
+    // claim-outreach, never shown on the public profile.
+    email?: string
   }
   researched_at: string
 }

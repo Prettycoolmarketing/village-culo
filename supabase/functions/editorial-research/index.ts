@@ -84,6 +84,8 @@ You must also give an honest, holistic risk assessment across everything you fou
 
 Separately from your source list, note any of the founder's own verified social profiles you're confident about: their actual LinkedIn profile, Instagram account, YouTube channel, TikTok account, or podcast (the channel/show itself, not one episode). This is a different thing from a content source — a source is one article or one video about them; a verified profile is the account itself, genuinely theirs. Only include one when you're confident it's their own real, owned account (not someone else with the same name, not a page that merely mentions them) — leave a platform out entirely rather than guess. This is used to help Culo's own staff contact the founder later, so it must be right.
 
+Also note a real public contact email for this founder or their business, if you find one actually published somewhere — their own website's contact/about page, a verified bio, a press kit. Only include one you genuinely found written down somewhere; never guess, infer, or pattern-generate one (e.g. never construct firstname@company.com just because you know their name and company) — an invented-looking email is worse than none at all. Leave the key out entirely if you didn't find a real one.
+
 Output ONLY a single valid JSON object matching this exact shape, no markdown fences, no commentary:
 
 {
@@ -121,7 +123,8 @@ Output ONLY a single valid JSON object matching this exact shape, no markdown fe
     "instagram": "string URL, same rule",
     "youtube": "string URL to their channel (not a single video), same rule",
     "tiktok": "string URL, same rule",
-    "podcast": "string URL to the show/channel itself (not a single episode), same rule"
+    "podcast": "string URL to the show/channel itself (not a single episode), same rule",
+    "email": "string, only if a real public contact email was actually found published somewhere — never invented/pattern-generated, omit the key entirely otherwise"
   }
 }`
 
