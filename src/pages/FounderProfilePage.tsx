@@ -208,27 +208,13 @@ export function FounderProfilePage() {
   // Render nothing rather than a confident false "not found" (matches the
   // app's own Suspense fallback={null} elsewhere) until the real answer is in.
   if (!founder) return hasSynced ? <FounderNotFound slug={slug ?? ''} /> : null
-  // Same minimum bar as getFounders({ publicOnly: true }) (see
-  // services/founders.ts) — a published founder with no real bio at all
-  // (never wrote/connected/imported anything) shouldn't have a working
-  // public page just because status reached published/featured somehow.
-  // Doesn't affect previewing your own still-draft profile — draft status
-  // means RLS already kept this from reaching an anonymous visitor at all.
-  //
-  // Scoped to unclaimed curated founders only — that's the actual scenario
-  // this guards against (an auto-published stub nobody's ever personalized).
-  // Previously applied to EVERY published founder regardless of claim
-  // status, which meant a real claimed/verified founder's live public page
-  // would go dead with a confusing "Founder not found" the moment their
-  // bio field was empty for any reason (mid-edit, a stray-whitespace save
-  // bug, etc.) — confirmed real: Sunita Patil's bio had saved as a single
-  // newline character, and her own claimed, account-holding profile
-  // disappeared behind this exact message.
-  if ((founder.status === 'published' || founder.status === 'featured')
-    && founder.profileStatus === 'village-curated' && !founder.userId
-    && !founder.bio?.trim()) {
-    return <FounderNotFound slug={slug ?? ''} />
-  }
+  // Removed per direct product direction (2026-11-09): this used to hide
+  // ANY published founder with an empty bio behind "Founder not found" —
+  // even scoped to unclaimed-curated-only it was still too aggressive, and
+  // caused a real, confusing outage of a genuine claimed founder's public
+  // page (Sunita Patil's bio had saved as a single stray newline
+  // character). A published founder with no bio now just renders with
+  // that section empty, same as any other optional field would.
   // Real FAQs the founder actually wrote (Profile > FAQ tab) — this used to
   // read from a parallel fake FAQ system that had no connection to what
   // founders could edit, so answering FAQs in the dashboard never showed up
