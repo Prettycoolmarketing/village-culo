@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { getLibraryItems, updateLibraryItem, deleteLibraryItem, duplicateLibraryItem } from '../../services/library'
 import { getFounders } from '../../services/founders'
+import { useAuth } from '../../contexts/AuthContext'
+import { getCurrentFounder } from '../../services/currentFounder'
 import { getBusinesses } from '../../services/businesses'
 import { Tabs } from '../../components/dashboard/Tabs'
 import { MissingAssetsPanel } from '../../components/dashboard/MissingAssetsPanel'
@@ -344,13 +346,28 @@ function LibraryDetailPane({ item, onClose, onSave, onDuplicated, onDeleted }: L
 // ─── DashboardLibraryPage ─────────────────────────────────────────────────────
 
 export function DashboardLibraryPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(() => getLibraryItems()[0]?.id ?? null)
+  const { user } = useAuth()
+  // library_items' public SELECT RLS policy (status != 'archived', no
+  // ownership check — it also backs the public /library browse page) means
+  // every signed-in founder's local cache actually contains EVERY founder's
+  // library items, not just their own. This page used to read that cache
+  // with no filter at all, so a founder's own dashboard Library list showed
+  // other founders' items mixed in — confirmed real: Sunita Patil saw
+  // "Where's Robyn" (Shakas Designer's item) in her own Library, couldn't
+  // edit or delete it (library_auth_update/delete correctly check
+  // owns_founder(founder_id), so RLS blocked her — not a session issue,
+  // just a founder she isn't). Scoping to the current founder here fixes
+  // the actual bug; founderId stays undefined for CAPO staff (no owned
+  // founder record), so getLibraryItems' filter is a no-op for them and
+  // they still see everything, same as before.
+  const founderId = getCurrentFounder(user)?.id
+  const [selectedId, setSelectedId] = useState<string | null>(() => getLibraryItems({ founderId })[0]?.id ?? null)
   const [search,     setSearch]     = useState('')
   const [tick, setTick] = useState(0)
   const refresh = () => setTick(t => t + 1)
   void tick
 
-  const allItems = getLibraryItems()
+  const allItems = getLibraryItems({ founderId })
   const filtered = search
     ? allItems.filter(i => i.title.toLowerCase().includes(search.toLowerCase()))
     : allItems

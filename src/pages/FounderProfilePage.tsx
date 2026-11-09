@@ -214,7 +214,19 @@ export function FounderProfilePage() {
   // public page just because status reached published/featured somehow.
   // Doesn't affect previewing your own still-draft profile — draft status
   // means RLS already kept this from reaching an anonymous visitor at all.
-  if ((founder.status === 'published' || founder.status === 'featured') && !founder.bio?.trim()) {
+  //
+  // Scoped to unclaimed curated founders only — that's the actual scenario
+  // this guards against (an auto-published stub nobody's ever personalized).
+  // Previously applied to EVERY published founder regardless of claim
+  // status, which meant a real claimed/verified founder's live public page
+  // would go dead with a confusing "Founder not found" the moment their
+  // bio field was empty for any reason (mid-edit, a stray-whitespace save
+  // bug, etc.) — confirmed real: Sunita Patil's bio had saved as a single
+  // newline character, and her own claimed, account-holding profile
+  // disappeared behind this exact message.
+  if ((founder.status === 'published' || founder.status === 'featured')
+    && founder.profileStatus === 'village-curated' && !founder.userId
+    && !founder.bio?.trim()) {
     return <FounderNotFound slug={slug ?? ''} />
   }
   // Real FAQs the founder actually wrote (Profile > FAQ tab) — this used to

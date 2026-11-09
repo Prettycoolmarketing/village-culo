@@ -1817,15 +1817,24 @@ export function DashboardProfilePage() {
     // pulling the live values for the fields this page never edits itself
     // closes that gap regardless of how old the rest of draft is.
     const live = getFounder(draft.id)
+    // Confirmed real: a founder's bio saved as a single stray newline
+    // character (clearing the textarea without actually emptying it, or
+    // similar) — "\n".trim() is "", so the public page's own "does this
+    // founder have a real bio" check correctly treated it as empty, but
+    // the raw "\n" wasn't, so the founder's live public profile page went
+    // dead with "Founder not found" the moment that saved. Trimming here
+    // means whitespace-only content always normalizes to a real empty
+    // string instead of silently persisting as invisible-but-truthy junk.
     const toSave: Founder = live
       ? {
           ...draft,
+          bio: draft.bio.trim(),
           voiceBrief: live.voiceBrief,
           voiceBriefUpdatedAt: live.voiceBriefUpdatedAt,
           insightBrief: live.insightBrief,
           insightBriefUpdatedAt: live.insightBriefUpdatedAt,
         }
-      : draft
+      : { ...draft, bio: draft.bio.trim() }
     const result = await updateFounder(toSave)
     setSaving(false)
     if (result.success) {
