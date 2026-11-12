@@ -78,7 +78,9 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
 
           {/* Subheadline */}
           <p className="font-body text-lg md:text-xl text-muted leading-relaxed max-w-xl mb-6">
-            CULO is coming to Canva to help edit your raw footage — be in the Village for first access.
+            CULO is coming to Canva to help edit your raw footage into social media post with captions, be in The
+            Culo Village for first access. Members in The Village are able to republish old posts as individual
+            web articles for aligned AI discovery.
           </p>
 
           <Link

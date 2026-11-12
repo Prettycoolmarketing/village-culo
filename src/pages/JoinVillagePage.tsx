@@ -111,6 +111,18 @@ const JOIN_FAQS = [
     q: "Does CULO ever publish anything I didn't say or do?",
     a: 'No — every piece is sourced, reviewed, and attributed; nothing is invented.',
   },
+  {
+    q: 'How much does it cost?',
+    a: 'Joining and your first 10 published stories are free, forever. Beyond that, a one-time Archive Unlock fee applies based on how much you import — no subscription.',
+  },
+  {
+    q: 'What can I import?',
+    a: 'YouTube videos, podcast episodes, your own blog or website, Instagram and Snapchat archives, and anything you\'ve been featured in elsewhere — each becomes its own article.',
+  },
+  {
+    q: 'Is Culo Creatives available yet?',
+    a: 'Not yet — it\'s currently in review with Canva. Joining the Village now puts you first in line for access once it launches.',
+  },
 ]
 
 // The real, account-creating join flow, staged at /join. Every "coming
@@ -253,7 +265,7 @@ export function JoinVillagePage() {
                 {isCanva ? 'Join The Culo Village' : 'Free to join'}
               </p>
               <h1 id="join-heading" className="font-heading text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
-                {isCanva ? <>Structure Your Posts Into Web Articles For Discovery</> : <>Turn everything you've already created into a body of work people can discover.</>}
+                {isCanva ? <>Structure Your Posts Into Web Articles For Discovery</> : <>Republish your posts as web articles,</>}
               </h1>
               <p className="font-body text-base md:text-lg text-white/70 leading-relaxed mb-4 max-w-xl mx-auto lg:mx-0">
                 {isCanva ? (
@@ -397,12 +409,8 @@ export function JoinVillagePage() {
                 What is The Culo Village?
               </p>
               <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-                Turn everything you've already created into a body of work people can discover.
+                Republish your posts as web articles,
               </h2>
-              <p className="font-body text-base text-muted leading-relaxed mb-4">
-                The Culo Village is a founder publishing network that brings together the content, ideas,
-                businesses and expertise you've already shared across the internet.
-              </p>
               <p className="font-body text-base text-muted leading-relaxed mb-4">
                 Republish your social posts, podcast appearances, videos, articles and other existing content as
                 individual web stories connected to your founder profile, creating one growing body of work
@@ -411,7 +419,7 @@ export function JoinVillagePage() {
               <p className="font-body text-base text-muted leading-relaxed mb-8">
                 Membership is free, forever, and your first 10 published stories are included. Culo Creatives,
                 the editing tool inside Canva covered next, is a separate optional add-on with a 14-day free
-                trial, then $25 AUD/month.
+                trial, then $25 AUD/month, (currently in review with Canva).
               </p>
               <a href="#join-heading" className="inline-flex items-center gap-2 text-primary font-body text-sm font-semibold hover:text-[#b05a35] transition-colors">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -429,6 +437,31 @@ export function JoinVillagePage() {
           article (research, writing, audit, human review, publish). Moved
           in from the old standalone /how-culo-works page, which no longer
           has a nav link. Shown on every /join visit, Canva or not. */}
+      {/* ── Importing, your dashboard, and managing your profile — also
+          moved in from /how-culo-works. Shown before How It Works now, per
+          direct product direction (2026-11-13). */}
+      <section className="py-16 md:py-20 bg-surface" aria-labelledby="dashboard-heading">
+        <InnerContainer className="max-w-3xl">
+          <h2 id="dashboard-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-5">
+            Importing, your dashboard, and managing your profile
+          </h2>
+          <p className="font-body text-base text-muted leading-loose mb-6">
+            Once you're in, your dashboard is where you run the whole thing:
+          </p>
+          <ul className="space-y-4 mb-6">
+            {DASHBOARD_ITEMS.map(item => (
+              <li key={item.label} className="font-body text-base text-muted leading-relaxed">
+                <span className="font-heading font-semibold text-charcoal">{item.label}</span> {item.desc}
+              </li>
+            ))}
+          </ul>
+          <p className="font-body text-base text-muted leading-loose">
+            Everything stays editable, always. Nothing publishes without passing through this dashboard first, and
+            nothing stays published if you decide to remove it.
+          </p>
+        </InnerContainer>
+      </section>
+
       <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="how-it-works-heading">
         <InnerContainer>
           <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3 text-center">
@@ -453,38 +486,20 @@ export function JoinVillagePage() {
         </InnerContainer>
       </section>
 
-      {/* ── Importing, your dashboard, and managing your profile — also
-          moved in from /how-culo-works. */}
-      <section className="py-16 md:py-20 bg-surface" aria-labelledby="dashboard-heading">
-        <InnerContainer className="max-w-3xl">
-          <h2 id="dashboard-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-5">
-            Importing, your dashboard, and managing your profile
-          </h2>
-          <p className="font-body text-base text-muted leading-loose mb-6">
-            Once you're in, your dashboard is where you run the whole thing:
-          </p>
-          <ul className="space-y-4 mb-6">
-            {DASHBOARD_ITEMS.map(item => (
-              <li key={item.label} className="font-body text-base text-muted leading-relaxed">
-                <span className="font-heading font-semibold text-charcoal">{item.label}</span> {item.desc}
-              </li>
-            ))}
-          </ul>
-          <p className="font-body text-base text-muted leading-loose">
-            Everything stays editable, always. Nothing publishes without passing through this dashboard first, and
-            nothing stays published if you decide to remove it.
-          </p>
-        </InnerContainer>
-      </section>
-
       {/* ── Frequently asked — also moved in from /how-culo-works, same
           FAQPage schema wired into usePageMeta above. */}
       <section className="py-16 md:py-20 bg-background" aria-labelledby="faq-heading">
-        <InnerContainer className="max-w-3xl">
-          <h2 id="faq-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-10">
+        <InnerContainer className="max-w-4xl text-center">
+          <a
+            href="#join-heading"
+            className="inline-flex items-center justify-center px-8 py-4 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors mb-14"
+          >
+            Join The Culo Village
+          </a>
+          <h2 id="faq-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-10 text-left">
             Frequently asked
           </h2>
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8 text-left">
             {JOIN_FAQS.map(f => (
               <div key={f.q}>
                 <p className="font-heading font-semibold text-charcoal mb-1">{f.q}</p>
@@ -651,10 +666,6 @@ export function JoinVillagePage() {
           <p className="font-body text-base text-muted leading-relaxed mb-2 max-w-xl mx-auto">
             Create with Culo Creatives, publish your existing and future work in The Culo Village, then share
             your stories wherever your audience already finds you.
-          </p>
-          <p className="font-body text-base text-muted leading-relaxed mb-8 max-w-xl mx-auto">
-            Instead of letting your best ideas disappear into individual feeds, build a connected body of work
-            around who you are, what you know and what you've built.
           </p>
           <a
             href="#join-heading"

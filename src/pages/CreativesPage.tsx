@@ -320,7 +320,7 @@ export function CreativesPage() {
                 Support
               </p>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-2 leading-tight">
-                Need a hand with Culo Creatives?
+                Want to partner with us?
               </h2>
               <p className="font-body text-white/60 mb-6">
                 Send us a message and we'll get back to you — usually within a business day.
