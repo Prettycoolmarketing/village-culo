@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { CULO_ORGANIZATION } from '../utils/seo'
@@ -8,6 +9,25 @@ import { Footer } from '../components/layout/Footer'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { StoryGrid } from '../widgets/StoryGrid'
 import { LiveFounderPagePreview } from '../components/ui/LiveFounderPagePreview'
+import { getFounders } from '../services/founders'
+import { getStories } from '../services/stories'
+
+// A simple, static mock of a dashboard screen — same browser-chrome framing
+// as LiveFounderPagePreview, but illustrative content instead of a live
+// iframe, since there's no real screenshot asset for these pages yet.
+function DashboardMockup({ path, children, className = '' }: { path: string; children: ReactNode; className?: string }) {
+  return (
+    <div className={`overflow-hidden bg-white ${className}`}>
+      <div className="flex items-center gap-1.5 px-4 py-2.5 bg-[#F3EDE6] border-b border-border">
+        <span className="w-2.5 h-2.5 rounded-full bg-red-300" />
+        <span className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+        <span className="w-2.5 h-2.5 rounded-full bg-green-300" />
+        <span className="ml-3 text-[10px] text-muted truncate font-body">culovillage.com{path}</span>
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  )
+}
 
 // The Canva-variant hero (isCanva=true, ?source=canva) keeps its real
 // Canva product screenshot — that pitch IS about Canva. The default
@@ -428,7 +448,23 @@ export function JoinVillagePage() {
                 Create your founder profile
               </a>
             </div>
-            <LiveFounderPagePreview slug="rohit-bhargava" className="block rounded-2xl border border-border shadow-lg hover:shadow-xl" />
+            <DashboardMockup path="/dashboard/import" className="block rounded-2xl border border-border shadow-lg">
+              <p className="font-heading text-sm font-bold text-charcoal mb-4">Republish your content as web articles</p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: '📹', label: 'YouTube', status: 'Connected' },
+                  { icon: '🎙️', label: 'Podcast', status: 'Connected' },
+                  { icon: '🌐', label: 'Blog', status: 'Connect' },
+                  { icon: '📸', label: 'Instagram', status: 'Connect' },
+                ].map(c => (
+                  <div key={c.label} className="border border-border rounded-xl p-3">
+                    <p className="text-lg mb-1" aria-hidden="true">{c.icon}</p>
+                    <p className="font-heading text-xs font-bold text-charcoal">{c.label}</p>
+                    <p className={`font-body text-[10px] font-semibold ${c.status === 'Connected' ? 'text-[#5E6B4A]' : 'text-primary'}`}>{c.status}</p>
+                  </div>
+                ))}
+              </div>
+            </DashboardMockup>
           </div>
         </InnerContainer>
       </section>
@@ -461,6 +497,57 @@ export function JoinVillagePage() {
           </p>
         </InnerContainer>
       </section>
+
+      {/* ── Publish, with real numbers — Shakas is the real, live example:
+          this isn't hypothetical, it's what an active founder's Publish
+          tab actually looks like after using the Village for a while. */}
+      {(() => {
+        const shakas = getFounders().find(f => f.slug === 'shakas-designer')
+        if (!shakas) return null
+        const published = getStories({ founderId: shakas.id, publicOnly: true }).length
+        return (
+          <section className="py-16 md:py-20 bg-surface" aria-labelledby="publish-heading">
+            <InnerContainer>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
+                <div>
+                  <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-3">
+                    Publish
+                  </p>
+                  <h2 id="publish-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
+                    Ready to publish, at your own pace
+                  </h2>
+                  <p className="font-body text-base text-muted leading-relaxed mb-4">
+                    Every piece Culo writes or imports for you lands here first, as a draft only you can see. Review
+                    it, edit anything, then publish whenever you're ready — nothing goes live on its own.
+                  </p>
+                  <p className="font-body text-base text-muted leading-relaxed">
+                    {shakas.name.trim()} has published {published} stories through the Village this way — real
+                    content, published on their own schedule, still fully editable any time.
+                  </p>
+                </div>
+                <DashboardMockup path="/dashboard/publish" className="block rounded-2xl border border-border shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="font-heading text-sm font-bold text-charcoal">Publish</p>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A]">{published} published</span>
+                  </div>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="flex items-center gap-3 border border-border rounded-xl p-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#F3EDE6] shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="h-2 bg-[#F3EDE6] rounded w-3/4 mb-1.5" />
+                          <div className="h-2 bg-[#F3EDE6] rounded w-1/2" />
+                        </div>
+                        <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-[#5E6B4A]/10 text-[#5E6B4A] shrink-0">Live</span>
+                      </div>
+                    ))}
+                  </div>
+                </DashboardMockup>
+              </div>
+            </InnerContainer>
+          </section>
+        )
+      })()}
 
       <section className="py-16 md:py-20 bg-background border-y border-border" aria-labelledby="how-it-works-heading">
         <InnerContainer>
