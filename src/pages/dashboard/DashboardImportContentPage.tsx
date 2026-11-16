@@ -115,7 +115,8 @@ function PodcastFeedConnectForm({ founderId, isHighVolume, onConnected }: { foun
     setBusy(true)
     setError(null)
     try {
-      const source = newConnectedSource(founderId, 'podcast-rss', new URL(value.trim()).hostname, { feedUrl: value.trim() })
+      const feedUrl = normalizeUrl(value)
+      const source = newConnectedSource(founderId, 'podcast-rss', new URL(feedUrl).hostname, { feedUrl })
       source.ownContent = true
       if (isHighVolume) source.dailyLimitOverride = HIGH_VOLUME_DAILY_LIMIT
       await connectedSourcesService.upsert(source)
@@ -567,10 +568,14 @@ function WebsiteConnectForm({ founderId, isHighVolume, onConnected }: { founderI
     setError(null)
     setCandidates([])
     try {
-      // Try auto-discovery first (paste the site itself, not necessarily the
-      // exact feed URL) — falls back cleanly to treating the input as a
-      // direct feed URL when it already is one.
-      const result = await resolveWebsiteFeed(value.trim())
+      // normalizeUrl prepends https:// to a bare domain ("www.example.com")
+      // — confirmed real: a founder pasting exactly that (no protocol) hit
+      // "That doesn't look like a valid URL" from the edge function's own
+      // new URL() call, for the single most common way someone types a
+      // website. Try auto-discovery first (paste the site itself, not
+      // necessarily the exact feed URL) — falls back cleanly to treating
+      // the input as a direct feed URL when it already is one.
+      const result = await resolveWebsiteFeed(normalizeUrl(value))
       if (result.status === 'candidates') {
         if (result.candidates.length === 1) {
           await connectWithFeedUrl(result.candidates[0]!.feedUrl, result.candidates[0]!.title)

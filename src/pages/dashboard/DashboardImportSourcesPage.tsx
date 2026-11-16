@@ -5,6 +5,7 @@ import { getCurrentFounderId } from '../../services/currentFounder'
 import { connectedSourcesService, scanSource, newConnectedSource } from '../../services/connectedSources'
 import { resolveChannelId } from '../../services/connectors/youtube'
 import { logImportError } from '../../services/importErrorLog'
+import { normalizeUrl } from '../../utils/url'
 import type { ConnectedSource, ConnectedSourceType } from '../../types/connectedSource'
 
 const TYPE_LABELS: Record<ConnectedSourceType, string> = {
@@ -30,10 +31,15 @@ function ConnectForm({ founderId, onConnected }: { founderId: string; onConnecte
     setBusy(true)
     setError(null)
     try {
+      // normalizeUrl prepends https:// to a bare domain — confirmed real:
+      // pasting "www.example.com" with no protocol hit "That doesn't look
+      // like a valid URL" from the resolve edge function's own new URL()
+      // call, for the single most common way someone types a website.
+      const feedUrl = normalizeUrl(value)
       const config = type === 'youtube'
         ? { channelId: await resolveChannelId(value) }
-        : { feedUrl: value.trim() }
-      const label = type === 'youtube' ? value.trim() : new URL(value.trim()).hostname
+        : { feedUrl }
+      const label = type === 'youtube' ? value.trim() : new URL(feedUrl).hostname
       const source = newConnectedSource(founderId, type, label, config)
       // This page's copy ("Paste your blog's RSS feed URL") only ever
       // invites a founder's own blog, unlike DashboardImportContentPage's

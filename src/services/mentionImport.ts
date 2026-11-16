@@ -12,6 +12,7 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { resolveArticle } from './websiteResolve'
 import { importedContentService } from './importedContent'
+import { normalizeUrl } from '../utils/url'
 import type { ImportedContent } from '../types/importedContent'
 
 export class MentionImportError extends Error {}
@@ -23,9 +24,14 @@ function firstNameOf(fullName: string): string {
 export async function importMentionArticle(
   founderId: string,
   founderName: string,
-  articleUrl: string,
+  rawArticleUrl: string,
 ): Promise<ImportedContent> {
   if (!isSupabaseConfigured || !supabase) throw new MentionImportError('Not configured.')
+
+  // normalizeUrl prepends https:// to a bare domain ("example.com/post") —
+  // without it, new URL() below throws on the single most common way
+  // someone pastes a link, before ever reaching resolve-article.
+  const articleUrl = normalizeUrl(rawArticleUrl)
 
   // LinkedIn blocks server-side scraping without a logged-in session —
   // confirmed real: every LinkedIn import produced a generic, info-free

@@ -72,8 +72,13 @@ serve(async (req) => {
       return json({ error: 'Paste the article URL.' }, 400)
     }
 
+    // Prepends https:// to a bare domain — same fix as resolve-website,
+    // same reason (a caller that forgets to normalize client-side should
+    // still work, not throw on the most common way someone types a link).
+    const normalizedInput = /^(https?|mailto|tel):/i.test(input.trim()) ? input.trim() : `https://${input.trim()}`
+
     let url: URL
-    try { url = new URL(input.trim()) } catch {
+    try { url = new URL(normalizedInput) } catch {
       return json({ error: 'That doesn’t look like a valid URL.' }, 400)
     }
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {

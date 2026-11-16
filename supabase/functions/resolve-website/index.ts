@@ -97,7 +97,14 @@ serve(async (req) => {
     if (!input || typeof input !== 'string' || !input.trim()) {
       return json({ status: 'error', message: 'Enter a website or feed URL.' }, 400)
     }
-    const trimmed = input.trim()
+    // Prepends https:// to a bare domain ("www.example.com") — confirmed
+    // real: a founder pasting exactly that (no protocol, the single most
+    // common way someone types a website) hit "That doesn't look like a
+    // valid URL" from the new URL() call below. Same fix as the client's
+    // own normalizeUrl (src/utils/url.ts) — duplicated here since edge
+    // functions can't import from src/, so this stays correct even for a
+    // caller that forgets to normalize client-side.
+    const trimmed = /^(https?|mailto|tel):/i.test(input.trim()) ? input.trim() : `https://${input.trim()}`
 
     let url: URL
     try { url = new URL(trimmed) } catch {
