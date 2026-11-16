@@ -107,11 +107,21 @@ interface PendingSignup { id: string; email: string; createdAt: string; emailCon
 // email for a curated founder (one-off "Find emails" run or regular
 // research), it shows up here automatically, ready to copy and send
 // outreach manually — no CSV, no mail-merge, just the list.
+// A curated founder's email can come from either of two places: research
+// finding one (evidenceLedger.verified_profiles.email) or one captured
+// directly at curation time (claimEmail — e.g. convert-text-to-vif pulling
+// a real email straight out of a messy pasted Facebook thread alongside
+// the name/link). claimEmail wins when both exist since it's the more
+// direct, human-sourced signal.
+function curatedEmail(f: ReturnType<typeof getFounders>[number]): string | undefined {
+  return f.claimEmail?.trim() || f.evidenceLedger?.verified_profiles?.email
+}
+
 function CuratedEmailsList() {
   const entries = [...getFounders()]
-    .filter(f => f.profileStatus === 'village-curated' && !!f.evidenceLedger?.verified_profiles?.email)
+    .filter(f => f.profileStatus === 'village-curated' && !!curatedEmail(f))
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map(f => ({ name: f.name, email: f.evidenceLedger!.verified_profiles!.email! }))
+    .map(f => ({ name: f.name, email: curatedEmail(f)! }))
 
   const [copied, setCopied] = useState(false)
   function handleCopy() {
@@ -413,8 +423,8 @@ function MembersPanel({ curatedOnly = false }: { curatedOnly?: boolean }) {
                       contact email, that's the more useful thing to see at
                       a glance here (this IS the outreach list) — the bio
                       excerpt only shows for rows that still don't have one. */}
-                  {curatedOnly && f.evidenceLedger?.verified_profiles?.email ? (
-                    <p className="text-xs text-[#C86A43] font-semibold mt-0.5 line-clamp-1">{f.evidenceLedger.verified_profiles.email}</p>
+                  {curatedOnly && curatedEmail(f) ? (
+                    <p className="text-xs text-[#C86A43] font-semibold mt-0.5 line-clamp-1">{curatedEmail(f)}</p>
                   ) : curatedOnly && f.bio?.trim() && (
                     <p className="text-xs text-[#9CA3AF] mt-0.5 line-clamp-1">{f.bio.trim()}</p>
                   )}

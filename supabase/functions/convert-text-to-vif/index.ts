@@ -55,6 +55,7 @@ const VIF_SCHEMA = `{
       "headline": "string — a short one-line description of what they do, only if the text actually states it (e.g. 'Family photographer in South West Sydney')",
       "website": "url",
       "linkedinUrl": "url",
+      "claimEmail": "a real contact email for this person, only if the pasted text actually states one — never invent or guess one from a name/domain",
       "youtubeUrl": "url",
       "instagramUrl": "url",
       "tiktokUrl": "url",
@@ -73,6 +74,7 @@ RULES
 One founder object per distinct real person who actually mentions a business, website, or social account of their own. A name alone with no business/link/description of what they do (e.g. someone just saying "yay so many! keep commenting everyone") is NOT a lead — skip it entirely, do not invent a business for them.
 Clean up link-preview noise: when a URL/business name is repeated two or three times in a row in slightly different capitalisation (a link-preview artifact, e.g. "RusticDesigns\\nAustralian Made Chopping Boards...\\nRUSTICDESIGNS.COM.AU\\nAustralian Made Chopping Boards...\\nAustralian Made Chopping Boards..."), treat it as ONE real signal, not several — extract the business name and description once, not duplicated.
 A bare Instagram/TikTok handle like "@example" or "www.instagram.com/example" becomes a full URL: "https://www.instagram.com/example/". Strip tracking query params like "?igshid=..." or "?dlrf=..." when the base handle is clear.
+If the text states a real email address for someone (not a generic page/business inbox mentioned in passing about something else), put it in claimEmail — this is what lets that exact person auto-link to their profile the moment they sign up with that email, so it's worth capturing whenever it's actually there, not just the social links.
 Also catch a handle mentioned WITHOUT an @ or URL when the platform is named right next to it — e.g. "my TikTok page, Msellie.brand" or "Instagram: janedoe_studio" both name a real handle, just without the usual punctuation. Build the actual platform URL from it the same way ("https://www.tiktok.com/@msellie.brand"). This matters: research can only directly verify a source it's given an exact link for — leaving a stated handle as plain text instead of a real URL means research has to guess-search for it instead, and can land on a completely different, wrong account with a similar-sounding name. Only do this when the text actually names both the platform and the handle together — never invent a handle that isn't explicitly stated.
 Only include a field when the text actually states it. Never invent, guess or embellish a name, business name, location, or any detail not actually written. headline/businesses[].description must be built only from real stated text (a founder's own words in the comment), never a generic guess at what their business probably does.
 If a name has only a Facebook profile/page link and nothing else, put that link in sourceLinks (not linkedinUrl/instagramUrl), and still extract them as a lead if they stated any real description of what they do.
