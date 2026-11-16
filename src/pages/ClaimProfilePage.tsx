@@ -172,6 +172,17 @@ function extractDomain(url?: string): string | null {
   }
 }
 
+// Same fix as supabase/functions/_shared/claimMatch.ts's matchClaimEmail —
+// treats a subdomain (en.sofiasilvaberenguer.com) as the same site as its
+// bare domain (sofiasilvaberenguer.com) rather than requiring an exact
+// hostname match. This is a client-side UX pre-check only (the real,
+// authoritative match is re-derived server-side in claim-founder-profile),
+// but it should still agree with the server's answer rather than being
+// more conservative for no reason.
+function domainsMatch(a: string, b: string): boolean {
+  return a === b || a.endsWith(`.${b}`) || b.endsWith(`.${a}`)
+}
+
 type ClaimMatch = 'verified' | 'likely' | 'none'
 
 function matchClaimEmail(email: string, founder: ReturnType<typeof getFounders>[number]): ClaimMatch {
@@ -184,7 +195,7 @@ function matchClaimEmail(email: string, founder: ReturnType<typeof getFounders>[
   const ownDomains = [founder.website, founder.instagram, founder.linkedin, founder.youtube, founder.podcast, ...(founder.socialLinks?.map(l => l.url) ?? [])]
     .map(extractDomain)
     .filter((d): d is string => !!d && !GENERIC_LINK_DOMAINS.has(d))
-  if (emailDomain && !GENERIC_EMAIL_DOMAINS.has(emailDomain) && ownDomains.includes(emailDomain)) return 'likely'
+  if (emailDomain && !GENERIC_EMAIL_DOMAINS.has(emailDomain) && ownDomains.some(d => domainsMatch(d, emailDomain))) return 'likely'
 
   const nameParts = founder.name.toLowerCase().split(/\s+/).map(normalizeToken).filter(p => p.length >= 3)
   if (localToken.length >= 3 && nameParts.some(part => localToken.includes(part))) return 'likely'

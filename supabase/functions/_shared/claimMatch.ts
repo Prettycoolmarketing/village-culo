@@ -51,6 +51,20 @@ export function extractDomain(url?: string): string | null {
   }
 }
 
+// Confirmed real (Sofia Silva Berenguer): her own site was on file as
+// en.sofiasilvaberenguer.com, her claim email's domain was the bare
+// sofiasilvaberenguer.com — obviously the same person's domain, but an
+// exact-string match treats "en." as a completely different site and
+// misses it, sending a genuinely verifiable claim to manual review with
+// nothing actually wrong. Checks whether one domain is a subdomain of the
+// other (in either direction) rather than requiring an exact hostname
+// match — deliberately not reducing to a "base domain" via label-counting,
+// since that breaks multi-part TLDs this platform's own audience commonly
+// uses (.com.au, .org.au, .co.uk) without a public-suffix list.
+export function domainsMatch(a: string, b: string): boolean {
+  return a === b || a.endsWith(`.${b}`) || b.endsWith(`.${a}`)
+}
+
 // `businessNames` — the name(s) of any business linked to this founder.
 // Confirmed real (Mitchell Bateman/Stagger Inn Adventures): a founder's
 // claim email is very often based on their business/brand name, not their
@@ -68,7 +82,7 @@ export function matchClaimEmail(email: string, founder: ClaimableFounder, busine
   const ownDomains = [founder.website, founder.instagram, founder.linkedin, founder.youtube, founder.podcast, ...(founder.socialLinks?.map(l => l.url) ?? [])]
     .map(extractDomain)
     .filter((d): d is string => !!d && !GENERIC_LINK_DOMAINS.has(d))
-  if (emailDomain && !GENERIC_EMAIL_DOMAINS.has(emailDomain) && ownDomains.includes(emailDomain)) return 'likely'
+  if (emailDomain && !GENERIC_EMAIL_DOMAINS.has(emailDomain) && ownDomains.some(d => domainsMatch(d, emailDomain))) return 'likely'
 
   const nameParts = [founder.name ?? '', ...businessNames]
     .flatMap(n => n.toLowerCase().split(/\s+/))
