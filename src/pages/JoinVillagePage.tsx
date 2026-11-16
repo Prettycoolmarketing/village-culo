@@ -429,7 +429,7 @@ export function JoinVillagePage() {
                 What is The Culo Village?
               </p>
               <h2 id="village-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal leading-tight mb-5">
-                Republish your posts as web articles,
+                Your work is already out there. Make it findable.
               </h2>
               <p className="font-body text-base text-muted leading-relaxed mb-4">
                 Republish your social posts, podcast appearances, videos, articles and other existing content as
