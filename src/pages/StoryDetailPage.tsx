@@ -313,6 +313,22 @@ export function StoryDetailPage() {
           ...(jsonLdSource.originalAuthor ? { author: jsonLdSource.originalAuthor } : {}),
         },
       } : {}),
+      // Confirmed real (Search Console): an embedded YouTube reel with no
+      // VideoObject schema reads to Google as "an article that happens to
+      // have a video in it somewhere," not a real watch page — "Video
+      // isn't on a watch page" for every one of them. This is the fix:
+      // declares the embed as the page's actual video, same pattern
+      // Google's own docs use for an Article/VideoObject combo.
+      ...(effectiveReelUrl ? {
+        video: {
+          '@type': 'VideoObject',
+          name: story.title,
+          description: (story.summary || story.title).slice(0, 200),
+          thumbnailUrl: story.coverImage || founder?.avatar || `${window.location.origin}/assets/culo-brand-cover.png`,
+          uploadDate: story.createdAt,
+          embedUrl: effectiveReelUrl,
+        },
+      } : {}),
     } : undefined,
   })
 

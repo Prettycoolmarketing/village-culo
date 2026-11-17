@@ -487,6 +487,19 @@ ${bookingUrl ? `<li><a href="${escapeHtml(bookingUrl)}">Book a 30-minute call</a
         datePublished: story.createdAt,
         ...(story.coverImage ? { image: story.coverImage } : {}),
         ...(author ? { author: { '@type': 'Person', name: author.name, url: `https://www.culovillage.com/founders/${author.slug}` } } : {}),
+        // Mirrors the same fix in src/pages/StoryDetailPage.tsx — an
+        // embedded reel with no VideoObject schema reads to Google as an
+        // article that happens to have a video, not a real watch page.
+        ...(story.reelUrl ? {
+          video: {
+            '@type': 'VideoObject',
+            name: story.title,
+            description: (story.summary || story.title || '').slice(0, 200),
+            thumbnailUrl: story.coverImage || author?.avatar || DEFAULT_OG_IMAGE,
+            uploadDate: story.createdAt,
+            embedUrl: story.reelUrl,
+          },
+        } : {}),
       }
       const bodyHtml = `
 <article>
@@ -494,6 +507,7 @@ ${bookingUrl ? `<li><a href="${escapeHtml(bookingUrl)}">Book a 30-minute call</a
 ${author ? `<p>By <a href="/founders/${escapeHtml(author.slug)}">${escapeHtml(author.name)}</a></p>` : ''}
 ${story.subtitle ? `<p><em>${escapeHtml(story.subtitle)}</em></p>` : ''}
 ${story.summary ? `<p>${escapeHtml(story.summary)}</p>` : ''}
+${story.reelUrl ? `<p><a href="${escapeHtml(story.reelUrl)}">Watch the video</a></p>` : ''}
 ${textToParagraphs(story.blog)}
 </article>`
       const html = renderDocument({
