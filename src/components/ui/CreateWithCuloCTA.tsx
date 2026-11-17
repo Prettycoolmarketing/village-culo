@@ -12,13 +12,14 @@ interface Props {
 
 // Every "Create/Continue with CULO in Canva" button across the app points
 // here — one link to update, not a dozen. A visitor who isn't signed in
-// yet gets sent to /joincanva (tagged source=canva, the $25/mo,
-// 14-day-trial tier — see joinFlow.ts); a founder who's already a member
-// doesn't need to join again, so they go straight to their own Content
-// tab instead. Swap CULO_CANVA_URL for the real Canva app deep link once
-// CULO in Canva ships, so this becomes "open the app" instead of "join
-// and pay first" for founders who already have billing set up.
-const CULO_CANVA_URL = 'https://www.culovillage.com/joincanva'
+// yet lands on /culocreatives (the product's own "coming soon" page with
+// real info and its own join CTA) rather than being dropped straight
+// into a signup form for a product that isn't live yet; a founder who's
+// already a member doesn't need to join again, so they go straight to
+// their own Content tab instead. Swap CULO_CANVA_URL for the real Canva
+// app deep link once CULO in Canva ships, so this becomes "open the app"
+// instead of "learn more" for founders who already have billing set up.
+const CULO_CANVA_URL = 'https://www.culovillage.com/culocreatives'
 const MEMBER_CONTENT_URL = '/dashboard/profile?tab=content'
 
 export function CreateWithCuloCTA({ variant = 'button', label, size = 'md' }: Props) {
