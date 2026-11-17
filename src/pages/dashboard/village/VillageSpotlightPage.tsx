@@ -144,7 +144,19 @@ function FeatureTogglePanel() {
               <div className="flex items-center gap-2">
                 <ToggleButton
                   active={f.featured}
-                  onToggle={() => void handleToggle(updateFounder({ ...f, featured: !f.featured, status: !f.featured ? 'featured' : 'published' }))}
+                  onToggle={() => {
+                    // Confirmed real: featuring a founder with no real
+                    // cover photo (just the generic placeholder) produced
+                    // a visibly broken-looking card on /founders — a text
+                    // list item with nothing where every other featured
+                    // card shows a real photo. Block it here instead of
+                    // letting staff discover that after the fact.
+                    if (!f.featured && !f.coverImage) {
+                      setToggleError(`${f.name} has no cover photo yet — add one on their profile before featuring them.`)
+                      return
+                    }
+                    void handleToggle(updateFounder({ ...f, featured: !f.featured, status: !f.featured ? 'featured' : 'published' }))
+                  }}
                 />
                 <Link to={`/founders/${f.slug}`} target="_blank" className="text-xs text-[#9CA3AF] hover:text-[#C86A43]">View ↗</Link>
                 <ConfirmButton label="Delete" confirmLabel="Confirm" onConfirm={() => void handleToggle(deleteFounder(f.id))} className="text-xs text-red-500 hover:underline" />
