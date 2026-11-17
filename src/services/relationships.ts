@@ -244,6 +244,13 @@ export function getConnectedTo(entityType: GraphEntityType, entityId: string, li
     const otherType = isFrom ? edge.toType : edge.fromType
     const otherId   = isFrom ? edge.toId   : edge.fromId
     if (otherType === 'source') continue
+    // A story 'mentions' edge is already shown in its own, more specific
+    // "Mentioned In Stories" section (both FounderProfilePage and
+    // BusinessProfilePage read it directly) — confirmed real: the exact
+    // same story card appeared twice on a business page, once here and
+    // once there, since this function has no relationshipType filter at
+    // all and resolveEntityLink happily resolves a 'story' side too.
+    if (otherType === 'story' && edge.relationshipType === 'mentions') continue
 
     const resolved = resolveEntityLink(otherType, otherId)
     if (!resolved) continue
