@@ -532,6 +532,15 @@ export function FounderProfilePage() {
               {founder.bio.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map((p, i) => (
                 <p key={i} className="font-body text-base text-charcoal/80 leading-loose">{p}</p>
               ))}
+              {/* Repeated, consistent context on every founder page — same
+                  few words every time, so a reader (or an AI crawler)
+                  builds up what CULO Village is from reading many pages,
+                  not from stumbling onto one explainer page nobody
+                  visits. Per direct product direction (2026-11-17). */}
+              <p className="font-body text-sm text-muted mt-4">
+                Researched and written by{' '}
+                <Link to="/how-culo-works" className="text-primary hover:underline font-medium">CULO Village</Link>. Learn how →
+              </p>
             </div>
 
             {founder.topics.length > 0 && (

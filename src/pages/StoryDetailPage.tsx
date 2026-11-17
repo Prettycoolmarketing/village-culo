@@ -629,6 +629,25 @@ export function StoryDetailPage() {
                 </p>
               )}
 
+              {/* Repeated, consistent context across every article — same
+                  few words every time, deliberately, so a reader (or an AI
+                  crawler) builds up what CULO Village actually is from
+                  reading many pages, not from stumbling onto one
+                  explainer page nobody visits. Per direct product
+                  direction (2026-11-17). */}
+              <p className="text-sm text-muted mb-3">
+                Researched and written by{' '}
+                <Link to="/how-culo-works" className="text-primary hover:underline font-medium">CULO Village</Link>. Learn how →
+              </p>
+
+              {/* Creatives teaser — an invitation to use the tool on their
+                  OWN future footage, never a claim about how this specific
+                  piece was made (Creatives isn't live yet). */}
+              <p className="text-sm text-muted mb-6">
+                ✦ Turn your own raw footage into posts like this with{' '}
+                <Link to="/culocreatives" className="text-primary hover:underline font-medium">Culo Creatives in Canva</Link> (coming soon) →
+              </p>
+
               {/* CTA + any additional links + the standalone "join" CTA */}
               <div className="flex flex-wrap gap-3">
                 {story.ctaLabel && story.ctaUrl && !isUnclaimedCuratedStory && (
