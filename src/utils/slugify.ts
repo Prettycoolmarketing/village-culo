@@ -2,9 +2,17 @@
 // never regenerated on a later title edit, so a URL already shared, linked
 // or indexed never silently breaks. Capped to a sane length: search engines
 // and AI answer engines both weight the words near the start of a URL more
-// than ones buried past ~70 characters, and an overlong slug reads as
+// than ones buried past ~80 characters, and an overlong slug reads as
 // spammy rather than descriptive.
-const MAX_SLUG_LENGTH = 70
+// Was 70 — confirmed real: "Inside Pructon: The Engineering Company Sam
+// Gerrard Built From Mount Isa" slugified to exactly 71 characters, one
+// over the old limit, so the word-boundary-safe cut below (correctly, by
+// its own logic) dropped the entire last word rather than cut mid-word —
+// silently losing "Isa" off "Mount Isa", a real place name, from the URL,
+// while 67 of the 70 allowed characters sat unused. 80 gives enough room
+// that losing a whole trailing word for being a handful of characters
+// over becomes rare instead of a near-miss like this one.
+const MAX_SLUG_LENGTH = 80
 
 export function slugify(text: string): string {
   const full = text
