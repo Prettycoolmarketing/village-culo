@@ -475,14 +475,14 @@ export function VillageCuratedFoundersPage() {
     // imported earlier but published sooner. Falls back to createdAt for
     // anything published before publishedAt started getting set.
     const sortDate = (f: Founder) => (pageTab === 'published' ? f.publishedAt ?? f.createdAt : f.createdAt)
-    // Claimed tab defaults to alphabetical regardless of the sortBy picker —
-    // it's a roster of real people with accounts, not a review queue, so
-    // "find this specific person" matters more than "what's newest," and
-    // 'newest' (by createdAt) looked arbitrary mixing pending/claimed/
-    // verified founders together with no obvious order to a human eye.
-    // The sortBy dropdown still works normally for the other tabs.
+    // Claimed tab: newest claim first, regardless of the sortBy picker —
+    // per direct product direction (2026-11-17). Sorts by claimedAt (when
+    // this specific claim actually happened), not createdAt (when the
+    // curated profile was first made, which could be months earlier and
+    // says nothing about claim recency) — falls back to createdAt only
+    // for the rare founder claimed before claimedAt existed as a field.
     if (pageTab === 'claimed') {
-      list.sort((a, b) => a.name.localeCompare(b.name))
+      list.sort((a, b) => (b.claimedAt ?? b.createdAt).localeCompare(a.claimedAt ?? a.createdAt))
     } else {
       list.sort((a, b) => {
         if (sortBy === 'newest')  return sortDate(b).localeCompare(sortDate(a))
