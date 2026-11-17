@@ -29,6 +29,16 @@
 //    with status 'draft' and a real (non-placeholder) title, the oldest
 //    such row imported 72h+ ago, and zero published/featured stories.
 //    Real content sitting there, never pushed live.
+// 5. WENT QUIET AFTER PUBLISHING — has at least one published/featured
+//    story (so the whole import→publish loop has genuinely worked for
+//    them at least once), but no import activity in the last 7 days
+//    (their most recent imported_content row, if any, is 7 days+ old —
+//    or they have none at all, meaning whatever got published didn't
+//    come through Import). Confirmed real: of 8 claimed founders audited
+//    2026-11-17, every one except the single power user did at most one
+//    import and then stopped for good — the gap conditions 1-4 don't
+//    cover, since onboarding/drafting isn't the problem for these
+//    people, they just never got a reason to come back for a second one.
 //
 // A staff digest to support@prettycoolmarketing.com lists everyone nudged
 // this run, grouped by which condition, for manual follow-up.
@@ -44,7 +54,7 @@ const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const STAFF_DIGEST_EMAIL = 'support@prettycoolmarketing.com'
 const HOUR = 60 * 60 * 1000
 
-type NudgeField = 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt'
+type NudgeField = 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt' | 'reengageNudgeSentAt'
 
 interface FounderData {
   name?: string
@@ -56,6 +66,7 @@ interface FounderData {
   readyNudgeSentAt?: string
   importNudgeSentAt?: string
   publishNudgeSentAt?: string
+  reengageNudgeSentAt?: string
 }
 interface FounderRow { id: string; updated_at: string; data: FounderData }
 interface NudgeTemplate { title: string; subject: string; bodyHtml: string }
@@ -100,7 +111,7 @@ serve(async (req) => {
       return true
     }
 
-    const notified: Record<string, string[]> = { needsSetup: [], ready: [], importedNothing: [], publishUntouched: [] }
+    const notified: Record<string, string[]> = { needsSetup: [], ready: [], importedNothing: [], publishUntouched: [], wentQuiet: [] }
 
     // 1. Needs setup, 24h+
     for (const f of founders) {
@@ -169,6 +180,32 @@ serve(async (req) => {
       }
     }
 
+    // 5. Published at least once, no import activity in 7 days+
+    const reengageCandidateIds = founders.filter(f => !f.data.reengageNudgeSentAt).map(f => f.id)
+    if (reengageCandidateIds.length > 0) {
+      const [{ data: allImportRows }, { data: publishedRows }] = await Promise.all([
+        admin.from('imported_content').select('founder_id, data').in('founder_id', reengageCandidateIds),
+        admin.from('stories').select('founder_id').in('founder_id', reengageCandidateIds).in('data->>status', ['published', 'featured']),
+      ])
+      const publishedSet = new Set((publishedRows ?? []).map(r => r.founder_id as string))
+      const latestImportByFounder = new Map<string, number>()
+      for (const row of allImportRows ?? []) {
+        const data = row.data as { importedAt?: string }
+        if (!data.importedAt) continue
+        const t = new Date(data.importedAt).getTime()
+        const founderId = row.founder_id as string
+        const existing = latestImportByFounder.get(founderId)
+        if (existing === undefined || t > existing) latestImportByFounder.set(founderId, t)
+      }
+      for (const f of founders) {
+        if (f.data.reengageNudgeSentAt || !publishedSet.has(f.id)) continue
+        const latest = latestImportByFounder.get(f.id)
+        if (latest !== undefined && now - latest < 7 * 24 * HOUR) continue
+        const name = f.data.name || 'there'
+        if (await sendNudge(f, 'reengageNudgeSentAt', { name })) notified.wentQuiet.push(`${name} <${f.data.signupEmail}>`)
+      }
+    }
+
     const total = Object.values(notified).reduce((n, arr) => n + arr.length, 0)
     if (total > 0 || unrecordedNudges.length > 0) {
       const section = (title: string, list: string[]) => list.length > 0 ? `<p><strong>${title}</strong></p><ul>${list.map(n => `<li>${n}</li>`).join('')}</ul>` : ''
@@ -177,6 +214,7 @@ serve(async (req) => {
         section('Ready to confirm (24h+)', notified.ready),
         section('Imported nothing (48h+)', notified.importedNothing),
         section('Ready to publish, untouched (72h+)', notified.publishUntouched),
+        section('Went quiet after publishing (7 days+)', notified.wentQuiet),
         section('Sent but not recorded — will likely re-send tomorrow', unrecordedNudges),
       ].join('')
       await sendEmail(STAFF_DIGEST_EMAIL, `${total} founder${total === 1 ? '' : 's'} nudged today`, emailLayout('Staff digest', digestHtml))

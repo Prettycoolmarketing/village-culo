@@ -1181,6 +1181,7 @@ const NUDGE_WHEN: Record<EmailNudgeTemplate['id'], string> = {
   readyNudgeSentAt: '24h+ after research finished, never reopened the dashboard',
   importNudgeSentAt: '48h+ after onboarding fully done, zero content imported',
   publishNudgeSentAt: '72h+ since a real draft article was imported, still unpublished',
+  reengageNudgeSentAt: 'Published at least once, no import activity in 7 days+',
 }
 // {{bioBlock}} only ever gets filled in for the ready-to-confirm nudge —
 // see send-nudges. Shown so staff editing a template knows what's
@@ -1190,6 +1191,7 @@ const NUDGE_PLACEHOLDERS: Record<EmailNudgeTemplate['id'], string[]> = {
   readyNudgeSentAt: ['{{name}}', '{{bioBlock}}'],
   importNudgeSentAt: ['{{name}}'],
   publishNudgeSentAt: ['{{name}}'],
+  reengageNudgeSentAt: ['{{name}}'],
 }
 
 function NudgesPanel() {

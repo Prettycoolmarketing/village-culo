@@ -7,7 +7,7 @@ const TABLE = 'email_nudge_templates'
 // id matches the Founder.*NudgeSentAt field send-nudges checks/sets for
 // this nudge — not an arbitrary key, see src/types/index.ts.
 export interface EmailNudgeTemplate {
-  id: 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt'
+  id: 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt' | 'reengageNudgeSentAt'
   title: string
   subject: string
   bodyHtml: string
