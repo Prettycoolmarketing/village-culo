@@ -588,14 +588,19 @@ export function StoryDetailPage() {
                 ))}
               </div>
 
-              {/* Original source attribution — not shown for an unclaimed
-                  curated founder's article: "Originally published on X /
-                  View original / Feature in CULO Village" reads as the
-                  founder actively cross-posting their own writing, which
-                  isn't true until they've actually claimed the profile. */}
-              {sourceImport && !isUnclaimedCuratedStory && (
+              {/* Original source attribution. For an unclaimed curated
+                  founder, "Originally published on X by [them]" reads as
+                  the founder actively cross-posting their own writing,
+                  which isn't true until they've claimed the profile — so
+                  that phrasing (and the author credit) stays hidden for
+                  those, but the source link itself always shows: this
+                  article cites real facts from that source, and the
+                  reader should always be able to trace them back to it,
+                  claimed or not. Per direct product direction
+                  (2026-11-17). */}
+              {sourceImport && (
                 <p className="text-sm text-muted mb-6">
-                  Originally published on{' '}
+                  {isUnclaimedCuratedStory ? 'Source: ' : 'Originally published on '}
                   <a
                     href={normalizeUrl(sourceImport.originalUrl)}
                     target="_blank"
@@ -604,7 +609,7 @@ export function StoryDetailPage() {
                   >
                     {PLATFORM_LABELS[sourceImport.sourcePlatform] ?? sourceImport.sourcePlatform}
                   </a>
-                  {sourceImport.originalAuthor ? ` by ${sourceImport.originalAuthor}` : ''}.
+                  {!isUnclaimedCuratedStory && sourceImport.originalAuthor ? ` by ${sourceImport.originalAuthor}` : ''}.
                 </p>
               )}
 
