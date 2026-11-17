@@ -69,7 +69,7 @@ serve(async (req) => {
   try {
     const { url: input } = await req.json()
     if (!input || typeof input !== 'string' || !input.trim()) {
-      return json({ error: 'Paste the article URL.' }, 400)
+      return json({ error: 'Paste the article URL.' })
     }
 
     // Prepends https:// to a bare domain — same fix as resolve-website,
@@ -79,10 +79,10 @@ serve(async (req) => {
 
     let url: URL
     try { url = new URL(normalizedInput) } catch {
-      return json({ error: 'That doesn’t look like a valid URL.' }, 400)
+      return json({ error: 'That doesn’t look like a valid URL.' })
     }
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return json({ error: 'Only http and https URLs are supported.' }, 400)
+      return json({ error: 'Only http and https URLs are supported.' })
     }
 
     const html = await safeFetchText(url.toString(), { timeoutMs: 10_000 })
@@ -120,7 +120,7 @@ serve(async (req) => {
       }
     }
     if (excerpt.trim().length < MIN_USABLE_EXCERPT_CHARS) {
-      return json({ error: 'Could not read enough real text from that page — it may require JavaScript to load its content. Try a different link, or paste the article text directly if you have it.' }, 400)
+      return json({ error: 'Could not read enough real text from that page — it may require JavaScript to load its content. Try a different link, or paste the article text directly if you have it.' })
     }
 
     return json({
@@ -131,7 +131,19 @@ serve(async (req) => {
       url: url.toString(),
     })
   } catch (err) {
-    if (err instanceof SafeFetchError) return json({ error: err.message }, 400)
-    return json({ error: err instanceof Error ? err.message : 'Could not read that page.' }, 500)
+    // Confirmed real, significant: every one of this function's own error
+    // messages above used to return a 400/500 status, and the client
+    // (resolveArticle in websiteResolve.ts) treats ANY non-2xx response as
+    // a transport failure — supabase-js's FunctionsHttpError.message is
+    // just the generic "Edge Function returned a non-2xx status code",
+    // never the actual {error: '...'} body this function sent. Every
+    // specific reason above (bad URL, JS-heavy page, etc.) was completely
+    // unreachable by any founder — they always saw that one generic,
+    // unhelpful message instead, no matter what actually went wrong.
+    // Always returning 200 (matching resolve-website's own established
+    // pattern) means the client's existing `data.error` check is what
+    // actually fires.
+    if (err instanceof SafeFetchError) return json({ error: err.message })
+    return json({ error: err instanceof Error ? err.message : 'Could not read that page.' })
   }
 })
