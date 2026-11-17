@@ -210,10 +210,19 @@ export function JoinConfirmPage() {
     e.preventDefault()
     if (!supabase || !resendEmail.trim()) return
     setResending(true)
-    await supabase.auth.resend({
-      type: 'signup',
-      email: resendEmail.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/join/confirm?source=${source}${canvaUserId ? `&canvaUserId=${encodeURIComponent(canvaUserId)}` : ''}` },
+    // Was `resend({ type: 'signup' })` — a no-op for the exact people who hit
+    // this screen most: Microsoft Safe Links (Outlook/Hotmail/live.com.au)
+    // silently consumes the single-use confirm link before the human ever
+    // clicks it, which also confirms their email — so resending a *signup*
+    // confirmation to an already-confirmed address sends nothing, while the
+    // .catch() below swallowed that silently and still showed "Sent!".
+    // resetPasswordForEmail works for both an already-confirmed account and
+    // one that genuinely never confirmed, and lands on /dashboard/reset-
+    // password, which (like this page) sets passwordSet: true on success —
+    // so this is the one link that reliably gets them to an account they
+    // can actually log back into, instead of being stuck here forever.
+    await supabase.auth.resetPasswordForEmail(resendEmail.trim(), {
+      redirectTo: `${window.location.origin}/dashboard/reset-password`,
     }).catch(() => { /* best-effort — Supabase's anti-enumeration behaviour means this never reveals whether the email actually exists */ })
     setResending(false)
     setResent(true)
@@ -228,7 +237,8 @@ export function JoinConfirmPage() {
             <p className="font-body text-sm text-charcoal font-semibold mb-2">That confirmation link has expired.</p>
             <p className="font-body text-sm text-muted mb-6">
               This can happen if it sat unopened for a while, or if your email provider (Outlook/Hotmail especially)
-              scanned the link before you clicked it. Enter your email and we'll send a fresh one.
+              scanned the link before you clicked it. Enter your email and we'll send you a fresh link to set your
+              password and get into your account.
             </p>
             {resent ? (
               <p className="font-body text-sm text-[#5E6B4A] font-semibold">Sent — check your inbox (and spam folder).</p>
@@ -247,7 +257,7 @@ export function JoinConfirmPage() {
                   disabled={resending}
                   className="rounded-xl px-6 py-3 text-sm font-semibold bg-primary text-white hover:bg-[#b05a35] disabled:opacity-60 transition-colors"
                 >
-                  {resending ? 'Sending…' : 'Send a new confirmation link'}
+                  {resending ? 'Sending…' : 'Send a new link'}
                 </button>
               </form>
             )}
