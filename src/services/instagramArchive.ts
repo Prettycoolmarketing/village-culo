@@ -310,6 +310,29 @@ export interface BuiltArchiveItem {
   dayKey: string // YYYY-MM-DD of the original post date — for grouping in the UI
 }
 
+// Nothing in this upload path (Supabase Storage, the DB write inside
+// uploadAndTrack, or captureVideoFrame's <video> event wait below) had a
+// timeout — a stalled/dropped connection on one media item just hung that
+// `await` forever. No error, no catch, no progress update, the whole import
+// frozen on whatever "Uploading media N of M…" text was last set (confirmed
+// real: Sofia Silva Berenguer, stuck at 24 of 106 with nothing in the
+// console). Wrapping each network call turns a hang into a rejection, which
+// routes into the same handled "skip this file, keep going" path a normal
+// upload error already uses below — one stalled media item can no longer
+// take the rest of the import down with it.
+const UPLOAD_TIMEOUT_MS = 30_000
+const FRAME_CAPTURE_TIMEOUT_MS = 15_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
+    promise.then(
+      v => { clearTimeout(timer); resolve(v) },
+      e => { clearTimeout(timer); reject(e) },
+    )
+  })
+}
+
 export async function buildImportedContentFromArchive(
   founderId: string,
   posts: ParsedInstagramPost[],
@@ -363,21 +386,42 @@ export async function buildImportedContentFromArchive(
       const blob = await zipEntry.async('blob')
       const filename = media.path.split('/').pop() || `instagram-${Date.now()}.jpg`
       const file = new File([blob], filename, { type: media.isVideo ? 'video/mp4' : 'image/jpeg' })
-      const result = await mediaUploadsService.uploadAndTrack(file, {
-        founderId,
-        usageType: media.isVideo ? 'reel-preview' : 'carousel-slide',
-      })
+
+      let result: Awaited<ReturnType<typeof mediaUploadsService.uploadAndTrack>>
+      try {
+        result = await withTimeout(
+          mediaUploadsService.uploadAndTrack(file, {
+            founderId,
+            usageType: media.isVideo ? 'reel-preview' : 'carousel-slide',
+          }),
+          UPLOAD_TIMEOUT_MS,
+          `${filename} upload`,
+        )
+      } catch (e) {
+        uploadErrors.push(`${filename}: ${e instanceof Error ? e.message : 'upload timed out'}`)
+        continue
+      }
+
       if (result.media) {
         if (media.isVideo) {
           videoUrls.push(result.media.publicUrl)
           if (!snapshotUrl) {
-            const frame = await captureVideoFrame(blob)
+            const frame = await withTimeout(captureVideoFrame(blob), FRAME_CAPTURE_TIMEOUT_MS, `${filename} frame capture`).catch(() => null)
             if (frame) {
-              const frameResult = await mediaUploadsService.uploadAndTrack(
-                new File([frame], `${filename}-cover.jpg`, { type: 'image/jpeg' }),
-                { founderId, usageType: 'carousel-slide' },
-              )
-              if (frameResult.media) snapshotUrl = frameResult.media.publicUrl
+              try {
+                const frameResult = await withTimeout(
+                  mediaUploadsService.uploadAndTrack(
+                    new File([frame], `${filename}-cover.jpg`, { type: 'image/jpeg' }),
+                    { founderId, usageType: 'carousel-slide' },
+                  ),
+                  UPLOAD_TIMEOUT_MS,
+                  `${filename} cover frame upload`,
+                )
+                if (frameResult.media) snapshotUrl = frameResult.media.publicUrl
+              } catch {
+                // Cover frame is a nice-to-have — the video itself already uploaded
+                // above, so a stalled/failed cover frame shouldn't block the import.
+              }
             }
           }
         } else {
