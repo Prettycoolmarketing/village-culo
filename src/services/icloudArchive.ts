@@ -102,6 +102,24 @@ function captureVideoFrame(blob: Blob): Promise<Blob | null> {
   })
 }
 
+// Same hang risk as the Instagram importer (src/services/instagramArchive.ts)
+// had before its fix: no timeout anywhere in this upload path, so a stalled
+// network call on one photo just hangs that await forever — no error, no
+// progress update. See instagramArchive.ts's withTimeout comment for the
+// confirmed real case this pattern caused.
+const UPLOAD_TIMEOUT_MS = 30_000
+const FRAME_CAPTURE_TIMEOUT_MS = 15_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
+    promise.then(
+      v => { clearTimeout(timer); resolve(v) },
+      e => { clearTimeout(timer); reject(e) },
+    )
+  })
+}
+
 export async function buildImportedContentFromICloud(
   founderId: string,
   photos: ParsedICloudPhoto[],
@@ -126,10 +144,21 @@ export async function buildImportedContentFromICloud(
 
     const filename = photo.zipPath.split('/').pop() || `icloud-photo-${i}.${photo.isVideo ? 'mp4' : 'jpg'}`
     const file = new File([blob], filename, { type: photo.isVideo ? 'video/mp4' : 'image/jpeg' })
-    const uploadResult = await mediaUploadsService.uploadAndTrack(file, {
-      founderId,
-      usageType: photo.isVideo ? 'reel-preview' : 'carousel-slide',
-    })
+
+    let uploadResult: Awaited<ReturnType<typeof mediaUploadsService.uploadAndTrack>>
+    try {
+      uploadResult = await withTimeout(
+        mediaUploadsService.uploadAndTrack(file, {
+          founderId,
+          usageType: photo.isVideo ? 'reel-preview' : 'carousel-slide',
+        }),
+        UPLOAD_TIMEOUT_MS,
+        `${filename} upload`,
+      )
+    } catch (e) {
+      uploadErrors.push(`${filename}: ${e instanceof Error ? e.message : 'upload timed out'}`)
+      continue
+    }
     if (!uploadResult.media) {
       if (uploadResult.error) uploadErrors.push(`${filename}: ${uploadResult.error}`)
       continue
@@ -139,13 +168,21 @@ export async function buildImportedContentFromICloud(
     let reelVideoUrl: string | undefined
     if (photo.isVideo) {
       reelVideoUrl = uploadResult.media.publicUrl
-      const frame = await captureVideoFrame(blob)
+      const frame = await withTimeout(captureVideoFrame(blob), FRAME_CAPTURE_TIMEOUT_MS, `${filename} frame capture`).catch(() => null)
       if (frame) {
-        const frameResult = await mediaUploadsService.uploadAndTrack(
-          new File([frame], `${filename}-cover.jpg`, { type: 'image/jpeg' }),
-          { founderId, businessId, usageType: 'carousel-slide' },
-        )
-        if (frameResult.media) thumbnailUrl = frameResult.media.publicUrl
+        try {
+          const frameResult = await withTimeout(
+            mediaUploadsService.uploadAndTrack(
+              new File([frame], `${filename}-cover.jpg`, { type: 'image/jpeg' }),
+              { founderId, businessId, usageType: 'carousel-slide' },
+            ),
+            UPLOAD_TIMEOUT_MS,
+            `${filename} cover frame upload`,
+          )
+          if (frameResult.media) thumbnailUrl = frameResult.media.publicUrl
+        } catch {
+          // Cover frame is a nice-to-have — the video itself already uploaded above.
+        }
       }
     }
 

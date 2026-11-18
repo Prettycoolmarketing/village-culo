@@ -35,10 +35,33 @@ import type { ImportedContent } from '../types/importedContent'
 // single fetch blocked the same way). Routed through fetch-remote-media
 // instead, which runs the actual fetch server-side where CORS doesn't
 // apply.
+// No timeout existed on this edge-function round trip at all — a stalled
+// fetch-remote-media call (fetching a third-party Snapchat URL server-side)
+// hung this await forever, same hang risk instagramArchive.ts's withTimeout
+// comment documents for the uploads below. Highest-risk call in this file
+// since it's a round trip to someone else's server, not just Supabase's own.
+const REMOTE_FETCH_TIMEOUT_MS = 30_000
+const UPLOAD_TIMEOUT_MS = 30_000
+const FRAME_CAPTURE_TIMEOUT_MS = 15_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
+    promise.then(
+      v => { clearTimeout(timer); resolve(v) },
+      e => { clearTimeout(timer); reject(e) },
+    )
+  })
+}
+
 async function fetchRemoteMedia(url: string): Promise<Blob | null> {
   if (!isSupabaseConfigured || !supabase) return null
   try {
-    const { data, error } = await supabase.functions.invoke<Blob>('fetch-remote-media', { body: { url } })
+    const { data, error } = await withTimeout(
+      supabase.functions.invoke<Blob>('fetch-remote-media', { body: { url } }),
+      REMOTE_FETCH_TIMEOUT_MS,
+      'remote media fetch',
+    )
     if (error || !data) return null
     return data instanceof Blob ? data : new Blob([data])
   } catch {
@@ -198,10 +221,21 @@ export async function buildImportedContentFromSnapchat(
 
     const filename = memory.zipPath?.split('/').pop() || `snapchat-memory-${i}.${memory.isVideo ? 'mp4' : 'jpg'}`
     const file = new File([blob], filename, { type: memory.isVideo ? 'video/mp4' : 'image/jpeg' })
-    const uploadResult = await mediaUploadsService.uploadAndTrack(file, {
-      founderId,
-      usageType: memory.isVideo ? 'reel-preview' : 'carousel-slide',
-    })
+
+    let uploadResult: Awaited<ReturnType<typeof mediaUploadsService.uploadAndTrack>>
+    try {
+      uploadResult = await withTimeout(
+        mediaUploadsService.uploadAndTrack(file, {
+          founderId,
+          usageType: memory.isVideo ? 'reel-preview' : 'carousel-slide',
+        }),
+        UPLOAD_TIMEOUT_MS,
+        `${filename} upload`,
+      )
+    } catch (e) {
+      uploadErrors.push(`${filename}: ${e instanceof Error ? e.message : 'upload timed out'}`)
+      continue
+    }
     if (!uploadResult.media) {
       if (uploadResult.error) uploadErrors.push(`${filename}: ${uploadResult.error}`)
       continue
@@ -211,13 +245,21 @@ export async function buildImportedContentFromSnapchat(
     let reelVideoUrl: string | undefined
     if (memory.isVideo) {
       reelVideoUrl = uploadResult.media.publicUrl
-      const frame = await captureVideoFrame(blob)
+      const frame = await withTimeout(captureVideoFrame(blob), FRAME_CAPTURE_TIMEOUT_MS, `${filename} frame capture`).catch(() => null)
       if (frame) {
-        const frameResult = await mediaUploadsService.uploadAndTrack(
-          new File([frame], `${filename}-cover.jpg`, { type: 'image/jpeg' }),
-          { founderId, businessId, usageType: 'carousel-slide' },
-        )
-        if (frameResult.media) thumbnailUrl = frameResult.media.publicUrl
+        try {
+          const frameResult = await withTimeout(
+            mediaUploadsService.uploadAndTrack(
+              new File([frame], `${filename}-cover.jpg`, { type: 'image/jpeg' }),
+              { founderId, businessId, usageType: 'carousel-slide' },
+            ),
+            UPLOAD_TIMEOUT_MS,
+            `${filename} cover frame upload`,
+          )
+          if (frameResult.media) thumbnailUrl = frameResult.media.publicUrl
+        } catch {
+          // Cover frame is a nice-to-have — the video itself already uploaded above.
+        }
       }
     }
 
