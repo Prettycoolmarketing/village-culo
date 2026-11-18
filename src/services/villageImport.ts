@@ -757,10 +757,39 @@ export function validateVIF(pkg: VillageImportPackage): VIFValidationResult {
  * is exactly the situation where a single transient network hiccup shouldn't
  * sink one founder's record out of a 500-row batch.
  */
+// No timeout existed anywhere in this chain (writeWithRetry itself, or the
+// writeEntity it ultimately calls) — a stalled Supabase write just hung this
+// await forever, same hang risk confirmed real and fixed in the Instagram/
+// iCloud/Snapchat archive importers (see instagramArchive.ts's withTimeout
+// comment). A batch import here has no onProgress callback at all, so a
+// hang wouldn't even leave a frozen progress line — it would just look like
+// the import never finished, with nothing in the console. A timed-out write
+// now counts as a normal failed WriteResult, so it gets the same one retry
+// every other failure already gets, instead of hanging the whole batch.
+const WRITE_TIMEOUT_MS = 20_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
+    promise.then(
+      v => { clearTimeout(timer); resolve(v) },
+      e => { clearTimeout(timer); reject(e) },
+    )
+  })
+}
+
+async function writeOnce(write: () => Promise<WriteResult>): Promise<WriteResult> {
+  try {
+    return await withTimeout(write(), WRITE_TIMEOUT_MS, 'write')
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'write timed out' }
+  }
+}
+
 async function writeWithRetry(write: () => Promise<WriteResult>): Promise<WriteResult> {
-  const first = await write()
+  const first = await writeOnce(write)
   if (first.success) return first
-  return write()
+  return writeOnce(write)
 }
 
 export async function importVIF(pkg: VillageImportPackage, options: VIFImportOptions): Promise<VIFImportResult> {
