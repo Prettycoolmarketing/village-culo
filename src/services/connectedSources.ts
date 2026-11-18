@@ -1,4 +1,5 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
+import { withTimeout } from '../utils/withTimeout'
 import type { ConnectedSource, ConnectedSourceFilter, ConnectedSourceType } from '../types/connectedSource'
 import type { ImportedContent } from '../types/importedContent'
 import { importedContentService, PLATFORM_LABELS } from './importedContent'
@@ -193,6 +194,17 @@ function draftFrom(founderId: string, sourceId: string, platform: ImportedConten
   }
 }
 
+// Same hang risk found and fixed across the archive importers and the VIF
+// bulk importer (see src/utils/withTimeout.ts) — the connector fetch and
+// every upsert below ran as a bare await/Promise.all with no timeout, so a
+// stalled feed fetch or DB write would hang this scan forever. Unlike the
+// archive importers, this doesn't need a "skip this item, keep going" path —
+// scanSource already has a catch block that records status: 'error' and
+// lastError for the whole source, so turning a hang into a rejection here is
+// enough: it now actually reaches that catch instead of hanging silently.
+const CONNECTOR_FETCH_TIMEOUT_MS = 30_000
+const UPSERT_BATCH_TIMEOUT_MS = 30_000
+
 /** Scans a connected source, writing up to today's remaining allowance of newly-discovered items as ImportedContent drafts. */
 export async function scanSource(source: ConnectedSource): Promise<ScanResult> {
   const dailyLimit = source.dailyLimitOverride ?? DAILY_IMPORT_LIMIT
@@ -209,22 +221,22 @@ export async function scanSource(source: ConnectedSource): Promise<ScanResult> {
   const seen = alreadyImportedKeys(source.id)
 
   try {
-    const items = await CONNECTORS[source.sourceType](source)
+    const items = await withTimeout(CONNECTORS[source.sourceType](source), CONNECTOR_FETCH_TIMEOUT_MS, `${source.sourceType} feed fetch`)
     const platform = PLATFORM_BY_SOURCE_TYPE[source.sourceType]
     const unseen = items.filter(item => !itemKeys(item).some(k => seen.has(k)))
     const toImport = unseen.slice(0, remainingToday)
     const drafts = toImport.map(item => draftFrom(source.founderId, source.id, platform, item, source.ownContent))
 
-    await Promise.all(drafts.map(d => importedContentService.upsert(d)))
+    await withTimeout(Promise.all(drafts.map(d => importedContentService.upsert(d))), UPSERT_BATCH_TIMEOUT_MS, 'content upsert batch')
     // Village does the work first — analyse every connector-discovered draft
     // immediately, so it lands in the founder's review queue with suggestions
     // already attached rather than a blank item to fill in by hand.
-    await Promise.all(drafts.map(d => {
+    await withTimeout(Promise.all(drafts.map(d => {
       const intel = villageContentIntelligenceService.analyse(importedContentToInput(d))
       return villageContentIntelligenceService.upsert(intel)
-    }))
+    })), UPSERT_BATCH_TIMEOUT_MS, 'content intelligence batch')
 
-    await connectedSourcesService.upsert({
+    await withTimeout(connectedSourcesService.upsert({
       ...source,
       status: 'idle',
       lastScannedAt: now(),
@@ -232,12 +244,16 @@ export async function scanSource(source: ConnectedSource): Promise<ScanResult> {
       discoveredCount: source.discoveredCount + drafts.length,
       lastScanDate: today(),
       importedToday: usedToday + drafts.length,
-    })
+    }), UPSERT_BATCH_TIMEOUT_MS, 'source status write')
 
     return { imported: drafts.length, moreAvailable: unseen.length > toImport.length, dailyLimitReached: false }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Scan failed.'
-    await connectedSourcesService.upsert({ ...source, status: 'error', lastError: message, lastScannedAt: now() })
+    await withTimeout(
+      connectedSourcesService.upsert({ ...source, status: 'error', lastError: message, lastScannedAt: now() }),
+      UPSERT_BATCH_TIMEOUT_MS,
+      'source error status write',
+    ).catch(() => { /* best-effort — the scan itself already failed, don't let a second timeout mask the real error */ })
     throw err
   }
 }
@@ -269,19 +285,19 @@ export async function importSelectedPodcastEpisodes(source: ConnectedSource, ite
   const unseen = items.filter(item => !itemKeys(item).some(k => seen.has(k)))
   const drafts = unseen.map(item => draftFrom(source.founderId, source.id, 'podcast', item))
 
-  await Promise.all(drafts.map(d => importedContentService.upsert(d)))
-  await Promise.all(drafts.map(d => {
+  await withTimeout(Promise.all(drafts.map(d => importedContentService.upsert(d))), UPSERT_BATCH_TIMEOUT_MS, 'content upsert batch')
+  await withTimeout(Promise.all(drafts.map(d => {
     const intel = villageContentIntelligenceService.analyse(importedContentToInput(d))
     return villageContentIntelligenceService.upsert(intel)
-  }))
+  })), UPSERT_BATCH_TIMEOUT_MS, 'content intelligence batch')
 
-  await connectedSourcesService.upsert({
+  await withTimeout(connectedSourcesService.upsert({
     ...source,
     status: 'idle',
     lastScannedAt: now(),
     lastError: undefined,
     discoveredCount: source.discoveredCount + drafts.length,
-  })
+  }), UPSERT_BATCH_TIMEOUT_MS, 'source status write')
 
   return { imported: drafts.length }
 }

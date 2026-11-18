@@ -1,4 +1,5 @@
 import { slugify } from '../utils/slugify'
+import { withTimeout } from '../utils/withTimeout'
 import { getFounderBySlug, getFounderByLinkedIn, getFounderByInstagram, normalizeLinkedInUrl, normalizeInstagramUrl, updateFounder } from './founders'
 import { getBusinessBySlug, updateBusiness } from './businesses'
 import { importedContentService, buildDraftImport, detectPlatform, youtubeThumbnailUrl } from './importedContent'
@@ -767,16 +768,6 @@ export function validateVIF(pkg: VillageImportPackage): VIFValidationResult {
 // now counts as a normal failed WriteResult, so it gets the same one retry
 // every other failure already gets, instead of hanging the whole batch.
 const WRITE_TIMEOUT_MS = 20_000
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
-    promise.then(
-      v => { clearTimeout(timer); resolve(v) },
-      e => { clearTimeout(timer); reject(e) },
-    )
-  })
-}
 
 async function writeOnce(write: () => Promise<WriteResult>): Promise<WriteResult> {
   try {

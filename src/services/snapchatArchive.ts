@@ -23,6 +23,7 @@
 
 import JSZip from 'jszip'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { withTimeout } from '../utils/withTimeout'
 import { mediaUploadsService } from './mediaUploads'
 import { getFounder } from './founders'
 import { getBusiness } from './businesses'
@@ -43,16 +44,6 @@ import type { ImportedContent } from '../types/importedContent'
 const REMOTE_FETCH_TIMEOUT_MS = 30_000
 const UPLOAD_TIMEOUT_MS = 30_000
 const FRAME_CAPTURE_TIMEOUT_MS = 15_000
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
-    promise.then(
-      v => { clearTimeout(timer); resolve(v) },
-      e => { clearTimeout(timer); reject(e) },
-    )
-  })
-}
 
 async function fetchRemoteMedia(url: string): Promise<Blob | null> {
   if (!isSupabaseConfigured || !supabase) return null

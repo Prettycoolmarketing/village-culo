@@ -15,6 +15,7 @@
 // copy themselves, same as a Snapchat import.
 
 import JSZip from 'jszip'
+import { withTimeout } from '../utils/withTimeout'
 import { mediaUploadsService } from './mediaUploads'
 import { getFounder } from './founders'
 import { getBusiness } from './businesses'
@@ -109,16 +110,6 @@ function captureVideoFrame(blob: Blob): Promise<Blob | null> {
 // confirmed real case this pattern caused.
 const UPLOAD_TIMEOUT_MS = 30_000
 const FRAME_CAPTURE_TIMEOUT_MS = 15_000
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms)
-    promise.then(
-      v => { clearTimeout(timer); resolve(v) },
-      e => { clearTimeout(timer); reject(e) },
-    )
-  })
-}
 
 export async function buildImportedContentFromICloud(
   founderId: string,
