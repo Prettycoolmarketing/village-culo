@@ -219,6 +219,28 @@ export default async function middleware(request) {
   const url = new URL(request.url)
   const [, section, slug] = url.pathname.split('/')
 
+  // prettycoolmarketing.com shares this project but is its own one-page site
+  // (see src/main.tsx) — a crawler must never get the Village homepage
+  // snapshot for it. Serve a small real-HTML version of that page instead.
+  if (/(^|\.)prettycoolmarketing\.com$/i.test(url.hostname)) {
+    if (url.pathname !== '/') return
+    const title = 'Pretty Cool Marketing'
+    const description = 'Pretty Cool Marketing builds content systems for Australian founders, turning raw footage, stories and expertise into reels, blogs and strategic social media content.'
+    return new Response(
+      `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title>` +
+      `<meta name="description" content="${description}">` +
+      `<meta property="og:title" content="${title}"><meta property="og:description" content="${description}">` +
+      `<meta property="og:image" content="https://www.prettycoolmarketing.com/assets/pcm/glamping.jpg">` +
+      `<meta property="og:url" content="https://www.prettycoolmarketing.com/"><link rel="canonical" href="https://www.prettycoolmarketing.com/"></head>` +
+      `<body><h1>Your brand deserves to be seen everywhere.</h1>` +
+      `<p>We turn your photos, stories, and chaos into a content engine that builds visibility, trust, and sales. Australia-wide. Limited spots monthly. Travel options available.</p>` +
+      `<h2>Social Media Management</h2><h2>Digital Marketing Operations</h2>` +
+      `<h2>Meet the founder: Shakas</h2><p>Founder of Pretty Cool Marketing: 15+ years behind the camera, multiple successful businesses built from scratch, and a team ready to partner with you on branded content creation, multi-archetype reel editing and automated content systems.</p>` +
+      `<p><a href="https://www.culovillage.com/marketing">Explore services</a> · <a href="https://www.culovillage.com">The Culo Village</a></p></body></html>`,
+      { status: 200, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, s-maxage=3600' } },
+    )
+  }
+
   try {
     // Homepage — the one route every crawler hits first, and until now the
     // one place this whole middleware didn't cover. A bot landing on "/"

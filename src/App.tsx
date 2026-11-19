@@ -46,6 +46,7 @@ import { JoinConfirmPage }   from './pages/JoinConfirmPage'
 import { JoinSetupPage }     from './pages/JoinSetupPage'
 import { JoinResearchPage }  from './pages/JoinResearchPage'
 import { JoinCanvaPaidPage } from './pages/JoinCanvaPaidPage'
+import { PcmSitePage }            from './pages/PcmSitePage'
 import { MarketingLandingPage }    from './pages/marketing/MarketingLandingPage'
 import { MarketingPublishingPage } from './pages/marketing/MarketingPublishingPage'
 import { MarketingSocialPage }     from './pages/marketing/MarketingSocialPage'
@@ -181,6 +182,9 @@ export default function App() {
               Deep-linked from the Canva Marketplace app via ?source=canva
               once it's live. */}
           <Route path="/join" element={<JoinVillagePage />} />
+          {/* Preview of the standalone prettycoolmarketing.com one-pager (the
+              real thing is served by hostname in main.tsx). noindex here. */}
+          <Route path="/pcm-site" element={<PcmSitePage />} />
           {/* Easier to remember/spell than /join?source=canva for anyone
               typing it manually or reading it off a screen — same page,
               same query param, just a shorter door in. */}
