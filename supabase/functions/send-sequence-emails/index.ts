@@ -31,12 +31,31 @@ interface Enrollment {
   sequenceId: string
   email: string
   name?: string
+  // Set at enrollment time (see enroll-email-sequence) for sequences whose
+  // copy needs per-recipient numbers, not just a name — Sequence D
+  // (Archive Unlock upsell) is the first to use these.
+  remainingCount?: number
+  tierPrice?: string
   startedAt: string
   sentDays: number[]
   status: 'active' | 'completed' | 'stopped'
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+// No sequence step ever had merge fields before Sequence D — every prior
+// one (A/B/C) was written as static copy with no {{...}} tokens, so this
+// was never needed. A step with a token this doesn't know (an enrollment
+// missing remainingCount/tierPrice, or a future field someone forgets to
+// add here) just leaves the literal "{{token}}" in the sent email rather
+// than throwing — visible and obviously wrong if it happens, instead of a
+// failed send.
+function applyMergeFields(text: string, enrollment: Enrollment): string {
+  return text
+    .replace(/\{\{name\}\}/g, enrollment.name?.trim() || 'there')
+    .replace(/\{\{remainingCount\}\}/g, typeof enrollment.remainingCount === 'number' ? String(enrollment.remainingCount) : '{{remainingCount}}')
+    .replace(/\{\{tierPrice\}\}/g, enrollment.tierPrice || '{{tierPrice}}')
+}
 
 serve(async (req) => {
   // Allow either a real cron trigger (no auth needed, this function is
@@ -78,10 +97,12 @@ serve(async (req) => {
 
       if (nextStep) {
         const unsubscribeUrl = `${SUPABASE_URL}/functions/v1/unsubscribe-email?email=${encodeURIComponent(enrollment.email)}`
-        const branded = emailLayout('The Culo Village: Brisbane, Australia', nextStep.bodyHtml, unsubscribeUrl)
+        const subject = applyMergeFields(nextStep.subject, enrollment)
+        const bodyHtml = applyMergeFields(nextStep.bodyHtml, enrollment)
+        const branded = emailLayout('The Culo Village: Brisbane, Australia', bodyHtml, unsubscribeUrl)
         // EMAIL_FROM is a noreply address with no monitored inbox — reply_to
         // gives recipients a real address to write back to instead of a bounce.
-        const result = await sendEmail(enrollment.email, nextStep.subject, branded, 'connect@culovillage.com')
+        const result = await sendEmail(enrollment.email, subject, branded, 'connect@culovillage.com')
         if (result.ok) { sentDays.add(nextStep.day); sent++ }
       }
 

@@ -2,6 +2,9 @@ import { getFounders, updateFounder } from './founders'
 import { getStories, getStory, updateStory } from './stories'
 import { getIdeas } from './ideas'
 import { canPublish, consumePublish, type PublishKind } from '../utils/publishing'
+import { FREE_ARCHIVE_PUBLISH } from '../config/publishing'
+import { getArchiveTier } from '../config/archiveUnlock'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { importedContentService, PLATFORM_LABELS } from './importedContent'
 import { villageContentIntelligenceService, storyToInput } from './villageIntelligence'
 import { syncIdeasFromStory, refreshAuthorityScores } from './ideaSync'
@@ -141,6 +144,34 @@ export async function publishStoryCore(story: Story, overrides: PublishOverrides
     const patch = consumePublish(founder, kind)
     if (patch && Object.keys(patch).length > 0) {
       await updateFounder({ ...founder, ...patch })
+
+      // The moment a founder's free imported-archive quota (10, see
+      // FREE_ARCHIVE_PUBLISH) is exactly used up with no Archive Unlock
+      // purchase — the real upsell moment, when the wall is actually in
+      // front of them. Enrolling here (not Archive Unlock's landing page,
+      // not a scheduled check) catches it exactly once, the instant it
+      // happens, same "fire right at the trigger" reasoning as the status
+      // promotion below. Best-effort: a failed enrollment should never
+      // block or fail the publish that triggered it. Stopped mid-sequence
+      // if they purchase — see stripe-archive-unlock-webhook.
+      if (
+        kind === 'imported'
+        && patch.archivePublishedCount === FREE_ARCHIVE_PUBLISH
+        && !founder.archiveUnlocked
+        && isSupabaseConfigured && supabase
+      ) {
+        const email = founder.signupEmail?.trim() || founder.claimEmail?.trim()
+        const totalImported = importedContentService.getAll({ founderId: founder.id }).length
+        const remainingCount = Math.max(0, totalImported - FREE_ARCHIVE_PUBLISH)
+        // Nothing to upsell if their whole imported archive was exactly the
+        // free 10 — "unlock your remaining 0 pieces" isn't a real offer.
+        if (email && remainingCount > 0) {
+          const tierPrice = getArchiveTier(totalImported).priceLabel
+          void supabase.functions.invoke('enroll-email-sequence', {
+            body: { sequenceId: 'D', email, name: founder.name, source: 'archive-free-quota-reached', remainingCount, tierPrice },
+          }).catch(() => { /* best-effort — the daily sequence cron still catches this founder via the dashboard if staff enroll manually */ })
+        }
+      }
     }
   }
 

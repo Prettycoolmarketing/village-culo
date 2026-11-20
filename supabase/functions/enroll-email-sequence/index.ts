@@ -27,7 +27,13 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
 
   try {
-    const body = await req.json() as { sequenceId?: string; email?: string; name?: string; source?: string }
+    const body = await req.json() as {
+      sequenceId?: string; email?: string; name?: string; source?: string
+      // Per-recipient numbers a sequence's own copy needs merged in at send
+      // time (see send-sequence-emails' applyMergeFields) — optional, only
+      // Sequence D (Archive Unlock upsell) sets these today.
+      remainingCount?: number; tierPrice?: string
+    }
     const sequenceId = body.sequenceId?.trim()
     const email = body.email?.trim().toLowerCase()
     if (!sequenceId || !email || !email.includes('@')) throw new Error('sequenceId and a real email are required')
@@ -51,7 +57,11 @@ serve(async (req) => {
     const now = new Date().toISOString()
     const { error } = await admin.from('email_sequence_enrollments').insert({
       id: crypto.randomUUID(), sequence_id: sequenceId, email,
-      data: { sequenceId, email, name: body.name, source: body.source, startedAt: now, sentDays: [], status: 'active' },
+      data: {
+        sequenceId, email, name: body.name, source: body.source,
+        remainingCount: body.remainingCount, tierPrice: body.tierPrice,
+        startedAt: now, sentDays: [], status: 'active',
+      },
     })
     if (error) throw new Error(error.message)
 

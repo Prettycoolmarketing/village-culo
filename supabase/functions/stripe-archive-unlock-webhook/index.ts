@@ -138,6 +138,31 @@ serve(async (req) => {
           }
 
           await admin.from('founders').update({ data: { ...d, ...patch } }).eq('id', founderId)
+
+          // Sequence D (Archive Unlock upsell, see migration 060) enrolls a
+          // founder the moment their free quota runs out with no purchase —
+          // this is that purchase. Without this, someone who converts on
+          // day 2 would still get days 3-5 pitching them to buy something
+          // they already bought. Only the two branches above that actually
+          // set archiveUnlocked (not the Publishing Pack branch) should stop
+          // it — matches the enrollment's own !founder.archiveUnlocked gate.
+          if (patch.archiveUnlocked === true) {
+            const email = (typeof d.signupEmail === 'string' && d.signupEmail.trim())
+              || (typeof d.claimEmail === 'string' && d.claimEmail.trim())
+            if (email) {
+              const { data: activeEnrollments } = await admin
+                .from('email_sequence_enrollments')
+                .select('id, data')
+                .eq('sequence_id', 'D')
+                .eq('email', (email as string).toLowerCase())
+                .filter('data->>status', 'eq', 'active')
+              for (const row of activeEnrollments ?? []) {
+                await admin.from('email_sequence_enrollments')
+                  .update({ data: { ...(row.data as Record<string, unknown>), status: 'stopped' } })
+                  .eq('id', row.id)
+              }
+            }
+          }
         }
       }
       // NOTE: this webhook only ever touches an EXISTING founder identified by
