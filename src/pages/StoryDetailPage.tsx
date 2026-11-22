@@ -325,7 +325,14 @@ export function StoryDetailPage() {
           name: story.title,
           description: (story.summary || story.title).slice(0, 200),
           thumbnailUrl: story.coverImage || founder?.avatar || `${window.location.origin}/assets/culo-brand-cover.png`,
-          uploadDate: story.createdAt,
+          // story.createdAt is stored as a bare date ("2026-08-24"), not a
+          // full datetime — confirmed real via Search Console, flagging
+          // every video with both "missing a time zone" and "invalid
+          // datetime value" for uploadDate, since schema.org requires a
+          // real dateTime here, not a bare date. Date's own UTC-midnight
+          // parse of a bare date plus toISOString() gives a full, valid,
+          // explicitly-timezoned value with no new data needed.
+          uploadDate: new Date(story.createdAt).toISOString(),
           embedUrl: effectiveReelUrl,
         },
       } : {}),

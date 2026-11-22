@@ -518,7 +518,11 @@ ${bookingUrl ? `<li><a href="${escapeHtml(bookingUrl)}">Book a 30-minute call</a
             name: story.title,
             description: (story.summary || story.title || '').slice(0, 200),
             thumbnailUrl: story.coverImage || author?.avatar || DEFAULT_OG_IMAGE,
-            uploadDate: story.createdAt,
+            // Mirrors the same fix in src/pages/StoryDetailPage.tsx —
+            // story.createdAt is a bare date, not a full datetime; Search
+            // Console flagged every video for it (missing time zone +
+            // invalid datetime value).
+            uploadDate: new Date(story.createdAt).toISOString(),
             embedUrl: story.reelUrl,
           },
         } : {}),
