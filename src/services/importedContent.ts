@@ -1,5 +1,4 @@
 import { readCache, writeEntity, deleteEntity, type WriteResult } from '../lib/entityStore'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import type {
   ImportedContent,
   ImportedContentFilter,
@@ -182,23 +181,19 @@ export const importedContentService = {
 
   async upsert(item: ImportedContent): Promise<WriteResult> {
     // staffCreated marks the one article runOnboardingResearch writes —
-    // that's not a founder-initiated import, it's already covered by its
-    // own "Culo's Article" tab/decision. A genuinely new (not an edit of
-    // an existing row), founder-initiated item, the first one this founder
-    // has ever brought in, is worth an instant staff alert — Culo Members
-    // previously had no indicator of import activity at all, confirmed as
-    // a real gap (a founder who'd imported 49 real items showed nothing
-    // different there).
-    const isNewItem = !this.get(item.id)
-    if (isNewItem && !item.staffCreated) {
-      const hadRealImportBefore = readCache<ImportedContent>(KEY)
-        .some(i => i.founderId === item.founderId && !i.staffCreated)
-      if (!hadRealImportBefore && isSupabaseConfigured && supabase) {
-        void supabase.functions.invoke('notify-first-import', {
-          body: { founderId: item.founderId, platform: item.sourcePlatform },
-        }).catch(() => {})
-      }
-    }
+    // Used to fire an instant per-item staff alert here (notify-first-
+    // import) — removed. A connector scan upserts several new items
+    // concurrently (connectedSources.ts's Promise.all), and this check read
+    // the same stale local cache for every one of them before any upsert's
+    // result came back, so a 15-item first import could pass "hadRealImport
+    // Before: false" a dozen-plus times in a row and fire that many staff
+    // emails for what should only ever be one alert, ever — confirmed real
+    // (10 separate emails for one founder's first website-rss scan).
+    // Superseded by a scheduled digest (notify-import-activity-digest,
+    // cron every 30 minutes) which finds every founder who crossed "first
+    // import" since its last run and sends ONE email covering all of them —
+    // no per-item client call, no race, and no instant-alert cost for every
+    // single import event.
     return writeEntity<ImportedContent>({
       cacheKey: KEY,
       item,
