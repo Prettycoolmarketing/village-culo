@@ -193,6 +193,7 @@ export function BusinessProfilePage() {
   const receivedRecs   = recommendationService.getAll({ businessId: business.id, status: 'approved' })
     .filter(r => r.disclosureVisible)
   const publicImports  = importedContentService.getAll({ businessId: business.id, publicOnly: true })
+  const businessStoryCount = getStories({ businessId: business.id, publicOnly: true }).length
 
   // ── Village Intelligence — aggregate across business content ──────────────
   const bestIntel = businessIntelRecords.length > 0
@@ -648,25 +649,30 @@ export function BusinessProfilePage() {
                 </section>
               )}
 
-              {/* Stories */}
-              <section aria-labelledby="business-stories-heading">
-                <h2 id="business-stories-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
-                  Stories from {business.name}
-                </h2>
-                <p className="font-body text-sm text-muted mb-6">Published founder stories connected to this business.</p>
-                <StoryGrid
-                  filter={{ businessId: business.id, publicOnly: true }}
-                  hideKey="business-profile"
-                  columns={2}
-                  cardVariant="compact"
-                  showSummary
-                  showFounder
-                  showTopics={false}
-                  showCTA={false}
-                  emptyTitle="No stories published yet"
-                  emptyMessage="Stories will appear here as the founder publishes and connects them to this business."
-                />
-              </section>
+              {/* Stories — hidden entirely when empty rather than showing a
+                  placeholder card, same reasoning as Library below: a
+                  "No stories published yet" box reads as "unfinished
+                  profile" to a visitor, not as a genuine content section
+                  that just hasn't filled up yet. */}
+              {businessStoryCount > 0 && (
+                <section aria-labelledby="business-stories-heading">
+                  <h2 id="business-stories-heading" className="font-heading text-2xl font-semibold text-charcoal mb-2">
+                    Stories from {business.name}
+                  </h2>
+                  <p className="font-body text-sm text-muted mb-6">Published founder stories connected to this business.</p>
+                  <StoryGrid
+                    filter={{ businessId: business.id, publicOnly: true }}
+                    hideKey="business-profile"
+                    columns={2}
+                    cardVariant="compact"
+                    showSummary
+                    showFounder
+                    showTopics={false}
+                    showCTA={false}
+                    hideEmpty
+                  />
+                </section>
+              )}
 
               {/* Founder */}
               {founder && (
@@ -680,6 +686,33 @@ export function BusinessProfilePage() {
                   </div>
                 </section>
               )}
+
+              {/* Join Culo pitch — every business page's only "join" CTA
+                  used to live inside the Stories section's own empty
+                  state ("Become a Publisher", only shown when this
+                  business had zero stories) — hiding that section when
+                  empty (above) removed the one CTA a business page had.
+                  This is a standalone, always-shown box instead, not tied
+                  to any one section being empty. */}
+              <div className="bg-charcoal rounded-2xl px-6 py-10 sm:px-10 sm:py-14 text-center">
+                <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+                  The Culo Village
+                </p>
+                <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-5 leading-tight max-w-xl mx-auto">
+                  Republish your own content as web articles
+                </h2>
+                <p className="font-body text-base text-white/70 leading-relaxed mb-8 max-w-xl mx-auto">
+                  Join The Culo Village to structure your posts into individual, AI-discoverable articles — your first 10 are free.
+                </p>
+                <div className="flex justify-center">
+                  <Link
+                    to="/onboarding"
+                    className="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+                  >
+                    Join The Culo Village →
+                  </Link>
+                </div>
+              </div>
 
               {/* Library — hidden entirely when empty rather than showing a
                   placeholder card, since an unpublished Library reads as

@@ -174,7 +174,21 @@ function splitSentences(text: string): string[] {
 }
 
 function lo(s: string) { return s.toLowerCase() }
-function has(haystack: string, needle: string): boolean { return lo(haystack).includes(lo(needle)) }
+// Was a bare substring check (`lo(haystack).includes(lo(needle))`) — every
+// keyword map below has short entries ('AI', 'PR', 'rent', 'land', 'show')
+// that matched inside completely unrelated words under plain substring
+// matching: 'AI' inside "again/wait/said/explain/maintain", 'rent' inside
+// "parent/different/current", 'land' inside "England/Ireland/island".
+// Confirmed real at scale: 195 of 1,120 analysed items (17%) got tagged
+// "technology" — directly traced to 'AI' false-matching ordinary prose, on
+// content with nothing technology-related in it (an ADHD post, a burnout
+// post). Word-boundary matching only counts a keyword that appears as its
+// own word (or exact phrase, for multi-word keywords like "real estate"),
+// not as a fragment of a longer one.
+function has(haystack: string, needle: string): boolean {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`\\b${escaped}\\b`, 'i').test(haystack)
+}
 
 function scoreKeywords(text: string, keywords: string[]): number {
   return keywords.reduce((n, kw) => n + (has(text, kw) ? 1 : 0), 0)
