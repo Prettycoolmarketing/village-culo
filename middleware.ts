@@ -79,6 +79,19 @@ function padDescription(summary, blog) {
 // Story, so a topic page can be "rich" even with no curated entry here as
 // long as at least one published Story carries that topic — same rule
 // TopicPage.tsx itself uses (`isRich`).
+// Mirrors src/pages/TopicPage.tsx's exported MIN_TOPIC_STORIES — keep both
+// in sync by hand (middleware.ts can't import from src/pages, same reason
+// TOPICS above is a duplicated copy, not an import). This constant was
+// missing here entirely before: the gate below only ever checked
+// matching.length === 0, with no floor at all, so a topic thin enough that
+// TopicPage.tsx itself showed real visitors "Nothing here yet" was still
+// served to Googlebot as a genuine, fully-indexed CollectionPage with a
+// real title, description and JSON-LD — bots and real visitors seeing
+// different content for the same URL. Confirmed real once the threshold
+// was raised from 3 to 15: most "live" topic pages would have stayed
+// crawlable here even after going offline for real visitors.
+const MIN_TOPIC_STORIES = 15
+
 const TOPICS: Record<string, { name: string; description: string }> = {
   'ai-marketing': { name: 'AI Marketing', description: 'Using artificial intelligence to create, distribute and optimise content.' },
   'founder-storytelling': { name: 'Founder Storytelling', description: 'How founders use their personal stories to build trust and authority.' },
@@ -779,20 +792,46 @@ ${item.why ? `<p>${escapeHtml(item.why)}</p>` : ''}
         .map(r => r.data)
         .filter(s => Array.isArray(s.topics) && s.topics.some((t: any) => t?.slug === slug))
 
-      if (!curated && matching.length === 0) return notFoundResponse(url.pathname) // matches TopicPage's own NotFound gate
+      // Was `!curated && matching.length === 0` — matches TopicPage's real
+      // gate now (isRich = stories.length >= MIN_TOPIC_STORIES), which never
+      // exempted a curated topic from the floor either.
+      if (matching.length < MIN_TOPIC_STORIES) return notFoundResponse(url.pathname)
 
       const name = curated?.name ?? matching[0].topics.find((t: any) => t.slug === slug)?.name ?? slug
       const description = curated?.description || `Founder stories in CULO Village about ${name}.`
+      // Same FAQ content/order as TopicPage.tsx's topicFaqs() — duplicated
+      // here for the same reason TOPICS and MIN_TOPIC_STORIES are: this file
+      // can't import from src/pages.
+      const faqs = [
+        { q: 'Who is Shakas?', a: 'Shakas researches and writes the founder content published across The Culo Village, including the articles on this page.' },
+        { q: 'What is The Culo Village?', a: 'A founder publishing platform — it republishes founders’ existing posts from across platforms as individual web articles, so their work is easier for people and AI tools to find.' },
+        { q: 'What is Culo Creatives?', a: 'An editing app coming to Canva that turns raw footage into social media posts with hooks and captions. The Village republishing shown here is step one; Creatives is step two.' },
+        { q: `What is this ${name} page?`, a: `A topic hub — every published Culo Village article about ${name}, gathered on one page, from the founders writing about it.` },
+        { q: 'Are these all Australian founders?', a: 'Mostly, though The Culo Village isn’t limited to Australia — any founder with a real business and real content can be published here.' },
+        { q: 'Can a founder edit or remove their own article?', a: 'Yes — every article carries a "Written by CULO" byline, and the founder it’s about can claim their profile and edit or remove anything on it at any time.' },
+      ]
       const jsonLd = {
         '@context': 'https://schema.org',
-        '@type': 'CollectionPage',
-        name,
-        description,
-        hasPart: matching.slice(0, 50).map(s => ({
-          '@type': 'Article',
-          headline: s.title,
-          url: `https://www.culovillage.com/stories/${s.slug}`,
-        })),
+        '@graph': [
+          {
+            '@type': 'CollectionPage',
+            name,
+            description,
+            hasPart: matching.slice(0, 50).map(s => ({
+              '@type': 'Article',
+              headline: s.title,
+              url: `https://www.culovillage.com/stories/${s.slug}`,
+            })),
+          },
+          {
+            '@type': 'FAQPage',
+            mainEntity: faqs.map(f => ({
+              '@type': 'Question',
+              name: f.q,
+              acceptedAnswer: { '@type': 'Answer', text: f.a },
+            })),
+          },
+        ],
       }
       const bodyHtml = `
 <article>
@@ -801,6 +840,8 @@ ${item.why ? `<p>${escapeHtml(item.why)}</p>` : ''}
 ${matching.length > 0 ? `<ul>
 ${matching.map(s => `<li><a href="/stories/${escapeHtml(s.slug)}">${escapeHtml(s.title)}</a></li>`).join('\n')}
 </ul>` : ''}
+<h2>Frequently asked</h2>
+${faqs.map(f => `<p><strong>${escapeHtml(f.q)}</strong><br/>${escapeHtml(f.a)}</p>`).join('\n')}
 </article>`
       const html = renderDocument({
         title: name, description, path: url.pathname,

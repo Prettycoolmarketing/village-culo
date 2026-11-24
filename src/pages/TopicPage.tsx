@@ -4,6 +4,7 @@ import { StoryGrid } from '../widgets/StoryGrid'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { getStories } from '../services/stories'
 import { topics } from '../data/topics'
+import { CULO_ORGANIZATION } from '../utils/seo'
 
 // A topic page isn't backed by its own table — Topics live embedded on each
 // Story, curated or founder-written alike (see createCustomTopic in
@@ -11,7 +12,48 @@ import { topics } from '../data/topics'
 // matching topic slug, so a founder writing a brand new topic during Publish
 // gets a real, working page the moment their story goes live.
 
-export const MIN_TOPIC_STORIES = 3
+// Was 3 — real per-topic counts checked against a growing page count showed
+// most "live" topic pages sat right at that floor (3-6 stories), which reads
+// as thin to a search engine rather than a genuine authority on the subject.
+// Raised so a topic page only goes live once there's real depth behind it —
+// confirmed against real data that Technology (26), Real Estate (19) and
+// Sustainability (18) already clear this comfortably; raising the bar takes
+// the thinner ones offline until they genuinely earn it back.
+export const MIN_TOPIC_STORIES = 15
+
+// Same questions on every topic page, not topic-specific — these are about
+// the Village itself (who's behind it, what Shakas/Creatives are, why a
+// founder's own content ended up here), the thing every visitor landing on
+// an unfamiliar topic hub actually wants answered before the story grid
+// below means anything to them.
+function topicFaqs(name: string) {
+  return [
+    {
+      q: 'Who is Shakas?',
+      a: 'Shakas researches and writes the founder content published across The Culo Village, including the articles on this page.',
+    },
+    {
+      q: 'What is The Culo Village?',
+      a: 'A founder publishing platform — it republishes founders\' existing posts from across platforms as individual web articles, so their work is easier for people and AI tools to find.',
+    },
+    {
+      q: 'What is Culo Creatives?',
+      a: 'An editing app coming to Canva that turns raw footage into social media posts with hooks and captions. The Village republishing shown here is step one; Creatives is step two.',
+    },
+    {
+      q: `What is this ${name} page?`,
+      a: `A topic hub — every published Culo Village article about ${name}, gathered on one page, from the founders writing about it.`,
+    },
+    {
+      q: 'Are these all Australian founders?',
+      a: 'Mostly, though The Culo Village isn\'t limited to Australia — any founder with a real business and real content can be published here.',
+    },
+    {
+      q: 'Can a founder edit or remove their own article?',
+      a: 'Yes — every article carries a "Written by CULO" byline, and the founder it\'s about can claim their profile and edit or remove anything on it at any time.',
+    },
+  ]
+}
 
 function storiesForTopic(slug: string) {
   return getStories({ publicOnly: true }).filter(s => s.topics.some(t => t.slug === slug))
@@ -42,10 +84,21 @@ export function TopicPage() {
   const curated = slug ? topics.find(t => t.slug === slug) : undefined
   const name = curated?.name ?? stories[0]?.topics.find(t => t.slug === slug)?.name ?? ''
   const description = curated?.description
+  const faqs = name ? topicFaqs(name) : []
 
   usePageMeta({
     title: isRich ? name : undefined,
     description: isRich ? (description || `Founder stories in CULO Village about ${name}.`) : undefined,
+    jsonLd: isRich ? {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+      publisher: CULO_ORGANIZATION,
+    } : null,
   })
 
   if (!slug || !isRich) return <NotFound />
@@ -79,6 +132,22 @@ export function TopicPage() {
             emptyTitle="Nothing here yet"
             emptyMessage="Check back soon."
           />
+        </InnerContainer>
+      </section>
+
+      <section className="py-16 md:py-20 bg-surface border-t border-border" aria-labelledby="topic-faq-heading">
+        <InnerContainer className="max-w-4xl">
+          <h2 id="topic-faq-heading" className="font-heading text-2xl sm:text-3xl font-bold text-charcoal mb-10 text-left">
+            Frequently asked
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-8 text-left">
+            {faqs.map(f => (
+              <div key={f.q}>
+                <p className="font-heading font-semibold text-charcoal mb-1">{f.q}</p>
+                <p className="font-body text-sm text-muted leading-relaxed">{f.a}</p>
+              </div>
+            ))}
+          </div>
         </InnerContainer>
       </section>
     </main>
