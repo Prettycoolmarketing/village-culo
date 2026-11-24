@@ -27,6 +27,7 @@ import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
 import { AreYouThisFounderCTA, ClaimPitchBox, ClaimProfileBanner, PublishPitchBox } from '../components/ui/ClaimProfileBanner'
+import { VillageStatsCard } from '../widgets/VillageStatsCard'
 import { ExitIntentClaimPopup } from '../components/ui/ExitIntentClaimPopup'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { FounderSocialLinks } from '../components/ui/FounderSocialLinks'
@@ -491,6 +492,12 @@ export function FounderProfilePage() {
 
         <div className="bg-surface border-b border-border pb-12">
           <InnerContainer>
+          {/* lg:flex row so the Village stats card sits to the right, in
+              line with the name/bio content, rather than appearing way
+              down the page — per direct request, matching how the
+              homepage hero already places the same card. */}
+          <div className="lg:flex lg:gap-10 lg:items-start">
+          <div className="flex-1 min-w-0">
             <div className="flex flex-col gap-6 pt-14 sm:pt-16 -mt-2 sm:-mt-3">
               <div className="flex flex-col sm:flex-row sm:items-end gap-6">
                 {/* No real photo yet reads as no avatar at all here, same
@@ -592,6 +599,9 @@ export function FounderProfilePage() {
             </div>
 
             <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-7" />
+          </div>
+          <VillageStatsCard className="hidden lg:flex flex-shrink-0 mt-2" />
+          </div>
           </InnerContainer>
         </div>
       </section>

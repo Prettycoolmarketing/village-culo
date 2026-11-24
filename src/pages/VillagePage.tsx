@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { usePageMeta } from '../utils/usePageMeta'
 import { CULO_ORGANIZATION } from '../utils/seo'
 import { HeroWidget }                from '../widgets/HeroWidget'
@@ -229,6 +230,33 @@ export function VillagePage() {
           />
         </VillageSection>
       )}
+
+      {/* ── 8. Join Culo ──────────────────────────────────────────────────────── */}
+      {/* Same dark pitch box pattern as founder/business profile pages — the
+          homepage itself had no closing join CTA of its own beyond the hero
+          button, which a visitor scrolling the whole page before deciding
+          never comes back up to see. */}
+      <VillageSection surface>
+        <div className="bg-charcoal rounded-2xl px-6 py-10 sm:px-10 sm:py-14 text-center">
+          <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+            The Culo Village
+          </p>
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-5 leading-tight max-w-xl mx-auto">
+            Republish your posts as web articles
+          </h2>
+          <p className="font-body text-base text-white/70 leading-relaxed mb-8 max-w-xl mx-auto">
+            Your first 10 articles are free. Be first in line for Culo Creatives in Canva, coming soon.
+          </p>
+          <div className="flex justify-center">
+            <Link
+              to="/join"
+              className="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+            >
+              Join The Culo Village →
+            </Link>
+          </div>
+        </div>
+      </VillageSection>
 
     </main>
   )

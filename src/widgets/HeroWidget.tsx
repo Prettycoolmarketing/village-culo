@@ -1,29 +1,12 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { topics } from '../data/topics'
-import { locations } from '../data/locations'
-import { getStories } from '../services/stories'
-import { getFounders } from '../services/founders'
-import { getBusinesses } from '../services/businesses'
-import { getIdeas } from '../services/ideas'
+import { VillageStatsCard } from './VillageStatsCard'
 
 // Curated topic pills shown in the hero — highest-count topics
 const popularTopics = topics
   .sort((a, b) => b.count - a.count)
   .slice(0, 8)
-
-// Real counts, not the placeholder numbers this widget shipped with —
-// publicOnly so a draft/curated-not-yet-published item never inflates what
-// a visitor is told exists, matching the same definition Archive uses.
-function villageStats() {
-  return [
-    { count: getStories({ publicOnly: true }).length,    label: 'Stories',    href: '/stories' },
-    { count: getFounders({ publicOnly: true }).length,   label: 'Founders',   href: '/founders' },
-    { count: getBusinesses({ publicOnly: true }).length, label: 'Businesses', href: '/businesses' },
-    { count: getIdeas({ publicOnly: true }).length,      label: 'Ideas',      href: '/ideas' },
-    { count: locations.length,                           label: 'Locations', href: '/map' },
-  ]
-}
 
 interface HeroWidgetProps {
   className?: string
@@ -179,35 +162,7 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
         </div>
 
         {/* ── Floating stat strip — right side on large screens ─────────────── */}
-        <aside
-          className="
-            hidden lg:flex flex-col gap-6
-            absolute right-8 top-1/2 -translate-y-1/2
-            bg-surface/80 backdrop-blur-sm rounded-2xl p-6
-            border border-border shadow-md
-            min-w-[180px]
-          "
-          aria-label="Village at a glance"
-        >
-          <p className="font-body text-xs font-semibold text-muted uppercase tracking-widest">
-            Village
-          </p>
-          {villageStats().map(stat => (
-            <Link
-              key={stat.label}
-              to={stat.href}
-              className="group flex flex-col"
-              aria-label={`${stat.count} ${stat.label} in the Village`}
-            >
-              <span className="font-heading text-3xl font-bold text-charcoal group-hover:text-primary transition-colors">
-                {stat.count}
-              </span>
-              <span className="font-body text-xs text-muted group-hover:text-primary transition-colors">
-                {stat.label}
-              </span>
-            </Link>
-          ))}
-        </aside>
+        <VillageStatsCard className="hidden lg:flex absolute right-8 top-1/2 -translate-y-1/2" />
       </div>
 
       {/* ── Bottom fade into next section ────────────────────────────────────── */}

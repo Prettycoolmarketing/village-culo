@@ -17,6 +17,7 @@ import { ConnectedToWidget } from '../components/ui/ConnectedToWidget'
 import { getServices }                     from '../services/serviceOfferings'
 import { StoryGrid }                  from '../widgets/StoryGrid'
 import { LibraryGrid }               from '../widgets/LibraryGrid'
+import { VillageStatsCard }           from '../widgets/VillageStatsCard'
 import { FounderCard }                from '../components/cards/FounderCard'
 import { StoryCard }                  from '../components/cards/StoryCard'
 import { BizLogo }                    from '../components/ui/BizLogo'
@@ -280,6 +281,11 @@ export function BusinessProfilePage() {
 
         <div className="bg-surface border-b border-border pb-10">
           <InnerContainer>
+          {/* Same lg:flex row as FounderProfilePage's hero, so the Village
+              stats card sits to the right, in line with the name/
+              description, instead of appearing way down the page. */}
+          <div className="lg:flex lg:gap-10 lg:items-start">
+          <div className="flex-1 min-w-0">
             <div className="flex items-end gap-5 -mt-10 relative z-10 mb-6">
               {(business.logo || !isUnclaimedCuratedBiz) && (
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden ring-4 ring-surface shadow-lg bg-background flex-shrink-0 flex items-center justify-center p-2.5">
@@ -370,6 +376,9 @@ export function BusinessProfilePage() {
                 </ul>
               </section>
             )}
+          </div>
+          <VillageStatsCard className="hidden lg:flex flex-shrink-0 mt-2" />
+          </div>
           </InnerContainer>
         </div>
       </section>
