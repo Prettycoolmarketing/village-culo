@@ -26,7 +26,7 @@ import { BusinessCard } from '../components/cards/BusinessCard'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { InnerContainer } from '../components/layout/PageContainer'
-import { AreYouThisFounderCTA, ClaimPitchBox, ClaimProfileBanner } from '../components/ui/ClaimProfileBanner'
+import { AreYouThisFounderCTA, ClaimPitchBox, ClaimProfileBanner, PublishPitchBox } from '../components/ui/ClaimProfileBanner'
 import { ExitIntentClaimPopup } from '../components/ui/ExitIntentClaimPopup'
 import { TrackedRecommendationLink } from '../components/ui/TrackedRecommendationLink'
 import { FounderSocialLinks } from '../components/ui/FounderSocialLinks'
@@ -252,6 +252,15 @@ export function FounderProfilePage() {
     founderId: founder.id,
     publicOnly: founder.status === 'published' || founder.status === 'featured',
   }).filter(i => !i.relatedStoryId && (i.description?.trim().length ?? 0) > 0)
+
+  // Raw counts for PublishPitchBox — every import regardless of whether it
+  // has a real description yet (publicImports above is filtered down to
+  // what's worth showing as a card, not a true total), against the same
+  // archivePublishedCount entitlement counter publishStory.ts itself
+  // increments, so "N more ready to go" matches what the founder's own
+  // dashboard would tell them.
+  const totalImportedCount = importedContentService.getAll({ founderId: founder.id }).length
+  const archivePublishedCount = founder.archivePublishedCount ?? 0
 
   // Featured picks — stories the founder has chosen to spotlight (see
   // Profile > Content). When they've picked any, the public profile leads
@@ -647,7 +656,25 @@ export function FounderProfilePage() {
               {importsSection}
               {isUnclaimedCurated && exploreFurtherSection}
               {isUnclaimedCurated && <ClaimPitchBox founder={founder} />}
+              {/* A claimed founder with nothing published yet (unlike the
+                  unclaimed case above, there's nothing left to "claim")
+                  used to get no box here at all — see PublishPitchBox. */}
+              {!isUnclaimedCurated && founder.userId && (
+                <PublishPitchBox totalImported={totalImportedCount} publishedCount={archivePublishedCount} />
+              )}
             </div>
+          </InnerContainer>
+        </div>
+      )}
+
+      {/* Same box, for a claimed founder who HAS already published some of
+          their archive but still has more imported and unpublished — the
+          section above only ever renders while hasRealStories is false, so
+          this is the only place that case reaches it. */}
+      {hasRealStories && founder.userId && (
+        <div className="pt-14 md:pt-16">
+          <InnerContainer>
+            <PublishPitchBox totalImported={totalImportedCount} publishedCount={archivePublishedCount} />
           </InnerContainer>
         </div>
       )}

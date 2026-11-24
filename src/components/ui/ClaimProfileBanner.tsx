@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Founder } from '../../types'
 import { InnerContainer } from '../layout/PageContainer'
+import { FREE_ARCHIVE_PUBLISH } from '../../config/publishing'
 
 // This page (and especially a curated founder's auto-published articles)
 // is seen by plenty of people who aren't the founder — the claim button
@@ -121,6 +122,49 @@ export function ClaimPitchBox({ founder }: { founder: Founder }) {
           initialLabel="Claim your profile to publish instantly"
           initialClassName="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
         />
+      </div>
+    </div>
+  )
+}
+
+// The same dark pitch box, for a founder who's already claimed their
+// profile — ClaimPitchBox above explicitly returns null the moment
+// profileStatus leaves 'village-curated', so a founder who'd claimed but
+// not yet published anything from their own archive got no box here at
+// all, even with their whole imported archive still sitting unpublished.
+// Terminology genuinely shifts once they've published at least one piece
+// (per direct product direction) — "keep going", not "get started", and
+// the free-quota line only makes sense before it's been used up.
+export function PublishPitchBox({ totalImported, publishedCount }: {
+  totalImported: number
+  publishedCount: number
+}) {
+  const remaining = Math.max(0, totalImported - publishedCount)
+  if (remaining === 0) return null
+  const hasPublished = publishedCount > 0
+
+  return (
+    <div className="bg-charcoal rounded-2xl px-6 py-10 sm:px-10 sm:py-14 text-center">
+      <p className="font-body text-xs font-semibold text-primary uppercase tracking-widest mb-4">
+        {hasPublished ? 'Your archive' : 'Ready when you are'}
+      </p>
+      <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-5 leading-tight max-w-xl mx-auto">
+        {hasPublished ? 'Keep publishing your archive' : 'Structure your content into web articles'}
+      </h2>
+      <p className="font-body text-base text-white/70 leading-relaxed mb-8 max-w-xl mx-auto">
+        {hasPublished
+          ? `${remaining} more imported piece${remaining === 1 ? '' : 's'} ready to go — ${
+              publishedCount < FREE_ARCHIVE_PUBLISH ? 'still free' : 'optional upgrade to unlock the rest'
+            }.`
+          : `${remaining} imported piece${remaining === 1 ? '' : 's'} ready to go. Your first ${FREE_ARCHIVE_PUBLISH} articles are on us!`}
+      </p>
+      <div className="flex justify-center">
+        <Link
+          to="/dashboard/import-content"
+          className="inline-flex items-center justify-center px-7 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-[#b05a35] transition-colors"
+        >
+          Go to your dashboard →
+        </Link>
       </div>
     </div>
   )
