@@ -495,8 +495,10 @@ export function FounderProfilePage() {
           {/* lg:flex row so the Village stats card sits to the right, in
               line with the name/bio content, rather than appearing way
               down the page — per direct request, matching how the
-              homepage hero already places the same card. */}
-          <div className="lg:flex lg:gap-10 lg:items-start">
+              homepage hero already places the same card. items-center
+              (not items-start) centres the card vertically against the
+              whole bio column instead of pinning it to the top. */}
+          <div className="lg:flex lg:gap-10 lg:items-center">
           <div className="flex-1 min-w-0">
             <div className="flex flex-col gap-6 pt-14 sm:pt-16 -mt-2 sm:-mt-3">
               <div className="flex flex-col sm:flex-row sm:items-end gap-6">
@@ -600,7 +602,7 @@ export function FounderProfilePage() {
 
             <FeaturedInSection items={founderFeaturedIn} headingId="founder-featured-in-heading" className="mt-7" />
           </div>
-          <VillageStatsCard className="hidden lg:flex flex-shrink-0 mt-2" />
+          <VillageStatsCard className="hidden lg:flex flex-shrink-0" />
           </div>
           </InnerContainer>
         </div>
