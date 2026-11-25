@@ -39,6 +39,18 @@
 //    import and then stopped for good — the gap conditions 1-4 don't
 //    cover, since onboarding/drafting isn't the problem for these
 //    people, they just never got a reason to come back for a second one.
+// 6. RESEARCH SUCCEEDED, NO BIO — researchStatus 'done', researchFoundNothing
+//    not true, still no real bio, for 24h+. The Risk Gate used to withhold
+//    an onboarding bio from auto-publishing even after a real source was
+//    found, leaving a founder with content imported and genuinely zero
+//    bio, invisible unless a staff member went looking (confirmed real:
+//    Grace Seah-Tan, Darryl Gianina, Angela Dickie, all fixed by hand
+//    2026-11-25). The Risk Gate itself is gone from this path now
+//    (f0deff6) so this should be rare going forward, but a founder whose
+//    own earlier research run is still sitting unwritten needs the same
+//    "go press the button" nudge as every other stuck state here —
+//    DashboardProfilePage already shows a "Write bio and article from
+//    research" button under exactly this condition.
 //
 // A staff digest to support@prettycoolmarketing.com lists everyone nudged
 // this run, grouped by which condition, for manual follow-up.
@@ -54,7 +66,7 @@ const SUPABASE_SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const STAFF_DIGEST_EMAIL = 'support@prettycoolmarketing.com'
 const HOUR = 60 * 60 * 1000
 
-type NudgeField = 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt' | 'reengageNudgeSentAt'
+type NudgeField = 'needsSetupNudgeSentAt' | 'readyNudgeSentAt' | 'importNudgeSentAt' | 'publishNudgeSentAt' | 'reengageNudgeSentAt' | 'bioMissingNudgeSentAt'
 
 interface FounderData {
   name?: string
@@ -62,11 +74,14 @@ interface FounderData {
   bio?: string
   onboardingStatus?: string
   passwordSet?: boolean
+  researchStatus?: string
+  researchFoundNothing?: boolean
   needsSetupNudgeSentAt?: string
   readyNudgeSentAt?: string
   importNudgeSentAt?: string
   publishNudgeSentAt?: string
   reengageNudgeSentAt?: string
+  bioMissingNudgeSentAt?: string
 }
 interface FounderRow { id: string; updated_at: string; data: FounderData }
 interface NudgeTemplate { title: string; subject: string; bodyHtml: string }
@@ -111,7 +126,7 @@ serve(async (req) => {
       return true
     }
 
-    const notified: Record<string, string[]> = { needsSetup: [], ready: [], importedNothing: [], publishUntouched: [], wentQuiet: [] }
+    const notified: Record<string, string[]> = { needsSetup: [], ready: [], importedNothing: [], publishUntouched: [], wentQuiet: [], bioMissing: [] }
 
     // 1. Needs setup, 24h+
     for (const f of founders) {
@@ -206,6 +221,15 @@ serve(async (req) => {
       }
     }
 
+    // 6. Research succeeded, no bio, 24h+
+    for (const f of founders) {
+      if (f.data.researchStatus !== 'done' || f.data.researchFoundNothing || f.data.bioMissingNudgeSentAt) continue
+      if (f.data.bio?.trim()) continue
+      if (stuckFor(f.updated_at) < 24 * HOUR) continue
+      const name = f.data.name || 'there'
+      if (await sendNudge(f, 'bioMissingNudgeSentAt', { name })) notified.bioMissing.push(`${name} <${f.data.signupEmail}>`)
+    }
+
     const total = Object.values(notified).reduce((n, arr) => n + arr.length, 0)
     if (total > 0 || unrecordedNudges.length > 0) {
       const section = (title: string, list: string[]) => list.length > 0 ? `<p><strong>${title}</strong></p><ul>${list.map(n => `<li>${n}</li>`).join('')}</ul>` : ''
@@ -215,6 +239,7 @@ serve(async (req) => {
         section('Imported nothing (48h+)', notified.importedNothing),
         section('Ready to publish, untouched (72h+)', notified.publishUntouched),
         section('Went quiet after publishing (7 days+)', notified.wentQuiet),
+        section('Research succeeded, no bio (24h+)', notified.bioMissing),
         section('Sent but not recorded — will likely re-send tomorrow', unrecordedNudges),
       ].join('')
       await sendEmail(STAFF_DIGEST_EMAIL, `${total} founder${total === 1 ? '' : 's'} nudged today`, emailLayout('Staff digest', digestHtml))
