@@ -109,6 +109,33 @@ serve(async (req) => {
       }
     }
 
+    // 5. Onboarding research genuinely succeeded (found a real source, not
+    // "found nothing") but the founder still has no bio — the Risk Gate
+    // deliberately withholds auto-publishing a low-confidence bio even
+    // after a real source is found, which is correct behaviour, but it
+    // leaves a founder with content imported and zero bio, invisible to
+    // anyone unless a staff member happens to go looking (confirmed real:
+    // Grace Seah-Tan, Darryl Gianina, Angela Dickie, all stuck exactly
+    // this way after a successful research run).
+    {
+      const { data: founders } = await admin
+        .from('founders')
+        .select('id, data')
+        .eq('data->>researchStatus', 'done')
+        .neq('data->>researchFoundNothing', 'true')
+      const stuckAfterResearch = (founders ?? []).filter(f => {
+        const d = f.data as { bio?: string }
+        return !d.bio || d.bio.trim().length < 20
+      })
+      if (stuckAfterResearch.length > 0) {
+        findings.push({
+          label: 'founders whose onboarding research found a real source but never got a bio (Risk Gate withheld it — needs a human to review and write it)',
+          count: stuckAfterResearch.length,
+          examples: stuckAfterResearch.slice(0, 5).map(f => `${(f.data as { name?: string }).name ?? f.id}`),
+        })
+      }
+    }
+
     if (findings.length === 0) {
       return new Response(JSON.stringify({ ok: true, findings: 0 }), { headers: { 'Content-Type': 'application/json' } })
     }
