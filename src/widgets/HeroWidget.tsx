@@ -59,11 +59,19 @@ export function HeroWidget({ className = '' }: HeroWidgetProps) {
             <span className="text-primary">Spread Across Platforms?</span>
           </h1>
 
-          {/* Subheadline */}
+          {/* Subheadline — leads with the Village's real, live benefit
+              (republishing, today) before the Creatives/Canva teaser, not
+              after. Confirmed real: three separate outside cold-outreach
+              tools, reading this page unprompted, each summarised CULO
+              Creatives as the main product and the Village as a "waitlist"
+              feeding it — the reverse of reality (the Village is live now,
+              Creatives is the one still coming). All three read the old
+              order (Canva mentioned first) and weighted it as the headline
+              fact. */}
           <p className="font-body text-lg md:text-xl text-muted leading-relaxed max-w-xl mb-6">
-            CULO is coming to Canva to help edit your raw footage into social media post with captions, be in The
-            Culo Village for first access. Members in The Village are able to republish old posts as individual
-            web articles for aligned AI discovery.
+            The Culo Village republishes your existing posts as individual web articles, live today, so people and
+            AI tools can find your work. Join now and you'll be first in line when Culo Creatives — our editing
+            app coming to Canva — launches.
           </p>
 
           <Link
