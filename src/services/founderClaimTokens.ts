@@ -19,7 +19,7 @@ import type { Founder } from '../types'
  * token (existing or freshly made) keyed by founder id. Staff-only: relies
  * on the caller already being signed in as a village admin.
  */
-export async function ensureClaimTokens(founders: Founder[]): Promise<Map<string, string>> {
+export async function ensureClaimTokens(founders: Pick<Founder, 'id'>[]): Promise<Map<string, string>> {
   const tokens = new Map<string, string>()
   if (!isSupabaseConfigured || !supabase || founders.length === 0) return tokens
 

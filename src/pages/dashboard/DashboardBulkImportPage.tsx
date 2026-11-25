@@ -11,6 +11,7 @@ import { ConfirmButton } from '../../components/ui/ConfirmButton'
 import { FounderEditModal, EditorialResearchPanel } from '../../components/dashboard/FounderEditModal'
 import { getAllEditorialItems, pipelineStage, type EditorialItemRow } from '../../services/editorialItems'
 import { convertSpreadsheetToVIF, convertTextToVIF } from '../../services/spreadsheetImport'
+import { ensureClaimTokens } from '../../services/founderClaimTokens'
 import type { Founder } from '../../types'
 
 // Nobody's got a "name" field in the system today — email is all a staff
@@ -354,11 +355,23 @@ export function DashboardBulkImportPage() {
   // and the equivalent in NZ/UK for anyone curated from there). Whoever
   // sends this — Shakas, Gia, anyone else — gets it by default rather than
   // needing to remember to add their own.
-  function outreachMsg(name: string, slug: string) {
+  function outreachMsg(name: string, slug: string, claimKey?: string) {
     const firstName  = name.trim().split(/\s+/)[0] ?? name
     const profileUrl = `${origin}/founders/${slug}`
-    const claimUrl   = `${origin}/claim/${slug}`
+    // ?key=... carries this founder's real claim secret (see
+    // founderClaimTokens.ts) — it's what lets /claim/:slug skip the
+    // request-and-review queue entirely. Without it, every claim coming
+    // through this exact message still has to go through manual review,
+    // even though the claimant is, by definition, the person this message
+    // was sent to directly — there's no real stranger-impersonation risk
+    // left to gate against once a staff member has invited them by name.
+    const claimUrl   = claimKey ? `${origin}/claim/${slug}?key=${claimKey}` : `${origin}/claim/${slug}`
     return `Hey ${firstName}!\n\nI came across your work and added you to The Culo Village a curated directory of Australian founder stories and businesses!\n\nYour public profile is live here: ${profileUrl}\n\nIf you'd like to claim it, import your content from across platforms to publish as web articles or start creating content with CULO in Canva, you can do that here: ${claimUrl}\n\nIt's completely free to claim. Happy to help you get set up! let me know!\n\nIf you'd rather not be listed, just reply No Thanks and I'll remove your profile! no hard feelings.`
+  }
+
+  async function copyOutreachMsg(f: Founder, msgKey: string) {
+    const tokens = await ensureClaimTokens([f])
+    copyText(outreachMsg(f.name, f.slug, tokens.get(f.id)), msgKey)
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────────
@@ -845,7 +858,7 @@ export function DashboardBulkImportPage() {
                               {copied === profKey ? '✓ Copied' : 'Copy Link'}
                             </button>
                             <button
-                              onClick={() => copyText(outreachMsg(f.name, f.slug), msgKey)}
+                              onClick={() => void copyOutreachMsg(f, msgKey)}
                               className={`text-[11px] font-semibold transition-colors ${
                                 copied === msgKey ? 'text-[#5E6B4A]' : 'text-[#9CA3AF] hover:text-[#C86A43]'
                               }`}

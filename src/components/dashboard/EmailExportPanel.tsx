@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getFounders } from '../../services/founders'
 import { getBusinesses } from '../../services/businesses'
 import { founderClaimService } from '../../services/founderClaim'
+import { ensureClaimTokens } from '../../services/founderClaimTokens'
 import { type EmailRow, toCSV, downloadCSV, deduplicate, splitName, sanitiseEmail } from '../../utils/emailExport'
 
 // Moved here from the Email Lists page's "Export" tab — lives next to Bulk
@@ -14,11 +15,22 @@ export function EmailExportPanel() {
   const [dateFrom, setDateFrom]         = useState('')
   const [dateTo, setDateTo]             = useState('')
   const [preview, setPreview]           = useState<{ label: string; count: number } | null>(null)
+  const [claimTokens, setClaimTokens]   = useState<Map<string, string>>(new Map())
 
   const origin    = typeof window !== 'undefined' ? window.location.origin : ''
   const founders  = getFounders()
   const businesses = getBusinesses()
   const claims    = founderClaimService.getAll()
+
+  // Every claimUrl below carries ?key=... once this resolves, so a claimant
+  // who was actually sent this exact exported link skips the
+  // request-and-review queue entirely instead of landing in it the way
+  // every outreach-driven claim used to (see founderClaimTokens.ts — the
+  // token existed, nothing actually wired it into an export or template).
+  useEffect(() => {
+    void ensureClaimTokens(founders).then(setClaimTokens)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const claimEmailByFounder = new Map<string, string>()
   for (const c of claims) {
@@ -38,7 +50,7 @@ export function EmailExportPanel() {
       profileStatus: f.profileStatus ?? f.status,
       founderSlug:   f.slug,
       profileUrl:    `${origin}/founders/${f.slug}`,
-      claimUrl:      `${origin}/claim/${f.slug}`,
+      claimUrl:      claimTokens.has(f.id) ? `${origin}/claim/${f.slug}?key=${claimTokens.get(f.id)}` : `${origin}/claim/${f.slug}`,
       businessName:  biz?.name ?? '',
       tags,
       createdAt:     f.createdAt,

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { slugify } from '../../utils/slugify'
 import { getFounders, updateFounder } from '../../services/founders'
@@ -21,6 +21,7 @@ import { topics as ALL_TOPICS } from '../../data/topics'
 import type { Founder, Business } from '../../types'
 import type { ImportedContent } from '../../types/importedContent'
 import { formatLocationLabel } from '../../utils/location'
+import { ensureClaimTokens } from '../../services/founderClaimTokens'
 
 // ─── Types ───────────────────────────────────────────────────────────────────────
 
@@ -85,6 +86,20 @@ export function DashboardCuratedFounderBuilderPage() {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [result, setResult] = useState<BuildResult | null>(null)
+  const [claimKey, setClaimKey] = useState<string | undefined>(undefined)
+
+  // Fetches this founder's real claim secret once the build finishes, so the
+  // outreach message below can carry a ?key=... link that skips the
+  // request-and-review queue entirely (see founderClaimTokens.ts) — the
+  // claimant is, by definition, the exact person this message was sent to.
+  useEffect(() => {
+    if (!result) { setClaimKey(undefined); return }
+    let cancelled = false
+    void ensureClaimTokens([{ id: result.founderId }]).then(tokens => {
+      if (!cancelled) setClaimKey(tokens.get(result.founderId))
+    })
+    return () => { cancelled = true }
+  }, [result])
 
   // ── Step 0: Founder Details ───────────────────────────────────────────────────
   const [name, setName] = useState('')
@@ -400,7 +415,7 @@ export function DashboardCuratedFounderBuilderPage() {
 
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
   const profileUrl  = result ? `${origin}/founders/${result.founderSlug}` : ''
-  const claimUrl    = result ? `${origin}/claim/${result.founderSlug}` : ''
+  const claimUrl    = result ? `${origin}/claim/${result.founderSlug}${claimKey ? `?key=${claimKey}` : ''}` : ''
   const outreachFirstName = result ? (result.founderName.trim().split(/\s+/)[0] ?? result.founderName) : ''
   const outreachMsg = result
     ? `Hey ${outreachFirstName}!\n\nI came across your work and added you to The Culo Village a curated directory of Australian founder stories and businesses!\n\nYour public profile is live here: ${profileUrl}\n\nIf you'd like to claim it, import your content from across platforms to publish as web articles or start creating content with CULO in Canva, you can do that here: ${claimUrl}\n\nIt's completely free to claim. Happy to help you get set up! let me know!\n\nIf you'd rather not be listed, just reply No Thanks and I'll remove your profile! no hard feelings.`
