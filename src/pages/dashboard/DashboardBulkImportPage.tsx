@@ -369,7 +369,7 @@ export function DashboardBulkImportPage() {
     return `Hey ${firstName}!\n\nI came across your work and added you to The Culo Village a curated directory of Australian founder stories and businesses!\n\nYour public profile is live here: ${profileUrl}\n\nIf you'd like to claim it, import your content from across platforms to publish as web articles or start creating content with CULO in Canva, you can do that here: ${claimUrl}\n\nIt's completely free to claim. Happy to help you get set up! let me know!\n\nIf you'd rather not be listed, just reply No Thanks and I'll remove your profile! no hard feelings.`
   }
 
-  async function copyOutreachMsg(f: Founder, msgKey: string) {
+  async function copyOutreachMsg(f: { id: string; name: string; slug: string }, msgKey: string) {
     const tokens = await ensureClaimTokens([f])
     copyText(outreachMsg(f.name, f.slug, tokens.get(f.id)), msgKey)
   }
