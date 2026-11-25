@@ -46,7 +46,13 @@ export async function writeOnboardingDraftsFromResearch(founderId: string): Prom
   if (bioResult.success && bioResult.item) {
     await runAudit(bioResult.item)
     const bioText = bioResult.item.draft_content?.body
-    if (bioText && bioResult.item.auto_publish_allowed) {
+    // Was gated on bioResult.item.auto_publish_allowed (the Risk Gate's
+    // confidence verdict) — removed by direct request: a founder with
+    // content imported and zero bio (invisible, looks like a broken
+    // profile) was worse than a bio written from a lower-confidence
+    // source. The founder can still edit or correct anything on their own
+    // profile at any time, same as every other auto-written bio.
+    if (bioText) {
       const latest = getFounder(founderId) ?? founder
       await updateFounder({ ...latest, bio: bioText })
       bioWritten = true
@@ -137,13 +143,15 @@ export async function runOnboardingResearch(founderId: string, identifier: strin
     if (bioResult.success && bioResult.item) {
       await runAudit(bioResult.item)
       const bioText = bioResult.item.draft_content?.body
-      // auto_publish_allowed is the Risk Gate's own verdict on this exact
-      // ledger — confirmed real bug, same shape as FounderEditModal's
-      // BioDraftBlock and runFullEditorialPipeline: this wrote straight to
-      // the live, public bio field regardless of it, so a low-confidence
-      // research run (research couldn't actually verify who this founder
-      // is) still got published onto their real profile automatically.
-      if (bioText && bioResult.item.auto_publish_allowed) {
+      // Was gated on bioResult.item.auto_publish_allowed (the Risk Gate's
+      // confidence verdict on this exact ledger) — removed by direct
+      // request: confirmed real, this left founders with content imported
+      // and genuinely zero bio (Grace Seah-Tan, Darryl Gianina, Angela
+      // Dickie), invisible unless a staff member went looking, which reads
+      // as a worse outcome than a bio written from a lower-confidence
+      // source — especially since the founder can review, edit or correct
+      // anything on their own profile at any time regardless.
+      if (bioText) {
         const founderNow = getFounder(founderId)
         if (founderNow) await updateFounder({ ...founderNow, bio: bioText })
       }
